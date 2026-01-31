@@ -1,0 +1,23 @@
+{
+    "name": "Six22",
+    "short_name": "Six22",
+    "description": "Start a new chapter. Find your tribe.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#050508",
+    "theme_color": "#F59E0B",
+    "icons": [
+        {
+            "src": "/favicon-six22.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/favicon-six22.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

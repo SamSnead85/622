@@ -1,165 +1,273 @@
 'use client';
 
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useEffect, useState } from 'react';
 
-// Navigation
-function Navigation() {
+// ============================================
+// AMBIENT BACKGROUND
+// Premium animated gradients
+// ============================================
+function AmbientBackground() {
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-950/80 backdrop-blur-xl border-b border-gray-900">
-            <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                        <span className="text-gray-950 font-semibold text-sm">C</span>
-                    </div>
-                    <span className="font-semibold text-[15px] tracking-[-0.01em]">Caravan</span>
-                </Link>
+        <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute inset-0 bg-[#050508]" />
 
-                <div className="hidden md:flex items-center gap-8">
-                    <Link href="#features" className="text-[14px] text-gray-400 hover:text-white transition-colors duration-200">
-                        Features
-                    </Link>
-                    <Link href="#communities" className="text-[14px] text-gray-400 hover:text-white transition-colors duration-200">
-                        Communities
-                    </Link>
-                    <Link href="#security" className="text-[14px] text-gray-400 hover:text-white transition-colors duration-200">
-                        Security
-                    </Link>
-                </div>
+            {/* Aurora gradients */}
+            <motion.div
+                className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-violet-500/20 blur-[150px]"
+                animate={{
+                    scale: [1, 1.2, 1],
+                    x: [0, 50, 0],
+                    opacity: [0.3, 0.5, 0.3]
+                }}
+                transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+                className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full bg-orange-500/15 blur-[120px]"
+                animate={{
+                    scale: [1.2, 1, 1.2],
+                    y: [0, -50, 0],
+                    opacity: [0.3, 0.5, 0.3]
+                }}
+                transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+                className="absolute top-1/2 right-0 w-[400px] h-[400px] rounded-full bg-cyan-500/10 blur-[100px]"
+                animate={{
+                    x: [0, -30, 0],
+                    opacity: [0.2, 0.4, 0.2]
+                }}
+                transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+                className="absolute bottom-1/4 left-0 w-[350px] h-[350px] rounded-full bg-rose-500/10 blur-[100px]"
+                animate={{
+                    y: [0, 30, 0],
+                    opacity: [0.2, 0.4, 0.2]
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+            />
 
-                <div className="flex items-center gap-3">
-                    <Link
-                        href="/login"
-                        className="text-[14px] text-gray-400 hover:text-white transition-colors duration-200 px-3 py-2"
-                    >
-                        Log in
-                    </Link>
-                    <Link
-                        href="/signup"
-                        className="text-[14px] font-medium bg-white text-gray-950 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                    >
-                        Get Started
-                    </Link>
-                </div>
-            </div>
-        </nav>
+            {/* Subtle grid pattern */}
+            <div
+                className="absolute inset-0 opacity-[0.02]"
+                style={{
+                    backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+                    backgroundSize: '60px 60px'
+                }}
+            />
+        </div>
     );
 }
 
-// Hero Section
-function HeroSection() {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const { scrollYProgress } = useScroll({
-        target: containerRef,
-        offset: ['start start', 'end start'],
-    });
+// ============================================
+// NAVIGATION
+// ============================================
+function Navigation({ mounted }: { mounted: boolean }) {
+    const [scrolled, setScrolled] = useState(false);
 
-    const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-    const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
-    const y = useTransform(scrollYProgress, [0, 0.5], [0, 100]);
+    useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 50);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    if (!mounted) return null;
 
     return (
-        <section ref={containerRef} className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
-            {/* Background - premium gradient */}
-            <div className="absolute inset-0">
-                {/* Subtle gradient orbs */}
-                <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-gradient-radial from-violet-500/10 via-transparent to-transparent blur-3xl" />
-                <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-radial from-cyan-500/8 via-transparent to-transparent blur-3xl" />
-                {/* Bottom fade */}
-                <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-gray-950 to-transparent" />
+        <motion.nav
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#050508]/90 backdrop-blur-2xl border-b border-white/5' : ''}`}
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        >
+            <div className="max-w-7xl mx-auto px-6 lg:px-8 h-20 flex items-center justify-between">
+                <Link href="/" className="flex items-center gap-3 group">
+                    <motion.div
+                        className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                    >
+                        <span className="text-white font-bold text-lg">C</span>
+                    </motion.div>
+                    <span className="font-semibold text-lg tracking-tight text-white">Six22</span>
+                </Link>
+
+                <div className="hidden md:flex items-center gap-10">
+                    {['Features', 'Tribes', 'About'].map((item) => (
+                        <Link
+                            key={item}
+                            href={`#${item.toLowerCase()}`}
+                            className="text-sm text-white/60 hover:text-white transition-colors duration-300"
+                        >
+                            {item}
+                        </Link>
+                    ))}
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <Link
+                        href="/login"
+                        className="text-sm text-white/60 hover:text-white transition-colors duration-300 px-4 py-2"
+                    >
+                        Log in
+                    </Link>
+                    <Link href="/signup">
+                        <motion.button
+                            className="text-sm font-semibold bg-gradient-to-r from-orange-400 to-rose-500 text-white px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
+                            Get Started
+                        </motion.button>
+                    </Link>
+                </div>
             </div>
+        </motion.nav>
+    );
+}
+
+// ============================================
+// HERO SECTION
+// ============================================
+function HeroSection({ mounted }: { mounted: boolean }) {
+    if (!mounted) return <div className="min-h-screen" />;
+
+    return (
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+            <AmbientBackground />
 
             <motion.div
-                className="relative z-10 max-w-4xl mx-auto px-6 text-center"
-                style={{ opacity, scale, y }}
+                className="relative z-10 max-w-4xl mx-auto px-6 text-center pt-20"
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
+                {/* Eyebrow */}
                 <motion.div
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 mb-8"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
                 >
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        <span className="text-[12px] font-medium text-gray-400">Now available on iOS and Android</span>
-                    </div>
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                    </span>
+                    <span className="text-xs font-medium text-white/70">The next generation of social</span>
                 </motion.div>
 
+                {/* Headline */}
                 <motion.h1
-                    className="text-[3.5rem] md:text-[4.5rem] font-semibold leading-[1] tracking-[-0.02em] mb-6"
-                    initial={{ opacity: 0, y: 30 }}
+                    className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-[1.05]"
+                    initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 >
-                    The social platform
+                    Share moments that
                     <br />
-                    <span className="text-gray-500">built for communities</span>
+                    <span className="bg-gradient-to-r from-orange-400 via-rose-400 to-violet-400 bg-clip-text text-transparent">matter most</span>
                 </motion.h1>
 
+                {/* Subheadline */}
                 <motion.p
-                    className="text-[1.125rem] text-gray-500 max-w-xl mx-auto mb-10 leading-relaxed"
-                    initial={{ opacity: 0, y: 30 }}
+                    className="text-lg md:text-xl text-white/50 max-w-2xl mx-auto mb-10 leading-relaxed"
+                    initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 >
-                    Share moments, build communities, and connect with people who share your passions.
-                    Private by design, safe for everyone.
+                    The social platform where real connections thrive.
+                    Bring your family and friends closer, no matter the distance.
                 </motion.p>
 
+                {/* CTAs */}
                 <motion.div
                     className="flex flex-col sm:flex-row items-center justify-center gap-4"
-                    initial={{ opacity: 0, y: 30 }}
+                    initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
                 >
-                    <Link
-                        href="/signup"
-                        className="inline-flex items-center gap-2 bg-white text-gray-950 font-medium px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                    >
-                        Start for free
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="opacity-60">
-                            <path d="M1 7h12m0 0L8 2m5 5L8 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
+                    <Link href="/signup">
+                        <motion.button
+                            className="flex items-center gap-2 bg-gradient-to-r from-orange-400 via-rose-500 to-violet-500 text-white font-semibold px-8 py-4 rounded-full text-base"
+                            whileHover={{ scale: 1.02, y: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
+                            Start your journey
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M3 8h10m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </motion.button>
                     </Link>
-                    <Link
-                        href="#features"
-                        className="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium px-6 py-3 transition-colors duration-200"
-                    >
-                        See how it works
+                    <Link href="#features">
+                        <motion.button
+                            className="flex items-center gap-2 px-8 py-4 text-white/70 hover:text-white transition-colors text-base"
+                            whileHover={{ x: 4 }}
+                        >
+                            See how it works
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="opacity-60">
+                                <path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </motion.button>
                     </Link>
+                </motion.div>
+
+                {/* Floating feature pills */}
+                <motion.div
+                    className="flex flex-wrap justify-center gap-3 mt-16"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                >
+                    {['🔥 Campfire Live', '📸 Moments', '🗺️ Journeys', '💬 Messages'].map((feature, i) => (
+                        <motion.div
+                            key={feature}
+                            className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white/60"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.9 + i * 0.1 }}
+                        >
+                            {feature}
+                        </motion.div>
+                    ))}
                 </motion.div>
             </motion.div>
 
-            {/* Scroll indicator */}
+            {/* Scroll hint */}
             <motion.div
-                className="absolute bottom-8 left-1/2 -translate-x-1/2"
+                className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.5 }}
             >
-                <div className="w-5 h-8 rounded-full border border-gray-800 flex items-start justify-center p-1.5">
-                    <motion.div
-                        className="w-1 h-1.5 rounded-full bg-gray-600"
-                        animate={{ y: [0, 8, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                    />
-                </div>
+                <motion.div
+                    className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center p-2"
+                    animate={{ y: [0, 8, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                    <div className="w-1 h-2 rounded-full bg-white/40" />
+                </motion.div>
             </motion.div>
         </section>
     );
 }
 
-// Stats Section
-function StatsSection() {
+// ============================================
+// STATS SECTION
+// ============================================
+function StatsSection({ mounted }: { mounted: boolean }) {
     const stats = [
-        { value: '10M+', label: 'Active users' },
-        { value: '50K+', label: 'Communities' },
-        { value: '99.9%', label: 'Uptime' },
-        { value: '<10ms', label: 'Avg latency' },
+        { value: '10M+', label: 'Active members' },
+        { value: '50K+', label: 'Tribes' },
+        { value: '1B+', label: 'Moments shared' },
+        { value: '180+', label: 'Countries' },
     ];
 
+    if (!mounted) return null;
+
     return (
-        <section className="py-24 px-6">
+        <section className="py-24 px-6 bg-[#0a0a0f] border-y border-white/5">
             <div className="max-w-6xl mx-auto">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                     {stats.map((stat, i) => (
@@ -171,8 +279,8 @@ function StatsSection() {
                             viewport={{ once: true }}
                             transition={{ duration: 0.5, delay: i * 0.1 }}
                         >
-                            <div className="text-[2rem] md:text-[3rem] font-semibold tracking-[-0.02em] mb-1">{stat.value}</div>
-                            <div className="text-[14px] text-gray-500">{stat.label}</div>
+                            <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent mb-2">{stat.value}</div>
+                            <div className="text-sm text-white/40">{stat.label}</div>
                         </motion.div>
                     ))}
                 </div>
@@ -181,65 +289,77 @@ function StatsSection() {
     );
 }
 
-// Features Section
-function FeaturesSection() {
+// ============================================
+// FEATURES SECTION
+// ============================================
+function FeaturesSection({ mounted }: { mounted: boolean }) {
     const features = [
         {
-            title: 'Short-form video',
-            description: 'Create and discover engaging content with a vertical feed designed for quick, impactful storytelling.',
+            icon: '📸',
+            title: 'Moments',
+            description: '24-hour stories that capture life as it happens. Share your day with the people who matter.',
+            color: 'from-orange-500/20 to-rose-500/20',
         },
         {
-            title: 'Communities',
-            description: 'Join topic-based spaces where conversations go deeper. From hobbies to causes, find your people.',
+            icon: '🔥',
+            title: 'Campfire Live',
+            description: 'Go live with your inner circle. Intimate streams for real conversations, not performances.',
+            color: 'from-rose-500/20 to-orange-500/20',
         },
         {
-            title: 'Secure messaging',
-            description: 'End-to-end encrypted conversations that stay between you and the people you trust.',
-        },
-        {
-            title: 'Content safety',
-            description: 'AI-powered moderation keeps the platform safe for all ages while respecting free expression.',
-        },
-        {
-            title: 'Cross-platform sync',
-            description: 'Start on your phone, continue on the web. Your content and conversations follow you everywhere.',
-        },
-        {
-            title: 'Creator tools',
-            description: 'Professional-grade editing, filters, and effects that help your content stand out.',
+            icon: '🗺️',
+            title: 'Journeys',
+            description: 'Curate collections of your greatest adventures. Your story, beautifully told.',
+            color: 'from-violet-500/20 to-cyan-500/20',
         },
     ];
 
+    if (!mounted) return null;
+
     return (
-        <section id="features" className="py-32 px-6">
+        <section id="features" className="py-32 px-6 relative">
             <div className="max-w-6xl mx-auto">
                 <motion.div
-                    className="max-w-2xl mb-16"
-                    initial={{ opacity: 0, y: 20 }}
+                    className="text-center mb-20"
+                    initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <h2 className="text-[3rem] font-semibold tracking-[-0.02em] leading-[1.1] mb-4">
-                        Everything you need.
-                        <br />
-                        <span className="text-gray-500">Nothing you don&apos;t.</span>
+                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+                        Built for real connection
                     </h2>
-                    <p className="text-[1.125rem] text-gray-500 leading-relaxed">
-                        We took the best parts of the platforms you love and left behind what doesn&apos;t work.
+                    <p className="text-lg text-white/40 max-w-xl mx-auto">
+                        Not another feed to scroll. A home for your most meaningful relationships.
                     </p>
                 </motion.div>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+                <div className="grid md:grid-cols-3 gap-8">
                     {features.map((feature, i) => (
                         <motion.div
                             key={feature.title}
-                            initial={{ opacity: 0, y: 20 }}
+                            className="group relative rounded-3xl overflow-hidden bg-white/5 border border-white/10"
+                            initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: i * 0.05 }}
+                            transition={{ duration: 0.6, delay: i * 0.1 }}
+                            whileHover={{ y: -8 }}
                         >
-                            <h3 className="text-[1.5rem] font-semibold tracking-[-0.01em] mb-2">{feature.title}</h3>
-                            <p className="text-[16px] text-gray-500 leading-relaxed">{feature.description}</p>
+                            {/* Icon */}
+                            <div className={`relative h-40 overflow-hidden bg-gradient-to-br ${feature.color} flex items-center justify-center`}>
+                                <motion.span
+                                    className="text-6xl"
+                                    animate={{ scale: [1, 1.1, 1], rotate: [0, 5, 0] }}
+                                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                                >
+                                    {feature.icon}
+                                </motion.span>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-8">
+                                <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
+                                <p className="text-white/50">{feature.description}</p>
+                            </div>
                         </motion.div>
                     ))}
                 </div>
@@ -248,153 +368,120 @@ function FeaturesSection() {
     );
 }
 
-// App Preview Section
-function AppPreviewSection() {
+// ============================================
+// TESTIMONIAL SECTION
+// ============================================
+function TestimonialSection({ mounted }: { mounted: boolean }) {
+    if (!mounted) return null;
+
     return (
-        <section className="py-32 px-6 overflow-hidden">
-            <div className="max-w-6xl mx-auto">
+        <section className="py-32 px-6 bg-[#0a0a0f]">
+            <div className="max-w-4xl mx-auto text-center">
                 <motion.div
-                    className="text-center mb-16"
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <h2 className="text-[3rem] font-semibold tracking-[-0.02em] mb-4">Designed for how you create</h2>
-                    <p className="text-[1.125rem] text-gray-500 max-w-xl mx-auto">
-                        A clean, intuitive interface that puts your content first and gets out of the way.
-                    </p>
-                </motion.div>
-
-                {/* Phone mockup */}
-                <motion.div
-                    className="relative mx-auto max-w-[280px]"
-                    initial={{ opacity: 0, y: 40 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                >
-                    <div className="relative bg-gray-900 rounded-[3rem] p-2 border border-gray-800">
-                        {/* Phone frame */}
-                        <div className="relative bg-gray-950 rounded-[2.5rem] overflow-hidden aspect-[9/19.5]">
-                            {/* Dynamic Island */}
-                            <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-7 bg-black rounded-full z-10" />
-
-                            {/* Screen content */}
-                            <div className="absolute inset-0 bg-gray-950">
-                                {/* Sample feed item */}
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="text-center px-8">
-                                        <div className="w-16 h-16 rounded-2xl bg-gray-900 border border-gray-800 mx-auto mb-4 flex items-center justify-center">
-                                            <span className="text-2xl">📹</span>
-                                        </div>
-                                        <p className="text-[13px] text-gray-500">Your feed awaits</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Bottom navigation */}
-                            <div className="absolute bottom-0 left-0 right-0 h-20 bg-black/80 backdrop-blur-xl border-t border-gray-900">
-                                <div className="flex items-center justify-around h-full px-6 pb-2">
-                                    {['●', '○', '+', '○', '○'].map((item, i) => (
-                                        <div
-                                            key={i}
-                                            className={`w-6 h-6 rounded-full ${i === 2 ? 'bg-white' : ''} flex items-center justify-center`}
-                                        >
-                                            {i === 2 ? (
-                                                <span className="text-gray-950 text-xs font-bold">+</span>
-                                            ) : (
-                                                <span className={`text-[8px] ${i === 0 ? 'text-white' : 'text-gray-600'}`}>{item}</span>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                    <div className="text-5xl mb-8">💬</div>
+                    <blockquote className="text-2xl md:text-3xl font-medium text-white mb-8 leading-relaxed">
+                        &ldquo;Caravan brought my scattered family back together.
+                        We share moments across three time zones like we&apos;re all in the same room.&rdquo;
+                    </blockquote>
+                    <div className="flex items-center justify-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-rose-500" />
+                        <div className="text-left">
+                            <div className="font-medium text-white">Sarah Chen</div>
+                            <div className="text-sm text-white/40">Mother of three, San Francisco</div>
                         </div>
                     </div>
-
-                    {/* Subtle glow */}
-                    <div className="absolute -inset-20 bg-gradient-radial from-gray-800/20 to-transparent rounded-full blur-3xl -z-10" />
                 </motion.div>
             </div>
         </section>
     );
 }
 
-// CTA Section
-function CTASection() {
+// ============================================
+// CTA SECTION
+// ============================================
+function CTASection({ mounted }: { mounted: boolean }) {
+    if (!mounted) return null;
+
     return (
-        <section className="py-32 px-6">
-            <div className="max-w-3xl mx-auto text-center">
+        <section className="relative py-32 px-6 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-900/30 via-rose-900/20 to-orange-900/30" />
+
+            <div className="relative max-w-3xl mx-auto text-center">
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <h2 className="text-[3rem] font-semibold tracking-[-0.02em] mb-4">
-                        Ready to get started?
+                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+                        Your adventure starts here
                     </h2>
-                    <p className="text-[1.125rem] text-gray-500 mb-10 max-w-lg mx-auto">
-                        Join millions of creators and communities building something meaningful.
+                    <p className="text-lg text-white/50 mb-10 max-w-lg mx-auto">
+                        Join millions of families and friends who chose meaningful connection over mindless scrolling.
                     </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link
-                            href="/signup"
-                            className="inline-flex items-center gap-2 bg-white text-gray-950 font-medium px-8 py-4 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                    <Link href="/signup">
+                        <motion.button
+                            className="bg-gradient-to-r from-orange-400 via-rose-500 to-violet-500 text-white font-semibold px-10 py-4 rounded-full text-lg"
+                            whileHover={{ scale: 1.02, y: -2 }}
+                            whileTap={{ scale: 0.98 }}
                         >
                             Create your account
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="opacity-60">
-                                <path d="M1 7h12m0 0L8 2m5 5L8 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        </Link>
-                        <Link
-                            href="/login"
-                            className="text-gray-400 hover:text-white font-medium px-4 py-4 transition-colors duration-200"
-                        >
-                            Sign in to existing account
-                        </Link>
-                    </div>
+                        </motion.button>
+                    </Link>
                 </motion.div>
             </div>
         </section>
     );
 }
 
-// Footer
+// ============================================
+// FOOTER
+// ============================================
 function Footer() {
     return (
-        <footer className="border-t border-gray-900 py-12 px-6">
+        <footer className="bg-[#0a0a0f] border-t border-white/5 py-16 px-6">
             <div className="max-w-6xl mx-auto">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-md bg-white flex items-center justify-center">
-                            <span className="text-gray-950 font-semibold text-xs">C</span>
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center">
+                            <span className="text-white font-bold">C</span>
                         </div>
-                        <span className="font-medium text-[14px]">Caravan</span>
+                        <span className="font-semibold text-white">Six22</span>
                     </div>
 
-                    <div className="flex items-center gap-8 text-[14px] text-gray-500">
-                        <Link href="/privacy" className="hover:text-white transition-colors duration-200">Privacy</Link>
-                        <Link href="/terms" className="hover:text-white transition-colors duration-200">Terms</Link>
-                        <Link href="/support" className="hover:text-white transition-colors duration-200">Support</Link>
+                    <div className="flex items-center gap-8 text-sm text-white/40">
+                        <Link href="/about" className="hover:text-white transition-colors">About</Link>
+                        <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+                        <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+                        <Link href="/support" className="hover:text-white transition-colors">Support</Link>
                     </div>
 
-                    <p className="text-[14px] text-gray-600">© 2024 Caravan Inc.</p>
+                    <p className="text-sm text-white/20">© 2026 Six22 Inc.</p>
                 </div>
             </div>
         </footer>
     );
 }
 
-// Main Page
+// ============================================
+// MAIN PAGE
+// ============================================
 export default function LandingPage() {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => { setMounted(true); }, []);
+
     return (
-        <div className="min-h-screen bg-gray-950">
-            <Navigation />
-            <HeroSection />
-            <StatsSection />
-            <FeaturesSection />
-            <AppPreviewSection />
-            <CTASection />
+        <div className="min-h-screen bg-[#050508]">
+            <Navigation mounted={mounted} />
+            <HeroSection mounted={mounted} />
+            <StatsSection mounted={mounted} />
+            <FeaturesSection mounted={mounted} />
+            <TestimonialSection mounted={mounted} />
+            <CTASection mounted={mounted} />
             <Footer />
         </div>
     );

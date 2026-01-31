@@ -1,0 +1,244 @@
+'use client';
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { API_ENDPOINTS, apiFetch } from '@/lib/api';
+import { useSocket } from './useSocket';
+
+// ============================================
+// TYPES
+// ============================================
+export interface User {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string;
+    lastActiveAt?: string;
+}
+
+export interface Message {
+    id: string;
+    conversationId: string;
+    senderId: string;
+    sender: User;
+    content: string;
+    mediaUrl?: string;
+    mediaType?: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'FILE';
+    createdAt: string;
+    reactions?: string[];
+    read?: boolean;
+}
+
+export interface Conversation {
+    id: string;
+    isGroup: boolean;
+    groupName?: string;
+    groupAvatar?: string;
+    participants: User[];
+    lastMessage?: {
+        id: string;
+        content: string;
+        senderId: string;
+        senderUsername: string;
+        createdAt: string;
+    };
+    unreadCount: number;
+    isMuted: boolean;
+    updatedAt: string;
+}
+
+interface TypingUser {
+    userId: string;
+    username: string;
+    conversationId: string;
+}
+
+// ============================================
+// MESSAGES HOOK
+// Real-time messaging with Socket.IO integration
+// ============================================
+export function useMessages() {
+    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [activeConversation, setActiveConversation] = useState<string | null>(null);
+    const [typingUsers, setTypingUsers] = useState<Map<string, TypingUser>>(new Map());
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const { emit, on, joinRoom, leaveRoom } = useSocket();
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Fetch conversations list
+    const fetchConversations = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            const response = await apiFetch(API_ENDPOINTS.conversations);
+            if (response.ok) {
+                const data = await response.json();
+                setConversations(data.conversations || []);
+            } else {
+                setError('Failed to load conversations');
+            }
+        } catch (err) {
+            console.error('Error fetching conversations:', err);
+            setError('Network error');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    // Fetch messages for a conversation
+    const fetchMessages = useCallback(async (conversationId: string) => {
+        try {
+            const response = await apiFetch(API_ENDPOINTS.messages(conversationId));
+            if (response.ok) {
+                const data = await response.json();
+                setMessages(data.messages || []);
+            }
+        } catch (err) {
+            console.error('Error fetching messages:', err);
+        }
+    }, []);
+
+    // Select a conversation
+    const selectConversation = useCallback((conversationId: string) => {
+        // Leave previous room
+        if (activeConversation) {
+            leaveRoom(activeConversation);
+        }
+
+        // Join new room
+        setActiveConversation(conversationId);
+        joinRoom(conversationId);
+        fetchMessages(conversationId);
+
+        // Mark as read
+        apiFetch(`${API_ENDPOINTS.messages(conversationId)}/read`, { method: 'PUT' }).catch(console.error);
+    }, [activeConversation, joinRoom, leaveRoom, fetchMessages]);
+
+    // Send a message
+    const sendMessage = useCallback(async (content: string, mediaUrl?: string, mediaType?: Message['mediaType']) => {
+        if (!activeConversation || !content.trim()) return;
+
+        try {
+            // Emit via socket for real-time
+            emit('message:send', {
+                conversationId: activeConversation,
+                content,
+                mediaUrl,
+                mediaType,
+            });
+        } catch (err) {
+            console.error('Error sending message:', err);
+        }
+    }, [activeConversation, emit]);
+
+    // Typing indicators
+    const startTyping = useCallback(() => {
+        if (!activeConversation) return;
+        emit('typing:start', activeConversation);
+
+        // Clear existing timeout
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        // Auto-stop typing after 3 seconds of inactivity
+        typingTimeoutRef.current = setTimeout(() => {
+            emit('typing:stop', activeConversation);
+        }, 3000);
+    }, [activeConversation, emit]);
+
+    const stopTyping = useCallback(() => {
+        if (!activeConversation) return;
+        emit('typing:stop', activeConversation);
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+    }, [activeConversation, emit]);
+
+    // Mark message as read
+    const markAsRead = useCallback((messageId: string) => {
+        if (!activeConversation) return;
+        emit('message:read', { conversationId: activeConversation, messageId });
+    }, [activeConversation, emit]);
+
+    // Socket event listeners
+    useEffect(() => {
+        // New message received
+        const unsubMessage = on<Message>('message:new', (message) => {
+            if (message.conversationId === activeConversation) {
+                setMessages(prev => [...prev, message]);
+            }
+            // Update conversation list
+            setConversations(prev => prev.map(c =>
+                c.id === message.conversationId
+                    ? {
+                        ...c,
+                        lastMessage: {
+                            id: message.id,
+                            content: message.content,
+                            senderId: message.senderId,
+                            senderUsername: message.sender.username,
+                            createdAt: message.createdAt,
+                        },
+                        unreadCount: message.conversationId === activeConversation
+                            ? c.unreadCount
+                            : c.unreadCount + 1,
+                    }
+                    : c
+            ));
+        });
+
+        // Typing started
+        const unsubTypingStart = on<TypingUser>('typing:start', (data) => {
+            setTypingUsers(prev => new Map(prev).set(data.userId, data));
+        });
+
+        // Typing stopped
+        const unsubTypingStop = on<{ userId: string }>('typing:stop', (data) => {
+            setTypingUsers(prev => {
+                const next = new Map(prev);
+                next.delete(data.userId);
+                return next;
+            });
+        });
+
+        // Message read receipt
+        const unsubRead = on<{ userId: string; messageId: string }>('message:read', (data) => {
+            setMessages(prev => prev.map(m =>
+                m.id === data.messageId ? { ...m, read: true } : m
+            ));
+        });
+
+        return () => {
+            unsubMessage?.();
+            unsubTypingStart?.();
+            unsubTypingStop?.();
+            unsubRead?.();
+        };
+    }, [on, activeConversation]);
+
+    // Initial fetch
+    useEffect(() => {
+        fetchConversations();
+    }, [fetchConversations]);
+
+    // Get typing users for active conversation
+    const activeTypingUsers = Array.from(typingUsers.values())
+        .filter(u => u.conversationId === activeConversation);
+
+    return {
+        conversations,
+        messages,
+        activeConversation,
+        typingUsers: activeTypingUsers,
+        isLoading,
+        error,
+        selectConversation,
+        sendMessage,
+        startTyping,
+        stopTyping,
+        markAsRead,
+        refetch: fetchConversations,
+    };
+}

@@ -52,18 +52,29 @@ export default function MomentsViewer({
         if (!isOpen || !currentMoment || isPaused) return;
 
         const startTime = Date.now();
+        let progressComplete = false;
+
         const interval = setInterval(() => {
             const elapsed = Date.now() - startTime;
             const newProgress = Math.min((elapsed / momentDuration) * 100, 100);
             setProgress(newProgress);
 
-            if (newProgress >= 100) {
-                goToNext();
+            if (newProgress >= 100 && !progressComplete) {
+                progressComplete = true;
+                // Use state updater to trigger next moment
+                if (currentMomentIndex < (currentUser?.moments.length ?? 0) - 1) {
+                    setCurrentMomentIndex(prev => prev + 1);
+                } else if (currentUserIndex < userMoments.length - 1) {
+                    setCurrentUserIndex(prev => prev + 1);
+                    setCurrentMomentIndex(0);
+                } else {
+                    onClose();
+                }
             }
         }, 50);
 
         return () => clearInterval(interval);
-    }, [isOpen, currentUserIndex, currentMomentIndex, isPaused, momentDuration]);
+    }, [isOpen, currentMoment, isPaused, momentDuration, currentMomentIndex, currentUserIndex, currentUser?.moments.length, userMoments.length, onClose]);
 
     // Reset progress when moment changes
     useEffect(() => {

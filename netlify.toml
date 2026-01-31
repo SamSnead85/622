@@ -1,0 +1,31 @@
+# Netlify Configuration for Caravan Web App
+# Deploy via GitHub -> Netlify integration
+
+[build]
+  # The web app is in the apps/web folder
+  base = "apps/web"
+  command = "npm run build"
+  publish = ".next"
+
+# Next.js on Netlify requires the Next.js plugin
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Environment variables (set in Netlify dashboard, not here)
+# NEXT_PUBLIC_API_URL = https://your-railway-app.up.railway.app
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Redirects for SPA routing (Next.js handles this, but as fallback)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"]}

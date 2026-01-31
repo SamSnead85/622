@@ -33,14 +33,15 @@ export default function CampfireGoLive() {
 
     // Start camera preview
     useEffect(() => {
+        const videoElement = videoRef.current;
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'user', width: 1280, height: 720 },
                     audio: true,
                 });
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
+                if (videoElement) {
+                    videoElement.srcObject = stream;
                     setHasCamera(true);
                 }
             } catch (error) {
@@ -50,8 +51,8 @@ export default function CampfireGoLive() {
         startCamera();
 
         return () => {
-            if (videoRef.current?.srcObject) {
-                const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+            if (videoElement?.srcObject) {
+                const tracks = (videoElement.srcObject as MediaStream).getTracks();
                 tracks.forEach(track => track.stop());
             }
         };

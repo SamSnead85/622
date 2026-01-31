@@ -11,6 +11,7 @@ import { usersRouter } from './routes/users.js';
 import { postsRouter } from './routes/posts.js';
 import { communitiesRouter } from './routes/communities.js';
 import { messagesRouter } from './routes/messages.js';
+import uploadRouter from './routes/upload.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 import { setupSocketHandlers } from './socket/index.js';
@@ -64,6 +65,7 @@ app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/posts', postsRouter);
 app.use('/api/v1/communities', communitiesRouter);
 app.use('/api/v1/messages', messagesRouter);
+app.use('/api/v1/upload', uploadRouter);
 
 // Error handler
 app.use(errorHandler);
