@@ -1,0 +1,283 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import Image from 'next/image';
+
+interface ChatMessage {
+    id: string;
+    username: string;
+    content: string;
+    type: 'message' | 'gift' | 'join';
+    giftEmoji?: string;
+    avatarUrl: string;
+}
+
+// Mock chat messages for demo
+const INITIAL_MESSAGES: ChatMessage[] = [
+    { id: '1', username: 'sarah_designs', content: 'Welcome everyone! 👋', type: 'message', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50&h=50&fit=crop&crop=face' },
+    { id: '2', username: 'techbro99', content: 'First! 🔥', type: 'message', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=50&h=50&fit=crop&crop=face' },
+];
+
+export default function CampfireGoLive() {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isLive, setIsLive] = useState(false);
+    const [title, setTitle] = useState('');
+    const [viewerCount, setViewerCount] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+    const [newMessage, setNewMessage] = useState('');
+    const [hasCamera, setHasCamera] = useState(false);
+    const [reactions, setReactions] = useState<{ id: string; emoji: string; x: number }[]>([]);
+
+    // Start camera preview
+    useEffect(() => {
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 1280, height: 720 },
+                    audio: true,
+                });
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                    setHasCamera(true);
+                }
+            } catch (error) {
+                console.error('Camera access denied:', error);
+            }
+        }
+        startCamera();
+
+        return () => {
+            if (videoRef.current?.srcObject) {
+                const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+                tracks.forEach(track => track.stop());
+            }
+        };
+    }, []);
+
+    // Duration timer when live
+    useEffect(() => {
+        if (!isLive) return;
+        const interval = setInterval(() => {
+            setDuration(d => d + 1);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [isLive]);
+
+    // Simulate viewers joining
+    useEffect(() => {
+        if (!isLive) return;
+        const interval = setInterval(() => {
+            setViewerCount(v => v + Math.floor(Math.random() * 3));
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [isLive]);
+
+    const goLive = () => {
+        if (!title.trim()) return alert('Please add a title for your stream');
+        setIsLive(true);
+        setViewerCount(1);
+        // In production: connect to streaming server
+    };
+
+    const endStream = () => {
+        setIsLive(false);
+        setDuration(0);
+        setViewerCount(0);
+    };
+
+    const sendMessage = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newMessage.trim()) return;
+        const msg: ChatMessage = {
+            id: Date.now().toString(),
+            username: 'you',
+            content: newMessage,
+            type: 'message',
+            avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face',
+        };
+        setMessages(prev => [...prev, msg]);
+        setNewMessage('');
+    };
+
+    const addReaction = (emoji: string) => {
+        const id = Date.now().toString();
+        const x = 20 + Math.random() * 60;
+        setReactions(prev => [...prev, { id, emoji, x }]);
+        setTimeout(() => {
+            setReactions(prev => prev.filter(r => r.id !== id));
+        }, 2000);
+    };
+
+    const formatDuration = (seconds: number) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return h > 0
+            ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+            : `${m}:${s.toString().padStart(2, '0')}`;
+    };
+
+    return (
+        <div className="min-h-screen bg-gray-950 text-white">
+            {/* Header */}
+            <header className="fixed top-0 left-0 right-0 z-20 bg-gray-950/80 backdrop-blur-lg border-b border-gray-900">
+                <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+                    <Link href="/dashboard" className="flex items-center gap-2 text-gray-400 hover:text-white">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span>Back</span>
+                    </Link>
+
+                    <div className="flex items-center gap-3">
+                        {isLive && (
+                            <>
+                                <div className="flex items-center gap-2 bg-red-500/20 px-3 py-1.5 rounded-full">
+                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                    <span className="text-red-400 text-sm font-semibold">LIVE</span>
+                                </div>
+                                <div className="text-sm text-gray-400">
+                                    <span className="text-white font-semibold">{viewerCount.toLocaleString()}</span> watching
+                                </div>
+                                <div className="text-sm text-gray-400">{formatDuration(duration)}</div>
+                            </>
+                        )}
+                    </div>
+
+                    {isLive ? (
+                        <button
+                            onClick={endStream}
+                            className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+                        >
+                            End Stream
+                        </button>
+                    ) : (
+                        <button
+                            onClick={goLive}
+                            disabled={!hasCamera || !title.trim()}
+                            className="bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2 rounded-lg font-semibold text-sm transition-all"
+                        >
+                            🔥 Go Live
+                        </button>
+                    )}
+                </div>
+            </header>
+
+            <div className="pt-16 flex h-screen">
+                {/* Main Video */}
+                <div className="flex-1 relative bg-black">
+                    <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="absolute inset-0 w-full h-full object-cover"
+                    />
+
+                    {/* Pre-live overlay */}
+                    {!isLive && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <div className="text-center max-w-md px-6">
+                                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-rose-500 to-orange-500 rounded-full flex items-center justify-center">
+                                    <span className="text-4xl">🔥</span>
+                                </div>
+                                <h1 className="text-2xl font-bold mb-2">Start a Campfire</h1>
+                                <p className="text-gray-400 mb-6">Add a title and go live to connect with your community</p>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    placeholder="What's your stream about?"
+                                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-center focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                                    maxLength={100}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Live reactions overlay */}
+                    <AnimatePresence>
+                        {reactions.map((reaction) => (
+                            <motion.div
+                                key={reaction.id}
+                                initial={{ y: 0, opacity: 1, scale: 1 }}
+                                animate={{ y: -300, opacity: 0, scale: 1.5 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 2, ease: 'easeOut' }}
+                                className="absolute bottom-24 pointer-events-none"
+                                style={{ left: `${reaction.x}%` }}
+                            >
+                                <span className="text-4xl">{reaction.emoji}</span>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+
+                    {/* Reaction buttons */}
+                    {isLive && (
+                        <div className="absolute bottom-4 left-4 flex gap-2">
+                            {['❤️', '🔥', '👏', '😂', '😮', '💯'].map((emoji) => (
+                                <button
+                                    key={emoji}
+                                    onClick={() => addReaction(emoji)}
+                                    className="w-12 h-12 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70 transition-colors text-xl"
+                                >
+                                    {emoji}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Chat Sidebar */}
+                <div className="w-80 bg-gray-900 border-l border-gray-800 flex flex-col">
+                    <div className="p-4 border-b border-gray-800">
+                        <h2 className="font-semibold">Live Chat</h2>
+                    </div>
+
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        {messages.map((msg) => (
+                            <div key={msg.id} className="flex gap-2">
+                                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                                    <Image
+                                        src={msg.avatarUrl}
+                                        alt={msg.username}
+                                        width={32}
+                                        height={32}
+                                        className="object-cover"
+                                    />
+                                </div>
+                                <div>
+                                    <span className="text-sm font-semibold text-rose-400">@{msg.username}</span>
+                                    <p className="text-sm text-gray-200">{msg.content}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Input */}
+                    <form onSubmit={sendMessage} className="p-4 border-t border-gray-800">
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                placeholder="Say something..."
+                                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                            />
+                            <button
+                                type="submit"
+                                className="bg-rose-500 hover:bg-rose-600 px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+                            >
+                                Send
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -1,0 +1,65 @@
+{
+    "expo": {
+        "name": "Caravan",
+        "slug": "caravan-social",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "scheme": "caravan",
+        "userInterfaceStyle": "dark",
+        "splash": {
+            "image": "./assets/splash.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#0A0A0B"
+        },
+        "assetBundlePatterns": [
+            "**/*"
+        ],
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.caravan.social",
+            "infoPlist": {
+                "NSCameraUsageDescription": "Allow Caravan to access your camera to create posts",
+                "NSPhotoLibraryUsageDescription": "Allow Caravan to access your photos to create posts",
+                "NSMicrophoneUsageDescription": "Allow Caravan to access your microphone to record videos"
+            }
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#0A0A0B"
+            },
+            "package": "com.caravan.social",
+            "permissions": [
+                "CAMERA",
+                "READ_EXTERNAL_STORAGE",
+                "WRITE_EXTERNAL_STORAGE",
+                "RECORD_AUDIO"
+            ]
+        },
+        "web": {
+            "bundler": "metro",
+            "output": "static",
+            "favicon": "./assets/favicon.png"
+        },
+        "plugins": [
+            "expo-router",
+            "expo-font",
+            [
+                "expo-camera",
+                {
+                    "cameraPermission": "Allow Caravan to access your camera to create amazing content."
+                }
+            ],
+            [
+                "expo-image-picker",
+                {
+                    "photosPermission": "Allow Caravan to access your photos to share with your community."
+                }
+            ]
+        ],
+        "experiments": {
+            "typedRoutes": true
+        }
+    }
+}

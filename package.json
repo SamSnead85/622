@@ -1,0 +1,27 @@
+{
+    "name": "caravan-social",
+    "version": "1.0.0",
+    "private": true,
+    "workspaces": [
+        "apps/*",
+        "packages/*",
+        "services/*"
+    ],
+    "scripts": {
+        "dev:mobile": "cd apps/mobile && npm run start",
+        "dev:web": "cd apps/web && npm run dev",
+        "dev:services": "npm run dev --workspaces --if-present",
+        "build": "npm run build --workspaces --if-present",
+        "test": "npm run test --workspaces --if-present",
+        "lint": "npm run lint --workspaces --if-present",
+        "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules services/*/node_modules"
+    },
+    "devDependencies": {
+        "typescript": "^5.3.3",
+        "prettier": "^3.2.0",
+        "eslint": "^8.56.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}

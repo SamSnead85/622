@@ -1,0 +1,306 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { prisma } from '../db/client.js';
+import { AppError } from '../middleware/errorHandler.js';
+import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
+
+const router = Router();
+
+// GET /api/v1/users/:username
+router.get('/:username', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { username } = req.params;
+
+        const user = await prisma.user.findUnique({
+            where: { username: username.toLowerCase() },
+            select: {
+                id: true,
+                username: true,
+                displayName: true,
+                bio: true,
+                website: true,
+                avatarUrl: true,
+                coverUrl: true,
+                isVerified: true,
+                isPrivate: true,
+                createdAt: true,
+                _count: {
+                    select: {
+                        followers: true,
+                        following: true,
+                        posts: true,
+                    },
+                },
+            },
+        });
+
+        if (!user) {
+            throw new AppError('User not found', 404);
+        }
+
+        // Check if current user follows this user
+        let isFollowing = false;
+        if (req.userId && req.userId !== user.id) {
+            const follow = await prisma.follow.findUnique({
+                where: {
+                    followerId_followingId: {
+                        followerId: req.userId,
+                        followingId: user.id,
+                    },
+                },
+            });
+            isFollowing = !!follow;
+        }
+
+        res.json({
+            ...user,
+            followersCount: user._count.followers,
+            followingCount: user._count.following,
+            postsCount: user._count.posts,
+            isFollowing,
+            isOwnProfile: req.userId === user.id,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// PUT /api/v1/users/profile
+router.put('/profile', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const updateSchema = z.object({
+            displayName: z.string().min(1).max(50).optional(),
+            bio: z.string().max(300).optional(),
+            website: z.string().url().optional().or(z.literal('')),
+            avatarUrl: z.string().url().optional(),
+            coverUrl: z.string().url().optional(),
+            isPrivate: z.boolean().optional(),
+        });
+
+        const data = updateSchema.parse(req.body);
+
+        const user = await prisma.user.update({
+            where: { id: req.userId },
+            data,
+            select: {
+                id: true,
+                username: true,
+                displayName: true,
+                bio: true,
+                website: true,
+                avatarUrl: true,
+                coverUrl: true,
+                isPrivate: true,
+            },
+        });
+
+        res.json(user);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/users/:userId/follow
+router.post('/:userId/follow', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { userId } = req.params;
+
+        if (userId === req.userId) {
+            throw new AppError('Cannot follow yourself', 400);
+        }
+
+        const targetUser = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!targetUser) {
+            throw new AppError('User not found', 404);
+        }
+
+        await prisma.follow.create({
+            data: {
+                followerId: req.userId!,
+                followingId: userId,
+            },
+        });
+
+        // Create notification
+        await prisma.notification.create({
+            data: {
+                userId: userId,
+                type: 'FOLLOW',
+                actorId: req.userId,
+                message: `started following you`,
+            },
+        });
+
+        res.json({ following: true });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// DELETE /api/v1/users/:userId/follow
+router.delete('/:userId/follow', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { userId } = req.params;
+
+        await prisma.follow.delete({
+            where: {
+                followerId_followingId: {
+                    followerId: req.userId!,
+                    followingId: userId,
+                },
+            },
+        }).catch(() => { });
+
+        res.json({ following: false });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/users/:userId/followers
+router.get('/:userId/followers', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { userId } = req.params;
+        const { cursor, limit = '20' } = req.query;
+
+        const followers = await prisma.follow.findMany({
+            where: { followingId: userId },
+            take: parseInt(limit as string) + 1,
+            ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
+            orderBy: { createdAt: 'desc' },
+            include: {
+                follower: {
+                    select: {
+                        id: true,
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true,
+                        isVerified: true,
+                    },
+                },
+            },
+        });
+
+        const hasMore = followers.length > parseInt(limit as string);
+        const results = hasMore ? followers.slice(0, -1) : followers;
+
+        res.json({
+            followers: results.map((f) => f.follower),
+            nextCursor: hasMore ? results[results.length - 1].id : null,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/users/:userId/following
+router.get('/:userId/following', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { userId } = req.params;
+        const { cursor, limit = '20' } = req.query;
+
+        const following = await prisma.follow.findMany({
+            where: { followerId: userId },
+            take: parseInt(limit as string) + 1,
+            ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
+            orderBy: { createdAt: 'desc' },
+            include: {
+                following: {
+                    select: {
+                        id: true,
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true,
+                        isVerified: true,
+                    },
+                },
+            },
+        });
+
+        const hasMore = following.length > parseInt(limit as string);
+        const results = hasMore ? following.slice(0, -1) : following;
+
+        res.json({
+            following: results.map((f) => f.following),
+            nextCursor: hasMore ? results[results.length - 1].id : null,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/users/:userId/posts
+router.get('/:userId/posts', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { userId } = req.params;
+        const { cursor, limit = '20' } = req.query;
+
+        const posts = await prisma.post.findMany({
+            where: {
+                userId,
+                isPublic: true,
+            },
+            take: parseInt(limit as string) + 1,
+            ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
+            orderBy: { createdAt: 'desc' },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true,
+                        isVerified: true,
+                    },
+                },
+                _count: {
+                    select: {
+                        likes: true,
+                        comments: true,
+                        shares: true,
+                    },
+                },
+            },
+        });
+
+        const hasMore = posts.length > parseInt(limit as string);
+        const results = hasMore ? posts.slice(0, -1) : posts;
+
+        // Check if current user liked/saved posts
+        let likedPostIds: string[] = [];
+        let savedPostIds: string[] = [];
+
+        if (req.userId) {
+            const [likes, saves] = await Promise.all([
+                prisma.like.findMany({
+                    where: { userId: req.userId, postId: { in: results.map((p) => p.id) } },
+                }),
+                prisma.save.findMany({
+                    where: { userId: req.userId, postId: { in: results.map((p) => p.id) } },
+                }),
+            ]);
+
+            likedPostIds = likes.map((l) => l.postId);
+            savedPostIds = saves.map((s) => s.postId);
+        }
+
+        res.json({
+            posts: results.map((post) => ({
+                ...post,
+                likesCount: post._count.likes,
+                commentsCount: post._count.comments,
+                sharesCount: post._count.shares,
+                isLiked: likedPostIds.includes(post.id),
+                isSaved: savedPostIds.includes(post.id),
+            })),
+            nextCursor: hasMore ? results[results.length - 1].id : null,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+export { router as usersRouter };
