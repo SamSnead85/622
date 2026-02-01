@@ -38,6 +38,15 @@ export const API_ENDPOINTS = {
     conversations: `${API_URL}/api/v1/messages/conversations`,
     messages: (conversationId: string) => `${API_URL}/api/v1/messages/conversations/${conversationId}`,
 
+    // Upload
+    upload: {
+        avatar: `${API_URL}/api/v1/upload/avatar`,
+        cover: `${API_URL}/api/v1/upload/cover`,
+        post: `${API_URL}/api/v1/upload/post`,
+        moment: `${API_URL}/api/v1/upload/moment`,
+        message: `${API_URL}/api/v1/upload/message`,
+    },
+
     // Health check
     health: `${API_URL}/health`,
 };
@@ -79,4 +88,56 @@ export const api = {
         body: JSON.stringify(data)
     }),
     delete: (url: string) => apiFetch(url, { method: 'DELETE' }),
+};
+
+// File upload helper (multipart/form-data)
+export const apiUpload = async (
+    url: string,
+    file: File,
+    onProgress?: (progress: number) => void
+): Promise<{ url: string; key?: string; type?: string; size?: number }> => {
+    const token = typeof window !== 'undefined'
+        ? localStorage.getItem('six22_token')
+        : null;
+
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const formData = new FormData();
+        formData.append('file', file);
+
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable && onProgress) {
+                const progress = Math.round((e.loaded / e.total) * 100);
+                onProgress(progress);
+            }
+        });
+
+        xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    const result = JSON.parse(xhr.responseText);
+                    resolve(result);
+                } catch {
+                    reject(new Error('Invalid response'));
+                }
+            } else {
+                try {
+                    const error = JSON.parse(xhr.responseText);
+                    reject(new Error(error.error || 'Upload failed'));
+                } catch {
+                    reject(new Error('Upload failed'));
+                }
+            }
+        });
+
+        xhr.addEventListener('error', () => reject(new Error('Network error')));
+        xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
+
+        xhr.open('POST', url);
+        if (token) {
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+        xhr.withCredentials = true;
+        xhr.send(formData);
+    });
 };

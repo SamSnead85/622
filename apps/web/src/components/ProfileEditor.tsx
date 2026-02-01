@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { useUpload } from '../hooks/useUpload';
 
 // ============================================
 // PRESET AVATARS - Clean, universal options
@@ -54,7 +55,7 @@ interface ProfileEditorProps {
 // ============================================
 // LOCAL STORAGE HELPERS
 // ============================================
-const STORAGE_KEY = 'caravan_user_profile';
+const STORAGE_KEY = 'six22_user_profile';
 
 export function saveProfileToStorage(profile: UserProfile): void {
     if (typeof window !== 'undefined') {
@@ -168,6 +169,7 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
     const [avatarTab, setAvatarTab] = useState<'presets' | 'upload'>('presets');
     const [saving, setSaving] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { uploadAvatar, uploading, progress, error: uploadError, resetError } = useUpload();
 
     useEffect(() => {
         if (currentProfile) {
@@ -175,17 +177,20 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
         }
     }, [currentProfile]);
 
-    const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePhotoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            const url = URL.createObjectURL(file);
+        if (!file) return;
+
+        resetError();
+        const result = await uploadAvatar(file);
+        if (result?.url) {
             setProfile(p => ({
                 ...p,
                 avatarType: 'custom',
-                avatarCustomUrl: url,
+                avatarCustomUrl: result.url,
             }));
         }
-    }, []);
+    }, [uploadAvatar, resetError]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -284,10 +289,31 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                             <div>
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="w-full py-4 rounded-2xl border-2 border-dashed border-white/20 text-white/60 hover:border-white/40 hover:text-white/80 transition-colors"
+                                    disabled={uploading}
+                                    className="w-full py-4 rounded-2xl border-2 border-dashed border-white/20 text-white/60 hover:border-white/40 hover:text-white/80 transition-colors disabled:opacity-50"
                                 >
-                                    📷 Choose Photo
+                                    {uploading ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <span className="animate-spin">⏳</span>
+                                            Uploading... {progress}%
+                                        </span>
+                                    ) : (
+                                        '📷 Choose Photo'
+                                    )}
                                 </button>
+                                {uploading && (
+                                    <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-violet-500 to-purple-600 transition-all"
+                                            style={{ width: `${progress}%` }}
+                                        />
+                                    </div>
+                                )}
+                                {uploadError && (
+                                    <p className="text-xs text-red-400 mt-2 text-center">
+                                        {uploadError}
+                                    </p>
+                                )}
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -296,7 +322,7 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                                     className="hidden"
                                 />
                                 <p className="text-xs text-white/40 mt-2 text-center">
-                                    JPG, PNG up to 5MB
+                                    JPG, PNG, WebP up to 10MB
                                 </p>
                             </div>
                         )}
