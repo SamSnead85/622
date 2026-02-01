@@ -75,9 +75,10 @@ setupSocketHandlers(io);
 
 // Start server
 const PORT = parseInt(process.env.PORT || '5180');
+const HOST = '0.0.0.0';
 
-httpServer.listen(PORT, () => {
-    logger.info(`🚀 Caravan Server running on port ${PORT}`);
+httpServer.listen(PORT, HOST, () => {
+    logger.info(`🚀 Caravan Server running on http://${HOST}:${PORT}`);
     logger.info(`📡 WebSocket server ready for real-time connections`);
     logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
