@@ -22,10 +22,29 @@ dotenv.config();
 const app: Application = express();
 const httpServer = createServer(app);
 
+// Parse allowed origins from environment
+const allowedOrigins = (process.env.CORS_ORIGIN || '*').split(',').map(o => o.trim());
+
+// Dynamic origin validation function
+const corsOriginHandler = (origin: string | undefined, callback: (err: Error | null, allow?: boolean | string) => void) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    // If wildcard, allow all
+    if (allowedOrigins.includes('*')) return callback(null, true);
+
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+        return callback(null, origin);
+    }
+
+    callback(new Error('CORS not allowed'), false);
+};
+
 // Socket.io setup for real-time features
 const io = new SocketServer(httpServer, {
     cors: {
-        origin: process.env.CORS_ORIGIN || '*',
+        origin: corsOriginHandler,
         methods: ['GET', 'POST'],
         credentials: true,
     },
@@ -34,7 +53,7 @@ const io = new SocketServer(httpServer, {
 // Middleware
 app.use(helmet());
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: corsOriginHandler,
     credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
