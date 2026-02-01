@@ -7,8 +7,7 @@
     "scripts": {
         "dev": "tsx watch src/index.ts",
         "start": "node dist/index.js",
-        "build": "tsc && npx prisma generate",
-        "postinstall": "npx prisma generate",
+        "build": "npx prisma generate && tsc",
         "lint": "eslint src --ext .ts",
         "db:migrate": "prisma migrate dev",
         "db:migrate:deploy": "prisma migrate deploy",
