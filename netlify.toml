@@ -23,9 +23,5 @@
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
-# Redirects for SPA routing (Next.js handles this, but as fallback)
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  conditions = {Role = ["admin"]}
+# Note: Next.js routing is handled by the @netlify/plugin-nextjs plugin
+# No custom redirects needed - the plugin manages all server-side routing
