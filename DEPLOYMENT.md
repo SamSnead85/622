@@ -69,13 +69,42 @@ npx prisma migrate deploy
    ```
 6. Click Deploy - Netlify will give you a URL like: `caravan-platform.netlify.app`
 
-### Step 6: Connect Custom Domain
+## Connect Your Domains
 
-**In Netlify:**
-1. Go to Site Settings > Domain management
-2. Click "Add custom domain"
-3. Add your domain (e.g., caravan.app)
-4. Update DNS records as instructed (usually add CNAME or A record)
+### Primary Domain (six22.app)
+
+1. Go to **Domain management** in Netlify
+2. Click **Add custom domain**
+3. Enter `six22.app` and set as primary domain
+4. Configure DNS at your registrar:
+   - **Apex/Root (@)**: Use ALIAS/ANAME to `apex-loadbalancer.netlify.com`
+   - **WWW**: CNAME to `six22.netlify.app`
+
+### Alias Domains
+
+The following domains redirect to `six22.app`:
+
+| Domain | Purpose |
+|--------|---------|
+| `tribesix22.com` | Tribes branding |
+| `joinsix22.com` | Join/signup campaigns |
+| `getsix22.com` | Marketing/acquisition |
+
+#### DNS Configuration for Alias Domains
+
+For each alias domain, configure at your registrar:
+
+```
+# Apex/Root (@)
+ALIAS  @  apex-loadbalancer.netlify.com
+# OR fallback A record
+A      @  75.2.60.5
+
+# WWW subdomain  
+CNAME  www  six22.netlify.app
+```
+
+The `_redirects` file handles 301 redirects from all aliases to `six22.app`.
 
 **Update CORS:**
 In Railway, update `CORS_ORIGIN` to your custom domain.
