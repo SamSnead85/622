@@ -1,0 +1,14 @@
+# Nixpacks configuration for Railway deployment
+# Handles monorepo structure by building from apps/server
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x", "npm"]
+
+[phases.install]
+cmds = ["cd apps/server && npm install"]
+
+[phases.build]
+cmds = ["cd apps/server && npm run build"]
+
+[start]
+cmd = "cd apps/server && npm run start"
