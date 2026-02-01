@@ -1,22 +1,30 @@
-FROM node:18-alpine
+FROM node:18-slim
+
+# Install OpenSSL and other required dependencies for Prisma
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/server
 
 # Copy only server package files first
 COPY apps/server/package*.json ./
 
+# Copy Prisma schema (needed for generate)
+COPY apps/server/prisma ./prisma/
+
 # Install dependencies
 RUN npm install
+
+# Generate Prisma client
+RUN npx prisma generate
 
 # Copy server source code
 COPY apps/server/ ./
 
-# Generate Prisma client and build
-RUN npx prisma generate
+# Build
 RUN npm run build
 
-# Expose port
-EXPOSE 5180
+# Expose port (Railway will override with $PORT)
+EXPOSE 8080
 
 # Start the server
 CMD ["node", "dist/index.js"]
