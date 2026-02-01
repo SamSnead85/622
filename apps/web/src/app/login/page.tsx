@@ -41,6 +41,7 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -61,12 +62,27 @@ export default function LoginPage() {
         setError('');
         setIsLoading(true);
 
-        const result = await login(email, password);
+        const result = await login(email, password, rememberMe);
 
         if (result.success) {
             router.push('/dashboard');
         } else {
             setError(result.error || 'Login failed');
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setError('');
+        setIsLoading(true);
+
+        try {
+            // For now, show coming soon message
+            // In production, this would use Google Identity Services
+            setError('Google login coming soon! Please use email/password for now.');
+            setIsLoading(false);
+        } catch {
+            setError('Google login failed');
             setIsLoading(false);
         }
     };
@@ -154,8 +170,17 @@ export default function LoginPage() {
                             </div>
                         </div>
 
-                        {/* Forgot Password */}
-                        <div className="flex justify-end">
+                        {/* Remember Me & Forgot Password */}
+                        <div className="flex items-center justify-between">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-orange-500 focus:ring-orange-500/50"
+                                />
+                                <span className="text-sm text-white/60">Remember me for 30 days</span>
+                            </label>
                             <Link href="/forgot-password" className="text-sm text-white/50 hover:text-white transition-colors">
                                 Forgot password?
                             </Link>
@@ -190,7 +215,10 @@ export default function LoginPage() {
                     {/* Social Login */}
                     <div className="grid grid-cols-2 gap-3">
                         <motion.button
-                            className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-all"
+                            type="button"
+                            onClick={handleGoogleLogin}
+                            disabled={isLoading}
+                            className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
                             whileTap={{ scale: 0.98 }}
                         >
                             <svg className="w-5 h-5" viewBox="0 0 24 24">

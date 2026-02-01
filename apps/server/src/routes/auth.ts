@@ -20,6 +20,7 @@ const signupSchema = z.object({
 const loginSchema = z.object({
     email: z.string().email(),
     password: z.string(),
+    rememberMe: z.boolean().optional().default(true),
 });
 
 const checkUsernameSchema = z.object({
@@ -27,9 +28,15 @@ const checkUsernameSchema = z.object({
 });
 
 // Helper to generate tokens
-const generateTokens = async (userId: string, deviceInfo?: { type?: string; name?: string; ip?: string }) => {
+const generateTokens = async (
+    userId: string,
+    deviceInfo?: { type?: string; name?: string; ip?: string },
+    rememberMe: boolean = true
+) => {
     const sessionId = uuid();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    // 30 days for "remember me", 24 hours for temporary sessions
+    const expiresIn = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    const expiresAt = new Date(Date.now() + expiresIn);
 
     await prisma.session.create({
         data: {
@@ -46,7 +53,7 @@ const generateTokens = async (userId: string, deviceInfo?: { type?: string; name
     const token = jwt.sign(
         { userId, sessionId },
         process.env.JWT_SECRET!,
-        { expiresIn: '7d' }
+        { expiresIn: rememberMe ? '30d' : '1d' }
     );
 
     return { token, expiresAt };
@@ -114,7 +121,7 @@ router.post('/signup', async (req, res, next) => {
 // POST /api/v1/auth/login
 router.post('/login', async (req, res, next) => {
     try {
-        const { email, password } = loginSchema.parse(req.body);
+        const { email, password, rememberMe } = loginSchema.parse(req.body);
 
         const user = await prisma.user.findUnique({
             where: { email: email.toLowerCase() },
@@ -134,12 +141,12 @@ router.post('/login', async (req, res, next) => {
             throw new AppError('Invalid credentials', 401);
         }
 
-        // Generate auth token
+        // Generate auth token (30 days if rememberMe, otherwise 24 hours)
         const { token, expiresAt } = await generateTokens(user.id, {
             type: req.headers['x-device-type'] as string,
             name: req.headers['x-device-name'] as string,
             ip: req.ip,
-        });
+        }, rememberMe);
 
         res.json({
             user: {
@@ -263,4 +270,103 @@ router.post('/refresh', authenticate, async (req: AuthRequest, res, next) => {
     }
 });
 
+// POST /api/v1/auth/google - Handle Google OAuth
+const googleAuthSchema = z.object({
+    idToken: z.string(),
+    accessToken: z.string().optional(),
+});
+
+router.post('/google', async (req, res, next) => {
+    try {
+        const { idToken } = googleAuthSchema.parse(req.body);
+
+        // Decode the Google ID token (in production, verify with Google's public keys)
+        const tokenParts = idToken.split('.');
+        if (tokenParts.length !== 3) {
+            throw new AppError('Invalid Google token', 400);
+        }
+
+        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+
+        const { email, name, picture, sub: googleId } = payload;
+
+        if (!email) {
+            throw new AppError('Email not provided by Google', 400);
+        }
+
+        // Check if user exists with this email
+        let user = await prisma.user.findUnique({
+            where: { email: email.toLowerCase() },
+        });
+
+        if (user) {
+            // User exists - check if OAuth account is linked
+            const oauthAccount = await prisma.oAuthAccount.findUnique({
+                where: { provider_providerId: { provider: 'google', providerId: googleId } },
+            });
+
+            if (!oauthAccount) {
+                // Link Google account to existing user
+                await prisma.oAuthAccount.create({
+                    data: {
+                        userId: user.id,
+                        provider: 'google',
+                        providerId: googleId,
+                    },
+                });
+            }
+        } else {
+            // Create new user from Google profile
+            const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '') +
+                Math.random().toString(36).substring(2, 6);
+
+            user = await prisma.user.create({
+                data: {
+                    email: email.toLowerCase(),
+                    username,
+                    displayName: name || email.split('@')[0],
+                    avatarUrl: picture,
+                    isVerified: true, // Google accounts are pre-verified
+                    oauthAccounts: {
+                        create: {
+                            provider: 'google',
+                            providerId: googleId,
+                        },
+                    },
+                },
+            });
+        }
+
+        if (user.isBanned) {
+            throw new AppError('Account suspended', 403);
+        }
+
+        // Generate session token
+        const { token, expiresAt } = await generateTokens(user.id, {
+            type: req.headers['x-device-type'] as string,
+            name: req.headers['x-device-name'] as string,
+            ip: req.ip,
+        });
+
+        res.json({
+            user: {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                displayName: user.displayName,
+                avatarUrl: user.avatarUrl,
+                coverUrl: user.coverUrl,
+                bio: user.bio,
+                isVerified: user.isVerified,
+            },
+            token,
+            expiresAt,
+            isNewUser: !user.bio, // Indicate if profile needs setup
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 export { router as authRouter };
+

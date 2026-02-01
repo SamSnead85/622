@@ -23,7 +23,7 @@ interface AuthContextType {
     user: User | null;
     isLoading: boolean;
     isAuthenticated: boolean;
-    login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    login: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string }>;
     signup: (email: string, password: string, username: string, displayName: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     updateUser: (updates: Partial<User>) => void;
@@ -72,11 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // Login
-    const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    const login = async (email: string, password: string, rememberMe: boolean = true): Promise<{ success: boolean; error?: string }> => {
         try {
             const response = await apiFetch(API_ENDPOINTS.login, {
                 method: 'POST',
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password, rememberMe }),
             });
 
             const data = await response.json();
