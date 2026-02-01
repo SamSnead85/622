@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePosts } from '@/hooks';
 
 // Default avatar/image fallbacks
@@ -500,6 +500,34 @@ export default function DashboardPage() {
     } | null>(null);
     const [mounted, setMounted] = useState(false);
     const { posts: apiPosts, friends: apiFriends, isLoading, likePost, loadMore, hasMore } = usePosts();
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+
+    // Infinite scroll using IntersectionObserver
+    const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !isLoading) {
+            loadMore();
+        }
+    }, [hasMore, isLoading, loadMore]);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(handleObserver, {
+            root: null,
+            rootMargin: '200px', // Start loading 200px before reaching bottom
+            threshold: 0,
+        });
+
+        const currentRef = loadMoreRef.current;
+        if (currentRef) {
+            observer.observe(currentRef);
+        }
+
+        return () => {
+            if (currentRef) {
+                observer.unobserve(currentRef);
+            }
+        };
+    }, [handleObserver]);
 
     useEffect(() => {
         setMounted(true);
@@ -648,11 +676,17 @@ export default function DashboardPage() {
                             ))}
                         </div>
 
-                        {/* Load more */}
-                        <div className="mt-8 text-center">
-                            <button className="px-6 py-3 rounded-full bg-white/10 text-white hover:bg-white/15 transition-colors">
-                                Load more
-                            </button>
+                        {/* Infinite scroll trigger */}
+                        <div ref={loadMoreRef} className="py-8 flex justify-center">
+                            {isLoading && (
+                                <div className="flex items-center gap-3">
+                                    <div className="w-6 h-6 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" />
+                                    <span className="text-white/50 text-sm">Loading more posts...</span>
+                                </div>
+                            )}
+                            {!hasMore && posts.length > 0 && (
+                                <p className="text-white/30 text-sm">You&apos;ve seen all posts ✨</p>
+                            )}
                         </div>
                     </div>
                 </section>
