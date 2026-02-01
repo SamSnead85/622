@@ -1,0 +1,10 @@
+# Redirect all alias domains to primary domain (six22.app)
+https://tribesix22.com/*  https://six22.app/:splat  301!
+https://www.tribesix22.com/*  https://six22.app/:splat  301!
+https://joinsix22.com/*  https://six22.app/:splat  301!
+https://www.joinsix22.com/*  https://six22.app/:splat  301!
+https://getsix22.com/*  https://six22.app/:splat  301!
+https://www.getsix22.com/*  https://six22.app/:splat  301!
+
+# Redirect www.six22.app to six22.app
+https://www.six22.app/*  https://six22.app/:splat  301!
