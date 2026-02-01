@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePosts } from '@/hooks';
+import { FeedFilters, TribeSelector, DEFAULT_FEED_FILTERS } from '@/components/FeedFilters';
+import { FullscreenPostViewer, PostData } from '@/components/FullscreenPostViewer';
 
 // Default avatar/image fallbacks
 const DEFAULT_AVATARS = [
@@ -490,17 +492,21 @@ function NavigationDock({ onCreateClick, activeTab }: { onCreateClick: () => voi
 // ============================================
 export default function DashboardPage() {
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [selectedPost, setSelectedPost] = useState<{
-        author: string;
-        avatar: string;
-        image: string;
-        caption: string;
-        likes: number;
-        time: string;
-    } | null>(null);
+    const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
+    const [fullscreenIndex, setFullscreenIndex] = useState<number>(-1);
+    const [activeFilter, setActiveFilter] = useState('all');
+    const [activeTribe, setActiveTribe] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
     const { posts: apiPosts, friends: apiFriends, isLoading, likePost, loadMore, hasMore } = usePosts();
     const loadMoreRef = useRef<HTMLDivElement>(null);
+
+    // Mock tribes for demo
+    const tribes = [
+        { id: 'tech', name: 'Tech Builders', icon: '💻' },
+        { id: 'fitness', name: 'Fitness Tribe', icon: '💪' },
+        { id: 'art', name: 'Creatives', icon: '🎨' },
+        { id: 'faith', name: 'Faith Community', icon: '🕌' },
+    ];
 
     // Infinite scroll using IntersectionObserver
     const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
@@ -556,8 +562,8 @@ export default function DashboardPage() {
         time: formatTimeAgo(p.createdAt),
         isLiked: p.isLiked,
     })) : [
-        { author: 'Sarah Chen', avatar: DEFAULT_AVATARS[0], image: DEFAULT_IMAGES[0], caption: 'Found this magical spot ✨', likes: 1247, time: '2h ago' },
-        { author: 'Marcus Johnson', avatar: DEFAULT_AVATARS[1], image: DEFAULT_IMAGES[1], caption: 'Family time is the best time 👨‍👩‍👧‍👦', likes: 2150, time: '5h ago' },
+        { id: 'mock-1', author: 'Sarah Chen', avatar: DEFAULT_AVATARS[0], image: DEFAULT_IMAGES[0], caption: 'Found this magical spot ✨', likes: 1247, time: '2h ago' },
+        { id: 'mock-2', author: 'Marcus Johnson', avatar: DEFAULT_AVATARS[1], image: DEFAULT_IMAGES[1], caption: 'Family time is the best time 👨‍👩‍👧‍👦', likes: 2150, time: '5h ago' },
     ];
 
     // Helper to format time
@@ -658,8 +664,42 @@ export default function DashboardPage() {
                             {friends.map((friend, i) => (
                                 <FriendOrb key={friend.name} {...friend} delay={0.05 + i * 0.03} />
                             ))}
+
+                            {/* Find Friends button */}
+                            <Link
+                                href="/explore?tab=people"
+                                className="flex flex-col items-center gap-2 flex-shrink-0"
+                            >
+                                <motion.div
+                                    className="relative w-14 h-14 md:w-16 md:h-16 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:bg-white/15 transition-colors"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <span className="text-xl md:text-2xl">🔍</span>
+                                </motion.div>
+                                <span className="text-[10px] md:text-xs text-white/60">Find Friends</span>
+                            </Link>
                         </div>
                     </div>
+                </section>
+
+                {/* Feed Filters */}
+                <section className="border-b border-white/5 py-3">
+                    <FeedFilters
+                        activeFilter={activeFilter}
+                        onFilterChange={setActiveFilter}
+                        className="max-w-5xl mx-auto"
+                    />
+
+                    {/* Tribe sub-selector (shows when Tribes filter active) */}
+                    {activeFilter === 'tribes' && (
+                        <TribeSelector
+                            tribes={tribes}
+                            activeTribe={activeTribe}
+                            onTribeChange={setActiveTribe}
+                            className="max-w-5xl mx-auto mt-3"
+                        />
+                    )}
                 </section>
 
                 {/* Content Grid */}
@@ -671,7 +711,7 @@ export default function DashboardPage() {
                                     key={post.author + i}
                                     post={post}
                                     delay={0.1 + i * 0.05}
-                                    onClick={() => setSelectedPost(post)}
+                                    onClick={() => setFullscreenIndex(i)}
                                 />
                             ))}
                         </div>
@@ -702,6 +742,18 @@ export default function DashboardPage() {
                         post={selectedPost}
                         isOpen={!!selectedPost}
                         onClose={() => setSelectedPost(null)}
+                    />
+                )}
+                {fullscreenIndex >= 0 && (
+                    <FullscreenPostViewer
+                        posts={posts}
+                        initialIndex={fullscreenIndex}
+                        isOpen={fullscreenIndex >= 0}
+                        onClose={() => setFullscreenIndex(-1)}
+                        onLike={(index) => {
+                            const post = posts[index];
+                            if (post?.id) likePost(post.id);
+                        }}
                     />
                 )}
             </AnimatePresence>
