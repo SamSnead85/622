@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import { ProfileEditor, Avatar, useProfile } from '@/components/ProfileEditor';
 import { loadPreferences, savePreferences, clearAllData, exportUserData } from '@/lib/persistence';
+import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 
 // Navigation
 function Navigation() {
@@ -126,8 +127,9 @@ const settingSections: SettingSection[] = [
     },
 ];
 
-export default function SettingsPage() {
+function SettingsPageContent() {
     const { profile, updateProfile } = useProfile();
+    const { logout } = useAuth();
     const [showProfileEditor, setShowProfileEditor] = useState(false);
     const [toggles, setToggles] = useState<Record<string, boolean>>({
         'dark-mode': true,
@@ -182,6 +184,10 @@ export default function SettingsPage() {
         }
     }, []);
 
+    const handleLogout = useCallback(async () => {
+        await logout();
+    }, [logout]);
+
     if (!mounted) return <div className="min-h-screen bg-[#050508]" />;
 
     return (
@@ -191,6 +197,7 @@ export default function SettingsPage() {
             </div>
 
             <Navigation />
+
 
             <main className="relative z-10 lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
                 {/* Header */}
@@ -264,7 +271,10 @@ export default function SettingsPage() {
                         >
                             📦 Export My Data
                         </button>
-                        <button className="w-full py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/15 transition-colors">
+                        <button
+                            onClick={handleLogout}
+                            className="w-full py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/15 transition-colors"
+                        >
                             Log Out
                         </button>
                         <button
@@ -287,3 +297,13 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+// Wrap with ProtectedRoute for authentication requirement
+export default function SettingsPage() {
+    return (
+        <ProtectedRoute>
+            <SettingsPageContent />
+        </ProtectedRoute>
+    );
+}
+

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMessages, type Message as ApiMessage, type Conversation } from '@/hooks';
+import { ProtectedRoute } from '@/contexts/AuthContext';
 
 // ============================================
 // TYPING INDICATOR
@@ -141,7 +142,7 @@ function Navigation({ activeTab }: { activeTab: string }) {
 // ============================================
 // MESSAGES PAGE - Connected to Real API
 // ============================================
-export default function MessagesPage() {
+function MessagesPageContent() {
     const {
         conversations,
         messages,
@@ -489,5 +490,14 @@ export default function MessagesPage() {
                 </div>
             </main>
         </div>
+    );
+}
+
+// Wrap with ProtectedRoute for authentication requirement
+export default function MessagesPage() {
+    return (
+        <ProtectedRoute>
+            <MessagesPageContent />
+        </ProtectedRoute>
     );
 }

@@ -420,22 +420,76 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
 }
 
 // ============================================
-// PROFILE PROVIDER HOOK
+// PROFILE PROVIDER HOOK (Backend-synced)
 // ============================================
 export function useProfile() {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
 
+    // Load profile on mount
     useEffect(() => {
-        // Load from local storage on mount
-        const stored = loadProfileFromStorage();
-        if (stored) {
-            setProfile(stored);
-        }
-        setLoading(false);
+        const loadProfile = async () => {
+            // Check if user is authenticated
+            const token = typeof window !== 'undefined'
+                ? localStorage.getItem('six22_token')
+                : null;
+
+            if (token) {
+                try {
+                    // Fetch from backend
+                    const response = await fetch(
+                        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5180'}/api/v1/auth/me`,
+                        {
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            credentials: 'include',
+                        }
+                    );
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        // Map backend user to UserProfile
+                        const userProfile: UserProfile = {
+                            id: data.id,
+                            displayName: data.displayName || '',
+                            username: data.username || '',
+                            bio: data.bio || '',
+                            avatarType: data.avatarUrl ? 'custom' : 'preset',
+                            avatarPreset: 'gradient-1',
+                            avatarCustomUrl: data.avatarUrl,
+                            theme: 'dark',
+                            notificationsEnabled: true,
+                            privateProfile: data.isPrivate || false,
+                        };
+                        setProfile(userProfile);
+                        // Also cache locally
+                        saveProfileToStorage(userProfile);
+                        setLoading(false);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Failed to load profile from backend:', error);
+                }
+            }
+
+            // Fallback to localStorage for unauthenticated users
+            const stored = loadProfileFromStorage();
+            if (stored) {
+                setProfile(stored);
+            }
+            setLoading(false);
+        };
+
+        loadProfile();
     }, []);
 
-    const updateProfile = useCallback((updates: Partial<UserProfile>) => {
+    // Update profile (syncs to backend if authenticated)
+    const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
+        const token = typeof window !== 'undefined'
+            ? localStorage.getItem('six22_token')
+            : null;
+
+        // Optimistically update local state
         setProfile(prev => {
             const newProfile: UserProfile = {
                 id: prev?.id || `user-${Date.now()}`,
@@ -452,9 +506,41 @@ export function useProfile() {
             saveProfileToStorage(newProfile);
             return newProfile;
         });
+
+        // Sync to backend if authenticated
+        if (token) {
+            setSaving(true);
+            try {
+                const backendUpdates: Record<string, unknown> = {};
+                if (updates.displayName !== undefined) backendUpdates.displayName = updates.displayName;
+                if (updates.bio !== undefined) backendUpdates.bio = updates.bio;
+                if (updates.avatarCustomUrl !== undefined) backendUpdates.avatarUrl = updates.avatarCustomUrl;
+                if (updates.privateProfile !== undefined) backendUpdates.isPrivate = updates.privateProfile;
+
+                if (Object.keys(backendUpdates).length > 0) {
+                    await fetch(
+                        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5180'}/api/v1/users/profile`,
+                        {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`,
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify(backendUpdates),
+                        }
+                    );
+                }
+            } catch (error) {
+                console.error('Failed to sync profile to backend:', error);
+            } finally {
+                setSaving(false);
+            }
+        }
     }, []);
 
-    return { profile, loading, updateProfile };
+    return { profile, loading, saving, updateProfile };
 }
 
 export default ProfileEditor;
+

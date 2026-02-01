@@ -22,6 +22,7 @@ export const API_ENDPOINTS = {
     // Users
     users: `${API_URL}/api/v1/users`,
     profile: (username: string) => `${API_URL}/api/v1/users/${username}`,
+    updateProfile: `${API_URL}/api/v1/users/profile`,
     follow: (userId: string) => `${API_URL}/api/v1/users/${userId}/follow`,
 
     // Posts
