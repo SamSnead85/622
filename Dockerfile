@@ -1,23 +1,22 @@
 FROM node:18-alpine
 
-WORKDIR /app
+WORKDIR /app/server
 
-# Copy package files
-COPY package*.json ./
-COPY apps/server/package*.json ./apps/server/
+# Copy only server package files first
+COPY apps/server/package*.json ./
 
 # Install dependencies
-RUN npm install --workspace=@caravan/server
+RUN npm install
 
-# Copy server source
-COPY apps/server ./apps/server
+# Copy server source code
+COPY apps/server/ ./
 
-# Build TypeScript
-WORKDIR /app/apps/server
+# Generate Prisma client and build
+RUN npx prisma generate
 RUN npm run build
 
 # Expose port
 EXPOSE 5180
 
-# Start server
-CMD ["npm", "run", "start"]
+# Start the server
+CMD ["node", "dist/index.js"]
