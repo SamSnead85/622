@@ -276,19 +276,57 @@ const googleAuthSchema = z.object({
     accessToken: z.string().optional(),
 });
 
+// Import Google Auth Library at the top of the file dynamically
 router.post('/google', async (req, res, next) => {
     try {
         const { idToken } = googleAuthSchema.parse(req.body);
 
-        // Decode the Google ID token (in production, verify with Google's public keys)
-        const tokenParts = idToken.split('.');
-        if (tokenParts.length !== 3) {
-            throw new AppError('Invalid Google token', 400);
+        let email: string;
+        let name: string | undefined;
+        let picture: string | undefined;
+        let googleId: string;
+
+        // Use Google Auth Library for production token verification
+        const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+
+        if (GOOGLE_CLIENT_ID) {
+            // Production: Verify token with Google
+            const { OAuth2Client } = await import('google-auth-library');
+            const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+            try {
+                const ticket = await client.verifyIdToken({
+                    idToken,
+                    audience: GOOGLE_CLIENT_ID,
+                });
+                const payload = ticket.getPayload();
+
+                if (!payload || !payload.email) {
+                    throw new AppError('Invalid Google token payload', 400);
+                }
+
+                email = payload.email;
+                name = payload.name;
+                picture = payload.picture;
+                googleId = payload.sub;
+            } catch (verifyError) {
+                console.error('Google token verification failed:', verifyError);
+                throw new AppError('Invalid or expired Google token', 401);
+            }
+        } else {
+            // Development fallback: Decode without verification (NOT for production)
+            console.warn('WARNING: GOOGLE_CLIENT_ID not set. Using unverified token decode.');
+            const tokenParts = idToken.split('.');
+            if (tokenParts.length !== 3) {
+                throw new AppError('Invalid Google token format', 400);
+            }
+
+            const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+            email = payload.email;
+            name = payload.name;
+            picture = payload.picture;
+            googleId = payload.sub;
         }
-
-        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
-
-        const { email, name, picture, sub: googleId } = payload;
 
         if (!email) {
             throw new AppError('Email not provided by Google', 400);
