@@ -137,14 +137,22 @@ function LoginPageContent() {
                 >
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-3 mb-10">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center">
-                            <span className="text-white font-bold text-xl">C</span>
-                        </div>
-                        <span className="font-semibold text-2xl text-white">Six22</span>
+                        <svg width="44" height="44" viewBox="0 0 40 40">
+                            <defs>
+                                <linearGradient id="login-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#F59E0B" />
+                                    <stop offset="50%" stopColor="#F43F5E" />
+                                    <stop offset="100%" stopColor="#8B5CF6" />
+                                </linearGradient>
+                            </defs>
+                            <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#login-logo-grad)" />
+                            <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
+                        </svg>
+                        <span className="font-semibold text-2xl bg-gradient-to-r from-amber-400 via-rose-400 to-violet-400 bg-clip-text text-transparent">Six22</span>
                     </Link>
 
                     {/* Heading */}
-                    <h1 className="text-3xl font-bold text-white mb-2">Welcome back</h1>
+                    <h1 className="text-3xl font-bold text-white mb-2">Welcome Back, Traveler</h1>
                     <p className="text-white/50 mb-8">Sign in to continue to your account</p>
 
                     {/* Error Message */}
@@ -307,12 +315,12 @@ function LoginPageContent() {
                             animate={{ rotate: [0, 5, 0, -5, 0] }}
                             transition={{ duration: 4, repeat: Infinity }}
                         >
-                            🏕️
+                            🌙
                         </motion.div>
-                        <h2 className="text-3xl font-bold text-white mb-4">Your campfire awaits</h2>
+                        <h2 className="text-3xl font-bold text-white mb-4">Your tribe is waiting</h2>
                         <p className="text-white/60">
-                            Reconnect with family and friends in a space you control.
-                            No algorithms deciding what you see. Just real moments from real people.
+                            A sanctuary for value-aligned communities.
+                            Stand with those who stand for justice.
                         </p>
                     </div>
                 </div>

@@ -80,10 +80,18 @@ export default function SignupPage() {
                     >
                         {/* Logo */}
                         <Link href="/" className="inline-flex items-center gap-3 mb-12">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center">
-                                <span className="text-white font-bold text-lg">C</span>
-                            </div>
-                            <span className="font-semibold text-xl text-white">Six22</span>
+                            <svg width="40" height="40" viewBox="0 0 40 40">
+                                <defs>
+                                    <linearGradient id="signup-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#F59E0B" />
+                                        <stop offset="50%" stopColor="#F43F5E" />
+                                        <stop offset="100%" stopColor="#8B5CF6" />
+                                    </linearGradient>
+                                </defs>
+                                <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#signup-logo-grad)" />
+                                <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
+                            </svg>
+                            <span className="font-semibold text-xl bg-gradient-to-r from-amber-400 via-rose-400 to-violet-400 bg-clip-text text-transparent">Six22</span>
                         </Link>
 
                         {/* Progress indicator */}
@@ -111,9 +119,9 @@ export default function SignupPage() {
                                     exit={{ opacity: 0, x: -20 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <h1 className="text-3xl font-bold text-white mb-2">Create your account</h1>
+                                    <h1 className="text-3xl font-bold text-white mb-2">Join the Movement</h1>
                                     <p className="text-white/50 mb-8">
-                                        Join the campfire. Your journey starts here.
+                                        Find your tribe. Stand for what matters.
                                     </p>
 
                                     <form onSubmit={handleStep1} className="space-y-4">
@@ -303,9 +311,9 @@ export default function SignupPage() {
                         >
                             <span className="text-5xl">🚀</span>
                         </motion.div>
-                        <h2 className="text-3xl font-bold text-white mb-4">Join the Journey</h2>
+                        <h2 className="text-3xl font-bold text-white mb-4">Your Tribe Awaits</h2>
                         <p className="text-lg text-white/50 max-w-md">
-                            Connect with creators, share your story, and discover content that matters.
+                            Connect with value-aligned communities who stand for justice and support one another.
                         </p>
 
                         {/* Floating elements right */}
