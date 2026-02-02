@@ -159,9 +159,17 @@ export default function MigrationPage() {
             <header className="border-b border-gray-900 px-6 py-4">
                 <div className="max-w-4xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                            <span className="text-gray-950 font-bold text-sm">C</span>
-                        </div>
+                        <svg width="32" height="32" viewBox="0 0 40 40">
+                            <defs>
+                                <linearGradient id="migrate-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#F59E0B" />
+                                    <stop offset="50%" stopColor="#F43F5E" />
+                                    <stop offset="100%" stopColor="#8B5CF6" />
+                                </linearGradient>
+                            </defs>
+                            <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#migrate-logo-grad)" />
+                            <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
+                        </svg>
                         <span className="font-semibold">Migrate to Six22</span>
                     </div>
                     {step !== 'select' && step !== 'complete' && (
@@ -401,7 +409,7 @@ export default function MigrationPage() {
                             <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 mb-8">
                                 <h2 className="font-semibold mb-4">Invite your connections</h2>
                                 <p className="text-gray-400 text-sm mb-4">
-                                    We found {connections.invitable} connections with email addresses who can be invited to join Caravan.
+                                    We found {connections.invitable} connections with email addresses who can be invited to join Six22.
                                 </p>
 
                                 <div className="flex items-center gap-2 mb-4">
@@ -447,9 +455,17 @@ export default function MigrationPage() {
 
                             <div className="bg-white text-gray-950 rounded-2xl p-6 mb-8 max-w-lg mx-auto">
                                 <div className="flex items-center gap-2 mb-4">
-                                    <div className="w-8 h-8 bg-gray-950 rounded-lg flex items-center justify-center">
-                                        <span className="text-white font-bold text-sm">C</span>
-                                    </div>
+                                    <svg width="32" height="32" viewBox="0 0 40 40">
+                                        <defs>
+                                            <linearGradient id="invite-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stopColor="#F59E0B" />
+                                                <stop offset="50%" stopColor="#F43F5E" />
+                                                <stop offset="100%" stopColor="#8B5CF6" />
+                                            </linearGradient>
+                                        </defs>
+                                        <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#invite-logo-grad)" />
+                                        <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
+                                    </svg>
                                     <span className="font-semibold text-sm">Six22</span>
                                 </div>
 

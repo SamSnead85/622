@@ -20,10 +20,18 @@ function Navigation({ activeTab }: { activeTab: string }) {
             {/* Desktop Sidebar */}
             <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-20 xl:w-64 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col p-4 z-40">
                 <Link href="/" className="flex items-center gap-3 px-3 py-4 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-lg">C</span>
-                    </div>
-                    <span className="text-xl font-semibold text-white hidden xl:block">Six22</span>
+                    <svg width="40" height="40" viewBox="0 0 40 40" className="flex-shrink-0">
+                        <defs>
+                            <linearGradient id="explore-nav-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#F59E0B" />
+                                <stop offset="50%" stopColor="#F43F5E" />
+                                <stop offset="100%" stopColor="#8B5CF6" />
+                            </linearGradient>
+                        </defs>
+                        <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#explore-nav-grad)" />
+                        <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
+                    </svg>
+                    <span className="text-xl font-semibold bg-gradient-to-r from-amber-400 via-rose-400 to-violet-400 bg-clip-text text-transparent hidden xl:block">Six22</span>
                 </Link>
 
                 <nav className="flex-1 space-y-2">
@@ -32,8 +40,8 @@ function Navigation({ activeTab }: { activeTab: string }) {
                             key={item.id}
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${activeTab === item.id
-                                    ? 'bg-white/10 text-white'
-                                    : 'text-white/60 hover:bg-white/5 hover:text-white'
+                                ? 'bg-white/10 text-white'
+                                : 'text-white/60 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
                             <span className="text-2xl">{item.icon}</span>
@@ -159,8 +167,8 @@ export default function ExplorePage() {
                                     key={cat}
                                     onClick={() => setActiveCategory(cat)}
                                     className={`px-4 py-2 rounded-full text-sm font-medium capitalize whitespace-nowrap transition-all ${activeCategory === cat
-                                            ? 'bg-white text-black'
-                                            : 'bg-white/10 text-white hover:bg-white/15'
+                                        ? 'bg-white text-black'
+                                        : 'bg-white/10 text-white hover:bg-white/15'
                                         }`}
                                 >
                                     {cat}
@@ -268,7 +276,7 @@ export default function ExplorePage() {
                                     <Link href="#" className="hover:text-white/50">Privacy</Link>
                                     <Link href="#" className="hover:text-white/50">Terms</Link>
                                 </div>
-                                <p>© 2026 Caravan</p>
+                                <p>© 2026 Six22</p>
                             </div>
                         </div>
                     </div>
