@@ -3,11 +3,14 @@
 @tailwind utilities;
 
 /* ============================================
-   CARAVAN - LUMINOUS DEPTH DESIGN SYSTEM
-   The Future of Social Media
+   SIX22 - LUMINOUS DEPTH DESIGN SYSTEM
+   The Sovereign Social Network
+   Your Data. Your Algorithm. Your Journey.
    ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import '../styles/design-tokens.css';
 
 :root {
   /* === VOID - The infinite canvas === */

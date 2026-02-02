@@ -5,18 +5,22 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 // ============================================
-// GEOMETRIC PATTERN - Subtle Islamic-inspired background
+// GEOMETRIC PATTERN - Subtle Islamic-inspired 8-pointed star
+// Inspired by Year 622 CE, the Hijra
 // ============================================
 function GeometricPattern() {
     return (
-        <svg className="absolute inset-0 w-full h-full opacity-[0.012]" xmlns="http://www.w3.org/2000/svg">
+        <svg className="absolute inset-0 w-full h-full opacity-[0.015]" xmlns="http://www.w3.org/2000/svg">
             <defs>
                 <pattern id="six22-pattern-landing" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
-                    <g fill="none" stroke="currentColor" strokeWidth="0.5">
+                    <g fill="none" stroke="#D4AF37" strokeWidth="0.5">
+                        {/* 8-Pointed Star - Classic Islamic motif */}
                         <polygon points="60,10 70,30 90,30 75,45 80,65 60,55 40,65 45,45 30,30 50,30" />
                         <polygon points="60,10 70,30 90,30 75,45 80,65 60,55 40,65 45,45 30,30 50,30" transform="rotate(45 60 60)" />
+                        {/* Circle - Unity symbol */}
                         <circle cx="60" cy="60" r="25" />
                         <circle cx="60" cy="60" r="12" />
+                        {/* Connecting lines */}
                         <line x1="0" y1="60" x2="35" y2="60" />
                         <line x1="85" y1="60" x2="120" y2="60" />
                         <line x1="60" y1="0" x2="60" y2="35" />
@@ -41,10 +45,10 @@ function AmbientBackground() {
             {/* Geometric pattern overlay */}
             <GeometricPattern />
 
-            {/* Gradient meshes - Six22 signature colors */}
+            {/* Gradient meshes - Six22 signature colors with gold emphasis */}
             <motion.div
                 className="absolute -top-40 -left-20 w-[700px] h-[700px] rounded-full"
-                style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 60%)' }}
+                style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.15) 0%, rgba(245,158,11,0.08) 40%, transparent 60%)' }}
                 animate={{ scale: [1, 1.15, 1], x: [0, 40, 0] }}
                 transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
             />
@@ -61,23 +65,24 @@ function AmbientBackground() {
                 transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
             />
 
-            {/* Horizon line */}
-            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+            {/* Horizon line - golden */}
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/30 to-transparent" />
         </div>
     );
 }
 
 // ============================================
 // HEXAGONAL LOGO
-// Six22 brand mark
+// Six22 brand mark - Year 622 CE reference
 // ============================================
 function HexLogo({ size = 40, className = '' }: { size?: number; className?: string }) {
     return (
         <svg className={className} width={size} height={size} viewBox="0 0 40 40">
             <defs>
                 <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#F59E0B" />
-                    <stop offset="50%" stopColor="#F43F5E" />
+                    <stop offset="0%" stopColor="#D4AF37" />
+                    <stop offset="25%" stopColor="#F59E0B" />
+                    <stop offset="60%" stopColor="#F43F5E" />
                     <stop offset="100%" stopColor="#8B5CF6" />
                 </linearGradient>
             </defs>
@@ -111,7 +116,7 @@ function Navigation({ mounted }: { mounted: boolean }) {
             <div className="max-w-7xl mx-auto px-6 lg:px-8 h-20 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-3 group">
                     <HexLogo size={38} />
-                    <span className="font-semibold text-lg tracking-tight bg-gradient-to-r from-amber-400 via-rose-400 to-violet-400 bg-clip-text text-transparent">Six22</span>
+                    <span className="font-semibold text-lg tracking-tight bg-gradient-to-r from-[#D4AF37] via-amber-400 to-rose-400 bg-clip-text text-transparent">Six22</span>
                 </Link>
 
                 <div className="hidden md:flex items-center gap-10">
