@@ -112,22 +112,51 @@ export function usePosts() {
 
     const createPost = useCallback(async (content: string, mediaFile?: File): Promise<{ success: boolean; error?: string }> => {
         try {
-            const formData = new FormData();
-            formData.append('content', content);
+            const token = typeof window !== 'undefined' ? localStorage.getItem('six22_token') : null;
+
+            let mediaUrl: string | undefined;
+            let mediaType: 'IMAGE' | 'VIDEO' | undefined;
+
+            // Step 1: If there's a media file, upload it first
             if (mediaFile) {
-                formData.append('media', mediaFile);
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', mediaFile);
+
+                const uploadResponse = await fetch(API_ENDPOINTS.upload.post, {
+                    method: 'POST',
+                    headers: {
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    },
+                    credentials: 'include',
+                    body: uploadFormData,
+                });
+
+                if (!uploadResponse.ok) {
+                    const uploadError = await uploadResponse.json().catch(() => ({}));
+                    return { success: false, error: uploadError.error || 'Failed to upload media' };
+                }
+
+                const uploadResult = await uploadResponse.json();
+                mediaUrl = uploadResult.url;
+                mediaType = uploadResult.type;
             }
 
-            // Get auth token for the fetch
-            const token = typeof window !== 'undefined' ? localStorage.getItem('six22_token') : null;
+            // Step 2: Create the post with the media URL
+            const postData = {
+                type: mediaUrl ? (mediaType || 'IMAGE') : 'TEXT',
+                caption: content,
+                mediaUrl: mediaUrl,
+                isPublic: true,
+            };
 
             const response = await fetch(API_ENDPOINTS.posts, {
                 method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
                 },
                 credentials: 'include',
-                body: formData,
+                body: JSON.stringify(postData),
             });
 
             if (response.ok) {
@@ -136,7 +165,7 @@ export function usePosts() {
                 return { success: true };
             } else {
                 const errorData = await response.json().catch(() => ({}));
-                return { success: false, error: errorData.message || 'Failed to create post' };
+                return { success: false, error: errorData.message || errorData.error || 'Failed to create post' };
             }
         } catch (err) {
             console.error('Error creating post:', err);
