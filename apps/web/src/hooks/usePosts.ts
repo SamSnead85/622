@@ -110,6 +110,40 @@ export function usePosts() {
         }
     }, []);
 
+    const createPost = useCallback(async (content: string, mediaFile?: File): Promise<{ success: boolean; error?: string }> => {
+        try {
+            const formData = new FormData();
+            formData.append('content', content);
+            if (mediaFile) {
+                formData.append('media', mediaFile);
+            }
+
+            // Get auth token for the fetch
+            const token = typeof window !== 'undefined' ? localStorage.getItem('six22_token') : null;
+
+            const response = await fetch(API_ENDPOINTS.posts, {
+                method: 'POST',
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+                credentials: 'include',
+                body: formData,
+            });
+
+            if (response.ok) {
+                // Refresh feed to show new post
+                await fetchFeed(1);
+                return { success: true };
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                return { success: false, error: errorData.message || 'Failed to create post' };
+            }
+        } catch (err) {
+            console.error('Error creating post:', err);
+            return { success: false, error: 'Network error' };
+        }
+    }, [fetchFeed]);
+
     useEffect(() => {
         fetchFeed(1);
         fetchFriends();
@@ -123,6 +157,7 @@ export function usePosts() {
         hasMore,
         loadMore,
         likePost,
+        createPost,
         refetch: () => fetchFeed(1),
     };
 }

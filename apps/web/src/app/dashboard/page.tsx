@@ -281,10 +281,91 @@ function ContentCard({
 // ============================================
 // CREATE MODAL
 // ============================================
-function CreateModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+function CreateModal({
+    isOpen,
+    onClose,
+    onPost
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    onPost: (content: string, file?: File) => Promise<{ success: boolean; error?: string }>;
+}) {
     const [preview, setPreview] = useState<string | null>(null);
+    const [mediaFile, setMediaFile] = useState<File | null>(null);
     const [caption, setCaption] = useState('');
     const [isStory, setIsStory] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    // Reset state when modal opens/closes
+    useEffect(() => {
+        if (!isOpen) {
+            setPreview(null);
+            setMediaFile(null);
+            setCaption('');
+            setIsStory(false);
+            setIsSubmitting(false);
+            setError(null);
+            setIsDragging(false);
+        }
+    }, [isOpen]);
+
+    const handleFileSelect = (file: File) => {
+        if (file) {
+            setMediaFile(file);
+            setPreview(URL.createObjectURL(file));
+            setError(null);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            // Check if it's an image or video
+            if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+                handleFileSelect(file);
+            } else {
+                setError('Please drop an image or video file');
+            }
+        }
+    };
+
+    const handleShare = async () => {
+        if (!caption.trim() && !mediaFile) {
+            setError('Please add a photo/video or write something');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setError(null);
+
+        const result = await onPost(caption, mediaFile || undefined);
+
+        if (result.success) {
+            onClose();
+        } else {
+            setError(result.error || 'Failed to create post');
+            setIsSubmitting(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -304,9 +385,31 @@ function CreateModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                 transition={{ type: 'spring', damping: 25 }}
             >
                 <div className="flex items-center justify-between p-4 border-b border-white/10">
-                    <button onClick={onClose} className="text-white/50 hover:text-white transition-colors">Cancel</button>
+                    <button
+                        onClick={onClose}
+                        className="text-white/50 hover:text-white transition-colors"
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </button>
                     <h2 className="font-semibold text-white">{isStory ? 'Add Story' : 'Create Post'}</h2>
-                    <button className="text-orange-400 font-semibold hover:text-orange-300 transition-colors">Share</button>
+                    <button
+                        onClick={handleShare}
+                        disabled={isSubmitting || (!caption.trim() && !mediaFile)}
+                        className={`font-semibold transition-colors ${isSubmitting || (!caption.trim() && !mediaFile)
+                            ? 'text-white/30 cursor-not-allowed'
+                            : 'text-orange-400 hover:text-orange-300'
+                            }`}
+                    >
+                        {isSubmitting ? (
+                            <span className="flex items-center gap-2">
+                                <span className="w-4 h-4 border-2 border-orange-400/30 border-t-orange-400 rounded-full animate-spin" />
+                                Sharing
+                            </span>
+                        ) : (
+                            'Share'
+                        )}
+                    </button>
                 </div>
 
                 {/* Toggle */}
@@ -325,12 +428,31 @@ function CreateModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                     </button>
                 </div>
 
+                {/* Error message */}
+                {error && (
+                    <div className="mx-4 mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+                        {error}
+                    </div>
+                )}
+
                 {!preview ? (
                     <div className="p-6 md:p-8">
-                        <div className="flex flex-col items-center justify-center min-h-[250px] md:min-h-[300px] border-2 border-dashed border-white/20 rounded-2xl hover:border-white/30 transition-colors">
+                        <div
+                            className={`flex flex-col items-center justify-center min-h-[250px] md:min-h-[300px] border-2 border-dashed rounded-2xl transition-colors ${isDragging
+                                ? 'border-orange-400 bg-orange-400/10'
+                                : 'border-white/20 hover:border-white/30'
+                                }`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                        >
                             <span className="text-5xl md:text-6xl mb-4">{isStory ? '📱' : '📸'}</span>
                             <p className="text-white/50 mb-4 text-center px-4">
-                                {isStory ? 'Share a moment with your friends' : 'Drop your content here'}
+                                {isDragging
+                                    ? 'Drop your file here!'
+                                    : isStory
+                                        ? 'Drag & drop or tap to share a moment'
+                                        : 'Drag & drop your photos or videos here'}
                             </p>
                             <label className="px-6 py-3 rounded-full bg-gradient-to-r from-orange-400 to-rose-500 text-white font-semibold cursor-pointer hover:opacity-90 transition-opacity">
                                 Choose File
@@ -340,7 +462,7 @@ function CreateModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                                     className="hidden"
                                     onChange={(e) => {
                                         const file = e.target.files?.[0];
-                                        if (file) setPreview(URL.createObjectURL(file));
+                                        if (file) handleFileSelect(file);
                                     }}
                                 />
                             </label>
@@ -352,7 +474,11 @@ function CreateModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={preview} alt="Preview" className="w-full h-full object-cover" />
                             <button
-                                onClick={() => setPreview(null)}
+                                onClick={() => {
+                                    if (preview) URL.revokeObjectURL(preview);
+                                    setPreview(null);
+                                    setMediaFile(null);
+                                }}
                                 className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
                             >
                                 ✕
@@ -497,7 +623,7 @@ export default function DashboardPage() {
     const [activeFilter, setActiveFilter] = useState('all');
     const [activeTribe, setActiveTribe] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
-    const { posts: apiPosts, friends: apiFriends, isLoading, likePost, loadMore, hasMore } = usePosts();
+    const { posts: apiPosts, friends: apiFriends, isLoading, likePost, loadMore, hasMore, createPost } = usePosts();
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
     // Mock tribes for demo
@@ -735,7 +861,7 @@ export default function DashboardPage() {
             {/* Modals */}
             <AnimatePresence>
                 {showCreateModal && (
-                    <CreateModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
+                    <CreateModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onPost={createPost} />
                 )}
                 {selectedPost && (
                     <PostDetailModal
