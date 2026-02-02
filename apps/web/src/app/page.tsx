@@ -1,48 +1,74 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Link from 'next/link';
-import { useEffect, useState, useRef } from 'react';
-import { Six22Logo, Six22PatternBg, JourneyPath } from '@/components/Six22Logo';
+import { Six22Logo, GatewayHero } from '@/components/Six22Logo';
 
 // ============================================
-// SIX22 - THE REVOLUTIONARY SOCIAL PLATFORM
-// Year 622 CE - The Journey Begins
-// "Not just another social app. This is YOUR journey."
+// PREMIUM LAYERED BACKGROUND
+// Twilight journey atmosphere
 // ============================================
-
-// Animated Stars Background
-function StarField() {
-    const stars = Array.from({ length: 50 }, (_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: Math.random() * 2 + 1,
-        delay: Math.random() * 5,
-        duration: Math.random() * 3 + 2,
-    }));
-
+function TwilightBackground() {
     return (
-        <div className="absolute inset-0 overflow-hidden">
-            {stars.map(star => (
-                <motion.div
-                    key={star.id}
-                    className="absolute rounded-full bg-white"
-                    style={{
-                        left: `${star.x}%`,
-                        top: `${star.y}%`,
-                        width: star.size,
-                        height: star.size,
-                    }}
-                    animate={{ opacity: [0.2, 1, 0.2] }}
-                    transition={{ duration: star.duration, delay: star.delay, repeat: Infinity }}
-                />
-            ))}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+            {/* Deep void base */}
+            <div className="absolute inset-0 bg-[#050508]" />
+
+            {/* Gradient meshes */}
+            <motion.div
+                className="absolute -top-40 -left-40 w-[800px] h-[800px]"
+                style={{
+                    background: 'radial-gradient(circle, rgba(124,58,237,0.15) 0%, rgba(124,58,237,0.05) 40%, transparent 70%)',
+                }}
+                animate={{ scale: [1, 1.1, 1], x: [0, 30, 0] }}
+                transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            <motion.div
+                className="absolute top-1/3 -right-40 w-[700px] h-[700px]"
+                style={{
+                    background: 'radial-gradient(circle, rgba(244,63,94,0.12) 0%, rgba(244,63,94,0.04) 40%, transparent 65%)',
+                }}
+                animate={{ scale: [1.1, 1, 1.1], x: [0, -40, 0] }}
+                transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            <motion.div
+                className="absolute bottom-0 left-1/3 w-[600px] h-[600px]"
+                style={{
+                    background: 'radial-gradient(circle, rgba(212,175,55,0.1) 0%, rgba(245,158,11,0.05) 40%, transparent 60%)',
+                }}
+                animate={{ y: [-20, 20, -20] }}
+                transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            {/* Subtle grid */}
+            <div
+                className="absolute inset-0 opacity-[0.02]"
+                style={{
+                    backgroundImage: `
+                        linear-gradient(rgba(212,175,55,0.5) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(212,175,55,0.5) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '80px 80px',
+                }}
+            />
+
+            {/* Noise texture */}
+            <div
+                className="absolute inset-0 opacity-[0.03]"
+                style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                }}
+            />
         </div>
     );
 }
 
-// Navigation
+// ============================================
+// NAVIGATION
+// ============================================
 function Navigation() {
     const [scrolled, setScrolled] = useState(false);
 
@@ -54,30 +80,39 @@ function Navigation() {
 
     return (
         <motion.nav
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-black/80 backdrop-blur-xl border-b border-white/5' : ''
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#050508]/90 backdrop-blur-xl border-b border-white/5' : ''
                 }`}
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            initial={{ y: -100 }}
+            animate={{ y: 0 }}
+            transition={{ duration: 0.6 }}
         >
             <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                <Six22Logo size="sm" animated={false} />
+                <Six22Logo size="md" variant="full" />
 
                 <div className="hidden md:flex items-center gap-8">
-                    <Link href="#features" className="text-white/60 hover:text-white transition-colors text-sm">Features</Link>
-                    <Link href="#journey" className="text-white/60 hover:text-white transition-colors text-sm">The Journey</Link>
-                    <Link href="#tribes" className="text-white/60 hover:text-white transition-colors text-sm">Tribes</Link>
+                    <a href="#hierarchy" className="text-white/60 hover:text-white transition-colors text-sm">
+                        The Hierarchy
+                    </a>
+                    <a href="#algorithm" className="text-white/60 hover:text-white transition-colors text-sm">
+                        Own Your Algorithm
+                    </a>
+                    <a href="#features" className="text-white/60 hover:text-white transition-colors text-sm">
+                        Features
+                    </a>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <Link href="/login" className="text-white/70 hover:text-white transition-colors text-sm font-medium">
+                <div className="flex items-center gap-3">
+                    <Link
+                        href="/login"
+                        className="px-4 py-2 text-white/70 hover:text-white transition-colors text-sm"
+                    >
                         Sign In
                     </Link>
                     <Link
                         href="/signup"
-                        className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F59E0B] to-[#F43F5E] text-white font-semibold text-sm hover:shadow-lg hover:shadow-amber-500/25 transition-all"
+                        className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#7C3AED] via-[#F43F5E] to-[#D4AF37] text-white font-medium text-sm hover:opacity-90 transition-opacity"
                     >
-                        Join the Journey
+                        Enter Your Territory
                     </Link>
                 </div>
             </div>
@@ -85,227 +120,426 @@ function Navigation() {
     );
 }
 
-// Hero Section - The wow factor
+// ============================================
+// HERO SECTION
+// ============================================
 function HeroSection() {
-    const ref = useRef(null);
-    const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-    const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-    const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+    const { scrollY } = useScroll();
+    const y = useTransform(scrollY, [0, 500], [0, 150]);
+    const opacity = useTransform(scrollY, [0, 400], [1, 0]);
 
     return (
-        <section ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-            {/* Background layers */}
-            <div className="absolute inset-0 bg-gradient-to-b from-[#030305] via-[#0a0a15] to-[#050510]" />
-            <StarField />
-            <Six22PatternBg opacity={0.02} />
-
-            {/* Ambient glows */}
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+            {/* Gateway visual behind */}
             <motion.div
-                className="absolute top-1/4 left-1/4 w-[800px] h-[800px] rounded-full"
-                style={{
-                    background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 60%)',
-                    y
-                }}
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 10, repeat: Infinity }}
-            />
-            <motion.div
-                className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] rounded-full"
-                style={{
-                    background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 60%)',
-                }}
-                animate={{ scale: [1.1, 1, 1.1] }}
-                transition={{ duration: 12, repeat: Infinity }}
-            />
+                className="absolute inset-0 flex items-center justify-center opacity-20"
+                style={{ y }}
+            >
+                <GatewayHero className="w-[600px] h-[700px]" />
+            </motion.div>
 
-            {/* Main content */}
             <motion.div
                 className="relative z-10 max-w-5xl mx-auto px-6 text-center"
                 style={{ opacity }}
             >
-                {/* Logo */}
                 <motion.div
-                    className="flex justify-center mb-8"
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
                 >
-                    <Six22Logo size="hero" variant="mark" />
-                </motion.div>
+                    {/* Main headline */}
+                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
+                        <span className="bg-gradient-to-r from-[#7C3AED] via-[#F43F5E] via-[#F59E0B] to-[#D4AF37] bg-clip-text text-transparent">
+                            Your Algorithm.
+                        </span>
+                        <br />
+                        <span className="text-white">
+                            Your Rules.
+                        </span>
+                        <br />
+                        <span className="text-white/80">
+                            Your Territory.
+                        </span>
+                    </h1>
 
-                {/* Main headline */}
-                <motion.h1
-                    className="text-5xl md:text-7xl lg:text-8xl font-extrabold mb-6 tracking-tight"
-                    initial={{ y: 40, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.3 }}
-                >
-                    <span className="bg-gradient-to-r from-white via-white to-white/80 bg-clip-text text-transparent">
-                        Not Just Social.
-                    </span>
-                    <br />
-                    <span className="bg-gradient-to-r from-[#D4AF37] via-[#F59E0B] to-[#F43F5E] bg-clip-text text-transparent">
-                        Sovereign.
-                    </span>
-                </motion.h1>
-
-                {/* Subheadline */}
-                <motion.p
-                    className="text-xl md:text-2xl text-white/60 max-w-3xl mx-auto mb-10 leading-relaxed"
-                    initial={{ y: 30, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.5 }}
-                >
-                    Own your data. Choose your algorithm. Build your tribe.
-                    <br />
-                    <span className="text-white/40">Year 622 - The journey that changed everything.</span>
-                </motion.p>
-
-                {/* CTAs */}
-                <motion.div
-                    className="flex flex-col sm:flex-row items-center justify-center gap-4"
-                    initial={{ y: 30, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.7 }}
-                >
-                    <Link
-                        href="/signup"
-                        className="group relative px-8 py-4 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F59E0B] to-[#F43F5E] text-white font-bold text-lg overflow-hidden"
+                    <motion.p
+                        className="text-xl md:text-2xl text-white/50 max-w-3xl mx-auto mb-8 leading-relaxed"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
                     >
-                        <span className="relative z-10">Start Your Journey</span>
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#F43F5E] via-[#8B5CF6] to-[#D4AF37] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    </Link>
-                    <Link
-                        href="#features"
-                        className="px-8 py-4 rounded-full border border-white/20 text-white/80 font-medium hover:bg-white/5 hover:border-white/30 transition-all"
-                    >
-                        Explore Features
-                    </Link>
-                </motion.div>
+                        Finally, a social network where <span className="text-white">YOU</span> decide what your family sees,
+                        how your community interacts, and what content gets highlighted.
+                    </motion.p>
 
-                {/* Stats */}
-                <motion.div
-                    className="flex items-center justify-center gap-12 mt-16"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 1, delay: 1 }}
-                >
-                    {[
-                        { value: '100%', label: 'Data Ownership' },
-                        { value: 'Your', label: 'Algorithm' },
-                        { value: '∞', label: 'Connections' },
-                    ].map((stat, i) => (
-                        <div key={i} className="text-center">
-                            <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#D4AF37] to-[#F59E0B] bg-clip-text text-transparent">
-                                {stat.value}
-                            </div>
-                            <div className="text-sm text-white/40 mt-1">{stat.label}</div>
+                    {/* Key differentiators */}
+                    <motion.div
+                        className="flex flex-wrap justify-center gap-6 mb-12"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                    >
+                        <div className="flex items-center gap-2 text-white/70">
+                            <div className="w-2 h-2 rounded-full bg-[#7C3AED]" />
+                            <span>Create your own Instagram for your family</span>
                         </div>
-                    ))}
+                        <div className="flex items-center gap-2 text-white/70">
+                            <div className="w-2 h-2 rounded-full bg-[#F43F5E]" />
+                            <span>Build your own TikTok for your tribe</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-white/70">
+                            <div className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+                            <span>Set your own rules for your nation</span>
+                        </div>
+                    </motion.div>
+
+                    {/* CTA */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.7 }}
+                        className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                    >
+                        <Link
+                            href="/signup"
+                            className="group relative px-8 py-4 rounded-xl overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#7C3AED] via-[#F43F5E] to-[#D4AF37] opacity-90 group-hover:opacity-100 transition-opacity" />
+                            <span className="relative flex items-center gap-2 text-white font-semibold text-lg">
+                                Enter Your Territory
+                                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                </svg>
+                            </span>
+                        </Link>
+
+                        <a
+                            href="#hierarchy"
+                            className="px-8 py-4 rounded-xl border border-white/10 text-white/70 hover:text-white hover:border-white/20 transition-all"
+                        >
+                            See How It Works
+                        </a>
+                    </motion.div>
                 </motion.div>
             </motion.div>
 
             {/* Scroll indicator */}
             <motion.div
-                className="absolute bottom-10 left-1/2 -translate-x-1/2"
+                className="absolute bottom-8 left-1/2 -translate-x-1/2"
                 animate={{ y: [0, 10, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
             >
-                <div className="w-6 h-10 rounded-full border-2 border-white/20 flex justify-center pt-2">
-                    <div className="w-1.5 h-3 rounded-full bg-gradient-to-b from-[#D4AF37] to-[#F43F5E]" />
+                <div className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center p-2">
+                    <motion.div
+                        className="w-1 h-2 rounded-full bg-white/40"
+                        animate={{ y: [0, 12, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                    />
                 </div>
             </motion.div>
         </section>
     );
 }
 
-// Features Section - What makes Six22 unique
-function FeaturesSection() {
-    const features = [
+// ============================================
+// HIERARCHY SECTION
+// ============================================
+function HierarchySection() {
+    const levels = [
         {
-            icon: '🔐',
-            title: 'Data Sovereignty',
-            description: 'Your data stays yours. Export anytime. No selling to advertisers. Ever.',
-            gradient: 'from-[#D4AF37] to-[#F59E0B]',
+            name: 'Circle',
+            size: '2-10',
+            icon: '👨‍👩‍👧‍👦',
+            color: '#D4AF37',
+            description: 'Your Inner Sanctum',
+            detail: 'Immediate family, best friends. No algorithm—just you deciding what they see.',
         },
         {
-            icon: '🎛️',
-            title: 'Algorithm Control',
-            description: 'You decide what you see. Tune your feed. No black-box manipulation.',
-            gradient: 'from-[#F59E0B] to-[#F43F5E]',
+            name: 'Clan',
+            size: '10-50',
+            icon: '🏠',
+            color: '#F59E0B',
+            description: 'Extended, Not Exposed',
+            detail: 'Connect cousin groups without merging. Each family keeps their privacy.',
         },
         {
-            icon: '⭐',
-            title: 'Tribes, Not Followers',
-            description: 'Build meaningful communities. Quality connections over vanity metrics.',
-            gradient: 'from-[#F43F5E] to-[#8B5CF6]',
+            name: 'Tribe',
+            size: '50-500',
+            icon: '⚔️',
+            color: '#F43F5E',
+            description: 'Your Community, Your Constitution',
+            detail: 'A larger community with elected elders. You write the moderation rules.',
         },
         {
-            icon: '🏕️',
-            title: 'Caravans',
-            description: 'Temporary group journeys. Explore topics together, then part ways gracefully.',
-            gradient: 'from-[#8B5CF6] to-[#D4AF37]',
-        },
-        {
-            icon: '🌴',
-            title: 'Oasis Spaces',
-            description: 'Private gathering spots for your inner circle. Share moments that matter.',
-            gradient: 'from-[#D4AF37] to-[#F43F5E]',
-        },
-        {
-            icon: '🧭',
-            title: 'Compass Discovery',
-            description: 'Find content based on your values, not engagement tricks.',
-            gradient: 'from-[#F59E0B] to-[#8B5CF6]',
+            name: 'Nation',
+            size: '500+',
+            icon: '🏰',
+            color: '#7C3AED',
+            description: 'Movement Without Oversight',
+            detail: 'Build a movement around shared purpose. Own the algorithm entirely.',
         },
     ];
 
     return (
-        <section id="features" className="relative py-32 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#050510] via-[#0a0a15] to-[#030305]" />
-            <Six22PatternBg opacity={0.015} />
-
-            <div className="relative z-10 max-w-7xl mx-auto px-6">
+        <section id="hierarchy" className="relative py-32 overflow-hidden">
+            <div className="max-w-7xl mx-auto px-6">
                 <motion.div
                     className="text-center mb-20"
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                        <span className="text-white">Beyond Social.</span>{' '}
-                        <span className="bg-gradient-to-r from-[#D4AF37] to-[#F43F5E] bg-clip-text text-transparent">
-                            Revolutionary.
-                        </span>
+                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+                        The Hierarchy of <span className="bg-gradient-to-r from-[#D4AF37] to-[#F43F5E] bg-clip-text text-transparent">Sovereignty</span>
                     </h2>
                     <p className="text-xl text-white/50 max-w-2xl mx-auto">
-                        Features that put you first. Not advertisers. Not algorithms. You.
+                        From your closest circle to a nation of thousands—each level has its own rules, its own algorithm, its own governance.
+                    </p>
+                </motion.div>
+
+                {/* Hierarchy visualization */}
+                <div className="relative">
+                    {/* Connecting lines */}
+                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-[#D4AF37] via-[#F43F5E] to-[#7C3AED] opacity-30" />
+
+                    <div className="space-y-12">
+                        {levels.map((level, index) => (
+                            <motion.div
+                                key={level.name}
+                                className={`flex items-center gap-8 ${index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}
+                                initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.1 }}
+                            >
+                                <div className={`flex-1 ${index % 2 === 0 ? 'text-right' : 'text-left'}`}>
+                                    <div
+                                        className="inline-block px-4 py-1 rounded-full text-sm mb-2"
+                                        style={{ backgroundColor: `${level.color}20`, color: level.color }}
+                                    >
+                                        {level.size} members
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-white mb-1">{level.name}</h3>
+                                    <p className="text-lg text-white/70 mb-2">{level.description}</p>
+                                    <p className="text-white/40">{level.detail}</p>
+                                </div>
+
+                                <div
+                                    className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl"
+                                    style={{
+                                        backgroundColor: `${level.color}15`,
+                                        border: `2px solid ${level.color}40`,
+                                        boxShadow: `0 0 40px ${level.color}20`,
+                                    }}
+                                >
+                                    {level.icon}
+                                </div>
+
+                                <div className="flex-1" />
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
+// ALGORITHM OWNERSHIP SECTION
+// ============================================
+function AlgorithmSection() {
+    const comparisons = [
+        {
+            them: 'Algorithm decides what you see',
+            us: 'YOU configure your feed formula',
+        },
+        {
+            them: 'Faceless moderators ban your content',
+            us: 'Your tribe elder reviews—someone you know',
+        },
+        {
+            them: 'One global policy for 2 billion people',
+            us: 'Each circle sets their own guidelines',
+        },
+        {
+            them: 'Your data fuels their ads',
+            us: 'Your data stays in your territory',
+        },
+    ];
+
+    return (
+        <section id="algorithm" className="relative py-32 overflow-hidden bg-gradient-to-b from-transparent via-[#7C3AED]/5 to-transparent">
+            <div className="max-w-6xl mx-auto px-6">
+                <motion.div
+                    className="text-center mb-16"
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                >
+                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+                        Own Your <span className="bg-gradient-to-r from-[#F43F5E] to-[#7C3AED] bg-clip-text text-transparent">Algorithm</span>
+                    </h2>
+                    <p className="text-xl text-white/50 max-w-2xl mx-auto">
+                        No more wondering why you see what you see. You control the formula.
+                    </p>
+                </motion.div>
+
+                {/* Comparison table */}
+                <div className="grid md:grid-cols-2 gap-8">
+                    {/* Them column */}
+                    <motion.div
+                        className="p-8 rounded-2xl border border-red-500/20 bg-red-500/5"
+                        initial={{ opacity: 0, x: -30 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                    >
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-400">
+                                ✕
+                            </div>
+                            <h3 className="text-xl font-bold text-red-400">Other Platforms</h3>
+                        </div>
+                        <ul className="space-y-4">
+                            {comparisons.map((c, i) => (
+                                <li key={i} className="flex items-start gap-3 text-white/50">
+                                    <span className="text-red-400 mt-1">•</span>
+                                    {c.them}
+                                </li>
+                            ))}
+                        </ul>
+                    </motion.div>
+
+                    {/* Us column */}
+                    <motion.div
+                        className="p-8 rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/5"
+                        initial={{ opacity: 0, x: 30 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                    >
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37]">
+                                ✓
+                            </div>
+                            <h3 className="text-xl font-bold text-[#D4AF37]">Six22</h3>
+                        </div>
+                        <ul className="space-y-4">
+                            {comparisons.map((c, i) => (
+                                <li key={i} className="flex items-start gap-3 text-white/70">
+                                    <span className="text-[#D4AF37] mt-1">•</span>
+                                    {c.us}
+                                </li>
+                            ))}
+                        </ul>
+                    </motion.div>
+                </div>
+
+                {/* Algorithm controls preview */}
+                <motion.div
+                    className="mt-16 p-8 rounded-2xl border border-white/10 bg-white/[0.02]"
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                >
+                    <h3 className="text-xl font-bold text-white mb-6">Your Algorithm Settings</h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[
+                            { label: 'Recency Weight', value: 70, color: '#D4AF37' },
+                            { label: 'Engagement Weight', value: 40, color: '#F59E0B' },
+                            { label: 'Familiarity Weight', value: 90, color: '#F43F5E' },
+                            { label: 'Novelty Weight', value: 30, color: '#7C3AED' },
+                        ].map((setting) => (
+                            <div key={setting.label}>
+                                <div className="flex justify-between text-sm mb-2">
+                                    <span className="text-white/70">{setting.label}</span>
+                                    <span style={{ color: setting.color }}>{setting.value}%</span>
+                                </div>
+                                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                                    <motion.div
+                                        className="h-full rounded-full"
+                                        style={{ backgroundColor: setting.color }}
+                                        initial={{ width: 0 }}
+                                        whileInView={{ width: `${setting.value}%` }}
+                                        viewport={{ once: true }}
+                                        transition={{ duration: 1, delay: 0.5 }}
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
+// FEATURES SECTION
+// ============================================
+function FeaturesSection() {
+    const features = [
+        {
+            icon: '🔐',
+            title: 'Moderation You Control',
+            description: 'Set content ratings, banned keywords, and strike thresholds for your community.',
+        },
+        {
+            icon: '🔗',
+            title: 'Federated Connections',
+            description: 'Link circles to clans, clans to tribes—each maintaining independence.',
+        },
+        {
+            icon: '📊',
+            title: 'Transparent Feed',
+            description: 'See exactly why each post appears. Adjust weights in real-time.',
+        },
+        {
+            icon: '👑',
+            title: 'Governance Tiers',
+            description: 'Elders, councils, admins—structured leadership for organized communities.',
+        },
+        {
+            icon: '🛡️',
+            title: 'Strike System',
+            description: 'Configure warnings, strikes, and bans. Your rules, your enforcement.',
+        },
+        {
+            icon: '🌐',
+            title: 'Cross-Group Sharing',
+            description: 'Share between connected groups with granular permission controls.',
+        },
+    ];
+
+    return (
+        <section id="features" className="relative py-32">
+            <div className="max-w-7xl mx-auto px-6">
+                <motion.div
+                    className="text-center mb-16"
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                >
+                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+                        Built for <span className="bg-gradient-to-r from-[#D4AF37] to-[#F59E0B] bg-clip-text text-transparent">Sovereignty</span>
+                    </h2>
+                    <p className="text-xl text-white/50 max-w-2xl mx-auto">
+                        Every feature designed to put power in your hands.
                     </p>
                 </motion.div>
 
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {features.map((feature, i) => (
+                    {features.map((feature, index) => (
                         <motion.div
-                            key={i}
-                            className="group relative p-8 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-white/10 transition-all duration-500"
-                            initial={{ opacity: 0, y: 30 }}
+                            key={feature.title}
+                            className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20 transition-all"
+                            initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ delay: i * 0.1 }}
-                            whileHover={{ y: -5 }}
+                            transition={{ delay: index * 0.1 }}
                         >
-                            {/* Glow on hover */}
-                            <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
-
-                            <div className="relative z-10">
-                                <div className="text-4xl mb-4">{feature.icon}</div>
-                                <h3 className={`text-xl font-bold mb-3 bg-gradient-to-r ${feature.gradient} bg-clip-text text-transparent`}>
-                                    {feature.title}
-                                </h3>
-                                <p className="text-white/50 leading-relaxed">
-                                    {feature.description}
-                                </p>
-                            </div>
+                            <div className="text-4xl mb-4">{feature.icon}</div>
+                            <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
+                            <p className="text-white/50">{feature.description}</p>
                         </motion.div>
                     ))}
                 </div>
@@ -314,80 +548,35 @@ function FeaturesSection() {
     );
 }
 
-// Journey Section - The story
-function JourneySection() {
+// ============================================
+// CTA SECTION
+// ============================================
+function CTASection() {
     return (
-        <section id="journey" className="relative py-32 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#030305] to-[#0a0a15]" />
-
-            {/* Journey path decoration */}
-            <JourneyPath className="left-0 right-0 top-1/3 mx-auto" />
-
-            <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+        <section className="relative py-32">
+            <div className="max-w-4xl mx-auto px-6 text-center">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <span className="inline-block px-4 py-2 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#D4AF37] text-sm font-medium mb-8">
-                        Year 622 CE
-                    </span>
-
-                    <h2 className="text-4xl md:text-6xl font-bold mb-8">
-                        <span className="text-white">The Journey That</span>
-                        <br />
-                        <span className="bg-gradient-to-r from-[#D4AF37] via-[#F59E0B] to-[#F43F5E] bg-clip-text text-transparent">
-                            Changed Everything
-                        </span>
-                    </h2>
-
-                    <p className="text-xl text-white/50 leading-relaxed mb-12">
-                        In the year 622, a community was born from a journey. People left behind what was
-                        familiar to build something meaningful—together.
-                        <br /><br />
-                        <span className="text-white/70">Six22 is that same spirit, reimagined for the digital age.</span>
-                    </p>
-
-                    <Link
-                        href="/about"
-                        className="inline-flex items-center gap-2 text-[#D4AF37] hover:text-[#F59E0B] transition-colors font-medium"
-                    >
-                        Learn Our Story
-                        <span className="text-lg">→</span>
-                    </Link>
-                </motion.div>
-            </div>
-        </section>
-    );
-}
-
-// CTA Section
-function CTASection() {
-    return (
-        <section className="relative py-32">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/10 via-[#F43F5E]/5 to-[#8B5CF6]/10" />
-
-            <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                >
-                    <Six22Logo size="lg" variant="mark" className="justify-center mb-8" />
+                    <Six22Logo size="xl" variant="mark" className="justify-center mb-8" />
 
                     <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        Ready to Own Your Journey?
+                        Ready to claim your territory?
                     </h2>
-
-                    <p className="text-xl text-white/50 mb-10">
-                        Join thousands who have chosen sovereignty over surveillance.
+                    <p className="text-xl text-white/50 mb-10 max-w-2xl mx-auto">
+                        Join the movement of families, tribes, and nations building their own sovereign digital spaces.
                     </p>
 
                     <Link
                         href="/signup"
-                        className="inline-flex px-10 py-5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F59E0B] to-[#F43F5E] text-white font-bold text-lg hover:shadow-xl hover:shadow-amber-500/20 transition-all transform hover:scale-105"
+                        className="inline-flex items-center gap-3 px-10 py-5 rounded-xl bg-gradient-to-r from-[#7C3AED] via-[#F43F5E] to-[#D4AF37] text-white font-semibold text-lg hover:opacity-90 transition-opacity"
                     >
-                        Join Six22 — It&apos;s Free
+                        Enter Your Territory
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
                     </Link>
                 </motion.div>
             </div>
@@ -395,31 +584,34 @@ function CTASection() {
     );
 }
 
-// Footer
+// ============================================
+// FOOTER
+// ============================================
 function Footer() {
     return (
-        <footer className="relative py-16 border-t border-white/5">
+        <footer className="border-t border-white/5 py-12">
             <div className="max-w-7xl mx-auto px-6">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                    <Six22Logo size="sm" animated={false} />
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <Six22Logo size="sm" variant="full" />
 
-                    <div className="flex items-center gap-8 text-sm text-white/40">
-                        <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-                        <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
-                        <Link href="/about" className="hover:text-white transition-colors">About</Link>
-                        <Link href="/careers" className="hover:text-white transition-colors">Careers</Link>
+                    <div className="flex items-center gap-6 text-sm text-white/40">
+                        <a href="#" className="hover:text-white transition-colors">Privacy</a>
+                        <a href="#" className="hover:text-white transition-colors">Terms</a>
+                        <a href="#" className="hover:text-white transition-colors">Contact</a>
                     </div>
 
-                    <div className="text-sm text-white/30">
-                        © 2026 Six22. Your data. Your algorithm. Your journey.
-                    </div>
+                    <p className="text-sm text-white/30">
+                        © 2026 Six22. Your Territory.
+                    </p>
                 </div>
             </div>
         </footer>
     );
 }
 
-// Main Page
+// ============================================
+// MAIN PAGE
+// ============================================
 export default function HomePage() {
     const [mounted, setMounted] = useState(false);
 
@@ -429,18 +621,20 @@ export default function HomePage() {
 
     if (!mounted) {
         return (
-            <div className="min-h-screen bg-[#030305] flex items-center justify-center">
+            <div className="min-h-screen bg-[#050508] flex items-center justify-center">
                 <div className="w-16 h-16 rounded-full border-4 border-[#D4AF37]/20 border-t-[#D4AF37] animate-spin" />
             </div>
         );
     }
 
     return (
-        <main className="min-h-screen bg-[#030305] text-white overflow-x-hidden">
+        <main className="min-h-screen bg-[#050508] text-white overflow-x-hidden">
+            <TwilightBackground />
             <Navigation />
             <HeroSection />
+            <HierarchySection />
+            <AlgorithmSection />
             <FeaturesSection />
-            <JourneySection />
             <CTASection />
             <Footer />
         </main>

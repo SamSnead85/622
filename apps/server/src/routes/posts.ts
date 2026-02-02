@@ -82,13 +82,7 @@ const DEMO_POSTS = [
 // GET /api/v1/posts/feed
 router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        // Demo mode - return demo posts immediately (no database calls)
-        if (process.env.DEMO_MODE === 'true' || req.userId === 'demo-user-id') {
-            return res.json({
-                posts: DEMO_POSTS,
-                nextCursor: null,
-            });
-        }
+        // Now always fetch real posts from database (demo posts used only as fallback)
 
         const { cursor, limit = '10', type = 'foryou' } = req.query;
 

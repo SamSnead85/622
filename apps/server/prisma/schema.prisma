@@ -682,3 +682,246 @@ model Invite {
   @@index([referralCode])
   @@index([status])
 }
+
+// ============================================
+// TERRITORY SYSTEM (Circle → Clan → Tribe → Nation)
+// Hierarchical sovereignty model
+// ============================================
+
+model Territory {
+  id              String           @id @default(uuid())
+  name            String
+  slug            String           @unique
+  description     String?          @db.Text
+  type            TerritoryType
+  avatarUrl       String?
+  coverUrl        String?
+  
+  // Theme/Branding
+  primaryColor    String?          @default("#D4AF37")
+  
+  // Privacy
+  isPublic        Boolean          @default(false)
+  requireApproval Boolean          @default(true)
+  
+  // Hierarchy
+  parentId        String?          // For nesting (Circle in Clan, Clan in Tribe, etc.)
+  
+  // Stats
+  memberCount     Int              @default(0)
+  postCount       Int              @default(0)
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  // Relations
+  parent          Territory?       @relation("TerritoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children        Territory[]      @relation("TerritoryHierarchy")
+  
+  members         TerritoryMember[]
+  posts           TerritoryPost[]
+  algorithmSettings TerritoryAlgorithmSettings?
+  
+  // Connections to other territories
+  outgoingConnections TerritoryConnection[] @relation("ConnectionFrom")
+  incomingConnections TerritoryConnection[] @relation("ConnectionTo")
+  
+  // Moderation
+  moderationRules TerritoryModerationRule[]
+  strikes         TerritoryStrike[]
+
+  @@index([type])
+  @@index([parentId])
+  @@index([slug])
+}
+
+enum TerritoryType {
+  CIRCLE  // 2-10 members - immediate family/best friends
+  CLAN    // 10-50 members - extended family/friend groups
+  TRIBE   // 50-500 members - community with governance
+  NATION  // 500+ members - movement with elected leadership
+  WORLD   // Platform-wide (system only)
+}
+
+model TerritoryMember {
+  id           String              @id @default(uuid())
+  territoryId  String
+  userId       String
+  role         TerritoryRole       @default(MEMBER)
+  joinedAt     DateTime            @default(now())
+  invitedById  String?
+  
+  // Status
+  isMuted      Boolean             @default(false)
+  strikeCount  Int                 @default(0)
+  
+  territory    Territory           @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+  
+  @@unique([territoryId, userId])
+  @@index([userId])
+  @@index([territoryId])
+}
+
+enum TerritoryRole {
+  MEMBER      // Regular member
+  GUARDIAN    // Can moderate content
+  ELDER       // Can set rules, invite members
+  CHIEF       // Full admin - owner/founder
+}
+
+model TerritoryPost {
+  id           String    @id @default(uuid())
+  territoryId  String
+  postId       String    // Reference to the main Post
+  sharedById   String    // Who shared/posted to this territory
+  createdAt    DateTime  @default(now())
+  
+  territory    Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+
+  @@unique([territoryId, postId])
+  @@index([territoryId])
+}
+
+// ============================================
+// TERRITORY CONNECTIONS
+// How territories relate to each other
+// ============================================
+
+model TerritoryConnection {
+  id             String               @id @default(uuid())
+  fromTerritoryId String
+  toTerritoryId   String
+  type           TerritoryConnectionType @default(OBSERVED)
+  
+  // What content flows between them
+  shareContent   Boolean              @default(false)
+  shareMembers   Boolean              @default(false)
+  
+  // Approval
+  status         ConnectionStatus     @default(PENDING)
+  requestedAt    DateTime             @default(now())
+  approvedAt     DateTime?
+  
+  fromTerritory  Territory            @relation("ConnectionFrom", fields: [fromTerritoryId], references: [id], onDelete: Cascade)
+  toTerritory    Territory            @relation("ConnectionTo", fields: [toTerritoryId], references: [id], onDelete: Cascade)
+
+  @@unique([fromTerritoryId, toTerritoryId])
+  @@index([fromTerritoryId])
+  @@index([toTerritoryId])
+}
+
+enum TerritoryConnectionType {
+  ALLIED      // Full mutual visibility, shared content pools
+  FEDERATED   // Selective sharing, each admin controls what flows
+  OBSERVED    // One-way view (like following)
+  BLOCKED     // No interaction
+}
+
+enum ConnectionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ============================================
+// ALGORITHM SETTINGS PER TERRITORY
+// Each territory owns its own algorithm
+// ============================================
+
+model TerritoryAlgorithmSettings {
+  id           String    @id @default(uuid())
+  territoryId  String    @unique
+  
+  // Content Prioritization Weights (0-100)
+  recencyWeight     Int      @default(50)   // How much recent content matters
+  engagementWeight  Int      @default(30)   // Likes/comments importance
+  familiarityWeight Int      @default(60)   // Content from closer circles
+  noveltyWeight     Int      @default(20)   // New/diverse content
+  
+  // Content Filtering
+  contentRatings    String[] @default(["G", "PG", "PG13"]) // Allowed ratings
+  
+  // Interaction Rules
+  whoCanPost        PostPermission @default(MEMBERS)
+  whoCanComment     PostPermission @default(MEMBERS)
+  whoCanInvite      PostPermission @default(ELDERS)
+  allowCrossPosting Boolean        @default(false)
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  territory    Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+}
+
+enum PostPermission {
+  ANYONE
+  MEMBERS
+  GUARDIANS
+  ELDERS
+  CHIEFS
+}
+
+// ============================================
+// MODERATION RULES PER TERRITORY
+// ============================================
+
+model TerritoryModerationRule {
+  id           String    @id @default(uuid())
+  territoryId  String
+  title        String
+  description  String    @db.Text
+  type         RuleType
+  
+  // For keyword rules
+  keywords     String[]  @default([])
+  
+  // Action when triggered
+  action       RuleAction @default(FLAG)
+  
+  isActive     Boolean   @default(true)
+  order        Int       @default(0)
+  createdAt    DateTime  @default(now())
+  
+  territory    Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+
+  @@index([territoryId])
+}
+
+enum RuleType {
+  KEYWORD_FILTER    // Ban/flag certain words
+  CONTENT_RATING    // Enforce content ratings
+  SPAM_DETECTION    // Auto-detect spam
+  CUSTOM            // Custom rule defined by admins
+}
+
+enum RuleAction {
+  FLAG              // Flag for review
+  HIDE              // Auto-hide content
+  DELETE            // Auto-delete
+  WARN              // Warn the poster
+  STRIKE            // Issue a strike
+}
+
+// ============================================
+// STRIKE SYSTEM PER TERRITORY
+// ============================================
+
+model TerritoryStrike {
+  id           String       @id @default(uuid())
+  territoryId  String
+  userId       String       // User who received the strike
+  issuedById   String       // Admin/moderator who issued it
+  reason       String       @db.Text
+  postId       String?      // Related post if applicable
+  
+  // Expiration
+  expiresAt    DateTime?    // Null = permanent
+  isActive     Boolean      @default(true)
+  
+  createdAt    DateTime     @default(now())
+  
+  territory    Territory    @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+
+  @@index([territoryId])
+  @@index([userId])
+}

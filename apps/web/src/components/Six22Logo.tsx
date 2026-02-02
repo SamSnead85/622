@@ -2,68 +2,67 @@
 
 import { motion } from 'framer-motion';
 
-// ============================================
-// SIX22 REVOLUTIONARY LOGO
-// A completely unique, animated brand mark
-// Inspired by Year 622 CE - The Journey
-// ============================================
-
 interface Six22LogoProps {
     size?: 'sm' | 'md' | 'lg' | 'xl' | 'hero';
     animated?: boolean;
     variant?: 'full' | 'mark' | 'minimal';
     className?: string;
+    showTagline?: boolean;
 }
 
 const sizeMap = {
-    sm: { width: 32, height: 32, text: 12 },
-    md: { width: 48, height: 48, text: 16 },
-    lg: { width: 64, height: 64, text: 20 },
-    xl: { width: 96, height: 96, text: 28 },
-    hero: { width: 140, height: 140, text: 40 },
+    sm: { width: 28, height: 28, text: 14 },
+    md: { width: 40, height: 40, text: 18 },
+    lg: { width: 56, height: 56, text: 24 },
+    xl: { width: 80, height: 80, text: 32 },
+    hero: { width: 120, height: 120, text: 48 },
 };
 
+/**
+ * SIX22 LOGO - "The Path"
+ * 
+ * Design Philosophy:
+ * - Subtle, modern, and inclusive
+ * - A single flowing path/journey line that forms "622"
+ * - Hints at migration/journey without religious iconography
+ * - Clean, premium, and scalable
+ * - Colors: Warm twilight gradient (amber → coral → violet)
+ * 
+ * The number 622 is historically significant as the year of the Hijra,
+ * but this is represented abstractly as a "path" - universal and inclusive.
+ */
 export function Six22Logo({
     size = 'md',
     animated = true,
     variant = 'full',
-    className = ''
+    className = '',
+    showTagline = false
 }: Six22LogoProps) {
     const dims = sizeMap[size];
+    const isLarge = size === 'lg' || size === 'xl' || size === 'hero';
 
     return (
         <div className={`flex items-center gap-3 ${className}`}>
-            {/* The Revolutionary Mark */}
+            {/* The Path Mark */}
             <motion.svg
                 width={dims.width}
                 height={dims.height}
-                viewBox="0 0 100 100"
-                initial={animated ? { opacity: 0, scale: 0.8 } : {}}
+                viewBox="0 0 80 80"
+                initial={animated ? { opacity: 0, scale: 0.9 } : {}}
                 animate={animated ? { opacity: 1, scale: 1 } : {}}
-                transition={{ duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
+                transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
             >
                 <defs>
-                    {/* Premium gradient - Desert Gold to Cosmic Violet */}
-                    <linearGradient id="six22-brand-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#D4AF37">
-                            {animated && <animate attributeName="stop-color" values="#D4AF37;#E8C547;#D4AF37" dur="4s" repeatCount="indefinite" />}
-                        </stop>
-                        <stop offset="35%" stopColor="#F59E0B" />
-                        <stop offset="65%" stopColor="#F43F5E" />
-                        <stop offset="100%" stopColor="#8B5CF6">
-                            {animated && <animate attributeName="stop-color" values="#8B5CF6;#A78BFA;#8B5CF6" dur="4s" repeatCount="indefinite" />}
-                        </stop>
+                    {/* Main gradient: Warm sunset journey */}
+                    <linearGradient id="path-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#F59E0B" />
+                        <stop offset="50%" stopColor="#F43F5E" />
+                        <stop offset="100%" stopColor="#8B5CF6" />
                     </linearGradient>
 
-                    {/* Inner glow */}
-                    <radialGradient id="six22-inner-glow" cx="50%" cy="50%" r="50%">
-                        <stop offset="0%" stopColor="white" stopOpacity="0.2" />
-                        <stop offset="100%" stopColor="white" stopOpacity="0" />
-                    </radialGradient>
-
-                    {/* Outer glow filter */}
-                    <filter id="six22-glow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="3" result="blur" />
+                    {/* Subtle glow */}
+                    <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="1.5" result="blur" />
                         <feMerge>
                             <feMergeNode in="blur" />
                             <feMergeNode in="SourceGraphic" />
@@ -71,76 +70,66 @@ export function Six22Logo({
                     </filter>
                 </defs>
 
-                {/* Outer geometric frame - 6 sided for "6" */}
-                <motion.polygon
-                    points="50,5 90,27 90,73 50,95 10,73 10,27"
-                    fill="none"
-                    stroke="url(#six22-brand-grad)"
-                    strokeWidth="2"
-                    filter="url(#six22-glow)"
-                    initial={animated ? { pathLength: 0, opacity: 0 } : {}}
-                    animate={animated ? { pathLength: 1, opacity: 1 } : {}}
-                    transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
-                />
+                {/* 
+                    THE PATH - A flowing line that subtly echoes "622"
+                    Read as: starting point → journey line → destination
+                    Abstract enough to be universal, not explicitly numeric
+                */}
 
-                {/* Inner hexagon */}
-                <motion.polygon
-                    points="50,15 80,32 80,68 50,85 20,68 20,32"
-                    fill="url(#six22-brand-grad)"
-                    initial={animated ? { scale: 0, opacity: 0 } : {}}
-                    animate={animated ? { scale: 1, opacity: 1 } : {}}
-                    transition={{ duration: 0.5, delay: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
-                    style={{ transformOrigin: 'center' }}
-                />
-
-                {/* Inner glow overlay */}
-                <polygon
-                    points="50,15 80,32 80,68 50,85 20,68 20,32"
-                    fill="url(#six22-inner-glow)"
-                />
-
-                {/* The "622" stylized - just the "6" as primary mark */}
-                <motion.text
-                    x="50"
-                    y="58"
-                    textAnchor="middle"
-                    fill="white"
-                    fontSize="38"
-                    fontWeight="800"
-                    fontFamily="'Outfit', sans-serif"
-                    initial={animated ? { opacity: 0, y: 10 } : {}}
-                    animate={animated ? { opacity: 1, y: 0 } : {}}
-                    transition={{ duration: 0.4, delay: 0.9 }}
-                >
-                    6
-                </motion.text>
-
-                {/* Crescent accent - subtle Islamic heritage */}
+                {/* Journey Path - flowing S-curve representing the journey */}
                 <motion.path
-                    d="M 70 25 A 15 15 0 1 1 70 45 A 12 12 0 1 0 70 25"
-                    fill="#D4AF37"
-                    opacity="0.8"
-                    initial={animated ? { opacity: 0, scale: 0 } : {}}
-                    animate={animated ? { opacity: 0.8, scale: 1 } : {}}
-                    transition={{ duration: 0.3, delay: 1.1 }}
-                    style={{ transformOrigin: '70px 35px' }}
+                    d="M 12 58 
+                       C 12 42, 28 30, 40 30
+                       C 52 30, 52 45, 40 48
+                       C 28 51, 28 65, 40 65
+                       C 55 65, 68 50, 68 35"
+                    fill="none"
+                    stroke="url(#path-gradient)"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    filter="url(#soft-glow)"
+                    initial={animated ? { pathLength: 0, opacity: 0 } : { pathLength: 1, opacity: 1 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
                 />
 
-                {/* Orbital ring - journey symbolism */}
+                {/* Origin Point - where the journey begins */}
+                <motion.circle
+                    cx="12"
+                    cy="58"
+                    r="4"
+                    fill="#F59E0B"
+                    initial={animated ? { scale: 0 } : { scale: 1 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.3, duration: 0.3 }}
+                />
+
+                {/* Destination Point - the North Star / guiding light */}
+                <motion.circle
+                    cx="68"
+                    cy="35"
+                    r="3.5"
+                    fill="#8B5CF6"
+                    initial={animated ? { scale: 0 } : { scale: 1 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 1, duration: 0.3 }}
+                />
+
+                {/* Subtle sparkle at destination */}
                 {animated && (
-                    <motion.ellipse
-                        cx="50"
-                        cy="50"
-                        rx="48"
-                        ry="48"
+                    <motion.circle
+                        cx="68"
+                        cy="35"
+                        r="6"
                         fill="none"
-                        stroke="url(#six22-brand-grad)"
-                        strokeWidth="0.5"
-                        strokeDasharray="4 8"
-                        initial={{ rotate: 0 }}
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                        style={{ transformOrigin: 'center' }}
+                        stroke="#8B5CF6"
+                        strokeWidth="1"
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{
+                            opacity: [0, 0.5, 0],
+                            scale: [0.5, 1.5, 0.5]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                     />
                 )}
             </motion.svg>
@@ -149,105 +138,194 @@ export function Six22Logo({
             {variant === 'full' && (
                 <motion.div
                     className="flex flex-col"
-                    initial={animated ? { opacity: 0, x: -10 } : {}}
+                    initial={animated ? { opacity: 0, x: -8 } : {}}
                     animate={animated ? { opacity: 1, x: 0 } : {}}
-                    transition={{ duration: 0.5, delay: 0.8 }}
+                    transition={{ duration: 0.4, delay: 0.5 }}
                 >
                     <span
-                        className="font-extrabold tracking-tight bg-gradient-to-r from-[#D4AF37] via-[#F59E0B] to-[#F43F5E] bg-clip-text text-transparent"
-                        style={{ fontSize: dims.text * 1.5, lineHeight: 1 }}
+                        className="font-bold tracking-tight"
+                        style={{
+                            fontSize: dims.text * 1.3,
+                            lineHeight: 1,
+                            background: 'linear-gradient(135deg, #F59E0B 0%, #F43F5E 50%, #8B5CF6 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                        }}
                     >
-                        SIX22
+                        six22
                     </span>
-                    {size !== 'sm' && (
+                    {(showTagline || isLarge) && (
                         <span
-                            className="text-white/50 tracking-widest uppercase"
-                            style={{ fontSize: dims.text * 0.35 }}
+                            className="text-white/40 font-medium tracking-wide"
+                            style={{ fontSize: Math.max(10, dims.text * 0.35) }}
                         >
-                            The Journey
+                            your journey
                         </span>
                     )}
                 </motion.div>
+            )}
+
+            {variant === 'minimal' && (
+                <motion.span
+                    className="font-bold tracking-tight"
+                    style={{
+                        fontSize: dims.text * 1.2,
+                        background: 'linear-gradient(135deg, #F59E0B 0%, #F43F5E 50%, #8B5CF6 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                    }}
+                    initial={animated ? { opacity: 0 } : {}}
+                    animate={animated ? { opacity: 1 } : {}}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                >
+                    six22
+                </motion.span>
             )}
         </div>
     );
 }
 
-// ============================================
-// ANIMATED PATTERN BACKGROUND
-// Unique to Six22 - nowhere else has this
-// ============================================
-export function Six22PatternBg({ opacity = 0.03 }: { opacity?: number }) {
+/**
+ * Extended Journey Hero - For landing pages and hero sections
+ * A larger, more elaborate version with particle trails
+ */
+export function JourneyHero({ className = '' }: { className?: string }) {
     return (
-        <svg className="absolute inset-0 w-full h-full" style={{ opacity }} xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <pattern id="six22-unique-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-                    {/* Interlocking hexagons - 6 for 622 */}
-                    <polygon points="50,10 70,22 70,46 50,58 30,46 30,22" fill="none" stroke="#D4AF37" strokeWidth="0.5" />
-                    <polygon points="50,42 70,54 70,78 50,90 30,78 30,54" fill="none" stroke="#F59E0B" strokeWidth="0.3" />
-                    {/* Connecting paths - journey lines */}
-                    <line x1="50" y1="58" x2="50" y2="42" stroke="#F43F5E" strokeWidth="0.3" />
-                    <circle cx="50" cy="50" r="4" fill="none" stroke="#8B5CF6" strokeWidth="0.3" />
-                </pattern>
+        <div className={`relative ${className}`}>
+            <motion.svg
+                viewBox="0 0 600 400"
+                className="w-full h-full"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1 }}
+            >
+                <defs>
+                    <linearGradient id="hero-journey-grad" x1="0%" y1="50%" x2="100%" y2="50%">
+                        <stop offset="0%" stopColor="#F59E0B" />
+                        <stop offset="40%" stopColor="#F43F5E" />
+                        <stop offset="100%" stopColor="#8B5CF6" />
+                    </linearGradient>
 
-                {/* Animated gradient overlay */}
-                <linearGradient id="pattern-fade" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="black" stopOpacity="0" />
-                    <stop offset="50%" stopColor="black" stopOpacity="1" />
-                    <stop offset="100%" stopColor="black" stopOpacity="0" />
-                </linearGradient>
-            </defs>
+                    <filter id="hero-glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feMerge>
+                            <feMergeNode in="blur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
 
-            <rect width="100%" height="100%" fill="url(#six22-unique-pattern)" />
-        </svg>
+                    <radialGradient id="origin-glow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.8" />
+                        <stop offset="100%" stopColor="#F59E0B" stopOpacity="0" />
+                    </radialGradient>
+
+                    <radialGradient id="dest-glow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.8" />
+                        <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
+                    </radialGradient>
+                </defs>
+
+                {/* The Great Journey Path */}
+                <motion.path
+                    d="M 80 280 
+                       C 80 180, 180 120, 260 140
+                       C 340 160, 340 260, 280 280
+                       C 220 300, 220 340, 300 340
+                       C 400 340, 480 280, 520 180"
+                    fill="none"
+                    stroke="url(#hero-journey-grad)"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    filter="url(#hero-glow)"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 2.5, ease: "easeOut" }}
+                />
+
+                {/* Secondary path - lighter */}
+                <motion.path
+                    d="M 100 260 
+                       C 100 180, 190 130, 260 150
+                       C 330 170, 330 250, 280 265
+                       C 230 280, 230 320, 295 320
+                       C 380 320, 460 270, 500 190"
+                    fill="none"
+                    stroke="url(#hero-journey-grad)"
+                    strokeWidth="2"
+                    strokeOpacity="0.3"
+                    strokeLinecap="round"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 2.2, ease: "easeOut", delay: 0.3 }}
+                />
+
+                {/* Origin point with glow */}
+                <motion.g
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                >
+                    <circle cx="80" cy="280" r="30" fill="url(#origin-glow)" />
+                    <circle cx="80" cy="280" r="10" fill="#F59E0B" />
+                    <circle cx="80" cy="280" r="5" fill="#FEF3C7" />
+                </motion.g>
+
+                {/* Destination star */}
+                <motion.g
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 2.2, duration: 0.5 }}
+                >
+                    <circle cx="520" cy="180" r="40" fill="url(#dest-glow)" />
+                    <circle cx="520" cy="180" r="12" fill="#8B5CF6" />
+                    <circle cx="520" cy="180" r="5" fill="#E9D5FF" />
+
+                    {/* Subtle rays */}
+                    {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
+                        <motion.line
+                            key={angle}
+                            x1={520 + Math.cos(angle * Math.PI / 180) * 18}
+                            y1={180 + Math.sin(angle * Math.PI / 180) * 18}
+                            x2={520 + Math.cos(angle * Math.PI / 180) * 28}
+                            y2={180 + Math.sin(angle * Math.PI / 180) * 28}
+                            stroke="#8B5CF6"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            initial={{ opacity: 0, pathLength: 0 }}
+                            animate={{ opacity: 0.6, pathLength: 1 }}
+                            transition={{ delay: 2.5 + i * 0.05, duration: 0.3 }}
+                        />
+                    ))}
+                </motion.g>
+
+                {/* Floating waypoint particles along the journey */}
+                {[0.2, 0.4, 0.6, 0.8].map((t, i) => (
+                    <motion.circle
+                        key={i}
+                        r="3"
+                        fill={['#F59E0B', '#FB923C', '#F43F5E', '#A855F7'][i]}
+                        initial={{ opacity: 0 }}
+                        animate={{
+                            opacity: [0, 1, 0],
+                            // Approximate positions along the path
+                            cx: [150 + i * 100, 160 + i * 100, 150 + i * 100],
+                            cy: [200 + (i % 2) * 60, 190 + (i % 2) * 60, 200 + (i % 2) * 60],
+                        }}
+                        transition={{
+                            duration: 2 + i * 0.5,
+                            repeat: Infinity,
+                            delay: i * 0.5,
+                            ease: "easeInOut"
+                        }}
+                    />
+                ))}
+            </motion.svg>
+        </div>
     );
 }
 
-// ============================================
-// JOURNEY PATH DECORATION
-// Visual metaphor for the platform's purpose
-// ============================================
-export function JourneyPath({ className = '' }: { className?: string }) {
-    return (
-        <motion.svg
-            className={`absolute ${className}`}
-            width="400"
-            height="200"
-            viewBox="0 0 400 200"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 0.5 }}
-        >
-            <defs>
-                <linearGradient id="journey-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#D4AF37" stopOpacity="0" />
-                    <stop offset="30%" stopColor="#D4AF37" stopOpacity="0.6" />
-                    <stop offset="70%" stopColor="#F59E0B" stopOpacity="0.6" />
-                    <stop offset="100%" stopColor="#F43F5E" stopOpacity="0" />
-                </linearGradient>
-            </defs>
-
-            {/* The winding journey path */}
-            <motion.path
-                d="M 0 100 Q 100 20, 200 100 T 400 100"
-                fill="none"
-                stroke="url(#journey-grad)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 2, delay: 0.8, ease: "easeOut" }}
-            />
-
-            {/* Waypoints */}
-            <motion.circle cx="100" cy="60" r="4" fill="#D4AF37"
-                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1.5 }} />
-            <motion.circle cx="200" cy="100" r="5" fill="#F59E0B"
-                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1.8 }} />
-            <motion.circle cx="300" cy="60" r="4" fill="#F43F5E"
-                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 2.1 }} />
-        </motion.svg>
-    );
-}
-
+// Keep backward compatibility
+export { JourneyHero as GatewayHero };
 export default Six22Logo;

@@ -21,3 +21,5 @@ export { WelcomeOnboarding } from './WelcomeOnboarding';
 // Existing Components
 export { default as MomentsViewer } from './MomentsViewer';
 
+// Branding
+export { Six22Logo, GatewayHero } from './Six22Logo';

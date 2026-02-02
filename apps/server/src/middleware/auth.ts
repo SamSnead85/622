@@ -36,13 +36,40 @@ export const authenticate = async (
             sessionId: string;
         };
 
-        // Demo mode - bypass database check
+        // Demo mode - ensure demo user exists in database
         if (decoded.sessionId === 'demo-session' && decoded.userId === 'demo-user-id') {
-            req.userId = 'demo-user-id';
+            // Ensure demo user exists in the database
+            let demoUser;
+            try {
+                demoUser = await prisma.user.upsert({
+                    where: { id: 'demo-user-id' },
+                    update: { lastActiveAt: new Date() },
+                    create: {
+                        id: 'demo-user-id',
+                        email: 'demo@six22.app',
+                        username: 'demo',
+                        displayName: 'Demo User',
+                        passwordHash: 'demo-no-login',
+                        isVerified: true,
+                    },
+                });
+            } catch (upsertError) {
+                // Try finding by email if id conflict
+                demoUser = await prisma.user.findUnique({
+                    where: { email: 'demo@six22.app' },
+                });
+                if (!demoUser) {
+                    console.error('Failed to create/find demo user:', upsertError);
+                    res.status(500).json({ error: 'Demo user initialization failed' });
+                    return;
+                }
+            }
+
+            req.userId = demoUser.id;
             req.user = {
-                id: 'demo-user-id',
-                email: 'demo@six22.app',
-                username: 'demo',
+                id: demoUser.id,
+                email: demoUser.email,
+                username: demoUser.username,
             };
             next();
             return;
@@ -113,14 +140,36 @@ export const optionalAuth = async (
             sessionId: string;
         };
 
-        // Demo mode
+        // Demo mode - ensure demo user exists
         if (decoded.sessionId === 'demo-session' && decoded.userId === 'demo-user-id') {
-            req.userId = 'demo-user-id';
-            req.user = {
-                id: 'demo-user-id',
-                email: 'demo@six22.app',
-                username: 'demo',
-            };
+            let demoUser;
+            try {
+                demoUser = await prisma.user.upsert({
+                    where: { id: 'demo-user-id' },
+                    update: {},
+                    create: {
+                        id: 'demo-user-id',
+                        email: 'demo@six22.app',
+                        username: 'demo',
+                        displayName: 'Demo User',
+                        passwordHash: 'demo-no-login',
+                        isVerified: true,
+                    },
+                });
+            } catch {
+                demoUser = await prisma.user.findFirst({
+                    where: { email: 'demo@six22.app' },
+                });
+            }
+
+            if (demoUser) {
+                req.userId = demoUser.id;
+                req.user = {
+                    id: demoUser.id,
+                    email: demoUser.email,
+                    username: demoUser.username,
+                };
+            }
             next();
             return;
         }

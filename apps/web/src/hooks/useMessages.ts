@@ -115,20 +115,40 @@ export function useMessages() {
         apiFetch(`${API_ENDPOINTS.messages(conversationId)}/read`, { method: 'PUT' }).catch(console.error);
     }, [activeConversation, joinRoom, leaveRoom, fetchMessages]);
 
-    // Send a message
+    // Send a message (with HTTP fallback)
     const sendMessage = useCallback(async (content: string, mediaUrl?: string, mediaType?: Message['mediaType']) => {
-        if (!activeConversation || !content.trim()) return;
+        if (!activeConversation || !content.trim()) return { success: false, error: 'No active conversation' };
 
         try {
-            // Emit via socket for real-time
-            emit('message:send', {
-                conversationId: activeConversation,
-                content,
-                mediaUrl,
-                mediaType,
+            // First try HTTP to ensure message is persisted
+            const response = await apiFetch(`${API_ENDPOINTS.messages(activeConversation)}/messages`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    content,
+                    mediaUrl,
+                    mediaType,
+                }),
             });
+
+            if (response.ok) {
+                const data = await response.json();
+                // Add message to local state
+                setMessages(prev => [...prev, data.message]);
+                // Also emit via socket for real-time updates to others
+                emit('message:send', {
+                    conversationId: activeConversation,
+                    content,
+                    mediaUrl,
+                    mediaType,
+                });
+                return { success: true };
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                return { success: false, error: errorData.error || 'Failed to send message' };
+            }
         } catch (err) {
             console.error('Error sending message:', err);
+            return { success: false, error: 'Network error' };
         }
     }, [activeConversation, emit]);
 

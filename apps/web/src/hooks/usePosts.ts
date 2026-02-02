@@ -50,20 +50,41 @@ export function usePosts() {
             setIsLoading(true);
             setError(null);
 
-            const response = await apiFetch(`${API_ENDPOINTS.posts}?page=${pageNum}&limit=20`);
+            // Use /feed endpoint with cursor-based pagination
+            const response = await apiFetch(`${API_ENDPOINTS.posts}/feed?limit=20`);
 
             if (response.ok) {
                 const data = await response.json();
 
+                // Map backend data shape to frontend shape
+                const mappedPosts: Post[] = (data.posts || []).map((post: any) => ({
+                    id: post.id,
+                    author: {
+                        id: post.user?.id || post.userId,
+                        username: post.user?.username || 'user',
+                        displayName: post.user?.displayName || 'User',
+                        avatarUrl: post.user?.avatarUrl,
+                    },
+                    content: post.caption || '',
+                    mediaUrl: post.mediaUrl,
+                    mediaType: post.type as 'IMAGE' | 'VIDEO',
+                    likes: post._count?.likes || post.likesCount || 0,
+                    commentsCount: post._count?.comments || post.commentsCount || 0,
+                    isLiked: post.isLiked || false,
+                    createdAt: post.createdAt,
+                }));
+
                 if (pageNum === 1) {
-                    setPosts(data.posts || []);
+                    setPosts(mappedPosts);
                 } else {
-                    setPosts(prev => [...prev, ...(data.posts || [])]);
+                    setPosts(prev => [...prev, ...mappedPosts]);
                 }
 
-                setHasMore(data.hasMore ?? false);
+                setHasMore(!!data.nextCursor);
                 setPage(pageNum);
             } else {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Feed error:', errorData);
                 setError('Failed to load feed');
             }
         } catch (err) {

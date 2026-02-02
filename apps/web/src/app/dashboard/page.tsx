@@ -9,6 +9,8 @@ import { usePosts } from '@/hooks';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedFilters, TribeSelector } from '@/components/FeedFilters';
 import { FullscreenPostViewer, PostData } from '@/components/FullscreenPostViewer';
+import { Six22Logo } from '@/components/Six22Logo';
+
 
 // Default avatar/image fallbacks
 const DEFAULT_AVATARS = [
@@ -24,32 +26,37 @@ const DEFAULT_IMAGES = [
 ];
 
 // ============================================
-// ISLAMIC GEOMETRIC PATTERN SVG
-// Subtle arabesque-inspired background element
+// FLOWING PATH PATTERN SVG
+// Abstract journey-inspired background element
+// Subtle, modern, and inclusive
 // ============================================
-function GeometricPattern() {
+function FlowingPathPattern() {
     return (
-        <svg className="absolute inset-0 w-full h-full opacity-[0.015]" xmlns="http://www.w3.org/2000/svg">
+        <svg className="absolute inset-0 w-full h-full opacity-[0.02]" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <pattern id="six22-pattern" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
-                    {/* Eight-pointed star - classic Islamic motif */}
-                    <g fill="none" stroke="#D4AF37" strokeWidth="0.5">
-                        <polygon points="60,10 70,30 90,30 75,45 80,65 60,55 40,65 45,45 30,30 50,30" />
-                        <polygon points="60,10 70,30 90,30 75,45 80,65 60,55 40,65 45,45 30,30 50,30" transform="rotate(45 60 60)" />
-                        <circle cx="60" cy="60" r="25" />
-                        <circle cx="60" cy="60" r="12" />
-                        {/* Connecting lines */}
-                        <line x1="0" y1="60" x2="35" y2="60" />
-                        <line x1="85" y1="60" x2="120" y2="60" />
-                        <line x1="60" y1="0" x2="60" y2="35" />
-                        <line x1="60" y1="85" x2="60" y2="120" />
+                <pattern id="six22-flow-pattern" x="0" y="0" width="200" height="200" patternUnits="userSpaceOnUse">
+                    {/* Flowing journey lines - abstract paths */}
+                    <g fill="none" stroke="url(#flow-grad)" strokeWidth="0.8" strokeLinecap="round">
+                        {/* Main flow */}
+                        <path d="M 20 180 Q 50 140, 100 150 T 180 100" opacity="0.5" />
+                        <path d="M 0 100 Q 40 80, 80 90 T 160 60 T 200 50" opacity="0.4" />
+                        <path d="M 40 200 Q 80 160, 120 170 T 200 140" opacity="0.3" />
+                        {/* Subtle dots at waypoints */}
+                        <circle cx="100" cy="150" r="2" fill="currentColor" opacity="0.4" />
+                        <circle cx="160" cy="60" r="1.5" fill="currentColor" opacity="0.3" />
                     </g>
                 </pattern>
+                <linearGradient id="flow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#F59E0B" />
+                    <stop offset="50%" stopColor="#F43F5E" />
+                    <stop offset="100%" stopColor="#8B5CF6" />
+                </linearGradient>
             </defs>
-            <rect width="100%" height="100%" fill="url(#six22-pattern)" />
+            <rect width="100%" height="100%" fill="url(#six22-flow-pattern)" />
         </svg>
     );
 }
+
 
 // ============================================
 // LUMINOUS VOID BACKGROUND
@@ -70,7 +77,7 @@ function LuminousVoidBackground() {
             <div className="absolute inset-0 bg-[#030305]" />
 
             {/* Subtle Islamic geometric pattern overlay */}
-            <GeometricPattern />
+            <FlowingPathPattern />
 
             {/* Gradient meshes - amber/rose/violet Six22 colors */}
             <motion.div
@@ -514,23 +521,9 @@ function NavigationDock({ onCreateClick, activeTab }: { onCreateClick: () => voi
             {/* Desktop sidebar */}
             <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-20 xl:w-64 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col p-4 z-40">
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-3 px-3 py-4 mb-6">
-                    <div className="relative w-10 h-10 flex-shrink-0">
-                        <svg className="w-full h-full" viewBox="0 0 40 40">
-                            <defs>
-                                <linearGradient id="sidebar-logo" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stopColor="#F59E0B" />
-                                    <stop offset="50%" stopColor="#F43F5E" />
-                                    <stop offset="100%" stopColor="#8B5CF6" />
-                                </linearGradient>
-                            </defs>
-                            <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#sidebar-logo)" />
-                            <text x="20" y="24" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">6</text>
-                        </svg>
-                    </div>
-                    <span className="text-xl font-semibold bg-gradient-to-r from-amber-400 via-rose-400 to-violet-400 bg-clip-text text-transparent hidden xl:block">
-                        Six22
-                    </span>
+                <Link href="/" className="flex items-center gap-3 px-1 py-4 mb-6">
+                    <Six22Logo size="md" variant="full" animated={false} className="xl:hidden" />
+                    <Six22Logo size="lg" variant="full" animated={false} className="hidden xl:flex" />
                 </Link>
 
                 {/* Nav items */}
@@ -977,24 +970,7 @@ export default function DashboardPage() {
                 {/* Mobile Header */}
                 <header className="lg:hidden sticky top-0 z-40 px-4 py-3 bg-black/60 backdrop-blur-xl border-b border-white/5">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8">
-                                <svg className="w-full h-full" viewBox="0 0 32 32">
-                                    <defs>
-                                        <linearGradient id="mobile-logo" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stopColor="#F59E0B" />
-                                            <stop offset="50%" stopColor="#F43F5E" />
-                                            <stop offset="100%" stopColor="#8B5CF6" />
-                                        </linearGradient>
-                                    </defs>
-                                    <polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="url(#mobile-logo)" />
-                                    <text x="16" y="19" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">6</text>
-                                </svg>
-                            </div>
-                            <span className="text-lg font-semibold bg-gradient-to-r from-amber-400 via-rose-400 to-violet-400 bg-clip-text text-transparent">
-                                Six22
-                            </span>
-                        </div>
+                        <Six22Logo size="sm" variant="minimal" animated={false} />
                         <div className="flex items-center gap-3">
                             <button className="relative">
                                 <span className="text-xl">🔔</span>
