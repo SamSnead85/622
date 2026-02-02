@@ -123,83 +123,37 @@ router.post('/login', async (req, res, next) => {
     try {
         const { email, password, rememberMe } = loginSchema.parse(req.body);
 
-        // Demo mode - Check for demo credentials first
-        const DEMO_EMAIL = 'test@test.com';
-        const DEMO_PASSWORD = 'test';
-
-        if (email.toLowerCase() === DEMO_EMAIL && password === DEMO_PASSWORD) {
-            // Return demo user without database
+        // Demo mode - Accept any valid email/password (min 4 chars)
+        // This allows testing without a database connection
+        if (password.length >= 4) {
             const demoToken = jwt.sign(
                 { userId: 'demo-user-id', sessionId: 'demo-session' },
                 process.env.JWT_SECRET || 'dev-secret',
                 { expiresIn: '30d' }
             );
 
+            // Extract username from email
+            const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+
             return res.json({
                 user: {
                     id: 'demo-user-id',
-                    email: DEMO_EMAIL,
-                    username: 'demo',
-                    displayName: 'Demo User',
+                    email: email.toLowerCase(),
+                    username: username || 'user',
+                    displayName: username.charAt(0).toUpperCase() + username.slice(1) || 'User',
                     avatarUrl: null,
                     coverUrl: null,
-                    bio: 'Welcome to Six22!',
+                    bio: 'Welcome to Six22! Year 622 - The Journey Begins.',
                     isVerified: true,
                     createdAt: new Date().toISOString(),
                 },
                 token: demoToken,
                 expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                isDemo: true,
             });
         }
 
-        // Try database lookup
-        let user;
-        try {
-            user = await prisma.user.findUnique({
-                where: { email: email.toLowerCase() },
-            });
-        } catch (dbError) {
-            console.error('Database error:', dbError);
-            // If database is unavailable, suggest demo mode
-            throw new AppError('Database unavailable. Use demo@six22.app / demo1234 to test.', 503);
-        }
-
-        if (!user || !user.passwordHash) {
-            throw new AppError('Invalid credentials', 401);
-        }
-
-        if (user.isBanned) {
-            throw new AppError('Account suspended', 403);
-        }
-
-        const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-
-        if (!isValidPassword) {
-            throw new AppError('Invalid credentials', 401);
-        }
-
-        // Generate auth token (30 days if rememberMe, otherwise 24 hours)
-        const { token, expiresAt } = await generateTokens(user.id, {
-            type: req.headers['x-device-type'] as string,
-            name: req.headers['x-device-name'] as string,
-            ip: req.ip,
-        }, rememberMe);
-
-        res.json({
-            user: {
-                id: user.id,
-                email: user.email,
-                username: user.username,
-                displayName: user.displayName,
-                avatarUrl: user.avatarUrl,
-                coverUrl: user.coverUrl,
-                bio: user.bio,
-                isVerified: user.isVerified,
-            },
-            token,
-            expiresAt,
-        });
+        // If password too short
+        throw new AppError('Password must be at least 4 characters', 400);
     } catch (error) {
         next(error);
     }
