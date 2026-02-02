@@ -1,17 +1,23 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuid } from 'uuid';
+import { writeFile, mkdir, unlink } from 'fs/promises';
+import { existsSync } from 'fs';
+import path from 'path';
 
 // ============================================
 // STORAGE SERVICE
-// Supports: Supabase Storage, AWS S3, Cloudflare R2
-// All use S3-compatible API
+// Supports: Local, Supabase Storage, AWS S3, Cloudflare R2
 // ============================================
 
-const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'supabase'; // supabase | s3 | r2
+const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local'; // local | supabase | s3 | r2
+const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+const SERVER_URL = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5180}`;
 
-// Configure S3 client based on provider
-function createStorageClient(): S3Client {
+// Configure S3 client based on provider (only if not local)
+function createStorageClient(): S3Client | null {
+    if (STORAGE_PROVIDER === 'local') return null;
+
     switch (STORAGE_PROVIDER) {
         case 'supabase':
             return new S3Client({
@@ -69,6 +75,23 @@ export async function uploadFile(
     const extension = getExtensionFromMime(mimeType);
     const key = `${folder}/${uuid()}.${extension}`;
 
+    // Local storage
+    if (STORAGE_PROVIDER === 'local' || !s3Client) {
+        const uploadPath = path.join(UPLOAD_DIR, folder);
+        if (!existsSync(uploadPath)) {
+            await mkdir(uploadPath, { recursive: true });
+        }
+        const filePath = path.join(UPLOAD_DIR, key);
+        await writeFile(filePath, buffer);
+
+        return {
+            key,
+            url: `${SERVER_URL}/uploads/${key}`,
+            size: buffer.length,
+        };
+    }
+
+    // S3-compatible storage
     await s3Client.send(new PutObjectCommand({
         Bucket: BUCKET,
         Key: key,
@@ -88,6 +111,16 @@ export async function uploadFile(
  * Delete a file from storage
  */
 export async function deleteFile(key: string): Promise<void> {
+    if (STORAGE_PROVIDER === 'local' || !s3Client) {
+        const filePath = path.join(UPLOAD_DIR, key);
+        try {
+            await unlink(filePath);
+        } catch {
+            // File might not exist
+        }
+        return;
+    }
+
     await s3Client.send(new DeleteObjectCommand({
         Bucket: BUCKET,
         Key: key,
@@ -98,6 +131,10 @@ export async function deleteFile(key: string): Promise<void> {
  * Get a signed URL for temporary access (private files)
  */
 export async function getSignedDownloadUrl(key: string, expiresIn = 3600): Promise<string> {
+    if (STORAGE_PROVIDER === 'local' || !s3Client) {
+        return `${SERVER_URL}/uploads/${key}`;
+    }
+
     const command = new GetObjectCommand({
         Bucket: BUCKET,
         Key: key,

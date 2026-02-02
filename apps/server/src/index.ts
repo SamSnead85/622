@@ -78,6 +78,9 @@ app.get('/health', (_, res) => {
     });
 });
 
+// Serve uploaded files statically (for local storage)
+app.use('/uploads', express.static('uploads'));
+
 // API routes
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', usersRouter);
