@@ -124,8 +124,8 @@ router.post('/login', async (req, res, next) => {
         const { email, password, rememberMe } = loginSchema.parse(req.body);
 
         // Demo mode - Check for demo credentials first
-        const DEMO_EMAIL = 'demo@six22.app';
-        const DEMO_PASSWORD = 'demo1234';
+        const DEMO_EMAIL = 'test@test.com';
+        const DEMO_PASSWORD = 'test';
 
         if (email.toLowerCase() === DEMO_EMAIL && password === DEMO_PASSWORD) {
             // Return demo user without database
