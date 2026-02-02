@@ -33,7 +33,7 @@ function GeometricPattern() {
             <defs>
                 <pattern id="six22-pattern" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
                     {/* Eight-pointed star - classic Islamic motif */}
-                    <g fill="none" stroke="currentColor" strokeWidth="0.5">
+                    <g fill="none" stroke="#D4AF37" strokeWidth="0.5">
                         <polygon points="60,10 70,30 90,30 75,45 80,65 60,55 40,65 45,45 30,30 50,30" />
                         <polygon points="60,10 70,30 90,30 75,45 80,65 60,55 40,65 45,45 30,30 50,30" transform="rotate(45 60 60)" />
                         <circle cx="60" cy="60" r="25" />
@@ -76,7 +76,7 @@ function LuminousVoidBackground() {
             <motion.div
                 className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full"
                 style={{
-                    background: 'radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%)',
+                    background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, rgba(245,158,11,0.06) 40%, transparent 70%)',
                 }}
                 animate={{
                     scale: [1, 1.15, 1],
@@ -109,7 +109,7 @@ function LuminousVoidBackground() {
             />
 
             {/* Horizon line glow */}
-            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/25 to-transparent" />
         </div>
     );
 }

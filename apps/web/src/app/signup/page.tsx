@@ -52,13 +52,20 @@ export default function SignupPage() {
         <div className="min-h-screen bg-[#050508] relative overflow-hidden">
             {/* Ambient Background */}
             <div className="fixed inset-0 pointer-events-none">
+                {/* Gold orb - Year 622 heritage */}
+                <motion.div
+                    className="absolute -top-20 -left-20 w-96 h-96 rounded-full"
+                    style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, rgba(245,158,11,0.06) 50%, transparent 70%)' }}
+                    animate={{ scale: [1, 1.2, 1], x: [0, 30, 0] }}
+                    transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+                />
                 <motion.div
                     className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-violet-500/10 blur-[120px]"
                     animate={{ scale: [1, 1.3, 1], y: [0, 30, 0] }}
                     transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 <motion.div
-                    className="absolute bottom-1/3 left-0 w-80 h-80 rounded-full bg-cyan-500/10 blur-[100px]"
+                    className="absolute bottom-1/3 left-0 w-80 h-80 rounded-full bg-rose-500/8 blur-[100px]"
                     animate={{ scale: [1.2, 1, 1.2], x: [0, 20, 0] }}
                     transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
                 />
@@ -83,15 +90,16 @@ export default function SignupPage() {
                             <svg width="40" height="40" viewBox="0 0 40 40">
                                 <defs>
                                     <linearGradient id="signup-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#F59E0B" />
-                                        <stop offset="50%" stopColor="#F43F5E" />
+                                        <stop offset="0%" stopColor="#D4AF37" />
+                                        <stop offset="30%" stopColor="#F59E0B" />
+                                        <stop offset="60%" stopColor="#F43F5E" />
                                         <stop offset="100%" stopColor="#8B5CF6" />
                                     </linearGradient>
                                 </defs>
                                 <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#signup-logo-grad)" />
                                 <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
                             </svg>
-                            <span className="font-semibold text-xl bg-gradient-to-r from-amber-400 via-rose-400 to-violet-400 bg-clip-text text-transparent">Six22</span>
+                            <span className="font-semibold text-xl bg-gradient-to-r from-[#D4AF37] via-amber-400 to-rose-400 bg-clip-text text-transparent">Six22</span>
                         </Link>
 
                         {/* Progress indicator */}
