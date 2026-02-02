@@ -179,7 +179,15 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
-            router.push('/login');
+            // Store the current path for redirect after login
+            if (typeof window !== 'undefined') {
+                const currentPath = window.location.pathname;
+                // Don't store login/signup pages
+                if (!currentPath.includes('/login') && !currentPath.includes('/signup')) {
+                    sessionStorage.setItem('six22_redirect', currentPath);
+                }
+            }
+            router.push('/login?error=auth_required');
         }
     }, [isLoading, isAuthenticated, router]);
 

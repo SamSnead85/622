@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 // SVG Icons
@@ -36,7 +36,12 @@ const Icons = {
     ),
 };
 
-export default function LoginPage() {
+// Loading fallback for Suspense
+function LoginLoading() {
+    return <div className="min-h-screen bg-[#050508]" />;
+}
+
+function LoginPageContent() {
     const [mounted, setMounted] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -47,13 +52,33 @@ export default function LoginPage() {
 
     const { login, isAuthenticated, isLoading: authLoading } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     useEffect(() => { setMounted(true); }, []);
+
+    // Check for auth error message from URL
+    useEffect(() => {
+        const authError = searchParams.get('error');
+        if (authError === 'session_expired') {
+            setError('Your session has expired. Please sign in again.');
+        } else if (authError === 'auth_required') {
+            setError('Please sign in to access that page.');
+        }
+    }, [searchParams]);
 
     // Redirect if already authenticated
     useEffect(() => {
         if (!authLoading && isAuthenticated) {
-            router.push('/dashboard');
+            // Check for stored redirect path
+            const redirectPath = typeof window !== 'undefined'
+                ? sessionStorage.getItem('six22_redirect')
+                : null;
+            if (redirectPath) {
+                sessionStorage.removeItem('six22_redirect');
+                router.push(redirectPath);
+            } else {
+                router.push('/dashboard');
+            }
         }
     }, [isAuthenticated, authLoading, router]);
 
@@ -65,7 +90,16 @@ export default function LoginPage() {
         const result = await login(email, password, rememberMe);
 
         if (result.success) {
-            router.push('/dashboard');
+            // Check for stored redirect path
+            const redirectPath = typeof window !== 'undefined'
+                ? sessionStorage.getItem('six22_redirect')
+                : null;
+            if (redirectPath) {
+                sessionStorage.removeItem('six22_redirect');
+                router.push(redirectPath);
+            } else {
+                router.push('/dashboard');
+            }
         } else {
             setError(result.error || 'Login failed');
             setIsLoading(false);
@@ -284,5 +318,14 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+// Wrap with Suspense for useSearchParams
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<LoginLoading />}>
+            <LoginPageContent />
+        </Suspense>
     );
 }
