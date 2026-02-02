@@ -10,7 +10,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { FeedFilters, TribeSelector } from '@/components/FeedFilters';
 import { FullscreenPostViewer, PostData } from '@/components/FullscreenPostViewer';
 import { Six22Logo } from '@/components/Six22Logo';
-
+import { OasisBackground, CrescentMoon, EightPointedStar } from '@/components/OasisBackground';
+import { ArchCard, ArabesqueDivider } from '@/components/ArchCard';
 
 // Default avatar/image fallbacks
 const DEFAULT_AVATARS = [
@@ -962,7 +963,7 @@ export default function DashboardPage() {
 
     return (
         <div className="min-h-screen relative">
-            <LuminousVoidBackground />
+            <OasisBackground />
 
             <NavigationDock onCreateClick={() => setShowCreateModal(true)} activeTab="home" />
 
@@ -1048,31 +1049,45 @@ export default function DashboardPage() {
                     )}
                 </section>
 
-                {/* Moments Grid */}
+                {/* Oasis Stream - Single Column Flow */}
                 <section className="px-4 lg:px-6 py-6 lg:py-8">
-                    <div className="max-w-5xl mx-auto">
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
+                    <div className="max-w-lg mx-auto">
+                        {/* Stream of posts using ArchCard */}
+                        <div className="space-y-6">
                             {posts.map((post, i) => (
-                                <MomentCard
-                                    key={post.id || post.author + i}
-                                    post={post}
-                                    delay={0.1 + i * 0.05}
-                                    onClick={() => setFullscreenIndex(i)}
-                                />
+                                <div key={post.id || post.author + i}>
+                                    <ArchCard
+                                        post={post}
+                                        delay={0.1 + i * 0.08}
+                                        onClick={() => setFullscreenIndex(i)}
+                                        onLike={() => likePost(post.id)}
+                                    />
+                                    {/* Arabesque divider between posts */}
+                                    {i < posts.length - 1 && (
+                                        <ArabesqueDivider />
+                                    )}
+                                </div>
                             ))}
                         </div>
 
                         <div ref={loadMoreRef} className="py-8 flex justify-center">
                             {isLoading && (
                                 <div className="flex items-center gap-3">
-                                    <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent animate-spin" style={{
-                                        clipPath: 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)',
-                                    }} />
-                                    <span className="text-white/50 text-sm">Discovering more moments...</span>
+                                    {/* 8-pointed star loading spinner */}
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                                    >
+                                        <EightPointedStar size={24} />
+                                    </motion.div>
+                                    <span className="text-amber-200/50 text-sm">Discovering more moments...</span>
                                 </div>
                             )}
                             {!hasMore && posts.length > 0 && (
-                                <p className="text-white/30 text-sm">You&apos;ve seen all moments ✨</p>
+                                <div className="flex items-center gap-2 text-amber-200/30 text-sm">
+                                    <CrescentMoon size={14} />
+                                    <span>You&apos;ve reached the oasis edge</span>
+                                </div>
                             )}
                         </div>
                     </div>
