@@ -31,16 +31,35 @@ export const authenticate = async (
             return;
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as {
             userId: string;
             sessionId: string;
         };
 
+        // Demo mode - bypass database check
+        if (decoded.sessionId === 'demo-session' && decoded.userId === 'demo-user-id') {
+            req.userId = 'demo-user-id';
+            req.user = {
+                id: 'demo-user-id',
+                email: 'demo@six22.app',
+                username: 'demo',
+            };
+            next();
+            return;
+        }
+
         // Verify session exists and isn't expired
-        const session = await prisma.session.findUnique({
-            where: { id: decoded.sessionId },
-            include: { user: true },
-        });
+        let session;
+        try {
+            session = await prisma.session.findUnique({
+                where: { id: decoded.sessionId },
+                include: { user: true },
+            });
+        } catch (dbError) {
+            console.error('Database error in auth:', dbError);
+            res.status(503).json({ error: 'Database unavailable' });
+            return;
+        }
 
         if (!session || session.expiresAt < new Date()) {
             res.status(401).json({ error: 'Session expired' });
@@ -63,7 +82,7 @@ export const authenticate = async (
         await prisma.user.update({
             where: { id: decoded.userId },
             data: { lastActiveAt: new Date() },
-        });
+        }).catch(() => { }); // Ignore errors updating last active
 
         next();
     } catch (error) {
@@ -89,10 +108,22 @@ export const optionalAuth = async (
 
     try {
         const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as {
             userId: string;
             sessionId: string;
         };
+
+        // Demo mode
+        if (decoded.sessionId === 'demo-session' && decoded.userId === 'demo-user-id') {
+            req.userId = 'demo-user-id';
+            req.user = {
+                id: 'demo-user-id',
+                email: 'demo@six22.app',
+                username: 'demo',
+            };
+            next();
+            return;
+        }
 
         const session = await prisma.session.findUnique({
             where: { id: decoded.sessionId },

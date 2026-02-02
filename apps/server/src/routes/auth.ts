@@ -123,9 +123,47 @@ router.post('/login', async (req, res, next) => {
     try {
         const { email, password, rememberMe } = loginSchema.parse(req.body);
 
-        const user = await prisma.user.findUnique({
-            where: { email: email.toLowerCase() },
-        });
+        // Demo mode - Check for demo credentials first
+        const DEMO_EMAIL = 'demo@six22.app';
+        const DEMO_PASSWORD = 'demo1234';
+
+        if (email.toLowerCase() === DEMO_EMAIL && password === DEMO_PASSWORD) {
+            // Return demo user without database
+            const demoToken = jwt.sign(
+                { userId: 'demo-user-id', sessionId: 'demo-session' },
+                process.env.JWT_SECRET || 'dev-secret',
+                { expiresIn: '30d' }
+            );
+
+            return res.json({
+                user: {
+                    id: 'demo-user-id',
+                    email: DEMO_EMAIL,
+                    username: 'demo',
+                    displayName: 'Demo User',
+                    avatarUrl: null,
+                    coverUrl: null,
+                    bio: 'Welcome to Six22!',
+                    isVerified: true,
+                    createdAt: new Date().toISOString(),
+                },
+                token: demoToken,
+                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                isDemo: true,
+            });
+        }
+
+        // Try database lookup
+        let user;
+        try {
+            user = await prisma.user.findUnique({
+                where: { email: email.toLowerCase() },
+            });
+        } catch (dbError) {
+            console.error('Database error:', dbError);
+            // If database is unavailable, suggest demo mode
+            throw new AppError('Database unavailable. Use demo@six22.app / demo1234 to test.', 503);
+        }
 
         if (!user || !user.passwordHash) {
             throw new AppError('Invalid credentials', 401);
@@ -189,39 +227,69 @@ router.post('/logout', authenticate, async (req: AuthRequest, res, next) => {
 // GET /api/v1/auth/me
 router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: req.userId },
-            select: {
-                id: true,
-                email: true,
-                username: true,
-                displayName: true,
-                bio: true,
-                website: true,
-                avatarUrl: true,
-                coverUrl: true,
-                isVerified: true,
-                isPrivate: true,
-                createdAt: true,
-                _count: {
-                    select: {
-                        followers: true,
-                        following: true,
-                        posts: true,
+        // Demo mode user
+        if (req.userId === 'demo-user-id') {
+            return res.json({
+                user: {
+                    id: 'demo-user-id',
+                    email: 'demo@six22.app',
+                    username: 'demo',
+                    displayName: 'Demo User',
+                    bio: 'Welcome to Six22! This is a demo account.',
+                    website: null,
+                    avatarUrl: null,
+                    coverUrl: null,
+                    isVerified: true,
+                    isPrivate: false,
+                    createdAt: new Date().toISOString(),
+                    followersCount: 128,
+                    followingCount: 64,
+                    postsCount: 12,
+                },
+            });
+        }
+
+        let user;
+        try {
+            user = await prisma.user.findUnique({
+                where: { id: req.userId },
+                select: {
+                    id: true,
+                    email: true,
+                    username: true,
+                    displayName: true,
+                    bio: true,
+                    website: true,
+                    avatarUrl: true,
+                    coverUrl: true,
+                    isVerified: true,
+                    isPrivate: true,
+                    createdAt: true,
+                    _count: {
+                        select: {
+                            followers: true,
+                            following: true,
+                            posts: true,
+                        },
                     },
                 },
-            },
-        });
+            });
+        } catch (dbError) {
+            console.error('Database error:', dbError);
+            throw new AppError('Database unavailable', 503);
+        }
 
         if (!user) {
             throw new AppError('User not found', 404);
         }
 
         res.json({
-            ...user,
-            followersCount: user._count.followers,
-            followingCount: user._count.following,
-            postsCount: user._count.posts,
+            user: {
+                ...user,
+                followersCount: user._count.followers,
+                followingCount: user._count.following,
+                postsCount: user._count.posts,
+            },
         });
     } catch (error) {
         next(error);
