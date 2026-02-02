@@ -1,35 +1,37 @@
 {
     "expo": {
-        "name": "Caravan",
-        "slug": "caravan-social",
+        "name": "Six22",
+        "slug": "six22",
         "version": "1.0.0",
         "orientation": "portrait",
         "icon": "./assets/icon.png",
-        "scheme": "caravan",
+        "scheme": "six22",
         "userInterfaceStyle": "dark",
         "splash": {
             "image": "./assets/splash.png",
             "resizeMode": "contain",
-            "backgroundColor": "#0A0A0B"
+            "backgroundColor": "#0A0908"
         },
         "assetBundlePatterns": [
             "**/*"
         ],
         "ios": {
             "supportsTablet": true,
-            "bundleIdentifier": "com.caravan.social",
+            "bundleIdentifier": "app.six22.mobile",
+            "buildNumber": "1",
             "infoPlist": {
-                "NSCameraUsageDescription": "Allow Caravan to access your camera to create posts",
-                "NSPhotoLibraryUsageDescription": "Allow Caravan to access your photos to create posts",
-                "NSMicrophoneUsageDescription": "Allow Caravan to access your microphone to record videos"
+                "NSCameraUsageDescription": "Allow Six22 to access your camera to create posts and moments",
+                "NSPhotoLibraryUsageDescription": "Allow Six22 to access your photos to share with your community",
+                "NSMicrophoneUsageDescription": "Allow Six22 to access your microphone to record videos and voice messages"
             }
         },
         "android": {
             "adaptiveIcon": {
                 "foregroundImage": "./assets/adaptive-icon.png",
-                "backgroundColor": "#0A0A0B"
+                "backgroundColor": "#0A0908"
             },
-            "package": "com.caravan.social",
+            "package": "app.six22.mobile",
+            "versionCode": 1,
             "permissions": [
                 "CAMERA",
                 "READ_EXTERNAL_STORAGE",
@@ -48,18 +50,24 @@
             [
                 "expo-camera",
                 {
-                    "cameraPermission": "Allow Caravan to access your camera to create amazing content."
+                    "cameraPermission": "Allow Six22 to access your camera to create amazing content."
                 }
             ],
             [
                 "expo-image-picker",
                 {
-                    "photosPermission": "Allow Caravan to access your photos to share with your community."
+                    "photosPermission": "Allow Six22 to access your photos to share with your community."
                 }
             ]
         ],
         "experiments": {
             "typedRoutes": true
-        }
+        },
+        "extra": {
+            "eas": {
+                "projectId": "your-project-id-here"
+            }
+        },
+        "owner": "six22app"
     }
 }
