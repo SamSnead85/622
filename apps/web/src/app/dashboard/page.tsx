@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { usePosts } from '@/hooks';
+import { useAuth } from '@/contexts/AuthContext';
 import { FeedFilters, TribeSelector } from '@/components/FeedFilters';
 import { FullscreenPostViewer, PostData } from '@/components/FullscreenPostViewer';
 
@@ -852,9 +854,25 @@ export default function DashboardPage() {
     const [activeFilter, setActiveFilter] = useState('all');
     const [activeTribe, setActiveTribe] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
+    const router = useRouter();
     const { posts: apiPosts, friends: apiFriends, isLoading, likePost, loadMore, hasMore, createPost } = usePosts();
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
+    // Redirect to login if not authenticated
+    useEffect(() => {
+        if (!authLoading && !isAuthenticated) {
+            router.push('/login?error=auth_required');
+        }
+    }, [authLoading, isAuthenticated, router]);
+
+    // Wrapper for createPost that checks auth first
+    const handleCreatePost = useCallback(async (content: string, file?: File): Promise<{ success: boolean; error?: string }> => {
+        if (!isAuthenticated) {
+            return { success: false, error: 'Authentication required. Please log in again.' };
+        }
+        return createPost(content, file);
+    }, [isAuthenticated, createPost]);
     const tribes = [
         { id: 'tech', name: 'Tech Builders', icon: '💻' },
         { id: 'fitness', name: 'Fitness Tribe', icon: '💪' },
@@ -927,7 +945,19 @@ export default function DashboardPage() {
         return `${diffDays}d ago`;
     }
 
-    if (!mounted) {
+    // Show loading while checking auth
+    if (!mounted || authLoading) {
+        return (
+            <div className="min-h-screen bg-[#030305] flex items-center justify-center">
+                <div className="w-10 h-10 border-2 border-amber-400 border-t-transparent animate-spin" style={{
+                    clipPath: 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)',
+                }} />
+            </div>
+        );
+    }
+
+    // Don't render if not authenticated (redirect will happen)
+    if (!isAuthenticated) {
         return (
             <div className="min-h-screen bg-[#030305] flex items-center justify-center">
                 <div className="w-10 h-10 border-2 border-amber-400 border-t-transparent animate-spin" style={{
@@ -1075,7 +1105,7 @@ export default function DashboardPage() {
 
             <AnimatePresence>
                 {showCreateModal && (
-                    <CreateModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onPost={createPost} />
+                    <CreateModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onPost={handleCreatePost} />
                 )}
                 {fullscreenIndex >= 0 && (
                     <FullscreenPostViewer
