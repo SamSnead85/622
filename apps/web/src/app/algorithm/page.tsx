@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ProtectedRoute } from '@/contexts/AuthContext';
 
 // ============================================
 // PROFESSIONAL SVG ICONS
@@ -241,8 +242,8 @@ function DataStorageSection() {
                         key={option.id}
                         onClick={() => setStorageOption(option.id)}
                         className={`relative p-4 rounded-2xl border text-left transition-all ${storageOption === option.id
-                                ? 'bg-white/10 border-white/20'
-                                : 'bg-white/5 border-white/10 hover:bg-white/[0.07]'
+                            ? 'bg-white/10 border-white/20'
+                            : 'bg-white/5 border-white/10 hover:bg-white/[0.07]'
                             }`}
                         whileTap={{ scale: 0.98 }}
                     >
@@ -292,8 +293,8 @@ function AlgorithmPresets() {
                         key={preset.id}
                         onClick={() => setActivePreset(preset.id)}
                         className={`flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-2xl border transition-all ${activePreset === preset.id
-                                ? 'bg-gradient-to-r from-orange-400 to-rose-500 border-transparent text-white'
-                                : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
+                            ? 'bg-gradient-to-r from-orange-400 to-rose-500 border-transparent text-white'
+                            : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
                             }`}
                         whileTap={{ scale: 0.95 }}
                     >
@@ -369,22 +370,51 @@ function Navigation() {
     );
 }
 
-export default function AlgorithmPage() {
+function AlgorithmPageContent() {
     const [mounted, setMounted] = useState(false);
     const [weights, setWeights] = useState(defaultWeights);
     const [activeTab, setActiveTab] = useState<'content' | 'people' | 'time' | 'mood'>('people');
     const [showSaveToast, setShowSaveToast] = useState(false);
+    const [disableRecommendations, setDisableRecommendations] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-    useEffect(() => { setMounted(true); }, []);
+    // Load saved settings on mount
+    useEffect(() => {
+        setMounted(true);
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('six22_algorithm');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.weights) setWeights(parsed.weights);
+                    if (parsed.disableRecommendations !== undefined) {
+                        setDisableRecommendations(parsed.disableRecommendations);
+                    }
+                } catch (e) {
+                    console.error('Failed to load algorithm settings:', e);
+                }
+            }
+        }
+    }, []);
 
-    const updateWeight = (id: string, value: number) => {
+    const updateWeight = useCallback((id: string, value: number) => {
         setWeights(prev => prev.map(w => w.id === id ? { ...w, weight: value } : w));
-    };
+        setHasUnsavedChanges(true);
+    }, []);
 
-    const handleSave = () => {
+    const handleSave = useCallback(() => {
+        // Save to localStorage
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('six22_algorithm', JSON.stringify({
+                weights,
+                disableRecommendations,
+                savedAt: new Date().toISOString()
+            }));
+        }
+        setHasUnsavedChanges(false);
         setShowSaveToast(true);
         setTimeout(() => setShowSaveToast(false), 3000);
-    };
+    }, [weights, disableRecommendations]);
 
     if (!mounted) {
         return <div className="min-h-screen bg-[#050508]" />;
@@ -465,8 +495,8 @@ export default function AlgorithmPage() {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex items-center gap-2 flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id
-                                        ? 'bg-white text-[#050508]'
-                                        : 'bg-white/5 text-white/60 hover:bg-white/10'
+                                    ? 'bg-white text-[#050508]'
+                                    : 'bg-white/5 text-white/60 hover:bg-white/10'
                                     }`}
                                 whileTap={{ scale: 0.95 }}
                             >
@@ -537,14 +567,63 @@ export default function AlgorithmPage() {
                         </div>
                     </motion.div>
 
+                    {/* Disable Recommendations Toggle */}
+                    <motion.div
+                        className="bg-white/5 rounded-3xl p-6 border border-white/10 mb-8"
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400">
+                                    {Icons.realtime}
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold text-white">Chronological Only</h4>
+                                    <p className="text-xs text-white/50">Disable all algorithmic recommendations</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setDisableRecommendations(!disableRecommendations);
+                                    setHasUnsavedChanges(true);
+                                }}
+                                className={`relative w-14 h-8 rounded-full transition-colors ${disableRecommendations ? 'bg-gradient-to-r from-orange-400 to-rose-500' : 'bg-white/20'}`}
+                            >
+                                <motion.div
+                                    className="absolute top-1 w-6 h-6 bg-white rounded-full shadow"
+                                    animate={{ left: disableRecommendations ? 'calc(100% - 28px)' : '4px' }}
+                                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                />
+                            </button>
+                        </div>
+                        {disableRecommendations && (
+                            <motion.p
+                                className="mt-3 text-sm text-rose-400/80 bg-rose-500/10 rounded-xl px-3 py-2"
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                            >
+                                Your feed will show posts in pure chronological order. No personalization.
+                            </motion.p>
+                        )}
+                    </motion.div>
+
                     {/* Save Button */}
                     <motion.button
                         onClick={handleSave}
-                        className="w-full py-4 rounded-2xl bg-gradient-to-r from-orange-400 via-rose-500 to-violet-500 font-semibold text-lg"
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
+                        className={`w-full py-4 rounded-2xl font-semibold text-lg flex items-center justify-center gap-2 ${hasUnsavedChanges
+                            ? 'bg-gradient-to-r from-orange-400 via-rose-500 to-violet-500'
+                            : 'bg-white/10 text-white/50'
+                            }`}
+                        whileHover={{ scale: hasUnsavedChanges ? 1.01 : 1 }}
+                        whileTap={{ scale: hasUnsavedChanges ? 0.99 : 1 }}
                     >
-                        Save My Algorithm
+                        {hasUnsavedChanges ? (
+                            <>Save My Algorithm<span className="text-xs opacity-70">(unsaved changes)</span></>
+                        ) : (
+                            'Algorithm Saved ✓'
+                        )}
                     </motion.button>
                 </div>
             </main>
@@ -563,5 +642,14 @@ export default function AlgorithmPage() {
                 )}
             </AnimatePresence>
         </div>
+    );
+}
+
+// Wrap with ProtectedRoute for authentication requirement
+export default function AlgorithmPage() {
+    return (
+        <ProtectedRoute>
+            <AlgorithmPageContent />
+        </ProtectedRoute>
     );
 }
