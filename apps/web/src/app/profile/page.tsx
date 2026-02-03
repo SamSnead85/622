@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
+import { Avatar, useProfile } from '@/components/ProfileEditor';
 
 // Navigation Component
 function Navigation({ activeTab }: { activeTab: string }) {
@@ -68,7 +70,9 @@ const userPosts = [
     { id: 9, image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop', likes: 1234 },
 ];
 
-export default function ProfilePage() {
+function ProfilePageContent() {
+    const { user } = useAuth();
+    const { profile } = useProfile();
     const [activeTab, setActiveTab] = useState<'posts' | 'journeys' | 'saved'>('posts');
     const [mounted, setMounted] = useState(false);
 
@@ -77,6 +81,12 @@ export default function ProfilePage() {
     if (!mounted) {
         return <div className="min-h-screen bg-[#050508]" />;
     }
+
+    // Use real user data with fallbacks
+    const displayName = user?.displayName || profile?.displayName || 'Your Name';
+    const username = user?.username || profile?.username || 'username';
+    const bio = user?.bio || profile?.bio || 'Add a bio to tell people about yourself';
+    const avatarUrl = user?.avatarUrl || profile?.avatarCustomUrl;
 
     return (
         <div className="min-h-screen bg-[#050508] relative">
@@ -104,30 +114,52 @@ export default function ProfilePage() {
                     {/* Profile Info */}
                     <div className="max-w-4xl mx-auto px-4 lg:px-6">
                         <div className="relative -mt-16 md:-mt-20 flex flex-col md:flex-row md:items-end gap-4 pb-6 border-b border-white/10">
-                            {/* Avatar */}
+                            {/* Avatar - Now using real user data */}
                             <motion.div
-                                className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden relative ring-4 ring-[#050508] bg-[#050508]"
+                                className="ring-4 ring-[#050508] bg-[#050508] rounded-full"
                                 initial={{ scale: 0.8, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                             >
-                                <Image
-                                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face"
-                                    alt="Profile"
-                                    fill
-                                    className="object-cover"
-                                />
+                                {avatarUrl && !avatarUrl.startsWith('preset:') ? (
+                                    <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden relative">
+                                        <Image
+                                            src={avatarUrl}
+                                            alt={displayName}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                ) : (
+                                    <Avatar profile={profile} size={144} className="md:block hidden" />
+                                )}
+                                {/* Mobile size avatar */}
+                                {avatarUrl && !avatarUrl.startsWith('preset:') ? null : (
+                                    <Avatar profile={profile} size={112} className="md:hidden" />
+                                )}
+                                {avatarUrl && !avatarUrl.startsWith('preset:') && (
+                                    <div className="w-28 h-28 rounded-full overflow-hidden relative md:hidden">
+                                        <Image
+                                            src={avatarUrl}
+                                            alt={displayName}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                )}
                             </motion.div>
 
                             {/* Info */}
                             <div className="flex-1">
                                 <div className="flex flex-col md:flex-row md:items-center gap-3 mb-3">
-                                    <h1 className="text-2xl md:text-3xl font-bold text-white">Abu Jawad</h1>
+                                    <h1 className="text-2xl md:text-3xl font-bold text-white">{displayName}</h1>
                                     <div className="flex items-center gap-2">
-                                        <span className="px-3 py-1 rounded-full bg-white/10 text-white/70 text-sm">@abujawad</span>
-                                        <span className="px-2 py-1 rounded-full bg-gradient-to-r from-orange-400 to-rose-500 text-white text-xs font-medium">PRO</span>
+                                        <span className="px-3 py-1 rounded-full bg-white/10 text-white/70 text-sm">@{username}</span>
+                                        {user?.isVerified && (
+                                            <span className="px-2 py-1 rounded-full bg-gradient-to-r from-orange-400 to-rose-500 text-white text-xs font-medium">PRO</span>
+                                        )}
                                     </div>
                                 </div>
-                                <p className="text-white/60 mb-4 max-w-lg">Explorer. Creator. Building amazing things one day at a time. 🌍✨</p>
+                                <p className="text-white/60 mb-4 max-w-lg">{bio}</p>
 
                                 {/* Stats */}
                                 <div className="flex items-center gap-6">
@@ -211,5 +243,14 @@ export default function ProfilePage() {
                 </div>
             </main>
         </div>
+    );
+}
+
+// Wrap with ProtectedRoute for authentication requirement
+export default function ProfilePage() {
+    return (
+        <ProtectedRoute>
+            <ProfilePageContent />
+        </ProtectedRoute>
     );
 }
