@@ -241,8 +241,12 @@ function LoginContent() {
         setIsLoading(true);
 
         try {
-            await login(email, password);
-            router.push(redirect);
+            const result = await login(email, password);
+            if (result.success) {
+                router.push(redirect);
+            } else {
+                setError(result.error || 'Login failed. Please try again.');
+            }
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';
             setError(errorMessage);

@@ -195,13 +195,56 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
 
     const handleSave = async () => {
         setSaving(true);
-        // Save to local storage
-        saveProfileToStorage(profile);
-        // Simulate API save
-        await new Promise(r => setTimeout(r, 500));
-        onSave(profile);
-        setSaving(false);
-        onClose();
+
+        try {
+            // Get token for API call
+            const token = typeof window !== 'undefined' ? localStorage.getItem('six22_token') : null;
+
+            if (token) {
+                // Build update data for API
+                const updateData: Record<string, string | boolean> = {
+                    displayName: profile.displayName,
+                };
+
+                if (profile.bio) {
+                    updateData.bio = profile.bio;
+                }
+
+                // Set avatarUrl based on type
+                if (profile.avatarType === 'custom' && profile.avatarCustomUrl) {
+                    updateData.avatarUrl = profile.avatarCustomUrl;
+                } else if (profile.avatarPreset) {
+                    // For presets, we store the preset ID as a special URL format
+                    updateData.avatarUrl = `preset:${profile.avatarPreset}`;
+                }
+
+                updateData.isPrivate = profile.privateProfile;
+
+                // Call the API to persist changes
+                const response = await fetch(`${API_URL}/api/v1/users/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(updateData),
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to save profile to API');
+                }
+            }
+
+            // Save to local storage as fallback/cache
+            saveProfileToStorage(profile);
+
+            onSave(profile);
+        } catch (error) {
+            console.error('Error saving profile:', error);
+        } finally {
+            setSaving(false);
+            onClose();
+        }
     };
 
     if (!isOpen) return null;
