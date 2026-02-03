@@ -407,7 +407,8 @@ function MomentCard({
 // ============================================
 // JOURNEY HEADER - Six22 branded header
 // ============================================
-function JourneyHeader({ onCreateClick }: { onCreateClick: () => void }) {
+function JourneyHeader({ onCreateClick, userAvatarUrl }: { onCreateClick: () => void; userAvatarUrl?: string }) {
+    const avatarHref = userAvatarUrl && !userAvatarUrl.startsWith('preset:') ? userAvatarUrl : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face';
     return (
         <header className="sticky top-0 z-40 backdrop-blur-xl bg-black/40 border-b border-white/5">
             <div className="max-w-6xl mx-auto px-4 lg:px-6 py-3 lg:py-4">
@@ -488,7 +489,7 @@ function JourneyHeader({ onCreateClick }: { onCreateClick: () => void }) {
                                     strokeWidth="1"
                                 />
                                 <image
-                                    href="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face"
+                                    href={avatarHref}
                                     x="2"
                                     y="2"
                                     width="32"
@@ -508,7 +509,9 @@ function JourneyHeader({ onCreateClick }: { onCreateClick: () => void }) {
 // ============================================
 // NAVIGATION DOCK - Hexagonal floating nav
 // ============================================
-function NavigationDock({ onCreateClick, activeTab }: { onCreateClick: () => void; activeTab: string }) {
+function NavigationDock({ onCreateClick, activeTab, userAvatarUrl, displayName, username }: { onCreateClick: () => void; activeTab: string; userAvatarUrl?: string; displayName?: string; username?: string }) {
+    // Use fallback avatar if no user avatar
+    const avatarHref = userAvatarUrl && !userAvatarUrl.startsWith('preset:') ? userAvatarUrl : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face';
     const navItems = [
         { id: 'home', icon: '🏠', label: 'Home', href: '/dashboard' },
         { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
@@ -569,7 +572,7 @@ function NavigationDock({ onCreateClick, activeTab }: { onCreateClick: () => voi
                             </defs>
                             <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="transparent" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
                             <image
-                                href="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face"
+                                href={avatarHref}
                                 x="3"
                                 y="3"
                                 width="34"
@@ -580,8 +583,8 @@ function NavigationDock({ onCreateClick, activeTab }: { onCreateClick: () => voi
                         </svg>
                     </div>
                     <div className="hidden xl:block">
-                        <p className="font-semibold text-white text-sm">Abu Jawad</p>
-                        <p className="text-xs text-white/50">@abujawad</p>
+                        <p className="font-semibold text-white text-sm">{displayName || 'Your Name'}</p>
+                        <p className="text-xs text-white/50">@{username || 'username'}</p>
                     </div>
                 </Link>
             </aside>
@@ -848,7 +851,8 @@ export default function DashboardPage() {
     const [activeFilter, setActiveFilter] = useState('all');
     const [activeTribe, setActiveTribe] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
-    const { isAuthenticated, isLoading: authLoading } = useAuth();
+    const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+    const userAvatarUrl = user?.avatarUrl;
     const router = useRouter();
     const { posts: apiPosts, friends: apiFriends, isLoading, likePost, loadMore, hasMore, createPost } = usePosts();
     const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -965,7 +969,13 @@ export default function DashboardPage() {
         <div className="min-h-screen relative">
             <OasisBackground />
 
-            <NavigationDock onCreateClick={() => setShowCreateModal(true)} activeTab="home" />
+            <NavigationDock
+                onCreateClick={() => setShowCreateModal(true)}
+                activeTab="home"
+                userAvatarUrl={userAvatarUrl}
+                displayName={user?.displayName}
+                username={user?.username}
+            />
 
             <main className="relative z-10 lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
                 {/* Mobile Header */}
@@ -986,7 +996,7 @@ export default function DashboardPage() {
                                     </defs>
                                     <polygon points="16,1 30,9 30,23 16,31 2,23 2,9" fill="transparent" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
                                     <image
-                                        href="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face"
+                                        href={userAvatarUrl && !userAvatarUrl.startsWith('preset:') ? userAvatarUrl : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face'}
                                         x="1"
                                         y="1"
                                         width="30"

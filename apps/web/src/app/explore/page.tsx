@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 
 // Shared Navigation Component
-function Navigation({ activeTab }: { activeTab: string }) {
+function Navigation({ activeTab, userAvatarUrl, displayName, username }: { activeTab: string; userAvatarUrl?: string; displayName?: string; username?: string }) {
+    const avatarHref = userAvatarUrl && !userAvatarUrl.startsWith('preset:') ? userAvatarUrl : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face';
     const navItems = [
         { id: 'home', icon: '🏠', label: 'Home', href: '/dashboard' },
         { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
@@ -53,15 +55,15 @@ function Navigation({ activeTab }: { activeTab: string }) {
                 <Link href="/profile" className="flex items-center gap-3 px-3 py-4 mt-4 border-t border-white/10">
                     <div className="w-10 h-10 rounded-full overflow-hidden relative ring-2 ring-white/20">
                         <Image
-                            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face"
+                            src={avatarHref}
                             alt="Profile"
                             fill
                             className="object-cover"
                         />
                     </div>
                     <div className="hidden xl:block">
-                        <p className="font-semibold text-white text-sm">Abu Jawad</p>
-                        <p className="text-xs text-white/50">@abujawad</p>
+                        <p className="font-semibold text-white text-sm">{displayName || 'Your Name'}</p>
+                        <p className="text-xs text-white/50">@{username || 'username'}</p>
                     </div>
                 </Link>
             </aside>
@@ -117,10 +119,12 @@ const suggestedUsers = [
     { name: 'Emily Park', username: 'emilyp', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face', followers: '15.2K' },
 ];
 
-export default function ExplorePage() {
+function ExplorePageContent() {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('all');
     const [mounted, setMounted] = useState(false);
+    const { user } = useAuth();
+    const userAvatarUrl = user?.avatarUrl;
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -138,7 +142,12 @@ export default function ExplorePage() {
                 <div className="absolute bottom-1/4 left-1/4 w-80 h-80 rounded-full bg-cyan-500/5 blur-[100px]" />
             </div>
 
-            <Navigation activeTab="explore" />
+            <Navigation
+                activeTab="explore"
+                userAvatarUrl={userAvatarUrl}
+                displayName={user?.displayName}
+                username={user?.username}
+            />
 
             <main className="relative z-10 lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
                 {/* Header */}
@@ -283,5 +292,14 @@ export default function ExplorePage() {
                 </div>
             </main>
         </div>
+    );
+}
+
+// Wrap with ProtectedRoute for authentication requirement
+export default function ExplorePage() {
+    return (
+        <ProtectedRoute>
+            <ExplorePageContent />
+        </ProtectedRoute>
     );
 }
