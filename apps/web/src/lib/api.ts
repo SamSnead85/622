@@ -88,7 +88,7 @@ export const apiFetch = async (
     options: RequestInit = {}
 ): Promise<Response> => {
     const token = typeof window !== 'undefined'
-        ? localStorage.getItem('six22_token')
+        ? localStorage.getItem('0g_token')
         : null;
 
     const headers: HeadersInit = {
@@ -128,7 +128,7 @@ export const apiUpload = async (
     onProgress?: (progress: number) => void
 ): Promise<{ url: string; key?: string; type?: string; size?: number }> => {
     const token = typeof window !== 'undefined'
-        ? localStorage.getItem('six22_token')
+        ? localStorage.getItem('0g_token')
         : null;
 
     console.log('[apiUpload] Starting upload to:', url);

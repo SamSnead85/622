@@ -45,8 +45,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for existing session on mount and handle token refresh
     useEffect(() => {
         const checkAuth = async () => {
-            const token = localStorage.getItem('six22_token');
-            const tokenExpiry = localStorage.getItem('six22_token_expiry');
+            const token = localStorage.getItem('0g_token');
+            const tokenExpiry = localStorage.getItem('0g_token_expiry');
 
             if (!token) {
                 setIsLoading(false);
@@ -71,8 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             });
                             if (refreshResponse.ok) {
                                 const refreshData = await refreshResponse.json();
-                                localStorage.setItem('six22_token', refreshData.token);
-                                localStorage.setItem('six22_token_expiry', refreshData.expiresAt);
+                                localStorage.setItem('0g_token', refreshData.token);
+                                localStorage.setItem('0g_token_expiry', refreshData.expiresAt);
                                 console.log('[Auth] Token refreshed successfully');
                             }
                         } catch (refreshError) {
@@ -81,15 +81,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     }
                 } else {
                     // Token invalid, clear it
-                    localStorage.removeItem('six22_token');
-                    localStorage.removeItem('six22_token_expiry');
+                    localStorage.removeItem('0g_token');
+                    localStorage.removeItem('0g_token_expiry');
                 }
             } catch (error) {
                 console.error('Auth check failed:', error);
                 // Only clear tokens if it's an auth error, not a network error
                 if (navigator.onLine) {
-                    localStorage.removeItem('six22_token');
-                    localStorage.removeItem('six22_token_expiry');
+                    localStorage.removeItem('0g_token');
+                    localStorage.removeItem('0g_token_expiry');
                 }
             } finally {
                 setIsLoading(false);
@@ -110,9 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const data = await response.json();
 
             if (response.ok) {
-                localStorage.setItem('six22_token', data.token);
+                localStorage.setItem('0g_token', data.token);
                 if (data.expiresAt) {
-                    localStorage.setItem('six22_token_expiry', data.expiresAt);
+                    localStorage.setItem('0g_token_expiry', data.expiresAt);
                 }
                 setUser(data.user);
                 return { success: true };
@@ -141,9 +141,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const data = await response.json();
 
             if (response.ok) {
-                localStorage.setItem('six22_token', data.token);
+                localStorage.setItem('0g_token', data.token);
                 if (data.expiresAt) {
-                    localStorage.setItem('six22_token_expiry', data.expiresAt);
+                    localStorage.setItem('0g_token_expiry', data.expiresAt);
                 }
                 setUser(data.user);
                 return { success: true };
@@ -163,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            localStorage.removeItem('six22_token');
+            localStorage.removeItem('0g_token');
             setUser(null);
             router.push('/');
         }
@@ -218,7 +218,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
                 const currentPath = window.location.pathname;
                 // Don't store login/signup pages
                 if (!currentPath.includes('/login') && !currentPath.includes('/signup')) {
-                    sessionStorage.setItem('six22_redirect', currentPath);
+                    sessionStorage.setItem('0g_redirect', currentPath);
                 }
             }
             router.push('/login?error=auth_required');

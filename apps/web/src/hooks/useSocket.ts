@@ -22,7 +22,7 @@ export function useSocket(options: UseSocketOptions = {}) {
     useEffect(() => {
         if (!autoConnect) return;
 
-        const token = localStorage.getItem('six22_token');
+        const token = localStorage.getItem('0g_token');
         if (!token) return;
 
         // Create socket connection with auth

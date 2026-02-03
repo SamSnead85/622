@@ -343,7 +343,7 @@ export default function DashboardPage() {
                         <h1 className="text-3xl font-bold text-white mb-2">
                             Welcome back, <span className="text-[#00D4FF]">{user.displayName?.split(' ')[0] || 'Explorer'}</span>
                         </h1>
-                        <p className="text-white/50">Discover what's happening around the world</p>
+                        <p className="text-white/50">Discover what&apos;s happening around the world</p>
                     </motion.div>
 
                     {/* Featured Live Streams */}

@@ -20,20 +20,13 @@ function Navigation({ activeTab, userAvatarUrl, displayName, username }: { activ
     return (
         <>
             {/* Desktop Sidebar */}
-            <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-20 xl:w-64 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col p-4 z-40">
+            <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-20 xl:w-64 bg-[#0A0A0F]/95 backdrop-blur-xl border-r border-white/5 flex-col p-4 z-40">
                 <Link href="/" className="flex items-center gap-3 px-3 py-4 mb-6">
-                    <svg width="40" height="40" viewBox="0 0 40 40" className="flex-shrink-0">
-                        <defs>
-                            <linearGradient id="explore-nav-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#F59E0B" />
-                                <stop offset="50%" stopColor="#F43F5E" />
-                                <stop offset="100%" stopColor="#8B5CF6" />
-                            </linearGradient>
-                        </defs>
-                        <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#explore-nav-grad)" />
-                        <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
-                    </svg>
-                    <span className="text-xl font-semibold bg-gradient-to-r from-amber-400 via-rose-400 to-violet-400 bg-clip-text text-transparent hidden xl:block">Six22</span>
+                    <div className="font-bold text-2xl tracking-tight">
+                        <span className="text-[#00D4FF]">0</span>
+                        <span className="text-white">G</span>
+                    </div>
+                    <span className="text-white/60 text-sm font-medium hidden xl:block">Zero Gravity</span>
                 </Link>
 
                 <nav className="flex-1 space-y-2">
@@ -42,7 +35,7 @@ function Navigation({ activeTab, userAvatarUrl, displayName, username }: { activ
                             key={item.id}
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${activeTab === item.id
-                                ? 'bg-white/10 text-white'
+                                ? 'bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/20'
                                 : 'text-white/60 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
@@ -285,7 +278,7 @@ function ExplorePageContent() {
                                     <Link href="#" className="hover:text-white/50">Privacy</Link>
                                     <Link href="#" className="hover:text-white/50">Terms</Link>
                                 </div>
-                                <p>© 2026 Six22</p>
+                                <p>© 2026 0G (Zero Gravity)</p>
                             </div>
                         </div>
                     </div>

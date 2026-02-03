@@ -2,10 +2,10 @@
 # Deploy via GitHub -> Netlify integration
 
 [build]
-  # The web app is in the apps/web folder
-  base = "apps/web"
-  command = "npm run build"
-  publish = ".next"
+  # Build from the monorepo root to properly handle npm workspaces
+  base = "."
+  command = "npm ci && npm run build --workspace=@caravan/web"
+  publish = "apps/web/.next"
 
 # Next.js on Netlify requires the Next.js plugin
 [[plugins]]

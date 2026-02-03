@@ -235,7 +235,7 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
 
         try {
             // Get token for API call
-            const token = typeof window !== 'undefined' ? localStorage.getItem('six22_token') : null;
+            const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
 
             if (token) {
                 // Build update data for API
@@ -524,7 +524,7 @@ export function useProfile() {
         const loadProfile = async () => {
             // Check if user is authenticated
             const token = typeof window !== 'undefined'
-                ? localStorage.getItem('six22_token')
+                ? localStorage.getItem('0g_token')
                 : null;
 
             if (token) {
@@ -579,7 +579,7 @@ export function useProfile() {
     // Update profile (syncs to backend if authenticated)
     const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
         const token = typeof window !== 'undefined'
-            ? localStorage.getItem('six22_token')
+            ? localStorage.getItem('0g_token')
             : null;
 
         // Optimistically update local state

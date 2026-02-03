@@ -72,7 +72,7 @@ export function useGoogleAuth(
 
             if (res.ok) {
                 // Store token in localStorage
-                localStorage.setItem('six22_token', data.token);
+                localStorage.setItem('0g_token', data.token);
                 onSuccess(data.user, data.token);
             } else {
                 onError(data.error || 'Google login failed');

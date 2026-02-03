@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { usePosts } from '@/hooks/usePosts';
 
 // ============================================
 // CREATE PAGE - Post, Moment, Journey creation
@@ -15,17 +16,20 @@ interface MediaItem {
     id: string;
     type: 'image' | 'video';
     url: string;
-    file?: File;
+    file: File;
 }
 
 function CreateContent() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const initialType = (searchParams.get('type') as ContentType) || 'post';
+    const { createPost } = usePosts();
 
     const [contentType, setContentType] = useState<ContentType>(initialType);
     const [caption, setCaption] = useState('');
     const [media, setMedia] = useState<MediaItem[]>([]);
     const [isPosting, setIsPosting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [showAudienceSelect, setShowAudienceSelect] = useState(false);
     const [audience, setAudience] = useState<'public' | 'friends' | 'private'>('public');
 
@@ -43,6 +47,7 @@ function CreateContent() {
             newMedia.push({ id, type, url, file });
         });
         setMedia(prev => [...prev, ...newMedia]);
+        setError(null);
     }, []);
 
     const removeMedia = useCallback((id: string) => {
@@ -54,15 +59,36 @@ function CreateContent() {
     }, []);
 
     const handlePost = useCallback(async () => {
-        if (!caption.trim() && media.length === 0) return;
+        if (!caption.trim() && media.length === 0) {
+            setError('Please add a caption or media');
+            return;
+        }
 
         setIsPosting(true);
-        // Simulate posting
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsPosting(false);
-        // Would redirect to dashboard
-        window.location.href = '/dashboard';
-    }, [caption, media.length]);
+        setError(null);
+
+        try {
+            // Upload each media file and create post
+            // For now, we handle the first media item (most common case)
+            const mediaFile = media.length > 0 ? media[0].file : undefined;
+
+            const result = await createPost(caption, mediaFile);
+
+            if (result.success) {
+                // Clean up blob URLs
+                media.forEach(item => URL.revokeObjectURL(item.url));
+                // Redirect to dashboard
+                router.push('/dashboard');
+            } else {
+                setError(result.error || 'Failed to create post. Please try again.');
+            }
+        } catch (err) {
+            console.error('Post creation error:', err);
+            setError('Something went wrong. Please try again.');
+        } finally {
+            setIsPosting(false);
+        }
+    }, [caption, media, createPost, router]);
 
     const contentTypes = [
         { id: 'post', label: 'Post', icon: '📝', desc: 'Share thoughts, photos, or videos' },
@@ -80,7 +106,7 @@ function CreateContent() {
         <div className="min-h-screen bg-[#050508] relative">
             {/* Background */}
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-1/4 left-1/3 w-80 h-80 rounded-full bg-violet-500/5 blur-[100px]" />
+                <div className="absolute top-1/4 left-1/3 w-80 h-80 rounded-full bg-[#00D4FF]/5 blur-[100px]" />
             </div>
 
             {/* Header */}
@@ -93,12 +119,12 @@ function CreateContent() {
                     <motion.button
                         onClick={handlePost}
                         disabled={isPosting || (!caption.trim() && media.length === 0)}
-                        className="px-5 py-2 rounded-full bg-gradient-to-r from-orange-400 to-rose-500 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-5 py-2 rounded-full bg-[#00D4FF] text-black font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         whileTap={{ scale: 0.95 }}
                     >
                         {isPosting ? (
                             <span className="flex items-center gap-2">
-                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                                 Posting
                             </span>
                         ) : (
@@ -109,6 +135,17 @@ function CreateContent() {
             </header>
 
             <main className="max-w-2xl mx-auto p-4 pb-24">
+                {/* Error Message */}
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400"
+                    >
+                        {error}
+                    </motion.div>
+                )}
+
                 {/* Content Type Selector */}
                 <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
                     {contentTypes.map(type => (
@@ -116,7 +153,7 @@ function CreateContent() {
                             key={type.id}
                             onClick={() => setContentType(type.id as ContentType)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-colors ${contentType === type.id
-                                ? 'bg-white text-black'
+                                ? 'bg-[#00D4FF] text-black'
                                 : 'bg-white/10 text-white hover:bg-white/15'
                                 }`}
                         >
@@ -131,11 +168,11 @@ function CreateContent() {
                     {media.length === 0 ? (
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            className="w-full aspect-video rounded-2xl border-2 border-dashed border-white/20 flex flex-col items-center justify-center gap-3 hover:border-white/40 hover:bg-white/5 transition-all"
+                            className="w-full aspect-video rounded-2xl border-2 border-dashed border-white/20 flex flex-col items-center justify-center gap-3 hover:border-[#00D4FF]/40 hover:bg-white/5 transition-all"
                         >
                             <span className="text-4xl">📸</span>
                             <p className="text-white/60">Add photos or videos</p>
-                            <p className="text-xs text-white/30">or drag and drop</p>
+                            <p className="text-xs text-white/30">Max 10 MB for images, 100 MB for videos</p>
                         </button>
                     ) : (
                         <div className="grid grid-cols-2 gap-2">
@@ -157,7 +194,7 @@ function CreateContent() {
                             ))}
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="aspect-square rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center hover:border-white/40 transition-colors"
+                                className="aspect-square rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center hover:border-[#00D4FF]/40 transition-colors"
                             >
                                 <span className="text-2xl">+</span>
                             </button>
@@ -178,7 +215,7 @@ function CreateContent() {
                     value={caption}
                     onChange={e => setCaption(e.target.value)}
                     placeholder={contentType === 'journey' ? 'Describe your journey...' : 'Write a caption...'}
-                    className="w-full h-32 bg-white/5 rounded-xl p-4 text-white placeholder:text-white/40 resize-none focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                    className="w-full h-32 bg-white/5 rounded-xl p-4 text-white placeholder:text-white/40 resize-none focus:outline-none focus:ring-2 focus:ring-[#00D4FF]/50 border border-white/10"
                 />
 
                 {/* Character count */}
@@ -193,7 +230,7 @@ function CreateContent() {
                     {/* Audience */}
                     <button
                         onClick={() => setShowAudienceSelect(true)}
-                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10"
                     >
                         <div className="flex items-center gap-3">
                             <span>{audiences.find(a => a.id === audience)?.icon}</span>
@@ -203,7 +240,7 @@ function CreateContent() {
                     </button>
 
                     {/* Location */}
-                    <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                    <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10">
                         <div className="flex items-center gap-3">
                             <span>📍</span>
                             <span className="text-white">Add Location</span>
@@ -212,7 +249,7 @@ function CreateContent() {
                     </button>
 
                     {/* Tag People */}
-                    <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                    <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10">
                         <div className="flex items-center gap-3">
                             <span>👤</span>
                             <span className="text-white">Tag People</span>
@@ -236,7 +273,7 @@ function CreateContent() {
                             initial={{ y: '100%' }}
                             animate={{ y: 0 }}
                             exit={{ y: '100%' }}
-                            className="w-full max-w-lg bg-[#0a0a0f] rounded-t-3xl p-6"
+                            className="w-full max-w-lg bg-[#0a0a0f] rounded-t-3xl p-6 border-t border-white/10"
                             onClick={e => e.stopPropagation()}
                         >
                             <h3 className="text-lg font-semibold text-white mb-4">Who can see this?</h3>
@@ -245,7 +282,7 @@ function CreateContent() {
                                     <button
                                         key={opt.id}
                                         onClick={() => { setAudience(opt.id as typeof audience); setShowAudienceSelect(false); }}
-                                        className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors ${audience === opt.id ? 'bg-white/10' : 'hover:bg-white/5'
+                                        className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors ${audience === opt.id ? 'bg-[#00D4FF]/10 border border-[#00D4FF]/30' : 'hover:bg-white/5'
                                             }`}
                                     >
                                         <span className="text-2xl">{opt.icon}</span>
@@ -253,7 +290,7 @@ function CreateContent() {
                                             <p className="text-white font-medium">{opt.label}</p>
                                             <p className="text-sm text-white/50">{opt.desc}</p>
                                         </div>
-                                        {audience === opt.id && <span className="text-orange-400">✓</span>}
+                                        {audience === opt.id && <span className="text-[#00D4FF]">✓</span>}
                                     </button>
                                 ))}
                             </div>
@@ -273,3 +310,4 @@ export default function CreatePage() {
         </Suspense>
     );
 }
+

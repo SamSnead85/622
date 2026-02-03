@@ -133,7 +133,7 @@ export function usePosts() {
 
     const createPost = useCallback(async (content: string, mediaFile?: File): Promise<{ success: boolean; error?: string }> => {
         try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('six22_token') : null;
+            const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
 
             let mediaUrl: string | undefined;
             let mediaType: 'IMAGE' | 'VIDEO' | undefined;
