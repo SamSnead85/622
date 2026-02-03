@@ -149,12 +149,14 @@ function CommunityCard({ community, index }: { community: Community; index: numb
                         View Tribe
                     </motion.button>
                 </Link>
-                <motion.button
-                    className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/20 transition-colors"
-                    whileTap={{ scale: 0.95 }}
-                >
-                    {Icons.cog}
-                </motion.button>
+                <Link href={`/communities/${community.id}/settings`}>
+                    <motion.button
+                        className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/20 transition-colors"
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        {Icons.cog}
+                    </motion.button>
+                </Link>
             </div>
         </motion.div>
     );
@@ -162,19 +164,21 @@ function CommunityCard({ community, index }: { community: Community; index: numb
 
 function CreateCommunityCard() {
     return (
-        <motion.div
-            className="bg-gradient-to-br from-orange-500/10 to-violet-500/10 rounded-2xl border border-dashed border-white/20 p-6 flex flex-col items-center justify-center text-center min-h-[280px] cursor-pointer hover:border-white/40 transition-colors"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-        >
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-violet-500 flex items-center justify-center mb-4 text-white">
-                {Icons.plus}
-            </div>
-            <h3 className="font-semibold text-white text-lg mb-2">Create a Tribe</h3>
-            <p className="text-sm text-white/50 max-w-[200px]">
-                Start your own private space for family, friends, or any group you want to connect.
-            </p>
-        </motion.div>
+        <Link href="/communities/create">
+            <motion.div
+                className="bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 rounded-2xl border border-dashed border-white/20 p-6 flex flex-col items-center justify-center text-center min-h-[280px] cursor-pointer hover:border-[#00D4FF]/50 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+            >
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center mb-4 text-white">
+                    {Icons.plus}
+                </div>
+                <h3 className="font-semibold text-white text-lg mb-2">Create a Tribe</h3>
+                <p className="text-sm text-white/50 max-w-[200px]">
+                    Start your own private space for family, friends, or any group you want to connect.
+                </p>
+            </motion.div>
+        </Link>
     );
 }
 

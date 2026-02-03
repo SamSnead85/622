@@ -1,149 +1,91 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 
 // ============================================
-// 0G LOGO COMPONENT
-// Minimal, premium Zero Gravity mark
+// ULTRA-PREMIUM DESIGN SYSTEM
+// Institutional-grade aesthetics
 // ============================================
-function ZeroGLogo({ size = 'md', className = '' }: { size?: 'sm' | 'md' | 'lg' | 'xl'; className?: string }) {
-    const sizes = {
-        sm: 'text-xl',
-        md: 'text-2xl',
-        lg: 'text-4xl',
-        xl: 'text-6xl',
-    };
 
+// ============================================
+// ANIMATED GRADIENT ORB BACKGROUND
+// Cinematic, layered depth
+// ============================================
+function AmbientBackground() {
     return (
-        <div className={`font-bold tracking-tight ${sizes[size]} ${className}`}>
-            <span className="text-[#00D4FF]">0</span>
-            <span className="text-white">G</span>
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+            {/* Base gradient */}
+            <div className="absolute inset-0 bg-[#030305]" />
+
+            {/* Animated gradient orbs */}
+            <motion.div
+                className="absolute -top-1/4 -left-1/4 w-[800px] h-[800px] rounded-full"
+                style={{
+                    background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+                }}
+                animate={{
+                    x: [0, 100, 0],
+                    y: [0, 50, 0],
+                }}
+                transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+                className="absolute -bottom-1/4 -right-1/4 w-[900px] h-[900px] rounded-full"
+                style={{
+                    background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)',
+                }}
+                animate={{
+                    x: [0, -80, 0],
+                    y: [0, -60, 0],
+                }}
+                transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+                className="absolute top-1/3 right-1/4 w-[600px] h-[600px] rounded-full"
+                style={{
+                    background: 'radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%)',
+                }}
+                animate={{
+                    x: [0, 60, 0],
+                    y: [0, -40, 0],
+                }}
+                transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            {/* Subtle noise texture overlay */}
+            <div
+                className="absolute inset-0 opacity-[0.015]"
+                style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+                }}
+            />
         </div>
     );
 }
 
 // ============================================
-// ANIMATED SPACE BACKGROUND
-// Premium floating particles and nebula effects
+// PREMIUM WORDMARK
+// Sophisticated typographic identity
 // ============================================
-function SpaceBackground() {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const resizeCanvas = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        };
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        // Stars
-        const stars: { x: number; y: number; size: number; opacity: number; speed: number }[] = [];
-        for (let i = 0; i < 150; i++) {
-            stars.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: Math.random() * 1.5 + 0.5,
-                opacity: Math.random() * 0.5 + 0.2,
-                speed: Math.random() * 0.3 + 0.1,
-            });
-        }
-
-        // Floating particles (electric blue)
-        const particles: { x: number; y: number; size: number; opacity: number; vx: number; vy: number }[] = [];
-        for (let i = 0; i < 30; i++) {
-            particles.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: Math.random() * 3 + 1,
-                opacity: Math.random() * 0.4 + 0.1,
-                vx: (Math.random() - 0.5) * 0.5,
-                vy: (Math.random() - 0.5) * 0.3 - 0.2,
-            });
-        }
-
-        const animate = () => {
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw nebula gradients
-            const gradient1 = ctx.createRadialGradient(
-                canvas.width * 0.2, canvas.height * 0.3, 0,
-                canvas.width * 0.2, canvas.height * 0.3, canvas.width * 0.4
-            );
-            gradient1.addColorStop(0, 'rgba(0, 212, 255, 0.08)');
-            gradient1.addColorStop(0.5, 'rgba(139, 92, 246, 0.04)');
-            gradient1.addColorStop(1, 'transparent');
-            ctx.fillStyle = gradient1;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            const gradient2 = ctx.createRadialGradient(
-                canvas.width * 0.8, canvas.height * 0.7, 0,
-                canvas.width * 0.8, canvas.height * 0.7, canvas.width * 0.3
-            );
-            gradient2.addColorStop(0, 'rgba(139, 92, 246, 0.06)');
-            gradient2.addColorStop(0.5, 'rgba(0, 212, 255, 0.03)');
-            gradient2.addColorStop(1, 'transparent');
-            ctx.fillStyle = gradient2;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw stars
-            stars.forEach((star) => {
-                star.y += star.speed;
-                if (star.y > canvas.height) {
-                    star.y = 0;
-                    star.x = Math.random() * canvas.width;
-                }
-
-                ctx.beginPath();
-                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
-                ctx.fill();
-            });
-
-            // Draw floating particles
-            particles.forEach((p) => {
-                p.x += p.vx;
-                p.y += p.vy;
-
-                if (p.x < 0) p.x = canvas.width;
-                if (p.x > canvas.width) p.x = 0;
-                if (p.y < 0) p.y = canvas.height;
-                if (p.y > canvas.height) p.y = 0;
-
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                const particleGradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-                particleGradient.addColorStop(0, `rgba(0, 212, 255, ${p.opacity})`);
-                particleGradient.addColorStop(1, 'transparent');
-                ctx.fillStyle = particleGradient;
-                ctx.fill();
-            });
-
-            requestAnimationFrame(animate);
-        };
-
-        animate();
-
-        return () => {
-            window.removeEventListener('resize', resizeCanvas);
-        };
-    }, []);
-
-    return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none" />;
+function Wordmark() {
+    return (
+        <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/90 to-white/70 flex items-center justify-center">
+                <span className="text-black font-bold text-lg tracking-tight">0G</span>
+            </div>
+            <span className="text-white/80 font-light tracking-[0.2em] text-sm uppercase hidden sm:block">
+                Zero Gravity
+            </span>
+        </div>
+    );
 }
 
 // ============================================
-// NAVIGATION
-// Premium minimal navigation
+// PREMIUM NAVIGATION
+// Glassmorphic, minimal
 // ============================================
 function Navigation() {
     const [scrolled, setScrolled] = useState(false);
@@ -156,39 +98,43 @@ function Navigation() {
 
     return (
         <motion.nav
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-black/80 backdrop-blur-xl border-b border-white/5' : ''
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
+                ? 'bg-black/70 backdrop-blur-2xl border-b border-white/5 py-4'
+                : 'bg-transparent py-6'
                 }`}
-            initial={{ y: -100 }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.6 }}
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
         >
-            <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                <ZeroGLogo size="md" />
+            <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between">
+                <Link href="/">
+                    <Wordmark />
+                </Link>
 
-                <div className="hidden md:flex items-center gap-8">
-                    <a href="#features" className="text-white/60 hover:text-[#00D4FF] transition-colors text-sm">
-                        Features
-                    </a>
-                    <a href="#orbits" className="text-white/60 hover:text-[#00D4FF] transition-colors text-sm">
-                        Orbits
-                    </a>
-                    <a href="#creators" className="text-white/60 hover:text-[#00D4FF] transition-colors text-sm">
-                        For Creators
-                    </a>
+                <div className="hidden md:flex items-center gap-10">
+                    {['Vision', 'Platform', 'Community'].map((item) => (
+                        <a
+                            key={item}
+                            href={`#${item.toLowerCase()}`}
+                            className="text-white/40 hover:text-white transition-colors text-sm font-light tracking-wide"
+                        >
+                            {item}
+                        </a>
+                    ))}
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                     <Link
                         href="/login"
-                        className="px-4 py-2 text-white/70 hover:text-white transition-colors text-sm"
+                        className="text-white/50 hover:text-white transition-colors text-sm font-light"
                     >
                         Sign In
                     </Link>
                     <Link
                         href="/signup"
-                        className="px-5 py-2.5 rounded-lg bg-[#00D4FF] text-black font-semibold text-sm hover:bg-[#33DDFF] transition-colors"
+                        className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-all hover:scale-[1.02]"
                     >
-                        Join 0G
+                        Get Started
                     </Link>
                 </div>
             </div>
@@ -197,219 +143,321 @@ function Navigation() {
 }
 
 // ============================================
-// HERO SECTION
-// Stunning zero-gravity intro
+// CINEMATIC HERO SECTION
+// Full-screen with layered depth
 // ============================================
 function HeroSection() {
-    const { scrollY } = useScroll();
-    const y = useTransform(scrollY, [0, 500], [0, 150]);
-    const opacity = useTransform(scrollY, [0, 400], [1, 0]);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const { scrollYProgress } = useScroll({
+        target: containerRef,
+        offset: ['start start', 'end start'],
+    });
+
+    const y = useTransform(scrollYProgress, [0, 1], ['0%', '40%']);
+    const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+    const scale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
 
     return (
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-            {/* Floating 0G Logo */}
-            <motion.div
-                className="absolute inset-0 flex items-center justify-center opacity-5"
-                style={{ y }}
-                animate={{ y: [0, -20, 0] }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-            >
-                <span className="text-[40vw] font-black text-[#00D4FF] select-none">0G</span>
+        <section ref={containerRef} className="relative h-screen overflow-hidden">
+            {/* Background Image with Parallax */}
+            <motion.div className="absolute inset-0" style={{ y, scale }}>
+                {/* Multi-layer gradient overlays for depth */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#030305] via-transparent to-[#030305] z-10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#030305]/90 via-transparent to-[#030305]/90 z-10" />
+                <div className="absolute inset-0 bg-black/30 z-10" />
+
+                <Image
+                    src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=2000&h=1200&fit=crop&q=90"
+                    alt=""
+                    fill
+                    className="object-cover"
+                    priority
+                />
             </motion.div>
 
+            {/* Hero Content */}
             <motion.div
-                className="relative z-10 max-w-5xl mx-auto px-6 text-center"
+                className="relative z-20 h-full flex flex-col justify-center"
                 style={{ opacity }}
             >
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                >
-                    {/* Badge */}
+                <div className="max-w-7xl mx-auto px-6 lg:px-8 w-full">
+                    {/* Eyebrow */}
                     <motion.div
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00D4FF]/10 border border-[#00D4FF]/20 mb-8"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.2 }}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.5 }}
+                        className="mb-8"
                     >
-                        <span className="w-2 h-2 rounded-full bg-[#00D4FF] animate-pulse" />
-                        <span className="text-[#00D4FF] text-sm font-medium">The Next Generation of Social</span>
+                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span className="text-white/60 text-xs tracking-widest uppercase font-light">
+                                Now Accepting Early Members
+                            </span>
+                        </span>
                     </motion.div>
 
-                    {/* Main headline */}
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
-                        <span className="text-white">Join</span>
-                        <br />
-                        <span className="bg-gradient-to-r from-[#00D4FF] via-[#8B5CF6] to-[#00D4FF] bg-clip-text text-transparent">
-                            Zero Gravity
-                        </span>
-                    </h1>
-
-                    <motion.p
-                        className="text-xl md:text-2xl text-white/50 max-w-3xl mx-auto mb-8 leading-relaxed"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.3 }}
+                    {/* Main Headline */}
+                    <motion.h1
+                        className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-light text-white leading-[1.05] tracking-tight max-w-5xl"
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, delay: 0.7 }}
                     >
-                        No algorithms weighing you down. No corporate control.
+                        Social media
                         <br />
-                        <span className="text-white">Just you.</span>
+                        <span className="bg-gradient-to-r from-white via-white/80 to-white/60 bg-clip-text text-transparent">
+                            without the weight
+                        </span>
+                    </motion.h1>
+
+                    {/* Sub-headline */}
+                    <motion.p
+                        className="mt-8 text-lg md:text-xl text-white/40 max-w-xl font-light leading-relaxed"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 1 }}
+                    >
+                        No algorithms manipulating your feed. No ads exploiting your attention.
+                        Just genuine connection with the people who matter.
                     </motion.p>
 
-                    {/* Tagline */}
+                    {/* CTAs */}
                     <motion.div
-                        className="flex flex-wrap justify-center gap-6 mb-12"
-                        initial={{ opacity: 0, y: 20 }}
+                        className="mt-12 flex flex-col sm:flex-row items-start gap-4"
+                        initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
-                    >
-                        <div className="flex items-center gap-2 text-white/70">
-                            <div className="w-2 h-2 rounded-full bg-[#00D4FF]" />
-                            <span>Weightless</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-white/70">
-                            <div className="w-2 h-2 rounded-full bg-[#8B5CF6]" />
-                            <span>Authentic</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-white/70">
-                            <div className="w-2 h-2 rounded-full bg-white" />
-                            <span>Yours</span>
-                        </div>
-                    </motion.div>
-
-                    {/* CTA Buttons */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.7 }}
-                        className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                        transition={{ duration: 0.8, delay: 1.2 }}
                     >
                         <Link
                             href="/signup"
-                            className="group relative px-10 py-4 rounded-xl overflow-hidden"
+                            className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-white/10"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6]" />
-                            <span className="relative flex items-center gap-2 text-black font-bold text-lg">
-                                Join 0G
-                                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            Request Early Access
+                            <svg
+                                className="w-4 h-4 transition-transform group-hover:translate-x-1"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                            </svg>
+                        </Link>
+                        <a
+                            href="#vision"
+                            className="inline-flex items-center gap-2 px-6 py-4 text-white/50 hover:text-white transition-colors text-sm font-light"
+                        >
+                            <span className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
                                 </svg>
                             </span>
-                        </Link>
-
-                        <a
-                            href="#features"
-                            className="px-8 py-4 rounded-xl border border-[#00D4FF]/30 text-[#00D4FF] hover:bg-[#00D4FF]/10 transition-all"
-                        >
-                            Explore Features
+                            Learn more
                         </a>
                     </motion.div>
-                </motion.div>
-            </motion.div>
-
-            {/* Scroll indicator */}
-            <motion.div
-                className="absolute bottom-8 left-1/2 -translate-x-1/2"
-                animate={{ y: [0, 10, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-            >
-                <div className="w-6 h-10 rounded-full border-2 border-[#00D4FF]/30 flex items-start justify-center p-2">
-                    <motion.div
-                        className="w-1 h-2 rounded-full bg-[#00D4FF]"
-                        animate={{ y: [0, 12, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                    />
                 </div>
             </motion.div>
+
+            {/* Scroll Indicator */}
+            <motion.div
+                className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 2 }}
+            >
+                <motion.div
+                    animate={{ y: [0, 10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    className="w-px h-16 bg-gradient-to-b from-white/30 to-transparent"
+                />
+            </motion.div>
+        </section>
+    );
+}
+
+// ============================================
+// SOCIAL PROOF / STATS SECTION
+// Premium metrics display
+// ============================================
+function StatsSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+    const stats = [
+        { value: '50K+', label: 'Early Members' },
+        { value: '180+', label: 'Countries' },
+        { value: '4.9', label: 'App Store Rating' },
+        { value: '0', label: 'Ads, Forever' },
+    ];
+
+    return (
+        <section ref={ref} className="relative py-20 border-y border-white/5 bg-black/50 backdrop-blur-sm">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+                    {stats.map((stat, i) => (
+                        <motion.div
+                            key={stat.label}
+                            className="text-center"
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={isInView ? { opacity: 1, y: 0 } : {}}
+                            transition={{ duration: 0.6, delay: i * 0.1 }}
+                        >
+                            <p className="text-4xl md:text-5xl font-light text-white mb-2">{stat.value}</p>
+                            <p className="text-sm text-white/40 tracking-wide">{stat.label}</p>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
+// VISION SECTION
+// Editorial typography
+// ============================================
+function VisionSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+    return (
+        <section id="vision" ref={ref} className="relative py-32 md:py-48">
+            <div className="max-w-5xl mx-auto px-6 lg:px-8">
+                <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 1 }}
+                    className="text-center"
+                >
+                    <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-8 font-light">Our Belief</p>
+
+                    <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-white leading-tight">
+                        We believe social platforms should{' '}
+                        <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">serve</span> their users,
+                        <br className="hidden md:block" />
+                        not <span className="bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent">exploit</span> them.
+                    </h2>
+
+                    <div className="mt-20 pt-16 border-t border-white/5 grid md:grid-cols-3 gap-12 md:gap-16 text-left">
+                        {[
+                            {
+                                icon: '🔍',
+                                title: 'Transparency',
+                                description: 'See exactly why content appears in your feed. No hidden algorithms, no shadow bans, no manipulation.',
+                            },
+                            {
+                                icon: '🔐',
+                                title: 'Ownership',
+                                description: 'Your data belongs to you. Export everything. Delete everything. We are custodians, not owners.',
+                            },
+                            {
+                                icon: '🛡️',
+                                title: 'Privacy',
+                                description: 'End-to-end encryption for private conversations. We cannot read your messages, and neither can anyone else.',
+                            },
+                        ].map((item, i) => (
+                            <motion.div
+                                key={item.title}
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                                transition={{ duration: 0.6, delay: 0.4 + i * 0.15 }}
+                            >
+                                <div className="text-3xl mb-4">{item.icon}</div>
+                                <h3 className="text-white font-medium mb-3">{item.title}</h3>
+                                <p className="text-white/50 font-light leading-relaxed text-sm">
+                                    {item.description}
+                                </p>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+            </div>
         </section>
     );
 }
 
 // ============================================
 // FEATURES SECTION
-// Why 0G is different
+// Premium feature cards
 // ============================================
 function FeaturesSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
+
     const features = [
         {
-            icon: (
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-            ),
-            title: 'AI-Powered Creation',
-            description: 'Create like a pro with AI co-direction. One-tap editing, smart suggestions, instant translations.',
-            color: '#00D4FF',
+            title: 'Your Circle, Your Rules',
+            description: 'Create private spaces for family, friends, or communities. You decide who joins, what gets shared, and how moderation works.',
+            image: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=900&h=600&fit=crop&q=90',
+            gradient: 'from-violet-500/20 to-indigo-500/20',
         },
         {
-            icon: (
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-            ),
-            title: 'Transparent Discovery',
-            description: 'See exactly why you see what you see. Configure your own algorithm weights.',
-            color: '#8B5CF6',
+            title: 'Go Live, Stay Connected',
+            description: 'Stream moments in real-time to the people who matter. No follower counts, no performance metrics—just presence.',
+            image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=900&h=600&fit=crop&q=90',
+            gradient: 'from-rose-500/20 to-orange-500/20',
         },
         {
-            icon: (
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-            ),
-            title: 'Own Your Community',
-            description: 'Build your space, your rules. From inner circle to global movement.',
-            color: '#00D4FF',
-        },
-        {
-            icon: (
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            ),
-            title: 'Creator-First Economy',
-            description: 'Keep what you earn. We take 5%, not 30%. Direct-to-fan monetization.',
-            color: '#8B5CF6',
+            title: 'Stories That Matter',
+            description: 'Share short-form moments with your tribe. Not to go viral, but to document the journey you are on together.',
+            image: 'https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=900&h=600&fit=crop&q=90',
+            gradient: 'from-cyan-500/20 to-emerald-500/20',
         },
     ];
 
     return (
-        <section id="features" className="relative py-32">
-            <div className="max-w-7xl mx-auto px-6">
+        <section id="platform" ref={ref} className="relative py-32 md:py-48">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
                 <motion.div
-                    className="text-center mb-20"
+                    className="mb-20"
                     initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.8 }}
                 >
-                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        Why <span className="text-[#00D4FF]">0G</span> is Different
+                    <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-4 font-light">Platform</p>
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-light text-white">
+                        Built for meaningful
+                        <br />
+                        <span className="text-white/50">connection</span>
                     </h2>
-                    <p className="text-xl text-white/50 max-w-2xl mx-auto">
-                        The first truly weightless social network. No manipulation, full transparency.
-                    </p>
                 </motion.div>
 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-24 md:space-y-32">
                     {features.map((feature, index) => (
                         <motion.div
                             key={feature.title}
-                            className="p-8 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-[#00D4FF]/30 transition-all group"
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
+                            className={`grid md:grid-cols-2 gap-12 md:gap-20 items-center ${index % 2 === 1 ? 'md:flex-row-reverse' : ''
+                                }`}
+                            initial={{ opacity: 0, y: 60 }}
+                            animate={isInView ? { opacity: 1, y: 0 } : {}}
+                            transition={{ duration: 0.8, delay: index * 0.2 }}
                         >
-                            <div
-                                className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-all group-hover:scale-110"
-                                style={{ backgroundColor: `${feature.color}15`, color: feature.color }}
-                            >
-                                {feature.icon}
+                            <div className={index % 2 === 1 ? 'md:order-2' : ''}>
+                                <h3 className="text-3xl md:text-4xl font-light text-white mb-6 leading-tight">
+                                    {feature.title}
+                                </h3>
+                                <p className="text-lg text-white/40 font-light leading-relaxed mb-8">
+                                    {feature.description}
+                                </p>
+                                <Link
+                                    href="/signup"
+                                    className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm"
+                                >
+                                    Learn more
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                    </svg>
+                                </Link>
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-3">{feature.title}</h3>
-                            <p className="text-white/50 text-lg leading-relaxed">{feature.description}</p>
+                            <div className={`relative aspect-[4/3] rounded-2xl overflow-hidden group ${index % 2 === 1 ? 'md:order-1' : ''}`}>
+                                <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} z-10 mix-blend-overlay`} />
+                                <Image
+                                    src={feature.image}
+                                    alt={feature.title}
+                                    fill
+                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 border border-white/10 rounded-2xl z-20" />
+                            </div>
                         </motion.div>
                     ))}
                 </div>
@@ -419,140 +467,75 @@ function FeaturesSection() {
 }
 
 // ============================================
-// ORBITS SECTION (Community Hierarchy)
-// Space-themed community tiers
+// TESTIMONIALS SECTION
+// Premium social proof
 // ============================================
-function OrbitsSection() {
-    const orbits = [
+function TestimonialsSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+    const testimonials = [
         {
-            name: 'Inner Orbit',
-            size: '2-10',
-            description: 'Your closest circle. Immediate family and best friends.',
-            color: '#00D4FF',
+            quote: "Finally, a platform where I can share family moments without worrying about privacy or algorithms.",
+            author: "Sarah Chen",
+            role: "Mother of 3",
+            avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
         },
         {
-            name: 'Family Orbit',
-            size: '10-50',
-            description: 'Extended family and close friends. Each group keeps their privacy.',
-            color: '#8B5CF6',
+            quote: "Zero Gravity has become our family's digital home. It's exactly what social media should have been from the start.",
+            author: "Marcus Williams",
+            role: "Community Builder",
+            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
         },
         {
-            name: 'Community Orbit',
-            size: '50-500',
-            description: 'Your tribe with elected leaders. You write the moderation rules.',
-            color: '#00D4FF',
-        },
-        {
-            name: 'Movement Orbit',
-            size: '500+',
-            description: 'Build a global movement around shared purpose. Own the algorithm entirely.',
-            color: '#8B5CF6',
+            quote: "The transparency around the algorithm is refreshing. I finally understand why I see what I see.",
+            author: "Aisha Rahman",
+            role: "Privacy Advocate",
+            avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
         },
     ];
 
     return (
-        <section id="orbits" className="relative py-32 overflow-hidden">
-            {/* Orbital rings visual */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                {[1, 2, 3, 4].map((i) => (
-                    <motion.div
-                        key={i}
-                        className="absolute rounded-full border border-[#00D4FF]"
-                        style={{
-                            width: `${i * 200}px`,
-                            height: `${i * 200}px`,
-                        }}
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 30 + i * 10, repeat: Infinity, ease: 'linear' }}
-                    />
-                ))}
-            </div>
-
-            <div className="max-w-6xl mx-auto px-6 relative z-10">
-                <motion.div
-                    className="text-center mb-20"
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                >
-                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        Your <span className="text-[#00D4FF]">Orbits</span> of Freedom
-                    </h2>
-                    <p className="text-xl text-white/50 max-w-2xl mx-auto">
-                        From your closest circle to a global movement—each level has its own rules, its own algorithm.
-                    </p>
-                </motion.div>
-
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {orbits.map((orbit, index) => (
-                        <motion.div
-                            key={orbit.name}
-                            className="text-center p-6 rounded-2xl border border-white/10 bg-white/[0.02]"
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
-                        >
-                            <div
-                                className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold"
-                                style={{
-                                    backgroundColor: `${orbit.color}15`,
-                                    border: `2px solid ${orbit.color}40`,
-                                    color: orbit.color,
-                                }}
-                            >
-                                {orbit.size}
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2">{orbit.name}</h3>
-                            <p className="text-white/50 text-sm">{orbit.description}</p>
-                        </motion.div>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-}
-
-// ============================================
-// CREATOR STATS SECTION
-// ============================================
-function CreatorSection() {
-    const stats = [
-        { value: '70%', label: 'Revenue Share', description: 'vs. 50% on other platforms' },
-        { value: '0%', label: 'Platform Lock-in', description: 'Export your content anytime' },
-        { value: '100%', label: 'Transparency', description: 'See exactly how your content performs' },
-    ];
-
-    return (
-        <section id="creators" className="relative py-32 bg-gradient-to-b from-transparent via-[#00D4FF]/5 to-transparent">
-            <div className="max-w-6xl mx-auto px-6">
+        <section ref={ref} className="relative py-32 border-y border-white/5">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
                 <motion.div
                     className="text-center mb-16"
                     initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.8 }}
                 >
-                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        Built for <span className="text-[#00D4FF]">Creators</span>
+                    <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-4 font-light">Testimonials</p>
+                    <h2 className="text-3xl md:text-4xl font-light text-white">
+                        Loved by early members
                     </h2>
-                    <p className="text-xl text-white/50 max-w-2xl mx-auto">
-                        Fair monetization. No exploitation. Direct connection to your audience.
-                    </p>
                 </motion.div>
 
                 <div className="grid md:grid-cols-3 gap-8">
-                    {stats.map((stat, index) => (
+                    {testimonials.map((testimonial, i) => (
                         <motion.div
-                            key={stat.label}
-                            className="text-center p-8 rounded-2xl border border-[#00D4FF]/20 bg-[#00D4FF]/5"
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
+                            key={testimonial.author}
+                            className="p-8 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm"
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={isInView ? { opacity: 1, y: 0 } : {}}
+                            transition={{ duration: 0.6, delay: i * 0.15 }}
                         >
-                            <div className="text-5xl font-black text-[#00D4FF] mb-2">{stat.value}</div>
-                            <div className="text-xl font-bold text-white mb-1">{stat.label}</div>
-                            <div className="text-white/50">{stat.description}</div>
+                            <p className="text-white/70 font-light leading-relaxed mb-8 text-lg">
+                                &ldquo;{testimonial.quote}&rdquo;
+                            </p>
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full overflow-hidden relative">
+                                    <Image
+                                        src={testimonial.avatar}
+                                        alt={testimonial.author}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
+                                <div>
+                                    <p className="text-white font-medium">{testimonial.author}</p>
+                                    <p className="text-white/40 text-sm">{testimonial.role}</p>
+                                </div>
+                            </div>
                         </motion.div>
                     ))}
                 </div>
@@ -563,34 +546,49 @@ function CreatorSection() {
 
 // ============================================
 // CTA SECTION
+// Final conversion section
 // ============================================
 function CTASection() {
-    return (
-        <section className="relative py-32">
-            <div className="max-w-4xl mx-auto px-6 text-center">
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                >
-                    <ZeroGLogo size="xl" className="justify-center mb-8" />
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
 
-                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        Ready to break free?
+    return (
+        <section id="community" ref={ref} className="relative py-32 md:py-48">
+            <div className="max-w-4xl mx-auto px-6 lg:px-8 text-center">
+                <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 1 }}
+                >
+                    <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-8 font-light">Join Us</p>
+
+                    <h2 className="text-4xl md:text-6xl lg:text-7xl font-light text-white leading-tight mb-8">
+                        Ready to experience
+                        <br />
+                        <span className="bg-gradient-to-r from-white via-white/80 to-white/60 bg-clip-text text-transparent">
+                            social, reimagined?
+                        </span>
                     </h2>
-                    <p className="text-xl text-white/50 mb-10 max-w-2xl mx-auto">
-                        Join the next generation of social media. Weightless. Authentic. Yours.
+
+                    <p className="text-lg text-white/40 font-light max-w-2xl mx-auto mb-12">
+                        Join thousands who are building a better social future.
+                        No ads. No algorithms. Just genuine connection.
                     </p>
 
-                    <Link
-                        href="/signup"
-                        className="inline-flex items-center gap-3 px-12 py-5 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-bold text-lg hover:opacity-90 transition-opacity"
-                    >
-                        Join 0G Now
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                    </Link>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <Link
+                            href="/signup"
+                            className="inline-flex items-center gap-3 px-10 py-5 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-white/10"
+                        >
+                            Get Early Access
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                            </svg>
+                        </Link>
+                        <span className="text-white/30 text-sm">
+                            Limited spots available
+                        </span>
+                    </div>
                 </motion.div>
             </div>
         </section>
@@ -598,25 +596,58 @@ function CTASection() {
 }
 
 // ============================================
-// FOOTER
+// PREMIUM FOOTER
+// Sophisticated, comprehensive
 // ============================================
 function Footer() {
     return (
-        <footer className="border-t border-white/5 py-12">
-            <div className="max-w-7xl mx-auto px-6">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                    <ZeroGLogo size="sm" />
-
-                    <div className="flex items-center gap-6 text-sm text-white/40">
-                        <a href="#" className="hover:text-[#00D4FF] transition-colors">Privacy</a>
-                        <a href="#" className="hover:text-[#00D4FF] transition-colors">Terms</a>
-                        <a href="#" className="hover:text-[#00D4FF] transition-colors">Contact</a>
-                        <a href="#" className="hover:text-[#00D4FF] transition-colors">Careers</a>
+        <footer className="border-t border-white/5 py-16 bg-black/50">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                <div className="grid md:grid-cols-4 gap-12 mb-12">
+                    <div className="md:col-span-2">
+                        <Wordmark />
+                        <p className="mt-6 text-white/30 text-sm font-light max-w-sm leading-relaxed">
+                            Social media without the weight. A platform built on transparency,
+                            privacy, and genuine human connection.
+                        </p>
                     </div>
 
-                    <p className="text-sm text-white/30">
-                        © 2026 0G — The Weightless Social Network
+                    <div>
+                        <h4 className="text-white/50 text-xs tracking-widest uppercase mb-4">Platform</h4>
+                        <ul className="space-y-3">
+                            {['Features', 'Security', 'Roadmap', 'Download'].map((item) => (
+                                <li key={item}>
+                                    <a href="#" className="text-white/40 hover:text-white transition-colors text-sm font-light">
+                                        {item}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 className="text-white/50 text-xs tracking-widest uppercase mb-4">Company</h4>
+                        <ul className="space-y-3">
+                            {['About', 'Blog', 'Careers', 'Contact'].map((item) => (
+                                <li key={item}>
+                                    <a href="#" className="text-white/40 hover:text-white transition-colors text-sm font-light">
+                                        {item}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <p className="text-white/20 text-xs">
+                        © 2026 Zero Gravity. All rights reserved.
                     </p>
+                    <div className="flex items-center gap-6 text-xs text-white/30">
+                        <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+                        <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+                        <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
+                    </div>
                 </div>
             </div>
         </footer>
@@ -624,7 +655,7 @@ function Footer() {
 }
 
 // ============================================
-// MAIN PAGE
+// MAIN PAGE COMPONENT
 // ============================================
 export default function HomePage() {
     const [mounted, setMounted] = useState(false);
@@ -635,20 +666,19 @@ export default function HomePage() {
 
     if (!mounted) {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full border-4 border-[#00D4FF]/20 border-t-[#00D4FF] animate-spin" />
+            <div className="min-h-screen bg-[#030305] flex items-center justify-center">
+                <div className="w-10 h-10 border border-white/20 border-t-white/80 rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <main className="min-h-screen bg-black text-white overflow-x-hidden">
-            <SpaceBackground />
+        <main className="min-h-screen bg-[#030305] text-white overflow-x-hidden">
+            <AmbientBackground />
             <Navigation />
             <HeroSection />
+            <VisionSection />
             <FeaturesSection />
-            <OrbitsSection />
-            <CreatorSection />
             <CTASection />
             <Footer />
         </main>

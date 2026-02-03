@@ -99,13 +99,113 @@ function ReactionPicker({ onSelect, onClose }: { onSelect: (emoji: string) => vo
     );
 }
 
+// ============================================
+// NEW CHAT MODAL
+// ============================================
+function NewChatModal({
+    isOpen,
+    onClose
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+}) {
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Mock contacts - will be real API data
+    const contacts = [
+        { id: '1', name: 'Family Group', avatar: '👨‍👩‍👧‍👦', type: 'group', lastSeen: 'Create new group' },
+        { id: '2', name: 'Start Group Chat', avatar: '➕', type: 'action', lastSeen: 'Add multiple people' },
+    ];
+
+    if (!isOpen) return null;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end md:items-center justify-center"
+            onClick={onClose}
+        >
+            <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 25 }}
+                className="bg-[#0A0A0F] w-full max-w-lg rounded-t-3xl md:rounded-3xl max-h-[80vh] overflow-hidden"
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-white/10">
+                    <h2 className="text-lg font-bold text-white">New Message</h2>
+                    <button
+                        onClick={onClose}
+                        className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                {/* Search */}
+                <div className="p-4">
+                    <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+                        <span className="text-white/40">🔍</span>
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search by name or username..."
+                            className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none"
+                            autoFocus
+                        />
+                    </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="px-4 space-y-2">
+                    {contacts.map((contact) => (
+                        <button
+                            key={contact.id}
+                            className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors"
+                        >
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
+                                <span className="text-xl">{contact.avatar}</span>
+                            </div>
+                            <div className="flex-1 text-left">
+                                <p className="font-semibold text-white">{contact.name}</p>
+                                <p className="text-sm text-white/50">{contact.lastSeen}</p>
+                            </div>
+                            <span className="text-white/40">→</span>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Invite CTA */}
+                <div className="p-4 mt-4 border-t border-white/10">
+                    <Link
+                        href="/invite"
+                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold hover:opacity-90 transition-opacity"
+                        onClick={onClose}
+                    >
+                        <span>🚀</span>
+                        Invite Friends to 0G
+                    </Link>
+                    <p className="text-center text-xs text-white/40 mt-2">
+                        Your friends aren&apos;t here yet? Invite them!
+                    </p>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+}
+
 // Navigation
 function Navigation({ activeTab }: { activeTab: string }) {
     const navItems = [
         { id: 'home', icon: '🏠', label: 'Home', href: '/dashboard' },
         { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
-        { id: 'journeys', icon: '🎬', label: 'Journeys', href: '/journeys' },
-        { id: 'campfire', icon: '🔥', label: 'Live', href: '/campfire' },
+        { id: 'communities', icon: '👥', label: 'Tribes', href: '/communities' },
+        { id: 'invite', icon: '🚀', label: 'Invite', href: '/invite' },
         { id: 'messages', icon: '💬', label: 'Messages', href: '/messages' },
     ];
 
@@ -165,6 +265,7 @@ function MessagesPageContent() {
     const [recordingTime, setRecordingTime] = useState(0);
     const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
     const [localReactions, setLocalReactions] = useState<Map<string, string[]>>(new Map());
+    const [showNewChatModal, setShowNewChatModal] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => { setMounted(true); }, []);
@@ -245,6 +346,16 @@ function MessagesPageContent() {
 
             <Navigation activeTab="messages" />
 
+            {/* New Chat Modal */}
+            <AnimatePresence>
+                {showNewChatModal && (
+                    <NewChatModal
+                        isOpen={showNewChatModal}
+                        onClose={() => setShowNewChatModal(false)}
+                    />
+                )}
+            </AnimatePresence>
+
             <main className="relative z-10 lg:ml-20 xl:ml-64 h-screen flex">
                 {/* Conversations List */}
                 <div className={`w-full md:w-80 lg:w-96 border-r border-white/5 flex flex-col bg-black/20 ${selectedConvo ? 'hidden md:flex' : 'flex'}`}>
@@ -252,7 +363,10 @@ function MessagesPageContent() {
                     <div className="p-4 border-b border-white/5">
                         <div className="flex items-center justify-between mb-4">
                             <h1 className="text-xl font-bold text-white">Messages</h1>
-                            <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
+                            <button
+                                onClick={() => setShowNewChatModal(true)}
+                                className="w-10 h-10 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center hover:opacity-90 transition-opacity"
+                            >
                                 ✏️
                             </button>
                         </div>
@@ -269,9 +383,16 @@ function MessagesPageContent() {
                                 <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                             </div>
                         ) : conversations.length === 0 ? (
-                            <div className="text-center p-8 text-white/50">
-                                <p>No conversations yet</p>
-                                <p className="text-sm mt-1">Start a new chat!</p>
+                            <div className="text-center p-8">
+                                <div className="text-5xl mb-4">👋</div>
+                                <h3 className="text-lg font-semibold text-white mb-2">No Messages Yet</h3>
+                                <p className="text-white/50 text-sm mb-6">Start chatting with your friends and tribe members</p>
+                                <Link
+                                    href="/invite"
+                                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold hover:opacity-90 transition-opacity"
+                                >
+                                    🚀 Invite Friends to 0G
+                                </Link>
                             </div>
                         ) : (
                             conversations.map((convo) => (

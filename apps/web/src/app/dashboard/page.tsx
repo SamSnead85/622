@@ -21,7 +21,7 @@ function ZeroGLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 }
 
 // ============================================
-// FEATURED LOCATIONS - Sacred Sites & Live Streams
+// FEATURED LOCATIONS - Sacred Sites & Live Streams  
 // ============================================
 const FEATURED_LOCATIONS = [
     {
@@ -29,8 +29,7 @@ const FEATURED_LOCATIONS = [
         name: 'Mecca',
         subtitle: 'Masjid al-Haram',
         image: '/featured/mecca.png',
-        viewers: 12453,
-        isLive: true,
+        isLive: false,
         category: 'Sacred Sites',
     },
     {
@@ -38,8 +37,7 @@ const FEATURED_LOCATIONS = [
         name: 'Medina',
         subtitle: "Prophet's Mosque ﷺ",
         image: '/featured/medina.png',
-        viewers: 8721,
-        isLive: true,
+        isLive: false,
         category: 'Sacred Sites',
     },
     {
@@ -47,8 +45,7 @@ const FEATURED_LOCATIONS = [
         name: 'Jerusalem',
         subtitle: 'Al-Aqsa Compound',
         image: '/featured/jerusalem.png',
-        viewers: 5432,
-        isLive: true,
+        isLive: false,
         category: 'Sacred Sites',
     },
     {
@@ -56,8 +53,7 @@ const FEATURED_LOCATIONS = [
         name: 'Abu Dhabi',
         subtitle: 'Sheikh Zayed Mosque',
         image: '/featured/abu-dhabi.jpg',
-        viewers: 4256,
-        isLive: true,
+        isLive: false,
         category: 'Cultural Heritage',
     },
     {
@@ -65,7 +61,6 @@ const FEATURED_LOCATIONS = [
         name: 'Istanbul',
         subtitle: 'Blue Mosque',
         image: '/featured/istanbul.png',
-        viewers: 3891,
         isLive: false,
         category: 'Cultural Heritage',
     },
@@ -77,11 +72,11 @@ const FEATURED_LOCATIONS = [
 function FeaturedLocationCard({ location, index }: { location: typeof FEATURED_LOCATIONS[0]; index: number }) {
     return (
         <motion.div
-            className="relative group cursor-pointer flex-shrink-0 w-72 md:w-80"
+            className="relative group cursor-pointer w-full"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            whileHover={{ y: -8, scale: 1.02 }}
+            whileHover={{ y: -4, scale: 1.02 }}
         >
             <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-white/10 group-hover:border-[#00D4FF]/40 transition-colors">
                 {/* Image */}
@@ -103,13 +98,9 @@ function FeaturedLocationCard({ location, index }: { location: typeof FEATURED_L
                     </div>
                 )}
 
-                {/* Viewer count */}
-                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm">
-                    <svg className="w-4 h-4 text-white/70" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-white/90 text-xs font-medium">{location.viewers.toLocaleString()}</span>
+                {/* Category badge */}
+                <div className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm">
+                    <span className="text-white/90 text-xs font-medium">{location.category}</span>
                 </div>
 
                 {/* Content */}
@@ -139,8 +130,8 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
         { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
         { id: 'live', icon: '📺', label: 'Live', href: '/campfire' },
         { id: 'communities', icon: '👥', label: 'Communities', href: '/communities' },
+        { id: 'invite', icon: '🚀', label: 'Invite', href: '/invite', highlight: true },
         { id: 'messages', icon: '💬', label: 'Messages', href: '/messages', hasNotification: true },
-        { id: 'notifications', icon: '🔔', label: 'Notifications', href: '/notifications' },
     ];
 
     return (
@@ -161,7 +152,9 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${activeTab === item.id
                                 ? 'bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/20'
-                                : 'text-white/60 hover:bg-white/5 hover:text-white'
+                                : (item as any).highlight
+                                    ? 'bg-gradient-to-r from-[#00D4FF]/20 to-[#8B5CF6]/20 text-[#00D4FF] border border-[#00D4FF]/30 hover:from-[#00D4FF]/30 hover:to-[#8B5CF6]/30'
+                                    : 'text-white/60 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
                             <span className="text-xl relative">
@@ -171,6 +164,9 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
                                 )}
                             </span>
                             <span className="font-medium hidden xl:block">{item.label}</span>
+                            {(item as any).highlight && (
+                                <span className="hidden xl:block ml-auto text-[10px] bg-[#00D4FF]/20 px-2 py-0.5 rounded-full text-[#00D4FF]">NEW</span>
+                            )}
                         </Link>
                     ))}
                 </nav>
@@ -186,9 +182,17 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
 
                 {/* Profile */}
                 <Link href="/profile" className="flex items-center gap-3 px-3 py-3 border-t border-white/10 mt-auto">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold">
-                        {user?.displayName?.[0] || 'U'}
-                    </div>
+                    {user?.avatarUrl ? (
+                        <img
+                            src={user.avatarUrl}
+                            alt={user.displayName || 'Profile'}
+                            className="w-10 h-10 rounded-full object-cover"
+                        />
+                    ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold">
+                            {user?.displayName?.[0] || 'U'}
+                        </div>
+                    )}
                     <div className="hidden xl:block">
                         <p className="font-semibold text-white text-sm">{user?.displayName || 'User'}</p>
                         <p className="text-xs text-white/50">@{user?.username || 'username'}</p>
@@ -334,19 +338,84 @@ export default function DashboardPage() {
             {/* Main Content */}
             <div className="lg:pl-20 xl:pl-64">
                 <div className="max-w-6xl mx-auto px-4 lg:px-8 py-8 pb-24 lg:pb-8">
-                    {/* Header */}
+                    {/* Header with Profile */}
                     <motion.div
-                        className="mb-8"
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
                     >
-                        <h1 className="text-3xl font-bold text-white mb-2">
-                            Welcome back, <span className="text-[#00D4FF]">{user.displayName?.split(' ')[0] || 'Explorer'}</span>
-                        </h1>
-                        <p className="text-white/50">Discover what&apos;s happening around the world</p>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold text-white">
+                                Welcome back{user.displayName ? `, ${user.displayName.split(' ')[0]}` : ''}
+                            </h1>
+                            <p className="text-white/50 text-sm md:text-base">Discover what&apos;s happening around the world</p>
+                        </div>
+
+                        {/* Profile Quick Access */}
+                        <Link
+                            href="/profile"
+                            className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                        >
+                            {user.avatarUrl ? (
+                                <img
+                                    src={user.avatarUrl}
+                                    alt={user.displayName || 'Profile'}
+                                    className="w-10 h-10 rounded-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold">
+                                    {user.displayName?.[0] || 'U'}
+                                </div>
+                            )}
+                            <div className="hidden sm:block">
+                                <p className="font-semibold text-white text-sm">{user.displayName || 'Your Profile'}</p>
+                                <p className="text-xs text-white/50">View profile & followers</p>
+                            </div>
+                            <span className="text-white/40 text-lg">→</span>
+                        </Link>
                     </motion.div>
 
-                    {/* Featured Live Streams */}
+                    {/* Stories / Moments Bar */}
+                    <motion.section
+                        className="mb-8"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.15 }}
+                    >
+                        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                            {/* Create Story */}
+                            <Link href="/create" className="flex flex-col items-center gap-2 flex-shrink-0">
+                                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 border-2 border-dashed border-[#00D4FF]/50 flex items-center justify-center hover:border-[#00D4FF] transition-colors">
+                                    <span className="text-2xl">+</span>
+                                </div>
+                                <span className="text-xs text-white/60">Your Story</span>
+                            </Link>
+
+                            {/* Placeholder stories - will be real user stories when API is connected */}
+                            {[
+                                { name: 'Invite', icon: '🚀', gradient: 'from-[#00D4FF] to-[#8B5CF6]', href: '/invite' },
+                                { name: 'Live', icon: '📺', gradient: 'from-red-500 to-orange-500', href: '/campfire' },
+                                { name: 'Games', icon: '🎮', gradient: 'from-purple-500 to-pink-500', href: '/games' },
+                                { name: 'Explore', icon: '🔍', gradient: 'from-green-500 to-teal-500', href: '/explore' },
+                            ].map((item, i) => (
+                                <Link
+                                    key={i}
+                                    href={item.href}
+                                    className="flex flex-col items-center gap-2 flex-shrink-0"
+                                >
+                                    <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br ${item.gradient} p-[3px]`}>
+                                        <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
+                                            <span className="text-2xl">{item.icon}</span>
+                                        </div>
+                                    </div>
+                                    <span className="text-xs text-white/60">{item.name}</span>
+                                </Link>
+                            ))}
+                        </div>
+                    </motion.section>
+
+                    {/* Featured Locations - 2 column grid */}
                     <motion.section
                         className="mb-10"
                         initial={{ opacity: 0 }}
@@ -355,17 +424,17 @@ export default function DashboardPage() {
                     >
                         <div className="flex items-center justify-between mb-6">
                             <div>
-                                <h2 className="text-xl font-semibold text-white">Featured Streams</h2>
-                                <p className="text-sm text-white/40">Live from sacred and historic sites</p>
+                                <h2 className="text-xl font-semibold text-white">Featured Destinations</h2>
+                                <p className="text-sm text-white/40">Sacred and historic sites</p>
                             </div>
                             <Link href="/campfire" className="text-[#00D4FF] text-sm font-medium hover:underline">
                                 View all →
                             </Link>
                         </div>
 
-                        {/* Horizontal scroll */}
-                        <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4">
-                            {FEATURED_LOCATIONS.map((location, i) => (
+                        {/* Responsive grid - 2 columns on mobile, 3 on larger */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {FEATURED_LOCATIONS.slice(0, 4).map((location, i) => (
                                 <FeaturedLocationCard key={location.id} location={location} index={i} />
                             ))}
                         </div>
@@ -383,9 +452,17 @@ export default function DashboardPage() {
                                 transition={{ delay: 0.3 }}
                             >
                                 <div className="flex gap-4">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold flex-shrink-0">
-                                        {user.displayName?.[0] || 'U'}
-                                    </div>
+                                    {user.avatarUrl ? (
+                                        <img
+                                            src={user.avatarUrl}
+                                            alt={user.displayName || 'Profile'}
+                                            className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                                        />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold flex-shrink-0">
+                                            {user.displayName?.[0] || 'U'}
+                                        </div>
+                                    )}
                                     <input
                                         type="text"
                                         placeholder="Share something with your community..."
@@ -409,50 +486,111 @@ export default function DashboardPage() {
                                 </div>
                             </motion.div>
 
-                            {/* Empty state / Coming soon */}
+                            {/* Quick Actions */}
                             <motion.div
-                                className="bg-gradient-to-br from-[#00D4FF]/5 to-[#8B5CF6]/5 rounded-2xl border border-white/5 p-8 text-center"
+                                className="bg-white/[0.02] rounded-2xl border border-white/5 p-6"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4 }}
                             >
-                                <div className="text-6xl mb-4">🚀</div>
-                                <h3 className="text-xl font-semibold text-white mb-2">Your Feed is Ready</h3>
-                                <p className="text-white/50 mb-6 max-w-md mx-auto">
-                                    Follow communities and creators to see their content here. Or be the first to share something amazing!
-                                </p>
-                                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                <h3 className="font-semibold text-white mb-4">Quick Actions</h3>
+                                <div className="grid grid-cols-2 gap-3">
                                     <Link
-                                        href="/explore"
-                                        className="px-6 py-3 rounded-xl bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity"
+                                        href="/communities/create"
+                                        className="group p-4 rounded-xl bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 border border-white/5 hover:border-[#00D4FF]/30 transition-colors"
                                     >
-                                        Explore Communities
+                                        <div className="text-3xl mb-2">🏕️</div>
+                                        <h4 className="font-semibold text-white mb-1">Create a Tribe</h4>
+                                        <p className="text-xs text-white/50">Build your private community</p>
+                                    </Link>
+                                    <Link
+                                        href="/campfire/go-live"
+                                        className="group p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-orange-500/10 border border-white/5 hover:border-rose-500/30 transition-colors"
+                                    >
+                                        <div className="text-3xl mb-2">📺</div>
+                                        <h4 className="font-semibold text-white mb-1">Go Live</h4>
+                                        <p className="text-xs text-white/50">Start a live stream</p>
                                     </Link>
                                     <Link
                                         href="/create"
-                                        className="px-6 py-3 rounded-xl border border-[#00D4FF]/30 text-[#00D4FF] font-semibold hover:bg-[#00D4FF]/10 transition-colors"
+                                        className="group p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-white/5 hover:border-emerald-500/30 transition-colors"
                                     >
-                                        Create Your First Post
+                                        <div className="text-3xl mb-2">📸</div>
+                                        <h4 className="font-semibold text-white mb-1">Share a Post</h4>
+                                        <p className="text-xs text-white/50">Photos, videos, thoughts</p>
+                                    </Link>
+                                    <Link
+                                        href="/journeys"
+                                        className="group p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-pink-500/10 border border-white/5 hover:border-violet-500/30 transition-colors"
+                                    >
+                                        <div className="text-3xl mb-2">✨</div>
+                                        <h4 className="font-semibold text-white mb-1">Watch Moments</h4>
+                                        <p className="text-xs text-white/50">Short video stories</p>
                                     </Link>
                                 </div>
+                            </motion.div>
+
+                            {/* Feed placeholder */}
+                            <motion.div
+                                className="bg-gradient-to-br from-[#00D4FF]/5 to-[#8B5CF6]/5 rounded-2xl border border-white/5 p-8 text-center"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 }}
+                            >
+                                <div className="text-5xl mb-4">🚀</div>
+                                <h3 className="text-lg font-semibold text-white mb-2">Your Feed is Growing</h3>
+                                <p className="text-white/50 mb-4 max-w-md mx-auto text-sm">
+                                    Follow tribes and creators to see their posts here
+                                </p>
+                                <Link
+                                    href="/explore"
+                                    className="inline-block px-6 py-2.5 rounded-xl bg-[#00D4FF] text-black font-semibold text-sm hover:opacity-90 transition-opacity"
+                                >
+                                    Explore
+                                </Link>
                             </motion.div>
                         </div>
 
                         {/* Sidebar */}
                         <div className="space-y-6">
+                            {/* Invite Friends Card */}
                             <motion.div
+                                className="bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 rounded-2xl border border-[#00D4FF]/20 p-6"
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.5 }}
                             >
-                                <ContentRequestCard />
+                                <div className="text-3xl mb-3">👋</div>
+                                <h3 className="text-lg font-semibold text-white mb-2">Invite Your People</h3>
+                                <p className="text-sm text-white/50 mb-4">
+                                    Zero Gravity is better with your tribe. Invite family and friends to join.
+                                </p>
+                                <Link
+                                    href="/communities/create"
+                                    className="block w-full py-2.5 rounded-xl bg-[#00D4FF] text-black text-center font-semibold text-sm hover:opacity-90 transition-opacity"
+                                >
+                                    Create a Tribe
+                                </Link>
                             </motion.div>
+
+                            {/* Your Communities */}
                             <motion.div
+                                className="bg-white/[0.02] rounded-2xl border border-white/5 p-5"
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.6 }}
                             >
-                                <TrendingTopics />
+                                <h3 className="text-lg font-semibold text-white mb-4">Your Tribes</h3>
+                                <div className="text-center py-6">
+                                    <div className="text-3xl mb-2">🏕️</div>
+                                    <p className="text-sm text-white/40 mb-3">No tribes yet</p>
+                                    <Link
+                                        href="/communities"
+                                        className="text-[#00D4FF] text-sm font-medium hover:underline"
+                                    >
+                                        Browse Communities
+                                    </Link>
+                                </div>
                             </motion.div>
                         </div>
                     </div>

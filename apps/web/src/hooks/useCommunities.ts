@@ -17,6 +17,15 @@ export interface Community {
     createdAt: string;
 }
 
+export interface CreateCommunityData {
+    name: string;
+    description: string;
+    category: string;
+    privacy: 'public' | 'private';
+    approvalRequired: boolean;
+    coverImage: string | null;
+}
+
 // ============================================
 // COMMUNITIES HOOK
 // Fetches user's communities from API
@@ -45,6 +54,35 @@ export function useCommunities() {
             setIsLoading(false);
         }
     }, []);
+
+    const createCommunity = useCallback(async (data: CreateCommunityData): Promise<{ success: boolean; communityId?: string; error?: string }> => {
+        try {
+            const response = await apiFetch(API_ENDPOINTS.communities, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: data.name,
+                    description: data.description,
+                    category: data.category,
+                    isPrivate: data.privacy === 'private',
+                    approvalRequired: data.approvalRequired,
+                    coverUrl: data.coverImage,
+                }),
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                await fetchCommunities(); // Refresh list
+                return { success: true, communityId: result.community?.id };
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                return { success: false, error: errorData.message || 'Failed to create community' };
+            }
+        } catch (err) {
+            console.error('Error creating community:', err);
+            return { success: false, error: 'Network error' };
+        }
+    }, [fetchCommunities]);
 
     const joinCommunity = useCallback(async (communityId: string) => {
         try {
@@ -80,6 +118,7 @@ export function useCommunities() {
         communities,
         isLoading,
         error,
+        createCommunity,
         joinCommunity,
         leaveCommunity,
         refetch: fetchCommunities,

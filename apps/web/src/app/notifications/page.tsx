@@ -11,8 +11,8 @@ function Navigation({ activeTab }: { activeTab: string }) {
     const navItems = [
         { id: 'home', icon: '🏠', label: 'Home', href: '/dashboard' },
         { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
-        { id: 'journeys', icon: '🎬', label: 'Journeys', href: '/journeys' },
-        { id: 'campfire', icon: '🔥', label: 'Live', href: '/campfire' },
+        { id: 'communities', icon: '👥', label: 'Tribes', href: '/communities' },
+        { id: 'invite', icon: '🚀', label: 'Invite', href: '/invite' },
         { id: 'messages', icon: '💬', label: 'Messages', href: '/messages' },
     ];
 

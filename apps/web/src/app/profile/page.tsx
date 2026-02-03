@@ -12,9 +12,9 @@ function Navigation({ activeTab }: { activeTab: string }) {
     const navItems = [
         { id: 'home', icon: '🏠', label: 'Home', href: '/dashboard' },
         { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
-        { id: 'journeys', icon: '🎬', label: 'Journeys', href: '/journeys' },
-        { id: 'campfire', icon: '🔥', label: 'Live', href: '/campfire' },
-        { id: 'messages', icon: '💬', label: 'Messages', href: '/messages' },
+        { id: 'communities', icon: '👥', label: 'Tribes', href: '/communities' },
+        { id: 'invite', icon: '🚀', label: 'Invite', href: '/invite' },
+        { id: 'profile', icon: '👤', label: 'Profile', href: '/profile' },
     ];
 
     return (
@@ -52,18 +52,8 @@ function Navigation({ activeTab }: { activeTab: string }) {
     );
 }
 
-// User's posts
-const userPosts = [
-    { id: 1, image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop', likes: 1247 },
-    { id: 2, image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop', likes: 892 },
-    { id: 3, image: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=400&fit=crop', likes: 2150 },
-    { id: 4, image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&h=400&fit=crop', likes: 1893 },
-    { id: 5, image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop', likes: 3421 },
-    { id: 6, image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=400&fit=crop', likes: 756 },
-    { id: 7, image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=400&fit=crop', likes: 1567 },
-    { id: 8, image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop', likes: 2890 },
-    { id: 9, image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop', likes: 1234 },
-];
+// User's posts - empty array, will be populated from API
+const userPosts: Array<{ id: number; image: string; likes: number }> = [];
 
 function ProfilePageContent() {
     const { user } = useAuth();
@@ -159,15 +149,15 @@ function ProfilePageContent() {
                                 {/* Stats */}
                                 <div className="flex items-center gap-6">
                                     <div className="text-center">
-                                        <p className="text-xl font-bold text-white">247</p>
+                                        <p className="text-xl font-bold text-white">0</p>
                                         <p className="text-xs text-white/50">Posts</p>
                                     </div>
-                                    <div className="text-center">
-                                        <p className="text-xl font-bold text-white">12.4K</p>
+                                    <div className="text-center cursor-pointer hover:opacity-80">
+                                        <p className="text-xl font-bold text-white">0</p>
                                         <p className="text-xs text-white/50">Followers</p>
                                     </div>
-                                    <div className="text-center">
-                                        <p className="text-xl font-bold text-white">892</p>
+                                    <div className="text-center cursor-pointer hover:opacity-80">
+                                        <p className="text-xl font-bold text-white">0</p>
                                         <p className="text-xs text-white/50">Following</p>
                                     </div>
                                 </div>
@@ -209,30 +199,47 @@ function ProfilePageContent() {
 
                         {/* Content Grid */}
                         <div className="py-6">
-                            <div className="grid grid-cols-3 gap-1 md:gap-2">
-                                {userPosts.map((post, i) => (
-                                    <motion.div
-                                        key={post.id}
-                                        className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: i * 0.03 }}
-                                        whileHover={{ scale: 1.02 }}
+                            {userPosts.length > 0 ? (
+                                <div className="grid grid-cols-3 gap-1 md:gap-2">
+                                    {userPosts.map((post, i) => (
+                                        <motion.div
+                                            key={post.id}
+                                            className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ delay: i * 0.03 }}
+                                            whileHover={{ scale: 1.02 }}
+                                        >
+                                            <Image
+                                                src={post.image}
+                                                alt={`Post ${post.id}`}
+                                                fill
+                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                            />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white font-semibold flex items-center gap-1">
+                                                    🔥 {post.likes.toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-16">
+                                    <div className="text-5xl mb-4">📸</div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">No Posts Yet</h3>
+                                    <p className="text-white/50 mb-6 max-w-md mx-auto">
+                                        Share your first moment with your community
+                                    </p>
+                                    <Link
+                                        href="/create"
+                                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-semibold hover:opacity-90 transition-opacity"
                                     >
-                                        <Image
-                                            src={post.image}
-                                            alt={`Post ${post.id}`}
-                                            fill
-                                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                        />
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                                            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white font-semibold flex items-center gap-1">
-                                                🔥 {post.likes.toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
+                                        <span>+</span>
+                                        Create Your First Post
+                                    </Link>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

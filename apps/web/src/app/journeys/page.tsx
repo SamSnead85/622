@@ -341,6 +341,22 @@ export default function JourneysPage() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [currentIndex, journeys.length]);
 
+    // First time visitor state
+    const [showOnboarding, setShowOnboarding] = useState(true);
+
+    // Check if first visit
+    useEffect(() => {
+        const hasSeenOnboarding = localStorage.getItem('0g_moments_onboarding');
+        if (hasSeenOnboarding) {
+            setShowOnboarding(false);
+        }
+    }, []);
+
+    const dismissOnboarding = () => {
+        localStorage.setItem('0g_moments_onboarding', 'true');
+        setShowOnboarding(false);
+    };
+
     // Don't render content until viewport height is known (client-side only)
     if (!viewportHeight) {
         return <div className="h-screen w-full bg-black" />;
@@ -348,48 +364,149 @@ export default function JourneysPage() {
 
     return (
         <div ref={containerRef} className="h-screen w-full bg-black overflow-hidden">
-            {/* Back button */}
+            {/* First-time Onboarding Overlay */}
+            <AnimatePresence>
+                {showOnboarding && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            className="max-w-md w-full text-center"
+                        >
+                            <div className="text-6xl mb-6">✨</div>
+                            <h2 className="text-3xl font-bold text-white mb-4">
+                                Welcome to Moments
+                            </h2>
+                            <p className="text-white/60 mb-8 leading-relaxed">
+                                Short videos from your circle. Swipe up to discover family updates,
+                                community highlights, and stories from the people who matter most.
+                            </p>
+                            <div className="space-y-4 text-left bg-white/5 rounded-2xl p-6 mb-8">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                        <span>👆</span>
+                                    </div>
+                                    <p className="text-white/80">Swipe up to see more moments</p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                        <span>❤️</span>
+                                    </div>
+                                    <p className="text-white/80">Double-tap to like</p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                        <span>🔊</span>
+                                    </div>
+                                    <p className="text-white/80">Tap the sound icon for audio</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={dismissOnboarding}
+                                className="w-full py-4 bg-white text-black font-semibold rounded-xl hover:bg-white/90 transition-colors"
+                            >
+                                Start Watching
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Header */}
+            <div className="fixed top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none py-4 px-4">
+                <div className="flex items-center justify-between pointer-events-auto">
+                    <Link
+                        href="/dashboard"
+                        className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                    </Link>
+                    <h1 className="text-lg font-semibold text-white">Moments</h1>
+                    <Link
+                        href="/create?type=moment"
+                        className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                            <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+                        </svg>
+                    </Link>
+                </div>
+            </div>
+
+            {/* Create Moment FAB */}
             <Link
-                href="/dashboard"
-                className="fixed top-4 left-4 z-30 w-10 h-10 rounded-full bg-black/40 flex items-center justify-center"
+                href="/create?type=moment"
+                className="fixed bottom-8 right-6 z-30 w-14 h-14 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 flex items-center justify-center shadow-lg shadow-violet-500/30 hover:scale-105 transition-transform"
             >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
                 </svg>
             </Link>
 
-            <motion.div
-                drag="y"
-                dragConstraints={{ top: 0, bottom: 0 }}
-                dragElastic={0.1}
-                onDragEnd={handleDragEnd}
-                animate={{ y: -currentIndex * viewportHeight }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="h-screen"
-            >
-                {journeys.map((journey, index) => (
-                    <div key={journey.id} className="h-screen w-full">
-                        <JourneyCard
-                            journey={journey}
-                            isActive={index === currentIndex}
-                            isMuted={isMuted}
-                            onToggleMute={() => setIsMuted(!isMuted)}
-                            onLike={() => { }}
-                        />
-                    </div>
-                ))}
-            </motion.div>
+            {/* Empty State */}
+            {journeys.length === 0 && !isLoading && (
+                <div className="h-full flex flex-col items-center justify-center px-8 text-center">
+                    <div className="text-6xl mb-4">🎬</div>
+                    <h2 className="text-2xl font-bold text-white mb-2">No moments yet</h2>
+                    <p className="text-white/50 mb-6 max-w-xs">
+                        Be the first to share a moment with your tribe
+                    </p>
+                    <Link
+                        href="/create?type=moment"
+                        className="px-8 py-3 bg-white text-black font-semibold rounded-xl"
+                    >
+                        Create Your First Moment
+                    </Link>
+                </div>
+            )}
+
+            {/* Content */}
+            {journeys.length > 0 && (
+                <motion.div
+                    drag="y"
+                    dragConstraints={{ top: 0, bottom: 0 }}
+                    dragElastic={0.1}
+                    onDragEnd={handleDragEnd}
+                    animate={{ y: -currentIndex * viewportHeight }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    className="h-screen"
+                >
+                    {journeys.map((journey, index) => (
+                        <div key={journey.id} className="h-screen w-full">
+                            <JourneyCard
+                                journey={journey}
+                                isActive={index === currentIndex}
+                                isMuted={isMuted}
+                                onToggleMute={() => setIsMuted(!isMuted)}
+                                onLike={() => { }}
+                            />
+                        </div>
+                    ))}
+                </motion.div>
+            )}
 
             {/* Progress dots */}
-            <div className="fixed right-1.5 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1.5">
-                {journeys.map((_, index) => (
-                    <div
-                        key={index}
-                        className={`w-1 rounded-full transition-all ${index === currentIndex ? 'h-6 bg-white' : 'h-1.5 bg-white/40'
-                            }`}
-                    />
-                ))}
-            </div>
+            {journeys.length > 1 && (
+                <div className="fixed right-1.5 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1.5">
+                    {journeys.map((_, index) => (
+                        <button
+                            key={index}
+                            onClick={() => setCurrentIndex(index)}
+                            className={`w-1 rounded-full transition-all ${index === currentIndex ? 'h-6 bg-white' : 'h-1.5 bg-white/40'
+                                }`}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
+
