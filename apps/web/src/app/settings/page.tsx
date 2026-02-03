@@ -139,7 +139,7 @@ const settingSections: SettingSection[] = [
 
 function SettingsPageContent() {
     const { profile, updateProfile } = useProfile();
-    const { logout } = useAuth();
+    const { logout, updateUser } = useAuth();
     const [showProfileEditor, setShowProfileEditor] = useState(false);
     const [toggles, setToggles] = useState<Record<string, boolean>>({
         'dark-mode': true,
@@ -147,6 +147,24 @@ function SettingsPageContent() {
         'activity': true,
     });
     const [mounted, setMounted] = useState(false);
+
+    // Handler that syncs profile changes to both useProfile AND AuthContext
+    const handleProfileSave = useCallback((updatedProfile: Parameters<typeof updateProfile>[0]) => {
+        updateProfile(updatedProfile);
+        // Also update AuthContext so all components (sidebar, dashboard, etc.) get the new avatar
+        if (updatedProfile.avatarType === 'custom' && updatedProfile.avatarCustomUrl) {
+            updateUser({ avatarUrl: updatedProfile.avatarCustomUrl });
+        } else if (updatedProfile.avatarPreset) {
+            // For presets, store as special format
+            updateUser({ avatarUrl: `preset:${updatedProfile.avatarPreset}` });
+        }
+        if (updatedProfile.displayName) {
+            updateUser({ displayName: updatedProfile.displayName });
+        }
+        if (updatedProfile.bio !== undefined) {
+            updateUser({ bio: updatedProfile.bio });
+        }
+    }, [updateProfile, updateUser]);
 
     useEffect(() => {
         setMounted(true);
@@ -301,7 +319,7 @@ function SettingsPageContent() {
             <ProfileEditor
                 isOpen={showProfileEditor}
                 onClose={() => setShowProfileEditor(false)}
-                onSave={updateProfile}
+                onSave={handleProfileSave}
                 currentProfile={profile || undefined}
             />
         </div>
