@@ -40,13 +40,15 @@ const PRESET_AVATARS = [
 
 export function WelcomeOnboarding({ onComplete }: OnboardingProps) {
     const [step, setStep] = useState(0);
-    const [displayName, setDisplayName] = useState('');
-    const [username, setUsername] = useState('');
+    const [name, setName] = useState('');
     const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
     const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
     const { updateProfile } = useProfile();
 
     const totalSteps = 4;
+
+    // Auto-generate username from name (lowercase, no spaces, alphanumeric only)
+    const generatedUsername = name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
     const toggleInterest = useCallback((id: string) => {
         setSelectedInterests(prev =>
@@ -55,22 +57,22 @@ export function WelcomeOnboarding({ onComplete }: OnboardingProps) {
     }, []);
 
     const handleComplete = useCallback(() => {
-        // Save profile
+        // Save profile - use name for both displayName and username
         updateProfile({
-            displayName,
-            username,
+            displayName: name,
+            username: generatedUsername,
             avatarType: 'preset',
             avatarPreset: selectedAvatar || 'gradient-1',
         });
         // Mark onboarding complete
         localStorage.setItem('caravan_onboarding_complete', 'true');
         onComplete();
-    }, [displayName, username, selectedAvatar, updateProfile, onComplete]);
+    }, [name, generatedUsername, selectedAvatar, updateProfile, onComplete]);
 
     const canProceed = () => {
         switch (step) {
             case 0: return true; // Welcome
-            case 1: return displayName.trim().length >= 2 && username.trim().length >= 3;
+            case 1: return name.trim().length >= 2; // Just need a name with 2+ characters
             case 2: return selectedAvatar !== null;
             case 3: return selectedInterests.length >= 3;
             default: return true;
@@ -135,7 +137,7 @@ export function WelcomeOnboarding({ onComplete }: OnboardingProps) {
                         </motion.div>
                     )}
 
-                    {/* Step 1: Name & Username */}
+                    {/* Step 1: Name */}
                     {step === 1 && (
                         <motion.div
                             key="name"
@@ -145,32 +147,23 @@ export function WelcomeOnboarding({ onComplete }: OnboardingProps) {
                             className="w-full max-w-md"
                         >
                             <h2 className="text-2xl font-bold text-white mb-2 text-center">What should we call you?</h2>
-                            <p className="text-white/50 text-center mb-8">This is how you&apos;ll appear to others</p>
+                            <p className="text-white/50 text-center mb-8">Pick any name you&apos;d like - no real name required</p>
 
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm text-white/60 mb-2">Display Name</label>
-                                    <input
-                                        type="text"
-                                        value={displayName}
-                                        onChange={e => setDisplayName(e.target.value)}
-                                        placeholder="Your name"
-                                        className="w-full px-4 py-3 bg-white/5 rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm text-white/60 mb-2">Username</label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30">@</span>
-                                        <input
-                                            type="text"
-                                            value={username}
-                                            onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                                            placeholder="username"
-                                            className="w-full pl-8 pr-4 py-3 bg-white/5 rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                                        />
-                                    </div>
-                                </div>
+                            <div>
+                                <label className="block text-sm text-white/60 mb-2">Your Name</label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    placeholder="e.g. AbuJawad, Desert Eagle, etc."
+                                    className="w-full px-4 py-4 bg-white/5 rounded-xl text-white text-lg placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                                    autoFocus
+                                />
+                                {name.length >= 2 && (
+                                    <p className="text-xs text-white/40 mt-2 text-center">
+                                        Your @handle will be: <span className="text-amber-400">@{generatedUsername}</span>
+                                    </p>
+                                )}
                             </div>
                         </motion.div>
                     )}
@@ -199,7 +192,7 @@ export function WelcomeOnboarding({ onComplete }: OnboardingProps) {
                                         } : undefined}
                                     >
                                         {avatar.type === 'emoji' && avatar.emoji}
-                                        {avatar.type === 'gradient' && displayName.charAt(0).toUpperCase()}
+                                        {avatar.type === 'gradient' && name.charAt(0).toUpperCase()}
                                     </button>
                                 ))}
                             </div>

@@ -12,12 +12,13 @@ export default function SignupPage() {
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [username, setUsername] = useState('');
-    const [displayName, setDisplayName] = useState('');
+    const [name, setName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
     const [mounted, setMounted] = useState(false);
+
+    // Auto-generate username from name
+    const generatedUsername = name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -28,18 +29,6 @@ export default function SignupPage() {
         }
     }, [authLoading, isAuthenticated, router]);
 
-    const checkUsername = async (value: string) => {
-        if (value.length < 3) {
-            setUsernameStatus('idle');
-            return;
-        }
-        setUsernameStatus('checking');
-        // Simulate username check - server validates on actual signup
-        await new Promise((r) => setTimeout(r, 500));
-        // For now, always mark as available - server will reject duplicates on signup
-        setUsernameStatus('available');
-    };
-
     const handleStep1 = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email || !password) return;
@@ -49,12 +38,12 @@ export default function SignupPage() {
 
     const handleStep2 = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (usernameStatus !== 'available' || !username) return;
+        if (!name.trim() || name.length < 2) return;
         setIsLoading(true);
         setError('');
 
         try {
-            const result = await signup(email, password, username, displayName || username);
+            const result = await signup(email, password, generatedUsername, name);
             if (result.success) {
                 router.push('/dashboard');
             } else {
@@ -231,53 +220,35 @@ export default function SignupPage() {
                                         ← Back
                                     </button>
 
-                                    <h1 className="text-3xl font-bold text-white mb-2">Choose your username</h1>
+                                    <h1 className="text-3xl font-bold text-white mb-2">What should we call you?</h1>
                                     <p className="text-white/50 mb-8">
-                                        This is how others will find and mention you.
+                                        Pick any name - no real name required
                                     </p>
 
                                     <form onSubmit={handleStep2} className="space-y-4">
                                         <div>
-                                            <label className="block text-sm text-white/60 mb-2">Username</label>
-                                            <div className="relative">
-                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">@</span>
-                                                <input
-                                                    type="text"
-                                                    value={username}
-                                                    onChange={(e) => {
-                                                        const value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
-                                                        setUsername(value);
-                                                        checkUsername(value);
-                                                    }}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-10 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:bg-white/10 transition-all"
-                                                    placeholder="username"
-                                                    minLength={3}
-                                                    maxLength={30}
-                                                    required
-                                                    autoFocus
-                                                />
-                                                {usernameStatus !== 'idle' && (
-                                                    <span className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                        {usernameStatus === 'checking' && (
-                                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                        )}
-                                                        {usernameStatus === 'available' && (
-                                                            <span className="text-emerald-400">✓</span>
-                                                        )}
-                                                        {usernameStatus === 'taken' && (
-                                                            <span className="text-red-400">✗</span>
-                                                        )}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-white/40 mt-2">
-                                                Letters, numbers, and underscores only
-                                            </p>
+                                            <label className="block text-sm text-white/60 mb-2">Your Name</label>
+                                            <input
+                                                type="text"
+                                                value={name}
+                                                onChange={(e) => setName(e.target.value)}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white text-lg placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:bg-white/10 transition-all"
+                                                placeholder="e.g. AbuJawad, Desert Eagle, etc."
+                                                minLength={2}
+                                                maxLength={50}
+                                                required
+                                                autoFocus
+                                            />
+                                            {name.length >= 2 && (
+                                                <p className="text-xs text-white/40 mt-2">
+                                                    Your @handle will be: <span className="text-amber-400 font-medium">@{generatedUsername}</span>
+                                                </p>
+                                            )}
                                         </div>
 
                                         <motion.button
                                             type="submit"
-                                            disabled={isLoading || usernameStatus !== 'available'}
+                                            disabled={isLoading || name.trim().length < 2}
                                             className="w-full bg-gradient-to-r from-orange-400 via-rose-500 to-violet-500 text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                                             whileTap={{ scale: 0.98 }}
                                         >

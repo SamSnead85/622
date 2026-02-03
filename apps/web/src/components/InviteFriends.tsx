@@ -87,9 +87,9 @@ export function InviteFriends({ isOpen, onClose }: InviteFriendsProps) {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className="fixed inset-4 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-50 sm:w-full sm:max-w-md"
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
                     >
-                        <div className="h-full sm:h-auto bg-gradient-to-b from-[#0a0a0f] to-[#050508] rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+                        <div className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-gradient-to-b from-[#0a0a0f] to-[#050508] rounded-3xl border border-white/10 shadow-2xl">
                             {/* Header with animated background */}
                             <div className="relative px-6 pt-8 pb-6 overflow-hidden">
                                 {/* Animated gradient orbs */}

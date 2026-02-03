@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useUpload } from '../hooks/useUpload';
 import { API_URL } from '@/lib/api';
+import { AvatarCropper } from './AvatarCropper';
 
 // ============================================
 // PRESET AVATARS - Clean, universal options
@@ -169,6 +170,8 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
     });
     const [avatarTab, setAvatarTab] = useState<'presets' | 'upload'>('presets');
     const [saving, setSaving] = useState(false);
+    const [showCropper, setShowCropper] = useState(false);
+    const [pendingImage, setPendingImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { uploadAvatar, uploading, progress, error: uploadError, resetError } = useUpload();
 
@@ -178,9 +181,34 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
         }
     }, [currentProfile]);
 
-    const handlePhotoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Handle file selection - show cropper first
+    const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // Create preview URL and show cropper
+        const previewUrl = URL.createObjectURL(file);
+        setPendingImage(previewUrl);
+        setShowCropper(true);
+
+        // Reset the file input so the same file can be selected again
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    }, []);
+
+    // Handle cropped image upload
+    const handleCroppedImage = useCallback(async (croppedBlob: Blob) => {
+        setShowCropper(false);
+
+        // Clean up pending image URL
+        if (pendingImage) {
+            URL.revokeObjectURL(pendingImage);
+            setPendingImage(null);
+        }
+
+        // Convert blob to file
+        const file = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' });
 
         resetError();
         const result = await uploadAvatar(file);
@@ -191,7 +219,16 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                 avatarCustomUrl: result.url,
             }));
         }
-    }, [uploadAvatar, resetError]);
+    }, [uploadAvatar, resetError, pendingImage]);
+
+    // Cancel cropping
+    const handleCropCancel = useCallback(() => {
+        setShowCropper(false);
+        if (pendingImage) {
+            URL.revokeObjectURL(pendingImage);
+            setPendingImage(null);
+        }
+    }, [pendingImage]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -362,7 +399,7 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                                     ref={fileInputRef}
                                     type="file"
                                     accept="image/*"
-                                    onChange={handlePhotoUpload}
+                                    onChange={handleFileSelect}
                                     className="hidden"
                                 />
                                 <p className="text-xs text-white/40 mt-2 text-center">
@@ -459,6 +496,17 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                     </button>
                 </div>
             </motion.div>
+
+            {/* Avatar Cropper Modal */}
+            <AnimatePresence>
+                {showCropper && pendingImage && (
+                    <AvatarCropper
+                        imageSrc={pendingImage}
+                        onSave={handleCroppedImage}
+                        onCancel={handleCropCancel}
+                    />
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }
