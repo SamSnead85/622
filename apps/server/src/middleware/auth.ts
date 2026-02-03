@@ -11,6 +11,11 @@ export interface AuthRequest extends Request {
     };
 }
 
+// ============================================
+// PRODUCTION AUTH MIDDLEWARE
+// All authentication uses real database sessions
+// ============================================
+
 export const authenticate = async (
     req: AuthRequest,
     res: Response,
@@ -31,49 +36,10 @@ export const authenticate = async (
             return;
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
             userId: string;
             sessionId: string;
         };
-
-        // Demo mode - ensure demo user exists in database
-        if (decoded.sessionId === 'demo-session' && decoded.userId === 'demo-user-id') {
-            // Ensure demo user exists in the database
-            let demoUser;
-            try {
-                demoUser = await prisma.user.upsert({
-                    where: { id: 'demo-user-id' },
-                    update: { lastActiveAt: new Date() },
-                    create: {
-                        id: 'demo-user-id',
-                        email: 'demo@six22.app',
-                        username: 'demo',
-                        displayName: 'Demo User',
-                        passwordHash: 'demo-no-login',
-                        isVerified: true,
-                    },
-                });
-            } catch (upsertError) {
-                // Try finding by email if id conflict
-                demoUser = await prisma.user.findUnique({
-                    where: { email: 'demo@six22.app' },
-                });
-                if (!demoUser) {
-                    console.error('Failed to create/find demo user:', upsertError);
-                    res.status(500).json({ error: 'Demo user initialization failed' });
-                    return;
-                }
-            }
-
-            req.userId = demoUser.id;
-            req.user = {
-                id: demoUser.id,
-                email: demoUser.email,
-                username: demoUser.username,
-            };
-            next();
-            return;
-        }
 
         // Verify session exists and isn't expired
         let session;
@@ -88,7 +54,14 @@ export const authenticate = async (
             return;
         }
 
-        if (!session || session.expiresAt < new Date()) {
+        if (!session) {
+            res.status(401).json({ error: 'Invalid session' });
+            return;
+        }
+
+        if (session.expiresAt < new Date()) {
+            // Clean up expired session
+            await prisma.session.delete({ where: { id: decoded.sessionId } }).catch(() => { });
             res.status(401).json({ error: 'Session expired' });
             return;
         }
@@ -105,11 +78,11 @@ export const authenticate = async (
             username: session.user.username,
         };
 
-        // Update last active
+        // Update last active timestamp
         await prisma.user.update({
             where: { id: decoded.userId },
             data: { lastActiveAt: new Date() },
-        }).catch(() => { }); // Ignore errors updating last active
+        }).catch(() => { }); // Silently ignore update errors
 
         next();
     } catch (error) {
@@ -117,9 +90,18 @@ export const authenticate = async (
             res.status(401).json({ error: 'Invalid token' });
             return;
         }
+        if (error instanceof jwt.TokenExpiredError) {
+            res.status(401).json({ error: 'Token expired' });
+            return;
+        }
         next(error);
     }
 };
+
+// ============================================
+// OPTIONAL AUTH MIDDLEWARE
+// Attaches user if authenticated, continues if not
+// ============================================
 
 export const optionalAuth = async (
     req: AuthRequest,
@@ -135,44 +117,10 @@ export const optionalAuth = async (
 
     try {
         const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
             userId: string;
             sessionId: string;
         };
-
-        // Demo mode - ensure demo user exists
-        if (decoded.sessionId === 'demo-session' && decoded.userId === 'demo-user-id') {
-            let demoUser;
-            try {
-                demoUser = await prisma.user.upsert({
-                    where: { id: 'demo-user-id' },
-                    update: {},
-                    create: {
-                        id: 'demo-user-id',
-                        email: 'demo@six22.app',
-                        username: 'demo',
-                        displayName: 'Demo User',
-                        passwordHash: 'demo-no-login',
-                        isVerified: true,
-                    },
-                });
-            } catch {
-                demoUser = await prisma.user.findFirst({
-                    where: { email: 'demo@six22.app' },
-                });
-            }
-
-            if (demoUser) {
-                req.userId = demoUser.id;
-                req.user = {
-                    id: demoUser.id,
-                    email: demoUser.email,
-                    username: demoUser.username,
-                };
-            }
-            next();
-            return;
-        }
 
         const session = await prisma.session.findUnique({
             where: { id: decoded.sessionId },
@@ -188,7 +136,7 @@ export const optionalAuth = async (
             };
         }
     } catch {
-        // Silent fail for optional auth
+        // Silent fail for optional auth - user simply isn't authenticated
     }
 
     next();

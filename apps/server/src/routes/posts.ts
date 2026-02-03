@@ -6,83 +6,10 @@ import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
-// Demo posts for testing
-const DEMO_POSTS = [
-    {
-        id: 'demo-post-1',
-        userId: 'demo-user-id',
-        type: 'IMAGE',
-        caption: 'Welcome to Six22! 🌙 The year 622 CE marks the beginning of the Islamic calendar - the Hijra. Join our community.',
-        mediaUrl: 'https://images.unsplash.com/photo-1564769625688-88f6b02e6b5a?w=800',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1564769625688-88f6b02e6b5a?w=400',
-        viewCount: 1280,
-        isPublic: true,
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-        user: {
-            id: 'demo-user-id',
-            username: 'demo',
-            displayName: 'Demo User',
-            avatarUrl: null,
-            isVerified: true,
-        },
-        likesCount: 128,
-        commentsCount: 24,
-        sharesCount: 12,
-        isLiked: false,
-        isSaved: false,
-    },
-    {
-        id: 'demo-post-2',
-        userId: 'creator-1',
-        type: 'IMAGE',
-        caption: 'The beauty of Islamic geometric patterns ✨ Each design tells a story of unity and infinity.',
-        mediaUrl: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=400',
-        viewCount: 2450,
-        isPublic: true,
-        createdAt: new Date(Date.now() - 7200000).toISOString(),
-        user: {
-            id: 'creator-1',
-            username: 'artistry',
-            displayName: 'Islamic Artistry',
-            avatarUrl: null,
-            isVerified: true,
-        },
-        likesCount: 342,
-        commentsCount: 56,
-        sharesCount: 78,
-        isLiked: true,
-        isSaved: false,
-    },
-    {
-        id: 'demo-post-3',
-        userId: 'creator-2',
-        type: 'IMAGE',
-        caption: 'Golden hour in the desert 🏜️ Finding peace in the vastness.',
-        mediaUrl: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=800',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=400',
-        viewCount: 892,
-        isPublic: true,
-        createdAt: new Date(Date.now() - 14400000).toISOString(),
-        user: {
-            id: 'creator-2',
-            username: 'wanderer',
-            displayName: 'Desert Wanderer',
-            avatarUrl: null,
-            isVerified: false,
-        },
-        likesCount: 89,
-        commentsCount: 12,
-        sharesCount: 5,
-        isLiked: false,
-        isSaved: true,
-    },
-];
-
 // GET /api/v1/posts/feed
 router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        // Now always fetch real posts from database (demo posts used only as fallback)
+        // Fetch real posts from database
 
         const { cursor, limit = '10', type = 'foryou' } = req.query;
 
@@ -97,8 +24,8 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                     select: { followingId: true },
                 });
             } catch (dbError) {
-                console.error('Database error:', dbError);
-                return res.json({ posts: DEMO_POSTS, nextCursor: null });
+                console.error('Database error fetching following:', dbError);
+                throw new AppError('Failed to load feed', 503);
             }
 
             whereClause = {
@@ -145,8 +72,8 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                 },
             });
         } catch (dbError) {
-            console.error('Database error:', dbError);
-            return res.json({ posts: DEMO_POSTS, nextCursor: null });
+            console.error('Database error fetching posts:', dbError);
+            throw new AppError('Failed to load posts', 503);
         }
 
         const hasMore = posts.length > parseInt(limit as string);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { API_ENDPOINTS } from '@/lib/api';
 
 // Google OAuth Configuration
@@ -9,13 +9,6 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 interface GoogleAuthResponse {
     credential: string;
     clientId: string;
-}
-
-interface GoogleUser {
-    email: string;
-    name: string;
-    picture: string;
-    sub: string;
 }
 
 declare global {
@@ -27,6 +20,7 @@ declare global {
                         client_id: string;
                         callback: (response: GoogleAuthResponse) => void;
                         auto_select?: boolean;
+                        use_fedcm_for_prompt?: boolean;
                     }) => void;
                     renderButton: (
                         element: HTMLElement | null,
@@ -39,15 +33,29 @@ declare global {
                             width?: number;
                         }
                     ) => void;
-                    prompt: () => void;
+                    prompt: (momentListener?: (notification: {
+                        isNotDisplayed: () => boolean;
+                        isSkippedMoment: () => boolean;
+                        getNotDisplayedReason: () => string;
+                        getSkippedReason: () => string;
+                    }) => void) => void;
+                    cancel: () => void;
                 };
             };
         };
     }
 }
 
-export function useGoogleAuth(onSuccess: (user: { id: string; email: string; displayName: string; avatarUrl: string }, token: string) => void, onError: (error: string) => void) {
+export function useGoogleAuth(
+    onSuccess: (user: { id: string; email: string; displayName: string; avatarUrl: string }, token: string) => void,
+    onError: (error: string) => void
+) {
+    const [isLibraryLoaded, setIsLibraryLoaded] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const buttonContainerRef = useRef<string | null>(null);
+
     const handleCredentialResponse = useCallback(async (response: GoogleAuthResponse) => {
+        setIsLoading(true);
         try {
             // Send the Google ID token to our backend
             const res = await fetch(API_ENDPOINTS.login.replace('/login', '/google'), {
@@ -63,6 +71,8 @@ export function useGoogleAuth(onSuccess: (user: { id: string; email: string; dis
             const data = await res.json();
 
             if (res.ok) {
+                // Store token in localStorage
+                localStorage.setItem('six22_token', data.token);
                 onSuccess(data.user, data.token);
             } else {
                 onError(data.error || 'Google login failed');
@@ -70,51 +80,114 @@ export function useGoogleAuth(onSuccess: (user: { id: string; email: string; dis
         } catch (error) {
             console.error('Google auth error:', error);
             onError('Network error during Google login');
+        } finally {
+            setIsLoading(false);
         }
     }, [onSuccess, onError]);
 
     useEffect(() => {
+        if (!GOOGLE_CLIENT_ID) {
+            console.warn('Google Client ID not configured');
+            return;
+        }
+
+        // Check if script already loaded
+        if (window.google?.accounts?.id) {
+            window.google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleCredentialResponse,
+                use_fedcm_for_prompt: true,
+            });
+            setIsLibraryLoaded(true);
+            return;
+        }
+
         // Load Google Sign-In script
         const script = document.createElement('script');
         script.src = 'https://accounts.google.com/gsi/client';
         script.async = true;
         script.defer = true;
+
         script.onload = () => {
-            if (window.google && GOOGLE_CLIENT_ID) {
+            if (window.google?.accounts?.id) {
                 window.google.accounts.id.initialize({
                     client_id: GOOGLE_CLIENT_ID,
                     callback: handleCredentialResponse,
+                    use_fedcm_for_prompt: true,
                 });
+                setIsLibraryLoaded(true);
+
+                // Re-render button if we have a container
+                if (buttonContainerRef.current) {
+                    const element = document.getElementById(buttonContainerRef.current);
+                    if (element) {
+                        window.google.accounts.id.renderButton(element, {
+                            type: 'standard',
+                            theme: 'filled_black',
+                            size: 'large',
+                            text: 'continue_with',
+                            shape: 'rectangular',
+                            width: 280,
+                        });
+                    }
+                }
             }
         };
+
+        script.onerror = () => {
+            console.error('Failed to load Google Sign-In script');
+            onError('Failed to load Google Sign-In. Please try again.');
+        };
+
         document.head.appendChild(script);
 
         return () => {
             // Cleanup
-            const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
-            if (existingScript) {
-                existingScript.remove();
+            if (window.google?.accounts?.id) {
+                window.google.accounts.id.cancel();
             }
         };
-    }, [handleCredentialResponse]);
+    }, [handleCredentialResponse, onError]);
 
     const triggerGoogleLogin = useCallback(() => {
         if (!GOOGLE_CLIENT_ID) {
-            onError('Google login is not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID.');
+            onError('Google login is not configured. Please contact support.');
             return;
         }
-        if (window.google) {
-            window.google.accounts.id.prompt();
-        } else {
-            onError('Google Sign-In is loading. Please try again.');
+
+        if (!isLibraryLoaded || !window.google?.accounts?.id) {
+            onError('Google Sign-In is loading. Please wait a moment and try again.');
+            return;
         }
-    }, [onError]);
+
+        // Use prompt with moment listener to handle cases where prompt doesn't show
+        window.google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed()) {
+                const reason = notification.getNotDisplayedReason();
+                console.log('Google One Tap not displayed:', reason);
+                // Common reasons: browser_not_supported, invalid_client, opt_out_or_no_session
+                if (reason === 'opt_out_or_no_session' || reason === 'suppressed_by_user') {
+                    onError('Please click the Google button to sign in, or allow popups for this site.');
+                }
+            } else if (notification.isSkippedMoment()) {
+                console.log('Google One Tap skipped:', notification.getSkippedReason());
+            }
+        });
+    }, [isLibraryLoaded, onError]);
 
     const renderGoogleButton = useCallback((elementId: string) => {
         if (!GOOGLE_CLIENT_ID) return;
 
+        buttonContainerRef.current = elementId;
+
+        // Wait for library to load
+        if (!isLibraryLoaded || !window.google?.accounts?.id) {
+            // Will be rendered when script loads
+            return;
+        }
+
         const element = document.getElementById(elementId);
-        if (window.google && element) {
+        if (element) {
             window.google.accounts.id.renderButton(element, {
                 type: 'standard',
                 theme: 'filled_black',
@@ -124,12 +197,14 @@ export function useGoogleAuth(onSuccess: (user: { id: string; email: string; dis
                 width: 280,
             });
         }
-    }, []);
+    }, [isLibraryLoaded]);
 
     return {
         triggerGoogleLogin,
         renderGoogleButton,
         isConfigured: !!GOOGLE_CLIENT_ID,
+        isLibraryLoaded,
+        isLoading,
     };
 }
 

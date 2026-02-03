@@ -99,7 +99,11 @@ export function useUpload(): UseUploadReturn {
             setProgress(100);
             return result as UploadResult;
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Upload failed';
+            let message = err instanceof Error ? err.message : 'Upload failed';
+            // Provide better guidance for auth errors
+            if (message.includes('Authentication') || message.includes('401')) {
+                message = 'Please log in to upload files. Go to Login to continue.';
+            }
             setError(message);
             return null;
         } finally {

@@ -4,18 +4,29 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SignupPage() {
     const router = useRouter();
+    const { signup, isAuthenticated, isLoading: authLoading } = useAuth();
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
+    const [displayName, setDisplayName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
     const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => { setMounted(true); }, []);
+
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (!authLoading && isAuthenticated) {
+            router.push('/dashboard');
+        }
+    }, [authLoading, isAuthenticated, router]);
 
     const checkUsername = async (value: string) => {
         if (value.length < 3) {
@@ -23,25 +34,37 @@ export default function SignupPage() {
             return;
         }
         setUsernameStatus('checking');
-        await new Promise((r) => setTimeout(r, 600));
-        setUsernameStatus(value === 'taken' ? 'taken' : 'available');
+        // Simulate username check - server validates on actual signup
+        await new Promise((r) => setTimeout(r, 500));
+        // For now, always mark as available - server will reject duplicates on signup
+        setUsernameStatus('available');
     };
 
     const handleStep1 = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email || !password) return;
-        setIsLoading(true);
-        await new Promise((r) => setTimeout(r, 800));
-        setIsLoading(false);
+        setError('');
         setStep(2);
     };
 
     const handleStep2 = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (usernameStatus !== 'available') return;
+        if (usernameStatus !== 'available' || !username) return;
         setIsLoading(true);
-        await new Promise((r) => setTimeout(r, 1200));
-        router.push('/dashboard');
+        setError('');
+
+        try {
+            const result = await signup(email, password, username, displayName || username);
+            if (result.success) {
+                router.push('/dashboard');
+            } else {
+                setError(result.error || 'Signup failed. Please try again.');
+            }
+        } catch (err) {
+            setError('Network error. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     if (!mounted) {

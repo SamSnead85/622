@@ -123,37 +123,48 @@ router.post('/login', async (req, res, next) => {
     try {
         const { email, password, rememberMe } = loginSchema.parse(req.body);
 
-        // Demo mode - Accept any valid email/password (min 4 chars)
-        // This allows testing without a database connection
-        if (password.length >= 4) {
-            const demoToken = jwt.sign(
-                { userId: 'demo-user-id', sessionId: 'demo-session' },
-                process.env.JWT_SECRET || 'dev-secret',
-                { expiresIn: '30d' }
-            );
+        // Find user by email
+        const user = await prisma.user.findUnique({
+            where: { email: email.toLowerCase() },
+        });
 
-            // Extract username from email
-            const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-
-            return res.json({
-                user: {
-                    id: 'demo-user-id',
-                    email: email.toLowerCase(),
-                    username: username || 'user',
-                    displayName: username.charAt(0).toUpperCase() + username.slice(1) || 'User',
-                    avatarUrl: null,
-                    coverUrl: null,
-                    bio: 'Welcome to Six22! Year 622 - The Journey Begins.',
-                    isVerified: true,
-                    createdAt: new Date().toISOString(),
-                },
-                token: demoToken,
-                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            });
+        if (!user) {
+            throw new AppError('Invalid email or password', 401);
         }
 
-        // If password too short
-        throw new AppError('Password must be at least 4 characters', 400);
+        // Check if user has a password (OAuth users may not have one)
+        if (!user.passwordHash) {
+            throw new AppError('Please use social login for this account', 400);
+        }
+
+        // Verify password
+        const validPassword = await bcrypt.compare(password, user.passwordHash);
+        if (!validPassword) {
+            throw new AppError('Invalid email or password', 401);
+        }
+
+        // Generate auth token
+        const { token, expiresAt } = await generateTokens(user.id, {
+            type: req.headers['x-device-type'] as string,
+            name: req.headers['x-device-name'] as string,
+            ip: req.ip,
+        }, rememberMe);
+
+        res.json({
+            user: {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                displayName: user.displayName,
+                avatarUrl: user.avatarUrl,
+                coverUrl: user.coverUrl,
+                bio: user.bio,
+                isVerified: user.isVerified,
+                createdAt: user.createdAt.toISOString(),
+            },
+            token,
+            expiresAt,
+        });
     } catch (error) {
         next(error);
     }
@@ -181,28 +192,6 @@ router.post('/logout', authenticate, async (req: AuthRequest, res, next) => {
 // GET /api/v1/auth/me
 router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        // Demo mode user
-        if (req.userId === 'demo-user-id') {
-            return res.json({
-                user: {
-                    id: 'demo-user-id',
-                    email: 'demo@six22.app',
-                    username: 'demo',
-                    displayName: 'Demo User',
-                    bio: 'Welcome to Six22! This is a demo account.',
-                    website: null,
-                    avatarUrl: null,
-                    coverUrl: null,
-                    isVerified: true,
-                    isPrivate: false,
-                    createdAt: new Date().toISOString(),
-                    followersCount: 128,
-                    followingCount: 64,
-                    postsCount: 12,
-                },
-            });
-        }
-
         let user;
         try {
             user = await prisma.user.findUnique({
