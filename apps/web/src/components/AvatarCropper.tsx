@@ -38,15 +38,17 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
         img.onload = () => {
             imageRef.current = img;
 
-            // Calculate initial scale to fit image in crop area
+            // Calculate scale to fit the ENTIRE image in the crop area (like LinkedIn)
             const cropSize = 200;
-            const minDimension = Math.min(img.width, img.height);
-            const fitScale = cropSize / minDimension;
+            const maxDimension = Math.max(img.width, img.height);
 
-            // Start with the image fitting the crop area
-            const startScale = Math.max(fitScale, 0.5);
-            setInitialScale(startScale);
-            setScale(startScale);
+            // Start with the image fully visible (zoomed out)
+            // This ensures the entire image fits within the crop circle
+            const fitScale = cropSize / maxDimension;
+
+            // Allow zooming out even more, or start at fit scale
+            setInitialScale(fitScale * 0.8); // Allow extra zoom out
+            setScale(fitScale); // Start at "fit to frame"
             setImageLoaded(true);
         };
         img.src = imageSrc;
