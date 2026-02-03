@@ -34,11 +34,11 @@ export async function sendPasswordResetEmail(
         const { data, error } = await resend.emails.send({
             from: FROM_EMAIL,
             to: email,
-            subject: 'Reset Your Password - Caravan',
+            subject: 'Reset Your Password - Six22',
             html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
                     <div style="text-align: center; margin-bottom: 32px;">
-                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">🐪 ${APP_NAME}</h1>
+                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">🌙 ${APP_NAME}</h1>
                     </div>
                     <h2 style="color: #1a1a2e; font-size: 24px;">Reset Your Password</h2>
                     <p style="color: #4a4a68; font-size: 16px; line-height: 1.6;">
@@ -87,15 +87,15 @@ export async function sendInviteEmail(
         const { data, error } = await resend.emails.send({
             from: FROM_EMAIL,
             to: email,
-            subject: `${senderName} invited you to join Caravan`,
+            subject: `${senderName} invited you to join Six22`,
             html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
                     <div style="text-align: center; margin-bottom: 32px;">
-                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">🐪 ${APP_NAME}</h1>
+                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">🌙 ${APP_NAME}</h1>
                     </div>
                     <h2 style="color: #1a1a2e; font-size: 24px;">You're Invited!</h2>
                     <p style="color: #4a4a68; font-size: 16px; line-height: 1.6;">
-                        <strong>${senderName}</strong> wants you to join them on Caravan - the social platform where you own your data and control your algorithm.
+                        <strong>${senderName}</strong> wants you to join them on Six22 - the social platform where you own your data and control your algorithm.
                     </p>
                     ${customMessage ? `
                         <div style="background: #f5f5f7; border-radius: 8px; padding: 16px; margin: 24px 0;">
@@ -107,7 +107,7 @@ export async function sendInviteEmail(
                     ` : ''}
                     <div style="text-align: center; margin: 32px 0;">
                         <a href="${joinUrl}" style="display: inline-block; background: linear-gradient(135deg, #f97316, #ec4899, #8b5cf6); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                            Join Caravan
+                            Join Six22
                         </a>
                     </div>
                     <p style="color: #6b6b8a; font-size: 14px;">
@@ -148,7 +148,7 @@ export async function sendWelcomeEmail(
             html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
                     <div style="text-align: center; margin-bottom: 32px;">
-                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">🐪 ${APP_NAME}</h1>
+                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">🌙 ${APP_NAME}</h1>
                     </div>
                     <h2 style="color: #1a1a2e; font-size: 24px;">Welcome to the journey, ${displayName}!</h2>
                     <p style="color: #4a4a68; font-size: 16px; line-height: 1.6;">
@@ -165,7 +165,7 @@ export async function sendWelcomeEmail(
                     </div>
                     <div style="text-align: center; margin: 32px 0;">
                         <a href="${APP_URL}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #f97316, #ec4899, #8b5cf6); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                            Open Caravan
+                            Open Six22
                         </a>
                     </div>
                     <hr style="border: none; border-top: 1px solid #e5e5ea; margin: 32px 0;" />
@@ -207,7 +207,7 @@ export async function sendNotificationEmail(
             html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
                     <div style="text-align: center; margin-bottom: 32px;">
-                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">🐪 ${APP_NAME}</h1>
+                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">🌙 ${APP_NAME}</h1>
                     </div>
                     <p style="color: #4a4a68; font-size: 16px; line-height: 1.6;">
                         ${body}
