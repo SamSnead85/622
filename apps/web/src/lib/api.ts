@@ -101,6 +101,10 @@ export const apiUpload = async (
         ? localStorage.getItem('six22_token')
         : null;
 
+    console.log('[apiUpload] Starting upload to:', url);
+    console.log('[apiUpload] Token present:', !!token);
+    console.log('[apiUpload] File:', file.name, file.size, file.type);
+
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         const formData = new FormData();
@@ -114,6 +118,8 @@ export const apiUpload = async (
         });
 
         xhr.addEventListener('load', () => {
+            console.log('[apiUpload] Response status:', xhr.status);
+            console.log('[apiUpload] Response text:', xhr.responseText);
             if (xhr.status >= 200 && xhr.status < 300) {
                 try {
                     const result = JSON.parse(xhr.responseText);
@@ -131,12 +137,17 @@ export const apiUpload = async (
             }
         });
 
-        xhr.addEventListener('error', () => reject(new Error('Network error')));
+        xhr.addEventListener('error', (e) => {
+            console.error('[apiUpload] Network error:', e);
+            reject(new Error('Network error'));
+        });
         xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
 
         xhr.open('POST', url);
         if (token) {
             xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        } else {
+            console.warn('[apiUpload] No auth token - request will likely fail');
         }
         xhr.withCredentials = true;
         xhr.send(formData);

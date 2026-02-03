@@ -23,34 +23,45 @@ const upload = multer({
 // UPLOAD AVATAR
 // ============================================
 router.post('/avatar', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, _next: NextFunction) => {
+    console.log('[UPLOAD] Avatar upload request received');
+    console.log('[UPLOAD] User ID:', req.userId);
+    console.log('[UPLOAD] File received:', req.file ? `${req.file.originalname} (${req.file.size} bytes, ${req.file.mimetype})` : 'NO FILE');
+
     try {
         const file = req.file;
         if (!file) {
+            console.log('[UPLOAD] Error: No file provided');
             res.status(400).json({ error: 'No file provided' });
             return;
         }
 
         if (!isValidMediaType(file.mimetype, 'image')) {
+            console.log('[UPLOAD] Error: Invalid file type:', file.mimetype);
             res.status(400).json({ error: 'Invalid file type. Use JPG, PNG, GIF, or WebP.' });
             return;
         }
 
         if (file.size > getMaxFileSize('image')) {
+            console.log('[UPLOAD] Error: File too large:', file.size);
             res.status(400).json({ error: 'File too large. Max 10 MB for images.' });
             return;
         }
 
+        console.log('[UPLOAD] Uploading file to storage...');
         const result = await uploadFile(file.buffer, 'avatars', file.mimetype, file.originalname);
+        console.log('[UPLOAD] Upload result:', result);
 
         // Update user profile
+        console.log('[UPLOAD] Updating user profile...');
         await prisma.user.update({
             where: { id: req.user!.id },
             data: { avatarUrl: result.url },
         });
+        console.log('[UPLOAD] User profile updated successfully');
 
         res.json({ url: result.url });
     } catch (error) {
-        console.error('Avatar upload error:', error);
+        console.error('[UPLOAD] Avatar upload error:', error);
         res.status(500).json({ error: 'Failed to upload avatar' });
     }
 });
