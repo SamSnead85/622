@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { usePosts } from '@/hooks/usePosts';
 
 // ============================================
 // TYPES
@@ -51,25 +52,35 @@ const SHARE_TARGETS: ShareTarget[] = [
 ];
 
 // ============================================
-// QUICK SHARE USERS (Mock Data)
+// DEFAULT AVATARS (Fallback for API friends without avatars)
 // ============================================
-const QUICK_SHARE_USERS: QuickShareUser[] = [
-    { id: '1', name: 'Sarah Chen', username: 'sarah', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face', isOnline: true },
-    { id: '2', name: 'Marcus J', username: 'marcus', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face', isOnline: true },
-    { id: '3', name: 'Emily Park', username: 'emily', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face', isOnline: false },
-    { id: '4', name: 'Jordan Lee', username: 'jordan', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&crop=face', isOnline: true },
-    { id: '5', name: 'Alex Rivera', username: 'alex', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop&crop=face', isOnline: false },
+const DEFAULT_AVATARS = [
+    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face',
+    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face',
+    'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
 ];
 
 // ============================================
 // SHARE SHEET COMPONENT
 // ============================================
 export function ShareSheet({ isOpen, onClose, content }: ShareSheetProps) {
+    const { friends: apiFriends, isLoading: friendsLoading } = usePosts();
     const [copied, setCopied] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [mounted, setMounted] = useState(false);
+
+    // Map API friends to quick share format
+    const quickShareUsers: QuickShareUser[] = apiFriends.length > 0
+        ? apiFriends.map((f, i) => ({
+            id: f.id,
+            name: f.displayName || f.username,
+            username: f.username,
+            avatar: f.avatarUrl || DEFAULT_AVATARS[i % DEFAULT_AVATARS.length],
+            isOnline: false, // Could be enhanced with real-time status
+        }))
+        : [];
 
     useEffect(() => {
         setMounted(true);
@@ -203,44 +214,63 @@ export function ShareSheet({ isOpen, onClose, content }: ShareSheetProps) {
                             {/* Quick Share to Friends */}
                             <div className="p-4 border-b border-white/10">
                                 <h3 className="text-sm font-medium text-white/70 mb-3">Send to Friends</h3>
-                                <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 scroll-x">
-                                    {QUICK_SHARE_USERS.map((user) => (
-                                        <button
-                                            key={user.id}
-                                            onClick={() => toggleUser(user.id)}
-                                            className="flex flex-col items-center gap-2 flex-shrink-0"
-                                        >
-                                            <div className="relative">
-                                                <div className={`w-14 h-14 rounded-full overflow-hidden ring-2 transition-all ${selectedUsers.includes(user.id)
-                                                    ? 'ring-orange-400 ring-offset-2 ring-offset-[#0a0a0f]'
-                                                    : 'ring-transparent'
-                                                    }`}>
-                                                    <Image
-                                                        src={user.avatar}
-                                                        alt={user.name}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                </div>
-                                                {user.isOnline && (
-                                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full ring-2 ring-[#0a0a0f]" />
-                                                )}
-                                                {selectedUsers.includes(user.id) && (
-                                                    <motion.div
-                                                        initial={{ scale: 0 }}
-                                                        animate={{ scale: 1 }}
-                                                        className="absolute -top-1 -right-1 w-5 h-5 bg-orange-400 rounded-full flex items-center justify-center"
-                                                    >
-                                                        <span className="text-[10px]">✓</span>
-                                                    </motion.div>
-                                                )}
+                                {friendsLoading ? (
+                                    // Loading skeleton
+                                    <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+                                        {[1, 2, 3, 4, 5].map((i) => (
+                                            <div key={i} className="flex flex-col items-center gap-2 animate-pulse">
+                                                <div className="w-14 h-14 rounded-full bg-white/10" />
+                                                <div className="w-10 h-2 rounded bg-white/10" />
                                             </div>
-                                            <span className="text-xs text-white/60 truncate max-w-14">
-                                                {user.name.split(' ')[0]}
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                ) : quickShareUsers.length > 0 ? (
+                                    <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 scroll-x">
+                                        {quickShareUsers.map((user) => (
+                                            <button
+                                                key={user.id}
+                                                onClick={() => toggleUser(user.id)}
+                                                className="flex flex-col items-center gap-2 flex-shrink-0"
+                                            >
+                                                <div className="relative">
+                                                    <div className={`w-14 h-14 rounded-full overflow-hidden ring-2 transition-all ${selectedUsers.includes(user.id)
+                                                        ? 'ring-orange-400 ring-offset-2 ring-offset-[#0a0a0f]'
+                                                        : 'ring-transparent'
+                                                        }`}>
+                                                        <Image
+                                                            src={user.avatar}
+                                                            alt={user.name}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    </div>
+                                                    {user.isOnline && (
+                                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full ring-2 ring-[#0a0a0f]" />
+                                                    )}
+                                                    {selectedUsers.includes(user.id) && (
+                                                        <motion.div
+                                                            initial={{ scale: 0 }}
+                                                            animate={{ scale: 1 }}
+                                                            className="absolute -top-1 -right-1 w-5 h-5 bg-orange-400 rounded-full flex items-center justify-center"
+                                                        >
+                                                            <span className="text-[10px]">✓</span>
+                                                        </motion.div>
+                                                    )}
+                                                </div>
+                                                <span className="text-xs text-white/60 truncate max-w-14">
+                                                    {user.name.split(' ')[0]}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    // Empty state
+                                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                                        <span className="text-2xl mb-2">🌙</span>
+                                        <p className="text-sm text-white/50">No friends yet</p>
+                                        <p className="text-xs text-white/30 mt-1">Invite friends to share with them</p>
+                                    </div>
+                                )}
 
                                 {/* Message input (when users selected) */}
                                 <AnimatePresence>

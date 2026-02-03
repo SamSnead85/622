@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ProfileEditor, Avatar, useProfile } from '@/components/ProfileEditor';
 import { loadPreferences, savePreferences, clearAllData, exportUserData } from '@/lib/persistence';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
+import { InviteFriends } from '@/components/InviteFriends';
 
 // Navigation
 function Navigation() {
@@ -141,6 +142,7 @@ function SettingsPageContent() {
     const { profile, updateProfile } = useProfile();
     const { logout, updateUser } = useAuth();
     const [showProfileEditor, setShowProfileEditor] = useState(false);
+    const [showInviteModal, setShowInviteModal] = useState(false);
     const [toggles, setToggles] = useState<Record<string, boolean>>({
         'dark-mode': true,
         'push': true,
@@ -293,6 +295,15 @@ function SettingsPageContent() {
 
                     {/* Logout & Danger Zone */}
                     <div className="mt-8 space-y-4">
+                        {/* Invite Friends - Prominent CTA */}
+                        <button
+                            onClick={() => setShowInviteModal(true)}
+                            className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-500 text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-3 shadow-lg"
+                        >
+                            <span className="text-xl">🌙</span>
+                            <span>Invite Friends to Six22</span>
+                        </button>
+
                         <button
                             onClick={handleExportData}
                             className="w-full py-3 rounded-xl bg-violet-500/10 text-violet-400 font-medium hover:bg-violet-500/20 transition-colors flex items-center justify-center gap-2"
@@ -321,6 +332,12 @@ function SettingsPageContent() {
                 onClose={() => setShowProfileEditor(false)}
                 onSave={handleProfileSave}
                 currentProfile={profile || undefined}
+            />
+
+            {/* Invite Friends Modal */}
+            <InviteFriends
+                isOpen={showInviteModal}
+                onClose={() => setShowInviteModal(false)}
             />
         </div>
     );
