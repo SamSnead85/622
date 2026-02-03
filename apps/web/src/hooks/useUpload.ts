@@ -101,8 +101,9 @@ export function useUpload(): UseUploadReturn {
         } catch (err) {
             let message = err instanceof Error ? err.message : 'Upload failed';
             // Provide better guidance for auth errors
-            if (message.includes('Authentication') || message.includes('401')) {
-                message = 'Please log in to upload files. Go to Login to continue.';
+            const authErrors = ['Authentication', '401', 'Invalid token', 'Session expired', 'Token expired', 'Authentication required'];
+            if (authErrors.some(e => message.includes(e))) {
+                message = 'Please log in to upload files. Your session may have expired.';
             }
             setError(message);
             return null;
