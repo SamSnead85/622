@@ -7,9 +7,9 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Six22 <noreply@six22.io>';
-const APP_NAME = 'Six22';
-const APP_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://six22.io';
+const FROM_EMAIL = process.env.FROM_EMAIL || '0G <noreply@0gravity.ai>';
+const APP_NAME = '0G';
+const APP_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://0gravity.ai';
 
 // ============================================
 // EMAIL TEMPLATES
@@ -38,7 +38,7 @@ export async function sendPasswordResetEmail(
             html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
                     <div style="text-align: center; margin-bottom: 32px;">
-                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">🌙 ${APP_NAME}</h1>
+                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">⚡ ${APP_NAME}</h1>
                     </div>
                     <h2 style="color: #1a1a2e; font-size: 24px;">Reset Your Password</h2>
                     <p style="color: #4a4a68; font-size: 16px; line-height: 1.6;">
@@ -91,7 +91,7 @@ export async function sendInviteEmail(
             html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
                     <div style="text-align: center; margin-bottom: 32px;">
-                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">🌙 ${APP_NAME}</h1>
+                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">⚡ ${APP_NAME}</h1>
                     </div>
                     <h2 style="color: #1a1a2e; font-size: 24px;">You're Invited!</h2>
                     <p style="color: #4a4a68; font-size: 16px; line-height: 1.6;">
@@ -148,7 +148,7 @@ export async function sendWelcomeEmail(
             html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
                     <div style="text-align: center; margin-bottom: 32px;">
-                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">🌙 ${APP_NAME}</h1>
+                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">⚡ ${APP_NAME}</h1>
                     </div>
                     <h2 style="color: #1a1a2e; font-size: 24px;">Welcome to the journey, ${displayName}!</h2>
                     <p style="color: #4a4a68; font-size: 16px; line-height: 1.6;">
@@ -207,7 +207,7 @@ export async function sendNotificationEmail(
             html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
                     <div style="text-align: center; margin-bottom: 32px;">
-                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">🌙 ${APP_NAME}</h1>
+                        <h1 style="color: #1a1a2e; font-size: 28px; margin: 0;">⚡ ${APP_NAME}</h1>
                     </div>
                     <p style="color: #4a4a68; font-size: 16px; line-height: 1.6;">
                         ${body}

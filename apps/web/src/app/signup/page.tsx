@@ -57,17 +57,17 @@ export default function SignupPage() {
     };
 
     if (!mounted) {
-        return <div className="min-h-screen bg-[#050508]" />;
+        return <div className="min-h-screen bg-black" />;
     }
 
     return (
-        <div className="min-h-screen bg-[#050508] relative overflow-hidden">
+        <div className="min-h-screen bg-black relative overflow-hidden">
             {/* Ambient Background */}
             <div className="fixed inset-0 pointer-events-none">
-                {/* Gold orb - Year 622 heritage */}
+                {/* Electric blue orb - 0G signature */}
                 <motion.div
                     className="absolute -top-20 -left-20 w-96 h-96 rounded-full"
-                    style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, rgba(245,158,11,0.06) 50%, transparent 70%)' }}
+                    style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.15) 0%, rgba(139,92,246,0.08) 50%, transparent 70%)' }}
                     animate={{ scale: [1, 1.2, 1], x: [0, 30, 0] }}
                     transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
                 />
@@ -99,31 +99,23 @@ export default function SignupPage() {
                     >
                         {/* Logo */}
                         <Link href="/" className="inline-flex items-center gap-3 mb-12">
-                            <svg width="40" height="40" viewBox="0 0 40 40">
-                                <defs>
-                                    <linearGradient id="signup-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#D4AF37" />
-                                        <stop offset="30%" stopColor="#F59E0B" />
-                                        <stop offset="60%" stopColor="#F43F5E" />
-                                        <stop offset="100%" stopColor="#8B5CF6" />
-                                    </linearGradient>
-                                </defs>
-                                <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#signup-logo-grad)" />
-                                <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
-                            </svg>
-                            <span className="font-semibold text-xl bg-gradient-to-r from-[#D4AF37] via-amber-400 to-rose-400 bg-clip-text text-transparent">Six22</span>
+                            <div className="text-3xl font-bold">
+                                <span className="text-[#00D4FF]">0</span>
+                                <span className="text-white">G</span>
+                            </div>
+                            <span className="font-semibold text-xl text-white/70">Zero Gravity</span>
                         </Link>
 
                         {/* Progress indicator */}
                         <div className="flex items-center gap-2 mb-8">
                             <motion.div
-                                className="h-1 flex-1 rounded-full bg-gradient-to-r from-orange-400 to-rose-500"
+                                className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6]"
                                 initial={{ scaleX: 0 }}
                                 animate={{ scaleX: step >= 1 ? 1 : 0 }}
                                 style={{ originX: 0 }}
                             />
                             <motion.div
-                                className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-gradient-to-r from-rose-500 to-violet-500' : 'bg-white/10'}`}
+                                className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF]' : 'bg-white/10'}`}
                                 initial={{ scaleX: 0 }}
                                 animate={{ scaleX: step >= 2 ? 1 : 1 }}
                                 style={{ originX: 0 }}
@@ -139,9 +131,9 @@ export default function SignupPage() {
                                     exit={{ opacity: 0, x: -20 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <h1 className="text-3xl font-bold text-white mb-2">Join the Movement</h1>
+                                    <h1 className="text-3xl font-bold text-white mb-2">Join Zero Gravity</h1>
                                     <p className="text-white/50 mb-8">
-                                        Find your tribe. Stand for what matters.
+                                        The next generation of social. Weightless. Authentic. Yours.
                                     </p>
 
                                     <form onSubmit={handleStep1} className="space-y-4">
@@ -174,7 +166,7 @@ export default function SignupPage() {
                                         <motion.button
                                             type="submit"
                                             disabled={isLoading}
-                                            className="w-full bg-gradient-to-r from-orange-400 via-rose-500 to-violet-500 text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                                            className="w-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                                             whileTap={{ scale: 0.98 }}
                                         >
                                             {isLoading ? 'Creating account...' : 'Continue'}
@@ -241,7 +233,7 @@ export default function SignupPage() {
                                             />
                                             {name.length >= 2 && (
                                                 <p className="text-xs text-white/40 mt-2">
-                                                    Your @handle will be: <span className="text-amber-400 font-medium">@{generatedUsername}</span>
+                                                    Your @handle will be: <span className="text-[#00D4FF] font-medium">@{generatedUsername}</span>
                                                 </p>
                                             )}
                                         </div>
@@ -249,12 +241,12 @@ export default function SignupPage() {
                                         <motion.button
                                             type="submit"
                                             disabled={isLoading || name.trim().length < 2}
-                                            className="w-full bg-gradient-to-r from-orange-400 via-rose-500 to-violet-500 text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                                            className="w-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                                             whileTap={{ scale: 0.98 }}
                                         >
                                             {isLoading ? (
                                                 <span className="flex items-center justify-center gap-2">
-                                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                    <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                                                     Creating your account...
                                                 </span>
                                             ) : (
@@ -268,7 +260,7 @@ export default function SignupPage() {
 
                         <p className="text-sm text-white/40 mt-8 text-center">
                             Already have an account?{' '}
-                            <Link href="/login" className="text-white/70 hover:text-white transition-colors">
+                            <Link href="/login" className="text-[#00D4FF] hover:text-[#33DDFF] transition-colors">
                                 Sign in
                             </Link>
                         </p>
@@ -313,9 +305,9 @@ export default function SignupPage() {
                         >
                             <span className="text-5xl">🚀</span>
                         </motion.div>
-                        <h2 className="text-3xl font-bold text-white mb-4">Your Tribe Awaits</h2>
+                        <h2 className="text-3xl font-bold text-white mb-4">Break Free</h2>
                         <p className="text-lg text-white/50 max-w-md">
-                            Connect with value-aligned communities who stand for justice and support one another.
+                            No algorithms weighing you down. No corporate control. Just you and your community.
                         </p>
 
                         {/* Floating elements right */}

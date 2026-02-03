@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 /* ============================================
-   SIX22 - LUMINOUS DEPTH DESIGN SYSTEM
-   The Sovereign Social Network
-   Your Data. Your Algorithm. Your Journey.
+   0G - ZERO GRAVITY DESIGN SYSTEM
+   The Weightless Social Network
+   Weightless. Authentic. Yours.
    ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -13,26 +13,32 @@
 @import '../styles/design-tokens.css';
 
 :root {
-  /* === VOID - The infinite canvas === */
-  --void: #050508;
-  --void-elevated: #0a0a0f;
-  --void-surface: #0f0f16;
+  /* === VOID - The infinite cosmos === */
+  --void: #000000;
+  --void-elevated: #0A1628;
+  --void-surface: #0f1729;
+
+  /* === 0G PRIMARY - Electric Blue === */
+  --og-primary: #00D4FF;
+  --og-primary-bright: #33DDFF;
+  --og-primary-glow: rgba(0, 212, 255, 0.4);
+  --og-primary-subtle: rgba(0, 212, 255, 0.15);
 
   /* === AURORA - Living energy === */
   --aurora-violet: #8B5CF6;
   --aurora-violet-bright: #A78BFA;
   --aurora-violet-glow: rgba(139, 92, 246, 0.4);
 
-  --aurora-cyan: #06B6D4;
-  --aurora-cyan-bright: #22D3EE;
-  --aurora-cyan-glow: rgba(6, 182, 212, 0.4);
+  --aurora-cyan: #00D4FF;
+  --aurora-cyan-bright: #33DDFF;
+  --aurora-cyan-glow: rgba(0, 212, 255, 0.4);
 
   --aurora-rose: #F43F5E;
   --aurora-rose-bright: #FB7185;
   --aurora-rose-glow: rgba(244, 63, 94, 0.4);
 
-  --ember: #F59E0B;
-  --ember-glow: rgba(245, 158, 11, 0.4);
+  --ember: #00D4FF;
+  --ember-glow: rgba(0, 212, 255, 0.4);
 
   /* === GLASS - Layered surfaces === */
   --glass-ultra: rgba(255, 255, 255, 0.02);

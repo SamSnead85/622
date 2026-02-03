@@ -1,73 +1,149 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Link from 'next/link';
-import { Six22Logo, GatewayHero } from '@/components/Six22Logo';
 
 // ============================================
-// PREMIUM LAYERED BACKGROUND
-// Twilight journey atmosphere
+// 0G LOGO COMPONENT
+// Minimal, premium Zero Gravity mark
 // ============================================
-function TwilightBackground() {
+function ZeroGLogo({ size = 'md', className = '' }: { size?: 'sm' | 'md' | 'lg' | 'xl'; className?: string }) {
+    const sizes = {
+        sm: 'text-xl',
+        md: 'text-2xl',
+        lg: 'text-4xl',
+        xl: 'text-6xl',
+    };
+
     return (
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-            {/* Deep void base */}
-            <div className="absolute inset-0 bg-[#050508]" />
-
-            {/* Gradient meshes */}
-            <motion.div
-                className="absolute -top-40 -left-40 w-[800px] h-[800px]"
-                style={{
-                    background: 'radial-gradient(circle, rgba(124,58,237,0.15) 0%, rgba(124,58,237,0.05) 40%, transparent 70%)',
-                }}
-                animate={{ scale: [1, 1.1, 1], x: [0, 30, 0] }}
-                transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-            />
-
-            <motion.div
-                className="absolute top-1/3 -right-40 w-[700px] h-[700px]"
-                style={{
-                    background: 'radial-gradient(circle, rgba(244,63,94,0.12) 0%, rgba(244,63,94,0.04) 40%, transparent 65%)',
-                }}
-                animate={{ scale: [1.1, 1, 1.1], x: [0, -40, 0] }}
-                transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-            />
-
-            <motion.div
-                className="absolute bottom-0 left-1/3 w-[600px] h-[600px]"
-                style={{
-                    background: 'radial-gradient(circle, rgba(212,175,55,0.1) 0%, rgba(245,158,11,0.05) 40%, transparent 60%)',
-                }}
-                animate={{ y: [-20, 20, -20] }}
-                transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
-            />
-
-            {/* Subtle grid */}
-            <div
-                className="absolute inset-0 opacity-[0.02]"
-                style={{
-                    backgroundImage: `
-                        linear-gradient(rgba(212,175,55,0.5) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(212,175,55,0.5) 1px, transparent 1px)
-                    `,
-                    backgroundSize: '80px 80px',
-                }}
-            />
-
-            {/* Noise texture */}
-            <div
-                className="absolute inset-0 opacity-[0.03]"
-                style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                }}
-            />
+        <div className={`font-bold tracking-tight ${sizes[size]} ${className}`}>
+            <span className="text-[#00D4FF]">0</span>
+            <span className="text-white">G</span>
         </div>
     );
 }
 
 // ============================================
+// ANIMATED SPACE BACKGROUND
+// Premium floating particles and nebula effects
+// ============================================
+function SpaceBackground() {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const resizeCanvas = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Stars
+        const stars: { x: number; y: number; size: number; opacity: number; speed: number }[] = [];
+        for (let i = 0; i < 150; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 1.5 + 0.5,
+                opacity: Math.random() * 0.5 + 0.2,
+                speed: Math.random() * 0.3 + 0.1,
+            });
+        }
+
+        // Floating particles (electric blue)
+        const particles: { x: number; y: number; size: number; opacity: number; vx: number; vy: number }[] = [];
+        for (let i = 0; i < 30; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 3 + 1,
+                opacity: Math.random() * 0.4 + 0.1,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.3 - 0.2,
+            });
+        }
+
+        const animate = () => {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw nebula gradients
+            const gradient1 = ctx.createRadialGradient(
+                canvas.width * 0.2, canvas.height * 0.3, 0,
+                canvas.width * 0.2, canvas.height * 0.3, canvas.width * 0.4
+            );
+            gradient1.addColorStop(0, 'rgba(0, 212, 255, 0.08)');
+            gradient1.addColorStop(0.5, 'rgba(139, 92, 246, 0.04)');
+            gradient1.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient1;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const gradient2 = ctx.createRadialGradient(
+                canvas.width * 0.8, canvas.height * 0.7, 0,
+                canvas.width * 0.8, canvas.height * 0.7, canvas.width * 0.3
+            );
+            gradient2.addColorStop(0, 'rgba(139, 92, 246, 0.06)');
+            gradient2.addColorStop(0.5, 'rgba(0, 212, 255, 0.03)');
+            gradient2.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient2;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw stars
+            stars.forEach((star) => {
+                star.y += star.speed;
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                ctx.fill();
+            });
+
+            // Draw floating particles
+            particles.forEach((p) => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                const particleGradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+                particleGradient.addColorStop(0, `rgba(0, 212, 255, ${p.opacity})`);
+                particleGradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = particleGradient;
+                ctx.fill();
+            });
+
+            requestAnimationFrame(animate);
+        };
+
+        animate();
+
+        return () => {
+            window.removeEventListener('resize', resizeCanvas);
+        };
+    }, []);
+
+    return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none" />;
+}
+
+// ============================================
 // NAVIGATION
+// Premium minimal navigation
 // ============================================
 function Navigation() {
     const [scrolled, setScrolled] = useState(false);
@@ -80,24 +156,24 @@ function Navigation() {
 
     return (
         <motion.nav
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#050508]/90 backdrop-blur-xl border-b border-white/5' : ''
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-black/80 backdrop-blur-xl border-b border-white/5' : ''
                 }`}
             initial={{ y: -100 }}
             animate={{ y: 0 }}
             transition={{ duration: 0.6 }}
         >
             <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                <Six22Logo size="md" variant="full" />
+                <ZeroGLogo size="md" />
 
                 <div className="hidden md:flex items-center gap-8">
-                    <a href="#hierarchy" className="text-white/60 hover:text-white transition-colors text-sm">
-                        The Hierarchy
-                    </a>
-                    <a href="#algorithm" className="text-white/60 hover:text-white transition-colors text-sm">
-                        Own Your Algorithm
-                    </a>
-                    <a href="#features" className="text-white/60 hover:text-white transition-colors text-sm">
+                    <a href="#features" className="text-white/60 hover:text-[#00D4FF] transition-colors text-sm">
                         Features
+                    </a>
+                    <a href="#orbits" className="text-white/60 hover:text-[#00D4FF] transition-colors text-sm">
+                        Orbits
+                    </a>
+                    <a href="#creators" className="text-white/60 hover:text-[#00D4FF] transition-colors text-sm">
+                        For Creators
                     </a>
                 </div>
 
@@ -110,9 +186,9 @@ function Navigation() {
                     </Link>
                     <Link
                         href="/signup"
-                        className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#7C3AED] via-[#F43F5E] to-[#D4AF37] text-white font-medium text-sm hover:opacity-90 transition-opacity"
+                        className="px-5 py-2.5 rounded-lg bg-[#00D4FF] text-black font-semibold text-sm hover:bg-[#33DDFF] transition-colors"
                     >
-                        Enter Your Territory
+                        Join 0G
                     </Link>
                 </div>
             </div>
@@ -122,6 +198,7 @@ function Navigation() {
 
 // ============================================
 // HERO SECTION
+// Stunning zero-gravity intro
 // ============================================
 function HeroSection() {
     const { scrollY } = useScroll();
@@ -130,12 +207,14 @@ function HeroSection() {
 
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-            {/* Gateway visual behind */}
+            {/* Floating 0G Logo */}
             <motion.div
-                className="absolute inset-0 flex items-center justify-center opacity-20"
+                className="absolute inset-0 flex items-center justify-center opacity-5"
                 style={{ y }}
+                animate={{ y: [0, -20, 0] }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
             >
-                <GatewayHero className="w-[600px] h-[700px]" />
+                <span className="text-[40vw] font-black text-[#00D4FF] select-none">0G</span>
             </motion.div>
 
             <motion.div
@@ -147,18 +226,23 @@ function HeroSection() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
                 >
+                    {/* Badge */}
+                    <motion.div
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00D4FF]/10 border border-[#00D4FF]/20 mb-8"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.2 }}
+                    >
+                        <span className="w-2 h-2 rounded-full bg-[#00D4FF] animate-pulse" />
+                        <span className="text-[#00D4FF] text-sm font-medium">The Next Generation of Social</span>
+                    </motion.div>
+
                     {/* Main headline */}
                     <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
-                        <span className="bg-gradient-to-r from-[#7C3AED] via-[#F43F5E] via-[#F59E0B] to-[#D4AF37] bg-clip-text text-transparent">
-                            Your Algorithm.
-                        </span>
+                        <span className="text-white">Join</span>
                         <br />
-                        <span className="text-white">
-                            Your Rules.
-                        </span>
-                        <br />
-                        <span className="text-white/80">
-                            Your Territory.
+                        <span className="bg-gradient-to-r from-[#00D4FF] via-[#8B5CF6] to-[#00D4FF] bg-clip-text text-transparent">
+                            Zero Gravity
                         </span>
                     </h1>
 
@@ -168,11 +252,12 @@ function HeroSection() {
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.3 }}
                     >
-                        Finally, a social network where <span className="text-white">YOU</span> decide what your family sees,
-                        how your community interacts, and what content gets highlighted.
+                        No algorithms weighing you down. No corporate control.
+                        <br />
+                        <span className="text-white">Just you.</span>
                     </motion.p>
 
-                    {/* Key differentiators */}
+                    {/* Tagline */}
                     <motion.div
                         className="flex flex-wrap justify-center gap-6 mb-12"
                         initial={{ opacity: 0, y: 20 }}
@@ -180,20 +265,20 @@ function HeroSection() {
                         transition={{ delay: 0.5 }}
                     >
                         <div className="flex items-center gap-2 text-white/70">
-                            <div className="w-2 h-2 rounded-full bg-[#7C3AED]" />
-                            <span>Create your own Instagram for your family</span>
+                            <div className="w-2 h-2 rounded-full bg-[#00D4FF]" />
+                            <span>Weightless</span>
                         </div>
                         <div className="flex items-center gap-2 text-white/70">
-                            <div className="w-2 h-2 rounded-full bg-[#F43F5E]" />
-                            <span>Build your own TikTok for your tribe</span>
+                            <div className="w-2 h-2 rounded-full bg-[#8B5CF6]" />
+                            <span>Authentic</span>
                         </div>
                         <div className="flex items-center gap-2 text-white/70">
-                            <div className="w-2 h-2 rounded-full bg-[#D4AF37]" />
-                            <span>Set your own rules for your nation</span>
+                            <div className="w-2 h-2 rounded-full bg-white" />
+                            <span>Yours</span>
                         </div>
                     </motion.div>
 
-                    {/* CTA */}
+                    {/* CTA Buttons */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -202,11 +287,11 @@ function HeroSection() {
                     >
                         <Link
                             href="/signup"
-                            className="group relative px-8 py-4 rounded-xl overflow-hidden"
+                            className="group relative px-10 py-4 rounded-xl overflow-hidden"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#7C3AED] via-[#F43F5E] to-[#D4AF37] opacity-90 group-hover:opacity-100 transition-opacity" />
-                            <span className="relative flex items-center gap-2 text-white font-semibold text-lg">
-                                Enter Your Territory
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6]" />
+                            <span className="relative flex items-center gap-2 text-black font-bold text-lg">
+                                Join 0G
                                 <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                 </svg>
@@ -214,10 +299,10 @@ function HeroSection() {
                         </Link>
 
                         <a
-                            href="#hierarchy"
-                            className="px-8 py-4 rounded-xl border border-white/10 text-white/70 hover:text-white hover:border-white/20 transition-all"
+                            href="#features"
+                            className="px-8 py-4 rounded-xl border border-[#00D4FF]/30 text-[#00D4FF] hover:bg-[#00D4FF]/10 transition-all"
                         >
-                            See How It Works
+                            Explore Features
                         </a>
                     </motion.div>
                 </motion.div>
@@ -229,9 +314,9 @@ function HeroSection() {
                 animate={{ y: [0, 10, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
             >
-                <div className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center p-2">
+                <div className="w-6 h-10 rounded-full border-2 border-[#00D4FF]/30 flex items-start justify-center p-2">
                     <motion.div
-                        className="w-1 h-2 rounded-full bg-white/40"
+                        className="w-1 h-2 rounded-full bg-[#00D4FF]"
                         animate={{ y: [0, 12, 0] }}
                         transition={{ duration: 1.5, repeat: Infinity }}
                     />
@@ -242,46 +327,56 @@ function HeroSection() {
 }
 
 // ============================================
-// HIERARCHY SECTION
+// FEATURES SECTION
+// Why 0G is different
 // ============================================
-function HierarchySection() {
-    const levels = [
+function FeaturesSection() {
+    const features = [
         {
-            name: 'Circle',
-            size: '2-10',
-            icon: '👨‍👩‍👧‍👦',
-            color: '#D4AF37',
-            description: 'Your Inner Sanctum',
-            detail: 'Immediate family, best friends. No algorithm—just you deciding what they see.',
+            icon: (
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+            ),
+            title: 'AI-Powered Creation',
+            description: 'Create like a pro with AI co-direction. One-tap editing, smart suggestions, instant translations.',
+            color: '#00D4FF',
         },
         {
-            name: 'Clan',
-            size: '10-50',
-            icon: '🏠',
-            color: '#F59E0B',
-            description: 'Extended, Not Exposed',
-            detail: 'Connect cousin groups without merging. Each family keeps their privacy.',
+            icon: (
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+            ),
+            title: 'Transparent Discovery',
+            description: 'See exactly why you see what you see. Configure your own algorithm weights.',
+            color: '#8B5CF6',
         },
         {
-            name: 'Tribe',
-            size: '50-500',
-            icon: '⚔️',
-            color: '#F43F5E',
-            description: 'Your Community, Your Constitution',
-            detail: 'A larger community with elected elders. You write the moderation rules.',
+            icon: (
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            ),
+            title: 'Own Your Community',
+            description: 'Build your space, your rules. From inner circle to global movement.',
+            color: '#00D4FF',
         },
         {
-            name: 'Nation',
-            size: '500+',
-            icon: '🏰',
-            color: '#7C3AED',
-            description: 'Movement Without Oversight',
-            detail: 'Build a movement around shared purpose. Own the algorithm entirely.',
+            icon: (
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            ),
+            title: 'Creator-First Economy',
+            description: 'Keep what you earn. We take 5%, not 30%. Direct-to-fan monetization.',
+            color: '#8B5CF6',
         },
     ];
 
     return (
-        <section id="hierarchy" className="relative py-32 overflow-hidden">
+        <section id="features" className="relative py-32">
             <div className="max-w-7xl mx-auto px-6">
                 <motion.div
                     className="text-center mb-20"
@@ -290,55 +385,33 @@ function HierarchySection() {
                     viewport={{ once: true }}
                 >
                     <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        The Hierarchy of <span className="bg-gradient-to-r from-[#D4AF37] to-[#F43F5E] bg-clip-text text-transparent">Sovereignty</span>
+                        Why <span className="text-[#00D4FF]">0G</span> is Different
                     </h2>
                     <p className="text-xl text-white/50 max-w-2xl mx-auto">
-                        From your closest circle to a nation of thousands—each level has its own rules, its own algorithm, its own governance.
+                        The first truly weightless social network. No manipulation, full transparency.
                     </p>
                 </motion.div>
 
-                {/* Hierarchy visualization */}
-                <div className="relative">
-                    {/* Connecting lines */}
-                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-[#D4AF37] via-[#F43F5E] to-[#7C3AED] opacity-30" />
-
-                    <div className="space-y-12">
-                        {levels.map((level, index) => (
-                            <motion.div
-                                key={level.name}
-                                className={`flex items-center gap-8 ${index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}
-                                initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: index * 0.1 }}
+                <div className="grid md:grid-cols-2 gap-8">
+                    {features.map((feature, index) => (
+                        <motion.div
+                            key={feature.title}
+                            className="p-8 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-[#00D4FF]/30 transition-all group"
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: index * 0.1 }}
+                        >
+                            <div
+                                className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-all group-hover:scale-110"
+                                style={{ backgroundColor: `${feature.color}15`, color: feature.color }}
                             >
-                                <div className={`flex-1 ${index % 2 === 0 ? 'text-right' : 'text-left'}`}>
-                                    <div
-                                        className="inline-block px-4 py-1 rounded-full text-sm mb-2"
-                                        style={{ backgroundColor: `${level.color}20`, color: level.color }}
-                                    >
-                                        {level.size} members
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-white mb-1">{level.name}</h3>
-                                    <p className="text-lg text-white/70 mb-2">{level.description}</p>
-                                    <p className="text-white/40">{level.detail}</p>
-                                </div>
-
-                                <div
-                                    className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl"
-                                    style={{
-                                        backgroundColor: `${level.color}15`,
-                                        border: `2px solid ${level.color}40`,
-                                        boxShadow: `0 0 40px ${level.color}20`,
-                                    }}
-                                >
-                                    {level.icon}
-                                </div>
-
-                                <div className="flex-1" />
-                            </motion.div>
-                        ))}
-                    </div>
+                                {feature.icon}
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-3">{feature.title}</h3>
+                            <p className="text-white/50 text-lg leading-relaxed">{feature.description}</p>
+                        </motion.div>
+                    ))}
                 </div>
             </div>
         </section>
@@ -346,30 +419,112 @@ function HierarchySection() {
 }
 
 // ============================================
-// ALGORITHM OWNERSHIP SECTION
+// ORBITS SECTION (Community Hierarchy)
+// Space-themed community tiers
 // ============================================
-function AlgorithmSection() {
-    const comparisons = [
+function OrbitsSection() {
+    const orbits = [
         {
-            them: 'Algorithm decides what you see',
-            us: 'YOU configure your feed formula',
+            name: 'Inner Orbit',
+            size: '2-10',
+            description: 'Your closest circle. Immediate family and best friends.',
+            color: '#00D4FF',
         },
         {
-            them: 'Faceless moderators ban your content',
-            us: 'Your tribe elder reviews—someone you know',
+            name: 'Family Orbit',
+            size: '10-50',
+            description: 'Extended family and close friends. Each group keeps their privacy.',
+            color: '#8B5CF6',
         },
         {
-            them: 'One global policy for 2 billion people',
-            us: 'Each circle sets their own guidelines',
+            name: 'Community Orbit',
+            size: '50-500',
+            description: 'Your tribe with elected leaders. You write the moderation rules.',
+            color: '#00D4FF',
         },
         {
-            them: 'Your data fuels their ads',
-            us: 'Your data stays in your territory',
+            name: 'Movement Orbit',
+            size: '500+',
+            description: 'Build a global movement around shared purpose. Own the algorithm entirely.',
+            color: '#8B5CF6',
         },
     ];
 
     return (
-        <section id="algorithm" className="relative py-32 overflow-hidden bg-gradient-to-b from-transparent via-[#7C3AED]/5 to-transparent">
+        <section id="orbits" className="relative py-32 overflow-hidden">
+            {/* Orbital rings visual */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+                {[1, 2, 3, 4].map((i) => (
+                    <motion.div
+                        key={i}
+                        className="absolute rounded-full border border-[#00D4FF]"
+                        style={{
+                            width: `${i * 200}px`,
+                            height: `${i * 200}px`,
+                        }}
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 30 + i * 10, repeat: Infinity, ease: 'linear' }}
+                    />
+                ))}
+            </div>
+
+            <div className="max-w-6xl mx-auto px-6 relative z-10">
+                <motion.div
+                    className="text-center mb-20"
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                >
+                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+                        Your <span className="text-[#00D4FF]">Orbits</span> of Freedom
+                    </h2>
+                    <p className="text-xl text-white/50 max-w-2xl mx-auto">
+                        From your closest circle to a global movement—each level has its own rules, its own algorithm.
+                    </p>
+                </motion.div>
+
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {orbits.map((orbit, index) => (
+                        <motion.div
+                            key={orbit.name}
+                            className="text-center p-6 rounded-2xl border border-white/10 bg-white/[0.02]"
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: index * 0.1 }}
+                        >
+                            <div
+                                className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold"
+                                style={{
+                                    backgroundColor: `${orbit.color}15`,
+                                    border: `2px solid ${orbit.color}40`,
+                                    color: orbit.color,
+                                }}
+                            >
+                                {orbit.size}
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">{orbit.name}</h3>
+                            <p className="text-white/50 text-sm">{orbit.description}</p>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
+// CREATOR STATS SECTION
+// ============================================
+function CreatorSection() {
+    const stats = [
+        { value: '70%', label: 'Revenue Share', description: 'vs. 50% on other platforms' },
+        { value: '0%', label: 'Platform Lock-in', description: 'Export your content anytime' },
+        { value: '100%', label: 'Transparency', description: 'See exactly how your content performs' },
+    ];
+
+    return (
+        <section id="creators" className="relative py-32 bg-gradient-to-b from-transparent via-[#00D4FF]/5 to-transparent">
             <div className="max-w-6xl mx-auto px-6">
                 <motion.div
                     className="text-center mb-16"
@@ -378,168 +533,26 @@ function AlgorithmSection() {
                     viewport={{ once: true }}
                 >
                     <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        Own Your <span className="bg-gradient-to-r from-[#F43F5E] to-[#7C3AED] bg-clip-text text-transparent">Algorithm</span>
+                        Built for <span className="text-[#00D4FF]">Creators</span>
                     </h2>
                     <p className="text-xl text-white/50 max-w-2xl mx-auto">
-                        No more wondering why you see what you see. You control the formula.
+                        Fair monetization. No exploitation. Direct connection to your audience.
                     </p>
                 </motion.div>
 
-                {/* Comparison table */}
-                <div className="grid md:grid-cols-2 gap-8">
-                    {/* Them column */}
-                    <motion.div
-                        className="p-8 rounded-2xl border border-red-500/20 bg-red-500/5"
-                        initial={{ opacity: 0, x: -30 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                    >
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-400">
-                                ✕
-                            </div>
-                            <h3 className="text-xl font-bold text-red-400">Other Platforms</h3>
-                        </div>
-                        <ul className="space-y-4">
-                            {comparisons.map((c, i) => (
-                                <li key={i} className="flex items-start gap-3 text-white/50">
-                                    <span className="text-red-400 mt-1">•</span>
-                                    {c.them}
-                                </li>
-                            ))}
-                        </ul>
-                    </motion.div>
-
-                    {/* Us column */}
-                    <motion.div
-                        className="p-8 rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/5"
-                        initial={{ opacity: 0, x: 30 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                    >
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37]">
-                                ✓
-                            </div>
-                            <h3 className="text-xl font-bold text-[#D4AF37]">Six22</h3>
-                        </div>
-                        <ul className="space-y-4">
-                            {comparisons.map((c, i) => (
-                                <li key={i} className="flex items-start gap-3 text-white/70">
-                                    <span className="text-[#D4AF37] mt-1">•</span>
-                                    {c.us}
-                                </li>
-                            ))}
-                        </ul>
-                    </motion.div>
-                </div>
-
-                {/* Algorithm controls preview */}
-                <motion.div
-                    className="mt-16 p-8 rounded-2xl border border-white/10 bg-white/[0.02]"
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                >
-                    <h3 className="text-xl font-bold text-white mb-6">Your Algorithm Settings</h3>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[
-                            { label: 'Recency Weight', value: 70, color: '#D4AF37' },
-                            { label: 'Engagement Weight', value: 40, color: '#F59E0B' },
-                            { label: 'Familiarity Weight', value: 90, color: '#F43F5E' },
-                            { label: 'Novelty Weight', value: 30, color: '#7C3AED' },
-                        ].map((setting) => (
-                            <div key={setting.label}>
-                                <div className="flex justify-between text-sm mb-2">
-                                    <span className="text-white/70">{setting.label}</span>
-                                    <span style={{ color: setting.color }}>{setting.value}%</span>
-                                </div>
-                                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                                    <motion.div
-                                        className="h-full rounded-full"
-                                        style={{ backgroundColor: setting.color }}
-                                        initial={{ width: 0 }}
-                                        whileInView={{ width: `${setting.value}%` }}
-                                        viewport={{ once: true }}
-                                        transition={{ duration: 1, delay: 0.5 }}
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </motion.div>
-            </div>
-        </section>
-    );
-}
-
-// ============================================
-// FEATURES SECTION
-// ============================================
-function FeaturesSection() {
-    const features = [
-        {
-            icon: '🔐',
-            title: 'Moderation You Control',
-            description: 'Set content ratings, banned keywords, and strike thresholds for your community.',
-        },
-        {
-            icon: '🔗',
-            title: 'Federated Connections',
-            description: 'Link circles to clans, clans to tribes—each maintaining independence.',
-        },
-        {
-            icon: '📊',
-            title: 'Transparent Feed',
-            description: 'See exactly why each post appears. Adjust weights in real-time.',
-        },
-        {
-            icon: '👑',
-            title: 'Governance Tiers',
-            description: 'Elders, councils, admins—structured leadership for organized communities.',
-        },
-        {
-            icon: '🛡️',
-            title: 'Strike System',
-            description: 'Configure warnings, strikes, and bans. Your rules, your enforcement.',
-        },
-        {
-            icon: '🌐',
-            title: 'Cross-Group Sharing',
-            description: 'Share between connected groups with granular permission controls.',
-        },
-    ];
-
-    return (
-        <section id="features" className="relative py-32">
-            <div className="max-w-7xl mx-auto px-6">
-                <motion.div
-                    className="text-center mb-16"
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                >
-                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        Built for <span className="bg-gradient-to-r from-[#D4AF37] to-[#F59E0B] bg-clip-text text-transparent">Sovereignty</span>
-                    </h2>
-                    <p className="text-xl text-white/50 max-w-2xl mx-auto">
-                        Every feature designed to put power in your hands.
-                    </p>
-                </motion.div>
-
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {features.map((feature, index) => (
+                <div className="grid md:grid-cols-3 gap-8">
+                    {stats.map((stat, index) => (
                         <motion.div
-                            key={feature.title}
-                            className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20 transition-all"
+                            key={stat.label}
+                            className="text-center p-8 rounded-2xl border border-[#00D4FF]/20 bg-[#00D4FF]/5"
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.1 }}
                         >
-                            <div className="text-4xl mb-4">{feature.icon}</div>
-                            <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
-                            <p className="text-white/50">{feature.description}</p>
+                            <div className="text-5xl font-black text-[#00D4FF] mb-2">{stat.value}</div>
+                            <div className="text-xl font-bold text-white mb-1">{stat.label}</div>
+                            <div className="text-white/50">{stat.description}</div>
                         </motion.div>
                     ))}
                 </div>
@@ -560,20 +573,20 @@ function CTASection() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <Six22Logo size="xl" variant="mark" className="justify-center mb-8" />
+                    <ZeroGLogo size="xl" className="justify-center mb-8" />
 
                     <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        Ready to claim your territory?
+                        Ready to break free?
                     </h2>
                     <p className="text-xl text-white/50 mb-10 max-w-2xl mx-auto">
-                        Join the movement of families, tribes, and nations building their own sovereign digital spaces.
+                        Join the next generation of social media. Weightless. Authentic. Yours.
                     </p>
 
                     <Link
                         href="/signup"
-                        className="inline-flex items-center gap-3 px-10 py-5 rounded-xl bg-gradient-to-r from-[#7C3AED] via-[#F43F5E] to-[#D4AF37] text-white font-semibold text-lg hover:opacity-90 transition-opacity"
+                        className="inline-flex items-center gap-3 px-12 py-5 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-bold text-lg hover:opacity-90 transition-opacity"
                     >
-                        Enter Your Territory
+                        Join 0G Now
                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
@@ -592,16 +605,17 @@ function Footer() {
         <footer className="border-t border-white/5 py-12">
             <div className="max-w-7xl mx-auto px-6">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                    <Six22Logo size="sm" variant="full" />
+                    <ZeroGLogo size="sm" />
 
                     <div className="flex items-center gap-6 text-sm text-white/40">
-                        <a href="#" className="hover:text-white transition-colors">Privacy</a>
-                        <a href="#" className="hover:text-white transition-colors">Terms</a>
-                        <a href="#" className="hover:text-white transition-colors">Contact</a>
+                        <a href="#" className="hover:text-[#00D4FF] transition-colors">Privacy</a>
+                        <a href="#" className="hover:text-[#00D4FF] transition-colors">Terms</a>
+                        <a href="#" className="hover:text-[#00D4FF] transition-colors">Contact</a>
+                        <a href="#" className="hover:text-[#00D4FF] transition-colors">Careers</a>
                     </div>
 
                     <p className="text-sm text-white/30">
-                        © 2026 Six22. Your Territory.
+                        © 2026 0G — The Weightless Social Network
                     </p>
                 </div>
             </div>
@@ -621,20 +635,20 @@ export default function HomePage() {
 
     if (!mounted) {
         return (
-            <div className="min-h-screen bg-[#050508] flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full border-4 border-[#D4AF37]/20 border-t-[#D4AF37] animate-spin" />
+            <div className="min-h-screen bg-black flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full border-4 border-[#00D4FF]/20 border-t-[#00D4FF] animate-spin" />
             </div>
         );
     }
 
     return (
-        <main className="min-h-screen bg-[#050508] text-white overflow-x-hidden">
-            <TwilightBackground />
+        <main className="min-h-screen bg-black text-white overflow-x-hidden">
+            <SpaceBackground />
             <Navigation />
             <HeroSection />
-            <HierarchySection />
-            <AlgorithmSection />
             <FeaturesSection />
+            <OrbitsSection />
+            <CreatorSection />
             <CTASection />
             <Footer />
         </main>

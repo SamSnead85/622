@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleAuth, useAppleAuth } from '@/hooks/useOAuth';
-import { Six22Logo } from '@/components/Six22Logo';
 
 
 // ============================================
@@ -19,11 +18,11 @@ function PremiumMeshBackground() {
             {/* Base dark */}
             <div className="absolute inset-0 bg-[#030305]" />
 
-            {/* Large gradient orb - top left - warm amber */}
+            {/* Large gradient orb - top left - electric blue */}
             <motion.div
                 className="absolute -top-32 -left-32 w-[800px] h-[800px]"
                 style={{
-                    background: 'radial-gradient(circle at center, rgba(212, 175, 55, 0.15) 0%, rgba(245, 158, 11, 0.08) 30%, transparent 60%)',
+                    background: 'radial-gradient(circle at center, rgba(0, 212, 255, 0.15) 0%, rgba(139, 92, 246, 0.08) 30%, transparent 60%)',
                 }}
                 animate={{
                     scale: [1, 1.1, 1],
@@ -83,7 +82,7 @@ function PremiumMeshBackground() {
             <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#030305] to-transparent" />
 
             {/* Left side accent line */}
-            <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#D4AF37]/20 to-transparent" />
+            <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#00D4FF]/20 to-transparent" />
         </div>
     );
 }
@@ -189,8 +188,8 @@ const Icons = {
 // Loading fallback for Suspense
 function LoginLoading() {
     return (
-        <div className="min-h-screen bg-[#030305] flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full border-4 border-[#D4AF37]/20 border-t-[#D4AF37] animate-spin" />
+        <div className="min-h-screen bg-black flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full border-4 border-[#00D4FF]/20 border-t-[#00D4FF] animate-spin" />
         </div>
     );
 }
@@ -209,7 +208,7 @@ function LoginContent() {
 
     const handleOAuthSuccess = useCallback((user: { id: string; email: string; displayName: string; avatarUrl?: string }, token: string) => {
         // Store token and redirect
-        localStorage.setItem('six22_token', token);
+        localStorage.setItem('0g_token', token);
         router.push(searchParams.get('redirect') || '/dashboard');
     }, [router, searchParams]);
 
@@ -268,19 +267,23 @@ function LoginContent() {
                         transition={{ duration: 0.8 }}
                         className="text-center"
                     >
-                        <Six22Logo size="lg" variant="full" />
+                        {/* 0G Logo */}
+                        <div className="text-6xl font-bold">
+                            <span className="text-[#00D4FF]">0</span>
+                            <span className="text-white">G</span>
+                        </div>
                         <h2 className="mt-8 text-3xl font-bold text-white">
-                            Your Territory Awaits
+                            Welcome Back
                         </h2>
                         <p className="mt-4 text-lg text-white/50 max-w-md">
-                            Own your algorithm. Build your community. Set your rules.
+                            The weightless social network. No algorithms weighing you down.
                         </p>
                     </motion.div>
                 </div>
             </div>
 
             {/* Right side - Login form */}
-            <div className="w-full lg:w-1/2 flex flex-col bg-[#050508]">
+            <div className="w-full lg:w-1/2 flex flex-col bg-black">
                 {/* Back to home */}
                 <div className="p-6">
                     <Link
@@ -304,11 +307,14 @@ function LoginContent() {
                     >
                         {/* Mobile logo */}
                         <div className="lg:hidden flex justify-center mb-8">
-                            <Six22Logo size="md" variant="mark" />
+                            <div className="text-4xl font-bold">
+                                <span className="text-[#00D4FF]">0</span>
+                                <span className="text-white">G</span>
+                            </div>
                         </div>
 
                         <h1 className="text-3xl font-bold text-white text-center mb-2">
-                            Log in to Six22
+                            Log in to 0G
                         </h1>
                         <p className="text-white/50 text-center mb-8">
                             Continue your journey
@@ -384,7 +390,7 @@ function LoginContent() {
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="Enter your email address"
                                         required
-                                        className="w-full px-4 py-3 rounded-lg bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/50 transition-all"
+                                        className="w-full px-4 py-3 rounded-lg bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#00D4FF]/50 focus:ring-1 focus:ring-[#00D4FF]/50 transition-all"
                                     />
                                 </div>
                             </div>
@@ -397,7 +403,7 @@ function LoginContent() {
                                     </label>
                                     <Link
                                         href="/forgot-password"
-                                        className="text-sm text-[#D4AF37] hover:text-[#F59E0B] transition-colors"
+                                        className="text-sm text-[#00D4FF] hover:text-[#33DDFF] transition-colors"
                                     >
                                         Forgot Password?
                                     </Link>
@@ -409,7 +415,7 @@ function LoginContent() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="Enter a unique password"
                                         required
-                                        className="w-full px-4 py-3 pr-12 rounded-lg bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/50 transition-all"
+                                        className="w-full px-4 py-3 pr-12 rounded-lg bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#00D4FF]/50 focus:ring-1 focus:ring-[#00D4FF]/50 transition-all"
                                     />
                                     <button
                                         type="button"
@@ -440,12 +446,12 @@ function LoginContent() {
 
                         {/* Sign up link */}
                         <p className="mt-8 text-center text-white/50">
-                            New to Six22?{' '}
+                            New to 0G?{' '}
                             <Link
                                 href="/signup"
-                                className="text-[#D4AF37] hover:text-[#F59E0B] font-medium transition-colors"
+                                className="text-[#00D4FF] hover:text-[#33DDFF] font-medium transition-colors"
                             >
-                                Sign up for an account
+                                Join Zero Gravity
                             </Link>
                         </p>
                     </motion.div>
