@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ChatMessage {
     id: string;
@@ -21,6 +22,7 @@ const INITIAL_MESSAGES: ChatMessage[] = [
 ];
 
 export default function CampfireGoLive() {
+    const { user } = useAuth();
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isLive, setIsLive] = useState(false);
     const [title, setTitle] = useState('');
@@ -30,6 +32,9 @@ export default function CampfireGoLive() {
     const [newMessage, setNewMessage] = useState('');
     const [hasCamera, setHasCamera] = useState(false);
     const [reactions, setReactions] = useState<{ id: string; emoji: string; x: number }[]>([]);
+
+    // Default avatar if user doesn't have one
+    const userAvatar = user?.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face';
 
     // Start camera preview
     useEffect(() => {
@@ -94,10 +99,10 @@ export default function CampfireGoLive() {
         if (!newMessage.trim()) return;
         const msg: ChatMessage = {
             id: Date.now().toString(),
-            username: 'you',
+            username: user?.username || 'you',
             content: newMessage,
             type: 'message',
-            avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face',
+            avatarUrl: userAvatar,
         };
         setMessages(prev => [...prev, msg]);
         setNewMessage('');

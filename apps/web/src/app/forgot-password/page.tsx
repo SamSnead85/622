@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
                             <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#forgot-logo-grad)" />
                             <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
                         </svg>
-                        <span className="text-2xl font-semibold bg-gradient-to-r from-amber-400 via-rose-400 to-violet-400 bg-clip-text text-transparent">Six22</span>
+                        <span className="text-2xl font-bold"><span className="text-[#00D4FF]">0</span><span className="text-white">G</span></span>
                     </Link>
                 </div>
 

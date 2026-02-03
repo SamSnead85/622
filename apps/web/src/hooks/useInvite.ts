@@ -161,10 +161,10 @@ export function useInvite() {
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Join me on Six22!',
+                    title: 'Join me on 0G!',
                     text: displayName
-                        ? `${displayName} invited you to join Six22 - Start a New Chapter`
-                        : "You're invited to join Six22 - Start a New Chapter",
+                        ? `${displayName} invited you to join 0G - Zero Gravity Social`
+                        : "You're invited to join 0G - Zero Gravity Social",
                     url: link,
                 });
                 return true;
@@ -177,10 +177,10 @@ export function useInvite() {
 
     // Generate share URL for specific platforms
     const getShareUrl = useCallback((platform: 'whatsapp' | 'twitter' | 'telegram' | 'sms' | 'email', displayName?: string): string => {
-        const link = inviteLink || 'https://six22.app';
+        const link = inviteLink || 'https://0g.social';
         const text = displayName
-            ? `${displayName} invited you to join Six22! 🌙 `
-            : "You're invited to join Six22! 🌙 ";
+            ? `${displayName} invited you to join 0G! 🚀 `
+            : "You're invited to join 0G! 🚀 ";
 
         const fullText = `${text}${link}`;
 
@@ -194,7 +194,7 @@ export function useInvite() {
             case 'sms':
                 return `sms:?body=${encodeURIComponent(fullText)}`;
             case 'email':
-                return `mailto:?subject=${encodeURIComponent('Join me on Six22!')}&body=${encodeURIComponent(fullText)}`;
+                return `mailto:?subject=${encodeURIComponent('Join me on 0G!')}&body=${encodeURIComponent(fullText)}`;
             default:
                 return link;
         }

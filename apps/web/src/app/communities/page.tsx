@@ -275,20 +275,11 @@ function DataOwnershipCard() {
 function Navigation() {
     return (
         <>
-            {/* Desktop Sidebar */}
             <nav className="hidden md:flex fixed left-0 top-0 h-full w-20 flex-col items-center py-8 bg-[#0a0a0f]/80 backdrop-blur-xl border-r border-white/5 z-50">
                 <Link href="/dashboard" className="mb-8">
-                    <svg width="40" height="40" viewBox="0 0 40 40">
-                        <defs>
-                            <linearGradient id="comm-nav-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#F59E0B" />
-                                <stop offset="50%" stopColor="#F43F5E" />
-                                <stop offset="100%" stopColor="#8B5CF6" />
-                            </linearGradient>
-                        </defs>
-                        <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#comm-nav-grad)" />
-                        <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
-                    </svg>
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
+                        <span className="text-black font-bold text-lg">0G</span>
+                    </div>
                 </Link>
 
                 <div className="flex-1 flex flex-col items-center gap-4">

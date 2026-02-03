@@ -211,7 +211,7 @@ function DataStorageSection() {
         {
             id: 'cloud' as const,
             icon: 'cloud' as const,
-            title: 'Six22 Cloud',
+            title: '0G Cloud',
             desc: 'Encrypted storage on our servers. Access from anywhere.',
             color: 'from-violet-400 to-purple-500'
         },

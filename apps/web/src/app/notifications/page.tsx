@@ -19,18 +19,9 @@ function Navigation({ activeTab }: { activeTab: string }) {
     return (
         <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-20 xl:w-64 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col p-4 z-40">
             <Link href="/" className="flex items-center gap-3 px-3 py-4 mb-6">
-                <svg width="40" height="40" viewBox="0 0 40 40" className="flex-shrink-0">
-                    <defs>
-                        <linearGradient id="notif-nav-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#F59E0B" />
-                            <stop offset="50%" stopColor="#F43F5E" />
-                            <stop offset="100%" stopColor="#8B5CF6" />
-                        </linearGradient>
-                    </defs>
-                    <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#notif-nav-grad)" />
-                    <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
-                </svg>
-                <span className="text-xl font-semibold bg-gradient-to-r from-amber-400 via-rose-400 to-violet-400 bg-clip-text text-transparent hidden xl:block">Six22</span>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center flex-shrink-0">
+                    <span className="text-black font-bold text-lg">0G</span>
+                </div>
             </Link>
             <nav className="flex-1 space-y-2">
                 {navItems.map((item) => (

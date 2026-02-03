@@ -199,7 +199,7 @@ function SettingsPageContent() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'six22-data.json';
+        a.download = '0g-data.json';
         a.click();
     }, []);
 

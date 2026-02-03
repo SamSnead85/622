@@ -170,7 +170,7 @@ export default function MigrationPage() {
                             <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#migrate-logo-grad)" />
                             <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
                         </svg>
-                        <span className="font-semibold">Migrate to Six22</span>
+                        <span className="font-semibold">Migrate to 0G</span>
                     </div>
                     {step !== 'select' && step !== 'complete' && (
                         <button
@@ -203,7 +203,7 @@ export default function MigrationPage() {
                                 <h1 className="text-3xl font-bold mb-3">Bring Your Content Home</h1>
                                 <p className="text-gray-400 max-w-lg mx-auto">
                                     Import your posts, videos, and connections from other platforms.
-                                    Your content, your community — now on Six22.
+                                    Your content, your community — now on 0G.
                                 </p>
                             </div>
 
@@ -388,13 +388,13 @@ export default function MigrationPage() {
                             <div className="text-center mb-8">
                                 <div className="text-6xl mb-4">🎉</div>
                                 <h1 className="text-2xl font-bold mb-2">Import Complete!</h1>
-                                <p className="text-gray-400">Your content has been imported to Six22</p>
+                                <p className="text-gray-400">Your content has been imported to 0G</p>
                             </div>
 
                             <div className="grid gap-4 md:grid-cols-3 mb-8">
                                 <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 text-center">
                                     <div className="text-3xl font-bold mb-1">{connections.matched}</div>
-                                    <div className="text-gray-400 text-sm">Already on Six22</div>
+                                    <div className="text-gray-400 text-sm">Already on 0G</div>
                                 </div>
                                 <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 text-center">
                                     <div className="text-3xl font-bold mb-1">{connections.invitable}</div>
@@ -409,7 +409,7 @@ export default function MigrationPage() {
                             <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 mb-8">
                                 <h2 className="font-semibold mb-4">Invite your connections</h2>
                                 <p className="text-gray-400 text-sm mb-4">
-                                    We found {connections.invitable} connections with email addresses who can be invited to join Six22.
+                                    We found {connections.invitable} connections with email addresses who can be invited to join 0G.
                                 </p>
 
                                 <div className="flex items-center gap-2 mb-4">
@@ -466,12 +466,12 @@ export default function MigrationPage() {
                                         <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#invite-logo-grad)" />
                                         <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
                                     </svg>
-                                    <span className="font-semibold text-sm">Six22</span>
+                                    <span className="font-semibold text-sm">0G</span>
                                 </div>
 
-                                <h2 className="text-xl font-bold mb-3">You&apos;ve been invited to Six22!</h2>
+                                <h2 className="text-xl font-bold mb-3">You&apos;ve been invited to 0G!</h2>
                                 <p className="text-gray-600 mb-4">
-                                    A friend moved to Six22 and wants to stay connected with you.
+                                    A friend moved to 0G and wants to stay connected with you.
                                 </p>
 
                                 <ul className="space-y-2 mb-6">
@@ -487,7 +487,7 @@ export default function MigrationPage() {
                                 </ul>
 
                                 <div className="bg-gray-950 text-white text-center py-3 rounded-lg font-semibold">
-                                    Join Six22 Free →
+                                    Join 0G Free →
                                 </div>
                             </div>
 
@@ -525,7 +525,7 @@ export default function MigrationPage() {
                             >
                                 🏕️
                             </motion.div>
-                            <h1 className="text-3xl font-bold mb-3">Welcome to Your Six22!</h1>
+                            <h1 className="text-3xl font-bold mb-3">Welcome to 0G!</h1>
                             <p className="text-gray-400 mb-8 max-w-md mx-auto">
                                 Your content has been imported and invites are on their way.
                                 Start exploring your new home.
