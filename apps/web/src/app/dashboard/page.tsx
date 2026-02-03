@@ -12,6 +12,8 @@ import { FullscreenPostViewer, PostData } from '@/components/FullscreenPostViewe
 import { Six22Logo } from '@/components/Six22Logo';
 import { OasisBackground, CrescentMoon, EightPointedStar } from '@/components/OasisBackground';
 import { ArchCard, ArabesqueDivider } from '@/components/ArchCard';
+import { WelcomeOnboarding } from '@/components/WelcomeOnboarding';
+import { InviteFriends } from '@/components/InviteFriends';
 
 // Default avatar/image fallbacks
 const DEFAULT_AVATARS = [
@@ -270,6 +272,121 @@ function TribeConstellation({
                 </Link>
             </div>
         </div>
+    );
+}
+
+// ============================================
+// WELCOME HERO - Amazing first-time user experience
+// Action cards for key features
+// ============================================
+function WelcomeHero({
+    displayName,
+    onInvite,
+    onCreateTribe,
+    onCreateMoment,
+    onDismiss
+}: {
+    displayName?: string;
+    onInvite: () => void;
+    onCreateTribe: () => void;
+    onCreateMoment: () => void;
+    onDismiss: () => void;
+}) {
+    const firstName = displayName?.split(' ')[0] || 'Friend';
+
+    const actionCards = [
+        {
+            id: 'invite',
+            icon: '🌙',
+            title: 'Invite Your Tribe',
+            description: 'Bring family & friends to Six22',
+            gradient: 'from-amber-500 to-rose-500',
+            onClick: onInvite,
+        },
+        {
+            id: 'tribe',
+            icon: '🏕️',
+            title: 'Create a Circle',
+            description: 'Start a private group space',
+            gradient: 'from-rose-500 to-violet-500',
+            onClick: onCreateTribe,
+        },
+        {
+            id: 'moment',
+            icon: '✨',
+            title: 'Share Your First Moment',
+            description: 'Post a photo or video',
+            gradient: 'from-violet-500 to-blue-500',
+            onClick: onCreateMoment,
+        },
+    ];
+
+    return (
+        <motion.section
+            className="px-4 lg:px-6 py-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+        >
+            <div className="max-w-3xl mx-auto">
+                {/* Welcome Header */}
+                <div className="text-center mb-8">
+                    <motion.div
+                        className="text-6xl mb-4"
+                        animate={{ rotate: [0, 5, -5, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                    >
+                        🌙
+                    </motion.div>
+                    <h2 className="text-3xl font-bold text-white mb-2">
+                        Welcome to Six22, {firstName}!
+                    </h2>
+                    <p className="text-white/60">
+                        Your sovereign space awaits. Here&apos;s how to get started:
+                    </p>
+                </div>
+
+                {/* Action Cards */}
+                <div className="grid md:grid-cols-3 gap-4 mb-8">
+                    {actionCards.map((card, i) => (
+                        <motion.button
+                            key={card.id}
+                            onClick={card.onClick}
+                            className="relative overflow-hidden rounded-2xl border border-white/10 p-6 text-left hover:border-white/20 transition-all group"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 + i * 0.1 }}
+                            whileHover={{ scale: 1.02, y: -4 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
+                            {/* Background gradient */}
+                            <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-10 group-hover:opacity-20 transition-opacity`} />
+
+                            <div className="relative">
+                                <span className="text-4xl mb-4 block">{card.icon}</span>
+                                <h3 className="font-semibold text-white text-lg mb-1">{card.title}</h3>
+                                <p className="text-sm text-white/50">{card.description}</p>
+                            </div>
+
+                            {/* Hover arrow */}
+                            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span className="text-white/40">→</span>
+                            </div>
+                        </motion.button>
+                    ))}
+                </div>
+
+                {/* Dismiss button */}
+                <div className="text-center">
+                    <button
+                        onClick={onDismiss}
+                        className="text-sm text-white/40 hover:text-white/60 transition-colors"
+                    >
+                        I&apos;ll explore on my own
+                    </button>
+                </div>
+            </div>
+        </motion.section>
     );
 }
 
@@ -857,12 +974,30 @@ export default function DashboardPage() {
     const { posts: apiPosts, friends: apiFriends, isLoading, likePost, loadMore, hasMore, createPost } = usePosts();
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
+    // First-time user detection
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [showInviteModal, setShowInviteModal] = useState(false);
+    const [isNewUser, setIsNewUser] = useState(false);
+
     // Redirect to login if not authenticated
     useEffect(() => {
         if (!authLoading && !isAuthenticated) {
             router.push('/login?error=auth_required');
         }
     }, [authLoading, isAuthenticated, router]);
+
+    // Check if new user (no onboarding complete and no posts)
+    useEffect(() => {
+        if (mounted && isAuthenticated) {
+            const onboardingComplete = localStorage.getItem('caravan_onboarding_complete');
+            const welcomeDismissed = localStorage.getItem('six22_welcome_dismissed');
+            if (!onboardingComplete) {
+                setShowOnboarding(true);
+            } else if (!welcomeDismissed && apiFriends.length === 0) {
+                setIsNewUser(true);
+            }
+        }
+    }, [mounted, isAuthenticated, apiFriends.length]);
 
     // Wrapper for createPost that checks auth first
     const handleCreatePost = useCallback(async (content: string, file?: File): Promise<{ success: boolean; error?: string }> => {
@@ -871,6 +1006,19 @@ export default function DashboardPage() {
         }
         return createPost(content, file);
     }, [isAuthenticated, createPost]);
+
+    // Handle onboarding completion
+    const handleOnboardingComplete = useCallback(() => {
+        setShowOnboarding(false);
+        setIsNewUser(true); // Show welcome hero after onboarding
+    }, []);
+
+    // Dismiss welcome hero
+    const dismissWelcome = useCallback(() => {
+        localStorage.setItem('six22_welcome_dismissed', 'true');
+        setIsNewUser(false);
+    }, []);
+
     const tribes = [
         { id: 'tech', name: 'Tech Builders', icon: '💻' },
         { id: 'fitness', name: 'Fitness Tribe', icon: '💪' },
@@ -1041,6 +1189,17 @@ export default function DashboardPage() {
                     </div>
                 </section>
 
+                {/* Welcome Hero for new users */}
+                {isNewUser && (
+                    <WelcomeHero
+                        displayName={user?.displayName}
+                        onInvite={() => setShowInviteModal(true)}
+                        onCreateTribe={() => router.push('/communities')}
+                        onCreateMoment={() => setShowCreateModal(true)}
+                        onDismiss={dismissWelcome}
+                    />
+                )}
+
                 {/* Feed Filters */}
                 <section className="border-b border-white/5 py-3">
                     <FeedFilters
@@ -1120,7 +1279,18 @@ export default function DashboardPage() {
                         }}
                     />
                 )}
+                {showInviteModal && (
+                    <InviteFriends
+                        isOpen={showInviteModal}
+                        onClose={() => setShowInviteModal(false)}
+                    />
+                )}
             </AnimatePresence>
+
+            {/* Welcome Onboarding for first-time users */}
+            {showOnboarding && (
+                <WelcomeOnboarding onComplete={handleOnboardingComplete} />
+            )}
         </div>
     );
 }

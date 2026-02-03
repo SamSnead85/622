@@ -112,24 +112,24 @@ export function WelcomeOnboarding({ onComplete }: OnboardingProps) {
                                 animate={{ rotate: [0, 10, -10, 0] }}
                                 transition={{ duration: 1, repeat: Infinity, repeatDelay: 2 }}
                             >
-                                🏕️
+                                🌙
                             </motion.div>
-                            <h1 className="text-3xl font-bold text-white mb-4">Welcome to Caravan</h1>
+                            <h1 className="text-3xl font-bold text-white mb-4">Welcome to Six22</h1>
                             <p className="text-white/60 text-lg mb-8">
-                                Your private space for connecting with the people who matter most.
+                                Your sovereign space for family, friends, and communities who matter.
                             </p>
                             <div className="space-y-4 text-left bg-white/5 rounded-2xl p-6">
                                 <div className="flex items-center gap-3">
+                                    <span className="text-2xl">👨‍👩‍👧‍👦</span>
+                                    <p className="text-white/80">Invite your family & close friends</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">🏕️</span>
+                                    <p className="text-white/80">Create private tribes & circles</p>
+                                </div>
+                                <div className="flex items-center gap-3">
                                     <span className="text-2xl">🔒</span>
-                                    <p className="text-white/80">Your data stays private</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-2xl">💬</span>
-                                    <p className="text-white/80">Connect with family & friends</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-2xl">🎮</span>
-                                    <p className="text-white/80">Play games together</p>
+                                    <p className="text-white/80">You own your data, always</p>
                                 </div>
                             </div>
                         </motion.div>
