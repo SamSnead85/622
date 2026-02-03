@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useNotifications, Notification } from '@/hooks/useNotifications';
 
 // Navigation
 function Navigation({ activeTab }: { activeTab: string }) {
@@ -43,22 +44,52 @@ function Navigation({ activeTab }: { activeTab: string }) {
     );
 }
 
-// Notification types
-const notifications = [
-    { id: 1, type: 'like', user: 'Sarah Chen', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face', action: 'liked your photo', time: '2m', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100&h=100&fit=crop', read: false },
-    { id: 2, type: 'follow', user: 'Marcus Johnson', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face', action: 'started following you', time: '15m', read: false },
-    { id: 3, type: 'comment', user: 'Emily Park', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face', action: 'commented: "Amazing shot! 📸"', time: '1h', image: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=100&h=100&fit=crop', read: false },
-    { id: 4, type: 'mention', user: 'Jordan Lee', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&crop=face', action: 'mentioned you in a post', time: '3h', read: true },
-    { id: 5, type: 'like', user: 'Alex Rivera', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop&crop=face', action: 'and 12 others liked your journey', time: '5h', image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=100&h=100&fit=crop', read: true },
-    { id: 6, type: 'live', user: 'Casey Morgan', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face', action: 'went live: "Sunday vibes"', time: '1d', read: true },
-    { id: 7, type: 'follow', user: 'Omar Hassan', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=face', action: 'and 5 others started following you', time: '2d', read: true },
+// Mock notifications for fallback
+const MOCK_NOTIFICATIONS = [
+    { id: '1', type: 'LIKE' as const, message: 'liked your photo', read: false, actorId: '1', actor: { id: '1', username: 'sarah_chen', displayName: 'Sarah Chen', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face' }, createdAt: new Date().toISOString() },
+    { id: '2', type: 'FOLLOW' as const, message: 'started following you', read: false, actorId: '2', actor: { id: '2', username: 'marcus_j', displayName: 'Marcus Johnson', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face' }, createdAt: new Date().toISOString() },
+    { id: '3', type: 'COMMENT' as const, message: 'commented: "Amazing shot! 📸"', read: false, actorId: '3', actor: { id: '3', username: 'emily_park', displayName: 'Emily Park', avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face' }, createdAt: new Date().toISOString() },
+    { id: '4', type: 'MENTION' as const, message: 'mentioned you in a post', read: true, actorId: '4', actor: { id: '4', username: 'jordan_lee', displayName: 'Jordan Lee', avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&crop=face' }, createdAt: new Date().toISOString() },
 ];
+
+function getNotificationIcon(type: Notification['type']): string {
+    switch (type) {
+        case 'LIKE': return '🔥';
+        case 'FOLLOW': return '👤';
+        case 'COMMENT': return '💬';
+        case 'MENTION': return '@';
+        case 'MESSAGE': return '✉️';
+        case 'COMMUNITY': return '🏘️';
+        case 'JOURNEY': return '🎬';
+        default: return '🔔';
+    }
+}
+
+function formatTimeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return 'now';
+    if (diffMins < 60) return `${diffMins}m`;
+
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d`;
+}
 
 export default function NotificationsPage() {
     const [filter, setFilter] = useState<'all' | 'unread'>('all');
     const [mounted, setMounted] = useState(false);
+    const { notifications: apiNotifications, isLoading, error, markAsRead, markAllAsRead } = useNotifications();
 
     useEffect(() => { setMounted(true); }, []);
+
+    // Use API data or fall back to mock
+    const notifications = apiNotifications.length > 0 ? apiNotifications : MOCK_NOTIFICATIONS;
 
     const filteredNotifications = filter === 'unread'
         ? notifications.filter(n => !n.read)
@@ -80,7 +111,10 @@ export default function NotificationsPage() {
                     <div className="max-w-2xl mx-auto">
                         <div className="flex items-center justify-between mb-4">
                             <h1 className="text-xl font-bold text-white">Notifications</h1>
-                            <button className="text-sm text-orange-400 hover:text-orange-300 transition-colors">
+                            <button
+                                onClick={markAllAsRead}
+                                className="text-sm text-orange-400 hover:text-orange-300 transition-colors"
+                            >
                                 Mark all as read
                             </button>
                         </div>
@@ -101,72 +135,80 @@ export default function NotificationsPage() {
                     </div>
                 </header>
 
+                {/* Loading State */}
+                {isLoading && (
+                    <div className="py-20 text-center">
+                        <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                        <p className="text-white/50">Loading notifications...</p>
+                    </div>
+                )}
+
+                {/* Error State */}
+                {error && !isLoading && (
+                    <div className="py-20 text-center">
+                        <span className="text-5xl mb-4 block">⚠️</span>
+                        <p className="text-white/50">{error}</p>
+                    </div>
+                )}
+
                 {/* Notifications List */}
-                <div className="max-w-2xl mx-auto">
-                    {filteredNotifications.length === 0 ? (
-                        <div className="py-20 text-center">
-                            <span className="text-5xl mb-4 block">🔔</span>
-                            <p className="text-white/50">No unread notifications</p>
-                        </div>
-                    ) : (
-                        filteredNotifications.map((notif, i) => (
-                            <motion.div
-                                key={notif.id}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: i * 0.03 }}
-                                className={`flex items-center gap-3 p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${!notif.read ? 'bg-white/[0.02]' : ''}`}
-                            >
-                                {/* Icon/Avatar */}
-                                <div className="relative">
-                                    <div className="w-12 h-12 rounded-full overflow-hidden relative">
-                                        <Image src={notif.avatar} alt={notif.user} fill className="object-cover" />
+                {!isLoading && !error && (
+                    <div className="max-w-2xl mx-auto">
+                        {filteredNotifications.length === 0 ? (
+                            <div className="py-20 text-center">
+                                <span className="text-5xl mb-4 block">🔔</span>
+                                <p className="text-white/50">No unread notifications</p>
+                            </div>
+                        ) : (
+                            filteredNotifications.map((notif, i) => (
+                                <motion.div
+                                    key={notif.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.03 }}
+                                    onClick={() => !notif.read && markAsRead(notif.id)}
+                                    className={`flex items-center gap-3 p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${!notif.read ? 'bg-white/[0.02]' : ''}`}
+                                >
+                                    {/* Icon/Avatar */}
+                                    <div className="relative">
+                                        <div className="w-12 h-12 rounded-full overflow-hidden relative">
+                                            <Image
+                                                src={notif.actor?.avatarUrl || '/placeholder-avatar.png'}
+                                                alt={notif.actor?.displayName || 'User'}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        </div>
+                                        <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#050508] flex items-center justify-center text-sm">
+                                            {getNotificationIcon(notif.type)}
+                                        </span>
                                     </div>
-                                    <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#050508] flex items-center justify-center text-sm">
-                                        {notif.type === 'like' && '🔥'}
-                                        {notif.type === 'follow' && '👤'}
-                                        {notif.type === 'comment' && '💬'}
-                                        {notif.type === 'mention' && '@'}
-                                        {notif.type === 'live' && '🔴'}
-                                    </span>
-                                </div>
 
-                                {/* Content */}
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-white">
-                                        <span className="font-semibold">{notif.user}</span>
-                                        {' '}{notif.action}
-                                    </p>
-                                    <p className="text-sm text-white/40">{notif.time}</p>
-                                </div>
-
-                                {/* Post thumbnail or action */}
-                                {notif.image && (
-                                    <div className="w-12 h-12 rounded-lg overflow-hidden relative flex-shrink-0">
-                                        <Image src={notif.image} alt="Post" fill className="object-cover" />
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-white">
+                                            <span className="font-semibold">{notif.actor?.displayName || 'Someone'}</span>
+                                            {' '}{notif.message}
+                                        </p>
+                                        <p className="text-sm text-white/40">{formatTimeAgo(notif.createdAt)}</p>
                                     </div>
-                                )}
 
-                                {notif.type === 'follow' && (
-                                    <button className="px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-colors">
-                                        Follow
-                                    </button>
-                                )}
+                                    {/* Follow button for follow notifications */}
+                                    {notif.type === 'FOLLOW' && (
+                                        <button className="px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-colors">
+                                            Follow
+                                        </button>
+                                    )}
 
-                                {notif.type === 'live' && (
-                                    <button className="px-4 py-1.5 rounded-full bg-gradient-to-r from-rose-500 to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity">
-                                        Watch
-                                    </button>
-                                )}
-
-                                {/* Unread indicator */}
-                                {!notif.read && (
-                                    <span className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" />
-                                )}
-                            </motion.div>
-                        ))
-                    )}
-                </div>
+                                    {/* Unread indicator */}
+                                    {!notif.read && (
+                                        <span className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" />
+                                    )}
+                                </motion.div>
+                            ))
+                        )}
+                    </div>
+                )}
             </main>
         </div>
     );

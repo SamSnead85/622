@@ -7,9 +7,9 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Caravan <noreply@caravan.app>';
-const APP_NAME = 'Caravan';
-const APP_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://caravan.app';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'Six22 <noreply@six22.io>';
+const APP_NAME = 'Six22';
+const APP_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://six22.io';
 
 // ============================================
 // EMAIL TEMPLATES
