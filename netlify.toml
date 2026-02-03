@@ -2,10 +2,11 @@
 # Deploy via GitHub -> Netlify integration
 
 [build]
-  # Build from the monorepo root to properly handle npm workspaces
+  # Build from the monorepo root
   base = "."
-  # Only install web workspace (skip mobile/server which have native deps)
-  command = "npm ci --workspace=apps/web && npm run build --workspace=@caravan/web"
+  # --ignore-scripts prevents react-native postinstall scripts (bob build) from running
+  # This is safe because we only build the web app which has no postinstall requirements
+  command = "npm ci --ignore-scripts && npm run build --workspace=@caravan/web"
   publish = "apps/web/.next"
 
 # Next.js on Netlify requires the Next.js plugin
