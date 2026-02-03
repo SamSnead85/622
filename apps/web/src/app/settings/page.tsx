@@ -21,18 +21,14 @@ function Navigation() {
     return (
         <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-20 xl:w-64 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col p-4 z-40">
             <Link href="/" className="flex items-center gap-3 px-3 py-4 mb-6">
-                <svg width="40" height="40" viewBox="0 0 40 40" className="flex-shrink-0">
-                    <defs>
-                        <linearGradient id="settings-nav-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#F59E0B" />
-                            <stop offset="50%" stopColor="#F43F5E" />
-                            <stop offset="100%" stopColor="#8B5CF6" />
-                        </linearGradient>
-                    </defs>
-                    <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#settings-nav-grad)" />
-                    <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
-                </svg>
-                <span className="text-xl font-semibold bg-gradient-to-r from-amber-400 via-rose-400 to-violet-400 bg-clip-text text-transparent hidden xl:block">Six22</span>
+                {/* 0G Logo */}
+                <div className="flex items-center gap-2">
+                    <div className="text-2xl font-bold flex-shrink-0">
+                        <span className="text-[#00D4FF]">0</span>
+                        <span className="text-white">G</span>
+                    </div>
+                    <span className="text-lg font-medium text-white/70 hidden xl:block">Zero Gravity</span>
+                </div>
             </Link>
             <nav className="flex-1 space-y-2">
                 {navItems.map((item) => (
@@ -51,7 +47,7 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void 
     return (
         <button
             onClick={onChange}
-            className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-gradient-to-r from-orange-400 to-rose-500' : 'bg-white/20'}`}
+            className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6]' : 'bg-white/20'}`}
         >
             <motion.div
                 className="absolute top-1 w-4 h-4 rounded-full bg-white shadow"
@@ -298,17 +294,17 @@ function SettingsPageContent() {
                         {/* Invite Friends - Prominent CTA */}
                         <button
                             onClick={() => setShowInviteModal(true)}
-                            className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-500 text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-3 shadow-lg"
+                            className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-3 shadow-lg"
                         >
-                            <span className="text-xl">🌙</span>
-                            <span>Invite Friends to Six22</span>
+                            <span className="text-xl">⚡</span>
+                            <span>Invite Friends to 0G</span>
                         </button>
 
                         <button
                             onClick={handleExportData}
                             className="w-full py-3 rounded-xl bg-violet-500/10 text-violet-400 font-medium hover:bg-violet-500/20 transition-colors flex items-center justify-center gap-2"
                         >
-                            📦 Export My Data
+                            ⬇️ Export My Data
                         </button>
                         <button
                             onClick={handleLogout}
