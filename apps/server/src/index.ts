@@ -11,6 +11,10 @@ import { usersRouter } from './routes/users.js';
 import { postsRouter } from './routes/posts.js';
 import { communitiesRouter } from './routes/communities.js';
 import { messagesRouter } from './routes/messages.js';
+import momentsRouter from './routes/moments.js';
+import { journeysRouter } from './routes/journeys.js';
+import { notificationsRouter } from './routes/notifications.js';
+import { livestreamRouter } from './routes/livestream.js';
 import uploadRouter from './routes/upload.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
@@ -87,6 +91,10 @@ app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/posts', postsRouter);
 app.use('/api/v1/communities', communitiesRouter);
 app.use('/api/v1/messages', messagesRouter);
+app.use('/api/v1/moments', momentsRouter);
+app.use('/api/v1/journeys', journeysRouter);
+app.use('/api/v1/notifications', notificationsRouter);
+app.use('/api/v1/livestream', livestreamRouter);
 app.use('/api/v1/upload', uploadRouter);
 
 // Error handler

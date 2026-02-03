@@ -46,6 +46,28 @@ export const API_ENDPOINTS = {
     conversations: `${API_URL}/api/v1/messages/conversations`,
     messages: (conversationId: string) => `${API_URL}/api/v1/messages/conversations/${conversationId}`,
 
+    // Moments (Stories)
+    moments: `${API_URL}/api/v1/moments`,
+    momentsFeed: `${API_URL}/api/v1/moments/feed`,
+    moment: (momentId: string) => `${API_URL}/api/v1/moments/${momentId}`,
+    momentView: (momentId: string) => `${API_URL}/api/v1/moments/${momentId}/view`,
+
+    // Journeys (Short-form video)
+    journeys: `${API_URL}/api/v1/journeys`,
+    journeysFeed: `${API_URL}/api/v1/journeys/feed`,
+    journey: (journeyId: string) => `${API_URL}/api/v1/journeys/${journeyId}`,
+    journeyLike: (journeyId: string) => `${API_URL}/api/v1/journeys/${journeyId}/like`,
+
+    // Notifications
+    notifications: `${API_URL}/api/v1/notifications`,
+    notificationRead: (notificationId: string) => `${API_URL}/api/v1/notifications/${notificationId}/read`,
+    notificationsReadAll: `${API_URL}/api/v1/notifications/read-all`,
+
+    // Live Streaming
+    livestreams: `${API_URL}/api/v1/livestream`,
+    livestreamActive: `${API_URL}/api/v1/livestream/active`,
+    livestreamCreate: `${API_URL}/api/v1/livestream/create`,
+
     // Upload
     upload: {
         avatar: `${API_URL}/api/v1/upload/avatar`,
@@ -53,6 +75,7 @@ export const API_ENDPOINTS = {
         post: `${API_URL}/api/v1/upload/post`,
         moment: `${API_URL}/api/v1/upload/moment`,
         message: `${API_URL}/api/v1/upload/message`,
+        journey: `${API_URL}/api/v1/upload/journey`,
     },
 
     // Health check
