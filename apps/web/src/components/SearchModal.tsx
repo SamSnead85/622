@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { API_URL, apiFetch } from '@/lib/api';
 
 // ============================================
 // TYPES
@@ -22,16 +23,18 @@ interface SearchModalProps {
 }
 
 // ============================================
-// MOCK DATA
+// RECENT SEARCHES (localStorage backed)
 // ============================================
-const RECENT_SEARCHES = ['photography tips', 'travel Japan', 'cooking class', '@sarah'];
-
-const MOCK_RESULTS: SearchResult[] = [
-    { id: '1', type: 'user', title: 'Sarah Chen', subtitle: '@sarahchen • 12.5k followers', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' },
-    { id: '2', type: 'user', title: 'Marcus Johnson', subtitle: '@marcusj • 8.2k followers', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100' },
-    { id: '3', type: 'community', title: 'Photography Enthusiasts', subtitle: '45k members', image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=100' },
-    { id: '4', type: 'journey', title: 'Tokyo Street Photography', subtitle: 'by @alex • 24 moments', image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=100' },
-];
+const RECENT_SEARCHES_KEY = 'six22_recent_searches';
+const getRecentSearches = (): string[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+        const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+        return stored ? JSON.parse(stored) : [];
+    } catch {
+        return [];
+    }
+};
 
 // ============================================
 // SEARCH MODAL
@@ -40,8 +43,14 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
+    const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-    // Debounced search
+    // Load recent searches on mount
+    useEffect(() => {
+        setRecentSearches(getRecentSearches());
+    }, []);
+
+    // Debounced search with real API
     useEffect(() => {
         if (!query.trim()) {
             setResults([]);
@@ -49,17 +58,40 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         }
 
         setLoading(true);
-        const timer = setTimeout(() => {
-            // Mock search - filter by query
-            const filtered = MOCK_RESULTS.filter(r =>
-                r.title.toLowerCase().includes(query.toLowerCase()) ||
-                r.subtitle?.toLowerCase().includes(query.toLowerCase())
-            );
-            setResults(filtered.length > 0 ? filtered : MOCK_RESULTS);
-            setLoading(false);
+        const controller = new AbortController();
+        const timer = setTimeout(async () => {
+            try {
+                // Search users via API
+                const response = await apiFetch(`${API_URL}/api/v1/users?search=${encodeURIComponent(query)}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const users = data.users || data || [];
+                    const userResults: SearchResult[] = users.map((u: { id: string; displayName?: string; username: string; avatarUrl?: string; _count?: { followers: number } }) => ({
+                        id: u.id,
+                        type: 'user' as const,
+                        title: u.displayName || u.username,
+                        subtitle: `@${u.username}${u._count?.followers ? ` • ${u._count.followers.toLocaleString()} followers` : ''}`,
+                        avatar: u.avatarUrl || undefined,
+                    }));
+                    setResults(userResults);
+                } else {
+                    setResults([]);
+                }
+            } catch (err) {
+                // On error, show no results
+                if ((err as Error).name !== 'AbortError') {
+                    console.error('Search error:', err);
+                    setResults([]);
+                }
+            } finally {
+                setLoading(false);
+            }
         }, 300);
 
-        return () => clearTimeout(timer);
+        return () => {
+            clearTimeout(timer);
+            controller.abort();
+        };
     }, [query]);
 
     // Keyboard handler
@@ -123,7 +155,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         <div className="p-4">
                             <h3 className="text-sm font-medium text-white/50 mb-3">Recent Searches</h3>
                             <div className="flex flex-wrap gap-2">
-                                {RECENT_SEARCHES.map(search => (
+                                {recentSearches.length > 0 ? recentSearches.map((search: string) => (
                                     <button
                                         key={search}
                                         onClick={() => handleRecentSearch(search)}
@@ -131,7 +163,9 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                                     >
                                         {search}
                                     </button>
-                                ))}
+                                )) : (
+                                    <p className="text-white/30 text-sm">No recent searches</p>
+                                )}
                             </div>
                         </div>
                     )}

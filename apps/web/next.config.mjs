@@ -14,6 +14,22 @@ const nextConfig = {
                 protocol: 'https',
                 hostname: 'picsum.photos',
             },
+            // Local development backend
+            {
+                protocol: 'http',
+                hostname: 'localhost',
+                port: '5180',
+            },
+            // Supabase Storage (matches any Supabase project)
+            {
+                protocol: 'https',
+                hostname: '*.supabase.co',
+            },
+            // Railway backend (production)
+            {
+                protocol: 'https',
+                hostname: '*.up.railway.app',
+            },
         ],
     },
 };

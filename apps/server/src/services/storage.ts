@@ -20,12 +20,24 @@ function createStorageClient(): S3Client | null {
 
     switch (STORAGE_PROVIDER) {
         case 'supabase':
+            // Supabase Storage uses their S3-compatible endpoint
+            // Requires: SUPABASE_URL, SUPABASE_ACCESS_KEY_ID, SUPABASE_SECRET_ACCESS_KEY
+            // Get these from: Supabase Dashboard > Storage > S3 Access Keys
+            const supabaseUrl = process.env.SUPABASE_URL;
+            if (!supabaseUrl) {
+                console.error('[Storage] SUPABASE_URL not configured');
+                return null;
+            }
+
+            // Extract project ref for endpoint (e.g., "abc123" from "https://abc123.supabase.co")
+            const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
+
             return new S3Client({
                 region: 'auto',
-                endpoint: `${process.env.SUPABASE_URL}/storage/v1/s3`,
+                endpoint: `https://${projectRef}.supabase.co/storage/v1/s3`,
                 credentials: {
-                    accessKeyId: process.env.SUPABASE_SERVICE_KEY || '',
-                    secretAccessKey: process.env.SUPABASE_SERVICE_KEY || '',
+                    accessKeyId: process.env.SUPABASE_ACCESS_KEY_ID || process.env.SUPABASE_SERVICE_KEY || '',
+                    secretAccessKey: process.env.SUPABASE_SECRET_ACCESS_KEY || process.env.SUPABASE_SERVICE_KEY || '',
                 },
                 forcePathStyle: true,
             });

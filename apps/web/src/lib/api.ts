@@ -2,12 +2,19 @@
 // This file handles the API URL based on environment
 
 const getApiUrl = () => {
-    // In browser, use the environment variable
-    if (typeof window !== 'undefined') {
-        return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5180';
+    const envUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    // Log warning if API URL is not set in production
+    if (!envUrl && typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+        console.warn(
+            '[Six22 API] NEXT_PUBLIC_API_URL not configured. ' +
+            'Set this in your Netlify environment variables to point to your Railway backend. ' +
+            'Example: https://your-app-name.up.railway.app'
+        );
     }
-    // On server-side, use the environment variable
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5180';
+
+    // In browser or server, use the environment variable with localhost fallback for development
+    return envUrl || 'http://localhost:5180';
 };
 
 export const API_URL = getApiUrl();

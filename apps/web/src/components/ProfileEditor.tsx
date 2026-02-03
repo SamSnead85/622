@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useUpload } from '../hooks/useUpload';
+import { API_URL } from '@/lib/api';
 
 // ============================================
 // PRESET AVATARS - Clean, universal options
@@ -439,7 +440,7 @@ export function useProfile() {
                 try {
                     // Fetch from backend
                     const response = await fetch(
-                        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5180'}/api/v1/auth/me`,
+                        `${API_URL}/api/v1/auth/me`,
                         {
                             headers: { 'Authorization': `Bearer ${token}` },
                             credentials: 'include',
@@ -448,18 +449,19 @@ export function useProfile() {
 
                     if (response.ok) {
                         const data = await response.json();
+                        const user = data.user || data; // Backend returns { user: {...} }
                         // Map backend user to UserProfile
                         const userProfile: UserProfile = {
-                            id: data.id,
-                            displayName: data.displayName || '',
-                            username: data.username || '',
-                            bio: data.bio || '',
-                            avatarType: data.avatarUrl ? 'custom' : 'preset',
+                            id: user.id,
+                            displayName: user.displayName || '',
+                            username: user.username || '',
+                            bio: user.bio || '',
+                            avatarType: user.avatarUrl ? 'custom' : 'preset',
                             avatarPreset: 'gradient-1',
-                            avatarCustomUrl: data.avatarUrl,
+                            avatarCustomUrl: user.avatarUrl,
                             theme: 'dark',
                             notificationsEnabled: true,
-                            privateProfile: data.isPrivate || false,
+                            privateProfile: user.isPrivate || false,
                         };
                         setProfile(userProfile);
                         // Also cache locally
@@ -519,7 +521,7 @@ export function useProfile() {
 
                 if (Object.keys(backendUpdates).length > 0) {
                     await fetch(
-                        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5180'}/api/v1/users/profile`,
+                        `${API_URL}/api/v1/users/profile`,
                         {
                             method: 'PUT',
                             headers: {

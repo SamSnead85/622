@@ -42,27 +42,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
 
-    // Check for existing session on mount
+    // Check for existing session on mount and handle token refresh
     useEffect(() => {
         const checkAuth = async () => {
             const token = localStorage.getItem('six22_token');
+            const tokenExpiry = localStorage.getItem('six22_token_expiry');
+
             if (!token) {
                 setIsLoading(false);
                 return;
             }
+
+            // Check if token is about to expire (within 7 days) and refresh if needed
+            const shouldRefresh = tokenExpiry &&
+                new Date(tokenExpiry).getTime() - Date.now() < 7 * 24 * 60 * 60 * 1000;
 
             try {
                 const response = await apiFetch(API_ENDPOINTS.me);
                 if (response.ok) {
                     const data = await response.json();
                     setUser(data.user);
+
+                    // Auto-refresh token if approaching expiry
+                    if (shouldRefresh) {
+                        try {
+                            const refreshResponse = await apiFetch(`${API_ENDPOINTS.me.replace('/me', '/refresh')}`, {
+                                method: 'POST',
+                            });
+                            if (refreshResponse.ok) {
+                                const refreshData = await refreshResponse.json();
+                                localStorage.setItem('six22_token', refreshData.token);
+                                localStorage.setItem('six22_token_expiry', refreshData.expiresAt);
+                                console.log('[Auth] Token refreshed successfully');
+                            }
+                        } catch (refreshError) {
+                            console.warn('[Auth] Token refresh failed, continuing with current token:', refreshError);
+                        }
+                    }
                 } else {
                     // Token invalid, clear it
                     localStorage.removeItem('six22_token');
+                    localStorage.removeItem('six22_token_expiry');
                 }
             } catch (error) {
                 console.error('Auth check failed:', error);
-                localStorage.removeItem('six22_token');
+                // Only clear tokens if it's an auth error, not a network error
+                if (navigator.onLine) {
+                    localStorage.removeItem('six22_token');
+                    localStorage.removeItem('six22_token_expiry');
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -83,6 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (response.ok) {
                 localStorage.setItem('six22_token', data.token);
+                if (data.expiresAt) {
+                    localStorage.setItem('six22_token_expiry', data.expiresAt);
+                }
                 setUser(data.user);
                 return { success: true };
             } else {
@@ -111,6 +142,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (response.ok) {
                 localStorage.setItem('six22_token', data.token);
+                if (data.expiresAt) {
+                    localStorage.setItem('six22_token_expiry', data.expiresAt);
+                }
                 setUser(data.user);
                 return { success: true };
             } else {
