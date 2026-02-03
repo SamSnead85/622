@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { readFile } from 'fs/promises';
-import { ParsedContent, ParsedPost, ParsedConnection } from '../MigrationService';
+import { ParsedContent, ParsedPost, ParsedConnection } from '../MigrationService.js';
 
 /**
  * Parser for Instagram data export files

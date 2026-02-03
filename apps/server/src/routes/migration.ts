@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import path from 'path';
-import { migrationService } from '../services/migration/MigrationService';
+import { migrationService } from '../services/migration/MigrationService.js';
 import { MigrationPlatform } from '@prisma/client';
 
 const router = Router();

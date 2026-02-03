@@ -1,7 +1,7 @@
 import { PrismaClient, MigrationPlatform, MigrationStatus, PostType } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { InstagramParser } from './parsers/InstagramParser';
-import { TikTokParser } from './parsers/TikTokParser';
+import { InstagramParser } from './parsers/InstagramParser.js';
+import { TikTokParser } from './parsers/TikTokParser.js';
 
 const prisma = new PrismaClient();
 

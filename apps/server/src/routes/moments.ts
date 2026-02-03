@@ -1,6 +1,6 @@
 import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { momentService } from '../services/MomentService';
+import { momentService } from '../services/MomentService.js';
 import { AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
