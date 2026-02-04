@@ -217,8 +217,8 @@ function HeroSection() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 1 }}
                     >
-                        No algorithms manipulating your feed. No ads exploiting your attention.
-                        Just genuine connection with the people who matter.
+                        A platform where truth-tellers share their stories, communities decide what matters,
+                        and you own everything you create. No lock-in. No exploitation.
                     </motion.p>
 
                     {/* CTAs */}
@@ -331,28 +331,29 @@ function VisionSection() {
                     <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-8 font-light">Our Belief</p>
 
                     <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-white leading-tight">
-                        We believe social platforms should{' '}
-                        <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">serve</span> their users,
+                        The truth should reach{' '}
+                        <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">every corner</span> of the world.
                         <br className="hidden md:block" />
-                        not <span className="bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent">exploit</span> them.
+                        And the{' '}
+                        <span className="bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent">community</span> should decide what matters.
                     </h2>
 
                     <div className="mt-20 pt-16 border-t border-white/5 grid md:grid-cols-3 gap-12 md:gap-16 text-left">
                         {[
                             {
-                                icon: '🔍',
-                                title: 'Transparency',
-                                description: 'See exactly why content appears in your feed. No hidden algorithms, no shadow bans, no manipulation.',
+                                icon: '🌍',
+                                title: 'Global Truth-Tellers',
+                                description: 'From journalists in conflict zones to activists documenting change—voices that matter reach the world without gatekeepers.',
                             },
                             {
-                                icon: '🔐',
-                                title: 'Ownership',
-                                description: 'Your data belongs to you. Export everything. Delete everything. We are custodians, not owners.',
+                                icon: '🗳️',
+                                title: 'Community-Driven Feed',
+                                description: 'Vote on what you want to see. Rank what matters. The algorithm serves you, not advertisers. Transparent. Always.',
                             },
                             {
-                                icon: '🛡️',
-                                title: 'Privacy',
-                                description: 'End-to-end encryption for private conversations. We cannot read your messages, and neither can anyone else.',
+                                icon: '💜',
+                                title: 'Collective Sponsorship',
+                                description: 'Rally your community to sponsor a storyteller. Fund a live stream from anywhere in the world. Together.',
                             },
                         ].map((item, i) => (
                             <motion.div
@@ -369,6 +370,106 @@ function VisionSection() {
                             </motion.div>
                         ))}
                     </div>
+                </motion.div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
+// STORY-TELLERS SECTION
+// The heart of what 0G is for
+// ============================================
+function StoryTellersSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+    return (
+        <section ref={ref} className="relative py-24 border-y border-white/5 bg-gradient-to-b from-black/50 to-transparent">
+            <div className="max-w-6xl mx-auto px-6 lg:px-8">
+                <motion.div
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.8 }}
+                    className="text-center mb-16"
+                >
+                    <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-4 font-light">Why We Built This</p>
+                    <h2 className="text-3xl md:text-4xl font-light text-white leading-tight max-w-3xl mx-auto">
+                        Every story deserves to be heard.
+                        <br />
+                        <span className="text-white/50">Every voice deserves a platform.</span>
+                    </h2>
+                </motion.div>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                    {/* Story Card 1 */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={isInView ? { opacity: 1, x: 0 } : {}}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                        className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors"
+                    >
+                        <div className="flex items-start gap-4 mb-6">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-xl">🎥</div>
+                            <div>
+                                <h3 className="text-lg font-medium text-white">Live from the Ground</h3>
+                                <p className="text-white/40 text-sm">Sub-1-second latency</p>
+                            </div>
+                        </div>
+                        <p className="text-white/60 font-light leading-relaxed">
+                            While other platforms have 3-5 second delays, our &lt;1s latency means real-time
+                            interaction. Ask questions. Get answers. Be there.
+                        </p>
+                        <div className="mt-6 flex items-center gap-2 text-emerald-400 text-sm">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            Real-time streaming
+                        </div>
+                    </motion.div>
+
+                    {/* Story Card 2 */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={isInView ? { opacity: 1, x: 0 } : {}}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                        className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors"
+                    >
+                        <div className="flex items-start gap-4 mb-6">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-xl">🗳️</div>
+                            <div>
+                                <h3 className="text-lg font-medium text-white">Community Decides</h3>
+                                <p className="text-white/40 text-sm">Transparent algorithm</p>
+                            </div>
+                        </div>
+                        <p className="text-white/60 font-light leading-relaxed">
+                            Vote on what stories matter. Collectively sponsor journalists and creators to go
+                            share truth with the world. The community is the curator.
+                        </p>
+                        <div className="mt-6 flex items-center gap-2 text-violet-400 text-sm">
+                            <span className="w-2 h-2 rounded-full bg-violet-400" />
+                            Collective action
+                        </div>
+                    </motion.div>
+                </div>
+
+                {/* Differentiators Strip */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.6, delay: 0.5 }}
+                    className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4"
+                >
+                    {[
+                        { icon: '🔓', label: 'No Lock-In', desc: 'Export all, anytime' },
+                        { icon: '💰', label: 'Creators Keep 90%', desc: 'Not 50% like others' },
+                        { icon: '🛡️', label: 'Privacy First', desc: 'Your data is yours' },
+                        { icon: '🤖', label: 'AI Co-Director', desc: 'Pro tools for all' },
+                    ].map((item) => (
+                        <div key={item.label} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-center">
+                            <span className="text-2xl">{item.icon}</span>
+                            <p className="text-white text-sm font-medium mt-2">{item.label}</p>
+                            <p className="text-white/40 text-xs mt-1">{item.desc}</p>
+                        </div>
+                    ))}
                 </motion.div>
             </div>
         </section>
@@ -678,6 +779,7 @@ export default function HomePage() {
             <Navigation />
             <HeroSection />
             <VisionSection />
+            <StoryTellersSection />
             <FeaturesSection />
             <CTASection />
             <Footer />
