@@ -203,15 +203,13 @@ export function LoadingButton({
     };
 
     return (
-        <motion.button
-            whileHover={{ scale: isLoading || disabled ? 1 : 1.02 }}
-            whileTap={{ scale: isLoading || disabled ? 1 : 0.98 }}
+        <button
             disabled={isLoading || disabled}
             className={`
-                rounded-xl font-medium transition-all
+                rounded-xl font-medium transition-all transform hover:scale-[1.02] active:scale-[0.98]
                 ${variantClasses[variant]}
                 ${sizeClasses[size]}
-                ${isLoading || disabled ? 'opacity-60 cursor-not-allowed' : ''}
+                ${isLoading || disabled ? 'opacity-60 cursor-not-allowed hover:scale-100 active:scale-100' : ''}
                 ${className}
             `}
             {...props}
@@ -224,7 +222,7 @@ export function LoadingButton({
             ) : (
                 children
             )}
-        </motion.button>
+        </button>
     );
 }
 

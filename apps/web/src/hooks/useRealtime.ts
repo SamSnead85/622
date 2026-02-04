@@ -237,7 +237,7 @@ export function usePresence(wsUrl: string) {
                 case 'user_online':
                     setPresence((prev) => ({
                         ...prev,
-                        onlineUsers: new Set([...prev.onlineUsers, message.userId as string]),
+                        onlineUsers: new Set([...Array.from(prev.onlineUsers), message.userId as string]),
                     }));
                     break;
                 case 'user_offline':
