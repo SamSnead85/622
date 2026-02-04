@@ -244,11 +244,14 @@ router.get('/:userId/posts', optionalAuth, async (req: AuthRequest, res, next) =
         const { userId } = req.params;
         const { cursor, limit = '20' } = req.query;
 
+        // Show all posts if viewing own profile, otherwise only public
+        const isOwnProfile = req.userId === userId;
+        const whereClause = isOwnProfile
+            ? { userId }
+            : { userId, isPublic: true };
+
         const posts = await prisma.post.findMany({
-            where: {
-                userId,
-                isPublic: true,
-            },
+            where: whereClause,
             take: parseInt(limit as string) + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: { createdAt: 'desc' },

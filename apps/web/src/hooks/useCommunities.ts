@@ -73,7 +73,7 @@ export function useCommunities() {
             if (response.ok) {
                 const result = await response.json();
                 await fetchCommunities(); // Refresh list
-                return { success: true, communityId: result.community?.id };
+                return { success: true, communityId: result.id || result.community?.id };
             } else {
                 const errorData = await response.json().catch(() => ({}));
                 return { success: false, error: errorData.message || 'Failed to create community' };
@@ -100,7 +100,7 @@ export function useCommunities() {
     const leaveCommunity = useCallback(async (communityId: string) => {
         try {
             const response = await apiFetch(`${API_ENDPOINTS.communities}/${communityId}/leave`, {
-                method: 'POST',
+                method: 'DELETE',
             });
             if (response.ok) {
                 await fetchCommunities(); // Refresh list

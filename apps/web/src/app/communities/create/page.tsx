@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCommunities } from '@/hooks/useCommunities';
+import { API_ENDPOINTS } from '@/lib/api';
 
 // ============================================
 // STEP TYPES
@@ -65,6 +66,59 @@ export default function CreateTribePage() {
         approvalRequired: true,
         coverImage: null,
     });
+
+    // Custom cover image upload state
+    const coverInputRef = useRef<HTMLInputElement>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+
+    // Handle custom cover image upload
+    const handleCoverUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            setUploadError('Please select an image file');
+            return;
+        }
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            setUploadError('Image must be less than 10MB');
+            return;
+        }
+
+        setIsUploading(true);
+        setUploadError(null);
+
+        try {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch(API_ENDPOINTS.upload.post, {
+                method: 'POST',
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+                credentials: 'include',
+                body: formData,
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                setTribeData(prev => ({ ...prev, coverImage: result.url }));
+            } else {
+                setUploadError('Failed to upload image');
+            }
+        } catch (err) {
+            console.error('Upload error:', err);
+            setUploadError('Network error uploading image');
+        } finally {
+            setIsUploading(false);
+        }
+    }, []);
 
     const steps: WizardStep[] = ['basics', 'privacy', 'cover', 'invite'];
     const currentStepIndex = steps.indexOf(step);
@@ -321,7 +375,65 @@ export default function CreateTribePage() {
                             exit={{ opacity: 0, x: -20 }}
                         >
                             <h2 className="text-2xl font-bold mb-2">Choose a Cover</h2>
-                            <p className="text-white/50 mb-8">Select a cover image for your tribe (optional)</p>
+                            <p className="text-white/50 mb-8">Select a preset or upload your own image</p>
+
+                            {/* Custom Upload Button */}
+                            <div className="mb-6">
+                                <input
+                                    ref={coverInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleCoverUpload}
+                                />
+                                <button
+                                    onClick={() => coverInputRef.current?.click()}
+                                    disabled={isUploading}
+                                    className={`w-full p-6 rounded-2xl border-2 border-dashed transition-all ${tribeData.coverImage && !COVER_PRESETS.includes(tribeData.coverImage)
+                                        ? 'border-[#00D4FF] bg-[#00D4FF]/10'
+                                        : 'border-white/20 hover:border-[#00D4FF]/50 hover:bg-white/5'
+                                        }`}
+                                >
+                                    {isUploading ? (
+                                        <div className="flex items-center justify-center gap-3">
+                                            <div className="w-5 h-5 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full animate-spin" />
+                                            <span className="text-white/70">Uploading...</span>
+                                        </div>
+                                    ) : tribeData.coverImage && !COVER_PRESETS.includes(tribeData.coverImage) ? (
+                                        <div className="relative">
+                                            <img
+                                                src={tribeData.coverImage}
+                                                alt="Custom cover"
+                                                className="w-full h-32 object-cover rounded-xl"
+                                            />
+                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-xl">
+                                                <span className="text-white font-medium">✓ Custom Image Selected</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#00D4FF]">
+                                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="font-medium text-white">Upload Custom Image</p>
+                                                <p className="text-sm text-white/50">PNG, JPG up to 10MB</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </button>
+                                {uploadError && (
+                                    <p className="text-red-400 text-sm mt-2">{uploadError}</p>
+                                )}
+                            </div>
+
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="flex-1 h-px bg-white/10" />
+                                <span className="text-xs text-white/40">or choose a preset</span>
+                                <div className="flex-1 h-px bg-white/10" />
+                            </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                 {COVER_PRESETS.map((url, i) => (
@@ -380,23 +492,57 @@ export default function CreateTribePage() {
                                     <input
                                         type="text"
                                         readOnly
-                                        value={`0g.social/tribe/${tribeData.name.toLowerCase().replace(/\s+/g, '-') || 'new-tribe'}`}
+                                        id="invite-link"
+                                        value={`https://0g.social/tribe/${tribeData.name.toLowerCase().replace(/\s+/g, '-') || 'new-tribe'}`}
                                         className="flex-1 bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white/70 text-sm"
                                     />
-                                    <button className="px-4 py-3 rounded-lg bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity">
+                                    <button
+                                        onClick={() => {
+                                            const input = document.getElementById('invite-link') as HTMLInputElement;
+                                            navigator.clipboard.writeText(input.value);
+                                            alert('Link copied to clipboard!');
+                                        }}
+                                        className="px-4 py-3 rounded-lg bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity"
+                                    >
                                         Copy
                                     </button>
                                 </div>
 
                                 <div className="flex justify-center gap-3 mt-6">
-                                    {['WhatsApp', 'SMS', 'Email'].map((platform) => (
-                                        <button
-                                            key={platform}
-                                            className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-medium hover:bg-white/10 transition-colors"
-                                        >
-                                            {platform}
-                                        </button>
-                                    ))}
+                                    {/* WhatsApp */}
+                                    <a
+                                        href={`https://wa.me/?text=${encodeURIComponent(`Join my tribe "${tribeData.name}" on 0G! https://0g.social/tribe/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}`)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-4 py-2 rounded-lg bg-[#25D366]/20 border border-[#25D366]/30 text-[#25D366] text-sm font-medium hover:bg-[#25D366]/30 transition-colors flex items-center gap-2"
+                                    >
+                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                                        </svg>
+                                        WhatsApp
+                                    </a>
+
+                                    {/* SMS */}
+                                    <a
+                                        href={`sms:?body=${encodeURIComponent(`Join my tribe "${tribeData.name}" on 0G! https://0g.social/tribe/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}`)}`}
+                                        className="px-4 py-2 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400 text-sm font-medium hover:bg-blue-500/30 transition-colors flex items-center gap-2"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                        </svg>
+                                        SMS
+                                    </a>
+
+                                    {/* Email */}
+                                    <a
+                                        href={`mailto:?subject=${encodeURIComponent(`Join my tribe "${tribeData.name}" on 0G`)}&body=${encodeURIComponent(`I'd love for you to join my tribe on 0G!\n\nTribe: ${tribeData.name}\n\nClick here to join: https://0g.social/tribe/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}`)}`}
+                                        className="px-4 py-2 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-400 text-sm font-medium hover:bg-purple-500/30 transition-colors flex items-center gap-2"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        Email
+                                    </a>
                                 </div>
                             </div>
 

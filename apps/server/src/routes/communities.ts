@@ -88,13 +88,14 @@ router.get('/my', authenticate, async (req: AuthRequest, res, next) => {
     }
 });
 
-// GET /api/v1/communities/:slug
-router.get('/:slug', optionalAuth, async (req: AuthRequest, res, next) => {
+// GET /api/v1/communities/:idOrSlug
+router.get('/:idOrSlug', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
-        const { slug } = req.params;
+        const { idOrSlug } = req.params;
 
-        const community = await prisma.community.findUnique({
-            where: { slug },
+        // Try to find by ID first, then by slug
+        let community = await prisma.community.findUnique({
+            where: { id: idOrSlug },
             include: {
                 creator: {
                     select: {
@@ -112,6 +113,29 @@ router.get('/:slug', optionalAuth, async (req: AuthRequest, res, next) => {
                 },
             },
         });
+
+        // If not found by ID, try by slug
+        if (!community) {
+            community = await prisma.community.findUnique({
+                where: { slug: idOrSlug },
+                include: {
+                    creator: {
+                        select: {
+                            id: true,
+                            username: true,
+                            displayName: true,
+                            avatarUrl: true,
+                        },
+                    },
+                    rules: {
+                        orderBy: { order: 'asc' },
+                    },
+                    _count: {
+                        select: { members: true, posts: true },
+                    },
+                },
+            });
+        }
 
         if (!community) {
             throw new AppError('Community not found', 404);
@@ -147,9 +171,12 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
         const createSchema = z.object({
             name: z.string().min(3).max(50),
             description: z.string().max(500).optional(),
+            category: z.string().max(50).optional(),
             avatarUrl: z.string().url().optional(),
             coverUrl: z.string().url().optional(),
+            isPrivate: z.boolean().optional(),
             isPublic: z.boolean().optional(),
+            approvalRequired: z.boolean().optional(),
         });
 
         const data = createSchema.parse(req.body);

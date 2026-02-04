@@ -128,14 +128,16 @@ function CommunityCard({ community, index }: { community: Community; index: numb
                         <span className="w-4 h-4">{Icons.users}</span>
                         <span>{community.memberCount} members</span>
                     </div>
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${community.role === 'admin'
-                        ? 'bg-orange-500/20 text-orange-300'
-                        : community.role === 'moderator'
-                            ? 'bg-cyan-500/20 text-cyan-300'
-                            : 'bg-white/10 text-white/60'
-                        }`}>
-                        {community.role.charAt(0).toUpperCase() + community.role.slice(1)}
-                    </span>
+                    {community.role && (
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${community.role === 'admin'
+                            ? 'bg-orange-500/20 text-orange-300'
+                            : community.role === 'moderator'
+                                ? 'bg-cyan-500/20 text-cyan-300'
+                                : 'bg-white/10 text-white/60'
+                            }`}>
+                            {community.role.charAt(0).toUpperCase() + community.role.slice(1)}
+                        </span>
+                    )}
                 </div>
             </div>
 

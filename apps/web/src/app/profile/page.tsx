@@ -117,21 +117,16 @@ function ProfilePageContent() {
                                         />
                                     </div>
                                 ) : (
-                                    <Avatar profile={profile} size={144} className="md:block hidden" />
-                                )}
-                                {/* Mobile size avatar */}
-                                {avatarUrl && !avatarUrl.startsWith('preset:') ? null : (
-                                    <Avatar profile={profile} size={112} className="md:hidden" />
-                                )}
-                                {avatarUrl && !avatarUrl.startsWith('preset:') && (
-                                    <div className="w-28 h-28 rounded-full overflow-hidden relative md:hidden">
-                                        <Image
-                                            src={avatarUrl}
-                                            alt={displayName}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    </div>
+                                    <>
+                                        {/* Desktop Avatar */}
+                                        <div className="hidden md:block">
+                                            <Avatar profile={profile} size={144} />
+                                        </div>
+                                        {/* Mobile Avatar */}
+                                        <div className="md:hidden">
+                                            <Avatar profile={profile} size={112} />
+                                        </div>
+                                    </>
                                 )}
                             </motion.div>
 

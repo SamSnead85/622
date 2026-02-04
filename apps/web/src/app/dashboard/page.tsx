@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePosts } from '@/hooks/usePosts';
 import { ReactionSpectrum, IntentionBadge, REACTION_SPECTRUM } from '@/components/ReactionSpectrum';
 import { DataOwnershipPanel, PrivacyFirstBadge, LiveLatencyIndicator } from '@/components/PlatformDifferentiators';
 import {
@@ -246,81 +247,30 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
                     ))}
                 </div>
             </nav>
+
+            {/* Mobile Floating Action Button */}
+            <motion.button
+                onClick={onCreateClick}
+                className="lg:hidden fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] shadow-lg shadow-[#00D4FF]/30 flex items-center justify-center"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+            >
+                <PlusIcon size={24} className="text-black" />
+            </motion.button>
         </>
     );
 }
 
-// ============================================
-// CONTENT REQUEST CARD (Citizen Journalism)
-// ============================================
-function ContentRequestCard() {
-    const requests = [
-        { location: 'Gaza', reason: 'Live coverage needed', votes: 1243, reward: '$500+' },
-        { location: 'Cairo', reason: 'Tahrir Square', votes: 892, reward: '$200+' },
-        { location: 'Sarajevo', reason: 'Historic sites', votes: 456, reward: '$100+' },
-    ];
-
-    return (
-        <div className="bg-[#0A1628] rounded-2xl border border-[#00D4FF]/20 p-5">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Content Requests</h3>
-                <span className="text-xs text-[#00D4FF] bg-[#00D4FF]/10 px-2 py-1 rounded-full">Earn Rewards</span>
-            </div>
-            <p className="text-sm text-white/50 mb-4">Community wants coverage from these locations</p>
-
-            <div className="space-y-3">
-                {requests.map((req, i) => (
-                    <div key={i} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
-                        <div>
-                            <p className="font-medium text-white">{req.location}</p>
-                            <p className="text-xs text-white/50">{req.reason}</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[#00D4FF] font-semibold">{req.reward}</p>
-                            <p className="text-xs text-white/40">{req.votes} votes</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <button className="w-full mt-4 py-2.5 rounded-xl border border-[#00D4FF]/30 text-[#00D4FF] font-medium hover:bg-[#00D4FF]/10 transition-colors">
-                View All Requests
-            </button>
-        </div>
-    );
-}
-
-// ============================================
-// TRENDING TOPICS
-// ============================================
-function TrendingTopics() {
-    const topics = [
-        { tag: '#AIEntrepreneurship', posts: '2.4K' },
-        { tag: '#MuslimFounders', posts: '1.8K' },
-        { tag: '#TechForGood', posts: '1.2K' },
-        { tag: '#FaithAndBusiness', posts: '956' },
-    ];
-
-    return (
-        <div className="bg-white/[0.02] rounded-2xl border border-white/5 p-5">
-            <h3 className="text-lg font-semibold text-white mb-4">Trending Now</h3>
-            <div className="space-y-3">
-                {topics.map((topic, i) => (
-                    <div key={i} className="flex items-center justify-between py-2 cursor-pointer hover:bg-white/5 -mx-2 px-2 rounded-lg transition-colors">
-                        <span className="text-[#00D4FF] font-medium">{topic.tag}</span>
-                        <span className="text-xs text-white/40">{topic.posts} posts</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
 
 // ============================================
 // MAIN DASHBOARD PAGE
 // ============================================
 export default function DashboardPage() {
     const { user, isLoading } = useAuth();
+    const { posts, likePost, isLoading: postsLoading, refetch } = usePosts();
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
 
@@ -389,20 +339,11 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
-                            {/* Online Friends Indicator */}
-                            <div className="flex items-center gap-4">
-                                {/* Online friends */}
-                                <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
-                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                    <span className="text-sm text-white/70">
-                                        <span className="text-green-400 font-medium">3</span> friends online
-                                    </span>
-                                </div>
-
+                            {/* Header Actions */}
+                            <div className="flex items-center gap-3">
                                 {/* Notifications */}
                                 <Link href="/notifications" className="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
                                     <BellIcon size={22} />
-                                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white">2</span>
                                 </Link>
 
                                 {/* Settings */}
@@ -413,49 +354,22 @@ export default function DashboardPage() {
                         </div>
                     </header>
 
-                    {/* Network Activity Bar - Who's online & recent activity */}
-                    <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-white/[0.03] to-white/[0.01] border border-white/5">
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm font-semibold text-white/80">Network Activity</h3>
-                            <span className="text-xs text-white/40">Live</span>
-                        </div>
-                        <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide">
-                            {/* Online friends avatars */}
-                            {[
-                                { name: 'Sarah', status: 'online' },
-                                { name: 'Ahmed', status: 'online' },
-                                { name: 'Lisa', status: 'online' },
-                                { name: 'Omar', status: 'away' },
-                                { name: 'Mia', status: 'away' },
-                            ].map((friend, i) => (
-                                <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0">
-                                    <div className="relative">
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center text-white text-sm font-medium">
-                                            {friend.name[0]}
-                                        </div>
-                                        <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black ${friend.status === 'online' ? 'bg-green-500' : 'bg-yellow-500'
-                                            }`} />
-                                    </div>
-                                    <span className="text-[10px] text-white/50">{friend.name}</span>
-                                </div>
-                            ))}
-
-                            {/* Divider */}
-                            <div className="w-px h-10 bg-white/10 mx-2 flex-shrink-0" />
-
-                            {/* Recent activity feed */}
-                            <div className="flex-1 min-w-[200px] flex-shrink-0">
-                                <div className="space-y-1">
-                                    <p className="text-xs text-white/60">
-                                        <span className="text-[#00D4FF]">Sarah</span> posted a new moment
-                                        <span className="text-white/30 ml-2">2m ago</span>
-                                    </p>
-                                    <p className="text-xs text-white/60">
-                                        <span className="text-[#00D4FF]">Ahmed</span> is watching live from Mecca
-                                        <span className="text-white/30 ml-2">5m ago</span>
-                                    </p>
-                                </div>
+                    {/* Invite Friends CTA - Build your network */}
+                    <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-[#00D4FF]/10 to-[#8B5CF6]/10 border border-[#00D4FF]/20">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
+                                <UsersIcon size={24} className="text-white" />
                             </div>
+                            <div className="flex-1">
+                                <h3 className="text-sm font-semibold text-white">Build Your Network</h3>
+                                <p className="text-xs text-white/50">Invite friends and family to connect on 0G</p>
+                            </div>
+                            <Link
+                                href="/invite"
+                                className="px-4 py-2 rounded-xl bg-[#00D4FF] text-black font-medium text-sm hover:opacity-90 transition-opacity"
+                            >
+                                Invite
+                            </Link>
                         </div>
                     </div>
 
@@ -576,7 +490,7 @@ export default function DashboardPage() {
                                 </div>
                             </motion.div>
 
-                            {/* Your Feed - Sample posts */}
+                            {/* Your Feed - Real Posts from API */}
                             <motion.div
                                 className="space-y-4"
                                 initial={{ opacity: 0, y: 20 }}
@@ -595,93 +509,107 @@ export default function DashboardPage() {
                                     </Link>
                                 </div>
 
-                                {/* Sample Post 1 */}
-                                <div className="bg-white/[0.02] rounded-2xl border border-white/5 overflow-hidden">
-                                    <div className="p-4">
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold text-sm">
-                                                S
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-semibold text-white text-sm">Sarah M.</span>
-                                                    <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[10px]">👥 Friends</span>
-                                                    <span className="text-white/30 text-xs">• 2h</span>
-                                                </div>
-                                                <p className="text-white/70 text-sm mt-2">Just finished an amazing journey through Jordan! The Petra Treasury at sunrise was absolutely magical ✨ Can&apos;t wait to share more photos!</p>
-                                            </div>
-                                        </div>
+                                {/* Loading State */}
+                                {postsLoading && posts.length === 0 && (
+                                    <div className="flex justify-center py-8">
+                                        <div className="w-8 h-8 rounded-full border-2 border-[#00D4FF]/20 border-t-[#00D4FF] animate-spin" />
                                     </div>
-                                    <div className="h-48 bg-gradient-to-br from-amber-900/30 to-rose-900/30 flex items-center justify-center">
-                                        <span className="text-4xl">🏛️</span>
-                                    </div>
-                                    <div className="p-4 flex items-center gap-4 border-t border-white/5">
-                                        <button className="flex items-center gap-2 text-white/60 hover:text-rose-400 transition-colors">
-                                            <span>❤️</span>
-                                            <span className="text-sm">124</span>
-                                        </button>
-                                        <button className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors">
-                                            <span>💬</span>
-                                            <span className="text-sm">18</span>
-                                        </button>
-                                        <button className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors">
-                                            <span>↗️</span>
-                                            <span className="text-sm">Share</span>
-                                        </button>
-                                    </div>
-                                </div>
+                                )}
 
-                                {/* Sample Post 2 - Your own post */}
-                                <div className="bg-white/[0.02] rounded-2xl border border-[#00D4FF]/20 overflow-hidden">
-                                    <div className="p-4">
-                                        <div className="flex items-start gap-3">
-                                            {user.avatarUrl ? (
-                                                <img
-                                                    src={user.avatarUrl}
-                                                    alt={user.displayName || 'You'}
-                                                    className="w-10 h-10 rounded-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-sm">
-                                                    {user.displayName?.[0] || 'U'}
+                                {/* Empty State */}
+                                {!postsLoading && posts.length === 0 && (
+                                    <div className="text-center py-12 bg-white/[0.02] rounded-2xl border border-white/5">
+                                        <div className="text-4xl mb-4">📸</div>
+                                        <h3 className="text-lg font-semibold text-white mb-2">No posts yet</h3>
+                                        <p className="text-white/50 mb-4">Share your first moment with the community!</p>
+                                        <button
+                                            onClick={() => router.push('/create')}
+                                            className="px-6 py-2.5 rounded-xl bg-[#00D4FF] text-black font-semibold text-sm hover:opacity-90 transition-opacity"
+                                        >
+                                            Create Post
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Real Posts */}
+                                {posts.map(post => (
+                                    <div key={post.id} className="bg-white/[0.02] rounded-2xl border border-white/5 overflow-hidden">
+                                        <div className="p-4">
+                                            <div className="flex items-start gap-3">
+                                                {post.author.avatarUrl ? (
+                                                    <img
+                                                        src={post.author.avatarUrl}
+                                                        alt={post.author.displayName}
+                                                        className="w-10 h-10 rounded-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-sm">
+                                                        {post.author.displayName?.[0] || 'U'}
+                                                    </div>
+                                                )}
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-semibold text-white text-sm">{post.author.displayName}</span>
+                                                        <span className="px-2 py-0.5 rounded-full bg-[#00D4FF]/20 text-[#00D4FF] text-[10px]">🌍 Public</span>
+                                                        <span className="text-white/30 text-xs">• {new Date(post.createdAt).toLocaleDateString()}</span>
+                                                    </div>
+                                                    {post.content && (
+                                                        <p className="text-white/70 text-sm mt-2">{post.content}</p>
+                                                    )}
                                                 </div>
-                                            )}
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-semibold text-white text-sm">{user.displayName || 'You'}</span>
-                                                    <span className="px-2 py-0.5 rounded-full bg-[#00D4FF]/20 text-[#00D4FF] text-[10px]">🌍 Public</span>
-                                                    <span className="text-white/30 text-xs">• 1d</span>
-                                                </div>
-                                                <p className="text-white/70 text-sm mt-2">Welcome to my 0G profile! This is where I share my journey, thoughts, and connect with amazing people. 🚀</p>
                                             </div>
                                         </div>
+
+                                        {/* Media Display */}
+                                        {post.mediaUrl && (
+                                            <div className="relative">
+                                                {post.mediaType === 'VIDEO' ? (
+                                                    <video
+                                                        src={post.mediaUrl}
+                                                        controls
+                                                        className="w-full max-h-[500px] object-contain bg-black"
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        src={post.mediaUrl}
+                                                        alt="Post media"
+                                                        className="w-full max-h-[500px] object-contain bg-black/50"
+                                                    />
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="p-4 flex items-center gap-4 border-t border-white/5">
+                                            <button
+                                                onClick={() => likePost(post.id)}
+                                                className={`flex items-center gap-2 transition-colors ${post.isLiked ? 'text-rose-400' : 'text-white/60 hover:text-rose-400'}`}
+                                            >
+                                                <span>{post.isLiked ? '❤️' : '🤍'}</span>
+                                                <span className="text-sm">{post.likes}</span>
+                                            </button>
+                                            <button className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors">
+                                                <span>💬</span>
+                                                <span className="text-sm">{post.commentsCount}</span>
+                                            </button>
+                                            <button className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors">
+                                                <span>↗️</span>
+                                                <span className="text-sm">Share</span>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="p-4 flex items-center gap-4 border-t border-white/5">
-                                        <button className="flex items-center gap-2 text-rose-400">
-                                            <span>❤️</span>
-                                            <span className="text-sm">47</span>
-                                        </button>
-                                        <button className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors">
-                                            <span>💬</span>
-                                            <span className="text-sm">8</span>
-                                        </button>
-                                        <button className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors">
-                                            <span>↗️</span>
-                                            <span className="text-sm">Share</span>
-                                        </button>
-                                        <div className="flex-1" />
-                                        <button className="text-xs text-white/40 hover:text-white/60">
-                                            ⋯
-                                        </button>
-                                    </div>
-                                </div>
+                                ))}
 
                                 {/* Load More */}
-                                <div className="text-center py-4">
-                                    <button className="px-6 py-2.5 rounded-xl bg-white/5 text-white/60 text-sm font-medium hover:bg-white/10 transition-colors border border-white/5">
-                                        Load More
-                                    </button>
-                                </div>
+                                {posts.length > 0 && (
+                                    <div className="text-center py-4">
+                                        <button
+                                            onClick={() => refetch()}
+                                            className="px-6 py-2.5 rounded-xl bg-white/5 text-white/60 text-sm font-medium hover:bg-white/10 transition-colors border border-white/5"
+                                        >
+                                            Refresh Feed
+                                        </button>
+                                    </div>
+                                )}
                             </motion.div>
                         </div>
 
