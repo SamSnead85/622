@@ -23,7 +23,12 @@ interface AuthContextType {
     user: User | null;
     isLoading: boolean;
     isAuthenticated: boolean;
-    login: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string }>;
+    // 2FA challenge state
+    pending2FA: { challengeToken: string; email: string } | null;
+    login: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; requires2FA?: boolean; error?: string }>;
+    verify2FA: (code: string) => Promise<{ success: boolean; error?: string }>;
+    verifyBackupCode: (code: string) => Promise<{ success: boolean; error?: string }>;
+    cancel2FA: () => void;
     signup: (email: string, password: string, username: string, displayName: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     updateUser: (updates: Partial<User>) => void;
@@ -40,6 +45,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [pending2FA, setPending2FA] = useState<{ challengeToken: string; email: string } | null>(null);
     const router = useRouter();
 
     // Check for existing session on mount and handle token refresh
@@ -100,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // Login
-    const login = async (email: string, password: string, rememberMe: boolean = true): Promise<{ success: boolean; error?: string }> => {
+    const login = async (email: string, password: string, rememberMe: boolean = true): Promise<{ success: boolean; requires2FA?: boolean; error?: string }> => {
         try {
             const response = await apiFetch(API_ENDPOINTS.login, {
                 method: 'POST',
@@ -110,6 +116,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const data = await response.json();
 
             if (response.ok) {
+                // Check if 2FA is required
+                if (data.requires2FA && data.challengeToken) {
+                    setPending2FA({ challengeToken: data.challengeToken, email });
+                    return { success: true, requires2FA: true };
+                }
+
+                // Normal login success
                 localStorage.setItem('0g_token', data.token);
                 if (data.expiresAt) {
                     localStorage.setItem('0g_token_expiry', data.expiresAt);
@@ -123,6 +136,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error('Login error:', error);
             return { success: false, error: 'Network error. Please try again.' };
         }
+    };
+
+    // Verify 2FA code
+    const verify2FA = async (code: string): Promise<{ success: boolean; error?: string }> => {
+        if (!pending2FA) {
+            return { success: false, error: 'No pending 2FA challenge' };
+        }
+
+        try {
+            const response = await apiFetch(`${API_ENDPOINTS.login.replace('/login', '/2fa/challenge')}`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    challengeToken: pending2FA.challengeToken,
+                    code
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                localStorage.setItem('0g_token', data.token);
+                if (data.expiresAt) {
+                    localStorage.setItem('0g_token_expiry', data.expiresAt);
+                }
+                setUser(data.user);
+                setPending2FA(null);
+                return { success: true };
+            } else {
+                return { success: false, error: data.error || 'Invalid verification code' };
+            }
+        } catch (error) {
+            console.error('2FA verification error:', error);
+            return { success: false, error: 'Network error. Please try again.' };
+        }
+    };
+
+    // Verify backup code
+    const verifyBackupCode = async (code: string): Promise<{ success: boolean; error?: string }> => {
+        if (!pending2FA) {
+            return { success: false, error: 'No pending 2FA challenge' };
+        }
+
+        try {
+            const response = await apiFetch(`${API_ENDPOINTS.login.replace('/login', '/2fa/challenge')}`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    challengeToken: pending2FA.challengeToken,
+                    backupCode: code
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                localStorage.setItem('0g_token', data.token);
+                if (data.expiresAt) {
+                    localStorage.setItem('0g_token_expiry', data.expiresAt);
+                }
+                setUser(data.user);
+                setPending2FA(null);
+                return { success: true };
+            } else {
+                return { success: false, error: data.error || 'Invalid backup code' };
+            }
+        } catch (error) {
+            console.error('Backup code verification error:', error);
+            return { success: false, error: 'Network error. Please try again.' };
+        }
+    };
+
+    // Cancel 2FA challenge
+    const cancel2FA = () => {
+        setPending2FA(null);
     };
 
     // Signup
@@ -182,7 +268,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 user,
                 isLoading,
                 isAuthenticated: !!user,
+                pending2FA,
                 login,
+                verify2FA,
+                verifyBackupCode,
+                cancel2FA,
                 signup,
                 logout,
                 updateUser,
@@ -191,6 +281,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             {children}
         </AuthContext.Provider>
     );
+
 }
 
 // ============================================

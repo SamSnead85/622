@@ -9,7 +9,8 @@ import {
     UserIcon,
     MessageIcon,
     PlusIcon,
-    BellIcon
+    BellIcon,
+    MegaphoneIcon
 } from '@/components/icons';
 
 interface NavItem {
@@ -23,8 +24,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
     { id: 'home', label: 'Home', href: '/dashboard', Icon: HomeIcon },
     { id: 'explore', label: 'Explore', href: '/explore', Icon: SearchIcon },
+    { id: 'community', label: 'Community', href: '/community', Icon: MegaphoneIcon },
     { id: 'communities', label: 'Tribes', href: '/communities', Icon: UsersIcon },
-    { id: 'invite', label: 'Invite', href: '/invite', Icon: SendIcon },
     { id: 'profile', label: 'Profile', href: '/profile', Icon: UserIcon },
 ];
 
@@ -76,8 +77,8 @@ export function Navigation({ activeTab, variant = 'default' }: NavigationProps) 
                             key={item.id}
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${activeTab === item.id
-                                    ? 'bg-white/10 text-white'
-                                    : 'text-white/60 hover:bg-white/5 hover:text-white'
+                                ? 'bg-white/10 text-white'
+                                : 'text-white/60 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
                             <item.Icon size={24} />
@@ -95,8 +96,8 @@ export function Navigation({ activeTab, variant = 'default' }: NavigationProps) 
                             key={item.id}
                             href={item.href}
                             className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === item.id
-                                    ? 'text-white'
-                                    : 'text-white/50 hover:text-white'
+                                ? 'text-white'
+                                : 'text-white/50 hover:text-white'
                                 }`}
                         >
                             <item.Icon size={22} />
@@ -123,8 +124,8 @@ export function BottomNav({ activeTab, variant = 'default' }: NavigationProps) {
                         key={item.id}
                         href={item.href}
                         className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === item.id
-                                ? 'text-[#00D4FF]'
-                                : 'text-white/50 hover:text-white'
+                            ? 'text-[#00D4FF]'
+                            : 'text-white/50 hover:text-white'
                             }`}
                     >
                         <item.Icon size={22} />

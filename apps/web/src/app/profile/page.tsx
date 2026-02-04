@@ -3,23 +3,64 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 import { Avatar, useProfile, SECONDARY_LANGUAGES } from '@/components/ProfileEditor';
 import { Navigation } from '@/components/Navigation';
-import { SettingsIcon, CameraIcon, PlusIcon } from '@/components/icons';
+import { SettingsIcon, CameraIcon, PlusIcon, PlayIcon } from '@/components/icons';
+import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 
-
-// User's posts - empty array, will be populated from API
-const userPosts: Array<{ id: number; image: string; likes: number }> = [];
+interface Post {
+    id: string;
+    type: 'IMAGE' | 'VIDEO' | 'TEXT' | 'POLL';
+    mediaUrl?: string;
+    caption?: string;
+    likesCount: number;
+    commentsCount: number;
+    viewCount: number;
+    createdAt: string;
+}
 
 function ProfilePageContent() {
     const { user } = useAuth();
     const { profile } = useProfile();
     const [activeTab, setActiveTab] = useState<'posts' | 'journeys' | 'saved'>('posts');
     const [mounted, setMounted] = useState(false);
+    const [userPosts, setUserPosts] = useState<Post[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({ postsCount: 0, followersCount: 0, followingCount: 0 });
 
     useEffect(() => { setMounted(true); }, []);
+
+    // Fetch user's posts from API
+    const fetchPosts = useCallback(async () => {
+        if (!user?.id) return;
+
+        try {
+            setLoading(true);
+            const response = await apiFetch(`/users/${user.id}/posts`);
+
+            if (response.ok) {
+                const data = await response.json();
+                setUserPosts(data.posts || []);
+                setStats({
+                    postsCount: data.postsCount || 0,
+                    followersCount: data.followersCount || 0,
+                    followingCount: data.followingCount || 0,
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch posts:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [user?.id]);
+
+    useEffect(() => {
+        if (mounted && user?.id) {
+            fetchPosts();
+        }
+    }, [mounted, user?.id, fetchPosts]);
 
     if (!mounted) {
         return <div className="min-h-screen bg-[#050508]" />;
@@ -126,22 +167,23 @@ function ProfilePageContent() {
                                 </div>
                                 <p className="text-white/60 mb-4 max-w-lg">{bio}</p>
 
-                                {/* Stats */}
+                                {/* Stats - Now using real counts */}
                                 <div className="flex items-center gap-6">
                                     <div className="text-center">
-                                        <p className="text-xl font-bold text-white">0</p>
+                                        <p className="text-xl font-bold text-white">{stats.postsCount}</p>
                                         <p className="text-xs text-white/50">Posts</p>
                                     </div>
                                     <div className="text-center cursor-pointer hover:opacity-80">
-                                        <p className="text-xl font-bold text-white">0</p>
+                                        <p className="text-xl font-bold text-white">{stats.followersCount}</p>
                                         <p className="text-xs text-white/50">Followers</p>
                                     </div>
                                     <div className="text-center cursor-pointer hover:opacity-80">
-                                        <p className="text-xl font-bold text-white">0</p>
+                                        <p className="text-xl font-bold text-white">{stats.followingCount}</p>
                                         <p className="text-xs text-white/50">Following</p>
                                     </div>
                                 </div>
                             </div>
+
 
                             {/* Actions */}
                             <div className="flex gap-2">
@@ -190,15 +232,27 @@ function ProfilePageContent() {
                                             transition={{ delay: i * 0.03 }}
                                             whileHover={{ scale: 1.02 }}
                                         >
-                                            <Image
-                                                src={post.image}
-                                                alt={`Post ${post.id}`}
-                                                fill
-                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                            />
+                                            {post.mediaUrl ? (
+                                                <Image
+                                                    src={post.mediaUrl}
+                                                    alt={post.caption || `Post ${post.id}`}
+                                                    fill
+                                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-gradient-to-br from-orange-900/50 to-violet-900/50 flex items-center justify-center">
+                                                    <span className="text-white/70 text-sm text-center px-2">{post.caption?.slice(0, 50)}</span>
+                                                </div>
+                                            )}
+                                            {/* Video indicator */}
+                                            {post.type === 'VIDEO' && (
+                                                <div className="absolute top-2 right-2 text-white">
+                                                    <PlayIcon size={20} />
+                                                </div>
+                                            )}
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                                                 <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white font-semibold flex items-center gap-1">
-                                                    🔥 {post.likes.toLocaleString()}
+                                                    🔥 {post.likesCount.toLocaleString()}
                                                 </span>
                                             </div>
                                         </motion.div>

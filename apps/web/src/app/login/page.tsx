@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleAuth, useAppleAuth } from '@/hooks/useOAuth';
+import { TwoFactorChallenge, BackupCodeChallenge } from '@/components/TwoFactorChallenge';
 
 
 // ============================================
@@ -201,10 +202,12 @@ function LoginContent() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [show2FA, setShow2FA] = useState(false);
+    const [showBackupCode, setShowBackupCode] = useState(false);
 
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { login, isAuthenticated } = useAuth();
+    const { login, isAuthenticated, pending2FA, verify2FA, verifyBackupCode, cancel2FA } = useAuth();
 
     const handleOAuthSuccess = useCallback((user: { id: string; email: string; displayName: string; avatarUrl?: string }, token: string) => {
         // Store token and redirect
@@ -242,7 +245,12 @@ function LoginContent() {
         try {
             const result = await login(email, password);
             if (result.success) {
-                router.push(redirect);
+                if (result.requires2FA) {
+                    // Show 2FA challenge
+                    setShow2FA(true);
+                } else {
+                    router.push(redirect);
+                }
             } else {
                 setError(result.error || 'Login failed. Please try again.');
             }
@@ -253,6 +261,42 @@ function LoginContent() {
             setIsLoading(false);
         }
     }, [email, password, login, router, redirect]);
+
+    // Handle 2FA verification
+    const handle2FAVerify = useCallback(async (code: string) => {
+        const result = await verify2FA(code);
+        if (result.success) {
+            router.push(redirect);
+        }
+        return result;
+    }, [verify2FA, router, redirect]);
+
+    // Handle backup code verification
+    const handleBackupCodeVerify = useCallback(async (code: string) => {
+        const result = await verifyBackupCode(code);
+        if (result.success) {
+            router.push(redirect);
+        }
+        return result;
+    }, [verifyBackupCode, router, redirect]);
+
+    // Handle 2FA cancel
+    const handle2FACancel = useCallback(() => {
+        setShow2FA(false);
+        setShowBackupCode(false);
+        cancel2FA();
+    }, [cancel2FA]);
+
+    // Switch between 2FA and backup code
+    const switchToBackupCode = useCallback(() => {
+        setShow2FA(false);
+        setShowBackupCode(true);
+    }, []);
+
+    const switchTo2FA = useCallback(() => {
+        setShowBackupCode(false);
+        setShow2FA(true);
+    }, []);
 
     return (
         <div className="min-h-screen flex">
@@ -457,6 +501,23 @@ function LoginContent() {
                     </motion.div>
                 </div>
             </div>
+
+            {/* 2FA Challenge Modal */}
+            <TwoFactorChallenge
+                isOpen={show2FA}
+                onVerify={handle2FAVerify}
+                onCancel={handle2FACancel}
+                onUseBackupCode={switchToBackupCode}
+                email={pending2FA?.email}
+            />
+
+            {/* Backup Code Challenge Modal */}
+            <BackupCodeChallenge
+                isOpen={showBackupCode}
+                onVerify={handleBackupCodeVerify}
+                onCancel={handle2FACancel}
+                onUseAuthenticator={switchTo2FA}
+            />
         </div>
     );
 }

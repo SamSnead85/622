@@ -123,12 +123,22 @@ router.post('/login', async (req, res, next) => {
     try {
         const { email, password, rememberMe } = loginSchema.parse(req.body);
 
+        // Check if locked out due to failed attempts
+        const { isLockedOut, recordFailedLogin, clearFailedLogins } = await import('../services/sessionSecurity.js');
+        const lockoutStatus = isLockedOut(email);
+
+        if (lockoutStatus.locked) {
+            const remainingMinutes = Math.ceil((lockoutStatus.lockoutEnds!.getTime() - Date.now()) / 60000);
+            throw new AppError(`Too many failed attempts. Try again in ${remainingMinutes} minutes.`, 429);
+        }
+
         // Find user by email
         const user = await prisma.user.findUnique({
             where: { email: email.toLowerCase() },
         });
 
         if (!user) {
+            recordFailedLogin(email);
             throw new AppError('Invalid email or password', 401);
         }
 
@@ -140,10 +150,32 @@ router.post('/login', async (req, res, next) => {
         // Verify password
         const validPassword = await bcrypt.compare(password, user.passwordHash);
         if (!validPassword) {
+            const lockResult = recordFailedLogin(email);
+            if (lockResult.locked) {
+                throw new AppError(`Account locked due to too many failed attempts. Try again in 15 minutes.`, 429);
+            }
             throw new AppError('Invalid email or password', 401);
         }
 
-        // Generate auth token
+        // Successful login - clear failed attempts
+        clearFailedLogins(email);
+
+        // Check if 2FA is enabled
+        if (user.twoFactorEnabled) {
+            // Import 2FA service and create challenge
+            const { createTwoFactorChallenge } = await import('../services/twoFactor.js');
+            const challengeToken = await createTwoFactorChallenge(user.id);
+
+            // Return challenge response (don't give full token yet)
+            res.json({
+                requires2FA: true,
+                challengeToken,
+                userId: user.id,
+            });
+            return;
+        }
+
+        // No 2FA - generate auth token directly
         const { token, expiresAt } = await generateTokens(user.id, {
             type: req.headers['x-device-type'] as string,
             name: req.headers['x-device-name'] as string,
@@ -510,6 +542,183 @@ router.post('/reset-password', async (req, res, next) => {
     }
 });
 
-export { router as authRouter };
+// ============================================
+// TWO-FACTOR AUTHENTICATION
+// ============================================
 
+const twoFactorSchema = z.object({
+    code: z.string().length(6).regex(/^\d+$/),
+});
+
+const twoFactorChallengeSchema = z.object({
+    challengeToken: z.string().min(1),
+    code: z.string().min(1), // Can be 6-digit or backup code
+    rememberMe: z.boolean().optional().default(true),
+});
+
+// POST /api/v1/auth/2fa/setup - Start 2FA setup
+router.post('/2fa/setup', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { generateTOTPSecret } = await import('../services/twoFactor.js');
+        const result = await generateTOTPSecret(req.userId!);
+
+        res.json({
+            secret: result.secret,
+            otpauthUrl: result.otpauthUrl,
+            message: 'Scan the QR code with your authenticator app, then verify with a code.',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/auth/2fa/verify - Verify and enable 2FA
+router.post('/2fa/verify', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { code } = twoFactorSchema.parse(req.body);
+        const { verifyAndEnable2FA } = await import('../services/twoFactor.js');
+
+        const result = await verifyAndEnable2FA(req.userId!, code);
+
+        if (!result.success) {
+            throw new AppError('Invalid verification code. Please try again.', 400);
+        }
+
+        res.json({
+            success: true,
+            backupCodes: result.backupCodes,
+            message: '2FA enabled successfully. Save your backup codes securely!',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/auth/2fa/challenge - Complete login with 2FA
+router.post('/2fa/challenge', async (req, res, next) => {
+    try {
+        const { challengeToken, code, rememberMe } = twoFactorChallengeSchema.parse(req.body);
+
+        const { verifyTwoFactorChallenge, verifyTOTPCode, useBackupCode } = await import('../services/twoFactor.js');
+
+        // Verify challenge token and get user ID
+        const userId = await verifyTwoFactorChallenge(challengeToken);
+
+        if (!userId) {
+            throw new AppError('Invalid or expired challenge. Please login again.', 401);
+        }
+
+        // Try TOTP code first, then backup code
+        const normalizedCode = code.replace(/\s/g, '');
+        let isValid = false;
+
+        if (/^\d{6}$/.test(normalizedCode)) {
+            // Looks like a TOTP code
+            isValid = await verifyTOTPCode(userId, normalizedCode);
+        }
+
+        if (!isValid) {
+            // Try as backup code
+            isValid = await useBackupCode(userId, normalizedCode);
+        }
+
+        if (!isValid) {
+            throw new AppError('Invalid verification code.', 401);
+        }
+
+        // 2FA verified - generate full auth token
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            throw new AppError('User not found', 404);
+        }
+
+        const { token, expiresAt } = await generateTokens(userId, {
+            type: req.headers['x-device-type'] as string,
+            name: req.headers['x-device-name'] as string,
+            ip: req.ip,
+        }, rememberMe);
+
+        res.json({
+            user: {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                displayName: user.displayName,
+                avatarUrl: user.avatarUrl,
+                coverUrl: user.coverUrl,
+                bio: user.bio,
+                isVerified: user.isVerified,
+                createdAt: user.createdAt.toISOString(),
+            },
+            token,
+            expiresAt,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/auth/2fa/disable - Disable 2FA
+router.post('/2fa/disable', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { code } = twoFactorSchema.parse(req.body);
+        const { disable2FA } = await import('../services/twoFactor.js');
+
+        const success = await disable2FA(req.userId!, code);
+
+        if (!success) {
+            throw new AppError('Invalid verification code.', 400);
+        }
+
+        res.json({
+            success: true,
+            message: '2FA has been disabled.',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/auth/2fa/backup-codes - Regenerate backup codes
+router.post('/2fa/backup-codes', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { code } = twoFactorSchema.parse(req.body);
+        const { regenerateBackupCodes } = await import('../services/twoFactor.js');
+
+        const backupCodes = await regenerateBackupCodes(req.userId!, code);
+
+        if (!backupCodes) {
+            throw new AppError('Invalid verification code.', 400);
+        }
+
+        res.json({
+            backupCodes,
+            message: 'New backup codes generated. Your old codes are no longer valid.',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/auth/2fa/status - Check 2FA status
+router.get('/2fa/status', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { is2FAEnabled, getBackupCodesCount } = await import('../services/twoFactor.js');
+
+        const enabled = await is2FAEnabled(req.userId!);
+        const backupCodesRemaining = enabled ? await getBackupCodesCount(req.userId!) : 0;
+
+        res.json({
+            enabled,
+            backupCodesRemaining,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+export { router as authRouter };
 

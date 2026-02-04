@@ -16,6 +16,8 @@ import { journeysRouter } from './routes/journeys.js';
 import { notificationsRouter } from './routes/notifications.js';
 import { livestreamRouter } from './routes/livestream.js';
 import uploadRouter from './routes/upload.js';
+import securityRouter from './routes/security.js';
+import communityRouter from './routes/community.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 import { setupSocketHandlers } from './socket/index.js';
@@ -96,6 +98,10 @@ app.use('/api/v1/journeys', journeysRouter);
 app.use('/api/v1/notifications', notificationsRouter);
 app.use('/api/v1/livestream', livestreamRouter);
 app.use('/api/v1/upload', uploadRouter);
+app.use('/api/v1/admin/security', securityRouter);
+app.use('/api/v1/community', communityRouter);
+
+
 
 // Error handler
 app.use(errorHandler);

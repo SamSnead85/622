@@ -44,6 +44,12 @@ model User {
   // Password Reset
   resetToken       String?
   resetTokenExpiry DateTime?
+  
+  // Two-Factor Authentication
+  twoFactorEnabled    Boolean   @default(false)
+  twoFactorSecret     String?   // Encrypted TOTP secret
+  twoFactorBackupCodes String[] // Hashed backup codes
+  twoFactorVerifiedAt DateTime?
 
   // Relations
   posts           Post[]
@@ -70,6 +76,7 @@ model User {
   // Auth
   sessions        Session[]
   oauthAccounts   OAuthAccount[]
+  twoFactorChallenges TwoFactorChallenge[]
   
   // Migration
   migrations      Migration[]
@@ -85,10 +92,19 @@ model User {
   // Live Streaming (Campfire)
   liveStreams     LiveStream[]
   liveStreamChats LiveStreamChat[]
+  
+  // Community Command Center
+  bulletinPosts             BulletinPost[]
+  streamSuggestions         LiveStreamSuggestion[]
+  sentConnectionRequests    ConnectionRequest[]    @relation("SentConnectionRequests")
+  receivedConnectionRequests ConnectionRequest[]   @relation("ReceivedConnectionRequests")
+  connectionSettings        UserConnectionSettings?
+  presence                  UserPresence?
 
   @@index([username])
   @@index([email])
 }
+
 
 model Session {
   id           String   @id @default(uuid())
@@ -104,6 +120,20 @@ model Session {
 
   @@index([userId])
   @@index([token])
+}
+
+// Two-Factor Authentication Challenge (temporary token during login)
+model TwoFactorChallenge {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique  // Temp token for 2FA verification
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([token])
+  @@index([userId])
 }
 
 model OAuthAccount {
@@ -740,14 +770,17 @@ model Territory {
   outgoingConnections TerritoryConnection[] @relation("ConnectionFrom")
   incomingConnections TerritoryConnection[] @relation("ConnectionTo")
   
-  // Moderation
+  // Moderation & Security
   moderationRules TerritoryModerationRule[]
   strikes         TerritoryStrike[]
+  geoBlocks       GeoBlock[]
+  contentModerationSettings ContentModerationSettings?
 
   @@index([type])
   @@index([parentId])
   @@index([slug])
 }
+
 
 enum TerritoryType {
   CIRCLE  // 2-10 members - immediate family/best friends
@@ -833,8 +866,11 @@ enum TerritoryConnectionType {
 
 enum ConnectionStatus {
   PENDING
-  APPROVED
-  REJECTED
+  APPROVED     // For territory connections
+  REJECTED     // For territory connections
+  ACCEPTED     // For user connection requests
+  DECLINED     // For user connection requests
+  BLOCKED      // For blocking connections
 }
 
 // ============================================
@@ -939,3 +975,353 @@ model TerritoryStrike {
   @@index([territoryId])
   @@index([userId])
 }
+
+// ============================================
+// GEO-BLOCKING (Territory & Platform Level)
+// ============================================
+
+model GeoBlock {
+  id              String       @id @default(uuid())
+  territoryId     String?      // Null = platform-wide block
+  countryCode     String       // ISO 3166-1 alpha-2 (e.g., "RU", "CN", "IR")
+  countryName     String
+  reason          String?      @db.Text
+  blockType       GeoBlockType @default(FULL)
+  createdById     String
+  createdAt       DateTime     @default(now())
+  expiresAt       DateTime?    // Null = permanent
+  
+  territory       Territory?   @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+  
+  @@unique([territoryId, countryCode])
+  @@index([countryCode])
+  @@index([territoryId])
+}
+
+enum GeoBlockType {
+  FULL          // No access at all
+  VIEW_ONLY     // Can view but not join/post
+  NO_JOIN       // Can view content but can't join
+}
+
+// ============================================
+// CONTENT MODERATION SETTINGS (Territory Level)
+// ============================================
+
+model ContentModerationSettings {
+  id                        String    @id @default(uuid())
+  territoryId               String    @unique
+  
+  // Explicit Content Filters
+  explicitLanguageFilter    Boolean   @default(false)
+  explicitMaterialsFilter   Boolean   @default(false)
+  
+  // AI-Assisted Moderation
+  aiModerationEnabled       Boolean   @default(true)
+  aiSensitivity             Int       @default(50) // 0-100
+  
+  // Custom Word Blocking
+  blockedWords              String[]  @default([])
+  flaggedWords              String[]  @default([]) // Flag but don't block
+  
+  // Content Ratings
+  minContentRating          String    @default("G")
+  maxContentRating          String    @default("PG13")
+  
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  
+  territory                 Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// PLATFORM SECURITY POLICIES (SuperAdmin)
+// ============================================
+
+model PlatformSecurityPolicy {
+  id              String             @id @default(uuid())
+  name            String             @unique
+  description     String?            @db.Text
+  isActive        Boolean            @default(true)
+  type            SecurityPolicyType
+  
+  // Configuration (JSON for flexibility)
+  config          Json               @default("{}")
+  
+  // Audit
+  createdById     String
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  
+  @@index([type])
+  @@index([isActive])
+}
+
+enum SecurityPolicyType {
+  RATE_LIMITING         // API and action rate limits
+  IP_BLOCKING           // Block specific IPs/ranges
+  GEO_RESTRICTION       // Platform-wide geo-blocking
+  CONTENT_SCANNING      // AI content moderation
+  AUTH_HARDENING        // Login security, 2FA requirements
+  DATA_PROTECTION       // Encryption, export controls
+  THREAT_DETECTION      // Anomaly detection, bot prevention
+}
+
+// ============================================
+// BLOCKED IPs (Platform Security)
+// ============================================
+
+model BlockedIP {
+  id              String      @id @default(uuid())
+  ipAddress       String      // Can be IP or CIDR range
+  reason          String?     @db.Text
+  threatLevel     ThreatLevel @default(MEDIUM)
+  source          String?     // "manual", "auto-detected", "threat-intel"
+  createdById     String?
+  createdAt       DateTime    @default(now())
+  expiresAt       DateTime?   // Null = permanent
+  
+  @@unique([ipAddress])
+  @@index([expiresAt])
+}
+
+enum ThreatLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ============================================
+// SECURITY AUDIT LOG (Compliance)
+// ============================================
+
+model SecurityAuditLog {
+  id              String      @id @default(uuid())
+  action          String      // "LOGIN_FAILED", "GEO_BLOCKED", "RATE_LIMITED", etc.
+  userId          String?     // Null for unauthenticated actions
+  ipAddress       String
+  countryCode     String?
+  userAgent       String?
+  details         Json?       // Additional context
+  severity        ThreatLevel @default(LOW)
+  createdAt       DateTime    @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([ipAddress])
+}
+
+// ============================================
+// COMMUNITY COMMAND CENTER - BULLETIN BOARD
+// ============================================
+
+model BulletinPost {
+  id            String          @id @default(uuid())
+  type          BulletinType
+  title         String
+  content       String          @db.Text
+  mediaUrl      String?
+  externalLink  String?
+  
+  // Engagement
+  upvotes       Int             @default(0)
+  downvotes     Int             @default(0)
+  viewCount     Int             @default(0)
+  
+  // Categorization
+  category      BulletinCategory
+  tags          String[]
+  isPinned      Boolean         @default(false)
+  isVerified    Boolean         @default(false)
+  
+  // Location for events/protests
+  location      String?
+  locationGeo   String?         // lat,lng for mapping
+  eventDate     DateTime?
+  
+  // Author
+  authorId      String
+  author        User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  // Comments
+  comments      BulletinComment[]
+  
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  expiresAt     DateTime?       // Optional auto-expiry
+  
+  @@index([type])
+  @@index([category])
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([isPinned])
+}
+
+enum BulletinType {
+  ANNOUNCEMENT        // Platform news
+  JOB                 // Job postings
+  COLLABORATION       // Seeking cofounders/partners
+  INVESTMENT          // Seeking investors
+  EVENT               // Protests, gatherings, meetups
+  CALL_TO_ACTION      // Community mobilization
+  SPOTLIGHT           // High-profile member joins
+  DISCUSSION          // General community discussions
+}
+
+enum BulletinCategory {
+  SOCIAL_JUSTICE
+  CAREER
+  BUSINESS
+  COMMUNITY
+  CULTURE
+  TECH
+  ACTIVISM
+  GENERAL
+}
+
+model BulletinComment {
+  id            String        @id @default(uuid())
+  content       String        @db.Text
+  
+  bulletinId    String
+  bulletin      BulletinPost  @relation(fields: [bulletinId], references: [id], onDelete: Cascade)
+  
+  authorId      String
+  
+  createdAt     DateTime      @default(now())
+  
+  @@index([bulletinId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model BulletinVote {
+  id            String        @id @default(uuid())
+  bulletinId    String
+  userId        String
+  isUpvote      Boolean       // true = upvote, false = downvote
+  
+  createdAt     DateTime      @default(now())
+  
+  @@unique([bulletinId, userId])
+  @@index([bulletinId])
+  @@index([userId])
+}
+
+// ============================================
+// LIVE FEED NETWORK - EXTERNAL STREAMS
+// ============================================
+
+model LiveStreamSuggestion {
+  id            String          @id @default(uuid())
+  platformType  StreamPlatform
+  externalId    String          // YouTube video ID, Twitch channel, etc.
+  embedUrl      String
+  title         String
+  thumbnailUrl  String?
+  description   String?         @db.Text
+  
+  // Voting
+  upvotes       Int             @default(0)
+  downvotes     Int             @default(0)
+  
+  // Status
+  status        SuggestionStatus @default(PENDING)
+  
+  // Suggested by
+  suggestedById String
+  suggestedBy   User            @relation(fields: [suggestedById], references: [id], onDelete: Cascade)
+  
+  // Votes
+  votes         StreamVote[]
+  
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  @@index([status])
+  @@index([platformType])
+  @@index([suggestedById])
+  @@index([createdAt])
+}
+
+enum StreamPlatform {
+  YOUTUBE
+  TWITCH
+  FACEBOOK
+  INSTAGRAM
+  TIKTOK
+  NATIVE        // Our own Campfire streams
+}
+
+enum SuggestionStatus {
+  PENDING
+  APPROVED
+  LIVE
+  ENDED
+  REJECTED
+}
+
+model StreamVote {
+  id              String              @id @default(uuid())
+  suggestionId    String
+  suggestion      LiveStreamSuggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  userId          String
+  isUpvote        Boolean
+  
+  createdAt       DateTime            @default(now())
+  
+  @@unique([suggestionId, userId])
+  @@index([suggestionId])
+  @@index([userId])
+}
+
+// ============================================
+// CONNECTION SYSTEM (LinkedIn-style)
+// ============================================
+
+model ConnectionRequest {
+  id          String            @id @default(uuid())
+  senderId    String
+  receiverId  String
+  status      ConnectionStatus  @default(PENDING)
+  message     String?           @db.Text
+  
+  sender      User              @relation("SentConnectionRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User              @relation("ReceivedConnectionRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+}
+
+model UserConnectionSettings {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  autoApprove     Boolean   @default(false)
+  
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// REAL-TIME PRESENCE (Online Users)
+// ============================================
+
+model UserPresence {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  isOnline        Boolean   @default(true)
+  lastSeenAt      DateTime  @default(now())
+  currentPage     String?   // Which page/section they're viewing
+  
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([isOnline])
+  @@index([lastSeenAt])
+}
+

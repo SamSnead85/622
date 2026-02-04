@@ -7,6 +7,7 @@ import { ProfileEditor, Avatar, useProfile } from '@/components/ProfileEditor';
 import { loadPreferences, savePreferences, clearAllData, exportUserData } from '@/lib/persistence';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 import { InviteFriends } from '@/components/InviteFriends';
+import { TwoFactorSetup } from '@/components/TwoFactorSetup';
 import {
     HomeIcon,
     SearchIcon,
@@ -19,7 +20,8 @@ import {
     PaletteIcon,
     InfoIcon,
     ZapIcon,
-    DownloadIcon
+    DownloadIcon,
+    ShieldIcon
 } from '@/components/icons';
 
 // Navigation
@@ -153,6 +155,8 @@ function SettingsPageContent() {
     const { logout, updateUser } = useAuth();
     const [showProfileEditor, setShowProfileEditor] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
+    const [show2FASetup, setShow2FASetup] = useState(false);
+    const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [toggles, setToggles] = useState<Record<string, boolean>>({
         'dark-mode': true,
         'push': true,
@@ -193,6 +197,21 @@ function SettingsPageContent() {
     }, []);
 
     const handleToggle = useCallback((id: string) => {
+        // Special handling for 2FA toggle
+        if (id === 'two-factor') {
+            if (!twoFactorEnabled) {
+                // Open 2FA setup modal
+                setShow2FASetup(true);
+            } else {
+                // Show confirmation to disable 2FA
+                if (confirm('Are you sure you want to disable Two-Factor Authentication?')) {
+                    // TODO: Call API to disable 2FA
+                    setTwoFactorEnabled(false);
+                }
+            }
+            return;
+        }
+
         setToggles(prev => {
             const updated = { ...prev, [id]: !prev[id] };
             // Save to persistence
@@ -205,6 +224,11 @@ function SettingsPageContent() {
             });
             return updated;
         });
+    }, [twoFactorEnabled]);
+
+    const handle2FAComplete = useCallback(() => {
+        setTwoFactorEnabled(true);
+        setShow2FASetup(false);
     }, []);
 
     const handleExportData = useCallback(() => {
@@ -286,7 +310,7 @@ function SettingsPageContent() {
                                             <span className="text-white/80">{item.label}</span>
                                             {item.type === 'toggle' && (
                                                 <Toggle
-                                                    enabled={toggles[item.id] || false}
+                                                    enabled={item.id === 'two-factor' ? twoFactorEnabled : (toggles[item.id] || false)}
                                                     onChange={() => handleToggle(item.id)}
                                                 />
                                             )}
@@ -349,6 +373,13 @@ function SettingsPageContent() {
             <InviteFriends
                 isOpen={showInviteModal}
                 onClose={() => setShowInviteModal(false)}
+            />
+
+            {/* 2FA Setup Modal */}
+            <TwoFactorSetup
+                isOpen={show2FASetup}
+                onClose={() => setShow2FASetup(false)}
+                onComplete={handle2FAComplete}
             />
         </div>
     );

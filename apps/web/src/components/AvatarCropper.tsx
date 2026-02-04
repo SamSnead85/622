@@ -217,7 +217,7 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
                 <div className="mb-6">
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={() => handleZoom(scale - 0.2)}
+                            onClick={() => handleZoom(scale - 0.05)}
                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#00D4FF]/30 transition-colors"
                         >
                             −
@@ -237,7 +237,7 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
                             />
                         </div>
                         <button
-                            onClick={() => handleZoom(scale + 0.2)}
+                            onClick={() => handleZoom(scale + 0.05)}
                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#00D4FF]/30 transition-colors"
                         >
                             +

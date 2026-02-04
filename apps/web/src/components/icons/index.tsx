@@ -1255,3 +1255,139 @@ export function BrainIcon({ className = '', size }: IconProps) {
         </svg>
     );
 }
+
+// Megaphone Icon - For Community Command Center
+export function MegaphoneIcon({ className = '', size }: IconProps) {
+    const s = getSize(size);
+    return (
+        <svg
+            width={s}
+            height={s}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <path d="m3 11 18-5v12L3 13v-2z" />
+            <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+        </svg>
+    );
+}
+
+// Key Icon (for 2FA backup codes)
+export function KeyIcon({ className = '', size }: IconProps) {
+    const s = getSize(size);
+    return (
+        <svg
+            width={s}
+            height={s}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4" />
+        </svg>
+    );
+}
+
+// QR Code Icon (for 2FA setup)
+export function QrCodeIcon({ className = '', size }: IconProps) {
+    const s = getSize(size);
+    return (
+        <svg
+            width={s}
+            height={s}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <rect width="5" height="5" x="3" y="3" rx="1" />
+            <rect width="5" height="5" x="16" y="3" rx="1" />
+            <rect width="5" height="5" x="3" y="16" rx="1" />
+            <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+            <path d="M21 21v.01" />
+            <path d="M12 7v3a2 2 0 0 1-2 2H7" />
+            <path d="M3 12h.01" />
+            <path d="M12 3h.01" />
+            <path d="M12 16v.01" />
+            <path d="M16 12h1" />
+            <path d="M21 12v.01" />
+            <path d="M12 21v-1" />
+        </svg>
+    );
+}
+
+// Copy Icon (for copying secrets)
+export function CopyIcon({ className = '', size }: IconProps) {
+    const s = getSize(size);
+    return (
+        <svg
+            width={s}
+            height={s}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+        </svg>
+    );
+}
+
+// Check Circle Icon (for success states)
+export function CheckCircleIcon({ className = '', size }: IconProps) {
+    const s = getSize(size);
+    return (
+        <svg
+            width={s}
+            height={s}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <path d="m9 11 3 3L22 4" />
+        </svg>
+    );
+}
+
+// Close / X Icon (for modals)
+export function CloseIcon({ className = '', size }: IconProps) {
+    const s = getSize(size);
+    return (
+        <svg
+            width={s}
+            height={s}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+        </svg>
+    );
+}
+
