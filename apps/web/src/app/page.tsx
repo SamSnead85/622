@@ -153,8 +153,8 @@ function Navigation() {
 const heroImages = [
     // Desert Caravan - Opening theme (authentic documentary-style)
     { id: 'caravan', src: 'https://images.unsplash.com/photo-1548111395-36c5857f89c5?w=2000&h=1200&fit=crop&q=90' },
-    // Modern African life - Contemporary Lagos/Nairobi street scene
-    { id: 'african-modern', src: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=2000&h=1200&fit=crop&q=90' },
+    // Modern African life - Contemporary community scene
+    { id: 'african-modern', src: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=2000&h=1200&fit=crop&q=90' },
     // Black family/community - Modern, natural, warm family moment
     { id: 'black-community', src: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=2000&h=1200&fit=crop&q=90' },
     // Japanese modern life - Tokyo street life, contemporary culture
