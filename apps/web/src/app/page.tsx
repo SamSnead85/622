@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ImpactSection } from '@/components/ImpactHub';
 
 // ============================================
 // ULTRA-PREMIUM DESIGN SYSTEM
@@ -780,6 +781,7 @@ export default function HomePage() {
             <HeroSection />
             <VisionSection />
             <StoryTellersSection />
+            <ImpactSection />
             <FeaturesSection />
             <CTASection />
             <Footer />
