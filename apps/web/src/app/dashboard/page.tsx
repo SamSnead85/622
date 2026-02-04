@@ -482,7 +482,7 @@ export default function DashboardPage() {
                     <div className="grid lg:grid-cols-3 gap-8">
                         {/* Feed - Main column */}
                         <div className="lg:col-span-2 space-y-6">
-                            {/* Quick post */}
+                            {/* Quick post with privacy controls */}
                             <motion.div
                                 className="bg-white/[0.02] rounded-2xl border border-white/5 p-4"
                                 initial={{ opacity: 0, y: 20 }}
@@ -501,12 +501,32 @@ export default function DashboardPage() {
                                             {user.displayName?.[0] || 'U'}
                                         </div>
                                     )}
-                                    <input
-                                        type="text"
-                                        placeholder="Share something with your community..."
-                                        className="flex-1 bg-white/5 rounded-xl px-4 py-3 text-white placeholder:text-white/40 border border-white/5 focus:border-[#00D4FF]/30 focus:outline-none transition-colors"
-                                        onFocus={() => router.push('/create')}
-                                    />
+                                    <div className="flex-1">
+                                        <input
+                                            type="text"
+                                            placeholder="What's on your mind?"
+                                            className="w-full bg-white/5 rounded-xl px-4 py-3 text-white placeholder:text-white/40 border border-white/5 focus:border-[#00D4FF]/30 focus:outline-none transition-colors"
+                                            onFocus={() => router.push('/create')}
+                                        />
+                                        {/* Privacy selector */}
+                                        <div className="flex items-center gap-3 mt-3">
+                                            <span className="text-xs text-white/40">Share with:</span>
+                                            <div className="flex gap-2">
+                                                <button className="px-3 py-1 rounded-full bg-[#00D4FF]/20 text-[#00D4FF] text-xs font-medium border border-[#00D4FF]/30">
+                                                    🌍 Public
+                                                </button>
+                                                <button className="px-3 py-1 rounded-full bg-white/5 text-white/60 text-xs font-medium border border-white/10 hover:bg-white/10 transition-colors">
+                                                    👥 Friends
+                                                </button>
+                                                <button className="px-3 py-1 rounded-full bg-white/5 text-white/60 text-xs font-medium border border-white/10 hover:bg-white/10 transition-colors">
+                                                    👨‍👩‍👧 Family
+                                                </button>
+                                                <button className="px-3 py-1 rounded-full bg-white/5 text-white/60 text-xs font-medium border border-white/10 hover:bg-white/10 transition-colors">
+                                                    🔒 Only Me
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-2 mt-4 pl-16">
                                     <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-white/60 hover:bg-white/5 transition-colors">
@@ -521,71 +541,122 @@ export default function DashboardPage() {
                                         <span>📺</span>
                                         <span className="text-sm">Go Live</span>
                                     </button>
+                                    <div className="flex-1" />
+                                    <button
+                                        onClick={() => router.push('/create')}
+                                        className="px-5 py-2 rounded-xl bg-[#00D4FF] text-black font-semibold text-sm hover:opacity-90 transition-opacity"
+                                    >
+                                        Post
+                                    </button>
                                 </div>
                             </motion.div>
 
-                            {/* Quick Actions */}
+                            {/* Your Feed - Sample posts */}
                             <motion.div
-                                className="bg-white/[0.02] rounded-2xl border border-white/5 p-6"
+                                className="space-y-4"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4 }}
                             >
-                                <h3 className="font-semibold text-white mb-4">Quick Actions</h3>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Link
-                                        href="/communities/create"
-                                        className="group p-4 rounded-xl bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 border border-white/5 hover:border-[#00D4FF]/30 transition-colors"
-                                    >
-                                        <div className="text-3xl mb-2">🏕️</div>
-                                        <h4 className="font-semibold text-white mb-1">Create a Tribe</h4>
-                                        <p className="text-xs text-white/50">Build your private community</p>
-                                    </Link>
-                                    <Link
-                                        href="/campfire/go-live"
-                                        className="group p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-orange-500/10 border border-white/5 hover:border-rose-500/30 transition-colors"
-                                    >
-                                        <div className="text-3xl mb-2">📺</div>
-                                        <h4 className="font-semibold text-white mb-1">Go Live</h4>
-                                        <p className="text-xs text-white/50">Start a live stream</p>
-                                    </Link>
-                                    <Link
-                                        href="/create"
-                                        className="group p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-white/5 hover:border-emerald-500/30 transition-colors"
-                                    >
-                                        <div className="text-3xl mb-2">📸</div>
-                                        <h4 className="font-semibold text-white mb-1">Share a Post</h4>
-                                        <p className="text-xs text-white/50">Photos, videos, thoughts</p>
-                                    </Link>
-                                    <Link
-                                        href="/journeys"
-                                        className="group p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-pink-500/10 border border-white/5 hover:border-violet-500/30 transition-colors"
-                                    >
-                                        <div className="text-3xl mb-2">✨</div>
-                                        <h4 className="font-semibold text-white mb-1">Watch Moments</h4>
-                                        <p className="text-xs text-white/50">Short video stories</p>
+                                {/* Your Algorithm Banner */}
+                                <div className="bg-gradient-to-r from-[#00D4FF]/10 to-transparent rounded-xl border border-[#00D4FF]/20 p-4 flex items-center gap-4">
+                                    <span className="text-2xl">🎯</span>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-white">Your Feed, Your Rules</p>
+                                        <p className="text-xs text-white/50">You control what shows here. No hidden algorithms.</p>
+                                    </div>
+                                    <Link href="/algorithm" className="text-xs text-[#00D4FF] font-medium hover:underline">
+                                        Customize →
                                     </Link>
                                 </div>
-                            </motion.div>
 
-                            {/* Feed placeholder */}
-                            <motion.div
-                                className="bg-gradient-to-br from-[#00D4FF]/5 to-[#8B5CF6]/5 rounded-2xl border border-white/5 p-8 text-center"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.5 }}
-                            >
-                                <div className="text-5xl mb-4">🚀</div>
-                                <h3 className="text-lg font-semibold text-white mb-2">Your Feed is Growing</h3>
-                                <p className="text-white/50 mb-4 max-w-md mx-auto text-sm">
-                                    Follow tribes and creators to see their posts here
-                                </p>
-                                <Link
-                                    href="/explore"
-                                    className="inline-block px-6 py-2.5 rounded-xl bg-[#00D4FF] text-black font-semibold text-sm hover:opacity-90 transition-opacity"
-                                >
-                                    Explore
-                                </Link>
+                                {/* Sample Post 1 */}
+                                <div className="bg-white/[0.02] rounded-2xl border border-white/5 overflow-hidden">
+                                    <div className="p-4">
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold text-sm">
+                                                S
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-semibold text-white text-sm">Sarah M.</span>
+                                                    <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[10px]">👥 Friends</span>
+                                                    <span className="text-white/30 text-xs">• 2h</span>
+                                                </div>
+                                                <p className="text-white/70 text-sm mt-2">Just finished an amazing journey through Jordan! The Petra Treasury at sunrise was absolutely magical ✨ Can&apos;t wait to share more photos!</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="h-48 bg-gradient-to-br from-amber-900/30 to-rose-900/30 flex items-center justify-center">
+                                        <span className="text-4xl">🏛️</span>
+                                    </div>
+                                    <div className="p-4 flex items-center gap-4 border-t border-white/5">
+                                        <button className="flex items-center gap-2 text-white/60 hover:text-rose-400 transition-colors">
+                                            <span>❤️</span>
+                                            <span className="text-sm">124</span>
+                                        </button>
+                                        <button className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors">
+                                            <span>💬</span>
+                                            <span className="text-sm">18</span>
+                                        </button>
+                                        <button className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors">
+                                            <span>↗️</span>
+                                            <span className="text-sm">Share</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Sample Post 2 - Your own post */}
+                                <div className="bg-white/[0.02] rounded-2xl border border-[#00D4FF]/20 overflow-hidden">
+                                    <div className="p-4">
+                                        <div className="flex items-start gap-3">
+                                            {user.avatarUrl ? (
+                                                <img
+                                                    src={user.avatarUrl}
+                                                    alt={user.displayName || 'You'}
+                                                    className="w-10 h-10 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-sm">
+                                                    {user.displayName?.[0] || 'U'}
+                                                </div>
+                                            )}
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-semibold text-white text-sm">{user.displayName || 'You'}</span>
+                                                    <span className="px-2 py-0.5 rounded-full bg-[#00D4FF]/20 text-[#00D4FF] text-[10px]">🌍 Public</span>
+                                                    <span className="text-white/30 text-xs">• 1d</span>
+                                                </div>
+                                                <p className="text-white/70 text-sm mt-2">Welcome to my 0G profile! This is where I share my journey, thoughts, and connect with amazing people. 🚀</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 flex items-center gap-4 border-t border-white/5">
+                                        <button className="flex items-center gap-2 text-rose-400">
+                                            <span>❤️</span>
+                                            <span className="text-sm">47</span>
+                                        </button>
+                                        <button className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors">
+                                            <span>💬</span>
+                                            <span className="text-sm">8</span>
+                                        </button>
+                                        <button className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors">
+                                            <span>↗️</span>
+                                            <span className="text-sm">Share</span>
+                                        </button>
+                                        <div className="flex-1" />
+                                        <button className="text-xs text-white/40 hover:text-white/60">
+                                            ⋯
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Load More */}
+                                <div className="text-center py-4">
+                                    <button className="px-6 py-2.5 rounded-xl bg-white/5 text-white/60 text-sm font-medium hover:bg-white/10 transition-colors border border-white/5">
+                                        Load More
+                                    </button>
+                                </div>
                             </motion.div>
                         </div>
 
