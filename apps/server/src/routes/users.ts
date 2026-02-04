@@ -17,6 +17,8 @@ router.get('/:username', optionalAuth, async (req: AuthRequest, res, next) => {
                 id: true,
                 username: true,
                 displayName: true,
+                displayNameSecondary: true,
+                secondaryLanguage: true,
                 bio: true,
                 website: true,
                 avatarUrl: true,
@@ -70,6 +72,8 @@ router.put('/profile', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const updateSchema = z.object({
             displayName: z.string().min(1).max(50).optional(),
+            displayNameSecondary: z.string().max(100).nullable().optional(), // Secondary language name
+            secondaryLanguage: z.string().max(5).nullable().optional(),      // Language code (ar, zh, hi, etc.)
             bio: z.string().max(300).optional(),
             website: z.string().url().optional().or(z.literal('')),
             avatarUrl: z.string().url().optional(),
@@ -86,6 +90,8 @@ router.put('/profile', authenticate, async (req: AuthRequest, res, next) => {
                 id: true,
                 username: true,
                 displayName: true,
+                displayNameSecondary: true,
+                secondaryLanguage: true,
                 bio: true,
                 website: true,
                 avatarUrl: true,

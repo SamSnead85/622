@@ -34,9 +34,31 @@ const PRESET_AVATARS = [
 // ============================================
 // TYPES
 // ============================================
+// Supported secondary languages for display name
+export const SECONDARY_LANGUAGES = [
+    { code: 'ar', name: 'العربية', label: 'Arabic', direction: 'rtl' },
+    { code: 'zh', name: '中文', label: 'Chinese', direction: 'ltr' },
+    { code: 'hi', name: 'हिन्दी', label: 'Hindi', direction: 'ltr' },
+    { code: 'ja', name: '日本語', label: 'Japanese', direction: 'ltr' },
+    { code: 'ko', name: '한국어', label: 'Korean', direction: 'ltr' },
+    { code: 'ru', name: 'Русский', label: 'Russian', direction: 'ltr' },
+    { code: 'he', name: 'עברית', label: 'Hebrew', direction: 'rtl' },
+    { code: 'fa', name: 'فارسی', label: 'Persian', direction: 'rtl' },
+    { code: 'ur', name: 'اردو', label: 'Urdu', direction: 'rtl' },
+    { code: 'th', name: 'ไทย', label: 'Thai', direction: 'ltr' },
+    { code: 'bn', name: 'বাংলা', label: 'Bengali', direction: 'ltr' },
+    { code: 'ta', name: 'தமிழ்', label: 'Tamil', direction: 'ltr' },
+    { code: 'el', name: 'Ελληνικά', label: 'Greek', direction: 'ltr' },
+    { code: 'am', name: 'አማርኛ', label: 'Amharic', direction: 'ltr' },
+] as const;
+
+export type SecondaryLanguageCode = typeof SECONDARY_LANGUAGES[number]['code'];
+
 interface UserProfile {
     id: string;
     displayName: string;
+    displayNameSecondary?: string;     // Name in secondary language
+    secondaryLanguage?: SecondaryLanguageCode; // Language code
     username: string;
     bio: string;
     avatarType: 'preset' | 'custom';
@@ -239,13 +261,17 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
 
             if (token) {
                 // Build update data for API
-                const updateData: Record<string, string | boolean> = {
+                const updateData: Record<string, string | boolean | null> = {
                     displayName: profile.displayName,
                 };
 
                 if (profile.bio) {
                     updateData.bio = profile.bio;
                 }
+
+                // Secondary language name fields
+                updateData.displayNameSecondary = profile.displayNameSecondary || null;
+                updateData.secondaryLanguage = profile.secondaryLanguage || null;
 
                 // Set avatarUrl based on type
                 if (profile.avatarType === 'custom' && profile.avatarCustomUrl) {
@@ -422,6 +448,98 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                             />
                         </div>
 
+                        {/* Secondary Language Name */}
+                        <div className="relative">
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-medium text-white/70">
+                                    Name in Another Language
+                                    <span className="text-white/40 text-xs ml-2">(optional)</span>
+                                </label>
+                                {!profile.displayNameSecondary && !profile.secondaryLanguage && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setProfile(p => ({ ...p, secondaryLanguage: 'ar' }))}
+                                        className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1"
+                                    >
+                                        <span>+ Add</span>
+                                    </button>
+                                )}
+                            </div>
+
+                            {(profile.displayNameSecondary || profile.secondaryLanguage) && (
+                                <div className="space-y-3 p-4 rounded-xl bg-white/5 border border-white/10">
+                                    {/* Language Selector */}
+                                    <div className="flex flex-wrap gap-2">
+                                        {SECONDARY_LANGUAGES.map(lang => (
+                                            <button
+                                                key={lang.code}
+                                                type="button"
+                                                onClick={() => setProfile(p => ({ ...p, secondaryLanguage: lang.code }))}
+                                                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${profile.secondaryLanguage === lang.code
+                                                    ? 'bg-violet-500 text-white'
+                                                    : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
+                                                    }`}
+                                                title={lang.label}
+                                            >
+                                                {lang.name}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Secondary Name Input */}
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={profile.displayNameSecondary || ''}
+                                            onChange={e => setProfile(p => ({ ...p, displayNameSecondary: e.target.value }))}
+                                            placeholder={`Enter your name in ${SECONDARY_LANGUAGES.find(l => l.code === profile.secondaryLanguage)?.label || 'selected language'}`}
+                                            dir={SECONDARY_LANGUAGES.find(l => l.code === profile.secondaryLanguage)?.direction || 'ltr'}
+                                            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500 text-lg"
+                                            style={{
+                                                fontFamily: profile.secondaryLanguage === 'ar' || profile.secondaryLanguage === 'fa' || profile.secondaryLanguage === 'ur'
+                                                    ? '"Noto Sans Arabic", "Segoe UI", sans-serif'
+                                                    : profile.secondaryLanguage === 'zh' || profile.secondaryLanguage === 'ja'
+                                                        ? '"Noto Sans CJK", "Segoe UI", sans-serif'
+                                                        : undefined
+                                            }}
+                                        />
+                                        {profile.displayNameSecondary && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setProfile(p => ({ ...p, displayNameSecondary: '', secondaryLanguage: undefined }))}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 text-sm"
+                                            >
+                                                Clear
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Preview */}
+                                    {profile.displayNameSecondary && (
+                                        <div className="pt-2 border-t border-white/10">
+                                            <p className="text-xs text-white/40 mb-2">Preview on profile:</p>
+                                            <div className="flex flex-col items-start gap-0.5">
+                                                <span className="text-white font-medium">{profile.displayName || 'Your Name'}</span>
+                                                <span
+                                                    className="text-white/60 text-sm"
+                                                    dir={SECONDARY_LANGUAGES.find(l => l.code === profile.secondaryLanguage)?.direction || 'ltr'}
+                                                    style={{
+                                                        fontFamily: profile.secondaryLanguage === 'ar' || profile.secondaryLanguage === 'fa' || profile.secondaryLanguage === 'ur'
+                                                            ? '"Noto Sans Arabic", "Segoe UI", sans-serif'
+                                                            : profile.secondaryLanguage === 'zh' || profile.secondaryLanguage === 'ja'
+                                                                ? '"Noto Sans CJK", "Segoe UI", sans-serif'
+                                                                : undefined
+                                                    }}
+                                                >
+                                                    {profile.displayNameSecondary}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
                         <div>
                             <label className="block text-sm font-medium text-white/70 mb-2">Username</label>
                             <input
@@ -545,6 +663,8 @@ export function useProfile() {
                         const userProfile: UserProfile = {
                             id: user.id,
                             displayName: user.displayName || '',
+                            displayNameSecondary: user.displayNameSecondary || '',
+                            secondaryLanguage: user.secondaryLanguage || undefined,
                             username: user.username || '',
                             bio: user.bio || '',
                             avatarType: user.avatarUrl ? 'custom' : 'preset',

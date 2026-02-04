@@ -147,11 +147,31 @@ function Navigation() {
 // ============================================
 // CINEMATIC HERO SECTION
 // Full-screen with layered depth
+// "Around the World" cultural journey carousel
 // ============================================
 
 const heroImages = [
-    { id: 'caravan', src: 'https://images.unsplash.com/photo-1769018003686-b01c7ba79b57?w=2000&h=1200&fit=crop&q=90' },
+    // Desert Caravan - Opening theme (authentic documentary-style)
+    { id: 'caravan', src: 'https://images.unsplash.com/photo-1548111395-36c5857f89c5?w=2000&h=1200&fit=crop&q=90' },
+    // Modern African life - Contemporary Lagos/Nairobi street scene
+    { id: 'african-modern', src: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=2000&h=1200&fit=crop&q=90' },
+    // Black family/community - Modern, natural, warm family moment
+    { id: 'black-community', src: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=2000&h=1200&fit=crop&q=90' },
+    // Japanese modern life - Tokyo street life, contemporary culture
+    { id: 'japanese-modern', src: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=2000&h=1200&fit=crop&q=90' },
+    // Indian celebration - Holi festival/modern Diwali celebration
+    { id: 'indian-festival', src: 'https://images.unsplash.com/photo-1514222134-b57cbb8ce073?w=2000&h=1200&fit=crop&q=90' },
+    // Latin American community - Modern street scene/family
+    { id: 'latin-community', src: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=2000&h=1200&fit=crop&q=90' },
+    // Middle Eastern culture - Modern city/authentic moment
+    { id: 'middle-eastern', src: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=2000&h=1200&fit=crop&q=90' },
+    // Asian American family - Contemporary, natural moment
+    { id: 'asian-american', src: 'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=2000&h=1200&fit=crop&q=90' },
+    // Pacific Islander - Modern Polynesian culture
+    { id: 'pacific-islander', src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&h=1200&fit=crop&q=90' },
+    // Jerusalem Skyline - Historic significance
     { id: 'jerusalem', src: 'https://images.unsplash.com/photo-1547483238-f400e65ccd56?w=2000&h=1200&fit=crop&q=90' },
+    // Mountain Horizon - Universal aspiration
     { id: 'horizon', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=2000&h=1200&fit=crop&q=90' },
 ];
 
@@ -168,11 +188,11 @@ function HeroSection() {
     const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
     const scale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
 
-    // Auto-rotate hero images every 6 seconds
+    // Auto-rotate hero images every 4 seconds for flowing world tour effect
     useEffect(() => {
         const interval = setInterval(() => {
             setActiveHeroImage((prev) => (prev + 1) % heroImages.length);
-        }, 6000);
+        }, 4000);
         return () => clearInterval(interval);
     }, []);
 
@@ -186,16 +206,16 @@ function HeroSection() {
                 <div className="absolute inset-0 bg-gradient-to-r from-[#030305]/90 via-transparent to-[#030305]/90 z-10" />
                 <div className="absolute inset-0 bg-black/30 z-10" />
 
-                {/* Rotating Hero Images */}
+                {/* Rotating Hero Images - Smooth 2s crossfade to eliminate black gaps */}
                 {heroImages.map((img, index) => (
                     <Image
                         key={img.id}
                         src={img.src}
                         alt=""
                         fill
-                        className={`object-cover transition-opacity duration-1000 ${index === activeHeroImage ? 'opacity-100' : 'opacity-0'
+                        className={`object-cover transition-opacity duration-[2000ms] ease-in-out ${index === activeHeroImage ? 'opacity-100' : 'opacity-0'
                             }`}
-                        priority={index === 0}
+                        priority={index <= 2}
                     />
                 ))}
             </motion.div>

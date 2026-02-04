@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
-import { Avatar, useProfile } from '@/components/ProfileEditor';
+import { Avatar, useProfile, SECONDARY_LANGUAGES } from '@/components/ProfileEditor';
 import { Navigation } from '@/components/Navigation';
 import { SettingsIcon, CameraIcon, PlusIcon } from '@/components/icons';
 
@@ -27,6 +27,9 @@ function ProfilePageContent() {
 
     // Use real user data with fallbacks
     const displayName = user?.displayName || profile?.displayName || 'Your Name';
+    const displayNameSecondary = profile?.displayNameSecondary;
+    const secondaryLanguage = profile?.secondaryLanguage;
+    const secondaryLangInfo = SECONDARY_LANGUAGES.find(l => l.code === secondaryLanguage);
     const username = user?.username || profile?.username || 'username';
     const bio = user?.bio || profile?.bio || 'Add a bio to tell people about yourself';
     const avatarUrl = user?.avatarUrl || profile?.avatarCustomUrl;
@@ -93,8 +96,27 @@ function ProfilePageContent() {
 
                             {/* Info */}
                             <div className="flex-1">
-                                <div className="flex flex-col md:flex-row md:items-center gap-3 mb-3">
-                                    <h1 className="text-2xl md:text-3xl font-bold text-white">{displayName}</h1>
+                                <div className="flex flex-col md:flex-row md:items-start gap-3 mb-3">
+                                    {/* Name Display - Primary + Secondary Language */}
+                                    <div className="flex flex-col">
+                                        <h1 className="text-2xl md:text-3xl font-bold text-white">{displayName}</h1>
+                                        {/* Secondary Language Name */}
+                                        {displayNameSecondary && (
+                                            <span
+                                                className="text-lg text-white/60 mt-0.5"
+                                                dir={secondaryLangInfo?.direction || 'ltr'}
+                                                style={{
+                                                    fontFamily: secondaryLanguage === 'ar' || secondaryLanguage === 'fa' || secondaryLanguage === 'ur' || secondaryLanguage === 'he'
+                                                        ? '"Noto Sans Arabic", "Segoe UI", sans-serif'
+                                                        : secondaryLanguage === 'zh' || secondaryLanguage === 'ja'
+                                                            ? '"Noto Sans CJK", "Segoe UI", sans-serif'
+                                                            : undefined
+                                                }}
+                                            >
+                                                {displayNameSecondary}
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="flex items-center gap-2">
                                         <span className="px-3 py-1 rounded-full bg-white/10 text-white/70 text-sm">@{username}</span>
                                         {user?.isVerified && (

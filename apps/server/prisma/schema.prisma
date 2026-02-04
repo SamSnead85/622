@@ -26,6 +26,8 @@ model User {
   phone           String?   @unique
   username        String    @unique
   displayName     String
+  displayNameSecondary String?   // Name in secondary language (Arabic, Chinese, etc.)
+  secondaryLanguage    String?   // Language code: 'ar', 'zh', 'hi', 'ja', 'ko', etc.
   bio             String?
   website         String?
   avatarUrl       String?
