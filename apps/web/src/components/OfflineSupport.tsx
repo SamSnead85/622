@@ -104,7 +104,7 @@ export function OfflineBanner() {
                         <div className="flex items-center gap-2">
                             <span className="text-lg">📡</span>
                             <div>
-                                <p className="font-medium">You're offline</p>
+                                <p className="font-medium">You&apos;re offline</p>
                                 <p className="text-sm opacity-75">
                                     Some features may be unavailable until you reconnect
                                 </p>
