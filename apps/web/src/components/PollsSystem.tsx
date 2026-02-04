@@ -77,8 +77,8 @@ interface PollCardProps {
 
 export function PollCard({ poll, onVote, onViewResults }: PollCardProps) {
     const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set(poll.userVotes || []));
-    const isEnded = poll.status === 'ended' || (poll.endsAt && poll.endsAt < new Date());
-    const canShowResults = poll.showResults === 'always' || (poll.showResults === 'after_vote' && poll.hasVoted) || isEnded;
+    const isEnded = poll.status === 'ended' || (poll.endsAt ? poll.endsAt < new Date() : false);
+    const canShowResults: boolean = poll.showResults === 'always' || (poll.showResults === 'after_vote' && poll.hasVoted) || isEnded;
     const canVote = !poll.hasVoted && !isEnded;
     const winningOption = canShowResults ? poll.options.reduce((a, b) => a.votes > b.votes ? a : b) : null;
 

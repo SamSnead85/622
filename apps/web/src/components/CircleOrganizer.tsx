@@ -188,7 +188,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, onStatusChange, onAssign }: TaskCardProps) {
-    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
+    const isOverdue = task.dueDate ? new Date(task.dueDate) < new Date() && task.status !== 'completed' : false;
 
     return (
         <motion.div
@@ -446,8 +446,8 @@ export function CircleOrganizer({
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setActiveTab(tab.id)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${activeTab === tab.id
-                                ? 'bg-white text-gray-900'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10'
+                            ? 'bg-white text-gray-900'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10'
                             }`}
                     >
                         <span>{tab.icon}</span>
@@ -479,8 +479,8 @@ export function CircleOrganizer({
                                         key={filter}
                                         onClick={() => setTaskFilter(filter)}
                                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${taskFilter === filter
-                                                ? 'bg-violet-500/20 text-violet-400'
-                                                : 'bg-white/5 text-white/50 hover:bg-white/10'
+                                            ? 'bg-violet-500/20 text-violet-400'
+                                            : 'bg-white/5 text-white/50 hover:bg-white/10'
                                             }`}
                                     >
                                         {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1).replace('-', ' ')}
