@@ -276,7 +276,7 @@ export default function PostDetailPage() {
                             onClick={handleLike}
                             className={`flex items-center gap-2 transition-colors ${post.isLiked ? 'text-rose-400' : 'text-white/60 hover:text-rose-400'}`}
                         >
-                            <HeartIcon size={24} filled={post.isLiked} />
+                            <span className="text-xl">{post.isLiked ? '❤️' : '🤍'}</span>
                             <span className="font-medium">{post.likes}</span>
                         </button>
                         <div className="flex items-center gap-2 text-white/60">

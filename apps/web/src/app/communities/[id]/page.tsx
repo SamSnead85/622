@@ -206,7 +206,35 @@ export default function CommunityDetailPage() {
                                 {Icons.plus}
                                 Post
                             </button>
-                            <button className="px-4 py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/15 transition-colors">
+                            <button
+                                onClick={() => {
+                                    const inviteUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/communities/${communityId}/join`;
+                                    if (navigator.share) {
+                                        navigator.share({
+                                            title: `Join ${community.name} on 0G`,
+                                            text: `You're invited to join ${community.name}!`,
+                                            url: inviteUrl,
+                                        });
+                                    } else {
+                                        navigator.clipboard.writeText(inviteUrl);
+                                        alert('Invite link copied to clipboard!');
+                                    }
+                                }}
+                                className="px-4 py-3 rounded-xl bg-green-500/20 text-green-400 font-medium hover:bg-green-500/30 transition-colors flex items-center gap-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+                                </svg>
+                                Invite
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/communities/${communityId}`;
+                                    navigator.clipboard.writeText(url);
+                                    alert('Link copied to clipboard!');
+                                }}
+                                className="px-4 py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/15 transition-colors"
+                            >
                                 {Icons.share}
                             </button>
                         </div>

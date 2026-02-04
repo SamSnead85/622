@@ -136,6 +136,144 @@ function NewMembersBanner() {
 }
 
 // ============================================
+// STORIES ROW - Friends & Active Users (Instagram/TikTok style)
+// ============================================
+function StoriesRow({ currentUser }: { currentUser: { id: string; username?: string; displayName?: string; avatarUrl?: string } }) {
+    const [users, setUsers] = useState<Array<{
+        id: string;
+        username: string;
+        displayName: string;
+        avatarUrl?: string;
+        hasStory?: boolean;
+        isLive?: boolean;
+    }>>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app'}/api/v1/users?limit=20`,
+                    {
+                        headers: {
+                            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                        },
+                        credentials: 'include',
+                    }
+                );
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Filter out current user
+                    const otherUsers = (data.users || []).filter((u: { id: string }) => u.id !== currentUser?.id);
+                    // Add random story/live status for visual variety
+                    const usersWithStatus = otherUsers.map((u: { id: string; username: string; displayName: string; avatarUrl?: string }) => ({
+                        ...u,
+                        hasStory: Math.random() > 0.5,
+                        isLive: Math.random() > 0.85,
+                    }));
+                    setUsers(usersWithStatus.slice(0, 15));
+                }
+            } catch (err) {
+                console.error('Error fetching users:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchUsers();
+    }, [currentUser?.id]);
+
+    if (isLoading) {
+        return (
+            <div className="mb-4 flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0">
+                        <div className="w-16 h-16 rounded-full bg-white/10 animate-pulse" />
+                        <div className="w-12 h-2 bg-white/10 rounded animate-pulse" />
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    if (users.length === 0) return null;
+
+    return (
+        <div className="mb-4 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-4 pb-2">
+                {/* Your Story */}
+                <Link
+                    href="/create"
+                    className="flex flex-col items-center gap-1 flex-shrink-0"
+                >
+                    <div className="relative">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 border-2 border-dashed border-[#00D4FF]/50 flex items-center justify-center">
+                            {currentUser?.avatarUrl ? (
+                                <img
+                                    src={currentUser.avatarUrl}
+                                    alt="Your story"
+                                    className="w-14 h-14 rounded-full object-cover opacity-60"
+                                />
+                            ) : (
+                                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold opacity-60">
+                                    {currentUser?.displayName?.[0] || 'U'}
+                                </div>
+                            )}
+                        </div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full bg-[#00D4FF] flex items-center justify-center border-2 border-[#0A0A0A]">
+                            <span className="text-xs text-black font-bold">+</span>
+                        </div>
+                    </div>
+                    <span className="text-xs text-white/60">Your Story</span>
+                </Link>
+
+                {/* Other Users */}
+                {users.map((user) => (
+                    <Link
+                        key={user.id}
+                        href={`/profile/${user.username}`}
+                        className="flex flex-col items-center gap-1 flex-shrink-0 group"
+                    >
+                        <div className="relative">
+                            <div className={`w-16 h-16 rounded-full p-0.5 ${user.isLive
+                                ? 'bg-gradient-to-br from-red-500 to-orange-500 animate-pulse'
+                                : user.hasStory
+                                    ? 'bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6]'
+                                    : 'bg-white/20'
+                                }`}>
+                                <div className="w-full h-full rounded-full bg-[#0A0A0A] p-0.5">
+                                    {user.avatarUrl ? (
+                                        <img
+                                            src={user.avatarUrl}
+                                            alt={user.displayName}
+                                            className="w-full h-full rounded-full object-cover group-hover:scale-105 transition-transform"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-sm">
+                                            {user.displayName?.[0] || 'U'}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            {user.isLive && (
+                                <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-red-500 text-[10px] font-bold text-white border border-[#0A0A0A]">
+                                    LIVE
+                                </div>
+                            )}
+                        </div>
+                        <span className="text-xs text-white/60 group-hover:text-white transition-colors max-w-16 truncate">
+                            {user.displayName?.split(' ')[0] || user.username}
+                        </span>
+                    </Link>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ============================================
 // FEATURED LOCATIONS - Sacred Sites & Live Streams  
 // ============================================
 const FEATURED_LOCATIONS = [
@@ -442,6 +580,9 @@ export default function DashboardPage() {
                             </div>
                         </div>
                     </header>
+
+                    {/* Stories Row - Friends & Active Users */}
+                    <StoriesRow currentUser={user} />
 
                     {/* New Members Welcome Banner */}
                     <NewMembersBanner />

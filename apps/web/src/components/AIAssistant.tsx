@@ -136,7 +136,7 @@ export function AIAssistant() {
 
     return (
         <>
-            {/* Floating Action Button */}
+            {/* Floating Action Button - Hidden on mobile */}
             <AnimatePresence>
                 {!isOpen && (
                     <motion.button
@@ -144,7 +144,7 @@ export function AIAssistant() {
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
                         onClick={() => setIsOpen(true)}
-                        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] shadow-lg shadow-purple-500/25 flex items-center justify-center hover:scale-105 transition-transform"
+                        className="hidden md:flex fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] shadow-lg shadow-purple-500/25 items-center justify-center hover:scale-105 transition-transform"
                     >
                         <CpuIcon size={24} className="text-white" />
                     </motion.button>
@@ -205,8 +205,8 @@ export function AIAssistant() {
                                         >
                                             <div
                                                 className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm ${msg.role === 'user'
-                                                        ? 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white rounded-br-md'
-                                                        : 'bg-white/10 text-white/90 rounded-bl-md'
+                                                    ? 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white rounded-br-md'
+                                                    : 'bg-white/10 text-white/90 rounded-bl-md'
                                                     }`}
                                             >
                                                 {msg.content}
