@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
@@ -42,6 +42,106 @@ function ZeroGLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
         <div className={`font-bold tracking-tight ${sizes[size]}`}>
             <span className="text-[#00D4FF]">0</span>
             <span className="text-white">G</span>
+        </div>
+    );
+}
+
+// ============================================
+// AUTOPLAY VIDEO - TikTok/Instagram style (plays when in view)
+// ============================================
+function AutoPlayVideo({ src, className = '' }: { src: string; className?: string }) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        // Intersection Observer for autoplay when in view
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.75) {
+                        // Video is mostly in view - play
+                        video.play().catch(() => {
+                            // Autoplay might be blocked, user needs to interact
+                            console.log('Autoplay blocked, user interaction required');
+                        });
+                        setIsPlaying(true);
+                    } else {
+                        // Video is out of view - pause
+                        video.pause();
+                        setIsPlaying(false);
+                    }
+                });
+            },
+            {
+                threshold: [0, 0.25, 0.5, 0.75, 1.0],
+                rootMargin: '-10% 0px',
+            }
+        );
+
+        observer.observe(video);
+
+        return () => {
+            observer.disconnect();
+        };
+    }, []);
+
+    const toggleMute = useCallback(() => {
+        if (videoRef.current) {
+            videoRef.current.muted = !videoRef.current.muted;
+            setIsMuted(!isMuted);
+        }
+    }, [isMuted]);
+
+    const togglePlay = useCallback(() => {
+        if (videoRef.current) {
+            if (isPlaying) {
+                videoRef.current.pause();
+            } else {
+                videoRef.current.play();
+            }
+            setIsPlaying(!isPlaying);
+        }
+    }, [isPlaying]);
+
+    return (
+        <div className="relative group">
+            <video
+                ref={videoRef}
+                src={src}
+                className={`w-full max-h-[600px] object-contain bg-black ${className}`}
+                loop
+                muted={isMuted}
+                playsInline
+                preload="metadata"
+            />
+            {/* Play/Pause Overlay */}
+            <div
+                className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                onClick={togglePlay}
+            >
+                {!isPlaying && (
+                    <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center">
+                        <span className="text-3xl">▶️</span>
+                    </div>
+                )}
+            </div>
+            {/* Mute/Unmute Button */}
+            <button
+                onClick={toggleMute}
+                className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+                <span className="text-lg">{isMuted ? '🔇' : '🔊'}</span>
+            </button>
+            {/* Progress indicator at bottom */}
+            {isPlaying && (
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                    <div className="h-full bg-[#00D4FF] animate-pulse" style={{ width: '100%' }} />
+                </div>
+            )}
         </div>
     );
 }
@@ -138,15 +238,29 @@ function NewMembersBanner() {
 // ============================================
 // STORIES ROW - Friends & Active Users (Instagram/TikTok style)
 // ============================================
+const FALLBACK_USERS = [
+    { id: 'invite-1', username: 'invite', displayName: 'Invite Friends', emoji: '👥', isInvite: true },
+    { id: 'explore-1', username: 'explore', displayName: 'Explore', emoji: '🔍', isExplore: true },
+    { id: 'demo-1', username: 'traveler', displayName: 'Traveler', emoji: '✈️', hasStory: true },
+    { id: 'demo-2', username: 'foodie', displayName: 'Foodie', emoji: '🍜', hasStory: true },
+    { id: 'demo-3', username: 'artist', displayName: 'Artist', emoji: '🎨', hasStory: true },
+    { id: 'demo-4', username: 'musician', displayName: 'Musician', emoji: '🎵', hasStory: true },
+    { id: 'demo-5', username: 'gamer', displayName: 'Gamer', emoji: '🎮', isLive: true },
+    { id: 'demo-6', username: 'fitness', displayName: 'Fitness', emoji: '💪', hasStory: true },
+];
+
 function StoriesRow({ currentUser }: { currentUser: { id: string; username?: string; displayName?: string; avatarUrl?: string } }) {
     const [users, setUsers] = useState<Array<{
         id: string;
         username: string;
         displayName: string;
         avatarUrl?: string;
+        emoji?: string;
         hasStory?: boolean;
         isLive?: boolean;
-    }>>([]);
+        isInvite?: boolean;
+        isExplore?: boolean;
+    }>>(FALLBACK_USERS); // Start with fallback users
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -167,16 +281,21 @@ function StoriesRow({ currentUser }: { currentUser: { id: string; username?: str
                     const data = await response.json();
                     // Filter out current user
                     const otherUsers = (data.users || []).filter((u: { id: string }) => u.id !== currentUser?.id);
-                    // Add random story/live status for visual variety
-                    const usersWithStatus = otherUsers.map((u: { id: string; username: string; displayName: string; avatarUrl?: string }) => ({
-                        ...u,
-                        hasStory: Math.random() > 0.5,
-                        isLive: Math.random() > 0.85,
-                    }));
-                    setUsers(usersWithStatus.slice(0, 15));
+                    if (otherUsers.length > 0) {
+                        // Add random story/live status for visual variety
+                        const usersWithStatus = otherUsers.map((u: { id: string; username: string; displayName: string; avatarUrl?: string }) => ({
+                            ...u,
+                            hasStory: Math.random() > 0.5,
+                            isLive: Math.random() > 0.85,
+                        }));
+                        setUsers(usersWithStatus.slice(0, 15));
+                    }
+                    // If no users returned, keep fallback users
                 }
+                // If API fails, keep fallback users
             } catch (err) {
                 console.error('Error fetching users:', err);
+                // Keep fallback users on error
             } finally {
                 setIsLoading(false);
             }
@@ -185,20 +304,7 @@ function StoriesRow({ currentUser }: { currentUser: { id: string; username?: str
         fetchUsers();
     }, [currentUser?.id]);
 
-    if (isLoading) {
-        return (
-            <div className="mb-4 flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0">
-                        <div className="w-16 h-16 rounded-full bg-white/10 animate-pulse" />
-                        <div className="w-12 h-2 bg-white/10 rounded animate-pulse" />
-                    </div>
-                ))}
-            </div>
-        );
-    }
-
-    if (users.length === 0) return null;
+    // Always render the Stories row
 
     return (
         <div className="mb-4 overflow-x-auto scrollbar-hide">
@@ -230,44 +336,61 @@ function StoriesRow({ currentUser }: { currentUser: { id: string; username?: str
                 </Link>
 
                 {/* Other Users */}
-                {users.map((user) => (
-                    <Link
-                        key={user.id}
-                        href={`/profile/${user.username}`}
-                        className="flex flex-col items-center gap-1 flex-shrink-0 group"
-                    >
-                        <div className="relative">
-                            <div className={`w-16 h-16 rounded-full p-0.5 ${user.isLive
-                                ? 'bg-gradient-to-br from-red-500 to-orange-500 animate-pulse'
-                                : user.hasStory
-                                    ? 'bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6]'
-                                    : 'bg-white/20'
-                                }`}>
-                                <div className="w-full h-full rounded-full bg-[#0A0A0A] p-0.5">
-                                    {user.avatarUrl ? (
-                                        <img
-                                            src={user.avatarUrl}
-                                            alt={user.displayName}
-                                            className="w-full h-full rounded-full object-cover group-hover:scale-105 transition-transform"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-sm">
-                                            {user.displayName?.[0] || 'U'}
-                                        </div>
-                                    )}
+                {users.map((user) => {
+                    // Determine the href based on user type
+                    const href = user.isInvite
+                        ? '/invite'
+                        : user.isExplore
+                            ? '/explore'
+                            : `/profile/${user.username}`;
+
+                    return (
+                        <Link
+                            key={user.id}
+                            href={href}
+                            className="flex flex-col items-center gap-1 flex-shrink-0 group"
+                        >
+                            <div className="relative">
+                                <div className={`w-16 h-16 rounded-full p-0.5 ${user.isLive
+                                    ? 'bg-gradient-to-br from-red-500 to-orange-500 animate-pulse'
+                                    : user.hasStory
+                                        ? 'bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6]'
+                                        : user.isInvite
+                                            ? 'bg-gradient-to-br from-green-500 to-emerald-500'
+                                            : user.isExplore
+                                                ? 'bg-gradient-to-br from-purple-500 to-pink-500'
+                                                : 'bg-white/20'
+                                    }`}>
+                                    <div className="w-full h-full rounded-full bg-[#0A0A0A] p-0.5">
+                                        {user.avatarUrl ? (
+                                            <img
+                                                src={user.avatarUrl}
+                                                alt={user.displayName}
+                                                className="w-full h-full rounded-full object-cover group-hover:scale-105 transition-transform"
+                                            />
+                                        ) : user.emoji ? (
+                                            <div className="w-full h-full rounded-full bg-gradient-to-br from-[#1a1a2e] to-[#16213e] flex items-center justify-center text-2xl group-hover:scale-105 transition-transform">
+                                                {user.emoji}
+                                            </div>
+                                        ) : (
+                                            <div className="w-full h-full rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-sm">
+                                                {user.displayName?.[0] || 'U'}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
+                                {user.isLive && (
+                                    <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-red-500 text-[10px] font-bold text-white border border-[#0A0A0A]">
+                                        LIVE
+                                    </div>
+                                )}
                             </div>
-                            {user.isLive && (
-                                <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-red-500 text-[10px] font-bold text-white border border-[#0A0A0A]">
-                                    LIVE
-                                </div>
-                            )}
-                        </div>
-                        <span className="text-xs text-white/60 group-hover:text-white transition-colors max-w-16 truncate">
-                            {user.displayName?.split(' ')[0] || user.username}
-                        </span>
-                    </Link>
-                ))}
+                            <span className="text-xs text-white/60 group-hover:text-white transition-colors max-w-16 truncate">
+                                {user.displayName?.split(' ')[0] || user.username}
+                            </span>
+                        </Link>
+                    );
+                })}
             </div>
         </div>
     );
@@ -772,11 +895,7 @@ export default function DashboardPage() {
                                         {post.mediaUrl && (
                                             <div className="relative">
                                                 {post.mediaType === 'VIDEO' ? (
-                                                    <video
-                                                        src={post.mediaUrl}
-                                                        controls
-                                                        className="w-full max-h-[500px] object-contain bg-black"
-                                                    />
+                                                    <AutoPlayVideo src={post.mediaUrl} />
                                                 ) : (
                                                     <img
                                                         src={post.mediaUrl}
