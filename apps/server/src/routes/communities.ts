@@ -92,6 +92,7 @@ router.get('/my', authenticate, async (req: AuthRequest, res, next) => {
 router.get('/:idOrSlug', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { idOrSlug } = req.params;
+        console.log('[Communities] Fetching community by ID/slug:', idOrSlug);
 
         // Try to find by ID first, then by slug
         let community = await prisma.community.findUnique({
@@ -114,6 +115,8 @@ router.get('/:idOrSlug', optionalAuth, async (req: AuthRequest, res, next) => {
             },
         });
 
+        console.log('[Communities] Found by ID:', !!community);
+
         // If not found by ID, try by slug
         if (!community) {
             community = await prisma.community.findUnique({
@@ -135,9 +138,11 @@ router.get('/:idOrSlug', optionalAuth, async (req: AuthRequest, res, next) => {
                     },
                 },
             });
+            console.log('[Communities] Found by slug:', !!community);
         }
 
         if (!community) {
+            console.log('[Communities] Community not found for:', idOrSlug);
             throw new AppError('Community not found', 404);
         }
 
@@ -161,6 +166,7 @@ router.get('/:idOrSlug', optionalAuth, async (req: AuthRequest, res, next) => {
             role: membership?.role || null,
         });
     } catch (error) {
+        console.error('[Communities] Error fetching community:', error);
         next(error);
     }
 });
