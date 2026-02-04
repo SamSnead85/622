@@ -6,6 +6,86 @@ import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
+// GET /api/v1/users - List all users
+router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { cursor, limit = '20' } = req.query;
+
+        const users = await prisma.user.findMany({
+            take: parseInt(limit as string) + 1,
+            ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                username: true,
+                displayName: true,
+                bio: true,
+                avatarUrl: true,
+                isVerified: true,
+                _count: {
+                    select: { followers: true },
+                },
+            },
+        });
+
+        const hasMore = users.length > parseInt(limit as string);
+        const results = hasMore ? users.slice(0, -1) : users;
+
+        res.json({
+            users: results.map((u) => ({
+                ...u,
+                followersCount: u._count.followers,
+            })),
+            nextCursor: hasMore ? results[results.length - 1].id : null,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/users/search - Search users by name or username
+router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { q, limit = '20' } = req.query;
+
+        if (!q || typeof q !== 'string') {
+            return res.json({ users: [] });
+        }
+
+        const searchTerm = q.toLowerCase();
+
+        const users = await prisma.user.findMany({
+            where: {
+                OR: [
+                    { username: { contains: searchTerm, mode: 'insensitive' } },
+                    { displayName: { contains: searchTerm, mode: 'insensitive' } },
+                ],
+            },
+            take: parseInt(limit as string),
+            select: {
+                id: true,
+                username: true,
+                displayName: true,
+                bio: true,
+                avatarUrl: true,
+                isVerified: true,
+                _count: {
+                    select: { followers: true },
+                },
+            },
+        });
+
+        res.json({
+            users: users.map((u) => ({
+                ...u,
+                followersCount: u._count.followers,
+            })),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // GET /api/v1/users/:username
 router.get('/:username', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
