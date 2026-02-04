@@ -599,7 +599,7 @@ function FeaturedLocationCard({ location, index }: { location: typeof FEATURED_L
     return (
         <motion.div
             className="relative group cursor-pointer w-full"
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
             whileHover={{ y: -4, scale: 1.02 }}
@@ -754,7 +754,7 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
                 className="lg:hidden fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] shadow-lg shadow-[#00D4FF]/30 flex items-center justify-center"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                initial={{ scale: 0, opacity: 0 }}
+                initial={false}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             >
@@ -905,7 +905,7 @@ export default function DashboardPage() {
                             {/* Quick post with privacy controls */}
                             <motion.div
                                 className="bg-white/[0.02] rounded-2xl border border-white/5 p-4"
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={false}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
                             >
@@ -974,7 +974,7 @@ export default function DashboardPage() {
                             {/* Your Feed - Real Posts from API */}
                             <motion.div
                                 className="space-y-4"
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={false}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4 }}
                             >
@@ -1143,7 +1143,7 @@ export default function DashboardPage() {
                             {/* People to Follow - Real Users */}
                             <motion.div
                                 className="bg-white/[0.02] rounded-2xl border border-white/5 p-4"
-                                initial={{ opacity: 0, x: 20 }}
+                                initial={false}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.35 }}
                             >
@@ -1156,7 +1156,7 @@ export default function DashboardPage() {
 
                             {/* Data Ownership - No Lock-in */}
                             <motion.div
-                                initial={{ opacity: 0, x: 20 }}
+                                initial={false}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.5 }}
                             >
@@ -1166,7 +1166,7 @@ export default function DashboardPage() {
                             {/* Privacy & Latency Indicators */}
                             <motion.div
                                 className="bg-white/[0.02] rounded-2xl border border-white/5 p-5"
-                                initial={{ opacity: 0, x: 20 }}
+                                initial={false}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.55 }}
                             >
@@ -1206,7 +1206,7 @@ export default function DashboardPage() {
                             {/* Invite Card */}
                             <motion.div
                                 className="bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 rounded-2xl border border-[#00D4FF]/20 p-5"
-                                initial={{ opacity: 0, x: 20 }}
+                                initial={false}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.6 }}
                             >
