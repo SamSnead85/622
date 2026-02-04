@@ -13,7 +13,13 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
 
         const { cursor, limit = '10', type = 'foryou' } = req.query;
 
-        let whereClause: any = { isPublic: true };
+        // Include public posts OR user's own posts
+        let whereClause: any = {
+            OR: [
+                { isPublic: true },
+                { userId: req.userId }
+            ]
+        };
 
         if (type === 'following') {
             // Get posts from users the current user follows
