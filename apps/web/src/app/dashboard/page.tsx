@@ -338,82 +338,120 @@ export default function DashboardPage() {
             {/* Main Content */}
             <div className="lg:pl-20 xl:pl-64">
                 <div className="max-w-6xl mx-auto px-4 lg:px-8 py-8 pb-24 lg:pb-8">
-                    {/* Header with Profile */}
-                    <motion.div
-                        className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        <div>
-                            <h1 className="text-2xl md:text-3xl font-bold text-white">
-                                Welcome back{user.displayName ? `, ${user.displayName.split(' ')[0]}` : ''}
-                            </h1>
-                            <p className="text-white/50 text-sm md:text-base">Discover what&apos;s happening around the world</p>
-                        </div>
-
-                        {/* Profile Quick Access */}
-                        <Link
-                            href="/profile"
-                            className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
-                        >
-                            {user.avatarUrl ? (
-                                <img
-                                    src={user.avatarUrl}
-                                    alt={user.displayName || 'Profile'}
-                                    className="w-10 h-10 rounded-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold">
-                                    {user.displayName?.[0] || 'U'}
-                                </div>
-                            )}
-                            <div className="hidden sm:block">
-                                <p className="font-semibold text-white text-sm">{user.displayName || 'Your Profile'}</p>
-                                <p className="text-xs text-white/50">View profile & followers</p>
-                            </div>
-                            <span className="text-white/40 text-lg">→</span>
-                        </Link>
-                    </motion.div>
-
-                    {/* Stories / Moments Bar */}
-                    <motion.section
-                        className="mb-8"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.15 }}
-                    >
-                        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                            {/* Create Story */}
-                            <Link href="/create" className="flex flex-col items-center gap-2 flex-shrink-0">
-                                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 border-2 border-dashed border-[#00D4FF]/50 flex items-center justify-center hover:border-[#00D4FF] transition-colors">
-                                    <span className="text-2xl">+</span>
-                                </div>
-                                <span className="text-xs text-white/60">Your Story</span>
-                            </Link>
-
-                            {/* Placeholder stories - will be real user stories when API is connected */}
-                            {[
-                                { name: 'Invite', icon: '🚀', gradient: 'from-[#00D4FF] to-[#8B5CF6]', href: '/invite' },
-                                { name: 'Live', icon: '📺', gradient: 'from-red-500 to-orange-500', href: '/campfire' },
-                                { name: 'Games', icon: '🎮', gradient: 'from-purple-500 to-pink-500', href: '/games' },
-                                { name: 'Explore', icon: '🔍', gradient: 'from-green-500 to-teal-500', href: '/explore' },
-                            ].map((item, i) => (
-                                <Link
-                                    key={i}
-                                    href={item.href}
-                                    className="flex flex-col items-center gap-2 flex-shrink-0"
-                                >
-                                    <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br ${item.gradient} p-[3px]`}>
-                                        <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
-                                            <span className="text-2xl">{item.icon}</span>
+                    {/* Sticky Header - No animation to prevent flash */}
+                    <header className="mb-6 sticky top-0 z-20 -mx-4 lg:-mx-8 px-4 lg:px-8 py-4 bg-black/80 backdrop-blur-xl border-b border-white/5">
+                        <div className="flex items-center justify-between">
+                            {/* Welcome & Profile */}
+                            <div className="flex items-center gap-4">
+                                <Link href="/profile">
+                                    {user.avatarUrl ? (
+                                        <img
+                                            src={user.avatarUrl}
+                                            alt={user.displayName || 'Profile'}
+                                            className="w-12 h-12 rounded-full object-cover ring-2 ring-[#00D4FF]/30"
+                                        />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-lg">
+                                            {user.displayName?.[0] || 'U'}
                                         </div>
-                                    </div>
-                                    <span className="text-xs text-white/60">{item.name}</span>
+                                    )}
                                 </Link>
-                            ))}
+                                <div>
+                                    <h1 className="text-xl md:text-2xl font-bold text-white">
+                                        Welcome back{user.displayName ? `, ${user.displayName.split(' ')[0]}` : ''}
+                                    </h1>
+                                    <p className="text-white/50 text-sm">Your 0G social hub</p>
+                                </div>
+                            </div>
+
+                            {/* Online Friends Indicator */}
+                            <div className="flex items-center gap-4">
+                                {/* Online friends */}
+                                <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
+                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                    <span className="text-sm text-white/70">
+                                        <span className="text-green-400 font-medium">3</span> friends online
+                                    </span>
+                                </div>
+
+                                {/* Notifications */}
+                                <Link href="/notifications" className="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                                    <span className="text-xl">🔔</span>
+                                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white">2</span>
+                                </Link>
+
+                                {/* Settings */}
+                                <Link href="/settings" className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                                    <span className="text-xl">⚙️</span>
+                                </Link>
+                            </div>
                         </div>
-                    </motion.section>
+                    </header>
+
+                    {/* Network Activity Bar - Who's online & recent activity */}
+                    <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-white/[0.03] to-white/[0.01] border border-white/5">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-semibold text-white/80">Network Activity</h3>
+                            <span className="text-xs text-white/40">Live</span>
+                        </div>
+                        <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide">
+                            {/* Online friends avatars */}
+                            {[
+                                { name: 'Sarah', status: 'online' },
+                                { name: 'Ahmed', status: 'online' },
+                                { name: 'Lisa', status: 'online' },
+                                { name: 'Omar', status: 'away' },
+                                { name: 'Mia', status: 'away' },
+                            ].map((friend, i) => (
+                                <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0">
+                                    <div className="relative">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center text-white text-sm font-medium">
+                                            {friend.name[0]}
+                                        </div>
+                                        <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black ${friend.status === 'online' ? 'bg-green-500' : 'bg-yellow-500'
+                                            }`} />
+                                    </div>
+                                    <span className="text-[10px] text-white/50">{friend.name}</span>
+                                </div>
+                            ))}
+
+                            {/* Divider */}
+                            <div className="w-px h-10 bg-white/10 mx-2 flex-shrink-0" />
+
+                            {/* Recent activity feed */}
+                            <div className="flex-1 min-w-[200px] flex-shrink-0">
+                                <div className="space-y-1">
+                                    <p className="text-xs text-white/60">
+                                        <span className="text-[#00D4FF]">Sarah</span> posted a new moment
+                                        <span className="text-white/30 ml-2">2m ago</span>
+                                    </p>
+                                    <p className="text-xs text-white/60">
+                                        <span className="text-[#00D4FF]">Ahmed</span> is watching live from Mecca
+                                        <span className="text-white/30 ml-2">5m ago</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Quick Actions Bar */}
+                    <div className="mb-6 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                        {[
+                            { name: 'Share Moment', icon: '📸', href: '/create', gradient: 'from-[#00D4FF] to-[#0088CC]' },
+                            { name: 'Invite Friends', icon: '🚀', href: '/invite', gradient: 'from-[#8B5CF6] to-[#6D28D9]' },
+                            { name: 'Go Live', icon: '📺', href: '/campfire', gradient: 'from-red-500 to-orange-500' },
+                            { name: 'Find People', icon: '👥', href: '/explore', gradient: 'from-green-500 to-teal-500' },
+                        ].map((action, i) => (
+                            <Link
+                                key={i}
+                                href={action.href}
+                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r ${action.gradient} text-white font-medium text-sm hover:opacity-90 transition-opacity flex-shrink-0`}
+                            >
+                                <span>{action.icon}</span>
+                                <span>{action.name}</span>
+                            </Link>
+                        ))}
+                    </div>
 
                     {/* Featured Locations - 2 column grid */}
                     <motion.section
