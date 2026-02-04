@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { ReactionSpectrum, IntentionBadge, REACTION_SPECTRUM } from '@/components/ReactionSpectrum';
+import { DataOwnershipPanel, PrivacyFirstBadge, LiveLatencyIndicator } from '@/components/PlatformDifferentiators';
 
 // ============================================
 // 0G LOGO COMPONENT
@@ -660,46 +662,75 @@ export default function DashboardPage() {
                             </motion.div>
                         </div>
 
-                        {/* Sidebar */}
+                        {/* Sidebar - 0G Differentiators */}
                         <div className="space-y-6">
-                            {/* Invite Friends Card */}
+                            {/* Data Ownership - No Lock-in */}
                             <motion.div
-                                className="bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 rounded-2xl border border-[#00D4FF]/20 p-6"
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.5 }}
                             >
-                                <div className="text-3xl mb-3">👋</div>
-                                <h3 className="text-lg font-semibold text-white mb-2">Invite Your People</h3>
-                                <p className="text-sm text-white/50 mb-4">
-                                    Zero Gravity is better with your tribe. Invite family and friends to join.
-                                </p>
-                                <Link
-                                    href="/communities/create"
-                                    className="block w-full py-2.5 rounded-xl bg-[#00D4FF] text-black text-center font-semibold text-sm hover:opacity-90 transition-opacity"
-                                >
-                                    Create a Tribe
-                                </Link>
+                                <DataOwnershipPanel />
                             </motion.div>
 
-                            {/* Your Communities */}
+                            {/* Privacy & Latency Indicators */}
                             <motion.div
                                 className="bg-white/[0.02] rounded-2xl border border-white/5 p-5"
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.55 }}
+                            >
+                                <h3 className="text-sm font-semibold text-white mb-4">Why 0G is Different</h3>
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                                        <span className="text-lg">🔓</span>
+                                        <div>
+                                            <p className="text-xs font-medium text-white">No Platform Lock-in</p>
+                                            <p className="text-[10px] text-white/40">Export all data anytime</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                                        <span className="text-lg">💰</span>
+                                        <div>
+                                            <p className="text-xs font-medium text-white">Creators Keep 90%</p>
+                                            <p className="text-[10px] text-white/40">vs 50% on TikTok</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                                        <span className="text-lg">⚡</span>
+                                        <div>
+                                            <p className="text-xs font-medium text-white">&lt;1s Live Latency</p>
+                                            <p className="text-[10px] text-white/40">Others: 3-5s delay</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                                        <span className="text-lg">🛡️</span>
+                                        <div>
+                                            <p className="text-xs font-medium text-white">Privacy-First</p>
+                                            <p className="text-[10px] text-white/40">Your data stays yours</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            {/* Invite Card */}
+                            <motion.div
+                                className="bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 rounded-2xl border border-[#00D4FF]/20 p-5"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.6 }}
                             >
-                                <h3 className="text-lg font-semibold text-white mb-4">Your Tribes</h3>
-                                <div className="text-center py-6">
-                                    <div className="text-3xl mb-2">🏕️</div>
-                                    <p className="text-sm text-white/40 mb-3">No tribes yet</p>
-                                    <Link
-                                        href="/communities"
-                                        className="text-[#00D4FF] text-sm font-medium hover:underline"
-                                    >
-                                        Browse Communities
-                                    </Link>
-                                </div>
+                                <div className="text-2xl mb-2">👋</div>
+                                <h3 className="text-sm font-semibold text-white mb-1">Invite Your People</h3>
+                                <p className="text-xs text-white/50 mb-3">
+                                    0G is better with your tribe.
+                                </p>
+                                <Link
+                                    href="/invite"
+                                    className="block w-full py-2 rounded-xl bg-[#00D4FF] text-black text-center font-semibold text-sm hover:opacity-90 transition-opacity"
+                                >
+                                    Send Invites
+                                </Link>
                             </motion.div>
                         </div>
                     </div>
