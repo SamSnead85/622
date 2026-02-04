@@ -357,6 +357,14 @@ function ExplorePageContent() {
                                                     Message
                                                 </Link>
                                             </div>
+                                            {/* Invite to Tribe Button */}
+                                            <Link
+                                                href={`/communities?invite=${u.id}`}
+                                                className="mt-2 w-full px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500/20 to-violet-500/20 border border-purple-500/30 text-purple-300 text-sm font-medium hover:bg-purple-500/30 transition-colors text-center flex items-center justify-center gap-2"
+                                            >
+                                                <UsersIcon size={16} />
+                                                Invite to Tribe
+                                            </Link>
                                         </motion.div>
                                     ))}
                                 </div>
