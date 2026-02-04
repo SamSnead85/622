@@ -468,7 +468,7 @@ export function CaravanDashboard({ currentMember, members, meetings, deals }: Ca
                     Elite Founder Network
                 </h1>
                 <p className="text-white/60 text-lg">
-                    No more minimum viable Muslims. We're the elite who carry the heavy load.
+                    No more minimum viable Muslims. We&apos;re the elite who carry the heavy load.
                 </p>
             </div>
 
@@ -570,8 +570,8 @@ export function CaravanDashboard({ currentMember, members, meetings, deals }: Ca
             <div className="mt-12 p-8 rounded-2xl bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 text-center">
                 <p className="text-white/50 text-sm mb-2">Our Foundation</p>
                 <p className="text-xl text-white italic">
-                    "You are the best nation ever raised up for humanity—you enjoin what is right,
-                    forbid what is wrong, and believe in Allah."
+                    &ldquo;You are the best nation ever raised up for humanity—you enjoin what is right,
+                    forbid what is wrong, and believe in Allah.&rdquo;
                 </p>
                 <p className="text-amber-400 mt-2">— Quran 3:110</p>
             </div>

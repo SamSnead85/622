@@ -380,8 +380,8 @@ export function InvestorCard({ investor, onClick, onRequestIntro }: InvestorCard
                     onRequestIntro?.();
                 }}
                 className={`w-full py-2.5 rounded-xl font-medium text-sm ${investor.warmIntroRequired
-                        ? 'bg-white/5 text-white/60 hover:bg-white/10'
-                        : 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white'
+                    ? 'bg-white/5 text-white/60 hover:bg-white/10'
+                    : 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white'
                     }`}
             >
                 {investor.warmIntroRequired ? '🔒 Warm Intro Required' : 'Request Introduction'}
@@ -444,8 +444,8 @@ export function Marketplace({ listings, onListingClick }: MarketplaceProps) {
                 <button
                     onClick={() => setShowMuslimOwned(!showMuslimOwned)}
                     className={`px-4 py-2 rounded-xl font-medium transition-colors ${showMuslimOwned
-                            ? 'bg-violet-500/20 text-violet-400'
-                            : 'bg-white/5 text-white/60 hover:bg-white/10'
+                        ? 'bg-violet-500/20 text-violet-400'
+                        : 'bg-white/5 text-white/60 hover:bg-white/10'
                         }`}
                 >
                     💜 Muslim-Owned Only
@@ -579,7 +579,7 @@ export function InvestorNetwork({ investors, onInvestorClick, onRequestIntro }: 
             {/* Quote */}
             <div className="p-6 rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/20">
                 <p className="text-white/80 italic text-center">
-                    "How excellent is the wealth of a righteous man" — Hadith
+                    &ldquo;How excellent is the wealth of a righteous man&rdquo; — Hadith
                 </p>
             </div>
 
@@ -588,8 +588,8 @@ export function InvestorNetwork({ investors, onInvestorClick, onRequestIntro }: 
                 <button
                     onClick={() => setHalalOnly(!halalOnly)}
                     className={`px-4 py-2 rounded-xl font-medium transition-colors ${halalOnly
-                            ? 'bg-emerald-500/20 text-emerald-400'
-                            : 'bg-white/5 text-white/60 hover:bg-white/10'
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : 'bg-white/5 text-white/60 hover:bg-white/10'
                         }`}
                 >
                     ☪️ Halal Focus Only
@@ -597,8 +597,8 @@ export function InvestorNetwork({ investors, onInvestorClick, onRequestIntro }: 
                 <button
                     onClick={() => setActiveOnly(!activeOnly)}
                     className={`px-4 py-2 rounded-xl font-medium transition-colors ${activeOnly
-                            ? 'bg-violet-500/20 text-violet-400'
-                            : 'bg-white/5 text-white/60 hover:bg-white/10'
+                        ? 'bg-violet-500/20 text-violet-400'
+                        : 'bg-white/5 text-white/60 hover:bg-white/10'
                         }`}
                 >
                     🟢 Actively Investing

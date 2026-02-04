@@ -509,7 +509,7 @@ export function CoFounderMatching({ matches, onConnect, onViewProfile }: CoFound
             {/* Quote */}
             <div className="p-6 rounded-xl bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 text-center">
                 <p className="text-white/80 italic">
-                    "The believers are like a structure, each part strengthening the other" — Hadith
+                    &ldquo;The believers are like a structure, each part strengthening the other&rdquo; — Hadith
                 </p>
             </div>
 
