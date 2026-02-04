@@ -392,32 +392,7 @@ export default function DashboardPage() {
                         ))}
                     </div>
 
-                    {/* Featured Locations - 2 column grid */}
-                    <motion.section
-                        className="mb-10"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h2 className="text-xl font-semibold text-white">Featured Destinations</h2>
-                                <p className="text-sm text-white/40">Sacred and historic sites</p>
-                            </div>
-                            <Link href="/campfire" className="text-[#00D4FF] text-sm font-medium hover:underline">
-                                View all →
-                            </Link>
-                        </div>
 
-                        {/* Responsive grid - 2 columns on mobile, 3 on larger */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {FEATURED_LOCATIONS.slice(0, 4).map((location, i) => (
-                                <FeaturedLocationCard key={location.id} location={location} index={i} />
-                            ))}
-                        </div>
-                    </motion.section>
-
-                    {/* Main content grid */}
                     <div className="grid lg:grid-cols-3 gap-8">
                         {/* Feed - Main column */}
                         <div className="lg:col-span-2 space-y-6">
@@ -587,13 +562,33 @@ export default function DashboardPage() {
                                                 <span>{post.isLiked ? '❤️' : '🤍'}</span>
                                                 <span className="text-sm">{post.likes}</span>
                                             </button>
-                                            <button className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors">
+                                            <button
+                                                onClick={() => router.push(`/post/${post.id}`)}
+                                                className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors"
+                                            >
                                                 <span>💬</span>
                                                 <span className="text-sm">{post.commentsCount}</span>
                                             </button>
-                                            <button className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors">
+                                            <button
+                                                onClick={() => {
+                                                    const url = `${window.location.origin}/post/${post.id}`;
+                                                    navigator.clipboard.writeText(url);
+                                                    alert('Link copied to clipboard!');
+                                                }}
+                                                className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors"
+                                            >
                                                 <span>↗️</span>
                                                 <span className="text-sm">Share</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    // Repost functionality - creates a new post with reference
+                                                    router.push(`/create?repost=${post.id}`);
+                                                }}
+                                                className="flex items-center gap-2 text-white/60 hover:text-green-400 transition-colors ml-auto"
+                                            >
+                                                <span>🔄</span>
+                                                <span className="text-sm">Repost</span>
                                             </button>
                                         </div>
                                     </div>
