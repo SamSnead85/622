@@ -143,7 +143,7 @@ function CommunityCard({ community, index }: { community: Community; index: numb
 
             {/* Actions */}
             <div className="px-4 pb-4 flex gap-2">
-                <Link href={`/communities/${community.id}`} className="flex-1">
+                <Link href={`/communities/${community.slug || community.id}`} className="flex-1">
                     <motion.button
                         className="w-full py-2.5 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/15 transition-colors"
                         whileTap={{ scale: 0.98 }}
@@ -151,7 +151,7 @@ function CommunityCard({ community, index }: { community: Community; index: numb
                         View Tribe
                     </motion.button>
                 </Link>
-                <Link href={`/communities/${community.id}/settings`}>
+                <Link href={`/communities/${community.slug || community.id}/settings`}>
                     <motion.button
                         className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/20 transition-colors"
                         whileTap={{ scale: 0.95 }}

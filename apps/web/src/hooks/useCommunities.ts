@@ -9,6 +9,7 @@ import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 export interface Community {
     id: string;
     name: string;
+    slug: string;
     description: string;
     memberCount: number;
     isPrivate: boolean;
