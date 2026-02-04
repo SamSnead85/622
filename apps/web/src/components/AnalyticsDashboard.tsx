@@ -23,7 +23,7 @@ export interface ChartDataPoint {
 
 export interface DemographicData {
     category: string;
-    segments: { name: string; value: number; color: string }[];
+    segments: { label: string; value: number; color: string }[];
 }
 
 export interface ActivityHeatmapData {
@@ -70,7 +70,7 @@ export function StatCard({ metric, icon = '📊', color = 'cyan' }: StatCardProp
                 <span className="text-2xl">{icon}</span>
                 {metric.trend && (
                     <span className={`text-sm ${metric.trend === 'up' ? 'text-green-400' :
-                            metric.trend === 'down' ? 'text-red-400' : 'text-white/40'
+                        metric.trend === 'down' ? 'text-red-400' : 'text-white/40'
                         }`}>
                         {metric.trend === 'up' ? '↑' : metric.trend === 'down' ? '↓' : '→'}
                         {Math.abs(changePercent).toFixed(1)}%
@@ -404,8 +404,8 @@ export function AnalyticsDashboard({
                             key={range}
                             onClick={() => setDateRange(range)}
                             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${dateRange === range
-                                    ? 'bg-cyan-500/20 text-cyan-400'
-                                    : 'bg-white/5 text-white/60 hover:bg-white/10'
+                                ? 'bg-cyan-500/20 text-cyan-400'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10'
                                 }`}
                         >
                             {range}

@@ -72,6 +72,21 @@ export function useInvite() {
         }
     }, []);
 
+    // Fetch user's invite history
+    const fetchInvites = useCallback(async () => {
+        try {
+            const response = await apiFetch(INVITE_ENDPOINTS.base);
+
+            if (response.ok) {
+                const data = await response.json();
+                setInvites(data.invites || []);
+                setRemainingInvites(data.remainingToday ?? 10);
+            }
+        } catch (err) {
+            console.error('Error fetching invites:', err);
+        }
+    }, []);
+
     // Send email invite
     const sendEmailInvite = useCallback(async (email: string, message?: string): Promise<boolean> => {
         setIsLoading(true);
@@ -99,22 +114,7 @@ export function useInvite() {
         } finally {
             setIsLoading(false);
         }
-    }, []);
-
-    // Fetch user's invite history
-    const fetchInvites = useCallback(async () => {
-        try {
-            const response = await apiFetch(INVITE_ENDPOINTS.base);
-
-            if (response.ok) {
-                const data = await response.json();
-                setInvites(data.invites || []);
-                setRemainingInvites(data.remainingToday ?? 10);
-            }
-        } catch (err) {
-            console.error('Error fetching invites:', err);
-        }
-    }, []);
+    }, [fetchInvites]);
 
     // Validate an invite code (for signup flow)
     const validateCode = useCallback(async (code: string): Promise<{ valid: boolean; sender?: InviteSender }> => {
