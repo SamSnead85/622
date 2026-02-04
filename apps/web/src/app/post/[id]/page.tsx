@@ -183,7 +183,7 @@ export default function PostDetailPage() {
             <div className="min-h-screen bg-gradient-to-b from-[#0A0A0A] to-[#121212] flex flex-col items-center justify-center text-white">
                 <div className="text-6xl mb-4">😔</div>
                 <h1 className="text-2xl font-bold mb-2">Post Not Found</h1>
-                <p className="text-white/60 mb-6">This post may have been deleted or doesn't exist.</p>
+                <p className="text-white/60 mb-6">This post may have been deleted or doesn&apos;t exist.</p>
                 <Link
                     href="/dashboard"
                     className="px-6 py-3 rounded-xl bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity"
