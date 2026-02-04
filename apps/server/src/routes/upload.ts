@@ -117,7 +117,8 @@ router.post('/post', authenticate, upload.single('file'), async (req: MulterRequ
         const isVideo = isValidMediaType(file.mimetype, 'video');
 
         if (!isImage && !isVideo) {
-            res.status(400).json({ error: 'Invalid file type. Use image or video.' });
+            console.log('[UPLOAD] Rejected file type:', file.mimetype);
+            res.status(400).json({ error: `Invalid file type: ${file.mimetype}. Supported: images (JPG, PNG, GIF, WebP, HEIC) and videos (MP4, MOV, WebM).` });
             return;
         }
 

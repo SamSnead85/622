@@ -197,9 +197,9 @@ function getExtensionFromMime(mimeType: string): string {
  */
 export function isValidMediaType(mimeType: string, category: 'image' | 'video' | 'audio'): boolean {
     const allowed: Record<string, string[]> = {
-        image: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/avif'],
-        video: ['video/mp4', 'video/webm', 'video/quicktime'],
-        audio: ['audio/mpeg', 'audio/wav', 'audio/ogg'],
+        image: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/heic', 'image/heif'],
+        video: ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v', 'video/3gpp', 'video/3gpp2', 'video/mpeg', 'video/x-msvideo'],
+        audio: ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/x-m4a', 'audio/aac'],
     };
     return allowed[category]?.includes(mimeType) ?? false;
 }
