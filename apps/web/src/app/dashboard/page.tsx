@@ -787,42 +787,70 @@ export default function DashboardPage() {
                                             </div>
                                         )}
 
-                                        <div className="p-4 flex items-center gap-4 border-t border-white/5">
-                                            <button
-                                                onClick={() => likePost(post.id)}
-                                                className={`flex items-center gap-2 transition-colors ${post.isLiked ? 'text-rose-400' : 'text-white/60 hover:text-rose-400'}`}
-                                            >
-                                                <span>{post.isLiked ? '❤️' : '🤍'}</span>
-                                                <span className="text-sm">{post.likes}</span>
-                                            </button>
-                                            <button
-                                                onClick={() => router.push(`/post/${post.id}`)}
-                                                className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors"
-                                            >
-                                                <span>💬</span>
-                                                <span className="text-sm">{post.commentsCount}</span>
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    const url = `${window.location.origin}/post/${post.id}`;
-                                                    navigator.clipboard.writeText(url);
-                                                    alert('Link copied to clipboard!');
-                                                }}
-                                                className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors"
-                                            >
-                                                <span>↗️</span>
-                                                <span className="text-sm">Share</span>
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    // Repost functionality - creates a new post with reference
-                                                    router.push(`/create?repost=${post.id}`);
-                                                }}
-                                                className="flex items-center gap-2 text-white/60 hover:text-green-400 transition-colors ml-auto"
-                                            >
-                                                <span>🔄</span>
-                                                <span className="text-sm">Repost</span>
-                                            </button>
+                                        {/* Interaction Buttons - Large & Visible */}
+                                        <div className="p-4 border-t border-white/5">
+                                            <div className="flex items-center justify-between">
+                                                {/* Left side - reactions */}
+                                                <div className="flex items-center gap-4">
+                                                    {/* Like/Heart Button */}
+                                                    <button
+                                                        onClick={() => likePost(post.id)}
+                                                        className={`flex flex-col items-center gap-1 transition-all transform hover:scale-110 ${post.isLiked ? 'text-rose-500' : 'text-white/70 hover:text-rose-400'}`}
+                                                    >
+                                                        <span className="text-2xl">{post.isLiked ? '❤️' : '🤍'}</span>
+                                                        <span className="text-xs font-medium">{post.likes || 0}</span>
+                                                    </button>
+
+                                                    {/* Dislike Button */}
+                                                    <button
+                                                        className="flex flex-col items-center gap-1 text-white/70 hover:text-blue-400 transition-all transform hover:scale-110"
+                                                    >
+                                                        <span className="text-2xl">👎</span>
+                                                        <span className="text-xs font-medium">0</span>
+                                                    </button>
+
+                                                    {/* Comment Button */}
+                                                    <button
+                                                        onClick={() => router.push(`/post/${post.id}`)}
+                                                        className="flex flex-col items-center gap-1 text-white/70 hover:text-[#00D4FF] transition-all transform hover:scale-110"
+                                                    >
+                                                        <span className="text-2xl">💬</span>
+                                                        <span className="text-xs font-medium">{post.commentsCount || 0}</span>
+                                                    </button>
+                                                </div>
+
+                                                {/* Right side - share/repost */}
+                                                <div className="flex items-center gap-4">
+                                                    {/* Share Button */}
+                                                    <button
+                                                        onClick={() => {
+                                                            const url = `${window.location.origin}/post/${post.id}`;
+                                                            if (navigator.share) {
+                                                                navigator.share({
+                                                                    title: 'Check out this post on 0G',
+                                                                    url
+                                                                });
+                                                            } else {
+                                                                navigator.clipboard.writeText(url);
+                                                                alert('Link copied!');
+                                                            }
+                                                        }}
+                                                        className="flex flex-col items-center gap-1 text-white/70 hover:text-[#00D4FF] transition-all transform hover:scale-110"
+                                                    >
+                                                        <span className="text-2xl">📤</span>
+                                                        <span className="text-xs font-medium">Share</span>
+                                                    </button>
+
+                                                    {/* Repost Button */}
+                                                    <button
+                                                        onClick={() => router.push(`/create?repost=${post.id}`)}
+                                                        className="flex flex-col items-center gap-1 text-white/70 hover:text-green-400 transition-all transform hover:scale-110"
+                                                    >
+                                                        <span className="text-2xl">🔄</span>
+                                                        <span className="text-xs font-medium">Repost</span>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
