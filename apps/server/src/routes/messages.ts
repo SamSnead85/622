@@ -6,6 +6,78 @@ import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
+// GET /api/v1/messages - Alias for /conversations
+router.get('/', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const conversations = await prisma.conversationParticipant.findMany({
+            where: { userId: req.userId },
+            include: {
+                conversation: {
+                    include: {
+                        participants: {
+                            include: {
+                                user: {
+                                    select: {
+                                        id: true,
+                                        username: true,
+                                        displayName: true,
+                                        avatarUrl: true,
+                                        lastActiveAt: true,
+                                    },
+                                },
+                            },
+                        },
+                        messages: {
+                            take: 1,
+                            orderBy: { createdAt: 'desc' },
+                            include: {
+                                sender: {
+                                    select: {
+                                        id: true,
+                                        username: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                conversation: {
+                    updatedAt: 'desc',
+                },
+            },
+        });
+
+        const result = conversations.map((cp) => {
+            const otherParticipants = cp.conversation.participants
+                .filter((p) => p.userId !== req.userId)
+                .map((p) => p.user);
+
+            const lastMessage = cp.conversation.messages[0];
+
+            return {
+                id: cp.conversation.id,
+                isGroup: cp.conversation.isGroup,
+                groupName: cp.conversation.groupName,
+                participants: otherParticipants,
+                lastMessage: lastMessage ? {
+                    id: lastMessage.id,
+                    content: lastMessage.content,
+                    senderId: lastMessage.senderId,
+                    senderUsername: lastMessage.sender.username,
+                    createdAt: lastMessage.createdAt,
+                } : null,
+                updatedAt: cp.conversation.updatedAt,
+            };
+        });
+
+        res.json({ conversations: result });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // GET /api/v1/messages/conversations
 router.get('/conversations', authenticate, async (req: AuthRequest, res, next) => {
     try {

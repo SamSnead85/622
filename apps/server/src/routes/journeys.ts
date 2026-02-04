@@ -16,6 +16,63 @@ const createJourneySchema = z.object({
 });
 
 // ============================================
+// GET /api/v1/journeys
+// List all journeys (public videos)
+// ============================================
+router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { cursor, limit = '20' } = req.query;
+
+        const journeys = await prisma.post.findMany({
+            where: {
+                type: 'VIDEO',
+                mediaUrl: { not: null },
+                isPublic: true,
+            },
+            take: parseInt(limit as string) + 1,
+            cursor: cursor ? { id: cursor as string } : undefined,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true,
+                    },
+                },
+                _count: {
+                    select: {
+                        likes: true,
+                        comments: true,
+                    },
+                },
+            },
+        });
+
+        const hasMore = journeys.length > parseInt(limit as string);
+        const results = hasMore ? journeys.slice(0, -1) : journeys;
+
+        res.json({
+            journeys: results.map((j) => ({
+                id: j.id,
+                userId: j.userId,
+                user: j.user,
+                videoUrl: j.mediaUrl,
+                thumbnailUrl: j.thumbnailUrl,
+                caption: j.caption,
+                likes: j._count.likes,
+                comments: j._count.comments,
+                createdAt: j.createdAt,
+            })),
+            nextCursor: hasMore ? results[results.length - 1]?.id : null,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
 // GET /api/v1/journeys/feed
 // Get paginated journeys feed
 // ============================================

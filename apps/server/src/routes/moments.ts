@@ -20,6 +20,23 @@ const createMomentSchema = z.object({
 // ============================================
 
 /**
+ * GET /api/v1/moments
+ * Get all active moments (stories)
+ */
+router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        // If not authenticated, return empty array
+        if (!req.user?.id) {
+            return res.json({ moments: [] });
+        }
+        const moments = await momentService.getMomentsFeed(req.user.id);
+        res.json({ moments });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
  * GET /api/moments/feed
  * Get moments from people the user follows
  */
