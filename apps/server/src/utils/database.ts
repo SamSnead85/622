@@ -258,13 +258,16 @@ export function cacheInvalidate(pattern?: string): void {
 export async function transaction<T>(
     operations: ((tx: PrismaClient) => Promise<T>)[]
 ): Promise<T[]> {
-    return prisma.$transaction(
-        operations.map((op) => op(prisma)),
-        {
-            maxWait: 5000, // 5s max wait for transaction slot
-            timeout: 10000, // 10s max transaction duration
+    return prisma.$transaction(async (tx) => {
+        const results: T[] = [];
+        for (const op of operations) {
+            results.push(await op(tx as PrismaClient));
         }
-    );
+        return results;
+    }, {
+        maxWait: 5000, // 5s max wait for transaction slot
+        timeout: 10000, // 10s max transaction duration
+    });
 }
 
 // ============================================

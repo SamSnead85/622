@@ -86,11 +86,11 @@ export function rateLimit(options: RateLimitOptions = {}) {
         // Skip incrementing on failed requests if configured
         if (skipFailedRequests) {
             const originalEnd = res.end.bind(res);
-            res.end = function (chunk?: unknown, encoding?: unknown) {
+            res.end = function (chunk?: unknown, encoding?: BufferEncoding) {
                 if (res.statusCode >= 400 && entry) {
                     entry.count--;
                 }
-                return originalEnd(chunk, encoding);
+                return originalEnd(chunk, encoding as BufferEncoding);
             } as typeof res.end;
         }
 
