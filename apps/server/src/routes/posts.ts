@@ -6,6 +6,51 @@ import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
+// GET /api/v1/posts - List all public posts (no auth required)
+router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { cursor, limit = '20' } = req.query;
+
+        const posts = await prisma.post.findMany({
+            where: { isPublic: true },
+            take: parseInt(limit as string) + 1,
+            ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
+            orderBy: { createdAt: 'desc' },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true,
+                        isVerified: true,
+                    },
+                },
+                _count: {
+                    select: {
+                        likes: true,
+                        comments: true,
+                    },
+                },
+            },
+        });
+
+        const hasMore = posts.length > parseInt(limit as string);
+        const results = hasMore ? posts.slice(0, -1) : posts;
+
+        res.json({
+            posts: results.map((post) => ({
+                ...post,
+                likesCount: post._count.likes,
+                commentsCount: post._count.comments,
+            })),
+            nextCursor: hasMore ? results[results.length - 1]?.id : null,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // GET /api/v1/posts/feed
 router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
     try {
