@@ -120,10 +120,12 @@ function ReactionPicker({ onSelect, onClose }: { onSelect: (emoji: string) => vo
 // ============================================
 function NewChatModal({
     isOpen,
-    onClose
+    onClose,
+    onConversationStarted,
 }: {
     isOpen: boolean;
     onClose: () => void;
+    onConversationStarted?: (convo: Conversation) => void;
 }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Array<{
@@ -171,9 +173,26 @@ function NewChatModal({
         return () => clearTimeout(debounce);
     }, [searchQuery]);
 
-    const handleStartConversation = async (userId: string, displayName: string) => {
+    const handleStartConversation = async (user: { id: string; username: string; displayName: string; avatarUrl?: string }) => {
         try {
-            await startConversation(userId);
+            const result = await startConversation(user.id);
+            if (result.success && result.conversationId) {
+                // Create a minimal conversation object to pass back
+                const newConvo: Conversation = {
+                    id: result.conversationId,
+                    isGroup: false,
+                    participants: [{
+                        id: user.id,
+                        username: user.username,
+                        displayName: user.displayName,
+                        avatarUrl: user.avatarUrl,
+                    }],
+                    unreadCount: 0,
+                    isMuted: false,
+                    updatedAt: new Date().toISOString(),
+                };
+                onConversationStarted?.(newConvo);
+            }
             onClose();
         } catch (err) {
             console.error('Error starting conversation:', err);
@@ -241,7 +260,7 @@ function NewChatModal({
                         searchResults.map((user) => (
                             <button
                                 key={user.id}
-                                onClick={() => handleStartConversation(user.id, user.displayName)}
+                                onClick={() => handleStartConversation(user)}
                                 className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors"
                             >
                                 <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
@@ -433,6 +452,10 @@ function MessagesPageContent() {
                     <NewChatModal
                         isOpen={showNewChatModal}
                         onClose={() => setShowNewChatModal(false)}
+                        onConversationStarted={(convo) => {
+                            setSelectedConvo(convo);
+                            selectConversation(convo.id);
+                        }}
                     />
                 )}
             </AnimatePresence>

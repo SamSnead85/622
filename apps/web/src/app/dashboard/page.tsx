@@ -662,9 +662,9 @@ export default function DashboardPage() {
 
             {/* Main Content */}
             <div className="lg:pl-20 xl:pl-64">
-                <div className="max-w-6xl mx-auto px-4 lg:px-8 py-8 pb-24 lg:pb-8">
-                    {/* Sticky Header - No animation to prevent flash */}
-                    <header className="mb-6 sticky top-0 z-20 -mx-4 lg:-mx-8 px-4 lg:px-8 py-4 bg-black/80 backdrop-blur-xl border-b border-white/5">
+                <div className="max-w-6xl mx-auto px-4 lg:px-8 py-4 pb-24 lg:pb-8">
+                    {/* Sticky Header - Compact */}
+                    <header className="mb-4 sticky top-0 z-20 -mx-4 lg:-mx-8 px-4 lg:px-8 py-3 bg-black/80 backdrop-blur-xl border-b border-white/5">
                         <div className="flex items-center justify-between">
                             {/* Welcome & Profile */}
                             <div className="flex items-center gap-4">
@@ -710,10 +710,10 @@ export default function DashboardPage() {
                     {/* New Members Welcome Banner */}
                     <NewMembersBanner />
 
-                    {/* Invite Friends CTA - Build your network */}
-                    <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-[#00D4FF]/10 to-[#8B5CF6]/10 border border-[#00D4FF]/20">
+                    {/* Invite Friends CTA - Compact */}
+                    <div className="mb-4 p-3 rounded-xl bg-gradient-to-r from-[#00D4FF]/10 to-[#8B5CF6]/10 border border-[#00D4FF]/20">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
                                 <UsersIcon size={24} className="text-white" />
                             </div>
                             <div className="flex-1">
@@ -729,8 +729,8 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* Quick Actions Bar */}
-                    <div className="mb-6 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                    {/* Quick Actions Bar - Always visible */}
+                    <div className="mb-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                         {[
                             { name: 'Share Moment', Icon: CameraIcon, href: '/create', gradient: 'from-[#00D4FF] to-[#0088CC]' },
                             { name: 'Invite Friends', Icon: SendIcon, href: '/invite', gradient: 'from-[#8B5CF6] to-[#6D28D9]' },
@@ -740,7 +740,7 @@ export default function DashboardPage() {
                             <Link
                                 key={i}
                                 href={action.href}
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r ${action.gradient} text-white font-medium text-sm hover:opacity-90 transition-opacity flex-shrink-0`}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r ${action.gradient} text-white font-medium text-sm hover:opacity-90 transition-opacity flex-shrink-0 whitespace-nowrap`}
                             >
                                 <action.Icon size={18} />
                                 <span>{action.name}</span>
