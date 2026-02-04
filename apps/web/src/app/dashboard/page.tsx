@@ -359,7 +359,9 @@ function StoriesRow({ currentUser }: { currentUser: { id: string; username?: str
                         ? '/invite'
                         : user.isExplore
                             ? '/explore'
-                            : `/profile/${user.username}`;
+                            : user.hasStory || user.isLive
+                                ? `/stories/${user.id}`
+                                : `/profile/${user.username}`;
 
                     return (
                         <Link

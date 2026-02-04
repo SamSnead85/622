@@ -83,27 +83,75 @@ function CreateContent() {
         setError(null);
 
         try {
-            // Upload each media file and create post
-            // For now, we handle the first media item (most common case)
-            const mediaFile = media.length > 0 ? media[0].file : undefined;
+            const token = localStorage.getItem('0g_token');
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app';
 
-            const result = await createPost(caption, mediaFile);
+            // Handle Moment (Story) creation
+            if (contentType === 'moment') {
+                if (media.length === 0) {
+                    setError('Moments require a photo or video');
+                    setIsPosting(false);
+                    return;
+                }
 
-            if (result.success) {
-                // Clean up blob URLs
-                media.forEach(item => URL.revokeObjectURL(item.url));
-                // Redirect to dashboard
-                router.push('/dashboard');
+                // First upload the media file
+                const formData = new FormData();
+                formData.append('file', media[0].file);
+
+                const uploadRes = await fetch(`${API_URL}/api/v1/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    body: formData,
+                });
+
+                if (!uploadRes.ok) {
+                    throw new Error('Failed to upload media');
+                }
+
+                const uploadData = await uploadRes.json();
+
+                // Create moment with uploaded media URL
+                const momentRes = await fetch(`${API_URL}/api/v1/moments`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type: media[0].type === 'video' ? 'VIDEO' : 'IMAGE',
+                        mediaUrl: uploadData.url,
+                        caption: caption || undefined,
+                    }),
+                });
+
+                if (momentRes.ok) {
+                    media.forEach(item => URL.revokeObjectURL(item.url));
+                    router.push('/dashboard');
+                } else {
+                    const err = await momentRes.json();
+                    throw new Error(err.error || 'Failed to create moment');
+                }
             } else {
-                setError(result.error || 'Failed to create post. Please try again.');
+                // Regular post creation
+                const mediaFile = media.length > 0 ? media[0].file : undefined;
+                const result = await createPost(caption, mediaFile);
+
+                if (result.success) {
+                    media.forEach(item => URL.revokeObjectURL(item.url));
+                    router.push('/dashboard');
+                } else {
+                    setError(result.error || 'Failed to create post. Please try again.');
+                }
             }
         } catch (err) {
             console.error('Post creation error:', err);
-            setError('Something went wrong. Please try again.');
+            setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
         } finally {
             setIsPosting(false);
         }
-    }, [caption, media, createPost, router]);
+    }, [caption, media, contentType, createPost, router]);
 
     const contentTypes = [
         { id: 'post', label: 'Post', Icon: EditIcon, desc: 'Share thoughts, photos, or videos' },
@@ -168,8 +216,8 @@ function CreateContent() {
                             key={type.id}
                             onClick={() => setContentType(type.id as ContentType)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-colors ${contentType === type.id
-                                    ? 'bg-[#00D4FF] text-black'
-                                    : 'bg-white/10 text-white hover:bg-white/15'
+                                ? 'bg-[#00D4FF] text-black'
+                                : 'bg-white/10 text-white hover:bg-white/15'
                                 }`}
                         >
                             <type.Icon size={18} />
