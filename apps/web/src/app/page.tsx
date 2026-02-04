@@ -147,8 +147,17 @@ function Navigation() {
 // CINEMATIC HERO SECTION
 // Full-screen with layered depth
 // ============================================
+
+const heroImages = [
+    { id: 'jerusalem', src: 'https://images.unsplash.com/photo-1547483238-f400e65ccd56?w=2000&h=1200&fit=crop&q=90' },
+    { id: 'protest', src: 'https://images.unsplash.com/photo-1591189863345-9db0dc1f5a1c?w=2000&h=1200&fit=crop&q=90' },
+    { id: 'horizon', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=2000&h=1200&fit=crop&q=90' },
+];
+
 function HeroSection() {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [activeHeroImage, setActiveHeroImage] = useState(0);
+
     const { scrollYProgress } = useScroll({
         target: containerRef,
         offset: ['start start', 'end start'],
@@ -157,6 +166,15 @@ function HeroSection() {
     const y = useTransform(scrollYProgress, [0, 1], ['0%', '40%']);
     const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
     const scale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
+
+    // Auto-rotate hero images every 6 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setActiveHeroImage((prev) => (prev + 1) % heroImages.length);
+        }, 6000);
+        return () => clearInterval(interval);
+    }, []);
+
 
     return (
         <section ref={containerRef} className="relative h-screen overflow-hidden">
@@ -167,13 +185,18 @@ function HeroSection() {
                 <div className="absolute inset-0 bg-gradient-to-r from-[#030305]/90 via-transparent to-[#030305]/90 z-10" />
                 <div className="absolute inset-0 bg-black/30 z-10" />
 
-                <Image
-                    src="https://images.unsplash.com/photo-1547483238-f400e65ccd56?w=2000&h=1200&fit=crop&q=90"
-                    alt=""
-                    fill
-                    className="object-cover"
-                    priority
-                />
+                {/* Rotating Hero Images */}
+                {heroImages.map((img, index) => (
+                    <Image
+                        key={img.id}
+                        src={img.src}
+                        alt=""
+                        fill
+                        className={`object-cover transition-opacity duration-1000 ${index === activeHeroImage ? 'opacity-100' : 'opacity-0'
+                            }`}
+                        priority={index === 0}
+                    />
+                ))}
             </motion.div>
 
             {/* Hero Content */}
