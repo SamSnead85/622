@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { TrendingIcon, VideoIcon, ArrowLeftIcon } from '@/components/icons';
 
 interface LiveStream {
     id: string;
@@ -108,12 +109,10 @@ export default function CampfireDiscoverPage() {
                 <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link href="/dashboard" className="text-gray-400 hover:text-white">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
+                            <ArrowLeftIcon size={20} />
                         </Link>
                         <div className="flex items-center gap-2">
-                            <span className="text-2xl">🔥</span>
+                            <TrendingIcon size={24} className="text-orange-500" />
                             <h1 className="text-xl font-bold">Campfire</h1>
                         </div>
                     </div>
@@ -122,10 +121,7 @@ export default function CampfireDiscoverPage() {
                         href="/campfire/go-live"
                         className="bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 px-4 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <circle cx="12" cy="12" r="3" fill="currentColor" />
-                        </svg>
+                        <VideoIcon size={16} />
                         Go Live
                     </Link>
                 </div>
@@ -153,8 +149,8 @@ export default function CampfireDiscoverPage() {
                             <button
                                 key={cat}
                                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${cat === 'All'
-                                        ? 'bg-white text-gray-950'
-                                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                    ? 'bg-white text-gray-950'
+                                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                     }`}
                             >
                                 {cat}
@@ -167,7 +163,7 @@ export default function CampfireDiscoverPage() {
                 {streams.length === 0 && (
                     <div className="text-center py-20">
                         <div className="w-20 h-20 mx-auto mb-6 bg-gray-800 rounded-full flex items-center justify-center">
-                            <span className="text-4xl">🔥</span>
+                            <TrendingIcon size={40} className="text-orange-500" />
                         </div>
                         <h3 className="text-xl font-semibold mb-2">No live streams right now</h3>
                         <p className="text-gray-400 mb-6">Be the first to start a campfire!</p>

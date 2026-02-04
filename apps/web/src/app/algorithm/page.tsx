@@ -4,6 +4,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/contexts/AuthContext';
+import {
+    HomeIcon,
+    SearchIcon,
+    UsersIcon,
+    UserIcon,
+    DownloadIcon,
+    BrainIcon
+} from '@/components/icons';
 
 // ============================================
 // NEURAL LENS™ - Your AI-Powered Feed Intelligence
@@ -373,8 +381,8 @@ function DataSovereigntySection() {
                         key={option.id}
                         onClick={() => setStorage(option.id)}
                         className={`w-full flex items-center gap-3 p-4 rounded-xl border text-left transition-all ${storage === option.id
-                                ? 'bg-white/5 border-white/20'
-                                : 'bg-white/[0.01] border-white/5 hover:bg-white/[0.03]'
+                            ? 'bg-white/5 border-white/20'
+                            : 'bg-white/[0.01] border-white/5 hover:bg-white/[0.03]'
                             }`}
                     >
                         <span className="text-xl">{option.icon}</span>
@@ -391,8 +399,9 @@ function DataSovereigntySection() {
             </div>
 
             <div className="mt-4 pt-4 border-t border-white/5">
-                <button className="w-full py-3 rounded-xl border border-white/10 text-white/60 text-sm hover:bg-white/5 transition-colors">
-                    📦 Export All My Data
+                <button className="w-full py-3 rounded-xl border border-white/10 text-white/60 text-sm hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
+                    <DownloadIcon size={16} />
+                    <span>Export All My Data</span>
                 </button>
             </div>
         </motion.div>
@@ -404,11 +413,11 @@ function DataSovereigntySection() {
 // ============================================
 function Navigation() {
     const navItems = [
-        { id: 'home', icon: '🏠', label: 'Home', href: '/dashboard' },
-        { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
-        { id: 'tribes', icon: '👥', label: 'Tribes', href: '/communities' },
-        { id: 'neural', icon: '🧠', label: 'Neural Lens', href: '/algorithm', active: true },
-        { id: 'profile', icon: '👤', label: 'Profile', href: '/profile' },
+        { id: 'home', Icon: HomeIcon, label: 'Home', href: '/dashboard', active: false },
+        { id: 'explore', Icon: SearchIcon, label: 'Explore', href: '/explore', active: false },
+        { id: 'tribes', Icon: UsersIcon, label: 'Tribes', href: '/communities', active: false },
+        { id: 'neural', Icon: BrainIcon, label: 'Neural Lens', href: '/algorithm', active: true },
+        { id: 'profile', Icon: UserIcon, label: 'Profile', href: '/profile', active: false },
     ];
 
     return (
@@ -427,11 +436,11 @@ function Navigation() {
                             key={item.id}
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${item.active
-                                    ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
-                                    : 'text-white/60 hover:bg-white/5'
+                                ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                                : 'text-white/60 hover:bg-white/5'
                                 }`}
                         >
-                            <span className="text-xl">{item.icon}</span>
+                            <item.Icon size={20} />
                             <span className="font-medium hidden xl:block">{item.label}</span>
                         </Link>
                     ))}
@@ -448,7 +457,7 @@ function Navigation() {
                             className={`flex flex-col items-center gap-1 p-2 ${item.active ? 'text-violet-400' : 'text-white/50'
                                 }`}
                         >
-                            <span className="text-xl">{item.icon}</span>
+                            <item.Icon size={20} />
                             <span className="text-[10px]">{item.label}</span>
                         </Link>
                     ))}
@@ -574,8 +583,8 @@ function NeuralLensPageContent() {
                                 key={mode}
                                 onClick={() => setActiveMode(mode)}
                                 className={`px-6 py-2.5 rounded-xl text-sm font-medium transition-all ${activeMode === mode
-                                        ? 'bg-gradient-to-r from-violet-500 to-cyan-500 text-white'
-                                        : 'text-white/50 hover:text-white'
+                                    ? 'bg-gradient-to-r from-violet-500 to-cyan-500 text-white'
+                                    : 'text-white/50 hover:text-white'
                                     }`}
                             >
                                 {mode === 'personal' ? '🎯 My Neural Lens' : '🌐 Community Lens'}

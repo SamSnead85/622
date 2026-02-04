@@ -6,51 +6,9 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 import { Avatar, useProfile } from '@/components/ProfileEditor';
+import { Navigation } from '@/components/Navigation';
+import { SettingsIcon, CameraIcon, PlusIcon } from '@/components/icons';
 
-// Navigation Component
-function Navigation({ activeTab }: { activeTab: string }) {
-    const navItems = [
-        { id: 'home', icon: '🏠', label: 'Home', href: '/dashboard' },
-        { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
-        { id: 'communities', icon: '👥', label: 'Tribes', href: '/communities' },
-        { id: 'invite', icon: '🚀', label: 'Invite', href: '/invite' },
-        { id: 'profile', icon: '👤', label: 'Profile', href: '/profile' },
-    ];
-
-    return (
-        <>
-            <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-20 xl:w-64 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col p-4 z-40">
-                <Link href="/" className="flex items-center gap-3 px-3 py-4 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center flex-shrink-0">
-                        <span className="text-black font-bold text-lg">0G</span>
-                    </div>
-                    <span className="text-xl font-bold hidden xl:block">
-                        <span className="text-[#00D4FF]">0</span>
-                        <span className="text-white">G</span>
-                    </span>
-                </Link>
-                <nav className="flex-1 space-y-2">
-                    {navItems.map((item) => (
-                        <Link key={item.id} href={item.href} className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${activeTab === item.id ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}>
-                            <span className="text-2xl">{item.icon}</span>
-                            <span className="font-medium hidden xl:block">{item.label}</span>
-                        </Link>
-                    ))}
-                </nav>
-            </aside>
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 z-50">
-                <div className="flex items-center justify-around py-2">
-                    {navItems.map((item) => (
-                        <Link key={item.id} href={item.href} className={`flex flex-col items-center gap-1 p-2 ${activeTab === item.id ? 'text-white' : 'text-white/50'}`}>
-                            <span className="text-xl">{item.icon}</span>
-                            <span className="text-[10px]">{item.label}</span>
-                        </Link>
-                    ))}
-                </div>
-            </nav>
-        </>
-    );
-}
 
 // User's posts - empty array, will be populated from API
 const userPosts: Array<{ id: number; image: string; likes: number }> = [];
@@ -171,9 +129,9 @@ function ProfilePageContent() {
                                 >
                                     Edit Profile
                                 </Link>
-                                <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
-                                    ⚙️
-                                </button>
+                                <Link href="/settings" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
+                                    <SettingsIcon size={18} className="text-white/70" />
+                                </Link>
                             </div>
                         </div>
 
@@ -226,7 +184,9 @@ function ProfilePageContent() {
                                 </div>
                             ) : (
                                 <div className="text-center py-16">
-                                    <div className="text-5xl mb-4">📸</div>
+                                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-orange-400/20 to-rose-400/20 flex items-center justify-center">
+                                        <CameraIcon size={32} className="text-orange-400" />
+                                    </div>
                                     <h3 className="text-xl font-semibold text-white mb-2">No Posts Yet</h3>
                                     <p className="text-white/50 mb-6 max-w-md mx-auto">
                                         Share your first moment with your community
@@ -235,7 +195,7 @@ function ProfilePageContent() {
                                         href="/create"
                                         className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-semibold hover:opacity-90 transition-opacity"
                                     >
-                                        <span>+</span>
+                                        <PlusIcon size={18} />
                                         Create Your First Post
                                     </Link>
                                 </div>

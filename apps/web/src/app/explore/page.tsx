@@ -5,16 +5,26 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
+import {
+    HomeIcon,
+    SearchIcon,
+    UsersIcon,
+    SendIcon,
+    MessageIcon,
+    TrendingIcon,
+    HeartIcon,
+    PlayIcon
+} from '@/components/icons';
 
 // Shared Navigation Component
 function Navigation({ activeTab, userAvatarUrl, displayName, username }: { activeTab: string; userAvatarUrl?: string; displayName?: string; username?: string }) {
     const avatarHref = userAvatarUrl && !userAvatarUrl.startsWith('preset:') ? userAvatarUrl : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face';
     const navItems = [
-        { id: 'home', icon: '🏠', label: 'Home', href: '/dashboard' },
-        { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
-        { id: 'communities', icon: '👥', label: 'Tribes', href: '/communities' },
-        { id: 'invite', icon: '🚀', label: 'Invite', href: '/invite' },
-        { id: 'messages', icon: '💬', label: 'Messages', href: '/messages' },
+        { id: 'home', Icon: HomeIcon, label: 'Home', href: '/dashboard' },
+        { id: 'explore', Icon: SearchIcon, label: 'Explore', href: '/explore' },
+        { id: 'communities', Icon: UsersIcon, label: 'Tribes', href: '/communities' },
+        { id: 'invite', Icon: SendIcon, label: 'Invite', href: '/invite' },
+        { id: 'messages', Icon: MessageIcon, label: 'Messages', href: '/messages' },
     ];
 
     return (
@@ -39,7 +49,7 @@ function Navigation({ activeTab, userAvatarUrl, displayName, username }: { activ
                                 : 'text-white/60 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
-                            <span className="text-2xl">{item.icon}</span>
+                            <item.Icon size={24} />
                             <span className="font-medium hidden xl:block">{item.label}</span>
                         </Link>
                     ))}
@@ -70,7 +80,7 @@ function Navigation({ activeTab, userAvatarUrl, displayName, username }: { activ
                             href={item.href}
                             className={`flex flex-col items-center gap-1 p-2 ${activeTab === item.id ? 'text-white' : 'text-white/50'}`}
                         >
-                            <span className="text-xl">{item.icon}</span>
+                            <item.Icon size={22} />
                             <span className="text-[10px]">{item.label}</span>
                         </Link>
                     ))}
@@ -186,7 +196,10 @@ function ExplorePageContent() {
                         <div className="lg:col-span-2">
                             {/* Trending */}
                             <div className="mb-6">
-                                <h2 className="text-lg font-semibold text-white mb-4">🔥 Trending Now</h2>
+                                <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                    <TrendingIcon size={20} className="text-orange-500" />
+                                    Trending Now
+                                </h2>
                                 <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
                                     {trendingTopics.map((topic) => (
                                         <motion.button
@@ -225,12 +238,12 @@ function ExplorePageContent() {
                                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-4 text-white">
                                                     {item.type === 'video' ? (
                                                         <span className="flex items-center gap-1">
-                                                            <span>▶️</span>
+                                                            <PlayIcon size={18} />
                                                             <span className="font-semibold">{(item.views! / 1000).toFixed(0)}K</span>
                                                         </span>
                                                     ) : (
                                                         <span className="flex items-center gap-1">
-                                                            <span>🔥</span>
+                                                            <TrendingIcon size={18} className="text-orange-400" />
                                                             <span className="font-semibold">{item.likes?.toLocaleString()}</span>
                                                         </span>
                                                     )}
@@ -238,7 +251,7 @@ function ExplorePageContent() {
                                             </div>
                                             {item.type === 'video' && (
                                                 <div className="absolute top-2 right-2 px-2 py-1 rounded bg-black/50 text-white text-xs">
-                                                    ▶️
+                                                    <PlayIcon size={14} />
                                                 </div>
                                             )}
                                         </div>

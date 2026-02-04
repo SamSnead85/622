@@ -7,15 +7,29 @@ import { ProfileEditor, Avatar, useProfile } from '@/components/ProfileEditor';
 import { loadPreferences, savePreferences, clearAllData, exportUserData } from '@/lib/persistence';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 import { InviteFriends } from '@/components/InviteFriends';
+import {
+    HomeIcon,
+    SearchIcon,
+    UsersIcon,
+    SendIcon,
+    MessageIcon,
+    UserIcon,
+    LockIcon,
+    BellIcon,
+    PaletteIcon,
+    InfoIcon,
+    ZapIcon,
+    DownloadIcon
+} from '@/components/icons';
 
 // Navigation
 function Navigation() {
     const navItems = [
-        { id: 'home', icon: '🏠', label: 'Home', href: '/dashboard' },
-        { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
-        { id: 'communities', icon: '👥', label: 'Tribes', href: '/communities' },
-        { id: 'invite', icon: '🚀', label: 'Invite', href: '/invite' },
-        { id: 'messages', icon: '💬', label: 'Messages', href: '/messages' },
+        { id: 'home', Icon: HomeIcon, label: 'Home', href: '/dashboard' },
+        { id: 'explore', Icon: SearchIcon, label: 'Explore', href: '/explore' },
+        { id: 'communities', Icon: UsersIcon, label: 'Tribes', href: '/communities' },
+        { id: 'invite', Icon: SendIcon, label: 'Invite', href: '/invite' },
+        { id: 'messages', Icon: MessageIcon, label: 'Messages', href: '/messages' },
     ];
 
     return (
@@ -33,7 +47,7 @@ function Navigation() {
             <nav className="flex-1 space-y-2">
                 {navItems.map((item) => (
                     <Link key={item.id} href={item.href} className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-white/60 hover:bg-white/5 hover:text-white">
-                        <span className="text-2xl">{item.icon}</span>
+                        <item.Icon size={24} />
                         <span className="font-medium hidden xl:block">{item.label}</span>
                     </Link>
                 ))}
@@ -73,63 +87,63 @@ type SettingSection = {
     items: SettingItem[];
 };
 
-// Setting sections
-const settingSections: SettingSection[] = [
+// Setting sections with Icon components
+const settingSections = [
     {
         title: 'Account',
-        icon: '👤',
+        Icon: UserIcon,
         items: [
-            { id: 'edit-profile', label: 'Edit Profile', type: 'link' },
-            { id: 'change-password', label: 'Change Password', type: 'link' },
-            { id: 'two-factor', label: 'Two-Factor Authentication', type: 'toggle' },
-            { id: 'email', label: 'Email Notifications', type: 'toggle' },
+            { id: 'edit-profile', label: 'Edit Profile', type: 'link' as const },
+            { id: 'change-password', label: 'Change Password', type: 'link' as const },
+            { id: 'two-factor', label: 'Two-Factor Authentication', type: 'toggle' as const },
+            { id: 'email', label: 'Email Notifications', type: 'toggle' as const },
         ]
     },
     {
         title: 'Privacy',
-        icon: '🔒',
+        Icon: LockIcon,
         items: [
-            { id: 'private', label: 'Private Account', type: 'toggle' },
-            { id: 'activity', label: 'Show Activity Status', type: 'toggle' },
-            { id: 'read-receipts', label: 'Read Receipts', type: 'toggle' },
-            { id: 'blocked', label: 'Blocked Accounts', type: 'link' },
+            { id: 'private', label: 'Private Account', type: 'toggle' as const },
+            { id: 'activity', label: 'Show Activity Status', type: 'toggle' as const },
+            { id: 'read-receipts', label: 'Read Receipts', type: 'toggle' as const },
+            { id: 'blocked', label: 'Blocked Accounts', type: 'link' as const },
         ]
     },
     {
         title: 'Notifications',
-        icon: '🔔',
+        Icon: BellIcon,
         items: [
-            { id: 'push', label: 'Push Notifications', type: 'toggle' },
-            { id: 'email-updates', label: 'Email Updates', type: 'toggle' },
-            { id: 'sounds', label: 'Notification Sounds', type: 'toggle' },
-            { id: 'vibration', label: 'Vibration', type: 'toggle' },
+            { id: 'push', label: 'Push Notifications', type: 'toggle' as const },
+            { id: 'email-updates', label: 'Email Updates', type: 'toggle' as const },
+            { id: 'sounds', label: 'Notification Sounds', type: 'toggle' as const },
+            { id: 'vibration', label: 'Vibration', type: 'toggle' as const },
         ]
     },
     {
         title: 'Appearance',
-        icon: '🎨',
+        Icon: PaletteIcon,
         items: [
-            { id: 'dark-mode', label: 'Dark Mode', type: 'toggle', defaultOn: true },
-            { id: 'reduced-motion', label: 'Reduced Motion', type: 'toggle' },
-            { id: 'high-contrast', label: 'High Contrast', type: 'toggle' },
+            { id: 'dark-mode', label: 'Dark Mode', type: 'toggle' as const, defaultOn: true },
+            { id: 'reduced-motion', label: 'Reduced Motion', type: 'toggle' as const },
+            { id: 'high-contrast', label: 'High Contrast', type: 'toggle' as const },
         ]
     },
     {
         title: 'Support',
-        icon: '💬',
+        Icon: MessageIcon,
         items: [
-            { id: 'help', label: 'Help Center', type: 'link' },
-            { id: 'report', label: 'Report a Problem', type: 'link' },
-            { id: 'feedback', label: 'Send Feedback', type: 'link' },
+            { id: 'help', label: 'Help Center', type: 'link' as const },
+            { id: 'report', label: 'Report a Problem', type: 'link' as const },
+            { id: 'feedback', label: 'Send Feedback', type: 'link' as const },
         ]
     },
     {
         title: 'About',
-        icon: 'ℹ️',
+        Icon: InfoIcon,
         items: [
-            { id: 'terms', label: 'Terms of Service', type: 'link' },
-            { id: 'privacy-policy', label: 'Privacy Policy', type: 'link' },
-            { id: 'version', label: 'App Version', type: 'info', value: '2.0.0' },
+            { id: 'terms', label: 'Terms of Service', type: 'link' as const },
+            { id: 'privacy-policy', label: 'Privacy Policy', type: 'link' as const },
+            { id: 'version', label: 'App Version', type: 'info' as const, value: '2.0.0' },
         ]
     },
 ];
@@ -263,7 +277,7 @@ function SettingsPageContent() {
                                 className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden"
                             >
                                 <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
-                                    <span>{section.icon}</span>
+                                    <section.Icon size={18} className="text-white/70" />
                                     <h2 className="font-semibold text-white">{section.title}</h2>
                                 </div>
                                 <div className="divide-y divide-white/5">
@@ -296,7 +310,7 @@ function SettingsPageContent() {
                             onClick={() => setShowInviteModal(true)}
                             className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-3 shadow-lg"
                         >
-                            <span className="text-xl">⚡</span>
+                            <ZapIcon size={20} />
                             <span>Invite Friends to 0G</span>
                         </button>
 
@@ -304,7 +318,8 @@ function SettingsPageContent() {
                             onClick={handleExportData}
                             className="w-full py-3 rounded-xl bg-violet-500/10 text-violet-400 font-medium hover:bg-violet-500/20 transition-colors flex items-center justify-center gap-2"
                         >
-                            ⬇️ Export My Data
+                            <DownloadIcon size={18} />
+                            <span>Export My Data</span>
                         </button>
                         <button
                             onClick={handleLogout}

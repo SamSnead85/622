@@ -5,6 +5,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { usePosts } from '@/hooks/usePosts';
+import {
+    EditIcon,
+    SparklesIcon,
+    MapIcon,
+    GlobeIcon,
+    UsersIcon,
+    LockIcon,
+    CameraIcon,
+    MapPinIcon,
+    UserIcon,
+    PlusIcon,
+    CheckIcon,
+    ArrowRightIcon
+} from '@/components/icons';
+import React from 'react';
 
 // ============================================
 // CREATE PAGE - Post, Moment, Journey creation
@@ -91,15 +106,15 @@ function CreateContent() {
     }, [caption, media, createPost, router]);
 
     const contentTypes = [
-        { id: 'post', label: 'Post', icon: '📝', desc: 'Share thoughts, photos, or videos' },
-        { id: 'moment', label: 'Moment', icon: '✨', desc: 'A 24-hour story highlight' },
-        { id: 'journey', label: 'Journey', icon: '🗺️', desc: 'A collection of connected moments' },
+        { id: 'post', label: 'Post', Icon: EditIcon, desc: 'Share thoughts, photos, or videos' },
+        { id: 'moment', label: 'Moment', Icon: SparklesIcon, desc: 'A 24-hour story highlight' },
+        { id: 'journey', label: 'Journey', Icon: MapIcon, desc: 'A collection of connected moments' },
     ];
 
     const audiences = [
-        { id: 'public', label: 'Everyone', icon: '🌍', desc: 'Visible to all users' },
-        { id: 'friends', label: 'Friends', icon: '👥', desc: 'Only your friends can see' },
-        { id: 'private', label: 'Only Me', icon: '🔒', desc: 'Save privately' },
+        { id: 'public', label: 'Everyone', Icon: GlobeIcon, desc: 'Visible to all users' },
+        { id: 'friends', label: 'Friends', Icon: UsersIcon, desc: 'Only your friends can see' },
+        { id: 'private', label: 'Only Me', Icon: LockIcon, desc: 'Save privately' },
     ];
 
     return (
@@ -153,11 +168,11 @@ function CreateContent() {
                             key={type.id}
                             onClick={() => setContentType(type.id as ContentType)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-colors ${contentType === type.id
-                                ? 'bg-[#00D4FF] text-black'
-                                : 'bg-white/10 text-white hover:bg-white/15'
+                                    ? 'bg-[#00D4FF] text-black'
+                                    : 'bg-white/10 text-white hover:bg-white/15'
                                 }`}
                         >
-                            <span>{type.icon}</span>
+                            <type.Icon size={18} />
                             <span className="font-medium">{type.label}</span>
                         </button>
                     ))}
@@ -170,7 +185,9 @@ function CreateContent() {
                             onClick={() => fileInputRef.current?.click()}
                             className="w-full aspect-video rounded-2xl border-2 border-dashed border-white/20 flex flex-col items-center justify-center gap-3 hover:border-[#00D4FF]/40 hover:bg-white/5 transition-all"
                         >
-                            <span className="text-4xl">📸</span>
+                            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center">
+                                <CameraIcon size={28} className="text-white/60" />
+                            </div>
                             <p className="text-white/60">Add photos or videos</p>
                             <p className="text-xs text-white/30">Max 10 MB for images, 100 MB for videos</p>
                         </button>
@@ -196,7 +213,7 @@ function CreateContent() {
                                 onClick={() => fileInputRef.current?.click()}
                                 className="aspect-square rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center hover:border-[#00D4FF]/40 transition-colors"
                             >
-                                <span className="text-2xl">+</span>
+                                <PlusIcon size={24} className="text-white/60" />
                             </button>
                         </div>
                     )}
@@ -233,28 +250,28 @@ function CreateContent() {
                         className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10"
                     >
                         <div className="flex items-center gap-3">
-                            <span>{audiences.find(a => a.id === audience)?.icon}</span>
+                            {React.createElement(audiences.find(a => a.id === audience)?.Icon || GlobeIcon, { size: 20, className: 'text-white/70' })}
                             <span className="text-white">{audiences.find(a => a.id === audience)?.label}</span>
                         </div>
-                        <span className="text-white/40">→</span>
+                        <ArrowRightIcon size={18} className="text-white/40" />
                     </button>
 
                     {/* Location */}
                     <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10">
                         <div className="flex items-center gap-3">
-                            <span>📍</span>
+                            <MapPinIcon size={20} className="text-white/70" />
                             <span className="text-white">Add Location</span>
                         </div>
-                        <span className="text-white/40">→</span>
+                        <ArrowRightIcon size={18} className="text-white/40" />
                     </button>
 
                     {/* Tag People */}
                     <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10">
                         <div className="flex items-center gap-3">
-                            <span>👤</span>
+                            <UserIcon size={20} className="text-white/70" />
                             <span className="text-white">Tag People</span>
                         </div>
-                        <span className="text-white/40">→</span>
+                        <ArrowRightIcon size={18} className="text-white/40" />
                     </button>
                 </div>
             </main>
@@ -285,12 +302,14 @@ function CreateContent() {
                                         className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors ${audience === opt.id ? 'bg-[#00D4FF]/10 border border-[#00D4FF]/30' : 'hover:bg-white/5'
                                             }`}
                                     >
-                                        <span className="text-2xl">{opt.icon}</span>
+                                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                                            <opt.Icon size={22} className="text-white" />
+                                        </div>
                                         <div className="text-left flex-1">
                                             <p className="text-white font-medium">{opt.label}</p>
                                             <p className="text-sm text-white/50">{opt.desc}</p>
                                         </div>
-                                        {audience === opt.id && <span className="text-[#00D4FF]">✓</span>}
+                                        {audience === opt.id && <CheckIcon size={20} className="text-[#00D4FF]" />}
                                     </button>
                                 ))}
                             </div>

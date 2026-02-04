@@ -3,6 +3,19 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import {
+    CameraIcon,
+    MusicIcon,
+    XIcon,
+    MessageIcon,
+    FolderIcon,
+    PackageIcon,
+    PartyIcon,
+    CheckIcon,
+    TentIcon,
+    SendIcon
+} from '@/components/icons';
+import React from 'react';
 
 type Platform = 'instagram' | 'tiktok' | 'twitter' | 'facebook' | 'whatsapp';
 type WizardStep = 'select' | 'guide' | 'upload' | 'processing' | 'connections' | 'invite' | 'complete';
@@ -10,7 +23,7 @@ type WizardStep = 'select' | 'guide' | 'upload' | 'processing' | 'connections' |
 interface PlatformInfo {
     id: Platform;
     name: string;
-    icon: string;
+    Icon: React.ComponentType<{ size?: number; className?: string }>;
     color: string;
     instructions: string[];
     estimatedTime: string;
@@ -21,7 +34,7 @@ const platforms: PlatformInfo[] = [
     {
         id: 'instagram',
         name: 'Instagram',
-        icon: '📷',
+        Icon: CameraIcon,
         color: 'from-purple-500 to-pink-500',
         estimatedTime: '24-48 hours for file',
         available: true,
@@ -38,7 +51,7 @@ const platforms: PlatformInfo[] = [
     {
         id: 'tiktok',
         name: 'TikTok',
-        icon: '🎵',
+        Icon: MusicIcon,
         color: 'from-gray-900 to-gray-700',
         estimatedTime: '1-3 days for file',
         available: true,
@@ -54,7 +67,7 @@ const platforms: PlatformInfo[] = [
     {
         id: 'twitter',
         name: 'X (Twitter)',
-        icon: '𝕏',
+        Icon: XIcon,
         color: 'from-gray-800 to-black',
         estimatedTime: '24-48 hours for file',
         available: false,
@@ -69,7 +82,7 @@ const platforms: PlatformInfo[] = [
     {
         id: 'facebook',
         name: 'Facebook',
-        icon: '📘',
+        Icon: SendIcon,
         color: 'from-blue-600 to-blue-800',
         estimatedTime: '24-48 hours for file',
         available: false,
@@ -84,7 +97,7 @@ const platforms: PlatformInfo[] = [
     {
         id: 'whatsapp',
         name: 'WhatsApp',
-        icon: '💬',
+        Icon: MessageIcon,
         color: 'from-green-500 to-green-700',
         estimatedTime: 'Instant',
         available: false,
@@ -221,7 +234,9 @@ export default function MigrationPage() {
                                     >
                                         <div className={`absolute inset-0 bg-gradient-to-br ${platform.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`} />
 
-                                        <div className="text-3xl mb-3">{platform.icon}</div>
+                                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${platform.color} flex items-center justify-center mb-3`}>
+                                            <platform.Icon size={24} className="text-white" />
+                                        </div>
                                         <div className="font-semibold mb-1">{platform.name}</div>
                                         <div className="text-sm text-gray-500">{platform.estimatedTime}</div>
 
@@ -244,8 +259,10 @@ export default function MigrationPage() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
                         >
-                            <div className="flex items-center gap-3 mb-8">
-                                <span className="text-4xl">{selectedPlatform.icon}</span>
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${selectedPlatform.color} flex items-center justify-center`}>
+                                    <selectedPlatform.Icon size={28} className="text-white" />
+                                </div>
                                 <div>
                                     <h1 className="text-2xl font-bold">Export from {selectedPlatform.name}</h1>
                                     <p className="text-gray-400">{selectedPlatform.estimatedTime}</p>
@@ -276,7 +293,9 @@ export default function MigrationPage() {
                                             onChange={handleFileUpload}
                                             className="hidden"
                                         />
-                                        <div className="text-4xl mb-3">📁</div>
+                                        <div className="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center mb-3">
+                                            <FolderIcon size={28} className="text-gray-400" />
+                                        </div>
                                         <div className="font-medium mb-1">Drop your ZIP file here</div>
                                         <div className="text-sm text-gray-500">or click to browse</div>
                                     </div>
@@ -298,7 +317,9 @@ export default function MigrationPage() {
                             exit={{ opacity: 0, y: -20 }}
                             className="text-center"
                         >
-                            <div className="text-6xl mb-6">📦</div>
+                            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gray-800 flex items-center justify-center">
+                                <PackageIcon size={40} className="text-gray-300" />
+                            </div>
                             <h1 className="text-2xl font-bold mb-2">Ready to Import</h1>
                             <p className="text-gray-400 mb-8">
                                 {file.name} ({(file.size / 1024 / 1024).toFixed(1)} MB)
@@ -308,16 +329,16 @@ export default function MigrationPage() {
                                 <h2 className="font-semibold mb-4">What we&apos;ll import:</h2>
                                 <ul className="space-y-2 text-left">
                                     <li className="flex items-center gap-2 text-gray-300">
-                                        <span className="text-green-500">✓</span> Posts & Media
+                                        <CheckIcon size={16} className="text-green-500" /> Posts & Media
                                     </li>
                                     <li className="flex items-center gap-2 text-gray-300">
-                                        <span className="text-green-500">✓</span> Captions & Hashtags
+                                        <CheckIcon size={16} className="text-green-500" /> Captions & Hashtags
                                     </li>
                                     <li className="flex items-center gap-2 text-gray-300">
-                                        <span className="text-green-500">✓</span> Followers & Following
+                                        <CheckIcon size={16} className="text-green-500" /> Followers & Following
                                     </li>
                                     <li className="flex items-center gap-2 text-gray-300">
-                                        <span className="text-green-500">✓</span> Original timestamps
+                                        <CheckIcon size={16} className="text-green-500" /> Original timestamps
                                     </li>
                                 </ul>
                             </div>
@@ -386,7 +407,9 @@ export default function MigrationPage() {
                             exit={{ opacity: 0, y: -20 }}
                         >
                             <div className="text-center mb-8">
-                                <div className="text-6xl mb-4">🎉</div>
+                                <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
+                                    <PartyIcon size={40} className="text-white" />
+                                </div>
                                 <h1 className="text-2xl font-bold mb-2">Import Complete!</h1>
                                 <p className="text-gray-400">Your content has been imported to 0G</p>
                             </div>
@@ -476,13 +499,13 @@ export default function MigrationPage() {
 
                                 <ul className="space-y-2 mb-6">
                                     <li className="flex items-center gap-2 text-sm">
-                                        <span className="text-green-600">✓</span> Completely free
+                                        <CheckIcon size={14} className="text-green-600" /> Completely free
                                     </li>
                                     <li className="flex items-center gap-2 text-sm">
-                                        <span className="text-green-600">✓</span> Privacy-first
+                                        <CheckIcon size={14} className="text-green-600" /> Privacy-first
                                     </li>
                                     <li className="flex items-center gap-2 text-sm">
-                                        <span className="text-green-600">✓</span> No ads or manipulation
+                                        <CheckIcon size={14} className="text-green-600" /> No ads or manipulation
                                     </li>
                                 </ul>
 
@@ -518,12 +541,12 @@ export default function MigrationPage() {
                             className="text-center"
                         >
                             <motion.div
-                                className="text-8xl mb-6"
+                                className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-amber-500 via-rose-500 to-violet-500 flex items-center justify-center"
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 transition={{ type: 'spring', damping: 10 }}
                             >
-                                🏕️
+                                <TentIcon size={48} className="text-white" />
                             </motion.div>
                             <h1 className="text-3xl font-bold mb-3">Welcome to 0G!</h1>
                             <p className="text-gray-400 mb-8 max-w-md mx-auto">

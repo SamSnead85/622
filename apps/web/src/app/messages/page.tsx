@@ -6,6 +6,22 @@ import Link from 'next/link';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMessages, type Message as ApiMessage, type Conversation } from '@/hooks';
 import { ProtectedRoute } from '@/contexts/AuthContext';
+import {
+    HomeIcon,
+    SearchIcon,
+    UsersIcon,
+    SendIcon,
+    MessageIcon,
+    WaveIcon,
+    EditIcon,
+    PhoneIcon,
+    VideoIcon,
+    InfoIcon,
+    MicIcon,
+    AttachIcon,
+    SmileIcon,
+    TrashIcon
+} from '@/components/icons';
 
 // ============================================
 // TYPING INDICATOR
@@ -149,7 +165,7 @@ function NewChatModal({
                 {/* Search */}
                 <div className="p-4">
                     <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
-                        <span className="text-white/40">🔍</span>
+                        <SearchIcon size={18} className="text-white/40" />
                         <input
                             type="text"
                             value={searchQuery}
@@ -187,7 +203,7 @@ function NewChatModal({
                         className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold hover:opacity-90 transition-opacity"
                         onClick={onClose}
                     >
-                        <span>🚀</span>
+                        <SendIcon size={18} />
                         Invite Friends to 0G
                     </Link>
                     <p className="text-center text-xs text-white/40 mt-2">
@@ -202,11 +218,11 @@ function NewChatModal({
 // Navigation
 function Navigation({ activeTab }: { activeTab: string }) {
     const navItems = [
-        { id: 'home', icon: '🏠', label: 'Home', href: '/dashboard' },
-        { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
-        { id: 'communities', icon: '👥', label: 'Tribes', href: '/communities' },
-        { id: 'invite', icon: '🚀', label: 'Invite', href: '/invite' },
-        { id: 'messages', icon: '💬', label: 'Messages', href: '/messages' },
+        { id: 'home', Icon: HomeIcon, label: 'Home', href: '/dashboard' },
+        { id: 'explore', Icon: SearchIcon, label: 'Explore', href: '/explore' },
+        { id: 'communities', Icon: UsersIcon, label: 'Tribes', href: '/communities' },
+        { id: 'invite', Icon: SendIcon, label: 'Invite', href: '/invite' },
+        { id: 'messages', Icon: MessageIcon, label: 'Messages', href: '/messages' },
     ];
 
     return (
@@ -222,7 +238,7 @@ function Navigation({ activeTab }: { activeTab: string }) {
                 <nav className="flex-1 space-y-2">
                     {navItems.map((item) => (
                         <Link key={item.id} href={item.href} className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${activeTab === item.id ? 'bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/20' : 'text-white/60 hover:bg-white/5'}`}>
-                            <span className="text-2xl">{item.icon}</span>
+                            <item.Icon size={24} />
                             <span className="font-medium hidden xl:block">{item.label}</span>
                         </Link>
                     ))}
@@ -232,7 +248,7 @@ function Navigation({ activeTab }: { activeTab: string }) {
                 <div className="flex items-center justify-around py-2">
                     {navItems.map((item) => (
                         <Link key={item.id} href={item.href} className={`flex flex-col items-center gap-1 p-2 ${activeTab === item.id ? 'text-white' : 'text-white/50'}`}>
-                            <span className="text-xl">{item.icon}</span>
+                            <item.Icon size={22} />
                             <span className="text-[10px]">{item.label}</span>
                         </Link>
                     ))}
@@ -371,7 +387,7 @@ function MessagesPageContent() {
                             </button>
                         </div>
                         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
-                            <span className="text-white/40">🔍</span>
+                            <SearchIcon size={16} className="text-white/40" />
                             <input type="text" placeholder="Search messages..." className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none text-sm" />
                         </div>
                     </div>
@@ -384,14 +400,17 @@ function MessagesPageContent() {
                             </div>
                         ) : conversations.length === 0 ? (
                             <div className="text-center p-8">
-                                <div className="text-5xl mb-4">👋</div>
+                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 flex items-center justify-center">
+                                    <WaveIcon size={32} className="text-[#00D4FF]" />
+                                </div>
                                 <h3 className="text-lg font-semibold text-white mb-2">No Messages Yet</h3>
                                 <p className="text-white/50 text-sm mb-6">Start chatting with your friends and tribe members</p>
                                 <Link
                                     href="/invite"
                                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold hover:opacity-90 transition-opacity"
                                 >
-                                    🚀 Invite Friends to 0G
+                                    <SendIcon size={18} />
+                                    Invite Friends to 0G
                                 </Link>
                             </div>
                         ) : (
@@ -466,9 +485,9 @@ function MessagesPageContent() {
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15">📞</button>
-                                    <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15">📹</button>
-                                    <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15">ℹ️</button>
+                                    <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15"><PhoneIcon size={18} /></button>
+                                    <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15"><VideoIcon size={18} /></button>
+                                    <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15"><InfoIcon size={18} /></button>
                                 </div>
                             </div>
 
@@ -519,7 +538,7 @@ function MessagesPageContent() {
                                                     onClick={() => setShowReactionPicker(showReactionPicker === msg.id ? null : msg.id)}
                                                     className={`absolute top-1/2 -translate-y-1/2 ${isMe ? '-left-8' : '-right-8'} opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-sm transition-opacity`}
                                                 >
-                                                    😊
+                                                    <SmileIcon size={14} className="text-white/60" />
                                                 </button>
 
                                                 {/* Reaction Picker */}
@@ -558,7 +577,7 @@ function MessagesPageContent() {
                                             className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center"
                                             whileTap={{ scale: 0.9 }}
                                         >
-                                            🗑️
+                                            <TrashIcon size={18} className="text-white/60" />
                                         </motion.button>
                                         <motion.button
                                             onClick={handleSendVoiceMessage}
@@ -570,8 +589,8 @@ function MessagesPageContent() {
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-3">
-                                        <button className="text-xl hover:scale-110 transition-transform">📎</button>
-                                        <button className="text-xl hover:scale-110 transition-transform">😊</button>
+                                        <button className="hover:scale-110 transition-transform"><AttachIcon size={20} className="text-white/60" /></button>
+                                        <button className="hover:scale-110 transition-transform"><SmileIcon size={20} className="text-white/60" /></button>
                                         <input
                                             type="text"
                                             value={messageInput}
@@ -595,7 +614,7 @@ function MessagesPageContent() {
                                                 className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15"
                                                 whileTap={{ scale: 0.9 }}
                                             >
-                                                🎤
+                                                <MicIcon size={18} className="text-white/60" />
                                             </motion.button>
                                         )}
                                     </div>
@@ -605,15 +624,17 @@ function MessagesPageContent() {
                     ) : (
                         <div className="flex-1 flex items-center justify-center">
                             <div className="text-center">
-                                <span className="text-6xl mb-4 block">💬</span>
+                                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 flex items-center justify-center">
+                                    <MessageIcon size={40} className="text-[#00D4FF]" />
+                                </div>
                                 <h2 className="text-xl font-semibold text-white mb-2">Your Messages</h2>
                                 <p className="text-white/50">Select a conversation to start chatting</p>
                             </div>
                         </div>
                     )}
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }
 

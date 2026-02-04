@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { GlobeIcon, VoteIcon, HeartIcon, VideoIcon, UnlockIcon, DollarIcon, ShieldIcon, CpuIcon } from '@/components/icons';
 import { ImpactSection } from '@/components/ImpactHub';
 
 // ============================================
@@ -365,17 +366,20 @@ function VisionSection() {
                     <div className="mt-20 pt-16 border-t border-white/5 grid md:grid-cols-3 gap-12 md:gap-16 text-left">
                         {[
                             {
-                                icon: '🌍',
+                                Icon: GlobeIcon,
+                                color: 'from-violet-400 to-cyan-400',
                                 title: 'Global Truth-Tellers',
                                 description: 'From journalists in conflict zones to activists documenting change—voices that matter reach the world without gatekeepers.',
                             },
                             {
-                                icon: '🗳️',
+                                Icon: VoteIcon,
+                                color: 'from-emerald-400 to-teal-400',
                                 title: 'Community-Driven Feed',
                                 description: 'Vote on what you want to see. Rank what matters. The algorithm serves you, not advertisers. Transparent. Always.',
                             },
                             {
-                                icon: '💜',
+                                Icon: HeartIcon,
+                                color: 'from-rose-400 to-pink-400',
                                 title: 'Collective Sponsorship',
                                 description: 'Rally your community to sponsor a storyteller. Fund a live stream from anywhere in the world. Together.',
                             },
@@ -386,7 +390,9 @@ function VisionSection() {
                                 animate={isInView ? { opacity: 1, y: 0 } : {}}
                                 transition={{ duration: 0.6, delay: 0.4 + i * 0.15 }}
                             >
-                                <div className="text-3xl mb-4">{item.icon}</div>
+                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4`}>
+                                    <item.Icon className="text-white" size={24} />
+                                </div>
                                 <h3 className="text-white font-medium mb-3">{item.title}</h3>
                                 <p className="text-white/50 font-light leading-relaxed text-sm">
                                     {item.description}
@@ -434,7 +440,9 @@ function StoryTellersSection() {
                         className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors"
                     >
                         <div className="flex items-start gap-4 mb-6">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-xl">🎥</div>
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center">
+                                <VideoIcon className="text-white" size={22} />
+                            </div>
                             <div>
                                 <h3 className="text-lg font-medium text-white">Live from the Ground</h3>
                                 <p className="text-white/40 text-sm">Sub-1-second latency</p>
@@ -458,7 +466,9 @@ function StoryTellersSection() {
                         className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors"
                     >
                         <div className="flex items-start gap-4 mb-6">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-xl">🗳️</div>
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center">
+                                <VoteIcon className="text-white" size={22} />
+                            </div>
                             <div>
                                 <h3 className="text-lg font-medium text-white">Community Decides</h3>
                                 <p className="text-white/40 text-sm">Transparent algorithm</p>
@@ -483,13 +493,15 @@ function StoryTellersSection() {
                     className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4"
                 >
                     {[
-                        { icon: '🔓', label: 'No Lock-In', desc: 'Export all, anytime' },
-                        { icon: '💰', label: 'Creators Keep 90%', desc: 'Not 50% like others' },
-                        { icon: '🛡️', label: 'Privacy First', desc: 'Your data is yours' },
-                        { icon: '🤖', label: 'AI Co-Director', desc: 'Pro tools for all' },
+                        { Icon: UnlockIcon, label: 'No Lock-In', desc: 'Export all, anytime', color: 'text-emerald-400' },
+                        { Icon: DollarIcon, label: 'Creators Keep 90%', desc: 'Not 50% like others', color: 'text-amber-400' },
+                        { Icon: ShieldIcon, label: 'Privacy First', desc: 'Your data is yours', color: 'text-violet-400' },
+                        { Icon: CpuIcon, label: 'AI Co-Director', desc: 'Pro tools for all', color: 'text-cyan-400' },
                     ].map((item) => (
                         <div key={item.label} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-center">
-                            <span className="text-2xl">{item.icon}</span>
+                            <div className="flex justify-center mb-2">
+                                <item.Icon className={item.color} size={28} />
+                            </div>
                             <p className="text-white text-sm font-medium mt-2">{item.label}</p>
                             <p className="text-white/40 text-xs mt-1">{item.desc}</p>
                         </div>

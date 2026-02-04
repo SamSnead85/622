@@ -8,6 +8,29 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { ReactionSpectrum, IntentionBadge, REACTION_SPECTRUM } from '@/components/ReactionSpectrum';
 import { DataOwnershipPanel, PrivacyFirstBadge, LiveLatencyIndicator } from '@/components/PlatformDifferentiators';
+import {
+    HomeIcon,
+    SearchIcon,
+    VideoIcon,
+    UsersIcon,
+    SendIcon,
+    MessageIcon,
+    PlusIcon,
+    BellIcon,
+    SettingsIcon,
+    CameraIcon,
+    GlobeIcon,
+    LockIcon,
+    UnlockIcon,
+    DollarIcon,
+    ShieldIcon,
+    HeartIcon,
+    ShareIcon,
+    MapPinIcon,
+    ZapIcon,
+    WaveIcon
+} from '@/components/icons';
+import React from 'react';
 
 // ============================================
 // 0G LOGO COMPONENT
@@ -128,12 +151,12 @@ function FeaturedLocationCard({ location, index }: { location: typeof FEATURED_L
 // ============================================
 function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: string; user: any; onCreateClick: () => void }) {
     const navItems = [
-        { id: 'feed', icon: '🏠', label: 'Feed', href: '/dashboard' },
-        { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
-        { id: 'live', icon: '📺', label: 'Live', href: '/campfire' },
-        { id: 'communities', icon: '👥', label: 'Communities', href: '/communities' },
-        { id: 'invite', icon: '🚀', label: 'Invite', href: '/invite', highlight: true },
-        { id: 'messages', icon: '💬', label: 'Messages', href: '/messages', hasNotification: true },
+        { id: 'feed', Icon: HomeIcon, label: 'Feed', href: '/dashboard' },
+        { id: 'explore', Icon: SearchIcon, label: 'Explore', href: '/explore' },
+        { id: 'live', Icon: VideoIcon, label: 'Live', href: '/campfire' },
+        { id: 'communities', Icon: UsersIcon, label: 'Communities', href: '/communities' },
+        { id: 'invite', Icon: SendIcon, label: 'Invite', href: '/invite', highlight: true },
+        { id: 'messages', Icon: MessageIcon, label: 'Messages', href: '/messages', hasNotification: true },
     ];
 
     return (
@@ -159,8 +182,8 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
                                     : 'text-white/60 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
-                            <span className="text-xl relative">
-                                {item.icon}
+                            <span className="relative">
+                                <item.Icon size={22} />
                                 {item.hasNotification && (
                                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#00D4FF] rounded-full" />
                                 )}
@@ -178,7 +201,7 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
                     onClick={onCreateClick}
                     className="flex items-center justify-center xl:justify-start gap-3 w-full px-4 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold hover:opacity-90 transition-opacity mb-4"
                 >
-                    <span className="text-lg">+</span>
+                    <PlusIcon size={18} />
                     <span className="hidden xl:block">Create Post</span>
                 </button>
 
@@ -212,8 +235,8 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
                             className={`flex flex-col items-center gap-1 p-2 ${activeTab === item.id ? 'text-[#00D4FF]' : 'text-white/50'
                                 }`}
                         >
-                            <span className="text-xl relative">
-                                {item.icon}
+                            <span className="relative">
+                                <item.Icon size={22} />
                                 {item.hasNotification && (
                                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#00D4FF] rounded-full" />
                                 )}
@@ -378,13 +401,13 @@ export default function DashboardPage() {
 
                                 {/* Notifications */}
                                 <Link href="/notifications" className="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-                                    <span className="text-xl">🔔</span>
+                                    <BellIcon size={22} />
                                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white">2</span>
                                 </Link>
 
                                 {/* Settings */}
                                 <Link href="/settings" className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-                                    <span className="text-xl">⚙️</span>
+                                    <SettingsIcon size={22} />
                                 </Link>
                             </div>
                         </div>
@@ -439,17 +462,17 @@ export default function DashboardPage() {
                     {/* Quick Actions Bar */}
                     <div className="mb-6 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                         {[
-                            { name: 'Share Moment', icon: '📸', href: '/create', gradient: 'from-[#00D4FF] to-[#0088CC]' },
-                            { name: 'Invite Friends', icon: '🚀', href: '/invite', gradient: 'from-[#8B5CF6] to-[#6D28D9]' },
-                            { name: 'Go Live', icon: '📺', href: '/campfire', gradient: 'from-red-500 to-orange-500' },
-                            { name: 'Find People', icon: '👥', href: '/explore', gradient: 'from-green-500 to-teal-500' },
+                            { name: 'Share Moment', Icon: CameraIcon, href: '/create', gradient: 'from-[#00D4FF] to-[#0088CC]' },
+                            { name: 'Invite Friends', Icon: SendIcon, href: '/invite', gradient: 'from-[#8B5CF6] to-[#6D28D9]' },
+                            { name: 'Go Live', Icon: VideoIcon, href: '/campfire', gradient: 'from-red-500 to-orange-500' },
+                            { name: 'Find People', Icon: UsersIcon, href: '/explore', gradient: 'from-green-500 to-teal-500' },
                         ].map((action, i) => (
                             <Link
                                 key={i}
                                 href={action.href}
                                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r ${action.gradient} text-white font-medium text-sm hover:opacity-90 transition-opacity flex-shrink-0`}
                             >
-                                <span>{action.icon}</span>
+                                <action.Icon size={18} />
                                 <span>{action.name}</span>
                             </Link>
                         ))}
@@ -532,15 +555,15 @@ export default function DashboardPage() {
                                 </div>
                                 <div className="flex items-center gap-2 mt-4 pl-16">
                                     <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-white/60 hover:bg-white/5 transition-colors">
-                                        <span>📷</span>
+                                        <CameraIcon size={18} />
                                         <span className="text-sm">Photo</span>
                                     </button>
                                     <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-white/60 hover:bg-white/5 transition-colors">
-                                        <span>🎬</span>
+                                        <VideoIcon size={18} />
                                         <span className="text-sm">Video</span>
                                     </button>
                                     <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-white/60 hover:bg-white/5 transition-colors">
-                                        <span>📺</span>
+                                        <VideoIcon size={18} />
                                         <span className="text-sm">Go Live</span>
                                     </button>
                                     <div className="flex-1" />
@@ -683,28 +706,28 @@ export default function DashboardPage() {
                                 <h3 className="text-sm font-semibold text-white mb-4">Why 0G is Different</h3>
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                                        <span className="text-lg">🔓</span>
+                                        <UnlockIcon size={20} className="text-[#00D4FF]" />
                                         <div>
                                             <p className="text-xs font-medium text-white">No Platform Lock-in</p>
                                             <p className="text-[10px] text-white/40">Export all data anytime</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                                        <span className="text-lg">💰</span>
+                                        <DollarIcon size={20} className="text-[#00D4FF]" />
                                         <div>
                                             <p className="text-xs font-medium text-white">Creators Keep 90%</p>
                                             <p className="text-[10px] text-white/40">vs 50% on TikTok</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                                        <span className="text-lg">⚡</span>
+                                        <ZapIcon size={20} className="text-[#00D4FF]" />
                                         <div>
                                             <p className="text-xs font-medium text-white">&lt;1s Live Latency</p>
                                             <p className="text-[10px] text-white/40">Others: 3-5s delay</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                                        <span className="text-lg">🛡️</span>
+                                        <ShieldIcon size={20} className="text-[#00D4FF]" />
                                         <div>
                                             <p className="text-xs font-medium text-white">Privacy-First</p>
                                             <p className="text-[10px] text-white/40">Your data stays yours</p>
@@ -720,7 +743,7 @@ export default function DashboardPage() {
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.6 }}
                             >
-                                <div className="text-2xl mb-2">👋</div>
+                                <WaveIcon size={28} className="text-[#00D4FF] mb-2" />
                                 <h3 className="text-sm font-semibold text-white mb-1">Invite Your People</h3>
                                 <p className="text-xs text-white/50 mb-3">
                                     0G is better with your tribe.

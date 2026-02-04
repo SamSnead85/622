@@ -4,13 +4,29 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
+import {
+    MessageIcon,
+    SmartphoneIcon,
+    MailIcon,
+    XIcon,
+    PlaneIcon,
+    LinkIcon,
+    HomeIcon,
+    SearchIcon,
+    PlusIcon,
+    SendIcon,
+    UserIcon,
+    QRCodeIcon,
+    LightbulbIcon,
+    TentIcon
+} from '@/components/icons';
 
 // Platform share configurations
 const SHARE_PLATFORMS = [
     {
         id: 'whatsapp',
         name: 'WhatsApp',
-        icon: '💬',
+        Icon: MessageIcon,
         color: 'from-green-500 to-green-600',
         getUrl: (link: string, message: string) =>
             `https://wa.me/?text=${encodeURIComponent(message + ' ' + link)}`,
@@ -18,7 +34,7 @@ const SHARE_PLATFORMS = [
     {
         id: 'sms',
         name: 'SMS',
-        icon: '📱',
+        Icon: SmartphoneIcon,
         color: 'from-blue-500 to-blue-600',
         getUrl: (link: string, message: string) =>
             `sms:?body=${encodeURIComponent(message + ' ' + link)}`,
@@ -26,7 +42,7 @@ const SHARE_PLATFORMS = [
     {
         id: 'email',
         name: 'Email',
-        icon: '📧',
+        Icon: MailIcon,
         color: 'from-purple-500 to-purple-600',
         getUrl: (link: string, message: string) =>
             `mailto:?subject=${encodeURIComponent('Join me on Zero Gravity!')}&body=${encodeURIComponent(message + '\n\n' + link)}`,
@@ -34,7 +50,7 @@ const SHARE_PLATFORMS = [
     {
         id: 'twitter',
         name: 'X / Twitter',
-        icon: '𝕏',
+        Icon: XIcon,
         color: 'from-gray-700 to-gray-800',
         getUrl: (link: string, message: string) =>
             `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(link)}`,
@@ -42,7 +58,7 @@ const SHARE_PLATFORMS = [
     {
         id: 'telegram',
         name: 'Telegram',
-        icon: '✈️',
+        Icon: PlaneIcon,
         color: 'from-sky-500 to-sky-600',
         getUrl: (link: string, message: string) =>
             `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(message)}`,
@@ -50,7 +66,7 @@ const SHARE_PLATFORMS = [
     {
         id: 'copy',
         name: 'Copy Link',
-        icon: '🔗',
+        Icon: LinkIcon,
         color: 'from-gray-600 to-gray-700',
         getUrl: () => '',
     },
@@ -205,7 +221,9 @@ function InvitePageContent() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
-                    <div className="text-6xl mb-4">🚀</div>
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
+                        <SendIcon className="text-white" size={32} />
+                    </div>
                     <h1 className="text-3xl font-bold text-white mb-3">
                         Invite Your People
                     </h1>
@@ -253,8 +271,8 @@ function InvitePageContent() {
                         <button
                             onClick={handleCopyLink}
                             className={`px-5 py-3 rounded-xl font-semibold text-sm transition-all ${copied
-                                    ? 'bg-green-500 text-white'
-                                    : 'bg-[#00D4FF] text-black hover:opacity-90'
+                                ? 'bg-green-500 text-white'
+                                : 'bg-[#00D4FF] text-black hover:opacity-90'
                                 }`}
                         >
                             {copied ? '✓ Copied!' : 'Copy'}
@@ -271,7 +289,7 @@ function InvitePageContent() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                     >
-                        <span>📤</span>
+                        <SendIcon size={20} />
                         Share Invite
                     </motion.button>
                 )}
@@ -290,7 +308,7 @@ function InvitePageContent() {
                                 onClick={() => handleShare(platform)}
                                 className={`p-4 rounded-2xl bg-gradient-to-br ${platform.color} hover:opacity-90 transition-opacity flex flex-col items-center gap-2`}
                             >
-                                <span className="text-2xl">{platform.icon}</span>
+                                <platform.Icon className="text-white" size={24} />
                                 <span className="text-xs font-medium text-white">{platform.name}</span>
                             </button>
                         ))}
@@ -308,7 +326,7 @@ function InvitePageContent() {
                         onClick={() => setShowQR(!showQR)}
                         className="w-full py-4 rounded-2xl border border-white/10 text-white/70 hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
                     >
-                        <span>📱</span>
+                        <QRCodeIcon size={20} />
                         {showQR ? 'Hide QR Code' : 'Show QR Code'}
                     </button>
 
@@ -354,7 +372,10 @@ function InvitePageContent() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7 }}
                 >
-                    <h3 className="text-lg font-semibold text-white mb-4">💡 Tips for Growing Your Tribe</h3>
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <LightbulbIcon className="text-amber-400" size={20} />
+                        Tips for Growing Your Tribe
+                    </h3>
                     <div className="space-y-3">
                         <div className="flex items-start gap-3 text-sm">
                             <span className="text-[#00D4FF]">1.</span>
@@ -380,9 +401,10 @@ function InvitePageContent() {
                 >
                     <Link
                         href="/communities/create"
-                        className="block w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-center text-white font-medium hover:bg-white/10 transition-colors"
+                        className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-center text-white font-medium hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
                     >
-                        🏕️ Create a Tribe for Your Community
+                        <TentIcon size={20} />
+                        Create a Tribe for Your Community
                     </Link>
                 </motion.div>
             </main>
@@ -390,24 +412,24 @@ function InvitePageContent() {
             {/* Bottom Navigation */}
             <nav className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 z-50 safe-area-pb">
                 <div className="flex items-center justify-around py-3">
-                    <Link href="/dashboard" className="flex flex-col items-center gap-1 p-2 text-white/50">
-                        <span className="text-xl">🏠</span>
+                    <Link href="/dashboard" className="flex flex-col items-center gap-1 p-2 text-white/50 hover:text-white transition-colors">
+                        <HomeIcon size={22} />
                         <span className="text-[10px]">Home</span>
                     </Link>
-                    <Link href="/explore" className="flex flex-col items-center gap-1 p-2 text-white/50">
-                        <span className="text-xl">🔍</span>
+                    <Link href="/explore" className="flex flex-col items-center gap-1 p-2 text-white/50 hover:text-white transition-colors">
+                        <SearchIcon size={22} />
                         <span className="text-[10px]">Explore</span>
                     </Link>
-                    <Link href="/create" className="flex flex-col items-center gap-1 p-2 text-white/50">
-                        <span className="text-xl">➕</span>
+                    <Link href="/create" className="flex flex-col items-center gap-1 p-2 text-white/50 hover:text-white transition-colors">
+                        <PlusIcon size={22} />
                         <span className="text-[10px]">Create</span>
                     </Link>
                     <Link href="/invite" className="flex flex-col items-center gap-1 p-2 text-[#00D4FF]">
-                        <span className="text-xl">🚀</span>
+                        <SendIcon size={22} />
                         <span className="text-[10px]">Invite</span>
                     </Link>
-                    <Link href="/profile" className="flex flex-col items-center gap-1 p-2 text-white/50">
-                        <span className="text-xl">👤</span>
+                    <Link href="/profile" className="flex flex-col items-center gap-1 p-2 text-white/50 hover:text-white transition-colors">
+                        <UserIcon size={22} />
                         <span className="text-[10px]">Profile</span>
                     </Link>
                 </div>

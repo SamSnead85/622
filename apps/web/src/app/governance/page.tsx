@@ -4,6 +4,21 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { CommunityVote, CollectiveSponsorship, StoryRequestBoard } from '@/components/CommunityGovernance';
+import {
+    VoteIcon,
+    HeartIcon,
+    MapPinIcon,
+    ShieldIcon,
+    EyeIcon,
+    ClipboardIcon,
+    SearchIcon,
+    NewspaperIcon,
+    MedicalIcon,
+    SmartphoneIcon,
+    GraduationIcon,
+    UsersIcon,
+    DollarIcon
+} from '@/components/icons';
 
 // ============================================================================
 // SAMPLE DATA
@@ -16,9 +31,9 @@ const ACTIVE_VOTES = [
         description: 'Should posts display why they appeared in your feed?',
         expiresIn: '2 days',
         options: [
-            { id: '1', title: 'Full transparency', description: 'Show all ranking factors', votes: 8234, userVoted: false, icon: '👁️' },
-            { id: '2', title: 'Summary only', description: 'High-level reasons', votes: 3421, userVoted: false, icon: '📋' },
-            { id: '3', title: 'On request', description: 'Click to reveal', votes: 1892, userVoted: false, icon: '🔍' },
+            { id: '1', title: 'Full transparency', description: 'Show all ranking factors', votes: 8234, userVoted: false, Icon: EyeIcon },
+            { id: '2', title: 'Summary only', description: 'High-level reasons', votes: 3421, userVoted: false, Icon: ClipboardIcon },
+            { id: '3', title: 'On request', description: 'Click to reveal', votes: 1892, userVoted: false, Icon: SearchIcon },
         ],
     },
     {
@@ -27,10 +42,10 @@ const ACTIVE_VOTES = [
         description: 'Rank which creators should receive expedited verification',
         expiresIn: '5 days',
         options: [
-            { id: '1', title: 'Journalists in conflict zones', description: 'Priority for those in danger', votes: 12847, userVoted: true, icon: '📰' },
-            { id: '2', title: 'Humanitarian workers', description: 'Aid workers on the ground', votes: 8921, userVoted: false, icon: '🏥' },
-            { id: '3', title: 'Citizen journalists', description: 'Community documenters', votes: 6234, userVoted: false, icon: '📱' },
-            { id: '4', title: 'Researchers & academics', description: 'Subject matter experts', votes: 4102, userVoted: false, icon: '🎓' },
+            { id: '1', title: 'Journalists in conflict zones', description: 'Priority for those in danger', votes: 12847, userVoted: true, Icon: NewspaperIcon },
+            { id: '2', title: 'Humanitarian workers', description: 'Aid workers on the ground', votes: 8921, userVoted: false, Icon: MedicalIcon },
+            { id: '3', title: 'Citizen journalists', description: 'Community documenters', votes: 6234, userVoted: false, Icon: SmartphoneIcon },
+            { id: '4', title: 'Researchers & academics', description: 'Subject matter experts', votes: 4102, userVoted: false, Icon: GraduationIcon },
         ],
     },
 ];
@@ -88,11 +103,11 @@ type Tab = 'votes' | 'sponsorship' | 'requests' | 'moderation';
 export default function GovernancePage() {
     const [activeTab, setActiveTab] = useState<Tab>('votes');
 
-    const tabs: { id: Tab; label: string; icon: string; badge?: number }[] = [
-        { id: 'votes', label: 'Active Votes', icon: '🗳️', badge: 2 },
-        { id: 'sponsorship', label: 'Sponsorship', icon: '💜' },
-        { id: 'requests', label: 'Story Requests', icon: '📍', badge: 4 },
-        { id: 'moderation', label: 'Moderation', icon: '🛡️' },
+    const tabs: { id: Tab; label: string; Icon: React.ComponentType<{ size?: number; className?: string }>; badge?: number }[] = [
+        { id: 'votes', label: 'Active Votes', Icon: VoteIcon, badge: 2 },
+        { id: 'sponsorship', label: 'Sponsorship', Icon: HeartIcon },
+        { id: 'requests', label: 'Story Requests', Icon: MapPinIcon, badge: 4 },
+        { id: 'moderation', label: 'Moderation', Icon: ShieldIcon },
     ];
 
     return (
@@ -128,13 +143,15 @@ export default function GovernancePage() {
                 <div className="max-w-6xl mx-auto px-6 py-6">
                     <div className="grid grid-cols-4 gap-6">
                         {[
-                            { label: 'Active Proposals', value: '12', icon: '📜' },
-                            { label: 'Total Voters', value: '48,234', icon: '👥' },
-                            { label: 'Funds Raised', value: '$2.4M', icon: '💰' },
-                            { label: 'Stories Funded', value: '89', icon: '📰' },
+                            { label: 'Active Proposals', value: '12', Icon: ClipboardIcon, color: 'text-violet-400' },
+                            { label: 'Total Voters', value: '48,234', Icon: UsersIcon, color: 'text-cyan-400' },
+                            { label: 'Funds Raised', value: '$2.4M', Icon: DollarIcon, color: 'text-emerald-400' },
+                            { label: 'Stories Funded', value: '89', Icon: NewspaperIcon, color: 'text-amber-400' },
                         ].map((stat) => (
                             <div key={stat.label} className="text-center">
-                                <span className="text-2xl mb-2 block">{stat.icon}</span>
+                                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mx-auto mb-2">
+                                    <stat.Icon size={24} className={stat.color} />
+                                </div>
                                 <p className="text-2xl font-bold text-white">{stat.value}</p>
                                 <p className="text-sm text-white/50">{stat.label}</p>
                             </div>
@@ -157,7 +174,7 @@ export default function GovernancePage() {
                                 : 'bg-white/5 text-white/70 hover:bg-white/10'
                                 }`}
                         >
-                            <span>{tab.icon}</span>
+                            <tab.Icon size={18} />
                             <span>{tab.label}</span>
                             {tab.badge && (
                                 <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === tab.id ? 'bg-gray-900 text-white' : 'bg-white/10'
@@ -254,10 +271,10 @@ function ModerationPanel() {
     const [selectedAction, setSelectedAction] = useState<string | null>(null);
 
     const moderationPrinciples = [
-        { icon: '🤝', title: 'Community-First', desc: 'Moderation decisions prioritize community safety and trust' },
-        { icon: '👁️', title: 'Transparent', desc: 'All moderation actions are logged and reviewable' },
-        { icon: '⚖️', title: 'Fair', desc: 'Appeals are handled by diverse community panels' },
-        { icon: '🛡️', title: 'Protective', desc: 'Zero tolerance for harassment, hate speech, and misinformation' },
+        { Icon: UsersIcon, title: 'Community-First', desc: 'Moderation decisions prioritize community safety and trust', color: 'text-cyan-400' },
+        { Icon: EyeIcon, title: 'Transparent', desc: 'All moderation actions are logged and reviewable', color: 'text-violet-400' },
+        { Icon: VoteIcon, title: 'Fair', desc: 'Appeals are handled by diverse community panels', color: 'text-emerald-400' },
+        { Icon: ShieldIcon, title: 'Protective', desc: 'Zero tolerance for harassment, hate speech, and misinformation', color: 'text-amber-400' },
     ];
 
     const recentActions = [
@@ -274,7 +291,9 @@ function ModerationPanel() {
                 <div className="grid md:grid-cols-4 gap-4">
                     {moderationPrinciples.map((principle) => (
                         <div key={principle.title} className="text-center p-4 rounded-xl bg-white/[0.02]">
-                            <span className="text-2xl mb-2 block">{principle.icon}</span>
+                            <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mx-auto mb-3">
+                                <principle.Icon size={22} className={principle.color} />
+                            </div>
                             <h4 className="font-medium text-white mb-1">{principle.title}</h4>
                             <p className="text-xs text-white/50">{principle.desc}</p>
                         </div>
@@ -307,8 +326,8 @@ function ModerationPanel() {
             {/* Join Moderation Council */}
             <div className="bg-gradient-to-r from-emerald-900/20 to-cyan-900/20 rounded-2xl border border-emerald-500/20 p-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-emerald-500/20 flex items-center justify-center text-3xl">
-                        🛡️
+                    <div className="w-14 h-14 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                        <ShieldIcon size={28} className="text-emerald-400" />
                     </div>
                     <div className="flex-1">
                         <h3 className="text-lg font-semibold text-white">Join the Moderation Council</h3>

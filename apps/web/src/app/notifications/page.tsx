@@ -5,35 +5,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
+import { Navigation } from '@/components/Navigation';
+import { HeartIcon, UserIcon, MessageIcon, BellIcon, UsersIcon, VideoIcon } from '@/components/icons';
+import React from 'react';
 
-// Navigation
-function Navigation({ activeTab }: { activeTab: string }) {
-    const navItems = [
-        { id: 'home', icon: '🏠', label: 'Home', href: '/dashboard' },
-        { id: 'explore', icon: '🔍', label: 'Explore', href: '/explore' },
-        { id: 'communities', icon: '👥', label: 'Tribes', href: '/communities' },
-        { id: 'invite', icon: '🚀', label: 'Invite', href: '/invite' },
-        { id: 'messages', icon: '💬', label: 'Messages', href: '/messages' },
-    ];
-
-    return (
-        <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-20 xl:w-64 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col p-4 z-40">
-            <Link href="/" className="flex items-center gap-3 px-3 py-4 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center flex-shrink-0">
-                    <span className="text-black font-bold text-lg">0G</span>
-                </div>
-            </Link>
-            <nav className="flex-1 space-y-2">
-                {navItems.map((item) => (
-                    <Link key={item.id} href={item.href} className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${activeTab === item.id ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5'}`}>
-                        <span className="text-2xl">{item.icon}</span>
-                        <span className="font-medium hidden xl:block">{item.label}</span>
-                    </Link>
-                ))}
-            </nav>
-        </aside>
-    );
-}
 
 // Mock notifications for fallback
 const MOCK_NOTIFICATIONS = [
@@ -43,16 +18,17 @@ const MOCK_NOTIFICATIONS = [
     { id: '4', type: 'MENTION' as const, message: 'mentioned you in a post', read: true, actorId: '4', actor: { id: '4', username: 'jordan_lee', displayName: 'Jordan Lee', avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&crop=face' }, createdAt: new Date().toISOString() },
 ];
 
-function getNotificationIcon(type: Notification['type']): string {
+function getNotificationIcon(type: Notification['type']): React.ReactNode {
+    const iconProps = { size: 14, className: 'text-white' };
     switch (type) {
-        case 'LIKE': return '🔥';
-        case 'FOLLOW': return '👤';
-        case 'COMMENT': return '💬';
-        case 'MENTION': return '@';
-        case 'MESSAGE': return '✉️';
-        case 'COMMUNITY': return '🏘️';
-        case 'JOURNEY': return '🎬';
-        default: return '🔔';
+        case 'LIKE': return <HeartIcon {...iconProps} />;
+        case 'FOLLOW': return <UserIcon {...iconProps} />;
+        case 'COMMENT': return <MessageIcon {...iconProps} />;
+        case 'MENTION': return <span className="text-white text-xs font-bold">@</span>;
+        case 'MESSAGE': return <MessageIcon {...iconProps} />;
+        case 'COMMUNITY': return <UsersIcon {...iconProps} />;
+        case 'JOURNEY': return <VideoIcon {...iconProps} />;
+        default: return <BellIcon {...iconProps} />;
     }
 }
 
@@ -137,7 +113,9 @@ export default function NotificationsPage() {
                 {/* Error State */}
                 {error && !isLoading && (
                     <div className="py-20 text-center">
-                        <span className="text-5xl mb-4 block">⚠️</span>
+                        <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-500/20 flex items-center justify-center">
+                            <BellIcon size={28} className="text-amber-400" />
+                        </div>
                         <p className="text-white/50">{error}</p>
                     </div>
                 )}
@@ -147,7 +125,9 @@ export default function NotificationsPage() {
                     <div className="max-w-2xl mx-auto">
                         {filteredNotifications.length === 0 ? (
                             <div className="py-20 text-center">
-                                <span className="text-5xl mb-4 block">🔔</span>
+                                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center">
+                                    <BellIcon size={28} className="text-white/40" />
+                                </div>
                                 <p className="text-white/50">No unread notifications</p>
                             </div>
                         ) : (
