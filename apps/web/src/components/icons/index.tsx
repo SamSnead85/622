@@ -1391,3 +1391,23 @@ export function CloseIcon({ className = '', size }: IconProps) {
     );
 }
 
+// Minus Icon (for minimize)
+export function MinusIcon({ className = '', size }: IconProps) {
+    const s = getSize(size);
+    return (
+        <svg
+            width={s}
+            height={s}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <path d="M5 12h14" />
+        </svg>
+    );
+}
+

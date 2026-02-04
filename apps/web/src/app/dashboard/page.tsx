@@ -383,7 +383,7 @@ export default function DashboardPage() {
                                 </Link>
                                 <div>
                                     <h1 className="text-xl md:text-2xl font-bold text-white">
-                                        Welcome back{user.displayName ? `, ${user.displayName.split(' ')[0]}` : ''}
+                                        Welcome back{user.displayName ? `, ${user.displayName}` : ''}
                                     </h1>
                                     <p className="text-white/50 text-sm">Your 0G social hub</p>
                                 </div>
