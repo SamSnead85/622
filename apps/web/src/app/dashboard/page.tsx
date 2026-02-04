@@ -52,25 +52,33 @@ function ZeroGLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 function AutoPlayVideo({ src, className = '' }: { src: string; className?: string }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isMuted, setIsMuted] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
+    const [progress, setProgress] = useState(0);
+    const [showControls, setShowControls] = useState(false);
 
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
+
+        // Update progress bar
+        const handleTimeUpdate = () => {
+            if (video.duration) {
+                setProgress((video.currentTime / video.duration) * 100);
+            }
+        };
+
+        video.addEventListener('timeupdate', handleTimeUpdate);
 
         // Intersection Observer for autoplay when in view
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting && entry.intersectionRatio >= 0.75) {
-                        // Video is mostly in view - play
                         video.play().catch(() => {
-                            // Autoplay might be blocked, user needs to interact
                             console.log('Autoplay blocked, user interaction required');
                         });
                         setIsPlaying(true);
                     } else {
-                        // Video is out of view - pause
                         video.pause();
                         setIsPlaying(false);
                     }
@@ -86,10 +94,12 @@ function AutoPlayVideo({ src, className = '' }: { src: string; className?: strin
 
         return () => {
             observer.disconnect();
+            video.removeEventListener('timeupdate', handleTimeUpdate);
         };
     }, []);
 
-    const toggleMute = useCallback(() => {
+    const toggleMute = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
         if (videoRef.current) {
             videoRef.current.muted = !videoRef.current.muted;
             setIsMuted(!isMuted);
@@ -107,8 +117,20 @@ function AutoPlayVideo({ src, className = '' }: { src: string; className?: strin
         }
     }, [isPlaying]);
 
+    const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (videoRef.current) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            videoRef.current.currentTime = percent * videoRef.current.duration;
+        }
+    }, []);
+
     return (
-        <div className="relative group">
+        <div
+            className="relative group"
+            onMouseEnter={() => setShowControls(true)}
+            onMouseLeave={() => setShowControls(false)}
+        >
             <video
                 ref={videoRef}
                 src={src}
@@ -123,28 +145,160 @@ function AutoPlayVideo({ src, className = '' }: { src: string; className?: strin
                 className="absolute inset-0 flex items-center justify-center cursor-pointer"
                 onClick={togglePlay}
             >
-                {!isPlaying && (
-                    <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center">
-                        <span className="text-3xl">▶️</span>
-                    </div>
-                )}
+                <AnimatePresence>
+                    {!isPlaying && (
+                        <motion.div
+                            className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center border border-white/20"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                        >
+                            <span className="text-3xl ml-1">▶️</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
-            {/* Mute/Unmute Button - Always visible */}
-            <button
-                onClick={toggleMute}
-                className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/60 flex items-center justify-center border border-white/20 hover:bg-black/80 transition-colors"
+
+            {/* Controls Overlay - Bottom */}
+            <motion.div
+                className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent"
+                initial={false}
+                animate={{ opacity: showControls || !isPlaying ? 1 : 0 }}
+                transition={{ duration: 0.2 }}
             >
-                <span className="text-lg">{isMuted ? '🔇' : '🔊'}</span>
-            </button>
-            {/* Progress indicator at bottom */}
-            {isPlaying && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-                    <div className="h-full bg-[#00D4FF] animate-pulse" style={{ width: '100%' }} />
+                {/* Progress Bar - Clickable */}
+                <div
+                    className="w-full h-1.5 bg-white/20 rounded-full cursor-pointer mb-2 group/progress"
+                    onClick={handleSeek}
+                >
+                    <motion.div
+                        className="h-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] rounded-full relative"
+                        style={{ width: `${progress}%` }}
+                    >
+                        {/* Scrubber Handle */}
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-md opacity-0 group-hover/progress:opacity-100 transition-opacity" />
+                    </motion.div>
                 </div>
-            )}
+
+                {/* Control Buttons */}
+                <div className="flex items-center justify-between">
+                    <button
+                        onClick={toggleMute}
+                        className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                    >
+                        <span className="text-lg">{isMuted ? '🔇' : '🔊'}</span>
+                    </button>
+                    <span className="text-xs text-white/60 font-medium">
+                        {videoRef.current ? `${Math.floor(videoRef.current.currentTime)}s` : '0s'}
+                    </span>
+                </div>
+            </motion.div>
         </div>
     );
 }
+
+// ============================================
+// DOUBLE-TAP HEART ANIMATION - Instagram style
+// ============================================
+function DoubleTapHeart({
+    children,
+    onDoubleTap,
+    className = ''
+}: {
+    children: React.ReactNode;
+    onDoubleTap: () => void;
+    className?: string;
+}) {
+    const [showHeart, setShowHeart] = useState(false);
+    const lastTapRef = useRef<number>(0);
+    const DOUBLE_TAP_DELAY = 300;
+
+    const handleTap = useCallback(() => {
+        const now = Date.now();
+        if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+            // Double tap detected
+            onDoubleTap();
+            setShowHeart(true);
+            setTimeout(() => setShowHeart(false), 1200);
+        }
+        lastTapRef.current = now;
+    }, [onDoubleTap]);
+
+    return (
+        <div className={`relative ${className}`} onClick={handleTap}>
+            {children}
+            <AnimatePresence>
+                {showHeart && (
+                    <motion.div
+                        className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        {/* Main heart */}
+                        <motion.div
+                            initial={{ scale: 0, rotate: -20 }}
+                            animate={{ scale: [0, 1.4, 1], rotate: [-20, 10, 0] }}
+                            transition={{ duration: 0.5, ease: 'easeOut' }}
+                            className="relative"
+                        >
+                            <span className="text-[100px] drop-shadow-[0_0_40px_rgba(255,0,100,0.8)]">❤️</span>
+                        </motion.div>
+                        {/* Particle burst */}
+                        {[...Array(8)].map((_, i) => (
+                            <motion.div
+                                key={i}
+                                className="absolute w-3 h-3 rounded-full"
+                                style={{ background: i % 2 === 0 ? '#FF0064' : '#00D4FF' }}
+                                initial={{ scale: 0, x: 0, y: 0 }}
+                                animate={{
+                                    scale: [0, 1, 0],
+                                    x: Math.cos((i * 45 * Math.PI) / 180) * 100,
+                                    y: Math.sin((i * 45 * Math.PI) / 180) * 100,
+                                    opacity: [1, 1, 0],
+                                }}
+                                transition={{ duration: 0.7, delay: 0.1 }}
+                            />
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+// ============================================
+// LOADING SKELETON - Premium animated placeholder
+// ============================================
+function PostSkeleton() {
+    return (
+        <div className="bg-white/[0.02] rounded-2xl border border-white/5 overflow-hidden animate-pulse">
+            {/* Header skeleton */}
+            <div className="p-4 pb-2">
+                <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-white/10" />
+                    <div className="flex-1">
+                        <div className="h-4 w-32 bg-white/10 rounded mb-2" />
+                        <div className="h-3 w-48 bg-white/5 rounded" />
+                    </div>
+                </div>
+            </div>
+            {/* Media skeleton */}
+            <div className="aspect-[4/3] bg-white/5">
+                <div className="w-full h-full bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-shimmer" />
+            </div>
+            {/* Actions skeleton */}
+            <div className="p-4 border-t border-white/5">
+                <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 rounded-full bg-white/10" />
+                    <div className="w-8 h-8 rounded-full bg-white/10" />
+                    <div className="w-8 h-8 rounded-full bg-white/10" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
 
 // ============================================
 // NEW MEMBERS BANNER - Welcome Ticker
@@ -772,9 +926,10 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
 // ============================================
 export default function DashboardPage() {
     const { user, isLoading } = useAuth();
-    const { posts, likePost, isLoading: postsLoading, refetch } = usePosts();
+    const { posts, likePost, isLoading: postsLoading, refetch, hasMore, loadMore } = usePosts();
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
+    const loadMoreRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setMounted(true);
@@ -992,10 +1147,12 @@ export default function DashboardPage() {
                                     </Link>
                                 </div>
 
-                                {/* Loading State */}
+                                {/* Loading State - Premium Skeletons */}
                                 {postsLoading && posts.length === 0 && (
-                                    <div className="flex justify-center py-8">
-                                        <div className="w-8 h-8 rounded-full border-2 border-[#00D4FF]/20 border-t-[#00D4FF] animate-spin" />
+                                    <div className="space-y-4">
+                                        <PostSkeleton />
+                                        <PostSkeleton />
+                                        <PostSkeleton />
                                     </div>
                                 )}
 
@@ -1044,21 +1201,23 @@ export default function DashboardPage() {
                                             </div>
                                         </div>
 
-                                        {/* Media Container - Standardized Aspect Ratio */}
+                                        {/* Media Container - Double-tap to like */}
                                         {post.mediaUrl && (
-                                            <div className="relative w-full aspect-[4/3] bg-black/30 overflow-hidden">
-                                                {post.mediaType === 'VIDEO' ? (
-                                                    <div className="absolute inset-0">
-                                                        <AutoPlayVideo src={post.mediaUrl} />
-                                                    </div>
-                                                ) : (
-                                                    <img
-                                                        src={post.mediaUrl}
-                                                        alt="Post media"
-                                                        className="absolute inset-0 w-full h-full object-cover"
-                                                    />
-                                                )}
-                                            </div>
+                                            <DoubleTapHeart onDoubleTap={() => !post.isLiked && likePost(post.id)}>
+                                                <div className="relative w-full aspect-[4/3] bg-black/30 overflow-hidden cursor-pointer">
+                                                    {post.mediaType === 'VIDEO' ? (
+                                                        <div className="absolute inset-0">
+                                                            <AutoPlayVideo src={post.mediaUrl} />
+                                                        </div>
+                                                    ) : (
+                                                        <img
+                                                            src={post.mediaUrl}
+                                                            alt="Post media"
+                                                            className="absolute inset-0 w-full h-full object-cover"
+                                                        />
+                                                    )}
+                                                </div>
+                                            </DoubleTapHeart>
                                         )}
 
                                         {/* Text-only posts get a consistent height placeholder */}
@@ -1138,9 +1297,20 @@ export default function DashboardPage() {
                                     </div>
                                 ))}
 
-                                {/* Load More */}
-                                {posts.length > 0 && (
-                                    <div className="text-center py-4">
+                                {/* Infinite Scroll Sentinel */}
+                                {hasMore && (
+                                    <div ref={loadMoreRef} className="py-8 flex justify-center">
+                                        <div onClick={loadMore} className="flex flex-col items-center gap-2 cursor-pointer group">
+                                            <div className="w-8 h-8 rounded-full border-2 border-[#00D4FF]/30 border-t-[#00D4FF] animate-spin" />
+                                            <span className="text-xs text-white/40 group-hover:text-[#00D4FF] transition-colors">Loading more...</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Refresh Feed Button */}
+                                {posts.length > 0 && !hasMore && (
+                                    <div className="text-center py-6">
+                                        <div className="text-white/30 text-sm mb-3">You're all caught up! ✨</div>
                                         <button
                                             onClick={() => refetch()}
                                             className="px-6 py-2.5 rounded-xl bg-white/5 text-white/60 text-sm font-medium hover:bg-white/10 transition-colors border border-white/5"
