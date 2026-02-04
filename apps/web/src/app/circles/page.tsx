@@ -195,7 +195,7 @@ export default function CirclesPage() {
                     {/* Quote */}
                     <div className="text-center">
                         <p className="text-white/60 italic text-lg">
-                            "The believers are like a structure, each part strengthening the other"
+                            &ldquo;The believers are like a structure, each part strengthening the other&rdquo;
                         </p>
                         <p className="text-amber-400 text-sm mt-1">— Hadith</p>
                     </div>
