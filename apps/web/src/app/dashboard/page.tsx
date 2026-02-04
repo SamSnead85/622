@@ -1012,47 +1012,59 @@ export default function DashboardPage() {
                                     </div>
                                 )}
 
-                                {/* Real Posts */}
+                                {/* Real Posts - Standardized Card Sizing */}
                                 {posts.map(post => (
                                     <div key={post.id} className="bg-white/[0.02] rounded-2xl border border-white/5 overflow-hidden">
-                                        <div className="p-4">
+                                        {/* Header - Fixed Height */}
+                                        <div className="p-4 pb-2">
                                             <div className="flex items-start gap-3">
                                                 {post.author.avatarUrl ? (
                                                     <img
                                                         src={post.author.avatarUrl}
                                                         alt={post.author.displayName}
-                                                        className="w-10 h-10 rounded-full object-cover"
+                                                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                                                     />
                                                 ) : (
-                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-sm">
+                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-sm flex-shrink-0">
                                                         {post.author.displayName?.[0] || 'U'}
                                                     </div>
                                                 )}
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-semibold text-white text-sm">{post.author.displayName}</span>
-                                                        <span className="px-2 py-0.5 rounded-full bg-[#00D4FF]/20 text-[#00D4FF] text-[10px]">🌍 Public</span>
-                                                        <span className="text-white/30 text-xs">• {new Date(post.createdAt).toLocaleDateString()}</span>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="font-semibold text-white text-sm truncate">{post.author.displayName}</span>
+                                                        <span className="px-2 py-0.5 rounded-full bg-[#00D4FF]/20 text-[#00D4FF] text-[10px] flex-shrink-0">🌍 Public</span>
+                                                        <span className="text-white/30 text-xs flex-shrink-0">• {new Date(post.createdAt).toLocaleDateString()}</span>
                                                     </div>
                                                     {post.content && (
-                                                        <p className="text-white/70 text-sm mt-2">{post.content}</p>
+                                                        <p className="text-white/70 text-sm mt-1 line-clamp-3">{post.content}</p>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* Media Display */}
+                                        {/* Media Container - Standardized Aspect Ratio */}
                                         {post.mediaUrl && (
-                                            <div className="relative">
+                                            <div className="relative w-full aspect-[4/3] bg-black/30 overflow-hidden">
                                                 {post.mediaType === 'VIDEO' ? (
-                                                    <AutoPlayVideo src={post.mediaUrl} />
+                                                    <div className="absolute inset-0">
+                                                        <AutoPlayVideo src={post.mediaUrl} />
+                                                    </div>
                                                 ) : (
                                                     <img
                                                         src={post.mediaUrl}
                                                         alt="Post media"
-                                                        className="w-full max-h-[500px] object-contain bg-black/50"
+                                                        className="absolute inset-0 w-full h-full object-cover"
                                                     />
                                                 )}
+                                            </div>
+                                        )}
+
+                                        {/* Text-only posts get a consistent height placeholder */}
+                                        {!post.mediaUrl && (
+                                            <div className="px-4 py-6 flex items-center justify-center min-h-[120px] bg-gradient-to-br from-[#00D4FF]/5 to-[#8B5CF6]/5">
+                                                <div className="text-center">
+                                                    <span className="text-4xl">{post.content?.length && post.content.length > 100 ? '📝' : '💭'}</span>
+                                                </div>
                                             </div>
                                         )}
 
