@@ -149,8 +149,8 @@ function Navigation() {
 // ============================================
 
 const heroImages = [
+    { id: 'caravan', src: 'https://images.unsplash.com/photo-1769018003686-b01c7ba79b57?w=2000&h=1200&fit=crop&q=90' },
     { id: 'jerusalem', src: 'https://images.unsplash.com/photo-1547483238-f400e65ccd56?w=2000&h=1200&fit=crop&q=90' },
-    { id: 'protest', src: 'https://images.unsplash.com/photo-1591189863345-9db0dc1f5a1c?w=2000&h=1200&fit=crop&q=90' },
     { id: 'horizon', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=2000&h=1200&fit=crop&q=90' },
 ];
 
