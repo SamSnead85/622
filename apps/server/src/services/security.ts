@@ -7,7 +7,7 @@
 
 import { PrismaClient, ThreatLevel, SecurityPolicyType, Prisma } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
-import { getGeoFromIP, isPlatformGeoBlocked } from './geoblock';
+import { getGeoFromIP, isPlatformGeoBlocked } from './geoblock.js';
 
 const prisma = new PrismaClient();
 
