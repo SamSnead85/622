@@ -79,7 +79,7 @@ function Wordmark() {
                 <span className="text-black font-bold text-lg tracking-tight">0G</span>
             </div>
             <span className="text-white/80 font-light tracking-[0.2em] text-sm uppercase hidden sm:block">
-                Zero Gravity
+                ZeroG
             </span>
         </div>
     );
@@ -639,7 +639,7 @@ function TestimonialsSection() {
             avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
         },
         {
-            quote: "Zero Gravity has become our family's digital home. It's exactly what social media should have been from the start.",
+            quote: "0G has become our family's digital home. It's exactly what social media should have been from the start.",
             author: "Marcus Williams",
             role: "Community Builder",
             avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
@@ -798,7 +798,7 @@ function Footer() {
 
                 <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-white/20 text-xs">
-                        © 2026 Zero Gravity. All rights reserved.
+                        © 2026 ZeroG. All rights reserved.
                     </p>
                     <div className="flex items-center gap-6 text-xs text-white/30">
                         <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>

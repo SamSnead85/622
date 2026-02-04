@@ -43,7 +43,7 @@ function Navigation() {
                         <span className="text-[#00D4FF]">0</span>
                         <span className="text-white">G</span>
                     </div>
-                    <span className="text-lg font-medium text-white/70 hidden xl:block">Zero Gravity</span>
+                    <span className="text-lg font-medium text-white/70 hidden xl:block">ZeroG</span>
                 </div>
             </Link>
             <nav className="flex-1 space-y-2">

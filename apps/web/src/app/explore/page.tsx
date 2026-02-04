@@ -58,7 +58,7 @@ function Navigation({ activeTab, userAvatarUrl, displayName, username }: { activ
                         <span className="text-[#00D4FF]">0</span>
                         <span className="text-white">G</span>
                     </div>
-                    <span className="text-white/60 text-sm font-medium hidden xl:block">Zero Gravity</span>
+                    <span className="text-white/60 text-sm font-medium hidden xl:block">ZeroG</span>
                 </Link>
 
                 <nav className="flex-1 space-y-2">

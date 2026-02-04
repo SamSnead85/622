@@ -495,7 +495,7 @@ function LoginContent() {
                                 href="/signup"
                                 className="text-[#00D4FF] hover:text-[#33DDFF] font-medium transition-colors"
                             >
-                                Join Zero Gravity
+                                Join ZeroG
                             </Link>
                         </p>
                     </motion.div>

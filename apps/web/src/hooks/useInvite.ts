@@ -163,8 +163,8 @@ export function useInvite() {
                 await navigator.share({
                     title: 'Join me on 0G!',
                     text: displayName
-                        ? `${displayName} invited you to join 0G - Zero Gravity Social`
-                        : "You're invited to join 0G - Zero Gravity Social",
+                        ? `${displayName} invited you to join 0G - ZeroG Social`
+                        : "You're invited to join 0G - ZeroG Social",
                     url: link,
                 });
                 return true;

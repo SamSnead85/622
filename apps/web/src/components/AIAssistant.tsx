@@ -14,7 +14,7 @@ interface Message {
     content: string;
 }
 
-const SYSTEM_PROMPT = `You are 0G Assistant, a helpful guide for the 0G (Zero Gravity) social platform. You help users:
+const SYSTEM_PROMPT = `You are 0G Assistant, a helpful guide for the 0G (ZeroG) social platform. You help users:
 
 - Navigate the platform and find features
 - Post photos, videos, and content

@@ -428,7 +428,7 @@ function Navigation() {
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
                         <span className="text-white font-bold">0G</span>
                     </div>
-                    <span className="text-white/60 text-sm font-medium hidden xl:block">Zero Gravity</span>
+                    <span className="text-white/60 text-sm font-medium hidden xl:block">ZeroG</span>
                 </Link>
                 <nav className="flex-1 space-y-2">
                     {navItems.map((item) => (

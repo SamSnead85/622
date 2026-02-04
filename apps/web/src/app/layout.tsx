@@ -4,19 +4,19 @@ import { Providers } from './providers';
 
 export const metadata: Metadata = {
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://0gravity.ai'),
-    title: '0G - Zero Gravity | The Journey. Together.',
+    title: '0G - ZeroG | The Journey. Together.',
     description: 'The next generation social network. Where authentic connections transcend algorithms. Join the caravan of creators, communities, and changemakers building a weightless digital future.',
     keywords: ['social media', 'zero gravity', '0G', 'creator economy', 'AI', 'transparent algorithm', 'privacy', 'community', 'caravan', 'authentic connections'],
     openGraph: {
-        title: '0G - Zero Gravity | The Journey. Together.',
+        title: '0G - ZeroG | The Journey. Together.',
         description: 'Where authentic connections transcend algorithms. Join the caravan of creators, communities, and changemakers.',
         type: 'website',
-        siteName: '0G - Zero Gravity',
+        siteName: '0G - ZeroG',
         images: ['/og-image.png'],
     },
     twitter: {
         card: 'summary_large_image',
-        title: '0G - Zero Gravity | The Journey. Together.',
+        title: '0G - ZeroG | The Journey. Together.',
         description: 'Where authentic connections transcend algorithms. Join the caravan of creators, communities, and changemakers.',
         images: ['/og-image.png'],
     },

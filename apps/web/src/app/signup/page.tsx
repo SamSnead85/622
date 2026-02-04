@@ -103,7 +103,7 @@ export default function SignupPage() {
                                 <span className="text-[#00D4FF]">0</span>
                                 <span className="text-white">G</span>
                             </div>
-                            <span className="font-semibold text-xl text-white/70">Zero Gravity</span>
+                            <span className="font-semibold text-xl text-white/70">ZeroG</span>
                         </Link>
 
                         {/* Progress indicator */}
@@ -131,7 +131,7 @@ export default function SignupPage() {
                                     exit={{ opacity: 0, x: -20 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <h1 className="text-3xl font-bold text-white mb-2">Join Zero Gravity</h1>
+                                    <h1 className="text-3xl font-bold text-white mb-2">Join ZeroG</h1>
                                     <p className="text-white/50 mb-8">
                                         The next generation of social. Weightless. Authentic. Yours.
                                     </p>

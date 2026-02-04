@@ -126,7 +126,7 @@ function InvitePageContent() {
         ? `${window.location.origin}/signup?ref=${inviteCode}`
         : `https://zerogravity.app/signup?ref=${inviteCode}`;
 
-    const inviteMessage = `Join me on Zero Gravity (0G) - a social network built for us, by us. No ads, no algorithms, just real connections.`;
+    const inviteMessage = `Join me on 0G (ZeroG) - a social network built for us, by us. No ads, no algorithms, just real connections.`;
 
     const handleCopyLink = async () => {
         try {
@@ -157,7 +157,7 @@ function InvitePageContent() {
         if (navigator.share && platform.id === 'native') {
             try {
                 await navigator.share({
-                    title: 'Join Zero Gravity',
+                    title: 'Join ZeroG',
                     text: inviteMessage,
                     url: inviteLink,
                 });
@@ -176,7 +176,7 @@ function InvitePageContent() {
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Join Zero Gravity',
+                    title: 'Join ZeroG',
                     text: inviteMessage,
                     url: inviteLink,
                 });
@@ -228,7 +228,7 @@ function InvitePageContent() {
                         Invite Your People
                     </h1>
                     <p className="text-white/60 max-w-md mx-auto">
-                        Zero Gravity is better with your tribe. Share your personal invite link and grow your community.
+                        0G is better with your tribe. Share your personal invite link and grow your community.
                     </p>
                 </motion.div>
 
@@ -343,7 +343,7 @@ function InvitePageContent() {
                                         dangerouslySetInnerHTML={{ __html: generateQRCodeSVG(inviteLink, 180) }}
                                     />
                                 </div>
-                                <p className="text-xs text-white/40 mt-3">Scan to join Zero Gravity</p>
+                                <p className="text-xs text-white/40 mt-3">Scan to join ZeroG</p>
                             </motion.div>
                         )}
                     </AnimatePresence>

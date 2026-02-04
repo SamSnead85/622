@@ -517,7 +517,7 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-3 px-3 py-4 mb-6">
                     <ZeroGLogo size="lg" />
-                    <span className="text-white/60 text-sm font-medium hidden xl:block">Zero Gravity</span>
+                    <span className="text-white/60 text-sm font-medium hidden xl:block">ZeroG</span>
                 </Link>
 
                 {/* Nav items */}
