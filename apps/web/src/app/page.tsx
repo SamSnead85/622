@@ -168,7 +168,7 @@ function HeroSection() {
                 <div className="absolute inset-0 bg-black/30 z-10" />
 
                 <Image
-                    src="https://images.unsplash.com/photo-1541746972996-4e0b0f43e02a?w=2000&h=1200&fit=crop&q=90"
+                    src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=2000&h=1200&fit=crop&q=90"
                     alt=""
                     fill
                     className="object-cover"
