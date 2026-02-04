@@ -121,7 +121,7 @@ export function PollCard({ poll, onVote, onViewResults }: PollCardProps) {
             <div className="space-y-2 mb-4">
                 {poll.options.map(option => (
                     <PollOptionButton key={option.id} option={{ ...option, isSelected: selectedOptions.has(option.id) }}
-                        showResults={canShowResults} isWinner={winningOption?.id === option.id}
+                        showResults={canShowResults} isWinner={winningOption?.id === option.id || false}
                         onSelect={() => handleSelect(option.id)} disabled={!canVote} />
                 ))}
             </div>

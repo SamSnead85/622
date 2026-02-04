@@ -123,7 +123,7 @@ export function MentorMatching({ mentors, onView, onConnect }: MentorMatchingPro
     const [selectedExpertise, setSelectedExpertise] = useState<string | 'all'>('all');
     const [priceFilter, setPriceFilter] = useState<'all' | 'free' | 'paid'>('all');
 
-    const allExpertise = useMemo(() => [...new Set(mentors.flatMap(m => m.expertise))].sort(), [mentors]);
+    const allExpertise = useMemo(() => Array.from(new Set(mentors.flatMap(m => m.expertise))).sort(), [mentors]);
 
     const filtered = useMemo(() => {
         return mentors.filter(m => {
