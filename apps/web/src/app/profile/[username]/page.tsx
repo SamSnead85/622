@@ -15,6 +15,9 @@ interface UserProfile {
     displayName: string;
     bio?: string;
     avatarUrl?: string;
+    coverUrl?: string;  // Cover photo/video
+    coverType?: 'IMAGE' | 'VIDEO';
+    isVerified?: boolean;  // Verified badge
     isFollowing?: boolean;
     followersCount: number;
     followingCount: number;
@@ -29,6 +32,57 @@ interface Post {
     likesCount: number;
     commentsCount: number;
     createdAt: string;
+}
+
+// LinkifiedBio - Makes URLs, @mentions, and #hashtags clickable
+function LinkifiedBio({ text }: { text: string }) {
+    const parts = text.split(/(\s+)/);
+
+    return (
+        <p className="text-white/70 mb-4 max-w-lg">
+            {parts.map((part, i) => {
+                // URLs
+                if (part.match(/^https?:\/\//)) {
+                    return (
+                        <a
+                            key={i}
+                            href={part}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#00D4FF] hover:underline"
+                        >
+                            {part.replace(/^https?:\/\//, '')}
+                        </a>
+                    );
+                }
+                // @mentions
+                if (part.match(/^@\w+/)) {
+                    return (
+                        <Link
+                            key={i}
+                            href={`/profile/${part.slice(1)}`}
+                            className="text-[#00D4FF] hover:underline"
+                        >
+                            {part}
+                        </Link>
+                    );
+                }
+                // #hashtags
+                if (part.match(/^#\w+/)) {
+                    return (
+                        <Link
+                            key={i}
+                            href={`/explore?tag=${part.slice(1)}`}
+                            className="text-[#8B5CF6] hover:underline"
+                        >
+                            {part}
+                        </Link>
+                    );
+                }
+                return part;
+            })}
+        </p>
+    );
 }
 
 export default function UserProfilePage() {
@@ -202,8 +256,29 @@ export default function UserProfilePage() {
             <Navigation activeTab="explore" />
 
             <main className="relative z-10 lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
-                {/* Cover Image */}
-                <div className="h-32 md:h-48 lg:h-56 bg-gradient-to-br from-[#00D4FF]/20 via-[#8B5CF6]/20 to-black relative overflow-hidden">
+                {/* Cover Image/Video */}
+                <div className="h-32 md:h-48 lg:h-56 relative overflow-hidden">
+                    {profile.coverUrl ? (
+                        profile.coverType === 'VIDEO' ? (
+                            <video
+                                src={profile.coverUrl}
+                                autoPlay
+                                muted
+                                loop
+                                playsInline
+                                className="absolute inset-0 w-full h-full object-cover"
+                            />
+                        ) : (
+                            <Image
+                                src={profile.coverUrl}
+                                alt="Cover"
+                                fill
+                                className="object-cover"
+                            />
+                        )
+                    ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#00D4FF]/20 via-[#8B5CF6]/20 to-black" />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80" />
                 </div>
 
@@ -234,12 +309,21 @@ export default function UserProfilePage() {
                         <div className="flex-1">
                             <div className="flex flex-col md:flex-row md:items-start gap-3 mb-3">
                                 <div>
-                                    <h1 className="text-2xl md:text-3xl font-bold text-white">{profile.displayName}</h1>
+                                    <div className="flex items-center gap-2">
+                                        <h1 className="text-2xl md:text-3xl font-bold text-white">{profile.displayName}</h1>
+                                        {profile.isVerified && (
+                                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#00D4FF]" title="Verified">
+                                                <svg className="w-4 h-4 text-black" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                                                </svg>
+                                            </span>
+                                        )}
+                                    </div>
                                     <span className="text-white/50">@{profile.username}</span>
                                 </div>
                             </div>
                             {profile.bio && (
-                                <p className="text-white/70 mb-4 max-w-lg">{profile.bio}</p>
+                                <LinkifiedBio text={profile.bio} />
                             )}
 
                             {/* Stats */}
