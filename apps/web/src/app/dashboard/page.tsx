@@ -52,7 +52,7 @@ function ZeroGLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 function AutoPlayVideo({ src, className = '' }: { src: string; className?: string }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isMuted, setIsMuted] = useState(true);
+    const [isMuted, setIsMuted] = useState(false);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -129,10 +129,10 @@ function AutoPlayVideo({ src, className = '' }: { src: string; className?: strin
                     </div>
                 )}
             </div>
-            {/* Mute/Unmute Button */}
+            {/* Mute/Unmute Button - Always visible */}
             <button
                 onClick={toggleMute}
-                className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/60 flex items-center justify-center border border-white/20 hover:bg-black/80 transition-colors"
             >
                 <span className="text-lg">{isMuted ? '🔇' : '🔊'}</span>
             </button>
