@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigation } from '@/components/Navigation';
-import { MessageCircleIcon, UserPlusIcon, UserMinusIcon, CameraIcon, PlayIcon } from '@/components/icons';
+import { MessageIcon, PlusIcon, MinusIcon, CameraIcon, PlayIcon } from '@/components/icons';
 
 interface UserProfile {
     id: string;
@@ -271,12 +271,12 @@ export default function UserProfilePage() {
                             >
                                 {isFollowing ? (
                                     <>
-                                        <UserMinusIcon size={18} />
+                                        <MinusIcon size={18} />
                                         Following
                                     </>
                                 ) : (
                                     <>
-                                        <UserPlusIcon size={18} />
+                                        <PlusIcon size={18} />
                                         Follow
                                     </>
                                 )}
@@ -285,7 +285,7 @@ export default function UserProfilePage() {
                                 onClick={handleMessage}
                                 className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
                             >
-                                <MessageCircleIcon size={18} />
+                                <MessageIcon size={18} />
                             </button>
                         </div>
                     </div>
