@@ -116,7 +116,7 @@ function ReactionPicker({ onSelect, onClose }: { onSelect: (emoji: string) => vo
 }
 
 // ============================================
-// NEW CHAT MODAL
+// NEW CHAT MODAL - With Real User Search
 // ============================================
 function NewChatModal({
     isOpen,
@@ -126,12 +126,59 @@ function NewChatModal({
     onClose: () => void;
 }) {
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<Array<{
+        id: string;
+        username: string;
+        displayName: string;
+        avatarUrl?: string;
+    }>>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const { startConversation } = useMessages();
 
-    // Mock contacts - will be real API data
-    const contacts = [
-        { id: '1', name: 'Family Group', avatar: '👨‍👩‍👧‍👦', type: 'group', lastSeen: 'Create new group' },
-        { id: '2', name: 'Start Group Chat', avatar: '➕', type: 'action', lastSeen: 'Add multiple people' },
-    ];
+    // Search users from API
+    useEffect(() => {
+        const searchUsers = async () => {
+            if (searchQuery.trim().length < 2) {
+                setSearchResults([]);
+                return;
+            }
+
+            setIsSearching(true);
+            try {
+                const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app'}/api/v1/users/search?q=${encodeURIComponent(searchQuery)}&limit=10`,
+                    {
+                        headers: {
+                            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                        },
+                        credentials: 'include',
+                    }
+                );
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setSearchResults(data.users || []);
+                }
+            } catch (err) {
+                console.error('Error searching users:', err);
+            } finally {
+                setIsSearching(false);
+            }
+        };
+
+        const debounce = setTimeout(searchUsers, 300);
+        return () => clearTimeout(debounce);
+    }, [searchQuery]);
+
+    const handleStartConversation = async (userId: string, displayName: string) => {
+        try {
+            await startConversation(userId);
+            onClose();
+        } catch (err) {
+            console.error('Error starting conversation:', err);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -174,26 +221,44 @@ function NewChatModal({
                             className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none"
                             autoFocus
                         />
+                        {isSearching && (
+                            <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        )}
                     </div>
                 </div>
 
-                {/* Quick Actions */}
-                <div className="px-4 space-y-2">
-                    {contacts.map((contact) => (
-                        <button
-                            key={contact.id}
-                            className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors"
-                        >
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
-                                <span className="text-xl">{contact.avatar}</span>
-                            </div>
-                            <div className="flex-1 text-left">
-                                <p className="font-semibold text-white">{contact.name}</p>
-                                <p className="text-sm text-white/50">{contact.lastSeen}</p>
-                            </div>
-                            <span className="text-white/40">→</span>
-                        </button>
-                    ))}
+                {/* Search Results */}
+                <div className="px-4 max-h-[300px] overflow-y-auto space-y-2">
+                    {searchQuery.trim().length < 2 ? (
+                        <p className="text-center text-white/40 text-sm py-4">
+                            Type at least 2 characters to search for users
+                        </p>
+                    ) : searchResults.length === 0 && !isSearching ? (
+                        <p className="text-center text-white/40 text-sm py-4">
+                            No users found for &quot;{searchQuery}&quot;
+                        </p>
+                    ) : (
+                        searchResults.map((user) => (
+                            <button
+                                key={user.id}
+                                onClick={() => handleStartConversation(user.id, user.displayName)}
+                                className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors"
+                            >
+                                <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
+                                    {user.avatarUrl ? (
+                                        <img src={user.avatarUrl} alt={user.displayName} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-white font-bold text-lg">{user.displayName?.[0] || 'U'}</span>
+                                    )}
+                                </div>
+                                <div className="flex-1 text-left">
+                                    <p className="font-semibold text-white">{user.displayName}</p>
+                                    <p className="text-sm text-white/50">@{user.username}</p>
+                                </div>
+                                <span className="text-[#00D4FF]">Message →</span>
+                            </button>
+                        ))
+                    )}
                 </div>
 
                 {/* Invite CTA */}

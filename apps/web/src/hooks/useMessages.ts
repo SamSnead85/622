@@ -243,6 +243,34 @@ export function useMessages() {
         fetchConversations();
     }, [fetchConversations]);
 
+    // Start a new conversation with a user
+    const startConversation = useCallback(async (userId: string): Promise<{ success: boolean; conversationId?: string; error?: string }> => {
+        try {
+            const response = await apiFetch(API_ENDPOINTS.conversations, {
+                method: 'POST',
+                body: JSON.stringify({
+                    participantIds: [userId],
+                    isGroup: false,
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                // Add new conversation to list
+                setConversations(prev => [data.conversation, ...prev]);
+                // Select the new conversation
+                selectConversation(data.conversation.id);
+                return { success: true, conversationId: data.conversation.id };
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                return { success: false, error: errorData.error || 'Failed to start conversation' };
+            }
+        } catch (err) {
+            console.error('Error starting conversation:', err);
+            return { success: false, error: 'Network error' };
+        }
+    }, [selectConversation]);
+
     // Get typing users for active conversation
     const activeTypingUsers = Array.from(typingUsers.values())
         .filter(u => u.conversationId === activeConversation);
@@ -256,6 +284,7 @@ export function useMessages() {
         error,
         selectConversation,
         sendMessage,
+        startConversation,
         startTyping,
         stopTyping,
         markAsRead,
