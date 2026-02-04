@@ -196,7 +196,24 @@ function NewMembersBanner() {
         return () => clearInterval(interval);
     }, []);
 
-    if (isLoading || newMembers.length === 0) return null;
+    // Always show banner - with placeholder when loading/empty
+    if (isLoading) {
+        return (
+            <div className="mb-4 h-10 overflow-hidden rounded-xl bg-gradient-to-r from-green-500/5 via-[#00D4FF]/5 to-purple-500/5 border border-white/5 animate-pulse" />
+        );
+    }
+
+    if (newMembers.length === 0) {
+        return (
+            <div className="mb-4 overflow-hidden rounded-xl bg-gradient-to-r from-[#00D4FF]/10 to-[#8B5CF6]/10 border border-[#00D4FF]/20">
+                <div className="py-2 px-4 flex items-center gap-3">
+                    <span className="text-lg">👥</span>
+                    <span className="text-sm text-white/70">Be among the first! Invite friends to grow the community.</span>
+                    <Link href="/invite" className="ml-auto text-xs text-[#00D4FF] font-semibold hover:underline">Invite →</Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="mb-4 overflow-hidden rounded-xl bg-gradient-to-r from-green-500/10 via-[#00D4FF]/10 to-purple-500/10 border border-green-500/20">
@@ -517,8 +534,8 @@ function PeopleToFollow({ currentUserId }: { currentUserId?: string }) {
                     <button
                         onClick={() => handleFollow(user.id)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${followingIds.has(user.id)
-                                ? 'bg-white/10 text-white/70 hover:bg-white/20'
-                                : 'bg-[#00D4FF] text-black hover:opacity-90'
+                            ? 'bg-white/10 text-white/70 hover:bg-white/20'
+                            : 'bg-[#00D4FF] text-black hover:opacity-90'
                             }`}
                     >
                         {followingIds.has(user.id) ? 'Following' : 'Follow'}
