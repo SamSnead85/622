@@ -3,8 +3,9 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
+import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 import {
     HomeIcon,
     SearchIcon,
@@ -15,6 +16,27 @@ import {
     HeartIcon,
     PlayIcon
 } from '@/components/icons';
+
+// Types for real data
+interface User {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string;
+    bio?: string;
+    followersCount?: number;
+    isOnline?: boolean;
+}
+
+interface Post {
+    id: string;
+    type: 'IMAGE' | 'VIDEO' | 'TEXT';
+    mediaUrl?: string;
+    thumbnailUrl?: string;
+    caption?: string;
+    viewCount: number;
+    user?: User;
+}
 
 // Shared Navigation Component
 function Navigation({ activeTab, userAvatarUrl, displayName, username }: { activeTab: string; userAvatarUrl?: string; displayName?: string; username?: string }) {
@@ -90,48 +112,116 @@ function Navigation({ activeTab, userAvatarUrl, displayName, username }: { activ
     );
 }
 
-// Trending Topics
-const trendingTopics = [
-    { tag: '#adventure', posts: '12.4K' },
-    { tag: '#foodie', posts: '8.2K' },
-    { tag: '#travel', posts: '15.1K' },
-    { tag: '#fitness', posts: '9.8K' },
-    { tag: '#photography', posts: '11.3K' },
-];
-
-// Explore Grid Items
-const exploreItems = [
-    { type: 'large', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=800&fit=crop', likes: 2341 },
-    { type: 'small', image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop', likes: 892 },
-    { type: 'small', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=400&fit=crop', likes: 1567 },
-    { type: 'video', image: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=600&fit=crop', views: 45000 },
-    { type: 'small', image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=400&fit=crop', likes: 3421 },
-    { type: 'small', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&h=400&fit=crop', likes: 1893 },
-    { type: 'large', image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=800&fit=crop', likes: 4567 },
-    { type: 'small', image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop', likes: 2156 },
-    { type: 'small', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop', likes: 1789 },
-    { type: 'video', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop', views: 32000 },
-    { type: 'small', image: 'https://images.unsplash.com/photo-1524638431109-93d95c968f03?w=400&h=400&fit=crop', likes: 2890 },
-    { type: 'small', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop', likes: 1234 },
-];
-
-// Suggested Users
-const suggestedUsers = [
-    { name: 'Sarah Chen', username: 'sarahc', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face', followers: '12.4K' },
-    { name: 'Marcus J', username: 'marcusj', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face', followers: '8.9K' },
-    { name: 'Emily Park', username: 'emilyp', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face', followers: '15.2K' },
-];
-
 function ExplorePageContent() {
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeCategory, setActiveCategory] = useState('all');
+    const [activeCategory, setActiveCategory] = useState('people');
     const [mounted, setMounted] = useState(false);
+    const [users, setUsers] = useState<User[]>([]);
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
     const { user } = useAuth();
     const userAvatarUrl = user?.avatarUrl;
 
-    useEffect(() => { setMounted(true); }, []);
+    // Fetch real users from API
+    const fetchUsers = useCallback(async () => {
+        try {
+            const response = await apiFetch(`${API_ENDPOINTS.users}?limit=20`);
+            if (response.ok) {
+                const data = await response.json();
+                // Filter out current user
+                const otherUsers = (data.users || data || []).filter((u: User) => u.id !== user?.id);
+                setUsers(otherUsers);
+            }
+        } catch (error) {
+            console.error('Failed to fetch users:', error);
+        }
+    }, [user?.id]);
 
-    const categories = ['all', 'travel', 'food', 'fitness', 'music', 'art'];
+    // Fetch real posts from API
+    const fetchPosts = useCallback(async () => {
+        try {
+            const response = await apiFetch(`${API_ENDPOINTS.posts}?limit=20`);
+            if (response.ok) {
+                const data = await response.json();
+                setPosts(data.posts || data || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch posts:', error);
+        }
+    }, []);
+
+    // Search users
+    const searchUsers = useCallback(async (query: string) => {
+        if (!query.trim()) {
+            fetchUsers();
+            return;
+        }
+        try {
+            const response = await apiFetch(`${API_ENDPOINTS.users}/search?q=${encodeURIComponent(query)}`);
+            if (response.ok) {
+                const data = await response.json();
+                const otherUsers = (data.users || data || []).filter((u: User) => u.id !== user?.id);
+                setUsers(otherUsers);
+            }
+        } catch (error) {
+            console.error('Search failed:', error);
+        }
+    }, [fetchUsers, user?.id]);
+
+    // Follow a user
+    const handleFollow = async (userId: string) => {
+        try {
+            const response = await apiFetch(`${API_ENDPOINTS.users}/${userId}/follow`, {
+                method: 'POST',
+            });
+            if (response.ok) {
+                setFollowingIds(prev => new Set(prev).add(userId));
+            }
+        } catch (error) {
+            console.error('Failed to follow:', error);
+        }
+    };
+
+    // Unfollow a user
+    const handleUnfollow = async (userId: string) => {
+        try {
+            const response = await apiFetch(`${API_ENDPOINTS.users}/${userId}/follow`, {
+                method: 'DELETE',
+            });
+            if (response.ok) {
+                setFollowingIds(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(userId);
+                    return newSet;
+                });
+            }
+        } catch (error) {
+            console.error('Failed to unfollow:', error);
+        }
+    };
+
+    useEffect(() => {
+        setMounted(true);
+        const loadData = async () => {
+            setLoading(true);
+            await Promise.all([fetchUsers(), fetchPosts()]);
+            setLoading(false);
+        };
+        loadData();
+    }, [fetchUsers, fetchPosts]);
+
+    // Debounced search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (activeCategory === 'people') {
+                searchUsers(searchQuery);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery, activeCategory, searchUsers]);
+
+    const categories = ['people', 'posts', 'tribes'];
 
     if (!mounted) {
         return <div className="min-h-screen bg-[#050508]" />;
@@ -166,7 +256,7 @@ function ExplorePageContent() {
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search people, posts, tags..."
+                                    placeholder="Search people by name or username..."
                                     className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none"
                                 />
                             </div>
@@ -191,110 +281,152 @@ function ExplorePageContent() {
                 </header>
 
                 <div className="max-w-6xl mx-auto px-4 lg:px-6 py-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Main Grid */}
-                        <div className="lg:col-span-2">
-                            {/* Trending */}
-                            <div className="mb-6">
-                                <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                    <TrendingIcon size={20} className="text-orange-500" />
-                                    Trending Now
-                                </h2>
-                                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-                                    {trendingTopics.map((topic) => (
-                                        <motion.button
-                                            key={topic.tag}
-                                            className="flex-shrink-0 px-4 py-3 rounded-xl bg-gradient-to-br from-orange-500/20 to-rose-500/20 border border-orange-500/20 hover:border-orange-500/40 transition-colors"
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
+                    {loading ? (
+                        <div className="flex items-center justify-center py-20">
+                            <div className="w-8 h-8 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full animate-spin" />
+                        </div>
+                    ) : activeCategory === 'people' ? (
+                        /* People Grid */
+                        <div className="space-y-4">
+                            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                <UsersIcon size={20} className="text-cyan-500" />
+                                {searchQuery ? `Search results for "${searchQuery}"` : 'People on 0G'}
+                            </h2>
+
+                            {users.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <UsersIcon size={48} className="mx-auto text-white/20 mb-4" />
+                                    <p className="text-white/50">
+                                        {searchQuery ? 'No users found matching your search' : 'No other users yet. Invite friends to join!'}
+                                    </p>
+                                    <Link href="/invite" className="inline-block mt-4 px-6 py-2 rounded-full bg-[#00D4FF] text-black font-medium">
+                                        Invite Friends
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {users.map((u) => (
+                                        <motion.div
+                                            key={u.id}
+                                            className="bg-white/5 rounded-2xl p-4 border border-white/10 hover:border-white/20 transition-colors"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
                                         >
-                                            <p className="font-semibold text-white">{topic.tag}</p>
-                                            <p className="text-xs text-white/50">{topic.posts} posts</p>
-                                        </motion.button>
+                                            <div className="flex items-center gap-3">
+                                                <Link href={`/profile/${u.username}`} className="relative">
+                                                    <div className="w-14 h-14 rounded-full overflow-hidden relative ring-2 ring-white/10">
+                                                        <Image
+                                                            src={u.avatarUrl && !u.avatarUrl.startsWith('preset:') ? u.avatarUrl : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face'}
+                                                            alt={u.displayName || u.username}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    </div>
+                                                    {/* Online indicator */}
+                                                    {u.isOnline && (
+                                                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-[#050508]" />
+                                                    )}
+                                                </Link>
+                                                <div className="flex-1 min-w-0">
+                                                    <Link href={`/profile/${u.username}`}>
+                                                        <p className="font-semibold text-white truncate hover:text-[#00D4FF] transition-colors">
+                                                            {u.displayName || u.username}
+                                                        </p>
+                                                    </Link>
+                                                    <p className="text-sm text-white/50">@{u.username}</p>
+                                                    {u.bio && <p className="text-xs text-white/40 truncate mt-1">{u.bio}</p>}
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 mt-4">
+                                                {followingIds.has(u.id) ? (
+                                                    <button
+                                                        onClick={() => handleUnfollow(u.id)}
+                                                        className="flex-1 px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/15 transition-colors"
+                                                    >
+                                                        Following
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleFollow(u.id)}
+                                                        className="flex-1 px-4 py-2 rounded-xl bg-[#00D4FF] text-black text-sm font-medium hover:bg-[#00D4FF]/90 transition-colors"
+                                                    >
+                                                        Connect
+                                                    </button>
+                                                )}
+                                                <Link href={`/messages?to=${u.id}`} className="px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/15 transition-colors">
+                                                    Message
+                                                </Link>
+                                            </div>
+                                        </motion.div>
                                     ))}
                                 </div>
-                            </div>
+                            )}
+                        </div>
+                    ) : activeCategory === 'posts' ? (
+                        /* Posts Grid */
+                        <div className="space-y-4">
+                            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                <TrendingIcon size={20} className="text-orange-500" />
+                                Public Posts
+                            </h2>
 
-                            {/* Explore Grid */}
-                            <div className="grid grid-cols-3 gap-1 md:gap-2">
-                                {exploreItems.map((item, i) => (
-                                    <motion.div
-                                        key={i}
-                                        className={`relative overflow-hidden rounded-lg md:rounded-xl cursor-pointer group ${item.type === 'large' ? 'col-span-2 row-span-2' : ''
-                                            } ${item.type === 'video' ? 'row-span-2' : ''}`}
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: i * 0.03 }}
-                                        whileHover={{ scale: 1.02 }}
-                                    >
-                                        <div className={`relative ${item.type === 'large' || item.type === 'video' ? 'aspect-square' : 'aspect-square'}`}>
+                            {posts.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <PlayIcon size={48} className="mx-auto text-white/20 mb-4" />
+                                    <p className="text-white/50">No public posts yet. Be the first to share!</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-3 gap-1 md:gap-2">
+                                    {posts.map((post, i) => (
+                                        <motion.div
+                                            key={post.id}
+                                            className="relative overflow-hidden rounded-lg md:rounded-xl cursor-pointer group aspect-square"
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ delay: i * 0.03 }}
+                                            whileHover={{ scale: 1.02 }}
+                                        >
                                             <Image
-                                                src={item.image}
-                                                alt="Explore"
+                                                src={post.thumbnailUrl || post.mediaUrl || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop'}
+                                                alt={post.caption || 'Post'}
                                                 fill
                                                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-4 text-white">
-                                                    {item.type === 'video' ? (
+                                                    {post.type === 'VIDEO' ? (
                                                         <span className="flex items-center gap-1">
                                                             <PlayIcon size={18} />
-                                                            <span className="font-semibold">{(item.views! / 1000).toFixed(0)}K</span>
+                                                            <span className="font-semibold">{(post.viewCount / 1000).toFixed(0)}K</span>
                                                         </span>
                                                     ) : (
                                                         <span className="flex items-center gap-1">
-                                                            <TrendingIcon size={18} className="text-orange-400" />
-                                                            <span className="font-semibold">{item.likes?.toLocaleString()}</span>
+                                                            <HeartIcon size={18} />
+                                                            <span className="font-semibold">{post.viewCount}</span>
                                                         </span>
                                                     )}
                                                 </div>
                                             </div>
-                                            {item.type === 'video' && (
+                                            {post.type === 'VIDEO' && (
                                                 <div className="absolute top-2 right-2 px-2 py-1 rounded bg-black/50 text-white text-xs">
                                                     <PlayIcon size={14} />
                                                 </div>
                                             )}
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Sidebar */}
-                        <div className="hidden lg:block space-y-6">
-                            {/* Suggested Users */}
-                            <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                                <h3 className="font-semibold text-white mb-4">Suggested for you</h3>
-                                <div className="space-y-4">
-                                    {suggestedUsers.map((user) => (
-                                        <div key={user.username} className="flex items-center gap-3">
-                                            <div className="w-12 h-12 rounded-full overflow-hidden relative">
-                                                <Image src={user.avatar} alt={user.name} fill className="object-cover" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-semibold text-white text-sm truncate">{user.name}</p>
-                                                <p className="text-xs text-white/50">@{user.username} · {user.followers}</p>
-                                            </div>
-                                            <button className="px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-colors">
-                                                Follow
-                                            </button>
-                                        </div>
+                                        </motion.div>
                                     ))}
                                 </div>
-                            </div>
-
-                            {/* Footer Links */}
-                            <div className="text-xs text-white/30 space-y-2">
-                                <div className="flex flex-wrap gap-2">
-                                    <Link href="#" className="hover:text-white/50">About</Link>
-                                    <Link href="#" className="hover:text-white/50">Help</Link>
-                                    <Link href="#" className="hover:text-white/50">Privacy</Link>
-                                    <Link href="#" className="hover:text-white/50">Terms</Link>
-                                </div>
-                                <p>© 2026 0G (Zero Gravity)</p>
-                            </div>
+                            )}
                         </div>
-                    </div>
+                    ) : (
+                        /* Tribes Link */
+                        <div className="text-center py-12">
+                            <UsersIcon size={48} className="mx-auto text-white/20 mb-4" />
+                            <p className="text-white/50 mb-4">Explore and join tribes to connect with communities</p>
+                            <Link href="/communities" className="inline-block px-6 py-2 rounded-full bg-[#00D4FF] text-black font-medium">
+                                Browse Tribes
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>
