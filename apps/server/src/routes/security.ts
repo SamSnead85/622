@@ -6,7 +6,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
 import {
     logSecurityEvent,
     SecurityEvents,
@@ -17,7 +17,7 @@ import {
     updateSecurityPolicy,
     initializeSecurityPolicies,
     getClientIP,
-} from '../services/security';
+} from '../services/security.js';
 import {
     addGeoBlock,
     removeGeoBlock,
@@ -25,7 +25,7 @@ import {
     ALL_COUNTRIES,
     HIGH_RISK_COUNTRIES,
     getGeoFromIP,
-} from '../services/geoblock';
+} from '../services/geoblock.js';
 import { PrismaClient, Role } from '@prisma/client';
 
 const router = Router();
