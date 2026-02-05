@@ -1,139 +1,109 @@
-/**
- * Rate Limiting Middleware
- * Production-grade rate limiting for API protection
- */
-
 import { Request, Response, NextFunction } from 'express';
-
-interface RateLimitEntry {
-    count: number;
-    resetTime: number;
-}
+import { cache } from '../services/cache/RedisCache.js';
+import { AppError } from './errorHandler.js';
 
 interface RateLimitOptions {
-    windowMs?: number;        // Time window in milliseconds
-    maxRequests?: number;     // Maximum requests per window
-    keyGenerator?: (req: Request) => string;
-    skipFailedRequests?: boolean;
+    windowMs: number; // Time window in milliseconds
+    max: number; // Max requests per window
     message?: string;
-}
-
-// In-memory store (use Redis in production for distributed systems)
-const store = new Map<string, RateLimitEntry>();
-
-// Clean up expired entries periodically
-setInterval(() => {
-    const now = Date.now();
-    for (const [key, entry] of store.entries()) {
-        if (now > entry.resetTime) {
-            store.delete(key);
-        }
-    }
-}, 60000); // Clean every minute
-
-/**
- * Default key generator using IP address
- */
-function defaultKeyGenerator(req: Request): string {
-    return (
-        (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-        req.ip ||
-        'unknown'
-    );
+    keyGenerator?: (req: Request) => string;
 }
 
 /**
- * Create rate limiter middleware
+ * Redis-based rate limiter middleware
+ * Uses existing Redis cache for distributed rate limiting
  */
-export function rateLimit(options: RateLimitOptions = {}) {
+export const rateLimit = (options: RateLimitOptions) => {
     const {
-        windowMs = 60000,        // 1 minute default
-        maxRequests = 100,       // 100 requests per window
-        keyGenerator = defaultKeyGenerator,
-        skipFailedRequests = false,
-        message = 'Too many requests, please try again later.',
+        windowMs,
+        max,
+        message = 'Too many requests, please try again later',
+        keyGenerator = (req) => req.ip || 'unknown'
     } = options;
 
-    return (req: Request, res: Response, next: NextFunction) => {
-        const key = keyGenerator(req);
-        const now = Date.now();
+    return async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const key = `ratelimit:${keyGenerator(req)}`;
+            const ttlSeconds = Math.floor(windowMs / 1000);
 
-        let entry = store.get(key);
+            // Increment and get current count
+            const current = await cache.increment(key, ttlSeconds);
 
-        // Reset if window expired
-        if (!entry || now > entry.resetTime) {
-            entry = { count: 1, resetTime: now + windowMs };
-            store.set(key, entry);
-        } else {
-            entry.count++;
+            // Set rate limit headers
+            res.setHeader('X-RateLimit-Limit', max.toString());
+            res.setHeader('X-RateLimit-Remaining', Math.max(0, max - current).toString());
+            res.setHeader('X-RateLimit-Reset', new Date(Date.now() + windowMs).toISOString());
+
+            if (current > max) {
+                throw new AppError(message, 429);
+            }
+
+            next();
+        } catch (error) {
+            if (error instanceof AppError && error.statusCode === 429) {
+                next(error);
+            } else {
+                // If Redis fails, allow request through (graceful degradation)
+                next();
+            }
         }
-
-        // Set rate limit headers
-        res.setHeader('X-RateLimit-Limit', maxRequests);
-        res.setHeader('X-RateLimit-Remaining', Math.max(0, maxRequests - entry.count));
-        res.setHeader('X-RateLimit-Reset', Math.ceil(entry.resetTime / 1000));
-
-        // Check if limit exceeded
-        if (entry.count > maxRequests) {
-            res.status(429).json({
-                error: message,
-                code: 'RATE_LIMIT_EXCEEDED',
-                retryAfter: Math.ceil((entry.resetTime - now) / 1000),
-            });
-            return;
-        }
-
-        // Skip incrementing on failed requests if configured
-        if (skipFailedRequests) {
-            const originalEnd = res.end.bind(res);
-            res.end = function (chunk?: unknown, encoding?: BufferEncoding) {
-                if (res.statusCode >= 400 && entry) {
-                    entry.count--;
-                }
-                return originalEnd(chunk, encoding as BufferEncoding);
-            } as typeof res.end;
-        }
-
-        next();
     };
-}
-
-/**
- * Preset rate limiters for different use cases
- */
-export const rateLimiters = {
-    // Standard API rate limit
-    api: rateLimit({
-        windowMs: 60000,
-        maxRequests: 100,
-    }),
-
-    // Strict limit for auth endpoints
-    auth: rateLimit({
-        windowMs: 900000, // 15 minutes
-        maxRequests: 10,
-        message: 'Too many login attempts. Please try again in 15 minutes.',
-    }),
-
-    // Upload rate limit
-    upload: rateLimit({
-        windowMs: 3600000, // 1 hour
-        maxRequests: 50,
-        message: 'Upload limit reached. Please try again later.',
-    }),
-
-    // Search rate limit
-    search: rateLimit({
-        windowMs: 60000,
-        maxRequests: 30,
-    }),
-
-    // WebSocket connection limit
-    websocket: rateLimit({
-        windowMs: 60000,
-        maxRequests: 5,
-        message: 'Too many connection attempts.',
-    }),
 };
 
-export default rateLimit;
+/**
+ * User-specific rate limiter (requires authentication)
+ */
+export const userRateLimit = (options: RateLimitOptions) => {
+    return rateLimit({
+        ...options,
+        keyGenerator: (req: any) => {
+            return req.userId || req.ip || 'unknown';
+        }
+    });
+};
+
+/**
+ * Predefined rate limiters for common use cases
+ */
+export const rateLimiters = {
+    // General API - 100 requests per 15 minutes per IP
+    general: rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: 100,
+    }),
+
+    // Auth endpoints - 5 attempts per 15 minutes per IP
+    auth: rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: 5,
+        message: 'Too many authentication attempts, please try again later',
+    }),
+
+    // Post creation - 10 posts per minute per user
+    createPost: userRateLimit({
+        windowMs: 60 * 1000,
+        max: 10,
+        message: 'You are creating posts too quickly, please slow down',
+    }),
+
+    // Comments - 20 per minute per user
+    createComment: userRateLimit({
+        windowMs: 60 * 1000,
+        max: 20,
+        message: 'You are commenting too quickly, please slow down',
+    }),
+
+    // Messages - 30 per minute per user
+    sendMessage: userRateLimit({
+        windowMs: 60 * 1000,
+        max: 30,
+        message: 'You are sending messages too quickly',
+    }),
+
+    // Uploads - 5 per minute per user
+    upload: userRateLimit({
+        windowMs: 60 * 1000,
+        max: 5,
+        message: 'Too many uploads, please wait a moment',
+    }),
+};

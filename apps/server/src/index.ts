@@ -5,6 +5,8 @@ import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import dotenv from 'dotenv';
+import * as Sentry from '@sentry/node';
+import { rateLimiters } from './middleware/rateLimit.js';
 
 import { authRouter } from './routes/auth.js';
 import { usersRouter } from './routes/users.js';
@@ -29,6 +31,16 @@ import { setupSocketHandlers } from './socket/index.js';
 dotenv.config();
 
 const app: Application = express();
+
+// Initialize Sentry for error monitoring
+if (process.env.SENTRY_DSN) {
+    Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+        environment: process.env.NODE_ENV || 'development',
+        tracesSampleRate: 1.0,
+    });
+    logger.info('✅ Sentry error monitoring initialized');
+}
 const httpServer = createServer(app);
 
 // Parse allowed origins from environment
@@ -110,6 +122,10 @@ app.use('/api/v1/reports', reportRouter);
 app.use('/api/v1/migration', migrationRouter);
 
 
+// Sentry error handler (must be before custom error handler)
+if (process.env.SENTRY_DSN) {
+    Sentry.setupExpressErrorHandler(app);
+}
 
 // Error handler
 app.use(errorHandler);
