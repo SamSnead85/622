@@ -48,7 +48,7 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
 
             // Allow zooming out even more, or start at fit scale
             setInitialScale(fitScale * 0.8); // Allow extra zoom out
-            setScale(0.1); // Start at 10% (zoomed out)
+            setScale(0.05); // Start at 5% (zoomed out)
             setImageLoaded(true);
         };
         img.src = imageSrc;
@@ -111,7 +111,7 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
 
     // Handle zoom with limits
     const handleZoom = useCallback((newScale: number) => {
-        setScale(Math.max(0.3, Math.min(4, newScale)));
+        setScale(Math.max(0.05, Math.min(4, newScale)));
     }, []);
 
     // Mouse wheel zoom
@@ -225,14 +225,14 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
                         <div className="flex-1 relative">
                             <input
                                 type="range"
-                                min="0.3"
+                                min="0.05"
                                 max="4"
                                 step="0.05"
                                 value={scale}
                                 onChange={(e) => handleZoom(parseFloat(e.target.value))}
                                 className="w-full h-2 rounded-full appearance-none cursor-pointer"
                                 style={{
-                                    background: `linear-gradient(to right, #00D4FF 0%, #00D4FF ${((scale - 0.3) / 3.7) * 100}%, rgba(255,255,255,0.1) ${((scale - 0.3) / 3.7) * 100}%, rgba(255,255,255,0.1) 100%)`
+                                    background: `linear-gradient(to right, #00D4FF 0%, #00D4FF ${((scale - 0.05) / 3.95) * 100}%, rgba(255,255,255,0.1) ${((scale - 0.05) / 3.95) * 100}%, rgba(255,255,255,0.1) 100%)`
                                 }}
                             />
                         </div>
