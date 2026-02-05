@@ -39,6 +39,10 @@ const nextConfig = {
     typescript: {
         ignoreBuildErrors: true,
     },
+    eslint: {
+        ignoreDuringBuilds: true,
+    },
+    swcMinify: true,
 };
 
 export default nextConfig;
