@@ -108,11 +108,17 @@ export default function CampfireGoLive() {
     const handleInviteToStage = async () => {
         if (!selectedViewer) return;
 
-        // In a real app, this would send a WebSocket event or Push Notification
-        // For MVP, we reuse the 'wave' endpoint with a specific message
-        alert(`Invited @${selectedViewer.username} to co-host! 🎤`);
+        try {
+            await apiFetch(`/api/v1/users/${selectedViewer.userId}/wave`, {
+                method: 'POST',
+                body: JSON.stringify({ message: 'wants you to Co-Host the stream! 🎤' })
+            });
+            alert(`Invited @${selectedViewer.username} to co-host! 🎤`);
+        } catch (error) {
+            console.error('Failed to invite user', error);
+            alert('Failed to send invitation');
+        }
 
-        // Close modal
         setSelectedViewer(null);
     };
 
