@@ -205,17 +205,17 @@ export function InviteFriends({ isOpen, onClose, communityId, communityName }: I
                                     <button
                                         onClick={() => setActiveTab('internal')}
                                         className={`flex-1 py-2 text-sm font-medium rounded-xl transition-colors ${activeTab === 'internal'
-                                                ? 'bg-white/10 text-white'
-                                                : 'text-white/40 hover:text-white/60'
+                                            ? 'bg-white/10 text-white'
+                                            : 'text-white/40 hover:text-white/60'
                                             }`}
                                     >
-                                        Private Invite
+                                        Tap In
                                     </button>
                                     <button
                                         onClick={() => setActiveTab('external')}
                                         className={`flex-1 py-2 text-sm font-medium rounded-xl transition-colors ${activeTab === 'external'
-                                                ? 'bg-white/10 text-white'
-                                                : 'text-white/40 hover:text-white/60'
+                                            ? 'bg-white/10 text-white'
+                                            : 'text-white/40 hover:text-white/60'
                                             }`}
                                     >
                                         Share Link

@@ -287,7 +287,7 @@ export default function CommunityHub() {
                 {/* 1. The Pulse (News Ticker) */}
                 <PulseTicker />
 
-                <div className="max-w-7xl mx-auto px-6 py-8 space-y-12">
+                <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-12">
 
                     {/* 2. Hero Header */}
                     <div className="flex flex-col md:flex-row items-end justify-between gap-6 border-b border-white/10 pb-8">
