@@ -46,6 +46,28 @@ interface Comment {
 
 
 
+
+function getYouTubeEmbedUrl(url: string): string {
+    if (url.includes('/embed/')) {
+        if (!url.includes('modestbranding')) {
+            return url + (url.includes('?') ? '&' : '?') + 'modestbranding=1&rel=0&showinfo=0&autoplay=1&mute=1';
+        }
+        return url;
+    }
+    let videoId = '';
+    if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1]?.split('?')[0] || '';
+    } else if (url.includes('/shorts/')) {
+        videoId = url.split('/shorts/')[1]?.split('?')[0] || '';
+    } else if (url.includes('watch?v=')) {
+        videoId = url.split('watch?v=')[1]?.split('&')[0] || '';
+    }
+    if (videoId) {
+        return `https://www.youtube-nocookie.com/embed/${videoId}?modestbranding=1&rel=0&showinfo=0&autoplay=1&mute=1&controls=1`;
+    }
+    return url;
+}
+
 function VideoPlayer({ src }: { src: string }) {
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -239,8 +261,22 @@ export default function PostDetailPage() {
         }
     };
 
-    const handleShare = () => {
+    const handleShare = async () => {
         const url = `${window.location.origin}/post/${postId}`;
+
+        if (typeof navigator !== 'undefined' && navigator.share) {
+            try {
+                await navigator.share({
+                    title: post?.author.displayName ? `Check out ${post.author.displayName}'s post` : 'Check out this post',
+                    text: post?.content || 'Check this out on 0G',
+                    url: url
+                });
+                return;
+            } catch (err) {
+                // User cancelled or failed
+            }
+        }
+
         navigator.clipboard.writeText(url);
         alert('Link copied to clipboard!');
     };
@@ -465,7 +501,7 @@ export default function PostDetailPage() {
                                 post.mediaUrl.includes('youtube') || post.mediaUrl.includes('youtu.be') ? (
                                     <div className="relative w-full aspect-video bg-black">
                                         <iframe
-                                            src={post.mediaUrl}
+                                            src={getYouTubeEmbedUrl(post.mediaUrl!)}
                                             className="absolute inset-0 w-full h-full"
                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                             allowFullScreen
