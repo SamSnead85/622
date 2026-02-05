@@ -64,7 +64,7 @@ const MOCK_JOURNEYS: Journey[] = [
             id: '3',
             username: 'omar_family',
             displayName: 'Omar & Family',
-            avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+            avatarUrl: 'https://ui-avatars.com/api/?name=User&background=random',
             isFollowing: false,
         },
     },

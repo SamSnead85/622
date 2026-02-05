@@ -642,7 +642,7 @@ function TestimonialsSection() {
             quote: "0G has become our family's digital home. It's exactly what social media should have been from the start.",
             author: "Marcus Williams",
             role: "Community Builder",
-            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+            avatar: "https://ui-avatars.com/api/?name=User&background=random",
         },
         {
             quote: "The transparency around the algorithm is refreshing. I finally understand why I see what I see.",

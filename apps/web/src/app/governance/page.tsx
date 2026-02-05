@@ -66,7 +66,7 @@ const SPONSORSHIP_TARGETS = [
     {
         id: 's2',
         name: 'Drop Site News',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+        avatar: 'https://ui-avatars.com/api/?name=User&background=random',
         description: 'Investigative journalism breaking stories mainstream media won\'t touch',
         goal: 75000,
         raised: 68900,

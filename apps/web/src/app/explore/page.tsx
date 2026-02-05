@@ -40,7 +40,7 @@ interface Post {
 
 // Shared Navigation Component
 function Navigation({ activeTab, userAvatarUrl, displayName, username }: { activeTab: string; userAvatarUrl?: string; displayName?: string; username?: string }) {
-    const avatarHref = userAvatarUrl && !userAvatarUrl.startsWith('preset:') ? userAvatarUrl : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face';
+    const avatarHref = userAvatarUrl && !userAvatarUrl.startsWith('preset:') ? userAvatarUrl : 'https://ui-avatars.com/api/?name=User&background=random';
     const navItems = [
         { id: 'home', Icon: HomeIcon, label: 'Home', href: '/dashboard' },
         { id: 'explore', Icon: SearchIcon, label: 'Explore', href: '/explore' },
@@ -316,7 +316,7 @@ function ExplorePageContent() {
                                                 <Link href={`/profile/${u.username}`} className="relative">
                                                     <div className="w-14 h-14 rounded-full overflow-hidden relative ring-2 ring-white/10">
                                                         <Image
-                                                            src={u.avatarUrl && !u.avatarUrl.startsWith('preset:') ? u.avatarUrl : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face'}
+                                                            src={u.avatarUrl && !u.avatarUrl.startsWith('preset:') ? u.avatarUrl : 'https://ui-avatars.com/api/?name=User&background=random'}
                                                             alt={u.displayName || u.username}
                                                             fill
                                                             className="object-cover"
