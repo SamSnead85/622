@@ -1,3 +1,4 @@
+
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
@@ -14,41 +15,37 @@ const createStreamSchema = z.object({
     thumbnailUrl: z.string().url().optional(),
 });
 
-// In-memory store for active streams (would use Redis in production)
-interface ActiveStream {
-    id: string;
-    userId: string;
-    title: string;
-    description?: string;
-    thumbnailUrl?: string;
-    viewerCount: number;
-    startedAt: Date;
-    user: {
-        id: string;
-        username: string;
-        displayName: string;
-        avatarUrl?: string;
-    };
-}
-
-const activeStreams = new Map<string, ActiveStream>();
-
 // ============================================
 // GET /api/v1/livestream/active
 // Get all active livestreams
 // ============================================
 router.get('/active', optionalAuth, async (req: AuthRequest, res) => {
     try {
-        const streams = Array.from(activeStreams.values()).map((stream) => ({
-            ...stream,
-            isFollowing: false, // Could check follow status
-        }));
+        const streams = await prisma.liveStream.findMany({
+            where: {
+                status: 'LIVE'
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true
+                    }
+                }
+            },
+            orderBy: {
+                viewerCount: 'desc'
+            }
+        });
 
         res.json({
             streams,
             count: streams.length,
         });
     } catch (error) {
+        console.error('Fetch active streams error:', error);
         res.status(500).json({ error: 'Failed to fetch streams' });
     }
 });
@@ -62,52 +59,37 @@ router.post('/create', authenticate, async (req: AuthRequest, res, next) => {
         const input = createStreamSchema.parse(req.body);
 
         // Check if user already has an active stream
-        const existingStream = Array.from(activeStreams.values()).find(
-            (s) => s.userId === req.userId
-        );
-
-        if (existingStream) {
-            throw new AppError('You already have an active stream', 400);
-        }
-
-        // Get user info
-        const user = await prisma.user.findUnique({
-            where: { id: req.userId },
-            select: {
-                id: true,
-                username: true,
-                displayName: true,
-                avatarUrl: true,
-            },
+        const existingStream = await prisma.liveStream.findFirst({
+            where: {
+                userId: req.userId,
+                status: 'LIVE'
+            }
         });
 
-        if (!user) {
-            throw new AppError('User not found', 404);
+        if (existingStream) {
+            // Auto-end previous stream
+            await prisma.liveStream.update({
+                where: { id: existingStream.id },
+                data: { status: 'ENDED', endedAt: new Date() }
+            });
         }
 
-        // Create stream
-        const streamId = `stream_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const stream: ActiveStream = {
-            id: streamId,
-            userId: req.userId!,
-            title: input.title,
-            description: input.description,
-            thumbnailUrl: input.thumbnailUrl,
-            viewerCount: 0,
-            startedAt: new Date(),
-            user: {
-                id: user.id,
-                username: user.username,
-                displayName: user.displayName,
-                avatarUrl: user.avatarUrl || undefined,
-            },
-        };
-
-        activeStreams.set(streamId, stream);
+        const stream = await prisma.liveStream.create({
+            data: {
+                userId: req.userId!,
+                title: input.title,
+                description: input.description,
+                thumbnailUrl: input.thumbnailUrl,
+                status: 'LIVE',
+                startedAt: new Date(),
+                playbackUrl: '',
+                streamKey: `stream_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+            }
+        });
 
         res.status(201).json({
             stream,
-            streamKey: streamId, // In production, this would be a secure key
+            streamKey: stream.streamKey,
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
@@ -124,13 +106,21 @@ router.post('/create', authenticate, async (req: AuthRequest, res, next) => {
 router.post('/:id/join', optionalAuth, async (req: AuthRequest, res) => {
     try {
         const { id } = req.params;
-        const stream = activeStreams.get(id);
 
-        if (!stream) {
-            return res.status(404).json({ error: 'Stream not found' });
+        const stream = await prisma.liveStream.update({
+            where: { id },
+            data: {
+                viewerCount: { increment: 1 },
+                totalViews: { increment: 1 }
+            }
+        });
+
+        if (stream.viewerCount > stream.peakViewerCount) {
+            await prisma.liveStream.update({
+                where: { id },
+                data: { peakViewerCount: stream.viewerCount }
+            });
         }
-
-        stream.viewerCount += 1;
 
         res.json({
             stream,
@@ -148,11 +138,13 @@ router.post('/:id/join', optionalAuth, async (req: AuthRequest, res) => {
 router.post('/:id/leave', optionalAuth, async (req: AuthRequest, res) => {
     try {
         const { id } = req.params;
-        const stream = activeStreams.get(id);
 
-        if (stream) {
-            stream.viewerCount = Math.max(0, stream.viewerCount - 1);
-        }
+        await prisma.liveStream.updateMany({
+            where: { id, viewerCount: { gt: 0 } },
+            data: {
+                viewerCount: { decrement: 1 }
+            }
+        });
 
         res.json({ left: true });
     } catch (error) {
@@ -167,17 +159,27 @@ router.post('/:id/leave', optionalAuth, async (req: AuthRequest, res) => {
 router.post('/:id/end', authenticate, async (req: AuthRequest, res) => {
     try {
         const { id } = req.params;
-        const stream = activeStreams.get(id);
+
+        const stream = await prisma.liveStream.findUnique({
+            where: { id }
+        });
 
         if (!stream) {
             return res.status(404).json({ error: 'Stream not found' });
         }
 
-        if (stream.userId !== req.userId) {
+        // Use optional chaining for safe access
+        if (stream.userId !== req.userId && req.user?.role !== 'SUPERADMIN' && req.user?.role !== 'ADMIN') {
             return res.status(403).json({ error: 'Not authorized to end this stream' });
         }
 
-        activeStreams.delete(id);
+        await prisma.liveStream.update({
+            where: { id },
+            data: {
+                status: 'ENDED',
+                endedAt: new Date()
+            }
+        });
 
         res.json({ ended: true });
     } catch (error) {
@@ -192,10 +194,21 @@ router.post('/:id/end', authenticate, async (req: AuthRequest, res) => {
 router.get('/:id', optionalAuth, async (req: AuthRequest, res) => {
     try {
         const { id } = req.params;
-        const stream = activeStreams.get(id);
+        const stream = await prisma.liveStream.findUnique({
+            where: { id },
+            include: {
+                user: {
+                    select: {
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true
+                    }
+                }
+            }
+        });
 
         if (!stream) {
-            return res.status(404).json({ error: 'Stream not found or has ended' });
+            return res.status(404).json({ error: 'Stream not found' });
         }
 
         res.json({ stream });

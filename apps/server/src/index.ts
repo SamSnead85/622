@@ -18,6 +18,8 @@ import { livestreamRouter } from './routes/livestream.js';
 import uploadRouter from './routes/upload.js';
 import securityRouter from './routes/security.js';
 import communityRouter from './routes/community.js';
+import { subscriptionRouter } from './routes/subscriptions.js';
+import { reportRouter } from './routes/reports.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 import { setupSocketHandlers } from './socket/index.js';
@@ -102,6 +104,8 @@ app.use('/api/v1/livestream', livestreamRouter);
 app.use('/api/v1/upload', uploadRouter);
 app.use('/api/v1/admin/security', securityRouter);
 app.use('/api/v1/community', communityRouter);
+app.use('/api/v1/subscriptions', subscriptionRouter);
+app.use('/api/v1/reports', reportRouter);
 
 
 
