@@ -26,7 +26,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
     { id: 'home', label: 'Home', href: '/dashboard', Icon: HomeIcon },
     { id: 'explore', label: 'Explore', href: '/explore', Icon: SearchIcon },
-    { id: 'community', label: 'Community', href: '/community', Icon: MegaphoneIcon },
     { id: 'communities', label: 'Tribes', href: '/communities', Icon: UsersIcon },
     { id: 'profile', label: 'Profile', href: '/profile', Icon: UserIcon },
 ];

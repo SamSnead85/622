@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCommunities, type Community } from '@/hooks';
+import { Navigation } from '@/components/Navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ============================================
 // ASSETS & ICONS
@@ -98,66 +100,7 @@ const BULLETIN_BOARD = [
 // COMPONENTS
 // ============================================
 
-// 1. Navigation Shell (Standard)
-function Navigation() {
-    return (
-        <>
-            <nav className="hidden md:flex fixed left-0 top-0 h-full w-20 flex-col items-center py-8 bg-[#0a0a0f]/80 backdrop-blur-xl border-r border-white/5 z-50">
-                <Link href="/dashboard" className="mb-8">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
-                        <span className="text-black font-bold text-lg">0G</span>
-                    </div>
-                </Link>
-
-                <div className="flex-1 flex flex-col items-center gap-4">
-                    {[
-                        { icon: 'home', href: '/dashboard', label: 'Home' },
-                        { icon: 'search', href: '/explore', label: 'Explore' },
-                        { icon: 'users', href: '/communities', label: 'Tribes', active: true },
-                        { icon: 'sliders', href: '/algorithm', label: 'Algorithm' },
-                    ].map((item) => (
-                        <Link key={item.href} href={item.href}>
-                            <motion.div
-                                className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors text-white/60 hover:text-white ${item.active ? 'bg-white/10 text-white' : 'hover:bg-white/5'
-                                    }`}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                title={item.label}
-                            >
-                                {Icons[item.icon as keyof typeof Icons]}
-                            </motion.div>
-                        </Link>
-                    ))}
-                </div>
-
-                <Link href="/profile">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-500" />
-                </Link>
-            </nav>
-
-            {/* Mobile Bottom Nav */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-[#0a0a0f]/90 backdrop-blur-xl border-t border-white/5 z-50 flex items-center justify-around px-6 safe-area-pb">
-                {[
-                    { icon: 'home', href: '/dashboard' },
-                    { icon: 'search', href: '/explore' },
-                    { icon: 'users', href: '/communities', active: true },
-                    { icon: 'sliders', href: '/algorithm' },
-                    { icon: 'user', href: '/profile' },
-                ].map((item) => (
-                    <Link key={item.href} href={item.href}>
-                        <motion.div
-                            className={`w-12 h-12 rounded-xl flex items-center justify-center text-white/60 ${item.active ? 'bg-white/10 text-white' : ''
-                                }`}
-                            whileTap={{ scale: 0.9 }}
-                        >
-                            {Icons[item.icon as keyof typeof Icons]}
-                        </motion.div>
-                    </Link>
-                ))}
-            </nav>
-        </>
-    );
-}
+// Navigation is now imported from '@/components/Navigation'
 
 // 2. Pulse Ticker
 function PulseTicker() {
@@ -271,11 +214,13 @@ export default function CommunityHub() {
 
     useEffect(() => { setMounted(true); }, []);
 
+    const { user } = useAuth();
+
     if (!mounted) return <div className="min-h-screen bg-[#050508]" />;
 
     return (
         <div className="min-h-screen bg-[#050508] text-white selection:bg-[#00D4FF]/30">
-            <Navigation />
+            <Navigation activeTab="communities" />
 
             {/* Ambient Background */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -283,7 +228,7 @@ export default function CommunityHub() {
                 <div className="absolute bottom-0 left-0 w-[50%] h-[50%] bg-violet-900/10 blur-[150px]" />
             </div>
 
-            <main className="relative z-10 md:ml-20">
+            <main className="relative z-10 lg:ml-20 xl:ml-64 pb-20 lg:pb-0">
                 {/* 1. The Pulse (News Ticker) */}
                 <PulseTicker />
 
