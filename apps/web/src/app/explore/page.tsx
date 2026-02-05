@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 import { API_ENDPOINTS, apiFetch } from '@/lib/api';
+import { Navigation } from '@/components/Navigation';
 import {
     HomeIcon,
     SearchIcon,
@@ -42,78 +43,7 @@ interface Post {
 }
 
 // Shared Navigation Component
-function Navigation({ activeTab, userAvatarUrl, displayName, username }: { activeTab: string; userAvatarUrl?: string; displayName?: string; username?: string }) {
-    const avatarHref = userAvatarUrl && !userAvatarUrl.startsWith('preset:') ? userAvatarUrl : 'https://ui-avatars.com/api/?name=User&background=random';
-    const navItems = [
-        { id: 'home', Icon: HomeIcon, label: 'Home', href: '/dashboard' },
-        { id: 'explore', Icon: SearchIcon, label: 'Explore', href: '/explore' },
-        { id: 'communities', Icon: UsersIcon, label: 'Tribes', href: '/communities' },
-        { id: 'invite', Icon: SendIcon, label: 'Invite', href: '/invite' },
-        { id: 'messages', Icon: MessageIcon, label: 'Messages', href: '/messages' },
-    ];
-
-    return (
-        <>
-            {/* Desktop Sidebar */}
-            <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-20 xl:w-64 bg-[#0A0A0F]/95 backdrop-blur-xl border-r border-white/5 flex-col p-4 z-40">
-                <Link href="/" className="flex items-center gap-3 px-3 py-4 mb-6">
-                    <div className="font-bold text-2xl tracking-tight">
-                        <span className="text-[#00D4FF]">0</span>
-                        <span className="text-white">G</span>
-                    </div>
-                    <span className="text-white/60 text-sm font-medium hidden xl:block">ZeroG</span>
-                </Link>
-
-                <nav className="flex-1 space-y-2">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.id}
-                            href={item.href}
-                            className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${activeTab === item.id
-                                ? 'bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/20'
-                                : 'text-white/60 hover:bg-white/5 hover:text-white'
-                                }`}
-                        >
-                            <item.Icon size={24} />
-                            <span className="font-medium hidden xl:block">{item.label}</span>
-                        </Link>
-                    ))}
-                </nav>
-
-                <Link href="/profile" className="flex items-center gap-3 px-3 py-4 mt-4 border-t border-white/10">
-                    <div className="w-10 h-10 rounded-full overflow-hidden relative ring-2 ring-white/20">
-                        <Image
-                            src={avatarHref}
-                            alt="Profile"
-                            fill
-                            className="object-cover"
-                        />
-                    </div>
-                    <div className="hidden xl:block">
-                        <p className="font-semibold text-white text-sm">{displayName || 'Your Name'}</p>
-                        <p className="text-xs text-white/50">@{username || 'username'}</p>
-                    </div>
-                </Link>
-            </aside>
-
-            {/* Mobile Bottom Nav */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 z-50">
-                <div className="flex items-center justify-around py-2">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.id}
-                            href={item.href}
-                            className={`flex flex-col items-center gap-1 p-2 ${activeTab === item.id ? 'text-white' : 'text-white/50'}`}
-                        >
-                            <item.Icon size={22} />
-                            <span className="text-[10px]">{item.label}</span>
-                        </Link>
-                    ))}
-                </div>
-            </nav>
-        </>
-    );
-}
+// Navigation imported from components
 
 function ExplorePageContent() {
     const [searchQuery, setSearchQuery] = useState('');

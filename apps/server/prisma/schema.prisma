@@ -323,6 +323,7 @@ enum PostType {
   VIDEO
   TEXT
   POLL
+  RALLY
 }
 
 model Music {

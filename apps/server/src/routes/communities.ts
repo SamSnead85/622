@@ -333,6 +333,35 @@ router.get('/:communityId/posts', optionalAuth, async (req: AuthRequest, res, ne
         const { communityId } = req.params;
         const { cursor, limit = '20' } = req.query;
 
+        // Security Check: Ensure user has access if community is private
+        const community = await prisma.community.findUnique({
+            where: { id: communityId },
+            select: { isPublic: true },
+        });
+
+        if (!community) {
+            throw new AppError('Community not found', 404);
+        }
+
+        if (!community.isPublic) {
+            if (!req.userId) {
+                throw new AppError('Authentication required to view this private community', 401);
+            }
+
+            const membership = await prisma.communityMember.findUnique({
+                where: {
+                    userId_communityId: {
+                        userId: req.userId,
+                        communityId,
+                    },
+                },
+            });
+
+            if (!membership) {
+                throw new AppError('You must be a member to view posts in this private community', 403);
+            }
+        }
+
         const posts = await prisma.post.findMany({
             where: { communityId },
             take: parseInt(limit as string) + 1,
@@ -349,8 +378,10 @@ router.get('/:communityId/posts', optionalAuth, async (req: AuthRequest, res, ne
                     },
                 },
                 _count: {
-                    select: { likes: true, comments: true, shares: true },
+                    select: { likes: true, comments: true, shares: true, rsvps: { where: { status: 'IN' } } },
                 },
+                likes: req.userId ? { where: { userId: req.userId } } : false,
+                rsvps: req.userId ? { where: { userId: req.userId, status: 'IN' } } : false,
             },
         });
 
@@ -363,9 +394,60 @@ router.get('/:communityId/posts', optionalAuth, async (req: AuthRequest, res, ne
                 likesCount: p._count.likes,
                 commentsCount: p._count.comments,
                 sharesCount: p._count.shares,
+                rsvpCount: p._count.rsvps,
+                isLiked: !!p.likes?.length,
+                isRsvped: !!p.rsvps?.length,
             })),
             nextCursor: hasMore ? results[results.length - 1].id : null,
         });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/communities/:communityId/invite
+router.post('/:communityId/invite', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const { userIds } = req.body;
+
+        if (!Array.isArray(userIds) || userIds.length === 0) {
+            throw new AppError('userIds array is required', 400);
+        }
+
+        const community = await prisma.community.findUnique({
+            where: { id: communityId },
+            include: { members: { where: { userId: req.userId } } },
+        });
+
+        if (!community) {
+            throw new AppError('Community not found', 404);
+        }
+
+        if (community.members.length === 0) {
+            throw new AppError('You must be a member to invite others', 403);
+        }
+
+        const sender = await prisma.user.findUnique({
+            where: { id: req.userId },
+        });
+
+        // Create Notifications
+        await prisma.$transaction(
+            userIds.map((targetId: string) =>
+                prisma.notification.create({
+                    data: {
+                        userId: targetId,
+                        type: 'COMMUNITY_INVITE',
+                        actorId: req.userId,
+                        targetId: communityId,
+                        message: `${sender?.displayName || 'Someone'} invited you to join ${community.name}`,
+                    },
+                })
+            )
+        );
+
+        res.json({ success: true, count: userIds.length });
     } catch (error) {
         next(error);
     }

@@ -7,6 +7,9 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_ENDPOINTS, apiFetch } from '@/lib/api';
+import { usePosts } from '@/hooks/usePosts';
+import { FeedPost, PostSkeleton } from '@/components/FeedPost';
+import { InviteFriends } from '@/components/InviteFriends';
 
 // ============================================
 // TYPES
@@ -79,6 +82,17 @@ export default function CommunityDetailPage() {
     const [community, setCommunity] = useState<CommunityDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showInvite, setShowInvite] = useState(false);
+
+    const {
+        posts,
+        isLoading: postsLoading,
+        hasMore,
+        loadMore,
+        likePost,
+        toggleRsvp,
+        deletePost
+    } = usePosts({ communityId });
 
     useEffect(() => {
         async function fetchCommunity() {
@@ -177,14 +191,21 @@ export default function CommunityDetailPage() {
                             <div>
                                 <h1 className="text-2xl font-bold text-white mb-1">{community.name}</h1>
                                 <div className="flex items-center gap-3 text-sm text-white/50">
-                                    <span className="flex items-center gap-1">
-                                        {community.isPrivate ? Icons.lock : Icons.globe}
-                                        {community.isPrivate ? 'Private' : 'Public'}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        {Icons.users}
-                                        {memberCount} members
-                                    </span>
+                                    <div className="flex items-center gap-2 text-white/50 text-sm mb-4">
+                                        {!community.isPrivate ? (
+                                            <>
+                                                {Icons.globe}
+                                                <span>Public Group</span>
+                                            </>
+                                        ) : (
+                                            <div className="flex items-center gap-2 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                                                <span className="text-emerald-400">{Icons.lock}</span>
+                                                <span className="text-emerald-400 font-medium text-xs">Private & Acc. Encrypted</span>
+                                            </div>
+                                        )}
+                                        <span>•</span>
+                                        <span>{community.memberCount} members</span>
+                                    </div>
                                 </div>
                             </div>
                             <span className={`text-xs font-medium px-3 py-1.5 rounded-full ${role === 'admin'
@@ -211,19 +232,7 @@ export default function CommunityDetailPage() {
                                 Post
                             </button>
                             <button
-                                onClick={() => {
-                                    const inviteUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/communities/${communityId}/join`;
-                                    if (navigator.share) {
-                                        navigator.share({
-                                            title: `Join ${community.name} on 0G`,
-                                            text: `You're invited to join ${community.name}!`,
-                                            url: inviteUrl,
-                                        });
-                                    } else {
-                                        navigator.clipboard.writeText(inviteUrl);
-                                        alert('Invite link copied to clipboard!');
-                                    }
-                                }}
+                                onClick={() => setShowInvite(true)}
                                 className="px-4 py-3 rounded-xl bg-green-500/20 text-green-400 font-medium hover:bg-green-500/30 transition-colors flex items-center gap-2"
                             >
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -245,28 +254,68 @@ export default function CommunityDetailPage() {
                     </motion.div>
 
                     {/* Posts Feed Placeholder */}
-                    <motion.div
-                        className="bg-white/5 rounded-2xl border border-white/10 p-8 text-center"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                    >
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 flex items-center justify-center">
-                            <span className="text-3xl">📝</span>
-                        </div>
-                        <h3 className="text-lg font-semibold text-white mb-2">No posts yet</h3>
-                        <p className="text-white/50 mb-4">
-                            Be the first to share something with your tribe!
-                        </p>
-                        <button
-                            onClick={() => router.push(`/create?communityId=${communityId}`)}
-                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold hover:opacity-90 transition-opacity"
-                        >
-                            Create First Post
-                        </button>
-                    </motion.div>
+                    {/* Posts Feed */}
+                    <div className="space-y-6">
+                        {postsLoading && posts.length === 0 ? (
+                            <>
+                                <PostSkeleton />
+                                <PostSkeleton />
+                            </>
+                        ) : posts.length > 0 ? (
+                            <>
+                                {posts.map((post) => (
+                                    <FeedPost
+                                        key={post.id}
+                                        post={post}
+                                        likePost={likePost}
+                                        toggleRsvp={toggleRsvp}
+                                        deletePost={deletePost}
+                                    />
+                                ))}
+
+                                {hasMore && (
+                                    <div className="flex justify-center py-4">
+                                        <button
+                                            onClick={loadMore}
+                                            className="px-4 py-2 rounded-full bg-white/5 text-white/50 text-sm hover:bg-white/10 hover:text-white transition-colors"
+                                        >
+                                            Load older posts
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <motion.div
+                                className="bg-white/5 rounded-2xl border border-white/10 p-8 text-center"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                            >
+                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 flex items-center justify-center">
+                                    <span className="text-3xl">📝</span>
+                                </div>
+                                <h3 className="text-lg font-semibold text-white mb-2">No posts yet</h3>
+                                <p className="text-white/50 mb-4">
+                                    Be the first to share something with your tribe!
+                                </p>
+                                <button
+                                    onClick={() => router.push(`/create?communityId=${communityId}`)}
+                                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold hover:opacity-90 transition-opacity"
+                                >
+                                    Create First Post
+                                </button>
+                            </motion.div>
+                        )}
+                    </div>
                 </div>
             </div>
+
+            <InviteFriends
+                isOpen={showInvite}
+                onClose={() => setShowInvite(false)}
+                communityId={communityId as string}
+                communityName={community.name}
+            />
         </div>
     );
 }

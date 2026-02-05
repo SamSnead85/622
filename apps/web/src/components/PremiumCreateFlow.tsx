@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { CameraIcon, SparklesIcon, PlayIcon, MapPinIcon, UserIcon, GlobeIcon, EditIcon, ArrowRightIcon } from '@/components/icons';
 import { AIMediaEditor } from './AIMediaEditor';
 
 // ============================================
@@ -11,7 +12,7 @@ import { AIMediaEditor } from './AIMediaEditor';
 interface CreateFlowProps {
     isOpen: boolean;
     onClose: () => void;
-    onPublish?: (post: { mediaUrl: string; caption: string; type: 'post' | 'moment' | 'journey' }) => void;
+    onPublish?: (post: { mediaUrl: string; caption: string; type: 'post' | 'moment' | 'journey'; file?: File | null }) => void;
 }
 
 type Step = 'select' | 'edit' | 'caption' | 'share';
@@ -79,6 +80,7 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
             mediaUrl: editedMediaUrl || mediaUrl || '',
             caption,
             type: contentType,
+            file: mediaFile
         });
 
         setIsPublishing(false);
@@ -152,9 +154,9 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
                         {/* Content Type Toggle */}
                         <div className="flex gap-2 mb-8">
                             {[
-                                { id: 'post', label: 'Post', icon: '📷', desc: 'Share to your profile' },
-                                { id: 'moment', label: 'Moment', icon: '⭕', desc: '24hr story' },
-                                { id: 'journey', label: 'Journey', icon: '🎬', desc: 'Video series' },
+                                { id: 'post', label: 'Post', Icon: CameraIcon, desc: 'Share to your profile' },
+                                { id: 'moment', label: 'Moment', Icon: SparklesIcon, desc: '24hr story' },
+                                { id: 'journey', label: 'Journey', Icon: PlayIcon, desc: 'Video series' },
                             ].map((type) => (
                                 <button
                                     key={type.id}
@@ -164,7 +166,7 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
                                         : 'bg-white/5 border-white/10 hover:border-white/20'
                                         }`}
                                 >
-                                    <span className="text-2xl">{type.icon}</span>
+                                    <type.Icon size={32} />
                                     <span className="font-medium text-white text-sm">{type.label}</span>
                                     <span className="text-[10px] text-white/50">{type.desc}</span>
                                 </button>
@@ -179,11 +181,11 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
                             <motion.div
                                 animate={{ y: [0, -10, 0] }}
                                 transition={{ duration: 2, repeat: Infinity }}
-                                className="text-6xl mb-4"
+                                className="mb-4 text-white/70"
                             >
-                                {contentType === 'post' && '📷'}
-                                {contentType === 'moment' && '⏱️'}
-                                {contentType === 'journey' && '🎥'}
+                                {contentType === 'post' && <CameraIcon size={48} />}
+                                {contentType === 'moment' && <SparklesIcon size={48} />}
+                                {contentType === 'journey' && <PlayIcon size={48} />}
                             </motion.div>
                             <p className="text-white/70 text-lg mb-2">
                                 Tap to select {contentType === 'journey' ? 'video' : 'photo or video'}
@@ -204,11 +206,11 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
                         {/* Camera option */}
                         <div className="flex gap-3 mt-6">
                             <button className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-                                <span className="text-xl">📸</span>
+                                <CameraIcon size={24} />
                                 <span className="text-white/70">Take Photo</span>
                             </button>
                             <button className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-                                <span className="text-xl">🎬</span>
+                                <PlayIcon size={24} />
                                 <span className="text-white/70">Record Video</span>
                             </button>
                         </div>
@@ -248,7 +250,7 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
                                     onClick={() => setStep('edit')}
                                     className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm flex items-center gap-1"
                                 >
-                                    <span>✨</span> Edit
+                                    <SparklesIcon size={16} /> Edit
                                 </button>
                             </div>
 
@@ -271,7 +273,7 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
                                 onClick={generateAiCaptions}
                                 className="w-full flex items-center justify-center gap-2 py-3 mt-3 rounded-xl bg-gradient-to-r from-violet-500/20 to-cyan-500/20 border border-violet-500/30 hover:border-violet-500/50 transition-colors"
                             >
-                                <span>✨</span>
+                                <SparklesIcon size={16} />
                                 <span className="text-white/80 text-sm">Generate AI Caption</span>
                             </button>
 
@@ -312,21 +314,21 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
                             <div className="mt-6 space-y-3">
                                 <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-white/10">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-lg">📍</span>
+                                        <MapPinIcon size={20} className="text-white/70" />
                                         <span className="text-white/70 text-sm">Add Location</span>
                                     </div>
-                                    <span className="text-white/30">›</span>
+                                    <ArrowRightIcon size={16} className="text-white/30" />
                                 </button>
                                 <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-white/10">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-lg">👥</span>
+                                        <UserIcon size={20} className="text-white/70" />
                                         <span className="text-white/70 text-sm">Tag People</span>
                                     </div>
-                                    <span className="text-white/30">›</span>
+                                    <ArrowRightIcon size={16} className="text-white/30" />
                                 </button>
                                 <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-white/10">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-lg">🌐</span>
+                                        <GlobeIcon size={20} className="text-white/70" />
                                         <span className="text-white/70 text-sm">Audience</span>
                                     </div>
                                     <span className="text-white/50 text-sm">Everyone</span>

@@ -25,7 +25,7 @@ export default function SignupPage() {
     // Redirect if already authenticated
     useEffect(() => {
         if (!authLoading && isAuthenticated) {
-            router.push('/dashboard');
+            router.push('/onboarding');
         }
     }, [authLoading, isAuthenticated, router]);
 
@@ -45,7 +45,7 @@ export default function SignupPage() {
         try {
             const result = await signup(email, password, generatedUsername, name);
             if (result.success) {
-                router.push('/dashboard');
+                router.push('/onboarding');
             } else {
                 setError(result.error || 'Signup failed. Please try again.');
             }

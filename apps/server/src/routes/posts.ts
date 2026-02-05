@@ -241,7 +241,7 @@ router.get('/:postId', optionalAuth, async (req: AuthRequest, res, next) => {
 router.post('/', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const createSchema = z.object({
-            type: z.enum(['IMAGE', 'VIDEO', 'TEXT', 'POLL']),
+            type: z.enum(['IMAGE', 'VIDEO', 'TEXT', 'POLL', 'RALLY']),
             caption: z.string().max(2200).optional(),
             mediaUrl: z.string().url().optional(),
             thumbnailUrl: z.string().url().optional(),

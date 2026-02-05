@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInvite } from '@/hooks/useInvite';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 
 // ============================================
 // INVITE FRIENDS MODAL
@@ -13,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 interface InviteFriendsProps {
     isOpen: boolean;
     onClose: () => void;
+    communityId?: string;
+    communityName?: string;
 }
 
 // Share platforms with Six22 branding
@@ -24,7 +27,7 @@ const SHARE_PLATFORMS = [
     { id: 'email', name: 'Email', icon: '📧', gradient: 'from-rose-400 to-rose-500' },
 ] as const;
 
-export function InviteFriends({ isOpen, onClose }: InviteFriendsProps) {
+export function InviteFriends({ isOpen, onClose, communityId, communityName }: InviteFriendsProps) {
     const { user } = useAuth();
     const {
         isLoading,
@@ -36,6 +39,14 @@ export function InviteFriends({ isOpen, onClose }: InviteFriendsProps) {
         remainingInvites
     } = useInvite();
 
+    // State
+    const [activeTab, setActiveTab] = useState<'external' | 'internal'>(communityId ? 'internal' : 'external');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+    const [isSearching, setIsSearching] = useState(false);
+    const [isSending, setIsSending] = useState(false);
+
     const [copied, setCopied] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
@@ -44,35 +55,110 @@ export function InviteFriends({ isOpen, onClose }: InviteFriendsProps) {
         setMounted(true);
     }, []);
 
-    // Generate invite link when modal opens
+    // Generate link or reset state on open
     useEffect(() => {
-        if (isOpen && !inviteLink) {
-            generateLink();
+        if (isOpen) {
+            setActiveTab(communityId ? 'internal' : 'external');
+            setSearchQuery('');
+            setSearchResults([]);
+            setSelectedUsers(new Set());
+            setShowSuccess(false);
+            if (!inviteLink && !communityId) {
+                generateLink();
+            }
         }
-    }, [isOpen, inviteLink, generateLink]);
+    }, [isOpen, inviteLink, generateLink, communityId]);
+
+    // Search Effect (Internal)
+    useEffect(() => {
+        if (!searchQuery.trim() || activeTab !== 'internal') {
+            setSearchResults([]);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setIsSearching(true);
+            try {
+                const res = await apiFetch(`${API_ENDPOINTS.users}?search=${encodeURIComponent(searchQuery)}&limit=5`);
+                const data = await res.json();
+                if (data.users) {
+                    setSearchResults(data.users.filter((u: any) => u.id !== user?.id));
+                }
+            } catch (error) {
+                console.error('Search error', error);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery, activeTab, user?.id]);
+
+    const handleSendInternalInvites = async () => {
+        if (selectedUsers.size === 0 || !communityId) return;
+        setIsSending(true);
+        try {
+            await apiFetch(`${API_ENDPOINTS.communities}/${communityId}/invite`, {
+                method: 'POST',
+                body: JSON.stringify({ userIds: Array.from(selectedUsers) })
+            });
+            setShowSuccess(true);
+            setTimeout(onClose, 2000);
+        } catch (error) {
+            console.error('Invite failed', error);
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    const toggleUser = (id: string) => {
+        const next = new Set(selectedUsers);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedUsers(next);
+    };
 
     const handleCopyLink = useCallback(async () => {
-        const success = await copyLink();
-        if (success) {
+        const linkToCopy = communityId
+            ? `${window.location.origin}/communities/${communityId}/join`
+            : inviteLink;
+
+        if (linkToCopy) {
+            await navigator.clipboard.writeText(linkToCopy);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         }
-    }, [copyLink]);
+    }, [inviteLink, communityId]);
 
     const handleShare = useCallback((platform: typeof SHARE_PLATFORMS[number]['id']) => {
-        const url = getShareUrl(platform as 'whatsapp' | 'twitter' | 'telegram' | 'sms' | 'email', user?.displayName);
-        window.open(url, '_blank', 'width=600,height=500');
+        let url;
+        if (communityId) {
+            const communityUrl = `${window.location.origin}/communities/${communityId}/join`;
+            const text = `Join ${communityName || 'the tribe'} on 0G!`;
+            // Basic construction for now, ideally generic util
+            if (platform === 'whatsapp') url = `https://wa.me/?text=${encodeURIComponent(text + ' ' + communityUrl)}`;
+            else if (platform === 'email') url = `mailto:?subject=Join Tribe&body=${encodeURIComponent(text + ' ' + communityUrl)}`;
+            else url = communityUrl; // Default fallback copies? No opens blank
+        } else {
+            url = getShareUrl(platform as any, user?.displayName);
+        }
+
+        if (url) window.open(url, '_blank', 'width=600,height=500');
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
-    }, [getShareUrl, user?.displayName]);
+    }, [getShareUrl, user?.displayName, communityId, communityName]);
 
     if (!mounted) return null;
+
+    const displayLink = communityId
+        ? `${typeof window !== 'undefined' ? window.location.origin : ''}/communities/${communityId}/join`
+        : (inviteLink || 'Generating link...');
 
     return (
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* Backdrop with blur */}
+                    {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -90,202 +176,160 @@ export function InviteFriends({ isOpen, onClose }: InviteFriendsProps) {
                         className="fixed inset-0 z-50 flex items-center justify-center p-4"
                     >
                         <div className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-gradient-to-b from-[#0a0a0f] to-[#050508] rounded-3xl border border-white/10 shadow-2xl">
-                            {/* Header with animated background */}
+
+                            {/* Header */}
                             <div className="relative px-6 pt-8 pb-6 overflow-hidden">
-                                {/* Animated gradient orbs */}
+                                {/* Gradient Orbs */}
                                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                                    <motion.div
-                                        animate={{
-                                            x: [0, 20, 0],
-                                            y: [0, -10, 0],
-                                        }}
-                                        transition={{
-                                            duration: 8,
-                                            repeat: Infinity,
-                                            ease: 'linear',
-                                        }}
-                                        className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-amber-500/20 blur-3xl"
-                                    />
-                                    <motion.div
-                                        animate={{
-                                            x: [0, -15, 0],
-                                            y: [0, 15, 0],
-                                        }}
-                                        transition={{
-                                            duration: 10,
-                                            repeat: Infinity,
-                                            ease: 'linear',
-                                        }}
-                                        className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-violet-500/20 blur-3xl"
-                                    />
+                                    <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-amber-500/20 blur-3xl" />
+                                    <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-violet-500/20 blur-3xl" />
                                 </div>
 
-                                {/* Close button */}
-                                <button
-                                    onClick={onClose}
-                                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
-                                >
+                                <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors z-10">
                                     <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                     </svg>
                                 </button>
 
-                                {/* Hexagonal invite badge */}
-                                <div className="relative mx-auto w-24 h-24 mb-6">
-                                    <svg className="w-full h-full" viewBox="0 0 100 100">
-                                        <defs>
-                                            <linearGradient id="invite-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stopColor="#F59E0B" />
-                                                <stop offset="50%" stopColor="#F43F5E" />
-                                                <stop offset="100%" stopColor="#8B5CF6" />
-                                            </linearGradient>
-                                        </defs>
-                                        <motion.polygon
-                                            initial={{ scale: 0, rotate: -30 }}
-                                            animate={{ scale: 1, rotate: 0 }}
-                                            transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
-                                            points="50,5 90,27.5 90,72.5 50,95 10,72.5 10,27.5"
-                                            fill="url(#invite-gradient)"
-                                            className="drop-shadow-lg"
-                                        />
-                                        <text
-                                            x="50"
-                                            y="58"
-                                            textAnchor="middle"
-                                            fill="white"
-                                            fontSize="32"
-                                            fontWeight="bold"
-                                        >
-                                            🌙
-                                        </text>
-                                    </svg>
-                                </div>
-
-                                {/* Title */}
-                                <motion.h2
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2 }}
-                                    className="text-2xl font-bold text-center text-white mb-2"
-                                >
-                                    Invite Friends
-                                </motion.h2>
-                                <motion.p
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.3 }}
-                                    className="text-sm text-center text-white/50"
-                                >
-                                    Bring your tribe to Six22
-                                </motion.p>
+                                <h2 className="text-2xl font-bold text-center text-white mb-2 relative z-10">
+                                    {communityId ? `Invite to ${communityName || 'Tribe'}` : 'Invite Friends'}
+                                </h2>
+                                <p className="text-sm text-center text-white/50 relative z-10">
+                                    {communityId ? 'Search for existing users or share a link' : 'Bring your tribe to 0G'}
+                                </p>
                             </div>
+
+                            {/* Tabs */}
+                            {communityId && (
+                                <div className="flex gap-2 px-6 mb-6">
+                                    <button
+                                        onClick={() => setActiveTab('internal')}
+                                        className={`flex-1 py-2 text-sm font-medium rounded-xl transition-colors ${activeTab === 'internal'
+                                                ? 'bg-white/10 text-white'
+                                                : 'text-white/40 hover:text-white/60'
+                                            }`}
+                                    >
+                                        Private Invite
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('external')}
+                                        className={`flex-1 py-2 text-sm font-medium rounded-xl transition-colors ${activeTab === 'external'
+                                                ? 'bg-white/10 text-white'
+                                                : 'text-white/40 hover:text-white/60'
+                                            }`}
+                                    >
+                                        Share Link
+                                    </button>
+                                </div>
+                            )}
 
                             {/* Content */}
                             <div className="px-6 pb-6 space-y-6">
-                                {/* Invite Code Display */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.4 }}
-                                    className="relative"
-                                >
-                                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/10">
-                                        <div className="flex-1 min-w-0">
-                                            {isLoading ? (
-                                                <div className="h-5 w-48 bg-white/10 rounded animate-pulse" />
-                                            ) : (
-                                                <p className="text-sm text-white font-mono truncate">
-                                                    {inviteLink || 'Generating link...'}
-                                                </p>
-                                            )}
-                                            {inviteCode && (
-                                                <p className="text-xs text-white/40 mt-1">
-                                                    Code: <span className="font-semibold text-white/60">{inviteCode}</span>
-                                                </p>
+                                {activeTab === 'internal' ? (
+                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                placeholder="Search users by name..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/20 transition-colors"
+                                            />
+                                            {isSearching && (
+                                                <div className="absolute right-3 top-3.5 w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                                             )}
                                         </div>
-                                        <button
-                                            onClick={handleCopyLink}
-                                            disabled={isLoading}
-                                            className="flex-shrink-0 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
-                                        >
-                                            {copied ? '✓ Copied' : 'Copy'}
-                                        </button>
-                                    </div>
-                                </motion.div>
 
-                                {/* Share Platforms */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.5 }}
-                                >
-                                    <p className="text-sm text-white/50 mb-3">Share via</p>
-                                    <div className="grid grid-cols-5 gap-3">
-                                        {SHARE_PLATFORMS.map((platform, index) => (
-                                            <motion.button
-                                                key={platform.id}
-                                                initial={{ opacity: 0, scale: 0.8 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                transition={{ delay: 0.5 + index * 0.05 }}
-                                                onClick={() => handleShare(platform.id)}
-                                                className="flex flex-col items-center gap-2 group"
-                                            >
-                                                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${platform.gradient} flex items-center justify-center text-xl shadow-lg transition-transform group-hover:scale-110 group-active:scale-95`}>
-                                                    {platform.icon}
+                                        <div className="max-h-60 overflow-y-auto space-y-2 min-h-[100px]">
+                                            {searchResults.length === 0 && searchQuery && !isSearching && (
+                                                <p className="text-center text-sm text-white/30 py-4">No users found</p>
+                                            )}
+                                            {searchResults.map(u => (
+                                                <div
+                                                    key={u.id}
+                                                    onClick={() => toggleUser(u.id)}
+                                                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${selectedUsers.has(u.id) ? 'bg-indigo-500/20 border border-indigo-500/40' : 'bg-white/5 border border-transparent hover:bg-white/10'
+                                                        }`}
+                                                >
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-neutral-800 flex-shrink-0">
+                                                        {u.avatarUrl ? (
+                                                            <img src={u.avatarUrl} alt={u.displayName} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-white/50 text-xs font-bold">
+                                                                {u.displayName?.[0]?.toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="text-white font-medium text-sm truncate">{u.displayName}</h4>
+                                                        <p className="text-white/40 text-xs truncate">@{u.username}</p>
+                                                    </div>
+                                                    {selectedUsers.has(u.id) && (
+                                                        <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center">
+                                                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <span className="text-[10px] text-white/60 group-hover:text-white/80 transition-colors">
-                                                    {platform.name}
-                                                </span>
-                                            </motion.button>
-                                        ))}
-                                    </div>
-                                </motion.div>
+                                            ))}
+                                        </div>
 
-                                {/* Remaining Invites Badge */}
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.6 }}
-                                    className="flex items-center justify-center gap-2 py-3"
-                                >
-                                    <span className="text-xs text-white/40">
-                                        {remainingInvites} invites remaining today
-                                    </span>
-                                    <div className="flex gap-1">
-                                        {[...Array(Math.min(remainingInvites, 5))].map((_, i) => (
-                                            <motion.div
-                                                key={i}
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                transition={{ delay: 0.7 + i * 0.05 }}
-                                                className="w-2 h-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400"
-                                            />
-                                        ))}
-                                    </div>
-                                </motion.div>
+                                        <button
+                                            onClick={handleSendInternalInvites}
+                                            disabled={selectedUsers.size === 0 || isSending}
+                                            className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-500 text-white font-bold hover:opacity-90 disabled:opacity-50 transition-opacity"
+                                        >
+                                            {isSending ? 'Sending Invites...' : `Send Invite to ${selectedUsers.size} Users`}
+                                        </button>
+                                    </motion.div>
+                                ) : (
+                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                                        <div className="relative">
+                                            <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/10">
+                                                <p className="flex-1 text-sm text-white font-mono truncate">
+                                                    {displayLink}
+                                                </p>
+                                                <button
+                                                    onClick={handleCopyLink}
+                                                    className="flex-shrink-0 px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition-colors"
+                                                >
+                                                    {copied ? 'Copied' : 'Copy'}
+                                                </button>
+                                            </div>
+                                        </div>
 
-                                {/* Success State */}
+                                        <div className="grid grid-cols-5 gap-3">
+                                            {SHARE_PLATFORMS.map((platform, index) => (
+                                                <button
+                                                    key={platform.id}
+                                                    onClick={() => handleShare(platform.id)}
+                                                    className="flex flex-col items-center gap-2 group"
+                                                >
+                                                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${platform.gradient} flex items-center justify-center text-xl shadow-lg transition-transform group-hover:scale-110`}>
+                                                        {platform.icon}
+                                                    </div>
+                                                    <span className="text-[10px] text-white/60">{platform.name}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {/* Success Toast */}
                                 <AnimatePresence>
                                     {showSuccess && (
                                         <motion.div
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -10 }}
-                                            className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-500/20 border border-emerald-500/30"
+                                            className="absolute bottom-6 left-6 right-6 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-500/20 border border-emerald-500/30 backdrop-blur-md"
                                         >
                                             <span className="text-emerald-400">✓</span>
-                                            <span className="text-sm text-emerald-400">Invite sent!</span>
+                                            <span className="text-sm text-emerald-400">{activeTab === 'internal' ? 'Invites Sent!' : 'Link Copied/Shared!'}</span>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
-                            </div>
-
-                            {/* Footer */}
-                            <div className="px-6 pb-6">
-                                <p className="text-xs text-center text-white/30">
-                                    The more friends you bring, the stronger your tribe becomes 🌴
-                                </p>
                             </div>
                         </div>
                     </motion.div>

@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 import { Avatar, useProfile, SECONDARY_LANGUAGES } from '@/components/ProfileEditor';
 import { Navigation } from '@/components/Navigation';
-import { SettingsIcon, CameraIcon, PlusIcon, PlayIcon } from '@/components/icons';
+import { SettingsIcon, CameraIcon, PlusIcon, PlayIcon, HeartIcon } from '@/components/icons';
 import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 
 interface Post {
@@ -246,8 +246,9 @@ function ProfilePageContent() {
                                                 </div>
                                             )}
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                                                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white font-semibold flex items-center gap-1">
-                                                    🔥 {post.likesCount.toLocaleString()}
+                                                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white font-semibold flex items-center gap-2">
+                                                    <HeartIcon size={20} className="fill-white" />
+                                                    {post.likesCount.toLocaleString()}
                                                 </span>
                                             </div>
                                         </motion.div>

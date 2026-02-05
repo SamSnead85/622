@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 
 // ============================================
@@ -19,10 +19,13 @@ export interface Post {
     content: string;
     mediaUrl?: string;
     mediaType?: 'IMAGE' | 'VIDEO';
+    type: 'IMAGE' | 'VIDEO' | 'TEXT' | 'POLL' | 'RALLY';
     embedUrl?: string;
     likes: number;
     commentsCount: number;
+    rsvpCount: number;
     isLiked: boolean;
+    isRsvped: boolean;
     createdAt: string;
 }
 
@@ -34,25 +37,42 @@ export interface FeedUser {
     hasStory: boolean;
 }
 
+export interface UsePostsOptions {
+    communityId?: string;
+}
+
 // ============================================
 // POSTS/FEED HOOK
 // Fetches posts from API with pagination
 // ============================================
-export function usePosts() {
+export function usePosts(options?: UsePostsOptions) {
     const [posts, setPosts] = useState<Post[]>([]);
     const [friends, setFriends] = useState<FeedUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(true);
-    const [page, setPage] = useState(1);
+    const [nextCursor, setNextCursor] = useState<string | null>(null);
+    const nextCursorRef = useRef<string | null>(null); // Ref to avoid closure staleness
 
-    const fetchFeed = useCallback(async (pageNum: number = 1) => {
+    const fetchFeed = useCallback(async (cursor: string | null = null, reset: boolean = false) => {
         try {
-            setIsLoading(true);
+            if (reset) {
+                setIsLoading(true);
+                setPosts([]);
+            }
+
             setError(null);
 
-            // Use /feed endpoint with cursor-based pagination
-            const response = await apiFetch(`${API_ENDPOINTS.posts}/feed?limit=20`);
+            // Construct URL based on context (Community vs Main Feed)
+            let url = options?.communityId
+                ? `${API_ENDPOINTS.communities}/${options.communityId}/posts?limit=20`
+                : `${API_ENDPOINTS.posts}/feed?limit=20`;
+
+            if (cursor) {
+                url += `&cursor=${cursor}`;
+            }
+
+            const response = await apiFetch(url);
 
             if (response.ok) {
                 const data = await response.json();
@@ -68,21 +88,30 @@ export function usePosts() {
                     },
                     content: post.caption || '',
                     mediaUrl: post.mediaUrl,
-                    mediaType: post.type as 'IMAGE' | 'VIDEO',
+                    mediaType: (post.type === 'IMAGE' || post.type === 'VIDEO') ? post.type as 'IMAGE' | 'VIDEO' : undefined,
+                    type: post.type,
                     likes: post._count?.likes || post.likesCount || 0,
                     commentsCount: post._count?.comments || post.commentsCount || 0,
+                    rsvpCount: post._count?.rsvps || post.rsvpCount || 0,
                     isLiked: post.isLiked || false,
+                    isRsvped: post.isRsvped || false,
                     createdAt: post.createdAt,
                 }));
 
-                if (pageNum === 1) {
+                if (reset) {
                     setPosts(mappedPosts);
                 } else {
-                    setPosts(prev => [...prev, ...mappedPosts]);
+                    setPosts(prev => {
+                        // Avoid duplicates
+                        const existingIds = new Set(prev.map(p => p.id));
+                        const newPosts = mappedPosts.filter(p => !existingIds.has(p.id));
+                        return [...prev, ...newPosts];
+                    });
                 }
 
                 setHasMore(!!data.nextCursor);
-                setPage(pageNum);
+                setNextCursor(data.nextCursor);
+                nextCursorRef.current = data.nextCursor;
             } else {
                 const errorData = await response.json().catch(() => ({}));
                 console.error('Feed error:', errorData);
@@ -92,9 +121,9 @@ export function usePosts() {
             console.error('Error fetching feed:', err);
             setError('Network error');
         } finally {
-            setIsLoading(false);
+            if (reset) setIsLoading(false);
         }
-    }, []);
+    }, [options?.communityId]);
 
     const fetchFriends = useCallback(async () => {
         try {
@@ -109,10 +138,10 @@ export function usePosts() {
     }, []);
 
     const loadMore = useCallback(() => {
-        if (!isLoading && hasMore) {
-            fetchFeed(page + 1);
+        if (!isLoading && hasMore && nextCursorRef.current) {
+            fetchFeed(nextCursorRef.current, false);
         }
-    }, [isLoading, hasMore, page, fetchFeed]);
+    }, [isLoading, hasMore, fetchFeed]);
 
     const likePost = useCallback(async (postId: string) => {
         try {
@@ -132,7 +161,50 @@ export function usePosts() {
         }
     }, []);
 
-    const createPost = useCallback(async (content: string, mediaFile?: File): Promise<{ success: boolean; error?: string }> => {
+    const toggleRsvp = useCallback(async (postId: string) => {
+        try {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+            if (!token) return;
+
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            // Optimistic update
+            const newIsRsvped = !post.isRsvped;
+            const newCount = newIsRsvped ? post.rsvpCount + 1 : Math.max(0, post.rsvpCount - 1);
+
+            setPosts(prev => prev.map(p =>
+                p.id === postId
+                    ? { ...p, isRsvped: newIsRsvped, rsvpCount: newCount }
+                    : p
+            ));
+
+            const method = newIsRsvped ? 'POST' : 'DELETE';
+            const body = newIsRsvped ? JSON.stringify({ status: 'IN' }) : undefined;
+
+            const response = await fetch(`${API_ENDPOINTS.posts}/${postId}/rsvp`, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body
+            });
+
+            if (!response.ok) {
+                // Revert on error
+                setPosts(prev => prev.map(p =>
+                    p.id === postId
+                        ? { ...p, isRsvped: !newIsRsvped, rsvpCount: post.rsvpCount }
+                        : p
+                ));
+            }
+        } catch (err) {
+            console.error('Error toggling RSVP:', err);
+        }
+    }, [posts]);
+
+    const createPost = useCallback(async (content: string, mediaFile?: File, typeOverride?: string, communityIdOverride?: string): Promise<{ success: boolean; error?: string }> => {
         try {
             const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
 
@@ -165,10 +237,11 @@ export function usePosts() {
 
             // Step 2: Create the post with the media URL
             const postData = {
-                type: mediaUrl ? (mediaType || 'IMAGE') : 'TEXT',
+                type: typeOverride || (mediaUrl ? (mediaType || 'IMAGE') : 'TEXT'),
                 caption: content,
                 mediaUrl: mediaUrl,
                 isPublic: true,
+                communityId: communityIdOverride || options?.communityId,
             };
 
             const response = await fetch(API_ENDPOINTS.posts, {
@@ -183,7 +256,7 @@ export function usePosts() {
 
             if (response.ok) {
                 // Refresh feed to show new post
-                await fetchFeed(1);
+                await fetchFeed(null, true);
                 return { success: true };
             } else {
                 const errorData = await response.json().catch(() => ({}));
@@ -193,7 +266,7 @@ export function usePosts() {
             console.error('Error creating post:', err);
             return { success: false, error: 'Network error' };
         }
-    }, [fetchFeed]);
+    }, [fetchFeed, options?.communityId]);
 
     const deletePost = useCallback(async (postId: string): Promise<{ success: boolean; error?: string }> => {
         try {
@@ -209,26 +282,27 @@ export function usePosts() {
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
                 },
                 credentials: 'include',
+                body: JSON.stringify({}), // Fix for some proxies requiring body
             });
 
             if (response.ok) {
                 return { success: true };
             } else {
                 // Revert on error - refetch the feed
-                await fetchFeed(1);
+                await fetchFeed(null, true);
                 const errorData = await response.json().catch(() => ({}));
                 return { success: false, error: errorData.message || errorData.error || 'Failed to delete post' };
             }
         } catch (err) {
             // Revert on error - refetch the feed
-            await fetchFeed(1);
+            await fetchFeed(null, true);
             console.error('Error deleting post:', err);
             return { success: false, error: 'Network error' };
         }
     }, [fetchFeed]);
 
     useEffect(() => {
-        fetchFeed(1);
+        fetchFeed(null, true);
         fetchFriends();
     }, [fetchFeed, fetchFriends]);
 
@@ -240,8 +314,9 @@ export function usePosts() {
         hasMore,
         loadMore,
         likePost,
+        toggleRsvp,
         createPost,
         deletePost,
-        refetch: () => fetchFeed(1),
+        refetch: () => fetchFeed(null, true),
     };
 }

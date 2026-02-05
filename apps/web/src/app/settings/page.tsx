@@ -8,6 +8,7 @@ import { loadPreferences, savePreferences, clearAllData, exportUserData } from '
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 import { InviteFriends } from '@/components/InviteFriends';
 import { TwoFactorSetup } from '@/components/TwoFactorSetup';
+import { Navigation } from '@/components/Navigation';
 import {
     HomeIcon,
     SearchIcon,
@@ -25,38 +26,7 @@ import {
 } from '@/components/icons';
 
 // Navigation
-function Navigation() {
-    const navItems = [
-        { id: 'home', Icon: HomeIcon, label: 'Home', href: '/dashboard' },
-        { id: 'explore', Icon: SearchIcon, label: 'Explore', href: '/explore' },
-        { id: 'communities', Icon: UsersIcon, label: 'Tribes', href: '/communities' },
-        { id: 'invite', Icon: SendIcon, label: 'Invite', href: '/invite' },
-        { id: 'messages', Icon: MessageIcon, label: 'Messages', href: '/messages' },
-    ];
-
-    return (
-        <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-20 xl:w-64 bg-black/40 backdrop-blur-xl border-r border-white/5 flex-col p-4 z-40">
-            <Link href="/" className="flex items-center gap-3 px-3 py-4 mb-6">
-                {/* 0G Logo */}
-                <div className="flex items-center gap-2">
-                    <div className="text-2xl font-bold flex-shrink-0">
-                        <span className="text-[#00D4FF]">0</span>
-                        <span className="text-white">G</span>
-                    </div>
-                    <span className="text-lg font-medium text-white/70 hidden xl:block">ZeroG</span>
-                </div>
-            </Link>
-            <nav className="flex-1 space-y-2">
-                {navItems.map((item) => (
-                    <Link key={item.id} href={item.href} className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-white/60 hover:bg-white/5 hover:text-white">
-                        <item.Icon size={24} />
-                        <span className="font-medium hidden xl:block">{item.label}</span>
-                    </Link>
-                ))}
-            </nav>
-        </aside>
-    );
-}
+// Local Navigation removed in favor of shared component
 
 // Toggle Switch
 function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void }) {
@@ -152,7 +122,7 @@ const settingSections = [
 
 function SettingsPageContent() {
     const { profile, updateProfile } = useProfile();
-    const { logout, updateUser } = useAuth();
+    const { user, logout, updateUser } = useAuth();
     const [showProfileEditor, setShowProfileEditor] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [show2FASetup, setShow2FASetup] = useState(false);
@@ -260,7 +230,12 @@ function SettingsPageContent() {
                 <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-violet-500/5 blur-[100px]" />
             </div>
 
-            <Navigation />
+            <Navigation
+                activeTab="profile"
+                userAvatarUrl={user?.avatarUrl || profile?.avatarCustomUrl}
+                displayName={user?.displayName || profile?.displayName}
+                username={user?.username || profile?.username}
+            />
 
 
             <main className="relative z-10 lg:ml-20 xl:ml-64 pb-24 lg:pb-8">

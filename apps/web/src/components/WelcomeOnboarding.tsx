@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProfile } from '@/components/ProfileEditor';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ============================================
 // WELCOME ONBOARDING FLOW
@@ -44,6 +45,14 @@ export function WelcomeOnboarding({ onComplete }: OnboardingProps) {
     const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
     const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
     const { updateProfile } = useProfile();
+    const { user } = useAuth();
+
+    // Pre-fill name from auth
+    useEffect(() => {
+        if (user?.displayName && !name) {
+            setName(user.displayName);
+        }
+    }, [user?.displayName]);
 
     const totalSteps = 4;
 

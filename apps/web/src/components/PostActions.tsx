@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ShareIcon, BookmarkIcon, FlagIcon, TrashIcon, PlayIcon, AlertIcon, MoreHorizontalIcon } from '@/components/icons';
 
 // ============================================
 // POST ACTIONS MENU
@@ -105,11 +106,7 @@ export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postC
                 className="p-2 rounded-full hover:bg-white/10 transition-colors"
                 aria-label="Post options"
             >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-white/60">
-                    <circle cx="12" cy="5" r="2" />
-                    <circle cx="12" cy="12" r="2" />
-                    <circle cx="12" cy="19" r="2" />
-                </svg>
+                <MoreHorizontalIcon className="text-white/60" />
             </button>
 
             {/* Dropdown Menu */}
@@ -134,7 +131,7 @@ export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postC
                                 onClick={handleShare}
                                 className="w-full px-4 py-3 text-left text-white hover:bg-white/5 transition-colors flex items-center gap-3"
                             >
-                                <span>📤</span>
+                                <ShareIcon size={18} />
                                 <span>Share via Text/Message</span>
                             </button>
 
@@ -146,7 +143,7 @@ export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postC
                                     }}
                                     className="w-full px-4 py-3 text-left text-white hover:bg-white/5 transition-colors flex items-center gap-3"
                                 >
-                                    <span>🔖</span>
+                                    <BookmarkIcon size={18} />
                                     <span>Save</span>
                                 </button>
                             )}
@@ -159,7 +156,7 @@ export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postC
                                     }}
                                     className="w-full px-4 py-3 text-left text-white hover:bg-white/5 transition-colors flex items-center gap-3"
                                 >
-                                    <span>🚩</span>
+                                    <FlagIcon size={18} />
                                     <span>Report</span>
                                 </button>
                             )}
@@ -172,7 +169,7 @@ export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postC
                                     }}
                                     className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 border-t border-white/10"
                                 >
-                                    <span>🗑️</span>
+                                    <TrashIcon size={18} />
                                     <span>Delete</span>
                                 </button>
                             )}
@@ -200,7 +197,7 @@ export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postC
                         >
                             <div className="text-center mb-6">
                                 <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-3xl">🗑️</span>
+                                    <TrashIcon size={32} className="text-red-500" />
                                 </div>
                                 <h3 className="text-xl font-semibold text-white mb-2">Delete Post?</h3>
                                 <p className="text-white/60">
@@ -380,7 +377,7 @@ export function VideoUrlInput({ value, onChange, onValidUrl }: VideoUrlInputProp
                         />
                     </div>
                     <div className="p-3 bg-white/5 flex items-center gap-2">
-                        <span className="text-red-500">▶️</span>
+                        <PlayIcon size={16} className="text-red-500" />
                         <span className="text-sm text-white/70">YouTube video ready to share</span>
                     </div>
                 </motion.div>

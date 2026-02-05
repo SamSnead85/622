@@ -26,7 +26,8 @@ function getNotificationIcon(type: Notification['type']): React.ReactNode {
         case 'COMMENT': return <MessageIcon {...iconProps} />;
         case 'MENTION': return <span className="text-white text-xs font-bold">@</span>;
         case 'MESSAGE': return <MessageIcon {...iconProps} />;
-        case 'COMMUNITY': return <UsersIcon {...iconProps} />;
+        case 'COMMUNITY':
+        case 'COMMUNITY_INVITE': return <UsersIcon {...iconProps} />;
         case 'JOURNEY': return <VideoIcon {...iconProps} />;
         default: return <BellIcon {...iconProps} />;
     }

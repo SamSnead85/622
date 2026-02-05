@@ -17,6 +17,7 @@ interface Post {
     content: string;
     mediaUrl?: string;
     mediaType?: 'IMAGE' | 'VIDEO';
+    type: 'IMAGE' | 'VIDEO' | 'TEXT' | 'POLL' | 'RALLY';
     createdAt: string;
     updatedAt?: string;
     likes: number;
@@ -136,7 +137,8 @@ export default function PostDetailPage() {
                     id: data.id,
                     content: data.caption || '',
                     mediaUrl: data.mediaUrl,
-                    mediaType: data.type,
+                    mediaType: (data.type === 'IMAGE' || data.type === 'VIDEO') ? data.type : undefined,
+                    type: data.type,
                     createdAt: data.createdAt,
                     updatedAt: data.updatedAt,
                     likes: data.likesCount || 0,
@@ -552,22 +554,24 @@ export default function PostDetailPage() {
                             <span className="font-medium">{post.commentsCount}</span>
                         </div>
 
-                        {/* RSVP "I'm In" Button */}
-                        <button
-                            onClick={handleRsvp}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all ${isRsvped
-                                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
-                                : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
-                                }`}
-                        >
-                            <span>{isRsvped ? '✓' : '🙋'}</span>
-                            <span>{isRsvped ? "I'm In!" : "I'm In"}</span>
-                            {rsvpCount > 0 && (
-                                <span className="bg-white/20 px-2 py-0.5 rounded-full text-sm">
-                                    {rsvpCount}
-                                </span>
-                            )}
-                        </button>
+                        {/* RSVP "I'm In" Button - Only for RALLY posts */}
+                        {post.type === 'RALLY' && (
+                            <button
+                                onClick={handleRsvp}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all ${isRsvped
+                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
+                                    : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                                    }`}
+                            >
+                                <span>{isRsvped ? '✓' : '🙋'}</span>
+                                <span>{isRsvped ? "I'm In!" : "I'm In"}</span>
+                                {rsvpCount > 0 && (
+                                    <span className="bg-white/20 px-2 py-0.5 rounded-full text-sm">
+                                        {rsvpCount}
+                                    </span>
+                                )}
+                            </button>
+                        )}
 
                         <button
                             onClick={handleShare}

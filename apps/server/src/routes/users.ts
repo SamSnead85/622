@@ -9,9 +9,15 @@ const router = Router();
 // GET /api/v1/users - List all users
 router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
-        const { cursor, limit = '20' } = req.query;
+        const { cursor, limit = '20', search } = req.query;
 
         const users = await prisma.user.findMany({
+            where: search ? {
+                OR: [
+                    { username: { contains: search as string, mode: 'insensitive' } },
+                    { displayName: { contains: search as string, mode: 'insensitive' } },
+                ]
+            } : undefined,
             take: parseInt(limit as string) + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: { createdAt: 'desc' },

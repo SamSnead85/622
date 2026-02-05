@@ -10,6 +10,7 @@ import { usePosts } from '@/hooks/usePosts';
 import { ReactionSpectrum, IntentionBadge, REACTION_SPECTRUM } from '@/components/ReactionSpectrum';
 import { DataOwnershipPanel, PrivacyFirstBadge, LiveLatencyIndicator } from '@/components/PlatformDifferentiators';
 import { PostActions } from '@/components/PostActions';
+import { FeedPost, PostSkeleton } from '@/components/FeedPost';
 import {
     HomeIcon,
     SearchIcon,
@@ -332,34 +333,6 @@ function DoubleTapHeart({
 // ============================================
 // LOADING SKELETON - Premium animated placeholder
 // ============================================
-function PostSkeleton() {
-    return (
-        <div className="bg-white/[0.02] rounded-2xl border border-white/5 overflow-hidden animate-pulse">
-            {/* Header skeleton */}
-            <div className="p-4 pb-2">
-                <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-white/10" />
-                    <div className="flex-1">
-                        <div className="h-4 w-32 bg-white/10 rounded mb-2" />
-                        <div className="h-3 w-48 bg-white/5 rounded" />
-                    </div>
-                </div>
-            </div>
-            {/* Media skeleton */}
-            <div className="aspect-[4/3] bg-white/5">
-                <div className="w-full h-full bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-shimmer" />
-            </div>
-            {/* Actions skeleton */}
-            <div className="p-4 border-t border-white/5">
-                <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-full bg-white/10" />
-                    <div className="w-8 h-8 rounded-full bg-white/10" />
-                    <div className="w-8 h-8 rounded-full bg-white/10" />
-                </div>
-            </div>
-        </div>
-    );
-}
 
 
 // ============================================
@@ -988,7 +961,7 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
 // ============================================
 export default function DashboardPage() {
     const { user, isLoading, isAdmin } = useAuth();
-    const { posts, likePost, deletePost, isLoading: postsLoading, refetch, hasMore, loadMore } = usePosts();
+    const { posts, likePost, deletePost, isLoading: postsLoading, refetch, hasMore, loadMore, toggleRsvp } = usePosts();
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
     const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -1224,158 +1197,22 @@ export default function DashboardPage() {
                                 )}
 
                                 {/* Real Posts - Standardized Card Sizing */}
-                                {posts.map(post => (
-                                    <div key={post.id} className="bg-white/[0.02] rounded-2xl border border-white/5 overflow-hidden">
-                                        {/* Header - Fixed Height */}
-                                        <div className="p-4 pb-2">
-                                            <div className="flex items-start gap-3">
-                                                {post.author.avatarUrl ? (
-                                                    <img
-                                                        src={post.author.avatarUrl}
-                                                        alt={post.author.displayName}
-                                                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                                                    />
-                                                ) : (
-                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-sm flex-shrink-0">
-                                                        {post.author.displayName?.[0] || 'U'}
-                                                    </div>
-                                                )}
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className="font-bold text-white text-sm">{post.author.displayName}</span>
-                                                        <span className="text-white/40 text-xs">@{post.author.username}</span>
-                                                        <span className="px-2 py-0.5 rounded-full bg-[#00D4FF]/20 text-[#00D4FF] text-[10px] flex-shrink-0">🌍 Public</span>
-                                                        <span className="text-white/30 text-xs flex-shrink-0">• {new Date(post.createdAt).toLocaleDateString()}</span>
-                                                    </div>
-                                                    {post.content && (
-                                                        <p className="text-white/70 text-sm mt-1 line-clamp-3">{post.content}</p>
-                                                    )}
-                                                </div>
-                                                {/* Visible Delete Button for Post Owner or Admin */}
-                                                {(post.author.id === user?.id || isAdmin) && (
-                                                    <button
-                                                        onClick={() => {
-                                                            if (confirm('Delete this post?')) {
-                                                                deletePost(post.id);
-                                                            }
-                                                        }}
-                                                        className="p-2 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all flex-shrink-0"
-                                                        title={post.author.id === user?.id ? 'Delete post' : 'Delete post (Admin)'}
-                                                    >
-                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                        </svg>
-                                                    </button>
-                                                )}
-                                                {/* Post Actions Menu */}
-                                                <div className="relative flex-shrink-0">
-                                                    <PostActions
-                                                        postId={post.id}
-                                                        isOwner={post.author.id === user?.id}
-                                                        onDelete={deletePost}
-                                                        postContent={post.content}
-                                                        authorName={post.author.displayName}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Media Container - Double-tap to like */}
-                                        {post.mediaUrl && (
-                                            <DoubleTapHeart onDoubleTap={() => !post.isLiked && likePost(post.id)}>
-                                                <div className="relative w-full bg-black/30 overflow-hidden cursor-pointer">
-                                                    {isYouTubeUrl(post.mediaUrl) ? (
-                                                        <YouTubeEmbed src={post.mediaUrl} />
-                                                    ) : post.mediaType === 'VIDEO' ? (
-                                                        <div className="aspect-[4/3]">
-                                                            <AutoPlayVideo src={post.mediaUrl} />
-                                                        </div>
-                                                    ) : (
-                                                        <img
-                                                            src={post.mediaUrl}
-                                                            alt="Post media"
-                                                            className="w-full h-auto max-h-[500px] object-contain"
-                                                        />
-                                                    )}
-                                                </div>
-                                            </DoubleTapHeart>
-                                        )}
-
-                                        {/* Text-only posts get a consistent height placeholder */}
-                                        {!post.mediaUrl && (
-                                            <div className="px-4 py-6 flex items-center justify-center min-h-[120px] bg-gradient-to-br from-[#00D4FF]/5 to-[#8B5CF6]/5">
-                                                <div className="text-center">
-                                                    <span className="text-4xl">{post.content?.length && post.content.length > 100 ? '📝' : '💭'}</span>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Interaction Buttons - Large & Visible */}
-                                        <div className="p-4 border-t border-white/5">
-                                            <div className="flex items-center justify-between">
-                                                {/* Left side - reactions */}
-                                                <div className="flex items-center gap-4">
-                                                    {/* Like/Heart Button */}
-                                                    <button
-                                                        onClick={() => likePost(post.id)}
-                                                        className={`flex flex-col items-center gap-1 transition-all transform hover:scale-110 ${post.isLiked ? 'text-rose-500' : 'text-white/70 hover:text-rose-400'}`}
-                                                    >
-                                                        <span className="text-2xl">{post.isLiked ? '❤️' : '🤍'}</span>
-                                                        <span className="text-xs font-medium">{post.likes || 0}</span>
-                                                    </button>
-
-                                                    {/* Dislike Button */}
-                                                    <button
-                                                        className="flex flex-col items-center gap-1 text-white/70 hover:text-blue-400 transition-all transform hover:scale-110"
-                                                    >
-                                                        <span className="text-2xl">👎</span>
-                                                        <span className="text-xs font-medium">0</span>
-                                                    </button>
-
-                                                    {/* Comment Button */}
-                                                    <button
-                                                        onClick={() => router.push(`/post/${post.id}`)}
-                                                        className="flex flex-col items-center gap-1 text-white/70 hover:text-[#00D4FF] transition-all transform hover:scale-110"
-                                                    >
-                                                        <span className="text-2xl">💬</span>
-                                                        <span className="text-xs font-medium">{post.commentsCount || 0}</span>
-                                                    </button>
-                                                </div>
-
-                                                {/* Right side - share/repost */}
-                                                <div className="flex items-center gap-4">
-                                                    {/* Share Button */}
-                                                    <button
-                                                        onClick={() => {
-                                                            const url = `${window.location.origin}/post/${post.id}`;
-                                                            if (navigator.share) {
-                                                                navigator.share({
-                                                                    title: 'Check out this post on 0G',
-                                                                    url
-                                                                });
-                                                            } else {
-                                                                navigator.clipboard.writeText(url);
-                                                                alert('Link copied!');
-                                                            }
-                                                        }}
-                                                        className="flex flex-col items-center gap-1 text-white/70 hover:text-[#00D4FF] transition-all transform hover:scale-110"
-                                                    >
-                                                        <span className="text-2xl">📤</span>
-                                                        <span className="text-xs font-medium">Share</span>
-                                                    </button>
-
-                                                    {/* Repost Button */}
-                                                    <button
-                                                        onClick={() => router.push(`/create?repost=${post.id}`)}
-                                                        className="flex flex-col items-center gap-1 text-white/70 hover:text-green-400 transition-all transform hover:scale-110"
-                                                    >
-                                                        <span className="text-2xl">🔄</span>
-                                                        <span className="text-xs font-medium">Repost</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                {posts.map((post) => (
+                                    <motion.div
+                                        key={post.id}
+                                        layout
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        <FeedPost
+                                            post={post}
+                                            likePost={likePost}
+                                            toggleRsvp={toggleRsvp}
+                                            deletePost={deletePost}
+                                        />
+                                    </motion.div>
                                 ))}
 
                                 {/* Infinite Scroll Sentinel */}
