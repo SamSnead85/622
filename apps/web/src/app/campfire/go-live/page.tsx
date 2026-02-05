@@ -32,11 +32,71 @@ const INITIAL_MESSAGES: ChatMessage[] = [
 
 export default function CampfireGoLive() {
     const { user } = useAuth();
-    // ... refs
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isLive, setIsLive] = useState(false);
+    const [title, setTitle] = useState('');
+    const [viewerCount, setViewerCount] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+    const [newMessage, setNewMessage] = useState('');
+    const [hasCamera, setHasCamera] = useState(false);
+    const [reactions, setReactions] = useState<{ id: string; emoji: string; x: number }[]>([]);
+    const [showShareMenu, setShowShareMenu] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
+    const [showInvite, setShowInvite] = useState(false);
     const [selectedViewer, setSelectedViewer] = useState<ChatMessage | null>(null);
-    // ... existing state
 
-    // ... (keep existing useEffects)
+    // Default avatar if user doesn't have one
+    const userAvatar = user?.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face';
+
+    // Start camera preview
+    useEffect(() => {
+        const videoElement = videoRef.current;
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 1280, height: 720 },
+                    audio: true,
+                });
+                if (videoElement) {
+                    videoElement.srcObject = stream;
+                    setHasCamera(true);
+                }
+            } catch (error) {
+                console.error('Camera access denied:', error);
+            }
+        }
+        startCamera();
+
+        return () => {
+            if (videoElement?.srcObject) {
+                const tracks = (videoElement.srcObject as MediaStream).getTracks();
+                tracks.forEach(track => track.stop());
+            }
+        };
+    }, []);
+
+    // Duration timer when live
+    useEffect(() => {
+        if (!isLive) return;
+        const interval = setInterval(() => {
+            setDuration(d => d + 1);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [isLive]);
+
+    const goLive = () => {
+        if (!title.trim()) return alert('Please add a title for your stream');
+        setIsLive(true);
+        setViewerCount(0);
+        // In production: connect to streaming server & notify followers
+    };
+
+    const endStream = () => {
+        setIsLive(false);
+        setDuration(0);
+        setViewerCount(0);
+    };
 
     const sendMessage = (e: React.FormEvent) => {
         e.preventDefault();
