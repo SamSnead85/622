@@ -8,6 +8,8 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigation } from '@/components/Navigation';
 import { MessageIcon, PlusIcon, MinusIcon, CameraIcon, PlayIcon } from '@/components/icons';
+import { apiFetch } from '@/lib/api';
+import { Modal, Input, Switch } from '@/components/ui/overlays';
 
 interface UserProfile {
     id: string;
@@ -88,7 +90,7 @@ function LinkifiedBio({ text }: { text: string }) {
 export default function UserProfilePage() {
     const params = useParams();
     const router = useRouter();
-    const { user: currentUser } = useAuth();
+    const { user: currentUser, isAdmin } = useAuth();
     const username = params?.username as string;
 
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -96,6 +98,35 @@ export default function UserProfilePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isFollowing, setIsFollowing] = useState(false);
+    const [isEditingAdmin, setIsEditingAdmin] = useState(false);
+    const [editForm, setEditForm] = useState({ displayName: '', bio: '', isVerified: false });
+
+    // Update form when profile loads
+    useEffect(() => {
+        if (profile) {
+            setEditForm({
+                displayName: profile.displayName || '',
+                bio: profile.bio || '',
+                isVerified: profile.isVerified || false
+            });
+        }
+    }, [profile]);
+
+    const handleAdminSave = async () => {
+        if (!profile) return;
+        try {
+            await apiFetch(`/users/${profile.id}`, {
+                method: 'PUT',
+                body: JSON.stringify(editForm)
+            });
+            setIsEditingAdmin(false);
+            // Reload page or re-fetch profile to show changes
+            window.location.reload();
+        } catch (error) {
+            console.error('Failed to update profile:', error);
+            alert('Failed to update profile');
+        }
+    };
     const [followLoading, setFollowLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
 
@@ -371,6 +402,14 @@ export default function UserProfilePage() {
                             >
                                 <MessageIcon size={18} />
                             </button>
+                            {isAdmin && (
+                                <button
+                                    onClick={() => setIsEditingAdmin(true)}
+                                    className="px-4 py-2 rounded-full bg-amber-500/20 text-amber-500 font-medium hover:bg-amber-500/30 transition-colors text-sm"
+                                >
+                                    Edit (Admin)
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -423,6 +462,51 @@ export default function UserProfilePage() {
                     </div>
                 </div>
             </main>
+
+            {/* Admin Edit Modal */}
+            <Modal
+                isOpen={isEditingAdmin}
+                onClose={() => setIsEditingAdmin(false)}
+                title={`Edit Profile: @${profile?.username}`}
+            >
+                <div className="space-y-4">
+                    <Input
+                        label="Display Name"
+                        value={editForm.displayName}
+                        onChange={(e) => setEditForm({ ...editForm, displayName: e.target.value })}
+                    />
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-medium text-white/70">Bio</label>
+                        <textarea
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:border-amber-500/50 min-h-[100px]"
+                            value={editForm.bio}
+                            onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                        />
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                        <span className="text-white font-medium">Verified Status</span>
+                        <Switch
+                            checked={editForm.isVerified}
+                            onChange={(checked) => setEditForm({ ...editForm, isVerified: checked })}
+                        />
+                    </div>
+
+                    <div className="pt-4 flex justify-end gap-2">
+                        <button
+                            onClick={() => setIsEditingAdmin(false)}
+                            className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleAdminSave}
+                            className="px-6 py-2 bg-gradient-to-r from-amber-500 to-rose-500 text-white font-medium rounded-lg hover:opacity-90"
+                        >
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }
