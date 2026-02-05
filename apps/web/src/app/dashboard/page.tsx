@@ -11,6 +11,7 @@ import { ReactionSpectrum, IntentionBadge, REACTION_SPECTRUM } from '@/component
 import { DataOwnershipPanel, PrivacyFirstBadge, LiveLatencyIndicator } from '@/components/PlatformDifferentiators';
 import { PostActions } from '@/components/PostActions';
 import { FeedPost, PostSkeleton } from '@/components/FeedPost';
+import { InlineComposer } from '@/components/InlineComposer';
 import { TheCompass, ViewMode, ScopeMode } from '@/components/TheCompass';
 import {
     HomeIcon,
@@ -1100,67 +1101,15 @@ export default function DashboardPage() {
                         {/* Feed - Main column */}
                         <div className="lg:col-span-2 space-y-3">
                             {/* Quick post with privacy controls */}
+                            {/* Quick post - Inline Composer (X-Style) */}
                             <div className="bg-white/[0.02] rounded-2xl border border-white/5 p-4">
-                                <div className="flex gap-4">
-                                    {user.avatarUrl ? (
-                                        <img
-                                            src={user.avatarUrl}
-                                            alt={user.displayName || 'Profile'}
-                                            className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                                        />
-                                    ) : (
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold flex-shrink-0">
-                                            {user.displayName?.[0] || 'U'}
-                                        </div>
-                                    )}
-                                    <div className="flex-1">
-                                        <input
-                                            type="text"
-                                            placeholder="What's on your mind?"
-                                            className="w-full bg-white/5 rounded-xl px-4 py-3 text-white placeholder:text-white/40 border border-white/5 focus:border-[#00D4FF]/30 focus:outline-none transition-colors"
-                                            onFocus={() => router.push('/create')}
-                                        />
-                                        {/* Privacy selector */}
-                                        <div className="flex items-center gap-3 mt-3">
-                                            <span className="text-xs text-white/40">Share with:</span>
-                                            <div className="flex gap-2">
-                                                <button className="px-3 py-1 rounded-full bg-[#00D4FF]/20 text-[#00D4FF] text-xs font-medium border border-[#00D4FF]/30">
-                                                    🌍 Public
-                                                </button>
-                                                <button className="px-3 py-1 rounded-full bg-white/5 text-white/60 text-xs font-medium border border-white/10 hover:bg-white/10 transition-colors">
-                                                    👥 Friends
-                                                </button>
-                                                <button className="px-3 py-1 rounded-full bg-white/5 text-white/60 text-xs font-medium border border-white/10 hover:bg-white/10 transition-colors">
-                                                    👨‍👩‍👧 Family
-                                                </button>
-                                                <button className="px-3 py-1 rounded-full bg-white/5 text-white/60 text-xs font-medium border border-white/10 hover:bg-white/10 transition-colors">
-                                                    🔒 Only Me
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2 mt-4 pl-16">
-                                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-white/60 hover:bg-white/5 transition-colors">
-                                        <CameraIcon size={18} />
-                                        <span className="text-sm">Photo</span>
-                                    </button>
-                                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-white/60 hover:bg-white/5 transition-colors">
-                                        <VideoIcon size={18} />
-                                        <span className="text-sm">Video</span>
-                                    </button>
-                                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-white/60 hover:bg-white/5 transition-colors">
-                                        <VideoIcon size={18} />
-                                        <span className="text-sm">Go Live</span>
-                                    </button>
-                                    <div className="flex-1" />
-                                    <button
-                                        onClick={() => router.push('/create')}
-                                        className="px-5 py-2 rounded-xl bg-[#00D4FF] text-black font-semibold text-sm hover:opacity-90 transition-opacity"
-                                    >
-                                        Post
-                                    </button>
-                                </div>
+                                <InlineComposer
+                                    user={user}
+                                    onPostSuccess={() => {
+                                        refetch();
+                                        // Optional: Scroll to top or show toast
+                                    }}
+                                />
                             </div>
 
                             {/* Your Feed - Real Posts from API */}
