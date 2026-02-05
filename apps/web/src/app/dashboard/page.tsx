@@ -1175,43 +1175,70 @@ export default function DashboardPage() {
                                 />
 
                                 {/* PINNED: HEAL Palestine Town Hall */}
-                                <div className="bg-white/[0.02] rounded-2xl border border-emerald-500/20 overflow-hidden mb-4">
-                                    <div className="relative h-48 sm:h-64 w-full">
-                                        <Image
-                                            src="https://healp-public-assets.s3.amazonaws.com/townhall_banner.jpg"
-                                            alt="HEAL Palestine Town Hall"
-                                            fill
-                                            className="object-cover opacity-80"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                                        <div className="absolute bottom-0 left-0 right-0 p-5">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="px-2 py-0.5 rounded bg-emerald-500/90 text-black text-[10px] font-bold uppercase tracking-wider">
-                                                    Pinned Invite
-                                                </span>
-                                                <span className="text-emerald-400 text-xs font-semibold">HEAL Palestine</span>
-                                            </div>
-                                            <h2 className="text-xl font-bold text-white leading-tight">
-                                                Community Town Hall: Strengthening dignity & healing.
-                                            </h2>
+                                <div className="relative w-full min-h-[450px] rounded-3xl overflow-hidden mb-6 group border border-emerald-500/30 shadow-[0_0_50px_rgba(16,185,129,0.15)]">
+                                    {/* Background Visual */}
+                                    <Image
+                                        src="https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=1600&q=80" // Placeholder: Philanthropy/Community
+                                        alt="HEAL Palestine Background"
+                                        fill
+                                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                        priority
+                                    />
+
+                                    {/* Dark Overlay for Readability */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/40" />
+
+                                    {/* Content Container */}
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10">
+
+                                        {/* Badge */}
+                                        <div className="mb-6 animate-fade-in-up">
+                                            <span className="px-4 py-1.5 rounded-full bg-emerald-500/90 text-black text-xs font-bold uppercase tracking-widest shadow-lg backdrop-blur-md">
+                                                Pinned Invite
+                                            </span>
                                         </div>
-                                    </div>
-                                    <div className="p-5">
-                                        <p className="text-white/80 text-sm leading-relaxed mb-4">
-                                            With heartfelt gratitude, we invite you to join HEAL Palestine’s co-founders and leadership for a virtual Community Town Hall on <span className="text-emerald-400 font-semibold">Feb 16, 2026</span>. Together, we will reflect on 2025&apos;s impact and share how our teams continue to strengthen community-led efforts for Palestinian children and families.
+
+                                        {/* Headline */}
+                                        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight max-w-3xl drop-shadow-xl font-display">
+                                            Community Town Hall:<br />
+                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200">
+                                                Strengthening Dignity & Healing
+                                            </span>
+                                        </h2>
+
+                                        {/* Description */}
+                                        <p className="text-white/90 text-lg md:text-xl leading-relaxed max-w-2xl mb-8 drop-shadow-md">
+                                            Join HEAL Palestine’s leadership to reflect on 2025&apos;s impact and strengthen our community-led efforts for children and families.
                                         </p>
-                                        <div className="flex flex-col sm:flex-row gap-3">
+
+                                        {/* Date Widget */}
+                                        <div className="flex items-center gap-3 px-5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 mb-8">
+                                            <span className="text-2xl">📅</span>
+                                            <div className="text-left">
+                                                <p className="text-xs text-white/60 font-bold uppercase">Date</p>
+                                                <p className="text-white font-semibold">Monday, Feb 16, 2026</p>
+                                            </div>
+                                            <div className="w-px h-8 bg-white/20 mx-2" />
+                                            <span className="text-2xl">⏰</span>
+                                            <div className="text-left">
+                                                <p className="text-xs text-white/60 font-bold uppercase">Time</p>
+                                                <p className="text-white font-semibold">11:00 AM - 12:00 PM (ET)</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
                                             <a
                                                 href="https://healpalestine.org/register"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-500 text-black font-bold text-center hover:bg-emerald-400 transition-colors"
+                                                className="flex-1 px-8 py-4 rounded-xl bg-emerald-500 text-black font-bold text-lg hover:bg-emerald-400 hover:scale-105 transition-all shadow-[0_0_30px_rgba(16,185,129,0.4)]"
                                             >
                                                 Register Now
                                             </a>
                                             <a
                                                 href="mailto:info@healpalestine.org"
-                                                className="px-4 py-2.5 rounded-xl bg-white/5 text-white font-medium text-center border border-white/10 hover:bg-white/10 transition-colors"
+                                                className="px-8 py-4 rounded-xl bg-white/10 backdrop-blur-md text-white font-bold text-lg border border-white/20 hover:bg-white/20 transition-all hover:scale-105"
                                             >
                                                 Contact Us
                                             </a>
