@@ -926,7 +926,7 @@ function NavigationSidebar({ activeTab, user, onCreateClick }: { activeTab: stri
 // MAIN DASHBOARD PAGE
 // ============================================
 export default function DashboardPage() {
-    const { user, isLoading } = useAuth();
+    const { user, isLoading, isAdmin } = useAuth();
     const { posts, likePost, deletePost, isLoading: postsLoading, refetch, hasMore, loadMore } = usePosts();
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
@@ -1199,8 +1199,8 @@ export default function DashboardPage() {
                                                         <p className="text-white/70 text-sm mt-1 line-clamp-3">{post.content}</p>
                                                     )}
                                                 </div>
-                                                {/* Visible Delete Button for Post Owner */}
-                                                {post.author.id === user?.id && (
+                                                {/* Visible Delete Button for Post Owner or Admin */}
+                                                {(post.author.id === user?.id || isAdmin) && (
                                                     <button
                                                         onClick={() => {
                                                             if (confirm('Delete this post?')) {
@@ -1208,7 +1208,7 @@ export default function DashboardPage() {
                                                             }
                                                         }}
                                                         className="p-2 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all flex-shrink-0"
-                                                        title="Delete post"
+                                                        title={post.author.id === user?.id ? 'Delete post' : 'Delete post (Admin)'}
                                                     >
                                                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
