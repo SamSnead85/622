@@ -1057,9 +1057,9 @@ export default function DashboardPage() {
                     </div>
 
 
-                    <div className="grid lg:grid-cols-3 gap-8">
+                    <div className="grid lg:grid-cols-3 gap-4">
                         {/* Feed - Main column */}
-                        <div className="lg:col-span-2 space-y-6">
+                        <div className="lg:col-span-2 space-y-3">
                             {/* Quick post with privacy controls */}
                             <motion.div
                                 className="bg-white/[0.02] rounded-2xl border border-white/5 p-4"
@@ -1131,7 +1131,7 @@ export default function DashboardPage() {
 
                             {/* Your Feed - Real Posts from API */}
                             <motion.div
-                                className="space-y-4"
+                                className="space-y-3"
                                 initial={false}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4 }}
@@ -1199,6 +1199,22 @@ export default function DashboardPage() {
                                                         <p className="text-white/70 text-sm mt-1 line-clamp-3">{post.content}</p>
                                                     )}
                                                 </div>
+                                                {/* Visible Delete Button for Post Owner */}
+                                                {post.author.id === user?.id && (
+                                                    <button
+                                                        onClick={() => {
+                                                            if (confirm('Delete this post?')) {
+                                                                deletePost(post.id);
+                                                            }
+                                                        }}
+                                                        className="p-2 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all flex-shrink-0"
+                                                        title="Delete post"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                )}
                                                 {/* Post Actions Menu */}
                                                 <div className="relative flex-shrink-0">
                                                     <PostActions
