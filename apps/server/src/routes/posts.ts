@@ -165,9 +165,9 @@ router.get('/:postId', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
 
-        const post = await prisma.post.update({
+        // First check if post exists
+        const post = await prisma.post.findUnique({
             where: { id: postId },
-            data: { viewCount: { increment: 1 } },
             include: {
                 user: {
                     select: {
@@ -192,6 +192,12 @@ router.get('/:postId', optionalAuth, async (req: AuthRequest, res, next) => {
         if (!post) {
             throw new AppError('Post not found', 404);
         }
+
+        // Increment view count in background (don't wait)
+        prisma.post.update({
+            where: { id: postId },
+            data: { viewCount: { increment: 1 } },
+        }).catch(() => { }); // Silently ignore if update fails
 
         let isLiked = false;
         let isSaved = false;

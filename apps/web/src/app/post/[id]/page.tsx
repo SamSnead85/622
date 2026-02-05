@@ -68,7 +68,23 @@ export default function PostDetailPage() {
 
             if (response.ok) {
                 const data = await response.json();
-                setPost(data.post);
+                // Backend returns post directly, map user to author for our interface
+                setPost({
+                    id: data.id,
+                    content: data.caption || '',
+                    mediaUrl: data.mediaUrl,
+                    mediaType: data.type,
+                    createdAt: data.createdAt,
+                    likes: data.likesCount || 0,
+                    isLiked: data.isLiked || false,
+                    commentsCount: data.commentsCount || 0,
+                    author: {
+                        id: data.user?.id || '',
+                        username: data.user?.username || '',
+                        displayName: data.user?.displayName || 'User',
+                        avatarUrl: data.user?.avatarUrl,
+                    },
+                });
             } else {
                 setError('Post not found');
             }
