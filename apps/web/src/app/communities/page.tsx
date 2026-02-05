@@ -292,9 +292,9 @@ export default function CommunityHub() {
                     {/* 2. Hero Header */}
                     <div className="flex flex-col md:flex-row items-end justify-between gap-6 border-b border-white/10 pb-8">
                         <div>
-                            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 tracking-tight">The Agora</h1>
+                            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 tracking-tight">The Nexus</h1>
                             <p className="text-lg text-white/50 max-w-xl">
-                                The global town square. Discover tribes, find opportunities, and connect with the sovereign network.
+                                The central connection point. Discover tribes, find opportunities, and connect with the sovereign network.
                             </p>
                         </div>
 
