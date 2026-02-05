@@ -1049,6 +1049,27 @@ export default function DashboardPage() {
                         </div>
                     </header>
 
+                    {/* Quick Actions Bar - Premium Glassmorphism */}
+                    <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {[
+                            { name: 'Share Moment', Icon: CameraIcon, href: '/create', color: 'text-[#00D4FF]' },
+                            { name: 'Invite Friends', Icon: SendIcon, href: '/invite', color: 'text-[#8B5CF6]' },
+                            { name: 'Go Live', Icon: VideoIcon, href: '/campfire', color: 'text-red-500' },
+                            { name: 'Find People', Icon: UsersIcon, href: '/explore', color: 'text-emerald-500' },
+                        ].map((action, i) => (
+                            <Link
+                                key={i}
+                                href={action.href}
+                                className="group flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all active:scale-95"
+                            >
+                                <div className={`p-2 rounded-lg bg-black/40 ${action.color} group-hover:scale-110 transition-transform`}>
+                                    <action.Icon size={18} />
+                                </div>
+                                <span className="font-semibold text-sm text-white/70 group-hover:text-white transition-colors">{action.name}</span>
+                            </Link>
+                        ))}
+                    </div>
+
                     {/* Stories Row - Friends & Active Users */}
                     <StoriesRow currentUser={user} />
 
@@ -1074,21 +1095,23 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* Quick Actions Bar - Always visible */}
-                    <div className="mb-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                    {/* Quick Actions Bar - Premium Glassmorphism */}
+                    <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
                         {[
-                            { name: 'Share Moment', Icon: CameraIcon, href: '/create', gradient: 'from-[#00D4FF] to-[#0088CC]' },
-                            { name: 'Invite Friends', Icon: SendIcon, href: '/invite', gradient: 'from-[#8B5CF6] to-[#6D28D9]' },
-                            { name: 'Go Live', Icon: VideoIcon, href: '/campfire', gradient: 'from-red-500 to-orange-500' },
-                            { name: 'Find People', Icon: UsersIcon, href: '/explore', gradient: 'from-green-500 to-teal-500' },
+                            { name: 'Share Moment', Icon: CameraIcon, href: '/create', color: 'text-[#00D4FF]' },
+                            { name: 'Invite Friends', Icon: SendIcon, href: '/invite', color: 'text-[#8B5CF6]' },
+                            { name: 'Go Live', Icon: VideoIcon, href: '/campfire', color: 'text-red-500' },
+                            { name: 'Find People', Icon: UsersIcon, href: '/explore', color: 'text-emerald-500' },
                         ].map((action, i) => (
                             <Link
                                 key={i}
                                 href={action.href}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r ${action.gradient} text-white font-medium text-sm hover:opacity-90 transition-opacity flex-shrink-0 whitespace-nowrap`}
+                                className="group flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all active:scale-95"
                             >
-                                <action.Icon size={18} />
-                                <span>{action.name}</span>
+                                <div className={`p-2 rounded-lg bg-black/40 ${action.color} group-hover:scale-110 transition-transform`}>
+                                    <action.Icon size={18} />
+                                </div>
+                                <span className="font-semibold text-sm text-white/70 group-hover:text-white transition-colors">{action.name}</span>
                             </Link>
                         ))}
                     </div>
