@@ -192,6 +192,7 @@ router.post('/login', async (req, res, next) => {
                 coverUrl: user.coverUrl,
                 bio: user.bio,
                 isVerified: user.isVerified,
+                role: user.role, // Include role for admin detection
                 createdAt: user.createdAt.toISOString(),
             },
             token,
@@ -239,6 +240,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
                     coverUrl: true,
                     isVerified: true,
                     isPrivate: true,
+                    role: true, // Include role for admin detection
                     createdAt: true,
                     _count: {
                         select: {
