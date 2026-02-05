@@ -503,10 +503,14 @@ export default function CreateTribePage() {
                                     <p className="text-sm font-semibold uppercase tracking-widest text-[#00D4FF] mb-2">Secure Access Link</p>
                                     <div className="flex gap-2">
                                         <div className="flex-1 bg-black rounded-lg border border-white/10 px-4 py-3 text-white/60 font-mono text-sm truncate">
-                                            {`0g.social/tribe/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}`}
+                                            {typeof window !== 'undefined' ? `${window.location.origin}/communities/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}` : `Calculating...`}
                                         </div>
                                         <button
-                                            onClick={() => alert('Link copied')}
+                                            onClick={() => {
+                                                const url = `${window.location.origin}/communities/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}`;
+                                                navigator.clipboard.writeText(url);
+                                                alert('Link copied');
+                                            }}
                                             className="px-4 py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 font-semibold"
                                         >
                                             Copy
