@@ -19,6 +19,7 @@ export interface Post {
     content: string;
     mediaUrl?: string;
     mediaType?: 'IMAGE' | 'VIDEO';
+    embedUrl?: string;
     likes: number;
     commentsCount: number;
     isLiked: boolean;
@@ -194,6 +195,38 @@ export function usePosts() {
         }
     }, [fetchFeed]);
 
+    const deletePost = useCallback(async (postId: string): Promise<{ success: boolean; error?: string }> => {
+        try {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+
+            // Optimistically remove from local state
+            setPosts(prev => prev.filter(p => p.id !== postId));
+
+            const response = await fetch(`${API_ENDPOINTS.posts}/${postId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+                credentials: 'include',
+            });
+
+            if (response.ok) {
+                return { success: true };
+            } else {
+                // Revert on error - refetch the feed
+                await fetchFeed(1);
+                const errorData = await response.json().catch(() => ({}));
+                return { success: false, error: errorData.message || errorData.error || 'Failed to delete post' };
+            }
+        } catch (err) {
+            // Revert on error - refetch the feed
+            await fetchFeed(1);
+            console.error('Error deleting post:', err);
+            return { success: false, error: 'Network error' };
+        }
+    }, [fetchFeed]);
+
     useEffect(() => {
         fetchFeed(1);
         fetchFriends();
@@ -208,6 +241,7 @@ export function usePosts() {
         loadMore,
         likePost,
         createPost,
+        deletePost,
         refetch: () => fetchFeed(1),
     };
 }

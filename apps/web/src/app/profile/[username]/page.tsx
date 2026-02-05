@@ -232,7 +232,7 @@ export default function UserProfilePage() {
                     <div className="max-w-4xl mx-auto px-4 py-16 text-center">
                         <div className="text-6xl mb-4">🔍</div>
                         <h1 className="text-2xl font-bold mb-2">{error || 'User not found'}</h1>
-                        <p className="text-white/50 mb-6">The user @{username} doesn't exist or their profile is private.</p>
+                        <p className="text-white/50 mb-6">The user @{username} doesn&apos;t exist or their profile is private.</p>
                         <Link
                             href="/explore"
                             className="inline-block px-6 py-3 rounded-xl bg-[#00D4FF] text-black font-semibold hover:opacity-90"
@@ -416,7 +416,7 @@ export default function UserProfilePage() {
                                 </div>
                                 <h3 className="text-xl font-semibold text-white mb-2">No Posts Yet</h3>
                                 <p className="text-white/50">
-                                    {profile.displayName} hasn't shared any posts yet.
+                                    {profile.displayName} hasn&apos;t shared any posts yet.
                                 </p>
                             </div>
                         )}

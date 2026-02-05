@@ -17,8 +17,10 @@ import {
     UserIcon,
     PlusIcon,
     CheckIcon,
-    ArrowRightIcon
+    ArrowRightIcon,
+    LinkIcon
 } from '@/components/icons';
+import { VideoUrlInput, extractYouTubeId, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/components/PostActions';
 import React from 'react';
 
 // ============================================
@@ -49,6 +51,9 @@ function CreateContent() {
     const [audience, setAudience] = useState<'public' | 'friends' | 'private'>('public');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [mediaMode, setMediaMode] = useState<'upload' | 'url'>('upload');
+    const [videoUrl, setVideoUrl] = useState('');
+    const [embedData, setEmbedData] = useState<{ embedUrl: string; thumbnailUrl: string } | null>(null);
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -226,53 +231,87 @@ function CreateContent() {
                     ))}
                 </div>
 
-                {/* Media Upload Area */}
+                {/* Media Mode Tabs */}
+                <div className="flex gap-2 mb-4">
+                    <button
+                        onClick={() => setMediaMode('upload')}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition-colors ${mediaMode === 'upload'
+                                ? 'bg-white/10 text-white border border-white/20'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10'
+                            }`}
+                    >
+                        <CameraIcon size={18} />
+                        <span>Upload</span>
+                    </button>
+                    <button
+                        onClick={() => setMediaMode('url')}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition-colors ${mediaMode === 'url'
+                                ? 'bg-white/10 text-white border border-white/20'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10'
+                            }`}
+                    >
+                        <LinkIcon size={18} />
+                        <span>Video URL</span>
+                    </button>
+                </div>
+
+                {/* Media Upload Area OR Video URL Input */}
                 <div className="mb-6">
-                    {media.length === 0 ? (
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="w-full aspect-video rounded-2xl border-2 border-dashed border-white/20 flex flex-col items-center justify-center gap-3 hover:border-[#00D4FF]/40 hover:bg-white/5 transition-all"
-                        >
-                            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center">
-                                <CameraIcon size={28} className="text-white/60" />
-                            </div>
-                            <p className="text-white/60">Add photos or videos</p>
-                            <p className="text-xs text-white/30">Max 10 MB for images, 100 MB for videos</p>
-                        </button>
-                    ) : (
-                        <div className="grid grid-cols-2 gap-2">
-                            {media.map(item => (
-                                <div key={item.id} className="relative aspect-square rounded-xl overflow-hidden">
-                                    {item.type === 'image' ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={item.url} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <video src={item.url} className="w-full h-full object-cover" />
-                                    )}
+                    {mediaMode === 'upload' ? (
+                        <>
+                            {media.length === 0 ? (
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="w-full aspect-video rounded-2xl border-2 border-dashed border-white/20 flex flex-col items-center justify-center gap-3 hover:border-[#00D4FF]/40 hover:bg-white/5 transition-all"
+                                >
+                                    <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center">
+                                        <CameraIcon size={28} className="text-white/60" />
+                                    </div>
+                                    <p className="text-white/60">Add photos or videos</p>
+                                    <p className="text-xs text-white/30">Max 10 MB for images, 100 MB for videos</p>
+                                </button>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-2">
+                                    {media.map(item => (
+                                        <div key={item.id} className="relative aspect-square rounded-xl overflow-hidden">
+                                            {item.type === 'image' ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img src={item.url} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <video src={item.url} className="w-full h-full object-cover" />
+                                            )}
+                                            <button
+                                                onClick={() => removeMedia(item.id)}
+                                                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
                                     <button
-                                        onClick={() => removeMedia(item.id)}
-                                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="aspect-square rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center hover:border-[#00D4FF]/40 transition-colors"
                                     >
-                                        ✕
+                                        <PlusIcon size={24} className="text-white/60" />
                                     </button>
                                 </div>
-                            ))}
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="aspect-square rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center hover:border-[#00D4FF]/40 transition-colors"
-                            >
-                                <PlusIcon size={24} className="text-white/60" />
-                            </button>
-                        </div>
+                            )}
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*,video/*"
+                                multiple
+                                className="hidden"
+                                onChange={handleFileSelect}
+                            />
+                        </>
+                    ) : (
+                        <VideoUrlInput
+                            value={videoUrl}
+                            onChange={setVideoUrl}
+                            onValidUrl={(embedUrl, thumbnailUrl) => setEmbedData({ embedUrl, thumbnailUrl })}
+                        />
                     )}
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*,video/*"
-                        multiple
-                        className="hidden"
-                        onChange={handleFileSelect}
-                    />
                 </div>
 
                 {/* Caption */}

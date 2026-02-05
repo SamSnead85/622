@@ -906,3 +906,123 @@ video {
   z-index: 200;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
+
+/* ============================================
+   LIGHT MODE THEME
+   Premium light mode with "Apex Clarity" aesthetic
+   ============================================ */
+
+.light-mode {
+  /* === Inverted Void === */
+  --void: #FAFBFC;
+  --void-elevated: #FFFFFF;
+  --void-surface: #F5F7FA;
+
+  /* === Text Colors for Light === */
+  --text-primary: #1A1A2E;
+  --text-secondary: rgba(26, 26, 46, 0.7);
+  --text-tertiary: rgba(26, 26, 46, 0.5);
+  --text-muted: rgba(26, 26, 46, 0.35);
+
+  /* === Glass for Light === */
+  --glass-ultra: rgba(0, 0, 0, 0.02);
+  --glass-light: rgba(0, 0, 0, 0.04);
+  --glass-medium: rgba(0, 0, 0, 0.06);
+  --glass-heavy: rgba(0, 0, 0, 0.10);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-bright: rgba(0, 0, 0, 0.15);
+}
+
+.light-mode body {
+  background: var(--void);
+  color: var(--text-primary);
+}
+
+.light-mode ::selection {
+  background: rgba(0, 212, 255, 0.3);
+  color: #1A1A2E;
+}
+
+/* Light mode component overrides */
+.light-mode .bg-black\/40 {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.light-mode .bg-black\/60 {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .bg-\[\#050508\] {
+  background: #FAFBFC;
+}
+
+.light-mode .bg-\[\#0A0A0F\] {
+  background: #F5F7FA;
+}
+
+.light-mode .bg-\[\#1A1A1F\] {
+  background: #FFFFFF;
+}
+
+.light-mode .bg-white\/5 {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.light-mode .bg-white\/10 {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.light-mode .text-white {
+  color: #1A1A2E;
+}
+
+.light-mode .text-white\/40 {
+  color: rgba(26, 26, 46, 0.4);
+}
+
+.light-mode .text-white\/50 {
+  color: rgba(26, 26, 46, 0.5);
+}
+
+.light-mode .text-white\/60 {
+  color: rgba(26, 26, 46, 0.6);
+}
+
+.light-mode .text-white\/70 {
+  color: rgba(26, 26, 46, 0.7);
+}
+
+.light-mode .text-white\/80 {
+  color: rgba(26, 26, 46, 0.8);
+}
+
+.light-mode .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.light-mode .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Light mode scrollbar */
+.light-mode ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.light-mode ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
