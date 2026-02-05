@@ -92,6 +92,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                 take: parseInt(limit as string) + 1,
                 ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
                 orderBy: [
+                    { isPinned: 'desc' },
                     { viewCount: 'desc' },
                     { createdAt: 'desc' },
                 ],
