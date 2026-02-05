@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
+import { cache } from '../services/cache/RedisCache.js';
 
 const router = Router();
 
@@ -54,11 +55,20 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
 // GET /api/v1/posts/feed
 router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        // Fetch real posts from database
-
         const { cursor, limit = '10', type = 'foryou' } = req.query;
 
-        // Include public posts OR user's own posts
+        // Create cache key based on user, pagination, and type
+        const cacheKey = `feed:${req.userId}:${type}:${cursor || 'initial'}:${limit}`;
+
+        // Try cache first (only for initial page, no cursor)
+        if (!cursor) {
+            const cached = await cache.get(cacheKey);
+            if (cached) {
+                return res.json(cached);
+            }
+        }
+
+        // Fetch real posts from database
         let whereClause: any = {
             OR: [
                 { isPublic: true },
@@ -144,7 +154,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
         const likedPostIds = new Set(likes.map((l) => l.postId));
         const savedPostIds = new Set(saves.map((s) => s.postId));
 
-        res.json({
+        const response = {
             posts: results.map((post) => ({
                 ...post,
                 likesCount: post._count.likes,
@@ -154,7 +164,14 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                 isSaved: savedPostIds.has(post.id),
             })),
             nextCursor: hasMore ? results[results.length - 1].id : null,
-        });
+        };
+
+        // Cache the initial page for 30 seconds
+        if (!cursor) {
+            await cache.set(cacheKey, response, 30);
+        }
+
+        res.json(response);
     } catch (error) {
         next(error);
     }
@@ -289,6 +306,9 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             });
         }
 
+        // Invalidate feed cache for user and their followers
+        await cache.invalidate(`feed:${req.userId}:*`);
+
         res.status(201).json(post);
     } catch (error) {
         next(error);
@@ -319,6 +339,9 @@ router.delete('/:postId', authenticate, async (req: AuthRequest, res, next) => {
         await prisma.post.delete({
             where: { id: postId },
         });
+
+        // Invalidate feed cache
+        await cache.invalidate(`feed:${post.userId}:*`);
 
         res.json({ deleted: true, moderatorAction: isAdmin && post.userId !== req.userId });
     } catch (error) {
