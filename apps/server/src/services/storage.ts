@@ -99,7 +99,32 @@ export async function uploadFile(
     const extension = getExtensionFromMime(mimeType);
     const key = `${folder}/${uuid()}.${extension}`;
 
-    // Local storage
+    // Priority 1: Cloudinary (if configured)
+    if (process.env.CLOUDINARY_CLOUD_NAME) {
+        try {
+            const { uploadImage, uploadVideo } = await import('./cloudinary.js');
+            const isVideo = mimeType.startsWith('video/');
+
+            console.log('[Storage] Uploading to Cloudinary:', { folder, mimeType, size: buffer.length });
+
+            const result: any = isVideo
+                ? await uploadVideo(buffer, { folder, publicId: uuid() })
+                : await uploadImage(buffer, { folder, publicId: uuid() });
+
+            console.log('[Storage] Cloudinary upload successful');
+
+            return {
+                key: result.public_id,
+                url: result.secure_url,
+                size: buffer.length,
+            };
+        } catch (cloudinaryError) {
+            console.error('[Storage] Cloudinary upload failed, falling back to default storage:', cloudinaryError);
+            // Fall through to default storage
+        }
+    }
+
+    // Priority 2: Local storage
     if (STORAGE_PROVIDER === 'local') {
         const uploadPath = path.join(UPLOAD_DIR, folder);
         if (!existsSync(uploadPath)) {
@@ -115,7 +140,7 @@ export async function uploadFile(
         };
     }
 
-    // Supabase Storage (using JS SDK - simpler and more reliable)
+    // Priority 3: Supabase Storage (using JS SDK - simpler and more reliable)
     if (STORAGE_PROVIDER === 'supabase') {
         const supabase = getSupabaseClient();
         if (!supabase) {
@@ -146,7 +171,7 @@ export async function uploadFile(
         };
     }
 
-    // S3-compatible storage (S3, R2)
+    // Priority 4: S3-compatible storage (S3, R2)
     if (!s3Client) {
         throw new Error('S3 client not initialized');
     }
