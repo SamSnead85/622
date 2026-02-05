@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import Navigation from '@/components/Navigation';
+import { Navigation } from '@/components/Navigation';
 import { usePosts } from '@/hooks/usePosts';
-import { useAuth } from '@/hooks/useAuth';
-import { PostActions } from '@/components/PostActions';
+import { useAuth } from '@/contexts/AuthContext';
 import {
     ArrowLeftIcon,
     EditIcon,
@@ -14,11 +13,11 @@ import {
     PlusIcon,
     MoreHorizontalIcon,
     HeartIcon,
-    MessageCircleIcon,
+    MessageIcon,
     ShareIcon,
     CalendarIcon,
-    ImageIcon,
-    VideoIcon,
+    CameraIcon,
+    PlayIcon,
 } from '@/components/icons';
 
 // ============================================
@@ -28,7 +27,7 @@ import {
 
 export default function MyPostsPage() {
     const { user } = useAuth();
-    const { posts, loading, deletePost, fetchPosts } = usePosts();
+    const { posts, isLoading, deletePost } = usePosts();
     const [filter, setFilter] = useState<'all' | 'published' | 'scheduled' | 'draft'>('all');
     const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular'>('newest');
     const [selectedPosts, setSelectedPosts] = useState<string[]>([]);
@@ -42,7 +41,7 @@ export default function MyPostsPage() {
     const sortedPosts = [...myPosts].sort((a, b) => {
         if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         if (sortBy === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        return (b.likeCount || 0) - (a.likeCount || 0);
+        return ((b as any).likesCount || (b as any).likes || 0) - ((a as any).likesCount || (a as any).likes || 0);
     });
 
     const handleDeletePost = async (postId: string) => {
@@ -64,6 +63,7 @@ export default function MyPostsPage() {
             await deletePost(postId);
         }
         setSelectedPosts([]);
+        setShowDeleteModal(false);
     };
 
     const toggleSelectPost = (postId: string) => {
@@ -94,8 +94,8 @@ export default function MyPostsPage() {
 
     const getMediaIcon = (post: any) => {
         if (post.mediaUrl) {
-            if (post.mediaType?.includes('video')) return <VideoIcon size={16} className="text-purple-400" />;
-            return <ImageIcon size={16} className="text-blue-400" />;
+            if (post.mediaType?.includes('video')) return <PlayIcon size={16} className="text-purple-400" />;
+            return <CameraIcon size={16} className="text-blue-400" />;
         }
         return null;
     };
@@ -140,7 +140,7 @@ export default function MyPostsPage() {
                                 </div>
                             </div>
                             <Link
-                                href="/create"
+                                href="/dashboard"
                                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-medium hover:opacity-90 transition-opacity"
                             >
                                 <PlusIcon size={18} />
@@ -156,8 +156,8 @@ export default function MyPostsPage() {
                                         key={f}
                                         onClick={() => setFilter(f)}
                                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filter === f
-                                                ? 'bg-[#00D4FF] text-black'
-                                                : 'bg-white/5 text-white/60 hover:bg-white/10'
+                                            ? 'bg-[#00D4FF] text-black'
+                                            : 'bg-white/5 text-white/60 hover:bg-white/10'
                                             }`}
                                     >
                                         {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -166,7 +166,7 @@ export default function MyPostsPage() {
                             </div>
                             <select
                                 value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value as any)}
+                                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                                 className="px-4 py-2 rounded-xl bg-white/5 text-white text-sm border-0 focus:ring-2 focus:ring-[#00D4FF]"
                             >
                                 <option value="newest">Newest First</option>
@@ -212,7 +212,7 @@ export default function MyPostsPage() {
 
                 {/* Posts List */}
                 <div className="max-w-4xl mx-auto px-4 py-6">
-                    {loading ? (
+                    {isLoading ? (
                         <div className="space-y-4">
                             {[...Array(5)].map((_, i) => (
                                 <div key={i} className="bg-white/[0.02] rounded-2xl p-4 animate-pulse">
@@ -237,7 +237,7 @@ export default function MyPostsPage() {
                                 Start sharing your thoughts, photos, and videos with the community.
                             </p>
                             <Link
-                                href="/create"
+                                href="/dashboard"
                                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold hover:opacity-90 transition-opacity"
                             >
                                 <PlusIcon size={20} />
@@ -260,8 +260,8 @@ export default function MyPostsPage() {
                                         <button
                                             onClick={() => toggleSelectPost(post.id)}
                                             className={`w-5 h-5 rounded border-2 flex-shrink-0 mt-1 transition-all ${selectedPosts.includes(post.id)
-                                                    ? 'bg-[#00D4FF] border-[#00D4FF]'
-                                                    : 'border-white/20 hover:border-white/40'
+                                                ? 'bg-[#00D4FF] border-[#00D4FF]'
+                                                : 'border-white/20 hover:border-white/40'
                                                 }`}
                                         >
                                             {selectedPosts.includes(post.id) && (
@@ -304,15 +304,15 @@ export default function MyPostsPage() {
                                             <div className="flex items-center gap-4 text-sm">
                                                 <span className="flex items-center gap-1 text-white/50">
                                                     <HeartIcon size={14} />
-                                                    {post.likeCount || 0}
+                                                    {(post as any).likesCount || (post as any).likes || 0}
                                                 </span>
                                                 <span className="flex items-center gap-1 text-white/50">
-                                                    <MessageCircleIcon size={14} />
-                                                    {post.commentCount || 0}
+                                                    <MessageIcon size={14} />
+                                                    {post.commentsCount || 0}
                                                 </span>
                                                 <span className="flex items-center gap-1 text-white/50">
                                                     <ShareIcon size={14} />
-                                                    {post.shareCount || 0}
+                                                    {(post as any).sharesCount || 0}
                                                 </span>
                                             </div>
                                         </div>
