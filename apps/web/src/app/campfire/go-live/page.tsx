@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiFetch } from '@/lib/api';
 import { ShareIcon, SendIcon } from '@/components/icons';
 import { CampfireInvite } from '@/components/CampfireInvite';
 
