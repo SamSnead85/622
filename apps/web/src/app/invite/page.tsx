@@ -122,9 +122,8 @@ function InvitePageContent() {
 
     // Generate unique invite link
     const inviteCode = user?.id ? btoa(user.id).slice(0, 8) : 'INVITE';
-    const inviteLink = typeof window !== 'undefined'
-        ? `${window.location.origin}/signup?ref=${inviteCode}`
-        : `https://zerogravity.app/signup?ref=${inviteCode}`;
+    // Using standard referral path '/r/' for clean redirection
+    const inviteLink = `https://join0g.com/r/${inviteCode}`;
 
     const inviteMessage = `Join me on 0G (ZeroG) - the Sovereign Social Network. No agendas, no algorithms, just pure human connection.`;
 
