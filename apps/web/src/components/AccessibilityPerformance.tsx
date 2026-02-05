@@ -200,11 +200,12 @@ export function useFontScaling() {
 }
 
 // Phase 661-670: RTL Support
+// Moved outside component to be stable constant
+const RTL_LANGUAGES = ['ar', 'he', 'fa', 'ur'];
+
 export function useRTL() {
     const [isRTL, setIsRTL] = useState(false);
     const [language, setLanguage] = useState('en');
-
-    const RTL_LANGUAGES = ['ar', 'he', 'fa', 'ur'];
 
     useEffect(() => {
         setIsRTL(RTL_LANGUAGES.includes(language));

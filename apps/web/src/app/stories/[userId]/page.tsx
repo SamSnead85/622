@@ -111,24 +111,9 @@ export default function StoriesViewerPage() {
                 },
             }).catch(console.error);
         }
-    }, [currentStory?.id, isAuthenticated, API_URL]);
+    }, [currentStory, isAuthenticated, API_URL]);
 
-    // Progress timer
-    useEffect(() => {
-        if (!currentStory || isPaused) return;
 
-        const interval = setInterval(() => {
-            setProgress(prev => {
-                if (prev >= 100) {
-                    goToNextStory();
-                    return 0;
-                }
-                return prev + (100 / (STORY_DURATION / 100));
-            });
-        }, 100);
-
-        return () => clearInterval(interval);
-    }, [currentStory?.id, isPaused]);
 
     const goToNextStory = useCallback(() => {
         if (!currentUserStories) return;
@@ -155,6 +140,23 @@ export default function StoriesViewerPage() {
             setProgress(0);
         }
     }, [currentStoryIndex, currentUserIndex, usersWithStories]);
+
+    // Progress timer (Moved here to avoid hoisting issues)
+    useEffect(() => {
+        if (!currentStory || isPaused) return;
+
+        const interval = setInterval(() => {
+            setProgress(prev => {
+                if (prev >= 100) {
+                    goToNextStory();
+                    return 0;
+                }
+                return prev + (100 / (STORY_DURATION / 100));
+            });
+        }, 100);
+
+        return () => clearInterval(interval);
+    }, [currentStory, isPaused, goToNextStory]);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === 'ArrowRight') goToNextStory();
