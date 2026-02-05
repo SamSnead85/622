@@ -48,7 +48,7 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
 
             // Allow zooming out even more, or start at fit scale
             setInitialScale(fitScale * 0.8); // Allow extra zoom out
-            setScale(fitScale); // Start at "fit to frame"
+            setScale(1.0); // Start at 100% (no zoom)
             setImageLoaded(true);
         };
         img.src = imageSrc;
