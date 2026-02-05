@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { ShareIcon, SendIcon } from '@/components/icons';
+import { CampfireInvite } from '@/components/CampfireInvite';
 
 interface ChatMessage {
     id: string;
@@ -32,6 +33,7 @@ export default function CampfireGoLive() {
     const [reactions, setReactions] = useState<{ id: string; emoji: string; x: number }[]>([]);
     const [showShareMenu, setShowShareMenu] = useState(false);
     const [linkCopied, setLinkCopied] = useState(false);
+    const [showInvite, setShowInvite] = useState(false);
 
     // Default avatar if user doesn't have one
     const userAvatar = user?.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face';
@@ -175,11 +177,11 @@ export default function CampfireGoLive() {
                     <div className="flex items-center gap-2">
                         {isLive && (
                             <button
-                                onClick={shareStream}
+                                onClick={() => setShowInvite(true)}
                                 className="flex items-center gap-2 bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] hover:opacity-90 px-4 py-2 rounded-lg font-semibold text-sm transition-opacity"
                             >
                                 <SendIcon size={16} />
-                                {linkCopied ? 'Link Copied!' : 'Invite People'}
+                                Tape In Friends
                             </button>
                         )}
                         {isLive ? (
@@ -268,12 +270,13 @@ export default function CampfireGoLive() {
                 </div>
 
                 {/* Chat Sidebar */}
-                <div className="w-80 bg-gray-900 border-l border-gray-800 flex flex-col">
-                    <div className="p-4 border-b border-gray-800">
+                <div className="w-80 bg-gray-900 border-l border-gray-800 flex flex-col hidden md:flex">
+                    <div className="p-4 border-b border-gray-800 flex justify-between items-center">
                         <h2 className="font-semibold">Live Chat</h2>
-                        {messages.length === 0 && (
-                            <p className="text-xs text-gray-500 mt-1">Waiting for viewers to join...</p>
-                        )}
+                        <span className="text-xs text-green-500 flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                            Online
+                        </span>
                     </div>
 
                     {/* Messages */}
@@ -282,7 +285,7 @@ export default function CampfireGoLive() {
                             <div className="flex flex-col items-center justify-center h-full text-center px-6">
                                 <span className="text-4xl mb-3">💬</span>
                                 <p className="text-sm text-gray-400">
-                                    {isLive ? 'No messages yet. Click "Invite People" to share your stream!' : 'Go live to start chatting'}
+                                    {isLive ? 'No messages yet. Ping your friends to join!' : 'Go live to start chatting'}
                                 </p>
                             </div>
                         ) : (
@@ -326,6 +329,12 @@ export default function CampfireGoLive() {
                     </form>
                 </div>
             </div>
+
+            <CampfireInvite
+                isOpen={showInvite}
+                onClose={() => setShowInvite(false)}
+                streamTitle={title}
+            />
         </div>
     );
 }
