@@ -69,10 +69,10 @@ export function InlineComposer({ user, onPostSuccess }: InlineComposerProps) {
 
             // 2. Create Post
             await api.post(API_ENDPOINTS.posts, {
-                content,
+                caption: content,
                 mediaUrl,
                 type: mediaType,
-                privacy, // Assuming backend supports privacy field, otherwise it might ignore
+                privacy,
             });
 
             // 3. Reset & Notify
@@ -193,8 +193,8 @@ export function InlineComposer({ user, onPostSuccess }: InlineComposerProps) {
                             onClick={handlePost}
                             disabled={(!content.trim() && !mediaFile) || isPosting}
                             className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${(!content.trim() && !mediaFile) || isPosting
-                                    ? 'bg-white/10 text-white/30 cursor-not-allowed'
-                                    : 'bg-[#00D4FF] text-black hover:opacity-90'
+                                ? 'bg-white/10 text-white/30 cursor-not-allowed'
+                                : 'bg-[#00D4FF] text-black hover:opacity-90'
                                 }`}
                         >
                             {isPosting ? 'Posting...' : 'Post'}
