@@ -184,6 +184,7 @@ router.get('/:postId', optionalAuth, async (req: AuthRequest, res, next) => {
                         likes: true,
                         comments: true,
                         shares: true,
+                        rsvps: true,
                     },
                 },
             },
@@ -201,19 +202,24 @@ router.get('/:postId', optionalAuth, async (req: AuthRequest, res, next) => {
 
         let isLiked = false;
         let isSaved = false;
+        let isRsvped = false;
 
         if (req.userId) {
-            const [like, save] = await Promise.all([
+            const [like, save, rsvp] = await Promise.all([
                 prisma.like.findUnique({
                     where: { userId_postId: { userId: req.userId, postId } },
                 }),
                 prisma.save.findUnique({
                     where: { userId_postId: { userId: req.userId, postId } },
                 }),
+                prisma.postRSVP.findUnique({
+                    where: { userId_postId: { userId: req.userId, postId } },
+                }),
             ]);
 
             isLiked = !!like;
             isSaved = !!save;
+            isRsvped = !!rsvp;
         }
 
         res.json({
@@ -221,8 +227,10 @@ router.get('/:postId', optionalAuth, async (req: AuthRequest, res, next) => {
             likesCount: post._count.likes,
             commentsCount: post._count.comments,
             sharesCount: post._count.shares,
+            rsvpCount: post._count.rsvps,
             isLiked,
             isSaved,
+            isRsvped,
         });
     } catch (error) {
         next(error);
@@ -313,6 +321,216 @@ router.delete('/:postId', authenticate, async (req: AuthRequest, res, next) => {
         });
 
         res.json({ deleted: true, moderatorAction: isAdmin && post.userId !== req.userId });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// PUT /api/v1/posts/:postId - Edit post (owner only)
+router.put('/:postId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { postId } = req.params;
+
+        const updateSchema = z.object({
+            caption: z.string().max(2200).optional(),
+        });
+
+        const { caption } = updateSchema.parse(req.body);
+
+        const post = await prisma.post.findUnique({
+            where: { id: postId },
+        });
+
+        if (!post) {
+            throw new AppError('Post not found', 404);
+        }
+
+        const userRole = req.user?.role;
+        const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN' || userRole === 'MODERATOR';
+
+        if (post.userId !== req.userId && !isAdmin) {
+            throw new AppError('Not authorized to edit this post', 403);
+        }
+
+        const updatedPost = await prisma.post.update({
+            where: { id: postId },
+            data: { caption },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true,
+                        isVerified: true,
+                    },
+                },
+            },
+        });
+
+        res.json(updatedPost);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/posts/:postId/rsvp - Mark "I'm In"
+router.post('/:postId/rsvp', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { postId } = req.params;
+        const statusSchema = z.object({
+            status: z.enum(['IN', 'MAYBE', 'OUT']).optional().default('IN'),
+        });
+
+        const { status } = statusSchema.parse(req.body);
+
+        const post = await prisma.post.findUnique({
+            where: { id: postId },
+        });
+
+        if (!post) {
+            throw new AppError('Post not found', 404);
+        }
+
+        const rsvp = await prisma.postRSVP.upsert({
+            where: {
+                userId_postId: {
+                    userId: req.userId!,
+                    postId,
+                },
+            },
+            update: { status },
+            create: {
+                userId: req.userId!,
+                postId,
+                status,
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true,
+                    },
+                },
+            },
+        });
+
+        // Get updated RSVP count
+        const rsvpCount = await prisma.postRSVP.count({
+            where: { postId, status: 'IN' },
+        });
+
+        res.json({ rsvp, rsvpCount, isRsvped: true });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// DELETE /api/v1/posts/:postId/rsvp - Remove RSVP
+router.delete('/:postId/rsvp', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { postId } = req.params;
+
+        await prisma.postRSVP.delete({
+            where: {
+                userId_postId: {
+                    userId: req.userId!,
+                    postId,
+                },
+            },
+        }).catch(() => { });
+
+        const rsvpCount = await prisma.postRSVP.count({
+            where: { postId, status: 'IN' },
+        });
+
+        res.json({ rsvpCount, isRsvped: false });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// PUT /api/v1/posts/:postId/comments/:commentId - Edit comment
+router.put('/:postId/comments/:commentId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { commentId } = req.params;
+
+        const updateSchema = z.object({
+            content: z.string().min(1).max(500),
+        });
+
+        const { content } = updateSchema.parse(req.body);
+
+        const comment = await prisma.comment.findUnique({
+            where: { id: commentId },
+        });
+
+        if (!comment) {
+            throw new AppError('Comment not found', 404);
+        }
+
+        const userRole = req.user?.role;
+        const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN' || userRole === 'MODERATOR';
+
+        if (comment.userId !== req.userId && !isAdmin) {
+            throw new AppError('Not authorized to edit this comment', 403);
+        }
+
+        const updatedComment = await prisma.comment.update({
+            where: { id: commentId },
+            data: { content },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true,
+                        isVerified: true,
+                    },
+                },
+            },
+        });
+
+        res.json(updatedComment);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// DELETE /api/v1/posts/:postId/comments/:commentId - Delete comment
+router.delete('/:postId/comments/:commentId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { postId, commentId } = req.params;
+
+        const comment = await prisma.comment.findUnique({
+            where: { id: commentId },
+        });
+
+        if (!comment) {
+            throw new AppError('Comment not found', 404);
+        }
+
+        // Get the post to check ownership
+        const post = await prisma.post.findUnique({ where: { id: postId } });
+
+        // Allow deletion if user owns the comment, owns the post, or is admin
+        const userRole = req.user?.role;
+        const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN' || userRole === 'MODERATOR';
+        const isCommentOwner = comment.userId === req.userId;
+        const isPostOwner = post?.userId === req.userId;
+
+        if (!isCommentOwner && !isPostOwner && !isAdmin) {
+            throw new AppError('Not authorized to delete this comment', 403);
+        }
+
+        await prisma.comment.delete({
+            where: { id: commentId },
+        });
+
+        res.json({ deleted: true });
     } catch (error) {
         next(error);
     }

@@ -121,7 +121,7 @@ function AutoPlayVideo({ src, className = '' }: { src: string; className?: strin
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
-                    if (entry.isIntersecting && entry.intersectionRatio >= 0.75) {
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
                         // TikTok-style: Try to play with sound first
                         video.muted = false;
                         video.play()
@@ -148,8 +148,7 @@ function AutoPlayVideo({ src, className = '' }: { src: string; className?: strin
                 });
             },
             {
-                threshold: [0, 0.25, 0.5, 0.75, 1.0],
-                rootMargin: '-10% 0px',
+                threshold: 0.5,
             }
         );
 

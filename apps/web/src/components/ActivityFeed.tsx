@@ -213,7 +213,7 @@ export function ActivityFeed({
                 {
                     id: '2',
                     type: 'new_member',
-                    actor: { id: 'u2', displayName: 'Omar Hassan' },
+                    actor: { id: 'u2', displayName: 'Omar Hassan', avatarUrl: '/avatars/omar.jpg' },
                     metadata: { groupName: 'Youth Basketball Club' },
                     createdAt: new Date(Date.now() - 15 * 60000),
                     isNew: true,

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -18,9 +18,12 @@ interface Post {
     mediaUrl?: string;
     mediaType?: 'IMAGE' | 'VIDEO';
     createdAt: string;
+    updatedAt?: string;
     likes: number;
     isLiked: boolean;
     commentsCount: number;
+    rsvpCount?: number;
+    isRsvped?: boolean;
     author: {
         id: string;
         username: string;
@@ -41,10 +44,40 @@ interface Comment {
     };
 }
 
+
+
+function VideoPlayer({ src }: { src: string }) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        // Try to play unmuted on mount
+        video.muted = false;
+        video.play().catch(() => {
+            // Fallback to muted if browser blocks unmuted autoplay
+            console.log('Autoplay unmuted blocked, falling back to muted');
+            video.muted = true;
+            video.play().catch((e: any) => console.error('Autoplay blocked', e));
+        });
+    }, [src]);
+
+    return (
+        <video
+            ref={videoRef}
+            src={src}
+            controls
+            playsInline
+            className="w-full max-h-[600px] object-contain bg-black"
+        />
+    );
+}
+
 export default function PostDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const { user, isAuthenticated } = useAuth();
+    const { user, isAuthenticated, isAdmin } = useAuth();
     const postId = params.id as string;
 
     const [post, setPost] = useState<Post | null>(null);
@@ -53,6 +86,14 @@ export default function PostDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // RSVP and Edit states
+    const [isRsvped, setIsRsvped] = useState(false);
+    const [rsvpCount, setRsvpCount] = useState(0);
+    const [isEditingPost, setIsEditingPost] = useState(false);
+    const [editedCaption, setEditedCaption] = useState('');
+    const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+    const [editedCommentContent, setEditedCommentContent] = useState('');
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app';
 
@@ -75,9 +116,12 @@ export default function PostDetailPage() {
                     mediaUrl: data.mediaUrl,
                     mediaType: data.type,
                     createdAt: data.createdAt,
+                    updatedAt: data.updatedAt,
                     likes: data.likesCount || 0,
                     isLiked: data.isLiked || false,
                     commentsCount: data.commentsCount || 0,
+                    rsvpCount: data.rsvpCount || 0,
+                    isRsvped: data.isRsvped || false,
                     author: {
                         id: data.user?.id || '',
                         username: data.user?.username || '',
@@ -85,6 +129,9 @@ export default function PostDetailPage() {
                         avatarUrl: data.user?.avatarUrl,
                     },
                 });
+                setIsRsvped(data.isRsvped || false);
+                setRsvpCount(data.rsvpCount || 0);
+                setEditedCaption(data.caption || '');
             } else {
                 setError('Post not found');
             }
@@ -198,6 +245,111 @@ export default function PostDetailPage() {
         alert('Link copied to clipboard!');
     };
 
+    const handleRsvp = async () => {
+        if (!isAuthenticated) {
+            router.push('/login');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('0g_token');
+            const method = isRsvped ? 'DELETE' : 'POST';
+            const response = await fetch(`${API_URL}/api/v1/posts/${postId}/rsvp`, {
+                method,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setIsRsvped(data.isRsvped);
+                setRsvpCount(data.rsvpCount);
+            }
+        } catch (err) {
+            console.error('Error toggling RSVP:', err);
+        }
+    };
+
+    const handleEditPost = async () => {
+        if (!editedCaption.trim() || editedCaption === post?.content) {
+            setIsEditingPost(false);
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('0g_token');
+            const response = await fetch(`${API_URL}/api/v1/posts/${postId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ caption: editedCaption }),
+            });
+
+            if (response.ok && post) {
+                setPost({ ...post, content: editedCaption, updatedAt: new Date().toISOString() });
+                setIsEditingPost(false);
+            }
+        } catch (err) {
+            console.error('Error editing post:', err);
+        }
+    };
+
+    const handleEditComment = async (commentId: string) => {
+        if (!editedCommentContent.trim()) return;
+
+        try {
+            const token = localStorage.getItem('0g_token');
+            const response = await fetch(`${API_URL}/api/v1/posts/${postId}/comments/${commentId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: editedCommentContent }),
+            });
+
+            if (response.ok) {
+                const updatedComment = await response.json();
+                setComments(prev => prev.map(c =>
+                    c.id === commentId
+                        ? { ...c, content: updatedComment.content }
+                        : c
+                ));
+                setEditingCommentId(null);
+                setEditedCommentContent('');
+            }
+        } catch (err) {
+            console.error('Error editing comment:', err);
+        }
+    };
+
+    const handleDeleteComment = async (commentId: string) => {
+        if (!confirm('Delete this comment?')) return;
+
+        try {
+            const token = localStorage.getItem('0g_token');
+            const response = await fetch(`${API_URL}/api/v1/posts/${postId}/comments/${commentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                setComments(prev => prev.filter(c => c.id !== commentId));
+                if (post) {
+                    setPost({ ...post, commentsCount: post.commentsCount - 1 });
+                }
+            }
+        } catch (err) {
+            console.error('Error deleting comment:', err);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gradient-to-b from-[#0A0A0A] to-[#121212] flex items-center justify-center">
@@ -268,7 +420,40 @@ export default function PostDetailPage() {
                     {/* Content */}
                     {post.content && (
                         <div className="px-4 pb-4">
-                            <p className="text-white text-lg">{post.content}</p>
+                            {isEditingPost ? (
+                                <div className="space-y-3">
+                                    <textarea
+                                        value={editedCaption}
+                                        onChange={(e) => setEditedCaption(e.target.value)}
+                                        className="w-full bg-white/5 rounded-xl px-4 py-3 text-white text-lg border border-white/10 focus:border-[#00D4FF]/50 focus:outline-none transition-colors resize-none"
+                                        rows={3}
+                                    />
+                                    <div className="flex gap-2 justify-end">
+                                        <button
+                                            onClick={() => {
+                                                setIsEditingPost(false);
+                                                setEditedCaption(post.content);
+                                            }}
+                                            className="px-4 py-2 rounded-xl bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleEditPost}
+                                            className="px-4 py-2 rounded-xl bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity"
+                                        >
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p className="text-white text-lg">{post.content}</p>
+                                    {post.updatedAt && post.updatedAt !== post.createdAt && (
+                                        <span className="text-white/40 text-xs ml-2">(edited)</span>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -289,14 +474,7 @@ export default function PostDetailPage() {
                                         />
                                     </div>
                                 ) : (
-                                    <video
-                                        src={post.mediaUrl}
-                                        controls
-                                        autoPlay
-                                        muted={false}
-                                        playsInline
-                                        className="w-full max-h-[600px] object-contain bg-black"
-                                    />
+                                    <VideoPlayer src={post.mediaUrl} />
                                 )
                             ) : (
                                 <img
@@ -316,7 +494,7 @@ export default function PostDetailPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="px-4 py-3 flex items-center gap-6 border-t border-white/5">
+                    <div className="px-4 py-3 flex items-center gap-4 border-t border-white/5 flex-wrap">
                         <button
                             onClick={handleLike}
                             className={`flex items-center gap-2 transition-colors ${post.isLiked ? 'text-rose-400' : 'text-white/60 hover:text-rose-400'}`}
@@ -328,13 +506,45 @@ export default function PostDetailPage() {
                             <span>💬</span>
                             <span className="font-medium">{post.commentsCount}</span>
                         </div>
+
+                        {/* RSVP "I'm In" Button */}
+                        <button
+                            onClick={handleRsvp}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all ${isRsvped
+                                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
+                                : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                                }`}
+                        >
+                            <span>{isRsvped ? '✓' : '🙋'}</span>
+                            <span>{isRsvped ? "I'm In!" : "I'm In"}</span>
+                            {rsvpCount > 0 && (
+                                <span className="bg-white/20 px-2 py-0.5 rounded-full text-sm">
+                                    {rsvpCount}
+                                </span>
+                            )}
+                        </button>
+
                         <button
                             onClick={handleShare}
-                            className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors"
+                            className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-colors ml-auto"
                         >
                             <ShareIcon size={24} />
                             <span className="font-medium">Share</span>
                         </button>
+
+                        {/* Edit button for post owner or admin */}
+                        {(user?.id === post.author.id || isAdmin) && !isEditingPost && (
+                            <button
+                                onClick={() => {
+                                    setIsEditingPost(true);
+                                    setEditedCaption(post.content);
+                                }}
+                                className="flex items-center gap-2 text-white/60 hover:text-amber-400 transition-colors"
+                            >
+                                <span>✏️</span>
+                                <span className="font-medium hidden sm:inline">Edit</span>
+                            </button>
+                        )}
                     </div>
                 </motion.div>
 
@@ -427,8 +637,59 @@ export default function PostDetailPage() {
                                             <span className="text-white/30 text-xs">
                                                 {new Date(comment.createdAt).toLocaleDateString()}
                                             </span>
+
+                                            {/* Edit/Delete buttons for comment owner or admin */}
+                                            {(user?.id === comment.author.id || isAdmin) && editingCommentId !== comment.id && (
+                                                <div className="flex gap-2 ml-auto">
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingCommentId(comment.id);
+                                                            setEditedCommentContent(comment.content);
+                                                        }}
+                                                        className="text-white/40 hover:text-amber-400 transition-colors text-xs"
+                                                    >
+                                                        ✏️ Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteComment(comment.id)}
+                                                        className="text-white/40 hover:text-rose-400 transition-colors text-xs"
+                                                    >
+                                                        🗑️ Delete
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
-                                        <p className="text-white/80 text-sm">{comment.content}</p>
+
+                                        {/* Comment content - editable or display */}
+                                        {editingCommentId === comment.id ? (
+                                            <div className="space-y-2">
+                                                <textarea
+                                                    value={editedCommentContent}
+                                                    onChange={(e) => setEditedCommentContent(e.target.value)}
+                                                    className="w-full bg-white/5 rounded-xl px-3 py-2 text-white text-sm border border-white/10 focus:border-[#00D4FF]/50 focus:outline-none transition-colors resize-none"
+                                                    rows={2}
+                                                />
+                                                <div className="flex gap-2 justify-end">
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingCommentId(null);
+                                                            setEditedCommentContent('');
+                                                        }}
+                                                        className="px-3 py-1 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 transition-colors text-sm"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleEditComment(comment.id)}
+                                                        className="px-3 py-1 rounded-lg bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity text-sm"
+                                                    >
+                                                        Save
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-white/80 text-sm">{comment.content}</p>
+                                        )}
                                     </div>
                                 </div>
                             </motion.div>

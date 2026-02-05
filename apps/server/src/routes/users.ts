@@ -186,6 +186,56 @@ router.put('/profile', authenticate, async (req: AuthRequest, res, next) => {
     }
 });
 
+// PUT /api/v1/users/:userId - Admin update user
+router.put('/:userId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { userId } = req.params;
+        const userRole = req.user?.role;
+        const isAdmin = userRole === 'SUPERADMIN' || userRole === 'ADMIN';
+
+        // Allow update if Admin OR if updating self
+        if (!isAdmin && userId !== req.userId) {
+            throw new AppError('Not authorized', 403);
+        }
+
+        const updateSchema = z.object({
+            displayName: z.string().min(1).max(50).optional(),
+            displayNameSecondary: z.string().max(100).nullable().optional(),
+            secondaryLanguage: z.string().max(5).nullable().optional(),
+            bio: z.string().max(1000).optional(),
+            website: z.string().optional().or(z.literal('')),
+            avatarUrl: z.string().optional(),
+            coverUrl: z.string().optional(),
+            isVerified: z.boolean().optional(),
+            role: z.enum(['USER', 'MODERATOR', 'ADMIN', 'SUPERADMIN']).optional(),
+        });
+
+        const data = updateSchema.parse(req.body);
+
+        if (data.role === 'SUPERADMIN' && userRole !== 'SUPERADMIN') {
+            throw new AppError('Only Superadmins can promote users to Superadmin', 403);
+        }
+
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data,
+            select: {
+                id: true,
+                username: true,
+                displayName: true,
+                bio: true,
+                avatarUrl: true,
+                isVerified: true,
+                role: true,
+            },
+        });
+
+        res.json(user);
+    } catch (error) {
+        next(error);
+    }
+});
+
 // POST /api/v1/users/:userId/follow
 router.post('/:userId/follow', authenticate, async (req: AuthRequest, res, next) => {
     try {
