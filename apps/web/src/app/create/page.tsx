@@ -103,7 +103,7 @@ function CreateContent() {
                 const formData = new FormData();
                 formData.append('file', media[0].file);
 
-                const uploadRes = await fetch(`${API_URL}/api/v1/upload`, {
+                const uploadRes = await fetch(`${API_URL}/api/v1/upload/moment`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -236,8 +236,8 @@ function CreateContent() {
                     <button
                         onClick={() => setMediaMode('upload')}
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition-colors ${mediaMode === 'upload'
-                                ? 'bg-white/10 text-white border border-white/20'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10'
+                            ? 'bg-white/10 text-white border border-white/20'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10'
                             }`}
                     >
                         <CameraIcon size={18} />
@@ -246,8 +246,8 @@ function CreateContent() {
                     <button
                         onClick={() => setMediaMode('url')}
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition-colors ${mediaMode === 'url'
-                                ? 'bg-white/10 text-white border border-white/20'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10'
+                            ? 'bg-white/10 text-white border border-white/20'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10'
                             }`}
                     >
                         <LinkIcon size={18} />
