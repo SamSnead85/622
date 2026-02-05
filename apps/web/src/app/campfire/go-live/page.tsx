@@ -18,17 +18,8 @@ interface ChatMessage {
     avatarUrl: string;
 }
 
-// Mock message for testing interactions
-const INITIAL_MESSAGES: ChatMessage[] = [
-    {
-        id: '1',
-        username: 'ZeroGFoundry',
-        userId: 'mock-zerog', // In real app, this would be a real ID
-        content: 'Cant wait to see this! 🔥',
-        type: 'message',
-        avatarUrl: 'https://ui-avatars.com/api/?name=ZeroG&background=random'
-    }
-];
+// Real users only - no mock data
+const INITIAL_MESSAGES: ChatMessage[] = [];
 
 export default function CampfireGoLive() {
     const { user } = useAuth();
