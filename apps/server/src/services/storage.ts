@@ -1,3 +1,4 @@
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuid } from 'uuid';
@@ -7,40 +8,44 @@ import path from 'path';
 
 // ============================================
 // STORAGE SERVICE
-// Supports: Local, Supabase Storage, AWS S3, Cloudflare R2
+// Supports: Local, Supabase Storage (JS SDK), AWS S3, Cloudflare R2
 // ============================================
 
 const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local'; // local | supabase | s3 | r2
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const SERVER_URL = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5180}`;
+const BUCKET = process.env.STORAGE_BUCKET || 'caravan-media';
 
-// Configure S3 client based on provider (only if not local)
-function createStorageClient(): S3Client | null {
-    if (STORAGE_PROVIDER === 'local') return null;
+// ============================================
+// SUPABASE CLIENT (for native SDK uploads)
+// ============================================
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient | null {
+    if (supabaseClient) return supabaseClient;
+
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        console.error('[Storage] Supabase URL or SERVICE_KEY not configured');
+        return null;
+    }
+
+    supabaseClient = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false }
+    });
+
+    return supabaseClient;
+}
+
+// ============================================
+// S3 CLIENT (for S3/R2)
+// ============================================
+function createS3Client(): S3Client | null {
+    if (STORAGE_PROVIDER === 'local' || STORAGE_PROVIDER === 'supabase') return null;
 
     switch (STORAGE_PROVIDER) {
-        case 'supabase':
-            // Supabase Storage uses their S3-compatible endpoint
-            // Requires: SUPABASE_URL, SUPABASE_ACCESS_KEY_ID, SUPABASE_SECRET_ACCESS_KEY
-            // Get these from: Supabase Dashboard > Storage > S3 Access Keys
-            const supabaseUrl = process.env.SUPABASE_URL;
-            if (!supabaseUrl) {
-                console.error('[Storage] SUPABASE_URL not configured');
-                return null;
-            }
-
-            // Extract project ref for endpoint (e.g., "abc123" from "https://abc123.supabase.co")
-            const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
-
-            return new S3Client({
-                region: 'auto',
-                endpoint: `https://${projectRef}.supabase.co/storage/v1/s3`,
-                credentials: {
-                    accessKeyId: process.env.SUPABASE_ACCESS_KEY_ID || process.env.SUPABASE_SERVICE_KEY || '',
-                    secretAccessKey: process.env.SUPABASE_SECRET_ACCESS_KEY || process.env.SUPABASE_SERVICE_KEY || '',
-                },
-                forcePathStyle: true,
-            });
         case 'r2':
             return new S3Client({
                 region: 'auto',
@@ -62,19 +67,14 @@ function createStorageClient(): S3Client | null {
     }
 }
 
-const s3Client = createStorageClient();
-const BUCKET = process.env.STORAGE_BUCKET || 'caravan-media';
+const s3Client = createS3Client();
 
 // Log storage configuration at startup
 console.log('[Storage] Provider:', STORAGE_PROVIDER);
 console.log('[Storage] Bucket:', BUCKET);
-if (STORAGE_PROVIDER !== 'local') {
-    console.log('[Storage] S3 Client initialized:', !!s3Client);
-    if (STORAGE_PROVIDER === 'supabase') {
-        console.log('[Storage] Supabase URL:', process.env.SUPABASE_URL ? 'configured' : 'MISSING');
-        console.log('[Storage] Access Key ID:', process.env.SUPABASE_ACCESS_KEY_ID ? 'configured' : 'MISSING');
-        console.log('[Storage] Secret Access Key:', process.env.SUPABASE_SECRET_ACCESS_KEY ? 'configured' : 'MISSING');
-    }
+if (STORAGE_PROVIDER === 'supabase') {
+    console.log('[Storage] Supabase URL:', process.env.SUPABASE_URL ? 'configured' : 'MISSING');
+    console.log('[Storage] Service Key:', process.env.SUPABASE_SERVICE_KEY ? 'configured' : 'MISSING');
 }
 
 // ============================================
@@ -100,7 +100,7 @@ export async function uploadFile(
     const key = `${folder}/${uuid()}.${extension}`;
 
     // Local storage
-    if (STORAGE_PROVIDER === 'local' || !s3Client) {
+    if (STORAGE_PROVIDER === 'local') {
         const uploadPath = path.join(UPLOAD_DIR, folder);
         if (!existsSync(uploadPath)) {
             await mkdir(uploadPath, { recursive: true });
@@ -115,7 +115,42 @@ export async function uploadFile(
         };
     }
 
-    // S3-compatible storage
+    // Supabase Storage (using JS SDK - simpler and more reliable)
+    if (STORAGE_PROVIDER === 'supabase') {
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+            throw new Error('Supabase client not initialized. Check SUPABASE_URL and SUPABASE_SERVICE_KEY.');
+        }
+
+        console.log('[Storage] Uploading to Supabase:', { bucket: BUCKET, key, mimeType, size: buffer.length });
+
+        const { data, error } = await supabase.storage
+            .from(BUCKET)
+            .upload(key, buffer, {
+                contentType: mimeType,
+                cacheControl: '31536000',
+                upsert: false,
+            });
+
+        if (error) {
+            console.error('[Storage] Supabase upload failed:', error);
+            throw new Error(`Storage upload failed: ${error.message}`);
+        }
+
+        console.log('[Storage] Supabase upload successful:', key);
+
+        return {
+            key,
+            url: getPublicUrl(key),
+            size: buffer.length,
+        };
+    }
+
+    // S3-compatible storage (S3, R2)
+    if (!s3Client) {
+        throw new Error('S3 client not initialized');
+    }
+
     console.log('[Storage] Uploading to S3:', { bucket: BUCKET, key, mimeType, size: buffer.length });
     try {
         await s3Client.send(new PutObjectCommand({
@@ -123,17 +158,11 @@ export async function uploadFile(
             Key: key,
             Body: buffer,
             ContentType: mimeType,
-            CacheControl: 'public, max-age=31536000', // 1 year cache
+            CacheControl: 'public, max-age=31536000',
         }));
-        console.log('[Storage] Upload successful:', key);
+        console.log('[Storage] S3 upload successful:', key);
     } catch (s3Error: unknown) {
-        const errorDetails = s3Error instanceof Error ? {
-            name: s3Error.name,
-            message: s3Error.message,
-            // @ts-expect-error S3 errors have additional properties
-            code: s3Error.Code || s3Error.$metadata?.httpStatusCode,
-        } : s3Error;
-        console.error('[Storage] S3 upload failed:', errorDetails);
+        console.error('[Storage] S3 upload failed:', s3Error);
         throw new Error(`Storage upload failed: ${s3Error instanceof Error ? s3Error.message : 'Unknown S3 error'}`);
     }
 
@@ -148,7 +177,7 @@ export async function uploadFile(
  * Delete a file from storage
  */
 export async function deleteFile(key: string): Promise<void> {
-    if (STORAGE_PROVIDER === 'local' || !s3Client) {
+    if (STORAGE_PROVIDER === 'local') {
         const filePath = path.join(UPLOAD_DIR, key);
         try {
             await unlink(filePath);
@@ -158,25 +187,47 @@ export async function deleteFile(key: string): Promise<void> {
         return;
     }
 
-    await s3Client.send(new DeleteObjectCommand({
-        Bucket: BUCKET,
-        Key: key,
-    }));
+    if (STORAGE_PROVIDER === 'supabase') {
+        const supabase = getSupabaseClient();
+        if (supabase) {
+            await supabase.storage.from(BUCKET).remove([key]);
+        }
+        return;
+    }
+
+    if (s3Client) {
+        await s3Client.send(new DeleteObjectCommand({
+            Bucket: BUCKET,
+            Key: key,
+        }));
+    }
 }
 
 /**
  * Get a signed URL for temporary access (private files)
  */
 export async function getSignedDownloadUrl(key: string, expiresIn = 3600): Promise<string> {
-    if (STORAGE_PROVIDER === 'local' || !s3Client) {
+    if (STORAGE_PROVIDER === 'local') {
         return `${SERVER_URL}/uploads/${key}`;
     }
 
-    const command = new GetObjectCommand({
-        Bucket: BUCKET,
-        Key: key,
-    });
-    return getSignedUrl(s3Client, command, { expiresIn });
+    if (STORAGE_PROVIDER === 'supabase') {
+        const supabase = getSupabaseClient();
+        if (supabase) {
+            const { data } = await supabase.storage.from(BUCKET).createSignedUrl(key, expiresIn);
+            return data?.signedUrl || getPublicUrl(key);
+        }
+    }
+
+    if (s3Client) {
+        const command = new GetObjectCommand({
+            Bucket: BUCKET,
+            Key: key,
+        });
+        return getSignedUrl(s3Client, command, { expiresIn });
+    }
+
+    return getPublicUrl(key);
 }
 
 /**
@@ -187,7 +238,6 @@ export function getPublicUrl(key: string): string {
         case 'supabase':
             return `${process.env.SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${key}`;
         case 'r2':
-            // R2 public URL via custom domain or workers
             return `${process.env.R2_PUBLIC_URL || process.env.R2_ENDPOINT}/${BUCKET}/${key}`;
         case 's3':
         default:
