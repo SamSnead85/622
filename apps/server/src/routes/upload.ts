@@ -139,8 +139,9 @@ router.post('/post', authenticate, upload.single('file'), async (req: MulterRequ
             size: result.size,
         });
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Post media upload error:', error);
-        res.status(500).json({ error: 'Failed to upload media' });
+        res.status(500).json({ error: `Failed to upload media: ${errorMessage}` });
     }
 });
 
@@ -180,8 +181,9 @@ router.post('/moment', authenticate, upload.single('file'), async (req: MulterRe
             size: result.size,
         });
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Moment media upload error:', error);
-        res.status(500).json({ error: 'Failed to upload media' });
+        res.status(500).json({ error: `Failed to upload media: ${errorMessage}` });
     }
 });
 

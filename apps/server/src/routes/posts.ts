@@ -293,7 +293,11 @@ router.delete('/:postId', authenticate, async (req: AuthRequest, res, next) => {
             throw new AppError('Post not found', 404);
         }
 
-        if (post.userId !== req.userId) {
+        // Allow deletion if user owns the post OR is an admin/moderator
+        const userRole = req.user?.role;
+        const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN' || userRole === 'MODERATOR';
+
+        if (post.userId !== req.userId && !isAdmin) {
             throw new AppError('Not authorized', 403);
         }
 
@@ -301,7 +305,7 @@ router.delete('/:postId', authenticate, async (req: AuthRequest, res, next) => {
             where: { id: postId },
         });
 
-        res.json({ deleted: true });
+        res.json({ deleted: true, moderatorAction: isAdmin && post.userId !== req.userId });
     } catch (error) {
         next(error);
     }

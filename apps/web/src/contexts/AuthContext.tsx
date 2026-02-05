@@ -17,12 +17,14 @@ interface User {
     bio?: string;
     isVerified: boolean;
     createdAt: string;
+    role?: 'USER' | 'MODERATOR' | 'ADMIN' | 'SUPERADMIN';
 }
 
 interface AuthContextType {
     user: User | null;
     isLoading: boolean;
     isAuthenticated: boolean;
+    isAdmin: boolean;
     // 2FA challenge state
     pending2FA: { challengeToken: string; email: string } | null;
     login: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; requires2FA?: boolean; error?: string }>;
@@ -262,12 +264,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    // Computed admin check
+    const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN' || user?.role === 'MODERATOR';
+
     return (
         <AuthContext.Provider
             value={{
                 user,
                 isLoading,
                 isAuthenticated: !!user,
+                isAdmin: !!isAdmin,
                 pending2FA,
                 login,
                 verify2FA,

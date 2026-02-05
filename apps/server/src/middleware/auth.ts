@@ -8,6 +8,7 @@ export interface AuthRequest extends Request {
         id: string;
         email: string;
         username: string;
+        role: string;
     };
 }
 
@@ -76,6 +77,7 @@ export const authenticate = async (
             id: session.user.id,
             email: session.user.email,
             username: session.user.username,
+            role: session.user.role,
         };
 
         // Update last active timestamp
@@ -133,6 +135,7 @@ export const optionalAuth = async (
                 id: session.user.id,
                 email: session.user.email,
                 username: session.user.username,
+                role: session.user.role,
             };
         }
     } catch {
