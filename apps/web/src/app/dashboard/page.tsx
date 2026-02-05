@@ -1096,8 +1096,6 @@ export default function DashboardPage() {
                     </div>
 
 
-
-
                     <div className="grid lg:grid-cols-3 gap-4">
                         {/* Feed - Main column */}
                         <div className="lg:col-span-2 space-y-3">
