@@ -126,7 +126,7 @@ function InvitePageContent() {
         ? `${window.location.origin}/signup?ref=${inviteCode}`
         : `https://zerogravity.app/signup?ref=${inviteCode}`;
 
-    const inviteMessage = `Join me on 0G (ZeroG) - a social network built for us, by us. No ads, no algorithms, just real connections.`;
+    const inviteMessage = `Join me on 0G (ZeroG) - the Sovereign Social Network. No agendas, no algorithms, just pure human connection.`;
 
     const handleCopyLink = async () => {
         try {
@@ -225,10 +225,10 @@ function InvitePageContent() {
                         <SendIcon className="text-white" size={32} />
                     </div>
                     <h1 className="text-3xl font-bold text-white mb-3">
-                        Invite Your People
+                        Ignite the Migration
                     </h1>
                     <p className="text-white/60 max-w-md mx-auto">
-                        0G is better with your tribe. Share your personal invite link and grow your community.
+                        Lead your tribe away from the noise. Invite your people to a space built for sovereignty, not profit.
                     </p>
                 </motion.div>
 
