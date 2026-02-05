@@ -13,7 +13,10 @@ const getApiUrl = () => {
         );
     }
 
-    // In browser or server, use the environment variable with localhost fallback for development
+    // In browser or server, check for production fallback
+    if (process.env.NODE_ENV === 'production' && !envUrl) {
+        return 'https://caravanserver-production-d7da.up.railway.app';
+    }
     return envUrl || 'http://localhost:5180';
 };
 
