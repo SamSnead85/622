@@ -284,9 +284,9 @@ export function isValidMediaType(mimeType: string, category: 'image' | 'video' |
  */
 export function getMaxFileSize(category: 'image' | 'video' | 'audio'): number {
     const limits: Record<string, number> = {
-        image: 10 * 1024 * 1024,   // 10 MB
-        video: 100 * 1024 * 1024,  // 100 MB
-        audio: 20 * 1024 * 1024,   // 20 MB
+        image: 25 * 1024 * 1024,   // 25 MB
+        video: 500 * 1024 * 1024,  // 500 MB
+        audio: 50 * 1024 * 1024,   // 50 MB
     };
     return limits[category] || 10 * 1024 * 1024;
 }

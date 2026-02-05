@@ -15,7 +15,7 @@ interface MulterRequest extends AuthRequest {
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
-        fileSize: 100 * 1024 * 1024, // 100 MB max (validated per type)
+        fileSize: 500 * 1024 * 1024, // 500 MB max (validated per type)
     },
 });
 
@@ -125,7 +125,7 @@ router.post('/post', authenticate, upload.single('file'), async (req: MulterRequ
         const maxSize = isVideo ? getMaxFileSize('video') : getMaxFileSize('image');
         if (file.size > maxSize) {
             res.status(400).json({
-                error: `File too large. Max ${isVideo ? '100' : '10'} MB.`
+                error: `File too large. Max ${isVideo ? '500' : '25'} MB.`
             });
             return;
         }
@@ -167,7 +167,7 @@ router.post('/moment', authenticate, upload.single('file'), async (req: MulterRe
         const maxSize = isVideo ? getMaxFileSize('video') : getMaxFileSize('image');
         if (file.size > maxSize) {
             res.status(400).json({
-                error: `File too large. Max ${isVideo ? '100' : '10'} MB.`
+                error: `File too large. Max ${isVideo ? '500' : '25'} MB.`
             });
             return;
         }
