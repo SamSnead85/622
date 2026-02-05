@@ -11,17 +11,17 @@ module.exports = {
             colors: {
                 // === VOID - The infinite canvas ===
                 void: {
-                    DEFAULT: '#050508',
-                    elevated: '#0a0a0f',
-                    surface: '#0f0f16',
+                    DEFAULT: '#000000', // Pure Black
+                    elevated: '#0A0A0F', // Deepest Navy/Black
+                    surface: '#12121A', // Card Surface
                 },
 
                 // === AURORA - Living energy ===
                 aurora: {
                     violet: '#8B5CF6',
                     'violet-bright': '#A78BFA',
-                    cyan: '#06B6D4',
-                    'cyan-bright': '#22D3EE',
+                    cyan: '#00D4FF', // 0G Electric Blue
+                    'cyan-bright': '#60E4FF', // Brighter Blue
                     rose: '#F43F5E',
                     'rose-bright': '#FB7185',
                 },
