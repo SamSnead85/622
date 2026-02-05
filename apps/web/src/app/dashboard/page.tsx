@@ -1198,7 +1198,7 @@ export default function DashboardPage() {
                                     </div>
                                     <div className="p-5">
                                         <p className="text-white/80 text-sm leading-relaxed mb-4">
-                                            With heartfelt gratitude, we invite you to join HEAL Palestine’s co-founders and leadership for a virtual Community Town Hall on <span className="text-emerald-400 font-semibold">Feb 16, 2026</span>. Together, we will reflect on 2025's impact and share how our teams continue to strengthen community-led efforts for Palestinian children and families.
+                                            With heartfelt gratitude, we invite you to join HEAL Palestine’s co-founders and leadership for a virtual Community Town Hall on <span className="text-emerald-400 font-semibold">Feb 16, 2026</span>. Together, we will reflect on 2025&apos;s impact and share how our teams continue to strengthen community-led efforts for Palestinian children and families.
                                         </p>
                                         <div className="flex flex-col sm:flex-row gap-3">
                                             <a
