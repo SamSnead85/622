@@ -106,7 +106,19 @@ export default function PostDetailPage() {
 
             if (response.ok) {
                 const data = await response.json();
-                setComments(data.comments || []);
+                // Map user to author for our Comment interface
+                const mappedComments = (data.comments || []).map((c: any) => ({
+                    id: c.id,
+                    content: c.content,
+                    createdAt: c.createdAt,
+                    author: {
+                        id: c.user?.id || '',
+                        username: c.user?.username || '',
+                        displayName: c.user?.displayName || 'User',
+                        avatarUrl: c.user?.avatarUrl,
+                    },
+                }));
+                setComments(mappedComments);
             }
         } catch (err) {
             console.error('Error fetching comments:', err);
