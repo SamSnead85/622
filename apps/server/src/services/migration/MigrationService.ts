@@ -2,6 +2,7 @@ import { PrismaClient, MigrationPlatform, MigrationStatus, PostType } from '@pri
 import { randomUUID } from 'crypto';
 import { InstagramParser } from './parsers/InstagramParser.js';
 import { TikTokParser } from './parsers/TikTokParser.js';
+import { WhatsAppParser } from './parsers/WhatsAppParser.js';
 
 const prisma = new PrismaClient();
 
@@ -36,7 +37,7 @@ export interface ParsedConnection {
     displayName?: string;
     profileImageUrl?: string;
     email?: string;
-    type: 'FOLLOWER' | 'FOLLOWING' | 'MUTUAL';
+    type: 'FOLLOWER' | 'FOLLOWING' | 'MUTUAL' | 'CONTACT';
 }
 
 export class MigrationService {
@@ -153,6 +154,8 @@ export class MigrationService {
                 return InstagramParser.parse(filePath);
             case 'TIKTOK':
                 return TikTokParser.parse(filePath);
+            case 'WHATSAPP':
+                return WhatsAppParser.parse(filePath);
             default:
                 throw new Error(`Platform ${platform} not yet supported`);
         }

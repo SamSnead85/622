@@ -2,6 +2,8 @@ import { Server as SocketServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db/client.js';
 import { logger } from '../utils/logger.js';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { Redis } from 'ioredis';
 
 interface AuthenticatedSocket extends Socket {
     userId?: string;
@@ -11,6 +13,19 @@ interface AuthenticatedSocket extends Socket {
 const connectedUsers = new Map<string, Set<string>>(); // userId -> Set<socketId>
 
 export const setupSocketHandlers = (io: SocketServer) => {
+    // Redis Adapter Setup for Horizontal Scaling
+    if (process.env.REDIS_URL) {
+        logger.info('🔌 Connecting to Redis for Socket.IO Adapter...');
+        const pubClient = new Redis(process.env.REDIS_URL);
+        const subClient = pubClient.duplicate();
+
+        io.adapter(createAdapter(pubClient, subClient));
+        logger.info('✅ Redis Adapter configured for Socket.IO');
+    } else {
+        logger.warn('⚠️ No REDIS_URL found. Running Socket.IO in memory mode (not suitable for multiple instances)');
+    }
+
+    // Authentication middleware
     // Authentication middleware
     io.use(async (socket: AuthenticatedSocket, next) => {
         try {
