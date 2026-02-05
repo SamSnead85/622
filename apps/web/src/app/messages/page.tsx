@@ -80,7 +80,7 @@ function VoiceMessage({ duration, sender }: { duration: number; sender: 'me' | '
             </button>
             <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
                 <motion.div
-                    className={`h-full ${sender === 'me' ? 'bg-white' : 'bg-gradient-to-r from-orange-400 to-rose-500'}`}
+                    className={`h-full ${sender === 'me' ? 'bg-white' : 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6]'}`}
                     style={{ width: `${progress}%` }}
                 />
             </div>
@@ -111,6 +111,43 @@ function ReactionPicker({ onSelect, onClose }: { onSelect: (emoji: string) => vo
                     {emoji}
                 </button>
             ))}
+        </motion.div>
+    );
+}
+
+// ============================================
+// FULL EMOJI PICKER (PREMIUM GRID)
+// ============================================
+const COMMON_EMOJIS = [
+    "😂", "❤️", "🔥", "👍", "🙌", "🎉", "✨", "💀", "😊", "🤣",
+    "😍", "🤔", "👀", "💯", "👋", "😭", "😤", "😡", "💩", "🤡",
+    "👻", "👽", "🤖", "👾", "🎃", "💪", "🤙", "🤝", "🙏", "🧠",
+    "💎", "🚀", "🪐", "🌍", "🌈", "☀️", "🌙", "⭐", "⚡", "❄️"
+];
+
+function EmojiGridPicker({ onSelect, onClose }: { onSelect: (emoji: string) => void; onClose: () => void }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+            className="absolute bottom-full mb-4 left-0 w-64 bg-[#1a1a1f]/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden p-3"
+        >
+            <div className="flex justify-between items-center mb-2 px-1">
+                <span className="text-xs font-bold text-white/50 uppercase tracking-wider">Most Used</span>
+                <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">✕</button>
+            </div>
+            <div className="grid grid-cols-5 gap-1">
+                {COMMON_EMOJIS.map(emoji => (
+                    <button
+                        key={emoji}
+                        onClick={() => { onSelect(emoji); }}
+                        className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-xl"
+                    >
+                        {emoji}
+                    </button>
+                ))}
+            </div>
         </motion.div>
     );
 }
@@ -366,6 +403,7 @@ function MessagesPageContent() {
     const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
     const [localReactions, setLocalReactions] = useState<Map<string, string[]>>(new Map());
     const [showNewChatModal, setShowNewChatModal] = useState(false);
+    const [showInputEmojiPicker, setShowInputEmojiPicker] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => { setMounted(true); }, []);
@@ -510,7 +548,7 @@ function MessagesPageContent() {
                                     whileTap={{ scale: 0.98 }}
                                 >
                                     <div className="relative">
-                                        <div className="w-12 h-12 rounded-full overflow-hidden relative bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center">
+                                        <div className="w-12 h-12 rounded-full overflow-hidden relative bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
                                             {convo.participants[0]?.avatarUrl ? (
                                                 <Image src={convo.participants[0].avatarUrl} alt={convo.participants[0].displayName} fill className="object-cover" />
                                             ) : (
@@ -534,7 +572,7 @@ function MessagesPageContent() {
                                         </p>
                                     </div>
                                     {convo.unreadCount > 0 && (
-                                        <span className="w-5 h-5 rounded-full bg-gradient-to-r from-orange-400 to-rose-500 text-white text-xs flex items-center justify-center">
+                                        <span className="w-5 h-5 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white text-xs flex items-center justify-center">
                                             {convo.unreadCount}
                                         </span>
                                     )}
@@ -554,7 +592,7 @@ function MessagesPageContent() {
                                     ←
                                 </button>
                                 <div className="relative">
-                                    <div className="w-10 h-10 rounded-full overflow-hidden relative bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center">
+                                    <div className="w-10 h-10 rounded-full overflow-hidden relative bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
                                         {selectedConvo.participants[0]?.avatarUrl ? (
                                             <Image src={selectedConvo.participants[0].avatarUrl} alt="" fill className="object-cover" />
                                         ) : (
@@ -594,7 +632,7 @@ function MessagesPageContent() {
                                         >
                                             <div className="relative group">
                                                 <div className={`max-w-[70%] px-4 py-2 rounded-2xl ${isMe
-                                                    ? 'bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-br-md'
+                                                    ? 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white rounded-br-md'
                                                     : 'bg-white/10 text-white rounded-bl-md'
                                                     }`}>
                                                     {msg.mediaType === 'AUDIO' ? (
@@ -652,61 +690,105 @@ function MessagesPageContent() {
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Input */}
-                            <div className="p-4 border-t border-white/5 bg-black/20 mb-16 md:mb-0">
-                                {isRecording ? (
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-full bg-red-500/10 border border-red-500/30">
-                                            <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                                            <span className="text-white">Recording... {Math.floor(recordingTime / 60)}:{String(recordingTime % 60).padStart(2, '0')}</span>
-                                        </div>
-                                        <motion.button
-                                            onClick={() => setIsRecording(false)}
-                                            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center"
-                                            whileTap={{ scale: 0.9 }}
-                                        >
-                                            <TrashIcon size={18} className="text-white/60" />
-                                        </motion.button>
-                                        <motion.button
-                                            onClick={handleSendVoiceMessage}
-                                            className="w-10 h-10 rounded-full bg-gradient-to-r from-orange-400 to-rose-500 flex items-center justify-center"
-                                            whileTap={{ scale: 0.9 }}
-                                        >
-                                            ➤
-                                        </motion.button>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-3">
-                                        <button className="hover:scale-110 transition-transform"><AttachIcon size={20} className="text-white/60" /></button>
-                                        <button className="hover:scale-110 transition-transform"><SmileIcon size={20} className="text-white/60" /></button>
-                                        <input
-                                            type="text"
-                                            value={messageInput}
-                                            onChange={handleInputChange}
-                                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                            onBlur={stopTyping}
-                                            placeholder="Type a message..."
-                                            className="flex-1 bg-white/5 rounded-full px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:bg-white/10 transition-colors"
-                                        />
-                                        {messageInput.trim() ? (
-                                            <motion.button
-                                                onClick={handleSendMessage}
-                                                className="w-10 h-10 rounded-full bg-gradient-to-r from-orange-400 to-rose-500 flex items-center justify-center"
-                                                whileTap={{ scale: 0.9 }}
-                                            >
-                                                <span className="text-white">➤</span>
-                                            </motion.button>
+                            {/* Premium Floating Input Bar */}
+                            <div className="absolute bottom-6 left-4 right-4 z-20">
+                                <motion.div
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    className="relative bg-[#0A0A0F]/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-visible"
+                                >
+                                    {/* Emoji Picker Popover */}
+                                    <AnimatePresence>
+                                        {showInputEmojiPicker && (
+                                            <div className="absolute bottom-full left-0 mb-2 z-30">
+                                                <EmojiGridPicker
+                                                    onSelect={(emoji) => {
+                                                        setMessageInput(prev => prev + emoji);
+                                                        // Keep open or close? Usually keep open for multiple.
+                                                        // But simplified: keep open.
+                                                    }}
+                                                    onClose={() => setShowInputEmojiPicker(false)}
+                                                />
+                                            </div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    <div className="p-2 flex items-end gap-2">
+                                        {isRecording ? (
+                                            <div className="flex-1 flex items-center gap-3 px-3 py-2">
+                                                <div className="flex-1 flex items-center gap-3 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/30">
+                                                    <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                                                    <span className="text-white font-mono text-sm">Recording... {Math.floor(recordingTime / 60)}:{String(recordingTime % 60).padStart(2, '0')}</span>
+                                                </div>
+                                                <motion.button
+                                                    onClick={() => setIsRecording(false)}
+                                                    className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                                                    whileTap={{ scale: 0.9 }}
+                                                >
+                                                    <TrashIcon size={18} className="text-white/60" />
+                                                </motion.button>
+                                                <motion.button
+                                                    onClick={handleSendVoiceMessage}
+                                                    className="w-10 h-10 rounded-full bg-[#00D4FF] hover:bg-[#00C4EF] flex items-center justify-center shadow-[0_0_20px_rgba(0,212,255,0.3)] transition-colors"
+                                                    whileTap={{ scale: 0.9 }}
+                                                >
+                                                    <span className="text-black font-bold">➤</span>
+                                                </motion.button>
+                                            </div>
                                         ) : (
-                                            <motion.button
-                                                onClick={() => setIsRecording(true)}
-                                                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15"
-                                                whileTap={{ scale: 0.9 }}
-                                            >
-                                                <MicIcon size={18} className="text-white/60" />
-                                            </motion.button>
+                                            <>
+                                                <button className="p-3 text-white/40 hover:text-[#00D4FF] transition-colors">
+                                                    <AttachIcon size={20} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setShowInputEmojiPicker(!showInputEmojiPicker)}
+                                                    className={`p-3 transition-colors ${showInputEmojiPicker ? 'text-[#00D4FF]' : 'text-white/40 hover:text-[#00D4FF]'}`}
+                                                >
+                                                    <SmileIcon size={20} />
+                                                </button>
+                                                <div className="flex-1 py-2">
+                                                    <textarea
+                                                        value={messageInput}
+                                                        onChange={(e) => {
+                                                            setMessageInput(e.target.value);
+                                                            startTyping();
+                                                            // Auto-resize?
+                                                        }}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                                e.preventDefault();
+                                                                handleSendMessage();
+                                                            }
+                                                        }}
+                                                        onBlur={stopTyping}
+                                                        placeholder="Type a message..."
+                                                        className="w-full bg-transparent text-white placeholder:text-white/20 focus:outline-none resize-none max-h-32 min-h-[24px]"
+                                                        rows={1}
+                                                    />
+                                                </div>
+                                                {messageInput.trim() ? (
+                                                    <motion.button
+                                                        onClick={handleSendMessage}
+                                                        className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center shadow-[0_0_20px_rgba(0,212,255,0.3)]"
+                                                        whileTap={{ scale: 0.95 }}
+                                                        initial={{ scale: 0 }}
+                                                        animate={{ scale: 1 }}
+                                                    >
+                                                        <span className="text-white">➤</span>
+                                                    </motion.button>
+                                                ) : (
+                                                    <motion.button
+                                                        onClick={() => setIsRecording(true)}
+                                                        className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-colors"
+                                                        whileTap={{ scale: 0.95 }}
+                                                    >
+                                                        <MicIcon size={20} />
+                                                    </motion.button>
+                                                )}
+                                            </>
                                         )}
                                     </div>
-                                )}
+                                </motion.div>
                             </div>
                         </>
                     ) : (
