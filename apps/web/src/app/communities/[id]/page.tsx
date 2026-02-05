@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 
@@ -72,6 +72,7 @@ const DEFAULT_COVER = 'https://images.unsplash.com/photo-1511895426328-dc8714191
 // ============================================
 export default function CommunityDetailPage() {
     const params = useParams();
+    const router = useRouter();
     const communityId = params.id as string;
     const { user } = useAuth();
 
@@ -202,7 +203,10 @@ export default function CommunityDetailPage() {
 
                         {/* Action buttons */}
                         <div className="flex gap-3">
-                            <button className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity">
+                            <button
+                                onClick={() => router.push(`/create?communityId=${communityId}`)}
+                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity"
+                            >
                                 {Icons.plus}
                                 Post
                             </button>
@@ -254,7 +258,10 @@ export default function CommunityDetailPage() {
                         <p className="text-white/50 mb-4">
                             Be the first to share something with your tribe!
                         </p>
-                        <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold hover:opacity-90 transition-opacity">
+                        <button
+                            onClick={() => router.push(`/create?communityId=${communityId}`)}
+                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold hover:opacity-90 transition-opacity"
+                        >
                             Create First Post
                         </button>
                     </motion.div>

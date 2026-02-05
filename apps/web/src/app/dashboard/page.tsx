@@ -1191,7 +1191,8 @@ export default function DashboardPage() {
                                                 )}
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className="font-semibold text-white text-sm truncate">{post.author.displayName}</span>
+                                                        <span className="font-bold text-white text-sm">{post.author.displayName}</span>
+                                                        <span className="text-white/40 text-xs">@{post.author.username}</span>
                                                         <span className="px-2 py-0.5 rounded-full bg-[#00D4FF]/20 text-[#00D4FF] text-[10px] flex-shrink-0">🌍 Public</span>
                                                         <span className="text-white/30 text-xs flex-shrink-0">• {new Date(post.createdAt).toLocaleDateString()}</span>
                                                     </div>
