@@ -1108,12 +1108,7 @@ export default function DashboardPage() {
                         {/* Feed - Main column */}
                         <div className="lg:col-span-2 space-y-3">
                             {/* Quick post with privacy controls */}
-                            <motion.div
-                                className="bg-white/[0.02] rounded-2xl border border-white/5 p-4"
-                                initial={false}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.3 }}
-                            >
+                            <div className="bg-white/[0.02] rounded-2xl border border-white/5 p-4">
                                 <div className="flex gap-4">
                                     {user.avatarUrl ? (
                                         <img
@@ -1174,15 +1169,10 @@ export default function DashboardPage() {
                                         Post
                                     </button>
                                 </div>
-                            </motion.div>
+                            </div>
 
                             {/* Your Feed - Real Posts from API */}
-                            <motion.div
-                                className="space-y-3"
-                                initial={false}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.4 }}
-                            >
+                            <div className="space-y-3">
                                 {/* Your Algorithm Banner */}
                                 <div className="bg-gradient-to-r from-[#00D4FF]/10 to-transparent rounded-xl border border-[#00D4FF]/20 p-4 flex items-center gap-4">
                                     <span className="text-2xl">🎯</span>
@@ -1396,41 +1386,27 @@ export default function DashboardPage() {
                                         </button>
                                     </div>
                                 )}
-                            </motion.div>
+                            </div>
                         </div>
 
                         {/* Sidebar - 0G Differentiators */}
                         <div className="space-y-6">
                             {/* People to Follow - Real Users */}
-                            <motion.div
-                                className="bg-white/[0.02] rounded-2xl border border-white/5 p-4"
-                                initial={false}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.35 }}
-                            >
+                            <div className="bg-white/[0.02] rounded-2xl border border-white/5 p-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="text-sm font-semibold text-white">People to Follow</h3>
                                     <Link href="/explore" className="text-xs text-[#00D4FF] hover:underline">See All</Link>
                                 </div>
                                 <PeopleToFollow currentUserId={user?.id} />
-                            </motion.div>
+                            </div>
 
                             {/* Data Ownership - No Lock-in */}
-                            <motion.div
-                                initial={false}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.5 }}
-                            >
+                            <div>
                                 <DataOwnershipPanel />
-                            </motion.div>
+                            </div>
 
                             {/* Privacy & Latency Indicators */}
-                            <motion.div
-                                className="bg-white/[0.02] rounded-2xl border border-white/5 p-5"
-                                initial={false}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.55 }}
-                            >
+                            <div className="bg-white/[0.02] rounded-2xl border border-white/5 p-5">
                                 <h3 className="text-sm font-semibold text-white mb-4">Why 0G is Different</h3>
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
@@ -1462,15 +1438,10 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
                                 </div>
-                            </motion.div>
+                            </div>
 
                             {/* Invite Card */}
-                            <motion.div
-                                className="bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 rounded-2xl border border-[#00D4FF]/20 p-5"
-                                initial={false}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.6 }}
-                            >
+                            <div className="bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 rounded-2xl border border-[#00D4FF]/20 p-5">
                                 <WaveIcon size={28} className="text-[#00D4FF] mb-2" />
                                 <h3 className="text-sm font-semibold text-white mb-1">Invite Your People</h3>
                                 <p className="text-xs text-white/50 mb-3">
@@ -1482,7 +1453,7 @@ export default function DashboardPage() {
                                 >
                                     Send Invites
                                 </Link>
-                            </motion.div>
+                            </div>
                         </div>
                     </div>
                 </div>
