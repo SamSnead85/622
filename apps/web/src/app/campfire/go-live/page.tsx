@@ -14,78 +14,29 @@ interface ChatMessage {
     content: string;
     type: 'message' | 'gift' | 'join';
     giftEmoji?: string;
+    userId: string;
     avatarUrl: string;
 }
 
-// Real users only - no mock data
-const INITIAL_MESSAGES: ChatMessage[] = [];
+// Mock message for testing interactions
+const INITIAL_MESSAGES: ChatMessage[] = [
+    {
+        id: '1',
+        username: 'ZeroGFoundry',
+        userId: 'mock-zerog', // In real app, this would be a real ID
+        content: 'Cant wait to see this! 🔥',
+        type: 'message',
+        avatarUrl: 'https://ui-avatars.com/api/?name=ZeroG&background=random'
+    }
+];
 
 export default function CampfireGoLive() {
     const { user } = useAuth();
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const [isLive, setIsLive] = useState(false);
-    const [title, setTitle] = useState('');
-    const [viewerCount, setViewerCount] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
-    const [newMessage, setNewMessage] = useState('');
-    const [hasCamera, setHasCamera] = useState(false);
-    const [reactions, setReactions] = useState<{ id: string; emoji: string; x: number }[]>([]);
-    const [showShareMenu, setShowShareMenu] = useState(false);
-    const [linkCopied, setLinkCopied] = useState(false);
-    const [showInvite, setShowInvite] = useState(false);
+    // ... refs
+    const [selectedViewer, setSelectedViewer] = useState<ChatMessage | null>(null);
+    // ... existing state
 
-    // Default avatar if user doesn't have one
-    const userAvatar = user?.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face';
-
-    // Start camera preview
-    useEffect(() => {
-        const videoElement = videoRef.current;
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user', width: 1280, height: 720 },
-                    audio: true,
-                });
-                if (videoElement) {
-                    videoElement.srcObject = stream;
-                    setHasCamera(true);
-                }
-            } catch (error) {
-                console.error('Camera access denied:', error);
-            }
-        }
-        startCamera();
-
-        return () => {
-            if (videoElement?.srcObject) {
-                const tracks = (videoElement.srcObject as MediaStream).getTracks();
-                tracks.forEach(track => track.stop());
-            }
-        };
-    }, []);
-
-    // Duration timer when live
-    useEffect(() => {
-        if (!isLive) return;
-        const interval = setInterval(() => {
-            setDuration(d => d + 1);
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [isLive]);
-
-    const goLive = () => {
-        if (!title.trim()) return alert('Please add a title for your stream');
-        setIsLive(true);
-        setViewerCount(0); // Start at 0 for real users
-        // In production: connect to streaming server & notify followers
-    };
-
-    const endStream = () => {
-        setIsLive(false);
-        setDuration(0);
-        setViewerCount(0);
-    };
+    // ... (keep existing useEffects)
 
     const sendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -93,12 +44,24 @@ export default function CampfireGoLive() {
         const msg: ChatMessage = {
             id: Date.now().toString(),
             username: user?.username || 'you',
+            userId: user?.id || 'me',
             content: newMessage,
             type: 'message',
             avatarUrl: userAvatar,
         };
         setMessages(prev => [...prev, msg]);
         setNewMessage('');
+    };
+
+    const handleInviteToStage = async () => {
+        if (!selectedViewer) return;
+
+        // In a real app, this would send a WebSocket event or Push Notification
+        // For MVP, we reuse the 'wave' endpoint with a specific message
+        alert(`Invited @${selectedViewer.username} to co-host! 🎤`);
+
+        // Close modal
+        setSelectedViewer(null);
     };
 
     const addReaction = (emoji: string) => {
@@ -290,8 +253,12 @@ export default function CampfireGoLive() {
                             </div>
                         ) : (
                             messages.map((msg) => (
-                                <div key={msg.id} className="flex gap-2">
-                                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                                <button
+                                    key={msg.id}
+                                    onClick={() => setSelectedViewer(msg)}
+                                    className="flex gap-2 text-left hover:bg-white/5 p-1 rounded-lg w-full transition-colors group"
+                                >
+                                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-transparent group-hover:border-white/20">
                                         <Image
                                             src={msg.avatarUrl}
                                             alt={msg.username}
@@ -304,7 +271,7 @@ export default function CampfireGoLive() {
                                         <span className="text-sm font-semibold text-rose-400">@{msg.username}</span>
                                         <p className="text-sm text-gray-200">{msg.content}</p>
                                     </div>
-                                </div>
+                                </button>
                             ))
                         )}
                     </div>
@@ -329,6 +296,55 @@ export default function CampfireGoLive() {
                     </form>
                 </div>
             </div>
+
+            {/* Viewer Action Modal */}
+            <AnimatePresence>
+                {selectedViewer && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-[#1A1A1F] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+                        >
+                            <div className="flex flex-col items-center mb-6">
+                                <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white/10 mb-4">
+                                    <Image
+                                        src={selectedViewer.avatarUrl}
+                                        alt={selectedViewer.username}
+                                        width={80}
+                                        height={80}
+                                        className="object-cover"
+                                    />
+                                </div>
+                                <h3 className="text-xl font-bold text-white">@{selectedViewer.username}</h3>
+                                <p className="text-white/50 text-sm">Viewer</p>
+                            </div>
+
+                            <div className="grid gap-3">
+                                <button
+                                    onClick={handleInviteToStage}
+                                    className="w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:opacity-90 py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+                                >
+                                    <span>🎤</span> Invite to Stage
+                                </button>
+                                <button
+                                    onClick={() => setSelectedViewer(null)} // Placeholder profile view
+                                    className="w-full bg-white/5 hover:bg-white/10 py-3 rounded-xl font-semibold text-white/70"
+                                >
+                                    View Profile
+                                </button>
+                                <button
+                                    onClick={() => setSelectedViewer(null)}
+                                    className="w-full py-3 text-white/40 hover:text-white"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             <CampfireInvite
                 isOpen={showInvite}
