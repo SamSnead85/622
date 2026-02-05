@@ -295,7 +295,7 @@ export function ImpactCounter() {
             </div>
 
             <p className="text-xs text-white/30 text-center mt-4">
-                0G is free forever. We are a zero-profit initiative. We do not monetize you.
+                0G is free forever. Built for community, not data.
             </p>
         </motion.div>
     );

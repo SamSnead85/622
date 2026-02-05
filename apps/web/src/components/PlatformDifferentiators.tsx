@@ -195,9 +195,9 @@ export function CreatorEarnings({
                     <span className="text-2xl">💰</span>
                 </div>
                 <div>
-                    <h3 className="font-semibold text-white mb-1">100% Yours</h3>
+                    <h3 className="font-semibold text-white mb-1">Direct Support</h3>
                     <p className="text-sm text-white/50">
-                        We take $0. You keep everything.
+                        Supporters back you directly.
                     </p>
                 </div>
             </div>
@@ -219,18 +219,14 @@ export function CreatorEarnings({
                 </div>
                 <div className="flex justify-between mt-2 text-xs text-white/40">
                     <span>Your share: 100%</span>
-                    <span>Platform: 0%</span>
                 </div>
             </div>
 
             <div className="bg-white/[0.02] rounded-xl p-3 flex items-center gap-3">
-                <span className="text-lg">📊</span>
+                <span className="text-lg">✨</span>
                 <div className="flex-1">
                     <p className="text-xs text-white/60">
-                        On TikTok, you&apos;d only get <span className="text-rose-400 font-semibold">${tiktokComparison.toFixed(2)}</span>
-                    </p>
-                    <p className="text-[10px] text-white/30">
-                        0G saves you ${(netEarnings - tiktokComparison).toFixed(2)} more
+                        Direct support from your community. No intermediaries.
                     </p>
                 </div>
             </div>

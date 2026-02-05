@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import {
     HomeIcon,
     SearchIcon,
@@ -123,7 +124,7 @@ export function Navigation({ activeTab, variant = 'default', userAvatarUrl, disp
                     <Link href="/profile" className="flex items-center gap-3 px-3 py-4 mt-4 border-t border-white/5 group">
                         <div className="w-10 h-10 rounded-full overflow-hidden relative ring-2 ring-white/10 group-hover:ring-[#00D4FF]/50 transition-all">
                             {/* Assuming next/image is handled by caller or basic img */}
-                            <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" />
+                            <Image src={avatarSrc} alt="Profile" fill className="object-cover" />
                         </div>
                         <div className="hidden xl:block overflow-hidden">
                             <p className="font-semibold text-white text-sm truncate group-hover:text-[#00D4FF] transition-colors">{displayName || 'Profile'}</p>
