@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
@@ -100,6 +100,7 @@ export default function UserProfilePage() {
     const [isFollowing, setIsFollowing] = useState(false);
     const [isEditingAdmin, setIsEditingAdmin] = useState(false);
     const [editForm, setEditForm] = useState({ displayName: '', bio: '', isVerified: false });
+    const [showWaveAnimation, setShowWaveAnimation] = useState(false);
 
     // Update form when profile loads
     useEffect(() => {
@@ -241,6 +242,10 @@ export default function UserProfilePage() {
     const handleWave = async () => {
         if (!profile?.id) return;
 
+        // Trigger Animation Immediately
+        setShowWaveAnimation(true);
+        setTimeout(() => setShowWaveAnimation(false), 2000);
+
         const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
         if (!token) return;
 
@@ -254,7 +259,7 @@ export default function UserProfilePage() {
                     'Content-Type': 'application/json',
                 },
             });
-            alert(`You waved at ${profile.displayName}! 👋`);
+            // No alert needed, visual feedback is enough
         } catch (err) {
             console.error('Error waving:', err);
         }
@@ -426,13 +431,41 @@ export default function UserProfilePage() {
                             </button>
                             {/* Wave Button */}
                             {currentUser?.id !== profile.id && (
-                                <button
-                                    onClick={handleWave}
-                                    className="px-4 py-2 rounded-full bg-amber-400 text-black font-semibold hover:bg-amber-300 transition-colors flex items-center gap-2"
-                                >
-                                    <span>👋</span>
-                                    <span className="hidden sm:inline">Say Hi</span>
-                                </button>
+                                <div className="relative">
+                                    <motion.button
+                                        onClick={handleWave}
+                                        whileTap={{ scale: 0.9 }}
+                                        animate={showWaveAnimation ? { scale: [1, 1.1, 1] } : {}}
+                                        className={`px-5 py-2 rounded-full font-bold flex items-center gap-2 shadow-lg transition-all ${showWaveAnimation
+                                                ? 'bg-green-500 text-black shadow-green-500/50 ring-2 ring-green-400'
+                                                : 'bg-gradient-to-r from-amber-300 to-orange-400 text-black shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-0.5'
+                                            }`}
+                                    >
+                                        <span className="text-lg">👋</span>
+                                        <span className="hidden sm:inline font-bold tracking-wide">
+                                            {showWaveAnimation ? 'Waved!' : 'Say Hi'}
+                                        </span>
+                                    </motion.button>
+
+                                    <AnimatePresence>
+                                        {showWaveAnimation && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 0, scale: 0.5, rotate: 0 }}
+                                                animate={{ opacity: 1, y: -80, scale: 2.5, rotate: [0, -20, 20, -10, 0] }}
+                                                exit={{ opacity: 0, y: -120, scale: 1.5 }}
+                                                transition={{ duration: 0.8, ease: "easeOut" }}
+                                                className="absolute left-1/2 -translate-x-1/2 top-0 pointer-events-none z-50 whitespace-nowrap"
+                                            >
+                                                <span className="text-6xl drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] filter">👋</span>
+                                                <motion.div
+                                                    initial={{ opacity: 0, scale: 0 }}
+                                                    animate={{ opacity: 1, scale: 1.5 }}
+                                                    className="absolute inset-0 bg-yellow-400/30 blur-2xl rounded-full -z-10"
+                                                />
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                             )}
                             {isAdmin && (
                                 <button
