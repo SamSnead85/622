@@ -31,10 +31,23 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
         const hasMore = users.length > parseInt(limit as string);
         const results = hasMore ? users.slice(0, -1) : users;
 
+        let followingIds = new Set<string>();
+        if (req.userId) {
+            const follows = await prisma.follow.findMany({
+                where: {
+                    followerId: req.userId,
+                    followingId: { in: results.map((u) => u.id) },
+                },
+                select: { followingId: true },
+            });
+            followingIds = new Set(follows.map((f) => f.followingId));
+        }
+
         res.json({
             users: results.map((u) => ({
                 ...u,
                 followersCount: u._count.followers,
+                isFollowing: followingIds.has(u.id),
             })),
             nextCursor: hasMore ? results[results.length - 1].id : null,
         });
@@ -75,10 +88,23 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
             },
         });
 
+        let followingIds = new Set<string>();
+        if (req.userId && users.length > 0) {
+            const follows = await prisma.follow.findMany({
+                where: {
+                    followerId: req.userId,
+                    followingId: { in: users.map((u) => u.id) },
+                },
+                select: { followingId: true },
+            });
+            followingIds = new Set(follows.map((f) => f.followingId));
+        }
+
         res.json({
             users: users.map((u) => ({
                 ...u,
                 followersCount: u._count.followers,
+                isFollowing: followingIds.has(u.id),
             })),
         });
     } catch (error) {

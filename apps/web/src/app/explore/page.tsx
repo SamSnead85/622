@@ -18,6 +18,7 @@ import {
 } from '@/components/icons';
 
 // Types for real data
+// Enhanced User Interface
 interface User {
     id: string;
     username: string;
@@ -26,6 +27,8 @@ interface User {
     bio?: string;
     followersCount?: number;
     isOnline?: boolean;
+    isFollowing?: boolean;
+    isVerified?: boolean;
 }
 
 interface Post {
@@ -120,6 +123,7 @@ function ExplorePageContent() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+    const [connectingIds, setConnectingIds] = useState<Set<string>>(new Set());
     const { user } = useAuth();
     const userAvatarUrl = user?.avatarUrl;
 
@@ -129,9 +133,15 @@ function ExplorePageContent() {
             const response = await apiFetch(`${API_ENDPOINTS.users}?limit=20`);
             if (response.ok) {
                 const data = await response.json();
-                // Filter out current user
                 const otherUsers = (data.users || data || []).filter((u: User) => u.id !== user?.id);
                 setUsers(otherUsers);
+
+                // Initialize following status
+                const initialFollowing = new Set<string>();
+                otherUsers.forEach((u: User) => {
+                    if (u.isFollowing) initialFollowing.add(u.id);
+                });
+                setFollowingIds(initialFollowing);
             }
         } catch (error) {
             console.error('Failed to fetch users:', error);
@@ -163,14 +173,22 @@ function ExplorePageContent() {
                 const data = await response.json();
                 const otherUsers = (data.users || data || []).filter((u: User) => u.id !== user?.id);
                 setUsers(otherUsers);
+
+                // Update following status for search results
+                const currentFollowing = new Set<string>(followingIds); // Keep existing known follows
+                otherUsers.forEach((u: User) => {
+                    if (u.isFollowing) currentFollowing.add(u.id);
+                });
+                setFollowingIds(currentFollowing);
             }
         } catch (error) {
             console.error('Search failed:', error);
         }
-    }, [fetchUsers, user?.id]);
+    }, [fetchUsers, user?.id, followingIds]);
 
     // Follow a user
     const handleFollow = async (userId: string) => {
+        setConnectingIds(prev => new Set(prev).add(userId));
         try {
             const response = await apiFetch(`${API_ENDPOINTS.users}/${userId}/follow`, {
                 method: 'POST',
@@ -180,11 +198,18 @@ function ExplorePageContent() {
             }
         } catch (error) {
             console.error('Failed to follow:', error);
+        } finally {
+            setConnectingIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(userId);
+                return newSet;
+            });
         }
     };
 
     // Unfollow a user
     const handleUnfollow = async (userId: string) => {
+        setConnectingIds(prev => new Set(prev).add(userId));
         try {
             const response = await apiFetch(`${API_ENDPOINTS.users}/${userId}/follow`, {
                 method: 'DELETE',
@@ -198,6 +223,12 @@ function ExplorePageContent() {
             }
         } catch (error) {
             console.error('Failed to unfollow:', error);
+        } finally {
+            setConnectingIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(userId);
+                return newSet;
+            });
         }
     };
 
@@ -214,25 +245,31 @@ function ExplorePageContent() {
     // Debounced search
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (activeCategory === 'people') {
+            if (activeCategory === 'people' && searchQuery) {
                 searchUsers(searchQuery);
+            } else if (activeCategory === 'people' && !searchQuery) {
+                fetchUsers();
             }
         }, 300);
         return () => clearTimeout(timer);
-    }, [searchQuery, activeCategory, searchUsers]);
+    }, [searchQuery, activeCategory, searchUsers, fetchUsers]);
 
-    const categories = ['people', 'posts', 'tribes'];
+    const categories = [
+        { id: 'people', label: 'People' },
+        { id: 'posts', label: 'Posts' },
+        { id: 'tribes', label: 'Tribes' }
+    ];
 
     if (!mounted) {
         return <div className="min-h-screen bg-[#050508]" />;
     }
 
     return (
-        <div className="min-h-screen bg-[#050508] relative">
+        <div className="min-h-screen bg-[#050508] relative font-sans">
             {/* Ambient background */}
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-violet-500/5 blur-[100px]" />
-                <div className="absolute bottom-1/4 left-1/4 w-80 h-80 rounded-full bg-cyan-500/5 blur-[100px]" />
+                <div className="absolute top-0 right-1/4 w-[500px] h-[500px] rounded-full bg-violet-600/5 blur-[120px]" />
+                <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-cyan-600/5 blur-[120px]" />
             </div>
 
             <Navigation
@@ -242,184 +279,213 @@ function ExplorePageContent() {
                 username={user?.username}
             />
 
-            <main className="relative z-10 lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
+            <main className="relative z-10 lg:ml-20 xl:ml-64 pb-24 lg:pb-8 transition-all duration-300">
                 {/* Header */}
-                <header className="sticky top-0 z-30 px-4 lg:px-6 py-4 bg-black/60 backdrop-blur-xl border-b border-white/5">
+                <header className="sticky top-0 z-30 px-4 lg:px-6 py-4 bg-black/80 backdrop-blur-xl border-b border-white/5 supports-[backdrop-filter]:bg-black/60">
                     <div className="max-w-6xl mx-auto">
                         <div className="flex items-center gap-4">
                             {/* Search */}
-                            <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/5 border border-white/10">
-                                <svg className="w-5 h-5 text-white/40" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                    <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" />
-                                </svg>
+                            <div className="flex-1 flex items-center gap-3 px-5 py-3.5 rounded-full bg-white/5 border border-white/10 focus-within:border-[#00D4FF]/50 focus-within:bg-white/10 transition-all group shadow-inner">
+                                <SearchIcon className="w-5 h-5 text-white/40 group-focus-within:text-[#00D4FF] transition-colors" />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search people by name or username..."
-                                    className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none"
+                                    placeholder="Search people, tags, and vibes..."
+                                    className="flex-1 bg-transparent text-white placeholder:text-white/30 focus:outline-none font-medium"
                                 />
                             </div>
                         </div>
 
                         {/* Categories */}
-                        <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide">
+                        <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide py-1">
                             {categories.map((cat) => (
                                 <button
-                                    key={cat}
-                                    onClick={() => setActiveCategory(cat)}
-                                    className={`px-4 py-2 rounded-full text-sm font-medium capitalize whitespace-nowrap transition-all ${activeCategory === cat
-                                        ? 'bg-white text-black'
-                                        : 'bg-white/10 text-white hover:bg-white/15'
+                                    key={cat.id}
+                                    onClick={() => setActiveCategory(cat.id)}
+                                    className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${activeCategory === cat.id
+                                        ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.3)]'
+                                        : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/5 hover:border-white/10'
                                         }`}
                                 >
-                                    {cat}
+                                    {cat.label}
                                 </button>
                             ))}
                         </div>
                     </div>
                 </header>
 
-                <div className="max-w-6xl mx-auto px-4 lg:px-6 py-6">
+                <div className="max-w-6xl mx-auto px-4 lg:px-6 py-8">
                     {loading ? (
-                        <div className="flex items-center justify-center py-20">
-                            <div className="w-8 h-8 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full animate-spin" />
+                        <div className="flex items-center justify-center py-32">
+                            <div className="relative">
+                                <div className="w-12 h-12 border-4 border-[#00D4FF]/20 border-t-[#00D4FF] rounded-full animate-spin" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-2 h-2 bg-[#00D4FF] rounded-full animate-pulse" />
+                                </div>
+                            </div>
                         </div>
                     ) : activeCategory === 'people' ? (
                         /* People Grid */
-                        <div className="space-y-4">
-                            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                <UsersIcon size={20} className="text-cyan-500" />
-                                {searchQuery ? `Search results for "${searchQuery}"` : 'People on 0G'}
+                        <div className="space-y-6">
+                            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-400">
+                                    {searchQuery ? `Searching "${searchQuery}"` : 'Discover People'}
+                                </span>
                             </h2>
 
                             {users.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <UsersIcon size={48} className="mx-auto text-white/20 mb-4" />
-                                    <p className="text-white/50">
-                                        {searchQuery ? 'No users found matching your search' : 'No other users yet. Invite friends to join!'}
-                                    </p>
-                                    <Link href="/invite" className="inline-block mt-4 px-6 py-2 rounded-full bg-[#00D4FF] text-black font-medium">
-                                        Invite Friends
-                                    </Link>
+                                <div className="flex flex-col items-center justify-center py-24 bg-white/5 rounded-3xl border border-white/5 border-dashed">
+                                    <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
+                                        <UsersIcon size={40} className="text-white/20" />
+                                    </div>
+                                    <p className="text-white/50 text-lg font-medium">No explorers found here.</p>
+                                    <p className="text-white/30 text-sm mt-1">Try a different search term.</p>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {users.map((u) => (
-                                        <motion.div
-                                            key={u.id}
-                                            className="bg-white/5 rounded-2xl p-4 border border-white/10 hover:border-white/20 transition-colors"
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Link href={`/profile/${u.username}`} className="relative">
-                                                    <div className="w-14 h-14 rounded-full overflow-hidden relative ring-2 ring-white/10">
-                                                        <Image
-                                                            src={u.avatarUrl && !u.avatarUrl.startsWith('preset:') ? u.avatarUrl : 'https://ui-avatars.com/api/?name=User&background=random'}
-                                                            alt={u.displayName || u.username}
-                                                            fill
-                                                            className="object-cover"
-                                                        />
-                                                    </div>
-                                                    {/* Online indicator */}
-                                                    {u.isOnline && (
-                                                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-[#050508]" />
-                                                    )}
-                                                </Link>
-                                                <div className="flex-1 min-w-0">
-                                                    <Link href={`/profile/${u.username}`}>
-                                                        <p className="font-semibold text-white truncate hover:text-[#00D4FF] transition-colors">
-                                                            {u.displayName || u.username}
-                                                        </p>
-                                                    </Link>
-                                                    <p className="text-sm text-white/50">@{u.username}</p>
-                                                    {u.bio && <p className="text-xs text-white/40 truncate mt-1">{u.bio}</p>}
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 mt-4">
-                                                {followingIds.has(u.id) ? (
-                                                    <button
-                                                        onClick={() => handleUnfollow(u.id)}
-                                                        className="flex-1 px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/15 transition-colors"
-                                                    >
-                                                        Following
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => handleFollow(u.id)}
-                                                        className="flex-1 px-4 py-2 rounded-xl bg-[#00D4FF] text-black text-sm font-medium hover:bg-[#00D4FF]/90 transition-colors"
-                                                    >
-                                                        Connect
-                                                    </button>
-                                                )}
-                                                <Link href={`/messages?to=${u.id}`} className="px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/15 transition-colors">
-                                                    Message
-                                                </Link>
-                                            </div>
-                                            {/* Invite to Tribe Button */}
-                                            <Link
-                                                href={`/communities?invite=${u.id}`}
-                                                className="mt-2 w-full px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500/20 to-violet-500/20 border border-purple-500/30 text-purple-300 text-sm font-medium hover:bg-purple-500/30 transition-colors text-center flex items-center justify-center gap-2"
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                    {users.map((u) => {
+                                        const isFollowing = followingIds.has(u.id);
+                                        const isConnecting = connectingIds.has(u.id);
+
+                                        return (
+                                            <motion.div
+                                                key={u.id}
+                                                className="group relative bg-[#121216] hover:bg-[#16161c] rounded-3xl p-5 border border-white/5 hover:border-[#00D4FF]/30 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] overflow-hidden"
+                                                initial={{ opacity: 0, y: 15 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                layoutId={`user-${u.id}`}
                                             >
-                                                <UsersIcon size={16} />
-                                                Invite to Tribe
-                                            </Link>
-                                        </motion.div>
-                                    ))}
+                                                {/* Hover Glow Effect */}
+                                                <div className="absolute top-0 right-0 w-24 h-24 bg-[#00D4FF]/10 blur-[50px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+                                                <div className="flex items-start gap-4 relative z-10">
+                                                    <Link href={`/profile/${u.username}`} className="relative flex-shrink-0">
+                                                        <div className="w-16 h-16 rounded-full overflow-hidden relative ring-2 ring-white/10 group-hover:ring-[#00D4FF]/50 transition-all">
+                                                            <Image
+                                                                src={u.avatarUrl && !u.avatarUrl.startsWith('preset:') ? u.avatarUrl : `https://ui-avatars.com/api/?name=${u.displayName || u.username}&background=random`}
+                                                                alt={u.displayName || u.username}
+                                                                fill
+                                                                className="object-cover"
+                                                            />
+                                                        </div>
+                                                        {u.isOnline && (
+                                                            <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-4 border-[#121216]" />
+                                                        )}
+                                                    </Link>
+
+                                                    <div className="flex-1 min-w-0 pt-1">
+                                                        <Link href={`/profile/${u.username}`} className="block">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <h3 className="font-bold text-white text-lg truncate group-hover:text-[#00D4FF] transition-colors leading-tight">
+                                                                    {u.displayName || u.username}
+                                                                </h3>
+                                                                {u.isVerified && (
+                                                                    <div className="text-[#00D4FF]">
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-white/40 text-sm font-medium">@{u.username}</p>
+                                                        </Link>
+
+                                                        {u.followersCount !== undefined && (
+                                                            <p className="text-white/30 text-xs mt-1">
+                                                                {u.followersCount} followers
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Bio */}
+                                                {u.bio && (
+                                                    <p className="text-white/60 text-sm mt-3 line-clamp-2 leading-relaxed h-[2.5em] relative z-10">
+                                                        {u.bio}
+                                                    </p>
+                                                )}
+
+                                                {/* Actions */}
+                                                <div className="grid grid-cols-2 gap-2 mt-5 relative z-10">
+                                                    <button
+                                                        onClick={() => isFollowing ? handleUnfollow(u.id) : handleFollow(u.id)}
+                                                        disabled={isConnecting}
+                                                        className={`col-span-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${isFollowing
+                                                            ? 'bg-white/5 text-white/60 hover:bg-red-500/10 hover:text-red-400 border border-white/5'
+                                                            : 'bg-[#00D4FF] text-black hover:bg-[#00D4FF]/90 shadow-[0_4px_12px_rgba(6,182,212,0.2)]'
+                                                            } ${isConnecting ? 'opacity-80 cursor-wait' : ''}`}
+                                                    >
+                                                        {isConnecting ? (
+                                                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                        ) : isFollowing ? (
+                                                            'Following'
+                                                        ) : (
+                                                            'Connect'
+                                                        )}
+                                                    </button>
+                                                    <Link
+                                                        href={`/messages?to=${u.id}`}
+                                                        className="col-span-1 py-2.5 rounded-xl bg-white/5 text-white font-medium text-sm hover:bg-white/10 hover:text-white transition-colors border border-white/5 flex items-center justify-center"
+                                                    >
+                                                        Message
+                                                    </Link>
+                                                </div>
+
+                                                <Link
+                                                    href={`/communities?invite=${u.id}`}
+                                                    className="block w-full text-center mt-3 py-2 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors"
+                                                >
+                                                    + Invite to Tribe
+                                                </Link>
+                                            </motion.div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
                     ) : activeCategory === 'posts' ? (
                         /* Posts Grid */
-                        <div className="space-y-4">
-                            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                <TrendingIcon size={20} className="text-orange-500" />
-                                Public Posts
+                        <div className="space-y-6">
+                            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                <TrendingIcon size={24} className="text-orange-500" />
+                                <span>Trending Now</span>
                             </h2>
 
                             {posts.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <PlayIcon size={48} className="mx-auto text-white/20 mb-4" />
-                                    <p className="text-white/50">No public posts yet. Be the first to share!</p>
+                                <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5 border-dashed">
+                                    <PlayIcon size={40} className="mx-auto text-white/20 mb-4" />
+                                    <p className="text-white/50 font-medium">The feed is quiet.</p>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-3 gap-1 md:gap-2">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 md:gap-3">
                                     {posts.map((post, i) => (
                                         <motion.div
                                             key={post.id}
-                                            className="relative overflow-hidden rounded-lg md:rounded-xl cursor-pointer group aspect-square"
-                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            className="relative overflow-hidden rounded-xl bg-gray-900 aspect-square group cursor-pointer"
+                                            initial={{ opacity: 0, scale: 0.95 }}
                                             animate={{ opacity: 1, scale: 1 }}
-                                            transition={{ delay: i * 0.03 }}
-                                            whileHover={{ scale: 1.02 }}
+                                            transition={{ delay: i * 0.05 }}
+                                            whileHover={{ y: -5, zIndex: 10 }}
                                         >
                                             <Image
-                                                src={post.thumbnailUrl || post.mediaUrl || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop'}
+                                                src={post.thumbnailUrl || post.mediaUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&h=500&fit=crop'}
                                                 alt={post.caption || 'Post'}
                                                 fill
-                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                                className="object-cover transition-transform duration-500 group-hover:scale-110"
                                             />
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-4 text-white">
-                                                    {post.type === 'VIDEO' ? (
-                                                        <span className="flex items-center gap-1">
-                                                            <PlayIcon size={18} />
-                                                            <span className="font-semibold">{(post.viewCount / 1000).toFixed(0)}K</span>
-                                                        </span>
-                                                    ) : (
-                                                        <span className="flex items-center gap-1">
-                                                            <HeartIcon size={18} />
-                                                            <span className="font-semibold">{post.viewCount}</span>
-                                                        </span>
-                                                    )}
+                                            {/* Gradient Overlay */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+                                                <div className="text-white w-full">
+                                                    <div className="flex items-center justify-between text-xs font-medium">
+                                                        <div className="flex items-center gap-1">
+                                                            <HeartIcon size={14} className="text-white" />
+                                                            {post.viewCount}
+                                                        </div>
+                                                        {post.type === 'VIDEO' && <PlayIcon size={14} />}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            {post.type === 'VIDEO' && (
-                                                <div className="absolute top-2 right-2 px-2 py-1 rounded bg-black/50 text-white text-xs">
-                                                    <PlayIcon size={14} />
-                                                </div>
-                                            )}
                                         </motion.div>
                                     ))}
                                 </div>
@@ -427,11 +493,16 @@ function ExplorePageContent() {
                         </div>
                     ) : (
                         /* Tribes Link */
-                        <div className="text-center py-12">
-                            <UsersIcon size={48} className="mx-auto text-white/20 mb-4" />
-                            <p className="text-white/50 mb-4">Explore and join tribes to connect with communities</p>
-                            <Link href="/communities" className="inline-block px-6 py-2 rounded-full bg-[#00D4FF] text-black font-medium">
-                                Browse Tribes
+                        <div className="flex flex-col items-center justify-center py-32 bg-[#121216] rounded-3xl border border-white/5">
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center mb-6 ring-1 ring-white/10">
+                                <UsersIcon size={48} className="text-violet-400" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-2">Find Your Tribe</h3>
+                            <p className="text-white/50 text-center max-w-md mb-8 leading-relaxed">
+                                Connect with communities that share your passions. <br />From creators to gamers, everyone has a home here.
+                            </p>
+                            <Link href="/communities" className="px-8 py-3 rounded-full bg-white text-black font-bold hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                                Enter Tribes
                             </Link>
                         </div>
                     )}
