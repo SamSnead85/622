@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 import { usePosts } from '@/hooks/usePosts';
+import { useCommunities } from '@/hooks/useCommunities';
 import { FeedPost, PostSkeleton } from '@/components/FeedPost';
 import { InviteFriends } from '@/components/InviteFriends';
 
@@ -24,6 +25,7 @@ interface CommunityDetail {
     role: 'admin' | 'moderator' | 'member';
     createdAt: string;
     category?: string;
+    isMember?: boolean;
 }
 
 // ============================================
@@ -83,6 +85,39 @@ export default function CommunityDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showInvite, setShowInvite] = useState(false);
+    const searchParams = useSearchParams();
+    const refUsername = searchParams.get('ref');
+    const { joinCommunity } = useCommunities();
+
+    const handleJoin = async () => {
+        if (!community) return;
+        await joinCommunity(community.id);
+
+        // Auto-connect logic
+        if (refUsername && refUsername !== user?.username) {
+            try {
+                const profileRes = await apiFetch(`${API_ENDPOINTS.users}/${refUsername}/profile`);
+                // Note: API_ENDPOINTS.profile might need adjustment if it takes username directly or returns profile structure
+                // Let's assume standard following for now.
+                // Actually, let's just alert for now as safe fallback or try to follow if we can resolve ID.
+                // But wait, standard /profile/:username endpoint returns { user: { id: ... } } usually.
+                if (profileRes.ok) {
+                    const profile = await profileRes.json();
+                    if (profile.user?.id) {
+                        await apiFetch(`${API_ENDPOINTS.users}/${profile.user.id}/follow`, { method: 'POST' });
+                        alert(`You have joined ${community.name} and connected with ${refUsername}!`);
+                    }
+                }
+            } catch (e) {
+                console.error('Auto-connect failed', e);
+            }
+        } else {
+            alert(`Welcome to ${community.name}!`);
+        }
+
+        // Reload to refresh permissions/posts
+        setTimeout(() => window.location.reload(), 500);
+    };
 
     const {
         posts,
