@@ -25,6 +25,10 @@ export function isYouTubeUrl(url: string): boolean {
     return url.includes('youtube.com') || url.includes('youtube-nocookie.com') || url.includes('youtu.be');
 }
 
+export function isKickUrl(url: string): boolean {
+    return url.includes('kick.com');
+}
+
 export function getYouTubeEmbedUrl(url: string): string {
     if (url.includes('/embed/')) {
         if (!url.includes('modestbranding')) {
@@ -45,6 +49,44 @@ export function getYouTubeEmbedUrl(url: string): string {
     }
     return url;
 }
+
+export function getKickEmbedUrl(url: string): string {
+    // kick.com/username/video/uuid
+    // kick.com/username
+    if (url.includes('kick.com/')) {
+        const parts = url.split('kick.com/')[1].split('/');
+        const username = parts[0];
+
+        // Live channel embed
+        if (parts.length === 1 || (parts.length > 0 && !parts.includes('video'))) {
+            return `https://player.kick.com/${username}?autoplay=true&muted=true`;
+        }
+
+        // VOD embed not officially supported purely via ID in simplified player, 
+        // but often player.kick.com works for clips if structured right.
+        // For now, default to channel player for live discovery.
+        return `https://player.kick.com/${username}?autoplay=true&muted=true`;
+    }
+    return url;
+}
+
+export function KickEmbed({ src }: { src: string }) {
+    const embedUrl = getKickEmbedUrl(src);
+    return (
+        <div className="relative w-full aspect-video bg-black">
+            <iframe
+                src={embedUrl}
+                className="absolute inset-0 w-full h-full"
+                allowFullScreen
+                frameBorder="0"
+                title="Kick Video"
+                scrolling="no"
+            />
+        </div>
+    );
+}
+
+
 
 export function YouTubeEmbed({ src }: { src: string }) {
     const embedUrl = getYouTubeEmbedUrl(src);
@@ -297,6 +339,8 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                     <div className="relative w-full bg-black/30 overflow-hidden cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
                         {isYouTubeUrl(post.mediaUrl) ? (
                             <YouTubeEmbed src={post.mediaUrl} />
+                        ) : isKickUrl(post.mediaUrl) ? (
+                            <KickEmbed src={post.mediaUrl} />
                         ) : post.mediaType === 'VIDEO' ? (
                             <div className="aspect-[4/3]">
                                 <AutoPlayVideo src={post.mediaUrl} />
