@@ -67,10 +67,16 @@ export const errorHandler = (
         }
     }
 
+    // Multer errors
+    if (err.name === 'MulterError') {
+        res.status(400).json({
+            error: `Upload error: ${err.message}`,
+        });
+        return;
+    }
+
     // Default error
     res.status(500).json({
-        error: process.env.NODE_ENV === 'production'
-            ? 'Internal server error'
-            : err.message,
+        error: err.message || 'Internal server error',
     });
 };
