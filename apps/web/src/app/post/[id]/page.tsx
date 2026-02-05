@@ -276,11 +276,28 @@ export default function PostDetailPage() {
                     {post.mediaUrl && (
                         <div className="relative">
                             {post.mediaType === 'VIDEO' ? (
-                                <video
-                                    src={post.mediaUrl}
-                                    controls
-                                    className="w-full max-h-[600px] object-contain bg-black"
-                                />
+                                // Check if it's a YouTube URL - use iframe, otherwise native video
+                                post.mediaUrl.includes('youtube') || post.mediaUrl.includes('youtu.be') ? (
+                                    <div className="relative w-full aspect-video bg-black">
+                                        <iframe
+                                            src={post.mediaUrl}
+                                            className="absolute inset-0 w-full h-full"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                            frameBorder="0"
+                                            title="Video"
+                                        />
+                                    </div>
+                                ) : (
+                                    <video
+                                        src={post.mediaUrl}
+                                        controls
+                                        autoPlay
+                                        muted={false}
+                                        playsInline
+                                        className="w-full max-h-[600px] object-contain bg-black"
+                                    />
+                                )
                             ) : (
                                 <img
                                     src={post.mediaUrl}
