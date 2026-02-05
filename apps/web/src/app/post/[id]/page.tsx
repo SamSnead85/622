@@ -413,15 +413,24 @@ export default function PostDetailPage() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-[#0A0A0A] to-[#121212]">
             {/* Header */}
+            {/* Header */}
             <header className="sticky top-0 z-50 bg-[#0A0A0A]/90 backdrop-blur-lg border-b border-white/5">
-                <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
-                    <button
-                        onClick={() => router.back()}
-                        className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href="/dashboard"
+                            className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                        >
+                            <ArrowLeftIcon size={24} className="text-white" />
+                        </Link>
+                        <h1 className="text-lg font-semibold text-white">Post</h1>
+                    </div>
+                    <Link
+                        href="/dashboard"
+                        className="px-4 py-2 rounded-full bg-white/10 text-white font-medium hover:bg-white/15 transition-colors text-sm"
                     >
-                        <ArrowLeftIcon size={24} className="text-white" />
-                    </button>
-                    <h1 className="text-lg font-semibold text-white">Post</h1>
+                        Back to Feed
+                    </Link>
                 </div>
             </header>
 
