@@ -1001,8 +1001,8 @@ export default function DashboardPage() {
 
     return (
         <main className="min-h-screen bg-black text-white">
-            {/* Background */}
-            <div className="fixed inset-0 pointer-events-none">
+            {/* Background - z-[-1] ensures it renders BEHIND content */}
+            <div className="fixed inset-0 pointer-events-none z-[-1]">
                 <div className="absolute inset-0 bg-gradient-to-b from-[#0A1628] via-black to-black" />
                 <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-[#00D4FF]/5 blur-[120px]" />
                 <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#8B5CF6]/5 blur-[100px]" />
