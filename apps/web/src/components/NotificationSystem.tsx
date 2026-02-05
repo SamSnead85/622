@@ -173,7 +173,7 @@ export function useNotificationPreferences() {
 
 interface Notification {
     id: string;
-    type: 'like' | 'comment' | 'follow' | 'mention' | 'message' | 'system';
+    type: 'like' | 'comment' | 'follow' | 'mention' | 'message' | 'system' | 'WAVE';
     title: string;
     body: string;
     avatarUrl?: string;
@@ -209,6 +209,7 @@ export function NotificationCenter({
             case 'mention': return '@';
             case 'message': return '✉️';
             case 'system': return '🔔';
+            case 'WAVE': return '👋';
         }
     };
 
