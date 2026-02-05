@@ -100,7 +100,7 @@ function YouTubeEmbed({ src }: { src: string }) {
 function AutoPlayVideo({ src, className = '' }: { src: string; className?: string }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isMuted, setIsMuted] = useState(true);
+    const [isMuted, setIsMuted] = useState(false); // Start unmuted - TikTok style
     const [progress, setProgress] = useState(0);
     const [showControls, setShowControls] = useState(false);
 
@@ -122,10 +122,25 @@ function AutoPlayVideo({ src, className = '' }: { src: string; className?: strin
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting && entry.intersectionRatio >= 0.75) {
-                        video.play().catch(() => {
-                            console.log('Autoplay blocked, user interaction required');
-                        });
-                        setIsPlaying(true);
+                        // TikTok-style: Try to play with sound first
+                        video.muted = false;
+                        video.play()
+                            .then(() => {
+                                // Successfully playing with sound
+                                setIsMuted(false);
+                                setIsPlaying(true);
+                            })
+                            .catch(() => {
+                                // Browser blocked autoplay with sound, fallback to muted
+                                console.log('Autoplay with sound blocked, playing muted');
+                                video.muted = true;
+                                setIsMuted(true);
+                                video.play()
+                                    .then(() => setIsPlaying(true))
+                                    .catch(() => {
+                                        console.log('Autoplay completely blocked');
+                                    });
+                            });
                     } else {
                         video.pause();
                         setIsPlaying(false);
