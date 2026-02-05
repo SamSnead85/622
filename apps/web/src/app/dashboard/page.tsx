@@ -11,6 +11,7 @@ import { ReactionSpectrum, IntentionBadge, REACTION_SPECTRUM } from '@/component
 import { DataOwnershipPanel, PrivacyFirstBadge, LiveLatencyIndicator } from '@/components/PlatformDifferentiators';
 import { PostActions } from '@/components/PostActions';
 import { FeedPost, PostSkeleton } from '@/components/FeedPost';
+import { TheCompass, ViewMode, ScopeMode } from '@/components/TheCompass';
 import {
     HomeIcon,
     SearchIcon,
@@ -965,6 +966,9 @@ export default function DashboardPage() {
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
     const loadMoreRef = useRef<HTMLDivElement>(null);
+    const [viewMode, setViewMode] = useState<ViewMode>('standard');
+    const [scopeMode, setScopeMode] = useState<ScopeMode>('orbit');
+    const [zenMode, setZenMode] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -1160,17 +1164,15 @@ export default function DashboardPage() {
 
                             {/* Your Feed - Real Posts from API */}
                             <div className="space-y-3">
-                                {/* Your Algorithm Banner */}
-                                <div className="bg-gradient-to-r from-[#00D4FF]/10 to-transparent rounded-xl border border-[#00D4FF]/20 p-4 flex items-center gap-4">
-                                    <span className="text-2xl">🎯</span>
-                                    <div className="flex-1">
-                                        <p className="text-sm font-medium text-white">Your Feed, Your Rules</p>
-                                        <p className="text-xs text-white/50">You control what shows here. No hidden algorithms.</p>
-                                    </div>
-                                    <Link href="/algorithm" className="text-xs text-[#00D4FF] font-medium hover:underline">
-                                        Customize →
-                                    </Link>
-                                </div>
+                                {/* THE COMPASS - Navigation Singularity */}
+                                <TheCompass
+                                    viewMode={viewMode}
+                                    setViewMode={setViewMode}
+                                    scopeMode={scopeMode}
+                                    setScopeMode={setScopeMode}
+                                    zenMode={zenMode}
+                                    setZenMode={setZenMode}
+                                />
 
                                 {/* Loading State - Premium Skeletons */}
                                 {postsLoading && posts.length === 0 && (
@@ -1211,6 +1213,7 @@ export default function DashboardPage() {
                                             likePost={likePost}
                                             toggleRsvp={toggleRsvp}
                                             deletePost={deletePost}
+                                            zenMode={zenMode}
                                         />
                                     </motion.div>
                                 ))}

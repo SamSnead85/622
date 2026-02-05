@@ -221,9 +221,10 @@ interface FeedPostProps {
     likePost: (id: string) => void;
     toggleRsvp: (id: string) => void;
     deletePost: (id: string) => Promise<{ success: boolean; error?: string }>;
+    zenMode?: boolean;
 }
 
-export function FeedPost({ post, likePost, toggleRsvp, deletePost }: FeedPostProps) {
+export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = false }: FeedPostProps) {
     const { user, isAdmin } = useAuth();
     const router = useRouter();
 
@@ -334,7 +335,9 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost }: FeedPostPro
                             <div className="relative">
                                 <HeartIcon size={24} className={`transition-transform duration-300 group-hover:scale-110 ${post.isLiked ? 'fill-rose-500' : ''}`} />
                             </div>
-                            <span className="text-sm font-medium">{post.likes || 0}</span>
+                            <span className={`text-sm font-medium transition-opacity ${zenMode ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
+                                {post.likes || 0}
+                            </span>
                         </button>
 
                         <button
@@ -342,7 +345,9 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost }: FeedPostPro
                             className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-all group"
                         >
                             <MessageIcon size={24} className="transition-transform duration-300 group-hover:scale-110" />
-                            <span className="text-sm font-medium">{post.commentsCount || 0}</span>
+                            <span className={`text-sm font-medium transition-opacity ${zenMode ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
+                                {post.commentsCount || 0}
+                            </span>
                         </button>
 
                         {post.type === 'RALLY' && (
