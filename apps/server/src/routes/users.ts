@@ -442,4 +442,39 @@ router.get('/:userId/posts', optionalAuth, async (req: AuthRequest, res, next) =
     }
 });
 
+// POST /api/v1/users/:id/wave - Send a wave/greeting
+router.post('/:id/wave', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { id } = req.params;
+        const senderId = req.userId!;
+        const { message = 'waved at you! 👋' } = req.body;
+
+        if (id === senderId) {
+            throw new AppError('Cannot wave at yourself', 400);
+        }
+
+        const targetUser = await prisma.user.findUnique({
+            where: { id }
+        });
+
+        if (!targetUser) {
+            throw new AppError('User not found', 404);
+        }
+
+        // Create notification
+        await prisma.notification.create({
+            data: {
+                userId: id,
+                actorId: senderId,
+                type: 'WAVE' as any,
+                message: message,
+            }
+        });
+
+        res.json({ success: true, message: 'Wave sent!' });
+    } catch (error) {
+        next(error);
+    }
+});
+
 export { router as usersRouter };

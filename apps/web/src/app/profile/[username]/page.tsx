@@ -238,6 +238,28 @@ export default function UserProfilePage() {
         }
     };
 
+    const handleWave = async () => {
+        if (!profile?.id) return;
+
+        const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+        if (!token) return;
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app';
+
+        try {
+            await fetch(`${apiUrl}/api/v1/users/${profile.id}/wave`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            alert(`You waved at ${profile.displayName}! 👋`);
+        } catch (err) {
+            console.error('Error waving:', err);
+        }
+    };
+
     const handleMessage = () => {
         if (!profile?.id) return;
         router.push(`/messages?user=${profile.id}`);
@@ -402,6 +424,16 @@ export default function UserProfilePage() {
                             >
                                 <MessageIcon size={18} />
                             </button>
+                            {/* Wave Button */}
+                            {currentUser?.id !== profile.id && (
+                                <button
+                                    onClick={handleWave}
+                                    className="px-4 py-2 rounded-full bg-amber-400 text-black font-semibold hover:bg-amber-300 transition-colors flex items-center gap-2"
+                                >
+                                    <span>👋</span>
+                                    <span className="hidden sm:inline">Say Hi</span>
+                                </button>
+                            )}
                             {isAdmin && (
                                 <button
                                     onClick={() => setIsEditingAdmin(true)}

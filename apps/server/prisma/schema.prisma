@@ -588,6 +588,7 @@ enum NotificationType {
   COMMUNITY_POST
   MESSAGE
   SYSTEM
+  WAVE
 }
 
 // ============================================
