@@ -187,7 +187,10 @@ export function useMessages() {
         // New message received
         const unsubMessage = on<Message>('message:new', (message) => {
             if (message.conversationId === activeConversation) {
-                setMessages(prev => [...prev, message]);
+                setMessages(prev => {
+                    if (prev.some(m => m.id === message.id)) return prev;
+                    return [...prev, message];
+                });
             }
             // Update conversation list
             setConversations(prev => prev.map(c =>

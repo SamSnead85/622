@@ -40,6 +40,8 @@ export const viewport: Viewport = {
     themeColor: '#000000',
 };
 
+import { GlobalMessageListener } from '@/components/GlobalMessageListener';
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -49,6 +51,7 @@ export default function RootLayout({
         <html lang="en" className="dark">
             <body className="bg-black text-gray-50 antialiased">
                 <Providers>
+                    <GlobalMessageListener />
                     {children}
                 </Providers>
             </body>
