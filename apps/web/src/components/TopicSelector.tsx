@@ -209,7 +209,7 @@ export default function TopicSelector({
 
                             {filteredTopics.length === 0 && !loading && (
                                 <p className="text-center text-white/40 text-sm py-8">
-                                    No topics found for "{searchQuery}"
+                                    No topics found for &quot;{searchQuery}&quot;
                                 </p>
                             )}
                         </div>
