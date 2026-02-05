@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function createPinnedPost() {
+async function createPinnedYouTubePost() {
     try {
         // Find the admin user (abujawad)
         const adminUser = await prisma.user.findFirst({
@@ -16,13 +16,15 @@ async function createPinnedPost() {
 
         console.log('Found admin user:', adminUser.displayName, adminUser.id);
 
-        // Create the pinned post with YouTube URL
+        // Create the pinned post with YouTube embed URL (no-cookie for privacy, controls minimal)
+        // Using youtube-nocookie.com and modestbranding to hide YouTube branding
         const post = await prisma.post.create({
             data: {
                 userId: adminUser.id,
                 type: 'VIDEO',
-                caption: 'A poem by Khalid ibn al-Walid for his son Sulayman. SubhanAllah.',
-                mediaUrl: 'https://www.youtube.com/watch?v=yysbKM86rUU',
+                caption: 'A poem by Khalid ibn al-Walid (RA) for his son Sulayman. SubhanAllah.',
+                // YouTube embed URL with minimal branding
+                mediaUrl: 'https://www.youtube-nocookie.com/embed/yysbKM86rUU?modestbranding=1&rel=0&showinfo=0&controls=1',
                 isPublic: true,
                 isPinned: true,
             }
@@ -37,7 +39,7 @@ async function createPinnedPost() {
                 userId: adminUser.id,
                 content: `Minute 1:35 is hard.
 
-Sulayman is the son of Khalid ibn al-Walid. A young Sahabi and like his father, he was a well-known for his skills in battle. He was killed during the conquest of Egypt in a battle near to Wardan in Giza.
+Sulayman is the son of Khalid ibn al-Walid. A young Sahabi and like his father, he was well-known for his skills in battle. He was killed during the conquest of Egypt in a battle near to Wardan in Giza.
 
 It's said that Khalid wrote this poem some time after the news reached him.
 
@@ -46,7 +48,7 @@ May Allah be pleased with all of them.`
         });
 
         console.log('Created comment:', comment.id);
-        console.log('✅ Successfully created pinned post with comment!');
+        console.log('✅ Successfully created pinned YouTube post with comment!');
     } catch (error) {
         console.error('Error:', error);
     } finally {
@@ -54,4 +56,4 @@ May Allah be pleased with all of them.`
     }
 }
 
-createPinnedPost();
+createPinnedYouTubePost();

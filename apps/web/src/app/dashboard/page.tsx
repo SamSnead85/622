@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
 import { ReactionSpectrum, IntentionBadge, REACTION_SPECTRUM } from '@/components/ReactionSpectrum';
 import { DataOwnershipPanel, PrivacyFirstBadge, LiveLatencyIndicator } from '@/components/PlatformDifferentiators';
-import { PostActions, YouTubeEmbed, extractYouTubeId } from '@/components/PostActions';
+import { PostActions } from '@/components/PostActions';
 import {
     HomeIcon,
     SearchIcon,
@@ -43,6 +43,50 @@ function ZeroGLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
         <div className={`font-bold tracking-tight ${sizes[size]}`}>
             <span className="text-[#00D4FF]">0</span>
             <span className="text-white">G</span>
+        </div>
+    );
+}
+
+// ============================================
+// YOUTUBE EMBED HELPER - Detect and render YouTube videos natively
+// ============================================
+function isYouTubeUrl(url: string): boolean {
+    return url.includes('youtube.com') || url.includes('youtube-nocookie.com') || url.includes('youtu.be');
+}
+
+function getYouTubeEmbedUrl(url: string): string {
+    // If already an embed URL, return as-is with extra params
+    if (url.includes('/embed/')) {
+        if (!url.includes('modestbranding')) {
+            return url + (url.includes('?') ? '&' : '?') + 'modestbranding=1&rel=0&showinfo=0&autoplay=1&mute=1';
+        }
+        return url.replace('autoplay=0', 'autoplay=1') + '&mute=1';
+    }
+    // Extract video ID from various YouTube URL formats
+    let videoId = '';
+    if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1]?.split('?')[0] || '';
+    } else if (url.includes('watch?v=')) {
+        videoId = url.split('watch?v=')[1]?.split('&')[0] || '';
+    }
+    if (videoId) {
+        return `https://www.youtube-nocookie.com/embed/${videoId}?modestbranding=1&rel=0&showinfo=0&autoplay=1&mute=1&controls=1`;
+    }
+    return url;
+}
+
+function YouTubeEmbed({ src }: { src: string }) {
+    const embedUrl = getYouTubeEmbedUrl(src);
+    return (
+        <div className="relative w-full aspect-video bg-black">
+            <iframe
+                src={embedUrl}
+                className="absolute inset-0 w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                frameBorder="0"
+                title="Video"
+            />
         </div>
     );
 }
@@ -1232,16 +1276,18 @@ export default function DashboardPage() {
                                         {/* Media Container - Double-tap to like */}
                                         {post.mediaUrl && (
                                             <DoubleTapHeart onDoubleTap={() => !post.isLiked && likePost(post.id)}>
-                                                <div className="relative w-full aspect-[4/3] bg-black/30 overflow-hidden cursor-pointer">
-                                                    {post.mediaType === 'VIDEO' ? (
-                                                        <div className="absolute inset-0">
+                                                <div className="relative w-full bg-black/30 overflow-hidden cursor-pointer">
+                                                    {isYouTubeUrl(post.mediaUrl) ? (
+                                                        <YouTubeEmbed src={post.mediaUrl} />
+                                                    ) : post.mediaType === 'VIDEO' ? (
+                                                        <div className="aspect-[4/3]">
                                                             <AutoPlayVideo src={post.mediaUrl} />
                                                         </div>
                                                     ) : (
                                                         <img
                                                             src={post.mediaUrl}
                                                             alt="Post media"
-                                                            className="absolute inset-0 w-full h-full object-cover"
+                                                            className="w-full h-auto max-h-[500px] object-contain"
                                                         />
                                                     )}
                                                 </div>
