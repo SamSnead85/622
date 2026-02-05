@@ -18,13 +18,13 @@
      ============================================ */
 
   /* === BACKGROUND - Deep, Sophisticated === */
-  --bg-primary: #0A0A0D;
-  /* Deep black (not pure black) */
-  --bg-secondary: #12121A;
+  --bg-primary: #050505;
+  /* Deepest black */
+  --bg-secondary: #0A0A0F;
   /* Elevated surfaces */
-  --bg-tertiary: #1A1A24;
+  --bg-tertiary: #12121A;
   /* Card backgrounds */
-  --bg-elevated: #22222F;
+  --bg-elevated: #1A1A24;
   /* Modals, popovers */
 
   /* === TEXT - Professional Hierarchy === */
@@ -36,12 +36,12 @@
   /* More muted (zinc-500) */
   --text-quaternary: #52525B;
   /* Subtle (zinc-600) */
-  --text-inverse: #09090B;
+  --text-inverse: #000000;
   /* On light backgrounds */
 
   /* === ACCENT - Refined, Not Loud === */
-  --accent-primary: #3B82F6;
-  /* Professional blue (not cyan) */
+  --accent-primary: #00D4FF;
+  /* 0G Electric Blue */
   --accent-primary-hover: #2563EB;
   /* Blue-600 */
   --accent-secondary: #8B5CF6;
