@@ -2,12 +2,15 @@
 
 import { useRouter } from 'next/navigation';
 import { WelcomeOnboarding } from '@/components/WelcomeOnboarding';
+import InterestSelector from '@/components/InterestSelector';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function OnboardingPage() {
     const router = useRouter();
     const { isAuthenticated, isLoading } = useAuth();
+    const [step, setStep] = useState<'welcome' | 'interests'>('welcome');
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
@@ -25,5 +28,30 @@ export default function OnboardingPage() {
 
     if (!isAuthenticated) return null;
 
-    return <WelcomeOnboarding onComplete={() => router.push('/dashboard')} />;
+    return (
+        <AnimatePresence mode="wait">
+            {step === 'welcome' ? (
+                <motion.div
+                    key="welcome"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, x: -100 }}
+                >
+                    <WelcomeOnboarding onComplete={() => setStep('interests')} />
+                </motion.div>
+            ) : (
+                <motion.div
+                    key="interests"
+                    initial={{ opacity: 0, x: 100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0 }}
+                >
+                    <InterestSelector
+                        onComplete={() => router.push('/dashboard')}
+                        onSkip={() => router.push('/dashboard')}
+                    />
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
 }

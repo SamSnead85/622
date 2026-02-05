@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import { ProfileEditor, Avatar, useProfile } from '@/components/ProfileEditor';
 import { loadPreferences, savePreferences, clearAllData, exportUserData } from '@/lib/persistence';
-import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
+import { useAuth, ProtectedRoute, type User } from '@/contexts/AuthContext';
 import { InviteFriends } from '@/components/InviteFriends';
 import { TwoFactorSetup } from '@/components/TwoFactorSetup';
 import { Navigation } from '@/components/Navigation';
@@ -134,22 +134,33 @@ function SettingsPageContent() {
     });
     const [mounted, setMounted] = useState(false);
 
-    // Handler that syncs profile changes to both useProfile AND AuthContext
-    const handleProfileSave = useCallback((updatedProfile: Parameters<typeof updateProfile>[0]) => {
+    // Handler that syncs profile changes to both useProfile AND Auth Context
+    const handleProfileSave = useCallback(async (updatedProfile: Parameters<typeof updateProfile>[0]) => {
         updateProfile(updatedProfile);
-        // Also update AuthContext so all components (sidebar, dashboard, etc.) get the new avatar
+
+        // Build single update object for AuthContext
+        const authUpdates: Partial<User> = {};
+
         if (updatedProfile.avatarType === 'custom' && updatedProfile.avatarCustomUrl) {
-            updateUser({ avatarUrl: updatedProfile.avatarCustomUrl });
+            authUpdates.avatarUrl = updatedProfile.avatarCustomUrl;
         } else if (updatedProfile.avatarPreset) {
-            // For presets, store as special format
-            updateUser({ avatarUrl: `preset:${updatedProfile.avatarPreset}` });
+            authUpdates.avatarUrl = `preset:${updatedProfile.avatarPreset}`;
         }
+
         if (updatedProfile.displayName) {
-            updateUser({ displayName: updatedProfile.displayName });
+            authUpdates.displayName = updatedProfile.displayName;
         }
+
+        if (updatedProfile.username) {
+            authUpdates.username = updatedProfile.username;
+        }
+
         if (updatedProfile.bio !== undefined) {
-            updateUser({ bio: updatedProfile.bio });
+            authUpdates.bio = updatedProfile.bio;
         }
+
+        // Single awaited call to ensure backend refetch happens
+        await updateUser(authUpdates);
     }, [updateProfile, updateUser]);
 
     useEffect(() => {

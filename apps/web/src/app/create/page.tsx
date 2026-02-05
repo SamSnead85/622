@@ -10,7 +10,7 @@ function CreateContent() {
     const router = useRouter();
     const { createPost } = usePosts();
 
-    const handlePublish = useCallback(async (data: { mediaUrl: string; caption: string; type: 'post' | 'moment' | 'journey'; file?: File | null }) => {
+    const handlePublish = useCallback(async (data: { mediaUrl: string; caption: string; type: 'post' | 'moment' | 'journey'; file?: File | null; topicIds?: string[] }) => {
         try {
             const token = localStorage.getItem('0g_token');
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app';
@@ -60,12 +60,12 @@ function CreateContent() {
             else if (data.type === 'journey') {
                 // Todo: Implement Journey specific API
                 // For now, post as video?
-                const result = await createPost(data.caption, data.file || undefined);
+                const result = await createPost(data.caption, data.file || undefined, data.topicIds);
                 if (result.success) router.push('/dashboard');
             }
             // REGULAR POST
             else {
-                const result = await createPost(data.caption, data.file || undefined);
+                const result = await createPost(data.caption, data.file || undefined, data.topicIds);
                 if (result.success) {
                     router.push('/dashboard');
                 }

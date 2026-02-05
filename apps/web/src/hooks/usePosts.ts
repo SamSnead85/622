@@ -204,7 +204,7 @@ export function usePosts(options?: UsePostsOptions) {
         }
     }, [posts]);
 
-    const createPost = useCallback(async (content: string, mediaFile?: File, typeOverride?: string, communityIdOverride?: string): Promise<{ success: boolean; error?: string }> => {
+    const createPost = useCallback(async (content: string, mediaFile?: File, topicIds?: string[], typeOverride?: string, communityIdOverride?: string): Promise<{ success: boolean; error?: string }> => {
         try {
             const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
 
@@ -242,6 +242,7 @@ export function usePosts(options?: UsePostsOptions) {
                 mediaUrl: mediaUrl,
                 isPublic: true,
                 communityId: communityIdOverride || options?.communityId,
+                topicIds: topicIds, // Include topic IDs
             };
 
             const response = await fetch(API_ENDPOINTS.posts, {

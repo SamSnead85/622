@@ -265,6 +265,11 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                     displayName: profile.displayName,
                 };
 
+                // Username - only if changed
+                if (profile.username) {
+                    updateData.username = profile.username;
+                }
+
                 if (profile.bio) {
                     updateData.bio = profile.bio;
                 }

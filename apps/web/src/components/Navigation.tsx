@@ -71,15 +71,11 @@ export function Navigation({ activeTab, variant = 'default', userAvatarUrl, disp
     return (
         <>
             {/* Desktop Sidebar - Glassmorphic & Motion */}
-            <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-20 xl:w-64 bg-[#050508]/80 backdrop-blur-2xl border-r border-white/5 flex-col p-4 z-40 supports-[backdrop-filter]:bg-[#050508]/60">
-                <Link href="/" className="flex items-center gap-4 px-3 py-6 mb-4 group">
-                    <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-300 shadow-[0_0_20px_rgba(139,92,246,0.3)]">
-                        <span className="text-white font-bold text-lg">0G</span>
+            <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-20 xl:w-64 bg-[var(--bg-primary)] border-r border-[var(--border-default)] flex-col p-4 z-40">
+                <Link href="/" className="flex items-center gap-3 px-3 py-4 mb-6 group">
+                    <div className="relative w-9 h-9 rounded-lg bg-white flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-[1.02]">
+                        <span className="text-black font-bold text-sm">0G</span>
                     </div>
-                    <span className="text-xl font-bold hidden xl:block tracking-tight group-hover:tracking-normal transition-all duration-300">
-                        <span className="text-[#00D4FF]">Zero</span>
-                        <span className="text-white">Gravity</span>
-                    </span>
                 </Link>
 
                 <nav className="flex-1 space-y-2">
@@ -89,29 +85,24 @@ export function Navigation({ activeTab, variant = 'default', userAvatarUrl, disp
                             <Link
                                 key={item.id}
                                 href={item.href}
-                                className={`relative flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group ${isActive ? 'text-white' : 'text-white/40 hover:text-white'
+                                className={`relative flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group ${isActive ? 'text-white' : 'text-[var(--text-tertiary)] hover:text-white'
                                     }`}
                             >
                                 {isActive && (
                                     <motion.div
                                         layoutId="desktop-nav-active"
-                                        className="absolute inset-0 bg-white/[0.03] border border-white/5 rounded-xl shadow-inner"
+                                        className="absolute inset-0 bg-white/[0.06] border border-white/10 rounded-lg"
                                         initial={false}
-                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                    >
-                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#00D4FF] rounded-r-full shadow-[0_0_10px_#00D4FF]" />
-                                    </motion.div>
+                                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                    />
                                 )}
                                 <div className="relative z-10">
                                     <item.Icon
-                                        size={24}
-                                        className={`transition-all duration-300 ${isActive
-                                            ? 'text-[#00D4FF] drop-shadow-[0_0_8px_rgba(0,212,255,0.5)] scale-110'
-                                            : 'group-hover:text-white group-hover:scale-105'
-                                            }`}
+                                        size={20}
+                                        className={`transition-colors duration-200 ${isActive ? 'text-white' : 'group-hover:text-white'}`}
                                     />
                                 </div>
-                                <span className={`font-medium hidden xl:block relative z-10 transition-colors ${isActive ? 'text-white' : ''}`}>
+                                <span className={`text-sm font-medium hidden xl:block relative z-10 transition-colors ${isActive ? 'text-white' : ''}`}>
                                     {item.label}
                                 </span>
                             </Link>
@@ -121,48 +112,44 @@ export function Navigation({ activeTab, variant = 'default', userAvatarUrl, disp
 
                 {/* Optional: Navigation Footer / Profile Link */}
                 {userAvatarUrl && (
-                    <Link href="/profile" className="flex items-center gap-3 px-3 py-4 mt-4 border-t border-white/5 group">
-                        <div className="w-10 h-10 rounded-full overflow-hidden relative ring-2 ring-white/10 group-hover:ring-[#00D4FF]/50 transition-all">
-                            {/* Assuming next/image is handled by caller or basic img */}
+                    <Link href="/profile" className="flex items-center gap-3 px-3 py-3 mt-4 border-t border-[var(--border-default)] group hover:bg-white/5 rounded-lg transition-colors">
+                        <div className="w-9 h-9 rounded-lg overflow-hidden relative ring-1 ring-white/10 group-hover:ring-white/20 transition-all">
                             <Image src={avatarSrc} alt="Profile" fill className="object-cover" />
                         </div>
                         <div className="hidden xl:block overflow-hidden">
-                            <p className="font-semibold text-white text-sm truncate group-hover:text-[#00D4FF] transition-colors">{displayName || 'Profile'}</p>
-                            <p className="text-xs text-white/50 truncate">@{username || 'user'}</p>
+                            <p className="font-medium text-white text-sm truncate">{displayName || 'Profile'}</p>
+                            <p className="text-xs text-[var(--text-tertiary)] truncate">@{username || 'user'}</p>
                         </div>
                     </Link>
                 )}
             </aside>
 
             {/* Mobile Bottom Navigation - Glass Island */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#050508]/90 backdrop-blur-3xl border-t border-white/5 z-50 safe-area-pb">
-                <div className="flex items-center justify-around py-1">
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[var(--bg-primary)]/95 backdrop-blur-xl border-t border-[var(--border-default)] z-50 safe-area-pb">
+                <div className="flex items-center justify-around py-2">
                     {items.map((item) => {
                         const isActive = activeTab === item.id;
                         return (
                             <Link
                                 key={item.id}
                                 href={item.href}
-                                className="relative flex flex-col items-center gap-1 p-3 w-full group"
+                                className="relative flex flex-col items-center gap-1 p-2 w-full group"
                             >
                                 {isActive && (
                                     <motion.div
                                         layoutId="mobile-nav-active"
-                                        className="absolute top-0 w-8 h-1 bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] rounded-b-full shadow-[0_2px_10px_rgba(139,92,246,0.5)]"
+                                        className="absolute top-0 w-10 h-0.5 bg-white rounded-b"
                                         initial={false}
-                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
                                     />
                                 )}
-                                <div className={`relative transition-all duration-300 ${isActive ? '-translate-y-1' : 'group-active:scale-90'}`}>
+                                <div className="relative">
                                     <item.Icon
-                                        size={24}
-                                        className={`transition-all ${isActive
-                                            ? 'text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]'
-                                            : 'text-white/40 group-hover:text-white'
-                                            }`}
+                                        size={22}
+                                        className={`transition-colors ${isActive ? 'text-white' : 'text-[var(--text-tertiary)]'}`}
                                     />
                                 </div>
-                                <span className={`text-[10px] font-medium transition-colors ${isActive ? 'text-white' : 'text-white/40'}`}>
+                                <span className={`text-[10px] font-medium transition-colors ${isActive ? 'text-white' : 'text-[var(--text-tertiary)]'}`}>
                                     {item.label}
                                 </span>
                             </Link>

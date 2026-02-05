@@ -55,9 +55,11 @@ export function useGoogleAuth(
     const buttonContainerRef = useRef<string | null>(null);
 
     const handleCredentialResponse = useCallback(async (response: GoogleAuthResponse) => {
+        console.log('[Google OAuth] Credential response received');
         setIsLoading(true);
         try {
             // Send the Google ID token to our backend
+            console.log('[Google OAuth] Sending token to backend:', API_ENDPOINTS.login.replace('/login', '/google'));
             const res = await fetch(API_ENDPOINTS.login.replace('/login', '/google'), {
                 method: 'POST',
                 headers: {
@@ -69,16 +71,19 @@ export function useGoogleAuth(
             });
 
             const data = await res.json();
+            console.log('[Google OAuth] Backend response:', { status: res.status, ok: res.ok });
 
             if (res.ok) {
+                console.log('[Google OAuth] Login successful, user:', data.user?.email);
                 // Store token in localStorage
                 localStorage.setItem('0g_token', data.token);
                 onSuccess(data.user, data.token);
             } else {
+                console.error('[Google OAuth] Login failed:', data.error);
                 onError(data.error || 'Google login failed');
             }
         } catch (error) {
-            console.error('Google auth error:', error);
+            console.error('[Google OAuth] Network error:', error);
             onError('Network error during Google login');
         } finally {
             setIsLoading(false);
@@ -93,10 +98,14 @@ export function useGoogleAuth(
 
         // Check if script already loaded
         if (window.google?.accounts?.id) {
+            // Cancel any existing One Tap prompts to clear cache
+            window.google.accounts.id.cancel();
+
             window.google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
                 callback: handleCredentialResponse,
-                use_fedcm_for_prompt: true,
+                auto_select: false, // CRITICAL: Disable auto-select to prevent showing accounts from other domains
+                use_fedcm_for_prompt: false, // Disable FedCM which can leak accounts across domains
             });
             setIsLibraryLoaded(true);
             return;
@@ -110,10 +119,14 @@ export function useGoogleAuth(
 
         script.onload = () => {
             if (window.google?.accounts?.id) {
+                // Cancel any existing One Tap prompts to clear cache
+                window.google.accounts.id.cancel();
+
                 window.google.accounts.id.initialize({
                     client_id: GOOGLE_CLIENT_ID,
                     callback: handleCredentialResponse,
-                    use_fedcm_for_prompt: true,
+                    auto_select: false, // CRITICAL: Disable auto-select to prevent showing accounts from other domains
+                    use_fedcm_for_prompt: false, // Disable FedCM which can leak accounts across domains
                 });
                 setIsLibraryLoaded(true);
 

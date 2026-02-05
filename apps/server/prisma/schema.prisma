@@ -9,132 +9,94 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ============================================
-// USER & AUTH
-// ============================================
-
-enum Role {
-  USER
-  MODERATOR
-  ADMIN
-  SUPERADMIN
-}
-
 model User {
-  id              String    @id @default(uuid())
-  email           String    @unique
-  phone           String?   @unique
-  username        String    @unique
-  displayName     String
-  displayNameSecondary String?   // Name in secondary language (Arabic, Chinese, etc.)
-  secondaryLanguage    String?   // Language code: 'ar', 'zh', 'hi', 'ja', 'ko', etc.
-  bio             String?
-  website         String?
-  avatarUrl       String?
-  coverUrl        String?
-  passwordHash    String?
-  role            Role      @default(USER)
-  isVerified      Boolean   @default(false)
-  isPrivate       Boolean   @default(false)
-  isBanned        Boolean   @default(false)
-  lastActiveAt    DateTime  @default(now())
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
-  // Password Reset
-  resetToken       String?
-  resetTokenExpiry DateTime?
-  
-  // Two-Factor Authentication
-  twoFactorEnabled    Boolean   @default(false)
-  twoFactorSecret     String?   // Encrypted TOTP secret
-  twoFactorBackupCodes String[] // Hashed backup codes
-  twoFactorVerifiedAt DateTime?
-
-  // Relations
-  posts           Post[]
-  comments        Comment[]
-  likes           Like[]
-  shares          Share[]
-  saves           Save[]
-  rsvps           PostRSVP[]
-  
-  // Social
-  followers       Follow[]  @relation("Following")
-  following       Follow[]  @relation("Followers")
-  
-  // Communities
-  communityMemberships CommunityMember[]
-  createdCommunities   Community[]       @relation("CommunityCreator")
-  
-  // Messaging
-  sentMessages    Message[] @relation("MessageSender")
-  conversations   ConversationParticipant[]
-  
-  // Notifications
-  notifications   Notification[]
-  
-  // Auth
-  sessions        Session[]
-  oauthAccounts   OAuthAccount[]
-  twoFactorChallenges TwoFactorChallenge[]
-  
-  // Migration
-  migrations      Migration[]
-  importedConnections PendingConnection[] @relation("ImportedConnections")
-  matchedConnections  PendingConnection[] @relation("MatchedConnections")
-  sentInvites     Invite[]               @relation("SentInvites")
-  joinedViaInvite Invite?                @relation("JoinedViaInvite")
-  
-  // Moments (Stories)
-  moments         Moment[]
-  momentViews     MomentView[]
-  
-  // Live Streaming (Campfire)
-  liveStreams     LiveStream[]
-  liveStreamChats LiveStreamChat[]
-  
-  // Community Command Center
-  bulletinPosts             BulletinPost[]
-  streamSuggestions         LiveStreamSuggestion[]
-  sentConnectionRequests    ConnectionRequest[]    @relation("SentConnectionRequests")
-  receivedConnectionRequests ConnectionRequest[]   @relation("ReceivedConnectionRequests")
-  connectionSettings        UserConnectionSettings?
-  presence                  UserPresence?
-  subscription              Subscription?
-  reports                   Report[]
+  id                         String                    @id @default(uuid())
+  email                      String                    @unique
+  phone                      String?                   @unique
+  username                   String                    @unique
+  displayName                String
+  displayNameSecondary       String?
+  secondaryLanguage          String?
+  bio                        String?
+  website                    String?
+  avatarUrl                  String?
+  coverUrl                   String?
+  passwordHash               String?
+  role                       Role                      @default(USER)
+  isVerified                 Boolean                   @default(false)
+  isPrivate                  Boolean                   @default(false)
+  isBanned                   Boolean                   @default(false)
+  lastActiveAt               DateTime                  @default(now())
+  createdAt                  DateTime                  @default(now())
+  updatedAt                  DateTime                  @updatedAt
+  resetToken                 String?
+  resetTokenExpiry           DateTime?
+  twoFactorEnabled           Boolean                   @default(false)
+  twoFactorSecret            String?
+  twoFactorBackupCodes       String[]
+  twoFactorVerifiedAt        DateTime?
+  bulletinPosts              BulletinPost[]
+  comments                   Comment[]
+  createdCommunities         Community[]               @relation("CommunityCreator")
+  communityMemberships       CommunityMember[]
+  receivedConnectionRequests ConnectionRequest[]       @relation("ReceivedConnectionRequests")
+  sentConnectionRequests     ConnectionRequest[]       @relation("SentConnectionRequests")
+  conversations              ConversationParticipant[]
+  following                  Follow[]                  @relation("Followers")
+  followers                  Follow[]                  @relation("Following")
+  joinedViaInvite            Invite?                   @relation("JoinedViaInvite")
+  sentInvites                Invite[]                  @relation("SentInvites")
+  likes                      Like[]
+  liveStreams                LiveStream[]
+  liveStreamChats            LiveStreamChat[]
+  streamSuggestions          LiveStreamSuggestion[]
+  sentMessages               Message[]                 @relation("MessageSender")
+  migrations                 Migration[]
+  moments                    Moment[]
+  momentViews                MomentView[]
+  notifications              Notification[]
+  oauthAccounts              OAuthAccount[]
+  matchedConnections         PendingConnection[]       @relation("MatchedConnections")
+  importedConnections        PendingConnection[]       @relation("ImportedConnections")
+  posts                      Post[]
+  rsvps                      PostRSVP[]
+  reports                    Report[]
+  saves                      Save[]
+  sessions                   Session[]
+  shares                     Share[]
+  subscription               Subscription?
+  twoFactorChallenges        TwoFactorChallenge[]
+  connectionSettings         UserConnectionSettings?
+  interests                  UserInterest[]
+  presence                   UserPresence?
 
   @@index([username])
   @@index([email])
 }
 
-
 model Session {
-  id           String   @id @default(uuid())
-  userId       String
-  token        String   @unique
-  deviceType   String?
-  deviceName   String?
-  ipAddress    String?
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  userId     String
+  token      String   @unique
+  deviceType String?
+  deviceName String?
+  ipAddress  String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([token])
 }
 
-// Two-Factor Authentication Challenge (temporary token during login)
 model TwoFactorChallenge {
   id        String   @id @default(uuid())
   userId    String
-  token     String   @unique  // Temp token for 2FA verification
+  token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
-  
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@index([token])
   @@index([userId])
 }
@@ -142,21 +104,16 @@ model TwoFactorChallenge {
 model OAuthAccount {
   id           String   @id @default(uuid())
   userId       String
-  provider     String   // google, apple
+  provider     String
   providerId   String
   accessToken  String?
   refreshToken String?
   createdAt    DateTime @default(now())
-  
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerId])
   @@index([userId])
 }
-
-// ============================================
-// MOMENTS (STORIES - 24hr ephemeral content)
-// ============================================
 
 model Moment {
   id           String       @id @default(uuid())
@@ -164,16 +121,15 @@ model Moment {
   type         MomentType   @default(IMAGE)
   mediaUrl     String
   thumbnailUrl String?
-  duration     Int?         // For video moments, duration in seconds
-  caption      String?      @db.Text
+  duration     Int?
+  caption      String?
   musicId      String?
   viewCount    Int          @default(0)
-  expiresAt    DateTime     // Set to 24 hours from creation
+  expiresAt    DateTime
   isActive     Boolean      @default(true)
   createdAt    DateTime     @default(now())
-  
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   music        Music?       @relation(fields: [musicId], references: [id])
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   views        MomentView[]
 
   @@index([userId])
@@ -181,35 +137,24 @@ model Moment {
   @@index([createdAt])
 }
 
-enum MomentType {
-  IMAGE
-  VIDEO
-  TEXT
-}
-
 model MomentView {
-  id        String   @id @default(uuid())
-  momentId  String
-  userId    String
-  viewedAt  DateTime @default(now())
-  
-  moment    Moment   @relation(fields: [momentId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String   @id @default(uuid())
+  momentId String
+  userId   String
+  viewedAt DateTime @default(now())
+  moment   Moment   @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([momentId, userId])
   @@index([momentId])
   @@index([userId])
 }
 
-// ============================================
-// LIVE STREAMING (CAMPFIRE)
-// ============================================
-
 model LiveStream {
   id              String           @id @default(uuid())
   userId          String
   title           String
-  description     String?          @db.Text
+  description     String?
   thumbnailUrl    String?
   streamKey       String           @unique @default(uuid())
   playbackUrl     String?
@@ -222,7 +167,6 @@ model LiveStream {
   scheduledFor    DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
-  
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   chatMessages    LiveStreamChat[]
 
@@ -231,132 +175,96 @@ model LiveStream {
   @@index([startedAt])
 }
 
-enum LiveStreamStatus {
-  SCHEDULED
-  LIVE
-  ENDED
-  CANCELLED
-}
-
 model LiveStreamChat {
-  id           String     @id @default(uuid())
-  streamId     String
-  userId       String
-  content      String     @db.Text
-  type         ChatType   @default(MESSAGE)
-  giftType     String?    // For gift messages
-  giftAmount   Int?       // Gift value
-  createdAt    DateTime   @default(now())
-  
-  stream       LiveStream @relation(fields: [streamId], references: [id], onDelete: Cascade)
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String     @id @default(uuid())
+  streamId   String
+  userId     String
+  content    String
+  type       ChatType   @default(MESSAGE)
+  giftType   String?
+  giftAmount Int?
+  createdAt  DateTime   @default(now())
+  stream     LiveStream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([streamId])
   @@index([userId])
   @@index([createdAt])
 }
 
-enum ChatType {
-  MESSAGE
-  GIFT
-  REACTION
-  JOIN
-  LEAVE
-}
-
-// ============================================
-// SOCIAL GRAPH
-// ============================================
-
 model Follow {
-  id           String   @id @default(uuid())
-  followerId   String
-  followingId  String
-  createdAt    DateTime @default(now())
-  
-  follower     User     @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
-  following    User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
 }
 
-// ============================================
-// CONTENT
-// ============================================
-
 model Post {
-  id           String      @id @default(uuid())
+  id           String        @id @default(uuid())
   userId       String
   communityId  String?
-  type         PostType    @default(VIDEO)
-  caption      String?     @db.Text
+  type         PostType      @default(VIDEO)
+  caption      String?
   mediaUrl     String?
   thumbnailUrl String?
-  duration     Int?        // Video duration in seconds
+  duration     Int?
   musicId      String?
-  viewCount    Int         @default(0)
-  isPublic     Boolean     @default(true)
-  isPinned     Boolean     @default(false)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  community    Community?  @relation(fields: [communityId], references: [id], onDelete: SetNull)
-  music        Music?      @relation(fields: [musicId], references: [id])
-  
+  viewCount    Int           @default(0)
+  isPublic     Boolean       @default(true)
+  isPinned     Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   comments     Comment[]
   likes        Like[]
-  shares       Share[]
-  saves        Save[]
-  rsvps        PostRSVP[]
+  community    Community?    @relation(fields: [communityId], references: [id])
+  music        Music?        @relation(fields: [musicId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   hashtags     PostHashtag[]
+  rsvps        PostRSVP[]
+  topics       PostTopic[]
+  saves        Save[]
+  shares       Share[]
 
   @@index([userId])
   @@index([communityId])
   @@index([createdAt])
 }
 
-enum PostType {
-  IMAGE
-  VIDEO
-  TEXT
-  POLL
-  RALLY
-}
-
 model Music {
-  id           String   @id @default(uuid())
-  title        String
-  artist       String
-  audioUrl     String
-  duration     Int      // Duration in seconds
-  coverUrl     String?
-  usageCount   Int      @default(0)
-  createdAt    DateTime @default(now())
-  
-  posts        Post[]
-  moments      Moment[]
+  id         String   @id @default(uuid())
+  title      String
+  artist     String
+  audioUrl   String
+  duration   Int
+  coverUrl   String?
+  usageCount Int      @default(0)
+  createdAt  DateTime @default(now())
+  moments    Moment[]
+  posts      Post[]
 
   @@index([title])
   @@index([artist])
 }
 
 model Comment {
-  id           String    @id @default(uuid())
-  postId       String
-  userId       String
-  parentId     String?   // For nested replies
-  content      String    @db.Text
-  likesCount   Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  
-  post         Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent       Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies      Comment[] @relation("CommentReplies")
+  id         String    @id @default(uuid())
+  postId     String
+  userId     String
+  parentId   String?
+  content    String
+  likesCount Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[] @relation("CommentReplies")
+  post       Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([postId])
   @@index([userId])
@@ -368,9 +276,8 @@ model Like {
   userId    String
   postId    String
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([postId])
@@ -381,9 +288,8 @@ model Share {
   userId    String
   postId    String
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([postId])
 }
@@ -393,9 +299,8 @@ model Save {
   userId    String
   postId    String
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([userId])
@@ -407,7 +312,6 @@ model PostRSVP {
   userId    String
   status    RSVPStatus @default(IN)
   createdAt DateTime   @default(now())
-  
   post      Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -415,56 +319,43 @@ model PostRSVP {
   @@index([postId])
 }
 
-enum RSVPStatus {
-  IN
-  MAYBE
-  OUT
-}
-
 model Hashtag {
-  id        String        @id @default(uuid())
-  name      String        @unique
-  usageCount Int          @default(0)
-  createdAt DateTime      @default(now())
-  
-  posts     PostHashtag[]
+  id         String        @id @default(uuid())
+  name       String        @unique
+  usageCount Int           @default(0)
+  createdAt  DateTime      @default(now())
+  posts      PostHashtag[]
 
   @@index([name])
 }
 
 model PostHashtag {
-  id        String   @id @default(uuid())
+  id        String  @id @default(uuid())
   postId    String
   hashtagId String
-  
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  hashtag   Hashtag  @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([postId, hashtagId])
 }
 
-// ============================================
-// COMMUNITIES
-// ============================================
-
 model Community {
-  id          String   @id @default(uuid())
+  id          String            @id @default(uuid())
   creatorId   String
-  name        String   @unique
-  slug        String   @unique
-  description String?  @db.Text
+  name        String            @unique
+  slug        String            @unique
+  description String?
   avatarUrl   String?
   coverUrl    String?
-  isPublic    Boolean  @default(true)
-  memberCount Int      @default(0)
-  postCount   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  isPublic    Boolean           @default(true)
+  memberCount Int               @default(0)
+  postCount   Int               @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   creator     User              @relation("CommunityCreator", fields: [creatorId], references: [id])
   members     CommunityMember[]
-  posts       Post[]
   rules       CommunityRule[]
+  posts       Post[]
 
   @@index([name])
   @@index([slug])
@@ -476,45 +367,32 @@ model CommunityMember {
   communityId String
   role        CommunityRole @default(MEMBER)
   joinedAt    DateTime      @default(now())
-  
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   community   Community     @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, communityId])
   @@index([communityId])
-}
-
-enum CommunityRole {
-  MEMBER
-  MODERATOR
-  ADMIN
 }
 
 model CommunityRule {
   id          String    @id @default(uuid())
   communityId String
   title       String
-  description String    @db.Text
+  description String
   order       Int       @default(0)
   createdAt   DateTime  @default(now())
-  
   community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
 
   @@index([communityId])
 }
 
-// ============================================
-// MESSAGING
-// ============================================
-
 model Conversation {
-  id           String    @id @default(uuid())
-  isGroup      Boolean   @default(false)
+  id           String                    @id @default(uuid())
+  isGroup      Boolean                   @default(false)
   groupName    String?
   groupAvatar  String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
   participants ConversationParticipant[]
   messages     Message[]
 }
@@ -526,7 +404,6 @@ model ConversationParticipant {
   lastReadAt     DateTime     @default(now())
   isMuted        Boolean      @default(false)
   joinedAt       DateTime     @default(now())
-  
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -538,13 +415,12 @@ model Message {
   id             String        @id @default(uuid())
   conversationId String
   senderId       String
-  content        String        @db.Text
+  content        String
   mediaUrl       String?
   mediaType      MessageMedia?
   isEdited       Boolean       @default(false)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-  
   conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User          @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
@@ -553,31 +429,575 @@ model Message {
   @@index([createdAt])
 }
 
-enum MessageMedia {
-  IMAGE
-  VIDEO
-  AUDIO
-  FILE
-}
-
-// ============================================
-// NOTIFICATIONS
-// ============================================
-
 model Notification {
   id        String           @id @default(uuid())
   userId    String
   type      NotificationType
   actorId   String?
-  targetId  String?          // Post, Comment, Community, etc.
+  targetId  String?
   message   String
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
-  
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
+}
+
+model Migration {
+  id                 String              @id @default(uuid())
+  userId             String
+  platform           MigrationPlatform
+  status             MigrationStatus     @default(PENDING)
+  filePath           String?
+  stats              Json?
+  errorMessage       String?
+  createdAt          DateTime            @default(now())
+  startedAt          DateTime?
+  completedAt        DateTime?
+  importedPosts      ImportedPost[]
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pendingConnections PendingConnection[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model ImportedPost {
+  id                String       @id @default(uuid())
+  migrationId       String
+  originalPlatform  String
+  originalId        String?
+  originalTimestamp DateTime?
+  type              PostType     @default(IMAGE)
+  caption           String?
+  mediaUrls         String[]
+  location          String?
+  tags              String[]
+  importStatus      ImportStatus @default(PENDING)
+  caravanPostId     String?
+  errorMessage      String?
+  createdAt         DateTime     @default(now())
+  migration         Migration    @relation(fields: [migrationId], references: [id], onDelete: Cascade)
+
+  @@index([migrationId])
+  @@index([importStatus])
+}
+
+model PendingConnection {
+  id               String            @id @default(uuid())
+  userId           String
+  migrationId      String?
+  platform         MigrationPlatform
+  originalUsername String
+  displayName      String?
+  profileImageUrl  String?
+  email            String?
+  phone            String?
+  matchedUserId    String?
+  matchConfidence  Int?
+  connectionType   ConnectionType    @default(FOLLOWER)
+  inviteStatus     InviteStatus      @default(NOT_SENT)
+  inviteSentAt     DateTime?
+  inviteMethod     InviteMethod?
+  createdAt        DateTime          @default(now())
+  matchedUser      User?             @relation("MatchedConnections", fields: [matchedUserId], references: [id])
+  migration        Migration?        @relation(fields: [migrationId], references: [id])
+  user             User              @relation("ImportedConnections", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([inviteStatus])
+  @@index([originalUsername])
+}
+
+model Invite {
+  id             String       @id @default(uuid())
+  senderId       String
+  recipientEmail String?
+  recipientPhone String?
+  method         InviteMethod
+  status         InviteStatus @default(SENT)
+  referralCode   String       @unique
+  message        String?
+  createdAt      DateTime     @default(now())
+  sentAt         DateTime     @default(now())
+  openedAt       DateTime?
+  joinedAt       DateTime?
+  joinedUserId   String?      @unique
+  joinedUser     User?        @relation("JoinedViaInvite", fields: [joinedUserId], references: [id])
+  sender         User         @relation("SentInvites", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([referralCode])
+  @@index([status])
+}
+
+model Territory {
+  id                        String                      @id @default(uuid())
+  name                      String
+  slug                      String                      @unique
+  description               String?
+  type                      TerritoryType
+  avatarUrl                 String?
+  coverUrl                  String?
+  primaryColor              String?                     @default("#D4AF37")
+  isPublic                  Boolean                     @default(false)
+  requireApproval           Boolean                     @default(true)
+  parentId                  String?
+  memberCount               Int                         @default(0)
+  postCount                 Int                         @default(0)
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  contentModerationSettings ContentModerationSettings?
+  geoBlocks                 GeoBlock[]
+  parent                    Territory?                  @relation("TerritoryHierarchy", fields: [parentId], references: [id])
+  children                  Territory[]                 @relation("TerritoryHierarchy")
+  algorithmSettings         TerritoryAlgorithmSettings?
+  outgoingConnections       TerritoryConnection[]       @relation("ConnectionFrom")
+  incomingConnections       TerritoryConnection[]       @relation("ConnectionTo")
+  members                   TerritoryMember[]
+  moderationRules           TerritoryModerationRule[]
+  posts                     TerritoryPost[]
+  strikes                   TerritoryStrike[]
+
+  @@index([type])
+  @@index([parentId])
+  @@index([slug])
+}
+
+model TerritoryMember {
+  id          String        @id @default(uuid())
+  territoryId String
+  userId      String
+  role        TerritoryRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+  invitedById String?
+  isMuted     Boolean       @default(false)
+  strikeCount Int           @default(0)
+  territory   Territory     @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+
+  @@unique([territoryId, userId])
+  @@index([userId])
+  @@index([territoryId])
+}
+
+model TerritoryPost {
+  id          String    @id @default(uuid())
+  territoryId String
+  postId      String
+  sharedById  String
+  createdAt   DateTime  @default(now())
+  territory   Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+
+  @@unique([territoryId, postId])
+  @@index([territoryId])
+}
+
+model TerritoryConnection {
+  id              String                  @id @default(uuid())
+  fromTerritoryId String
+  toTerritoryId   String
+  type            TerritoryConnectionType @default(OBSERVED)
+  shareContent    Boolean                 @default(false)
+  shareMembers    Boolean                 @default(false)
+  status          ConnectionStatus        @default(PENDING)
+  requestedAt     DateTime                @default(now())
+  approvedAt      DateTime?
+  fromTerritory   Territory               @relation("ConnectionFrom", fields: [fromTerritoryId], references: [id], onDelete: Cascade)
+  toTerritory     Territory               @relation("ConnectionTo", fields: [toTerritoryId], references: [id], onDelete: Cascade)
+
+  @@unique([fromTerritoryId, toTerritoryId])
+  @@index([fromTerritoryId])
+  @@index([toTerritoryId])
+}
+
+model TerritoryAlgorithmSettings {
+  id                String         @id @default(uuid())
+  territoryId       String         @unique
+  recencyWeight     Int            @default(50)
+  engagementWeight  Int            @default(30)
+  familiarityWeight Int            @default(60)
+  noveltyWeight     Int            @default(20)
+  contentRatings    String[]       @default(["G", "PG", "PG13"])
+  whoCanPost        PostPermission @default(MEMBERS)
+  whoCanComment     PostPermission @default(MEMBERS)
+  whoCanInvite      PostPermission @default(ELDERS)
+  allowCrossPosting Boolean        @default(false)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  territory         Territory      @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+}
+
+model TerritoryModerationRule {
+  id          String     @id @default(uuid())
+  territoryId String
+  title       String
+  description String
+  type        RuleType
+  keywords    String[]   @default([])
+  action      RuleAction @default(FLAG)
+  isActive    Boolean    @default(true)
+  order       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  territory   Territory  @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+
+  @@index([territoryId])
+}
+
+model TerritoryStrike {
+  id          String    @id @default(uuid())
+  territoryId String
+  userId      String
+  issuedById  String
+  reason      String
+  postId      String?
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  territory   Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+
+  @@index([territoryId])
+  @@index([userId])
+}
+
+model GeoBlock {
+  id          String       @id @default(uuid())
+  territoryId String?
+  countryCode String
+  countryName String
+  reason      String?
+  blockType   GeoBlockType @default(FULL)
+  createdById String
+  createdAt   DateTime     @default(now())
+  expiresAt   DateTime?
+  territory   Territory?   @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+
+  @@unique([territoryId, countryCode])
+  @@index([countryCode])
+  @@index([territoryId])
+}
+
+model ContentModerationSettings {
+  id                      String    @id @default(uuid())
+  territoryId             String    @unique
+  explicitLanguageFilter  Boolean   @default(false)
+  explicitMaterialsFilter Boolean   @default(false)
+  aiModerationEnabled     Boolean   @default(true)
+  aiSensitivity           Int       @default(50)
+  blockedWords            String[]  @default([])
+  flaggedWords            String[]  @default([])
+  minContentRating        String    @default("G")
+  maxContentRating        String    @default("PG13")
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  territory               Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+}
+
+model PlatformSecurityPolicy {
+  id          String             @id @default(uuid())
+  name        String             @unique
+  description String?
+  isActive    Boolean            @default(true)
+  type        SecurityPolicyType
+  config      Json               @default("{}")
+  createdById String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([type])
+  @@index([isActive])
+}
+
+model BlockedIP {
+  id          String      @id @default(uuid())
+  ipAddress   String      @unique
+  reason      String?
+  threatLevel ThreatLevel @default(MEDIUM)
+  source      String?
+  createdById String?
+  createdAt   DateTime    @default(now())
+  expiresAt   DateTime?
+
+  @@index([expiresAt])
+}
+
+model SecurityAuditLog {
+  id          String      @id @default(uuid())
+  action      String
+  userId      String?
+  ipAddress   String
+  countryCode String?
+  userAgent   String?
+  details     Json?
+  severity    ThreatLevel @default(LOW)
+  createdAt   DateTime    @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([ipAddress])
+}
+
+model BulletinPost {
+  id           String            @id @default(uuid())
+  type         BulletinType
+  title        String
+  content      String
+  mediaUrl     String?
+  externalLink String?
+  upvotes      Int               @default(0)
+  downvotes    Int               @default(0)
+  viewCount    Int               @default(0)
+  category     BulletinCategory
+  tags         String[]
+  isPinned     Boolean           @default(false)
+  isVerified   Boolean           @default(false)
+  location     String?
+  locationGeo  String?
+  eventDate    DateTime?
+  authorId     String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  expiresAt    DateTime?
+  comments     BulletinComment[]
+  author       User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([type])
+  @@index([category])
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([isPinned])
+}
+
+model BulletinComment {
+  id         String       @id @default(uuid())
+  content    String
+  bulletinId String
+  authorId   String
+  createdAt  DateTime     @default(now())
+  bulletin   BulletinPost @relation(fields: [bulletinId], references: [id], onDelete: Cascade)
+
+  @@index([bulletinId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model BulletinVote {
+  id         String   @id @default(uuid())
+  bulletinId String
+  userId     String
+  isUpvote   Boolean
+  createdAt  DateTime @default(now())
+
+  @@unique([bulletinId, userId])
+  @@index([bulletinId])
+  @@index([userId])
+}
+
+model LiveStreamSuggestion {
+  id            String           @id @default(uuid())
+  platformType  StreamPlatform
+  externalId    String
+  embedUrl      String
+  title         String
+  thumbnailUrl  String?
+  description   String?
+  upvotes       Int              @default(0)
+  downvotes     Int              @default(0)
+  status        SuggestionStatus @default(PENDING)
+  suggestedById String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  suggestedBy   User             @relation(fields: [suggestedById], references: [id], onDelete: Cascade)
+  votes         StreamVote[]
+
+  @@index([status])
+  @@index([platformType])
+  @@index([suggestedById])
+  @@index([createdAt])
+}
+
+model StreamVote {
+  id           String               @id @default(uuid())
+  suggestionId String
+  userId       String
+  isUpvote     Boolean
+  createdAt    DateTime             @default(now())
+  suggestion   LiveStreamSuggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+
+  @@unique([suggestionId, userId])
+  @@index([suggestionId])
+  @@index([userId])
+}
+
+model ConnectionRequest {
+  id         String           @id @default(uuid())
+  senderId   String
+  receiverId String
+  status     ConnectionStatus @default(PENDING)
+  message    String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  receiver   User             @relation("ReceivedConnectionRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender     User             @relation("SentConnectionRequests", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+}
+
+model UserConnectionSettings {
+  id          String  @id @default(uuid())
+  userId      String  @unique
+  autoApprove Boolean @default(false)
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserPresence {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  isOnline    Boolean  @default(true)
+  lastSeenAt  DateTime @default(now())
+  currentPage String?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([isOnline])
+  @@index([lastSeenAt])
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String             @unique
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripePriceId        String?
+  status               SubscriptionStatus @default(INACTIVE)
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([stripeCustomerId])
+  @@index([status])
+}
+
+model Report {
+  id         String       @id @default(uuid())
+  reporterId String
+  targetId   String
+  targetType ReportType
+  reason     String
+  status     ReportStatus @default(PENDING)
+  notes      String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  reporter   User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([targetType])
+  @@index([createdAt])
+}
+
+model Topic {
+  id            String         @id @default(uuid())
+  slug          String         @unique
+  name          String
+  description   String?
+  icon          String?
+  color         String?
+  postCount     Int            @default(0)
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  posts         PostTopic[]
+  userInterests UserInterest[]
+
+  @@index([slug])
+  @@index([postCount])
+}
+
+model PostTopic {
+  id      String @id @default(uuid())
+  postId  String
+  topicId String
+  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  topic   Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, topicId])
+  @@index([postId])
+  @@index([topicId])
+}
+
+model UserInterest {
+  id        String        @id @default(uuid())
+  userId    String
+  topicId   String
+  level     InterestLevel @default(INTERESTED)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  topic     Topic         @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topicId])
+  @@index([userId])
+  @@index([topicId])
+  @@index([level])
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+  SUPERADMIN
+}
+
+enum MomentType {
+  IMAGE
+  VIDEO
+  TEXT
+}
+
+enum LiveStreamStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELLED
+}
+
+enum ChatType {
+  MESSAGE
+  GIFT
+  REACTION
+  JOIN
+  LEAVE
+}
+
+enum PostType {
+  IMAGE
+  VIDEO
+  TEXT
+  POLL
+  RALLY
+}
+
+enum RSVPStatus {
+  IN
+  MAYBE
+  OUT
+}
+
+enum CommunityRole {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+enum MessageMedia {
+  IMAGE
+  VIDEO
+  AUDIO
+  FILE
 }
 
 enum NotificationType {
@@ -590,30 +1010,6 @@ enum NotificationType {
   MESSAGE
   SYSTEM
   WAVE
-}
-
-// ============================================
-// PLATFORM MIGRATION
-// ============================================
-
-model Migration {
-  id            String          @id @default(uuid())
-  userId        String
-  platform      MigrationPlatform
-  status        MigrationStatus @default(PENDING)
-  filePath      String?         // Path to uploaded export file
-  stats         Json?           // Import statistics
-  errorMessage  String?
-  createdAt     DateTime        @default(now())
-  startedAt     DateTime?
-  completedAt   DateTime?
-  
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  importedPosts ImportedPost[]
-  pendingConnections PendingConnection[]
-
-  @@index([userId])
-  @@index([status])
 }
 
 enum MigrationPlatform {
@@ -632,77 +1028,12 @@ enum MigrationStatus {
   CANCELLED
 }
 
-model ImportedPost {
-  id                String      @id @default(uuid())
-  migrationId       String
-  originalPlatform  String
-  originalId        String?     // ID on original platform
-  originalTimestamp DateTime?   // When created on original platform
-  
-  // Content (normalized to Caravan format)
-  type              PostType    @default(IMAGE)
-  caption           String?     @db.Text
-  mediaUrls         String[]    // Array of media URLs
-  location          String?
-  tags              String[]    // Hashtags
-  
-  // Status
-  importStatus      ImportStatus @default(PENDING)
-  caravanPostId     String?     // Created Caravan post ID
-  errorMessage      String?
-  
-  createdAt         DateTime    @default(now())
-  
-  migration         Migration   @relation(fields: [migrationId], references: [id], onDelete: Cascade)
-
-  @@index([migrationId])
-  @@index([importStatus])
-}
-
 enum ImportStatus {
   PENDING
   IMPORTING
   COMPLETED
   SKIPPED
   FAILED
-}
-
-model PendingConnection {
-  id                String      @id @default(uuid())
-  userId            String      // The Caravan user who imported
-  migrationId       String?
-  platform          MigrationPlatform
-  
-  // Original platform identity
-  originalUsername  String
-  displayName       String?
-  profileImageUrl   String?
-  
-  // Contact info for inviting
-  email             String?
-  phone             String?
-  
-  // Caravan matching
-  matchedUserId     String?     // If matched to existing Caravan user
-  matchConfidence   Int?        // 0-100 confidence score
-  
-  // Relationship type
-  connectionType    ConnectionType @default(FOLLOWER)
-  
-  // Invite status
-  inviteStatus      InviteStatus @default(NOT_SENT)
-  inviteSentAt      DateTime?
-  inviteMethod      InviteMethod?
-  
-  createdAt         DateTime    @default(now())
-  
-  user              User        @relation("ImportedConnections", fields: [userId], references: [id], onDelete: Cascade)
-  migration         Migration?  @relation(fields: [migrationId], references: [id], onDelete: SetNull)
-  matchedUser       User?       @relation("MatchedConnections", fields: [matchedUserId], references: [id])
-
-  @@index([userId])
-  @@index([inviteStatus])
-  @@index([originalUsername])
 }
 
 enum ConnectionType {
@@ -728,205 +1059,35 @@ enum InviteMethod {
   LINK
 }
 
-model Invite {
-  id              String        @id @default(uuid())
-  senderId        String
-  recipientEmail  String?
-  recipientPhone  String?
-  method          InviteMethod
-  status          InviteStatus  @default(SENT)
-  referralCode    String        @unique
-  message         String?       // Custom message
-  
-  // Tracking
-  createdAt       DateTime      @default(now())
-  sentAt          DateTime      @default(now())
-  openedAt        DateTime?
-  joinedAt        DateTime?
-  joinedUserId    String?       @unique // User who joined via this invite
-  
-  sender          User          @relation("SentInvites", fields: [senderId], references: [id], onDelete: Cascade)
-  joinedUser      User?         @relation("JoinedViaInvite", fields: [joinedUserId], references: [id])
-
-  @@index([senderId])
-  @@index([referralCode])
-  @@index([status])
-}
-
-// ============================================
-// TERRITORY SYSTEM (Circle → Clan → Tribe → Nation)
-// Hierarchical sovereignty model
-// ============================================
-
-model Territory {
-  id              String           @id @default(uuid())
-  name            String
-  slug            String           @unique
-  description     String?          @db.Text
-  type            TerritoryType
-  avatarUrl       String?
-  coverUrl        String?
-  
-  // Theme/Branding
-  primaryColor    String?          @default("#D4AF37")
-  
-  // Privacy
-  isPublic        Boolean          @default(false)
-  requireApproval Boolean          @default(true)
-  
-  // Hierarchy
-  parentId        String?          // For nesting (Circle in Clan, Clan in Tribe, etc.)
-  
-  // Stats
-  memberCount     Int              @default(0)
-  postCount       Int              @default(0)
-  
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  
-  // Relations
-  parent          Territory?       @relation("TerritoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children        Territory[]      @relation("TerritoryHierarchy")
-  
-  members         TerritoryMember[]
-  posts           TerritoryPost[]
-  algorithmSettings TerritoryAlgorithmSettings?
-  
-  // Connections to other territories
-  outgoingConnections TerritoryConnection[] @relation("ConnectionFrom")
-  incomingConnections TerritoryConnection[] @relation("ConnectionTo")
-  
-  // Moderation & Security
-  moderationRules TerritoryModerationRule[]
-  strikes         TerritoryStrike[]
-  geoBlocks       GeoBlock[]
-  contentModerationSettings ContentModerationSettings?
-
-  @@index([type])
-  @@index([parentId])
-  @@index([slug])
-}
-
-
 enum TerritoryType {
-  CIRCLE  // 2-10 members - immediate family/best friends
-  CLAN    // 10-50 members - extended family/friend groups
-  TRIBE   // 50-500 members - community with governance
-  NATION  // 500+ members - movement with elected leadership
-  WORLD   // Platform-wide (system only)
-}
-
-model TerritoryMember {
-  id           String              @id @default(uuid())
-  territoryId  String
-  userId       String
-  role         TerritoryRole       @default(MEMBER)
-  joinedAt     DateTime            @default(now())
-  invitedById  String?
-  
-  // Status
-  isMuted      Boolean             @default(false)
-  strikeCount  Int                 @default(0)
-  
-  territory    Territory           @relation(fields: [territoryId], references: [id], onDelete: Cascade)
-  
-  @@unique([territoryId, userId])
-  @@index([userId])
-  @@index([territoryId])
+  CIRCLE
+  CLAN
+  TRIBE
+  NATION
+  WORLD
 }
 
 enum TerritoryRole {
-  MEMBER      // Regular member
-  GUARDIAN    // Can moderate content
-  ELDER       // Can set rules, invite members
-  CHIEF       // Full admin - owner/founder
-}
-
-model TerritoryPost {
-  id           String    @id @default(uuid())
-  territoryId  String
-  postId       String    // Reference to the main Post
-  sharedById   String    // Who shared/posted to this territory
-  createdAt    DateTime  @default(now())
-  
-  territory    Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
-
-  @@unique([territoryId, postId])
-  @@index([territoryId])
-}
-
-// ============================================
-// TERRITORY CONNECTIONS
-// How territories relate to each other
-// ============================================
-
-model TerritoryConnection {
-  id             String               @id @default(uuid())
-  fromTerritoryId String
-  toTerritoryId   String
-  type           TerritoryConnectionType @default(OBSERVED)
-  
-  // What content flows between them
-  shareContent   Boolean              @default(false)
-  shareMembers   Boolean              @default(false)
-  
-  // Approval
-  status         ConnectionStatus     @default(PENDING)
-  requestedAt    DateTime             @default(now())
-  approvedAt     DateTime?
-  
-  fromTerritory  Territory            @relation("ConnectionFrom", fields: [fromTerritoryId], references: [id], onDelete: Cascade)
-  toTerritory    Territory            @relation("ConnectionTo", fields: [toTerritoryId], references: [id], onDelete: Cascade)
-
-  @@unique([fromTerritoryId, toTerritoryId])
-  @@index([fromTerritoryId])
-  @@index([toTerritoryId])
+  MEMBER
+  GUARDIAN
+  ELDER
+  CHIEF
 }
 
 enum TerritoryConnectionType {
-  ALLIED      // Full mutual visibility, shared content pools
-  FEDERATED   // Selective sharing, each admin controls what flows
-  OBSERVED    // One-way view (like following)
-  BLOCKED     // No interaction
+  ALLIED
+  FEDERATED
+  OBSERVED
+  BLOCKED
 }
 
 enum ConnectionStatus {
   PENDING
-  APPROVED     // For territory connections
-  REJECTED     // For territory connections
-  ACCEPTED     // For user connection requests
-  DECLINED     // For user connection requests
-  BLOCKED      // For blocking connections
-}
-
-// ============================================
-// ALGORITHM SETTINGS PER TERRITORY
-// Each territory owns its own algorithm
-// ============================================
-
-model TerritoryAlgorithmSettings {
-  id           String    @id @default(uuid())
-  territoryId  String    @unique
-  
-  // Content Prioritization Weights (0-100)
-  recencyWeight     Int      @default(50)   // How much recent content matters
-  engagementWeight  Int      @default(30)   // Likes/comments importance
-  familiarityWeight Int      @default(60)   // Content from closer circles
-  noveltyWeight     Int      @default(20)   // New/diverse content
-  
-  // Content Filtering
-  contentRatings    String[] @default(["G", "PG", "PG13"]) // Allowed ratings
-  
-  // Interaction Rules
-  whoCanPost        PostPermission @default(MEMBERS)
-  whoCanComment     PostPermission @default(MEMBERS)
-  whoCanInvite      PostPermission @default(ELDERS)
-  allowCrossPosting Boolean        @default(false)
-  
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  
-  territory    Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+  APPROVED
+  REJECTED
+  ACCEPTED
+  DECLINED
+  BLOCKED
 }
 
 enum PostPermission {
@@ -937,178 +1098,35 @@ enum PostPermission {
   CHIEFS
 }
 
-// ============================================
-// MODERATION RULES PER TERRITORY
-// ============================================
-
-model TerritoryModerationRule {
-  id           String    @id @default(uuid())
-  territoryId  String
-  title        String
-  description  String    @db.Text
-  type         RuleType
-  
-  // For keyword rules
-  keywords     String[]  @default([])
-  
-  // Action when triggered
-  action       RuleAction @default(FLAG)
-  
-  isActive     Boolean   @default(true)
-  order        Int       @default(0)
-  createdAt    DateTime  @default(now())
-  
-  territory    Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
-
-  @@index([territoryId])
-}
-
 enum RuleType {
-  KEYWORD_FILTER    // Ban/flag certain words
-  CONTENT_RATING    // Enforce content ratings
-  SPAM_DETECTION    // Auto-detect spam
-  CUSTOM            // Custom rule defined by admins
+  KEYWORD_FILTER
+  CONTENT_RATING
+  SPAM_DETECTION
+  CUSTOM
 }
 
 enum RuleAction {
-  FLAG              // Flag for review
-  HIDE              // Auto-hide content
-  DELETE            // Auto-delete
-  WARN              // Warn the poster
-  STRIKE            // Issue a strike
-}
-
-// ============================================
-// STRIKE SYSTEM PER TERRITORY
-// ============================================
-
-model TerritoryStrike {
-  id           String       @id @default(uuid())
-  territoryId  String
-  userId       String       // User who received the strike
-  issuedById   String       // Admin/moderator who issued it
-  reason       String       @db.Text
-  postId       String?      // Related post if applicable
-  
-  // Expiration
-  expiresAt    DateTime?    // Null = permanent
-  isActive     Boolean      @default(true)
-  
-  createdAt    DateTime     @default(now())
-  
-  territory    Territory    @relation(fields: [territoryId], references: [id], onDelete: Cascade)
-
-  @@index([territoryId])
-  @@index([userId])
-}
-
-// ============================================
-// GEO-BLOCKING (Territory & Platform Level)
-// ============================================
-
-model GeoBlock {
-  id              String       @id @default(uuid())
-  territoryId     String?      // Null = platform-wide block
-  countryCode     String       // ISO 3166-1 alpha-2 (e.g., "RU", "CN", "IR")
-  countryName     String
-  reason          String?      @db.Text
-  blockType       GeoBlockType @default(FULL)
-  createdById     String
-  createdAt       DateTime     @default(now())
-  expiresAt       DateTime?    // Null = permanent
-  
-  territory       Territory?   @relation(fields: [territoryId], references: [id], onDelete: Cascade)
-  
-  @@unique([territoryId, countryCode])
-  @@index([countryCode])
-  @@index([territoryId])
+  FLAG
+  HIDE
+  DELETE
+  WARN
+  STRIKE
 }
 
 enum GeoBlockType {
-  FULL          // No access at all
-  VIEW_ONLY     // Can view but not join/post
-  NO_JOIN       // Can view content but can't join
-}
-
-// ============================================
-// CONTENT MODERATION SETTINGS (Territory Level)
-// ============================================
-
-model ContentModerationSettings {
-  id                        String    @id @default(uuid())
-  territoryId               String    @unique
-  
-  // Explicit Content Filters
-  explicitLanguageFilter    Boolean   @default(false)
-  explicitMaterialsFilter   Boolean   @default(false)
-  
-  // AI-Assisted Moderation
-  aiModerationEnabled       Boolean   @default(true)
-  aiSensitivity             Int       @default(50) // 0-100
-  
-  // Custom Word Blocking
-  blockedWords              String[]  @default([])
-  flaggedWords              String[]  @default([]) // Flag but don't block
-  
-  // Content Ratings
-  minContentRating          String    @default("G")
-  maxContentRating          String    @default("PG13")
-  
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime  @updatedAt
-  
-  territory                 Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
-}
-
-// ============================================
-// PLATFORM SECURITY POLICIES (SuperAdmin)
-// ============================================
-
-model PlatformSecurityPolicy {
-  id              String             @id @default(uuid())
-  name            String             @unique
-  description     String?            @db.Text
-  isActive        Boolean            @default(true)
-  type            SecurityPolicyType
-  
-  // Configuration (JSON for flexibility)
-  config          Json               @default("{}")
-  
-  // Audit
-  createdById     String
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  
-  @@index([type])
-  @@index([isActive])
+  FULL
+  VIEW_ONLY
+  NO_JOIN
 }
 
 enum SecurityPolicyType {
-  RATE_LIMITING         // API and action rate limits
-  IP_BLOCKING           // Block specific IPs/ranges
-  GEO_RESTRICTION       // Platform-wide geo-blocking
-  CONTENT_SCANNING      // AI content moderation
-  AUTH_HARDENING        // Login security, 2FA requirements
-  DATA_PROTECTION       // Encryption, export controls
-  THREAT_DETECTION      // Anomaly detection, bot prevention
-}
-
-// ============================================
-// BLOCKED IPs (Platform Security)
-// ============================================
-
-model BlockedIP {
-  id              String      @id @default(uuid())
-  ipAddress       String      // Can be IP or CIDR range
-  reason          String?     @db.Text
-  threatLevel     ThreatLevel @default(MEDIUM)
-  source          String?     // "manual", "auto-detected", "threat-intel"
-  createdById     String?
-  createdAt       DateTime    @default(now())
-  expiresAt       DateTime?   // Null = permanent
-  
-  @@unique([ipAddress])
-  @@index([expiresAt])
+  RATE_LIMITING
+  IP_BLOCKING
+  GEO_RESTRICTION
+  CONTENT_SCANNING
+  AUTH_HARDENING
+  DATA_PROTECTION
+  THREAT_DETECTION
 }
 
 enum ThreatLevel {
@@ -1118,82 +1136,15 @@ enum ThreatLevel {
   CRITICAL
 }
 
-// ============================================
-// SECURITY AUDIT LOG (Compliance)
-// ============================================
-
-model SecurityAuditLog {
-  id              String      @id @default(uuid())
-  action          String      // "LOGIN_FAILED", "GEO_BLOCKED", "RATE_LIMITED", etc.
-  userId          String?     // Null for unauthenticated actions
-  ipAddress       String
-  countryCode     String?
-  userAgent       String?
-  details         Json?       // Additional context
-  severity        ThreatLevel @default(LOW)
-  createdAt       DateTime    @default(now())
-  
-  @@index([userId])
-  @@index([action])
-  @@index([createdAt])
-  @@index([ipAddress])
-}
-
-// ============================================
-// COMMUNITY COMMAND CENTER - BULLETIN BOARD
-// ============================================
-
-model BulletinPost {
-  id            String          @id @default(uuid())
-  type          BulletinType
-  title         String
-  content       String          @db.Text
-  mediaUrl      String?
-  externalLink  String?
-  
-  // Engagement
-  upvotes       Int             @default(0)
-  downvotes     Int             @default(0)
-  viewCount     Int             @default(0)
-  
-  // Categorization
-  category      BulletinCategory
-  tags          String[]
-  isPinned      Boolean         @default(false)
-  isVerified    Boolean         @default(false)
-  
-  // Location for events/protests
-  location      String?
-  locationGeo   String?         // lat,lng for mapping
-  eventDate     DateTime?
-  
-  // Author
-  authorId      String
-  author        User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  
-  // Comments
-  comments      BulletinComment[]
-  
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  expiresAt     DateTime?       // Optional auto-expiry
-  
-  @@index([type])
-  @@index([category])
-  @@index([authorId])
-  @@index([createdAt])
-  @@index([isPinned])
-}
-
 enum BulletinType {
-  ANNOUNCEMENT        // Platform news
-  JOB                 // Job postings
-  COLLABORATION       // Seeking cofounders/partners
-  INVESTMENT          // Seeking investors
-  EVENT               // Protests, gatherings, meetups
-  CALL_TO_ACTION      // Community mobilization
-  SPOTLIGHT           // High-profile member joins
-  DISCUSSION          // General community discussions
+  ANNOUNCEMENT
+  JOB
+  COLLABORATION
+  INVESTMENT
+  EVENT
+  CALL_TO_ACTION
+  SPOTLIGHT
+  DISCUSSION
 }
 
 enum BulletinCategory {
@@ -1207,78 +1158,13 @@ enum BulletinCategory {
   GENERAL
 }
 
-model BulletinComment {
-  id            String        @id @default(uuid())
-  content       String        @db.Text
-  
-  bulletinId    String
-  bulletin      BulletinPost  @relation(fields: [bulletinId], references: [id], onDelete: Cascade)
-  
-  authorId      String
-  
-  createdAt     DateTime      @default(now())
-  
-  @@index([bulletinId])
-  @@index([authorId])
-  @@index([createdAt])
-}
-
-model BulletinVote {
-  id            String        @id @default(uuid())
-  bulletinId    String
-  userId        String
-  isUpvote      Boolean       // true = upvote, false = downvote
-  
-  createdAt     DateTime      @default(now())
-  
-  @@unique([bulletinId, userId])
-  @@index([bulletinId])
-  @@index([userId])
-}
-
-// ============================================
-// LIVE FEED NETWORK - EXTERNAL STREAMS
-// ============================================
-
-model LiveStreamSuggestion {
-  id            String          @id @default(uuid())
-  platformType  StreamPlatform
-  externalId    String          // YouTube video ID, Twitch channel, etc.
-  embedUrl      String
-  title         String
-  thumbnailUrl  String?
-  description   String?         @db.Text
-  
-  // Voting
-  upvotes       Int             @default(0)
-  downvotes     Int             @default(0)
-  
-  // Status
-  status        SuggestionStatus @default(PENDING)
-  
-  // Suggested by
-  suggestedById String
-  suggestedBy   User            @relation(fields: [suggestedById], references: [id], onDelete: Cascade)
-  
-  // Votes
-  votes         StreamVote[]
-  
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  
-  @@index([status])
-  @@index([platformType])
-  @@index([suggestedById])
-  @@index([createdAt])
-}
-
 enum StreamPlatform {
   YOUTUBE
   TWITCH
   FACEBOOK
   INSTAGRAM
   TIKTOK
-  NATIVE        // Our own Campfire streams
+  NATIVE
 }
 
 enum SuggestionStatus {
@@ -1287,89 +1173,6 @@ enum SuggestionStatus {
   LIVE
   ENDED
   REJECTED
-}
-
-model StreamVote {
-  id              String              @id @default(uuid())
-  suggestionId    String
-  suggestion      LiveStreamSuggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
-  userId          String
-  isUpvote        Boolean
-  
-  createdAt       DateTime            @default(now())
-  
-  @@unique([suggestionId, userId])
-  @@index([suggestionId])
-  @@index([userId])
-}
-
-// ============================================
-// CONNECTION SYSTEM (LinkedIn-style)
-// ============================================
-
-model ConnectionRequest {
-  id          String            @id @default(uuid())
-  senderId    String
-  receiverId  String
-  status      ConnectionStatus  @default(PENDING)
-  message     String?           @db.Text
-  
-  sender      User              @relation("SentConnectionRequests", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver    User              @relation("ReceivedConnectionRequests", fields: [receiverId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  
-  @@unique([senderId, receiverId])
-  @@index([senderId])
-  @@index([receiverId])
-  @@index([status])
-}
-
-model UserConnectionSettings {
-  id              String    @id @default(uuid())
-  userId          String    @unique
-  autoApprove     Boolean   @default(false)
-  
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-// ============================================
-// REAL-TIME PRESENCE (Online Users)
-// ============================================
-
-model UserPresence {
-  id              String    @id @default(uuid())
-  userId          String    @unique
-  isOnline        Boolean   @default(true)
-  lastSeenAt      DateTime  @default(now())
-  currentPage     String?   // Which page/section they're viewing
-  
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([isOnline])
-  @@index([lastSeenAt])
-}
-
-// ============================================
-// MONETIZATION (Stripe)
-// ============================================
-
-model Subscription {
-  id                   String   @id @default(uuid())
-  userId               String   @unique
-  stripeCustomerId     String?
-  stripeSubscriptionId String?
-  stripePriceId        String?
-  status               SubscriptionStatus @default(INACTIVE)
-  currentPeriodEnd     DateTime?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([stripeCustomerId])
-  @@index([status])
 }
 
 enum SubscriptionStatus {
@@ -1382,28 +1185,6 @@ enum SubscriptionStatus {
   trialing
   unpaid
   INACTIVE
-}
-
-// ============================================
-// MODERATION (Reports)
-// ============================================
-
-model Report {
-  id          String       @id @default(uuid())
-  reporterId  String
-  targetId    String       // ID of the reported content/user
-  targetType  ReportType
-  reason      String       @db.Text
-  status      ReportStatus @default(PENDING)
-  notes       String?      // Admin notes
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  reporter    User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
-
-  @@index([status])
-  @@index([targetType])
-  @@index([createdAt])
 }
 
 enum ReportType {
@@ -1422,3 +1203,8 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum InterestLevel {
+  NOT_INTERESTED
+  INTERESTED
+  VERY_INTERESTED
+}

@@ -68,12 +68,17 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             }
         }
 
+        // Check if user is a "new user" (has no follows)
+        const followCount = await prisma.follow.count({
+            where: { followerId: req.userId },
+        });
+        const isNewUser = followCount === 0;
+
+        console.log(`[Feed] User ${req.userId} follow count: ${followCount}, isNewUser: ${isNewUser}`);
+
         // Fetch real posts from database
         let whereClause: any = {
-            OR: [
-                { isPublic: true },
-                { userId: req.userId }
-            ]
+            isPublic: true, // Always show public posts
         };
 
         if (type === 'following') {
@@ -89,22 +94,32 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                 throw new AppError('Failed to load feed', 503);
             }
 
-            whereClause = {
-                ...whereClause,
-                userId: { in: following.map((f) => f.followingId) },
-            };
+            if (following.length === 0) {
+                // No follows yet - show all public posts instead of empty feed
+                console.log('[Feed] User has no follows, showing all public posts for "following" tab');
+                whereClause = { isPublic: true };
+            } else {
+                whereClause = {
+                    isPublic: true,
+                    userId: { in: following.map((f) => f.followingId) },
+                };
+            }
         }
 
         let posts;
         try {
+            // For "For You" feed, fetch more posts to rank them intelligently
+            const fetchLimit = type === 'foryou'
+                ? parseInt(limit as string) * 3  // Fetch 3x to have pool for ranking
+                : parseInt(limit as string) + 1;
+
             posts = await prisma.post.findMany({
                 where: whereClause,
-                take: parseInt(limit as string) + 1,
+                take: fetchLimit,
                 ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
                 orderBy: [
                     { isPinned: 'desc' },
-                    { viewCount: 'desc' },
-                    { createdAt: 'desc' },
+                    { createdAt: 'desc' }, // Get recent posts first, then rank by engagement
                 ],
                 include: {
                     user: {
@@ -133,9 +148,49 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                     },
                 },
             });
+
+            console.log(`[Feed] Fetched ${posts.length} posts for user ${req.userId}`);
         } catch (dbError) {
             console.error('Database error fetching posts:', dbError);
             throw new AppError('Failed to load posts', 503);
+        }
+
+        // Smart ranking algorithm for "For You" feed
+        if (type === 'foryou' && !cursor) {
+            const now = Date.now();
+            const oneDayMs = 24 * 60 * 60 * 1000;
+
+            // Calculate engagement score for each post
+            const rankedPosts = posts.map(post => {
+                const engagementScore =
+                    (post._count.likes * 3) +      // Likes worth 3 points
+                    (post._count.comments * 5) +   // Comments worth 5 points (higher engagement)
+                    (post._count.shares * 7);      // Shares worth 7 points (viral signal)
+
+                // Recency boost: posts under 24h get 3x multiplier
+                const postAge = now - new Date(post.createdAt).getTime();
+                const recencyBoost = postAge < oneDayMs ? 3 : 1;
+
+                // Pinned posts always show first
+                const pinnedBoost = post.isPinned ? 10000 : 0;
+
+                // NEW USER BOOST: If user is new, boost all posts slightly
+                // This ensures they see a vibrant feed even with low engagement
+                const newUserBoost = isNewUser ? 1.5 : 1;
+
+                const finalScore = pinnedBoost + (engagementScore * recencyBoost * newUserBoost);
+
+                return {
+                    ...post,
+                    _engagementScore: finalScore
+                };
+            });
+
+            // Sort by engagement score
+            rankedPosts.sort((a, b) => b._engagementScore - a._engagementScore);
+
+            // Take only the requested limit
+            posts = rankedPosts.slice(0, parseInt(limit as string) + 1);
         }
 
         const hasMore = posts.length > parseInt(limit as string);
@@ -162,9 +217,13 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                 sharesCount: post._count.shares,
                 isLiked: likedPostIds.has(post.id),
                 isSaved: savedPostIds.has(post.id),
+                // Remove internal ranking score
+                _engagementScore: undefined,
             })),
             nextCursor: hasMore ? results[results.length - 1].id : null,
         };
+
+        console.log(`[Feed] Returning ${response.posts.length} posts to user ${req.userId}`);
 
         // Cache the initial page for 30 seconds
         if (!cursor) {
@@ -266,9 +325,11 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             musicId: z.string().optional(),
             communityId: z.string().optional(),
             isPublic: z.boolean().optional(),
+            topicIds: z.array(z.string()).max(3).optional(), // Max 3 topics
         });
 
         const data = createSchema.parse(req.body);
+        const { topicIds, ...postData } = data;
 
         // Extract hashtags from caption
         const hashtags = data.caption?.match(/#\w+/g) || [];
@@ -276,7 +337,7 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
         const post = await prisma.post.create({
             data: {
                 userId: req.userId!,
-                ...data,
+                ...postData,
             },
             include: {
                 user: {
@@ -304,6 +365,24 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             await prisma.postHashtag.create({
                 data: { postId: post.id, hashtagId: hashtag.id },
             });
+        }
+
+        // Process topics
+        if (topicIds && topicIds.length > 0) {
+            await Promise.all(
+                topicIds.map(async (topicId) => {
+                    // Create PostTopic relation
+                    await prisma.postTopic.create({
+                        data: { postId: post.id, topicId },
+                    });
+
+                    // Increment topic postCount
+                    await prisma.topic.update({
+                        where: { id: topicId },
+                        data: { postCount: { increment: 1 } },
+                    });
+                })
+            );
         }
 
         // Invalidate feed cache for user and their followers

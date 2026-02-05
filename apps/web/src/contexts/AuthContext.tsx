@@ -4,10 +4,9 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { useRouter } from 'next/navigation';
 import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 
-// ============================================
 // TYPES
 // ============================================
-interface User {
+export interface User {
     id: string;
     email: string;
     username: string;
@@ -33,7 +32,7 @@ interface AuthContextType {
     cancel2FA: () => void;
     signup: (email: string, password: string, username: string, displayName: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
-    updateUser: (updates: Partial<User>) => void;
+    updateUser: (updates: Partial<User>) => Promise<void>;
 }
 
 // ============================================
@@ -70,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (response.ok) {
                     const data = await response.json();
                     setUser(data.user);
+                    console.log('[Auth] User authenticated:', data.user.email);
 
                     // Auto-refresh token if approaching expiry
                     if (shouldRefresh) {
@@ -89,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     }
                 } else {
                     // Token invalid, clear it
+                    console.warn('[Auth] Token invalid, clearing');
                     localStorage.removeItem('0g_token');
                     localStorage.removeItem('0g_token_expiry');
                 }
@@ -105,6 +106,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
         checkAuth();
+
+        // Listen for storage events to handle OAuth login from login page
+        const handleStorageChange = (e: StorageEvent) => {
+            console.log('[Auth] Storage event detected:', e.key);
+            if (e.key === '0g_token' && e.newValue && !e.oldValue) {
+                console.log('[Auth] New token detected, re-authenticating...');
+                // Token was just added (OAuth login), re-check auth
+                checkAuth();
+            }
+        };
+
+        // Custom event for same-tab storage changes (since StorageEvent doesn't fire in same tab)
+        const handleCustomStorage = () => {
+            console.log('[Auth] Custom storage event detected, re-authenticating...');
+            checkAuth();
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('storage', handleCustomStorage as EventListener);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('storage', handleCustomStorage as EventListener);
+        };
     }, []);
 
     // Login
@@ -257,12 +282,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    // Update user locally
-    const updateUser = (updates: Partial<User>) => {
+
+    // Update user locally and refetch from backend to ensure consistency
+    const updateUser = async (updates: Partial<User>) => {
         if (user) {
+            // Optimistically update UI
             setUser({ ...user, ...updates });
+
+            // Refetch from backend to ensure we have the latest data
+            try {
+                const response = await apiFetch(API_ENDPOINTS.me);
+                if (response.ok) {
+                    const data = await response.json();
+                    setUser(data.user);
+                    console.log('[Auth] User profile refreshed from backend:', data.user.displayName);
+                }
+            } catch (error) {
+                console.error('[Auth] Failed to refresh user profile:', error);
+                // Keep optimistic update if backend fails
+            }
         }
     };
+
 
     // Computed admin check
     const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN' || user?.role === 'MODERATOR';

@@ -271,7 +271,7 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
     const router = useRouter();
 
     return (
-        <div className="bg-white/[0.02] rounded-2xl border border-white/5 overflow-hidden">
+        <div className="bg-white/[0.02] rounded-2xl border border-white/10 shadow-lg shadow-black/20 overflow-hidden mb-6 transition-all duration-200 hover:border-[#00D4FF]/30 hover:shadow-[#00D4FF]/10 group">
             {/* Header */}
             <div className="p-4 pb-2">
                 <div className="flex items-start gap-3">
@@ -308,19 +308,6 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                             <p className="text-white/70 text-sm mt-1 line-clamp-3">{post.content}</p>
                         )}
                     </div>
-                    {(post.author.id === user?.id || isAdmin) && (
-                        <button
-                            onClick={() => {
-                                if (confirm('Delete this post?')) {
-                                    deletePost(post.id);
-                                }
-                            }}
-                            className="p-2 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all flex-shrink-0"
-                            title="Delete post"
-                        >
-                            <TrashIcon size={20} />
-                        </button>
-                    )}
                     <div className="relative flex-shrink-0">
                         <PostActions
                             postId={post.id}
@@ -328,6 +315,9 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                             onDelete={() => deletePost(post.id)}
                             postContent={post.content}
                             authorName={post.author.displayName}
+                            mediaUrl={post.mediaUrl}
+                            thumbnailUrl={post.mediaUrl}
+                            postType={post.type}
                         />
                     </div>
                 </div>

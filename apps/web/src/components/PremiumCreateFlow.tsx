@@ -5,14 +5,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { CameraIcon, SparklesIcon, PlayIcon, MapPinIcon, UserIcon, GlobeIcon, EditIcon, ArrowRightIcon } from '@/components/icons';
 import { AIMediaEditor } from './AIMediaEditor';
+import TopicSelector from './TopicSelector';
 
 // ============================================
 // TYPES
 // ============================================
+interface Topic {
+    id: string;
+    slug: string;
+    name: string;
+    icon: string;
+    color: string;
+}
+
 interface CreateFlowProps {
     isOpen: boolean;
     onClose: () => void;
-    onPublish?: (post: { mediaUrl: string; caption: string; type: 'post' | 'moment' | 'journey'; file?: File | null }) => void;
+    onPublish?: (post: { mediaUrl: string; caption: string; type: 'post' | 'moment' | 'journey'; file?: File | null; topicIds?: string[] }) => void;
 }
 
 type Step = 'select' | 'edit' | 'caption' | 'share';
@@ -29,6 +38,7 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
     const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
     const [editedMediaUrl, setEditedMediaUrl] = useState<string | null>(null);
     const [caption, setCaption] = useState('');
+    const [selectedTopics, setSelectedTopics] = useState<Topic[]>([]);
     const [isPublishing, setIsPublishing] = useState(false);
     const [aiCaption, setAiCaption] = useState<string | null>(null);
     const [showAiCaptions, setShowAiCaptions] = useState(false);
@@ -66,6 +76,7 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
         setMediaUrl(null);
         setEditedMediaUrl(null);
         setCaption('');
+        setSelectedTopics([]);
         setAiCaption(null);
         setShowAiCaptions(false);
     }, []);
@@ -80,13 +91,14 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
             mediaUrl: editedMediaUrl || mediaUrl || '',
             caption,
             type: contentType,
-            file: mediaFile
+            file: mediaFile,
+            topicIds: selectedTopics.map(t => t.id)
         });
 
         setIsPublishing(false);
         handleReset();
         onClose();
-    }, [editedMediaUrl, mediaUrl, caption, contentType, onPublish, onClose, handleReset]);
+    }, [editedMediaUrl, mediaUrl, caption, contentType, selectedTopics, mediaFile, onPublish, onClose, handleReset]);
 
     // Close handler
     const handleClose = useCallback(() => {
@@ -309,6 +321,15 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
                                     </motion.div>
                                 )}
                             </AnimatePresence>
+
+                            {/* Topic Selector */}
+                            <div className="mt-6">
+                                <TopicSelector
+                                    selectedTopics={selectedTopics}
+                                    onChange={setSelectedTopics}
+                                    maxSelection={3}
+                                />
+                            </div>
 
                             {/* Post Settings */}
                             <div className="mt-6 space-y-3">

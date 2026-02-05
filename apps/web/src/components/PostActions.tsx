@@ -17,9 +17,12 @@ interface PostActionsProps {
     onSave?: (postId: string) => void;
     postContent?: string;
     authorName?: string;
+    mediaUrl?: string;
+    thumbnailUrl?: string;
+    postType?: 'IMAGE' | 'VIDEO' | 'TEXT' | 'POLL' | 'RALLY';
 }
 
-export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postContent, authorName }: PostActionsProps) {
+export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postContent, authorName, mediaUrl, thumbnailUrl, postType }: PostActionsProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -103,10 +106,10 @@ export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postC
                     e.stopPropagation();
                     setIsOpen(!isOpen);
                 }}
-                className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                className="p-2 rounded-full hover:bg-[#00D4FF]/10 transition-all duration-200 hover:scale-110 group-hover:bg-white/5"
                 aria-label="Post options"
             >
-                <MoreHorizontalIcon className="text-white/60" />
+                <MoreHorizontalIcon className="text-white/60 group-hover:text-white/80" />
             </button>
 
             {/* Dropdown Menu */}
@@ -178,40 +181,103 @@ export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postC
                 )}
             </AnimatePresence>
 
-            {/* Delete Confirmation Modal */}
+            {/* Enhanced Delete Confirmation Modal with Post Preview */}
             <AnimatePresence>
                 {showDeleteConfirm && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
                         onClick={() => setShowDeleteConfirm(false)}
                     >
                         <motion.div
                             initial={{ scale: 0.9, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.9, y: 20 }}
-                            className="bg-[#1A1A1F] rounded-2xl p-6 max-w-sm w-full border border-white/10"
+                            className="bg-[#1A1A1F] rounded-2xl max-w-md w-full border border-white/10 overflow-hidden"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="text-center mb-6">
-                                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-                                    <TrashIcon size={32} className="text-red-500" />
+                            {/* Header */}
+                            <div className="p-6 border-b border-white/10">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                                        <TrashIcon size={24} className="text-red-500" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-lg font-semibold text-white mb-1">Delete this post?</h3>
+                                        <p className="text-sm text-white/50">
+                                            This action cannot be undone
+                                        </p>
+                                    </div>
                                 </div>
-                                <h3 className="text-xl font-semibold text-white mb-2">Delete Post?</h3>
-                                <p className="text-white/60">
-                                    This action cannot be undone. This post will be permanently removed.
-                                </p>
                             </div>
 
+                            {/* Post Preview */}
+                            <div className="p-4 bg-white/5">
+                                <div className="rounded-xl overflow-hidden border border-white/10 bg-black/40">
+                                    {/* Media Preview */}
+                                    {(postType === 'VIDEO' || postType === 'IMAGE') && (mediaUrl || thumbnailUrl) && (
+                                        <div className="relative aspect-video bg-black">
+                                            <img
+                                                src={thumbnailUrl || mediaUrl}
+                                                alt="Post preview"
+                                                className="w-full h-full object-cover"
+                                            />
+                                            {postType === 'VIDEO' && (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                                        <span className="text-white text-xl ml-0.5">▶</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* Post Type Badge */}
+                                            <div className="absolute top-2 left-2 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm text-xs font-medium text-white">
+                                                {postType === 'VIDEO' ? '🎥 Video' : '📷 Image'}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Caption Preview */}
+                                    {postContent && (
+                                        <div className="p-3">
+                                            <p className="text-sm text-white/70 line-clamp-3">
+                                                {postContent}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Text Post */}
+                                    {postType === 'TEXT' && !mediaUrl && (
+                                        <div className="p-6 text-center">
+                                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 flex items-center justify-center mx-auto mb-3">
+                                                <span className="text-2xl">📝</span>
+                                            </div>
+                                            <p className="text-sm text-white/70 line-clamp-4">
+                                                {postContent || 'Text post'}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Author */}
+                                    {authorName && (
+                                        <div className="px-3 py-2 border-t border-white/5 flex items-center gap-2">
+                                            <span className="text-xs text-white/40">by</span>
+                                            <span className="text-xs font-medium text-white/60">{authorName}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Error Message */}
                             {error && (
-                                <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
+                                <div className="mx-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
                                     {error}
                                 </div>
                             )}
 
-                            <div className="flex gap-3">
+                            {/* Actions */}
+                            <div className="p-4 flex gap-3">
                                 <button
                                     onClick={() => setShowDeleteConfirm(false)}
                                     disabled={isDeleting}
@@ -230,7 +296,10 @@ export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postC
                                             Deleting...
                                         </>
                                     ) : (
-                                        'Delete'
+                                        <>
+                                            <TrashIcon size={16} />
+                                            Delete Permanently
+                                        </>
                                     )}
                                 </button>
                             </div>

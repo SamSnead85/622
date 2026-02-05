@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { ShareIcon, SendIcon } from '@/components/icons';
 
 interface ChatMessage {
     id: string;
@@ -15,11 +16,8 @@ interface ChatMessage {
     avatarUrl: string;
 }
 
-// Mock chat messages for demo
-const INITIAL_MESSAGES: ChatMessage[] = [
-    { id: '1', username: 'sarah_designs', content: 'Welcome everyone! 👋', type: 'message', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50&h=50&fit=crop&crop=face' },
-    { id: '2', username: 'techbro99', content: 'First! 🔥', type: 'message', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=50&h=50&fit=crop&crop=face' },
-];
+// Real users only - no mock data
+const INITIAL_MESSAGES: ChatMessage[] = [];
 
 export default function CampfireGoLive() {
     const { user } = useAuth();
@@ -32,6 +30,8 @@ export default function CampfireGoLive() {
     const [newMessage, setNewMessage] = useState('');
     const [hasCamera, setHasCamera] = useState(false);
     const [reactions, setReactions] = useState<{ id: string; emoji: string; x: number }[]>([]);
+    const [showShareMenu, setShowShareMenu] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
 
     // Default avatar if user doesn't have one
     const userAvatar = user?.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face';
@@ -72,20 +72,11 @@ export default function CampfireGoLive() {
         return () => clearInterval(interval);
     }, [isLive]);
 
-    // Simulate viewers joining
-    useEffect(() => {
-        if (!isLive) return;
-        const interval = setInterval(() => {
-            setViewerCount(v => v + Math.floor(Math.random() * 3));
-        }, 3000);
-        return () => clearInterval(interval);
-    }, [isLive]);
-
     const goLive = () => {
         if (!title.trim()) return alert('Please add a title for your stream');
         setIsLive(true);
-        setViewerCount(1);
-        // In production: connect to streaming server
+        setViewerCount(0); // Start at 0 for real users
+        // In production: connect to streaming server & notify followers
     };
 
     const endStream = () => {
@@ -126,6 +117,34 @@ export default function CampfireGoLive() {
             : `${m}:${s.toString().padStart(2, '0')}`;
     };
 
+    const shareStream = async () => {
+        const streamUrl = `${window.location.origin}/campfire/watch/${user?.id || 'live'}`;
+        const shareText = `🔥 I'm LIVE on 0G! Join me: ${title || 'Live Stream'}`;
+
+        // Try native share first (mobile)
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: '0G Live Stream',
+                    text: shareText,
+                    url: streamUrl,
+                });
+                return;
+            } catch (err) {
+                console.log('Share cancelled');
+            }
+        }
+
+        // Fallback: copy link
+        try {
+            await navigator.clipboard.writeText(streamUrl);
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy link');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-950 text-white">
             {/* Header */}
@@ -153,22 +172,33 @@ export default function CampfireGoLive() {
                         )}
                     </div>
 
-                    {isLive ? (
-                        <button
-                            onClick={endStream}
-                            className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-                        >
-                            End Stream
-                        </button>
-                    ) : (
-                        <button
-                            onClick={goLive}
-                            disabled={!hasCamera || !title.trim()}
-                            className="bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2 rounded-lg font-semibold text-sm transition-all"
-                        >
-                            🔥 Go Live
-                        </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {isLive && (
+                            <button
+                                onClick={shareStream}
+                                className="flex items-center gap-2 bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] hover:opacity-90 px-4 py-2 rounded-lg font-semibold text-sm transition-opacity"
+                            >
+                                <SendIcon size={16} />
+                                {linkCopied ? 'Link Copied!' : 'Invite People'}
+                            </button>
+                        )}
+                        {isLive ? (
+                            <button
+                                onClick={endStream}
+                                className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+                            >
+                                End Stream
+                            </button>
+                        ) : (
+                            <button
+                                onClick={goLive}
+                                disabled={!hasCamera || !title.trim()}
+                                className="bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2 rounded-lg font-semibold text-sm transition-all"
+                            >
+                                🔥 Go Live
+                            </button>
+                        )}
+                    </div>
                 </div>
             </header>
 
@@ -241,27 +271,39 @@ export default function CampfireGoLive() {
                 <div className="w-80 bg-gray-900 border-l border-gray-800 flex flex-col">
                     <div className="p-4 border-b border-gray-800">
                         <h2 className="font-semibold">Live Chat</h2>
+                        {messages.length === 0 && (
+                            <p className="text-xs text-gray-500 mt-1">Waiting for viewers to join...</p>
+                        )}
                     </div>
 
                     {/* Messages */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {messages.map((msg) => (
-                            <div key={msg.id} className="flex gap-2">
-                                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                                    <Image
-                                        src={msg.avatarUrl}
-                                        alt={msg.username}
-                                        width={32}
-                                        height={32}
-                                        className="object-cover"
-                                    />
-                                </div>
-                                <div>
-                                    <span className="text-sm font-semibold text-rose-400">@{msg.username}</span>
-                                    <p className="text-sm text-gray-200">{msg.content}</p>
-                                </div>
+                        {messages.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                                <span className="text-4xl mb-3">💬</span>
+                                <p className="text-sm text-gray-400">
+                                    {isLive ? 'No messages yet. Click "Invite People" to share your stream!' : 'Go live to start chatting'}
+                                </p>
                             </div>
-                        ))}
+                        ) : (
+                            messages.map((msg) => (
+                                <div key={msg.id} className="flex gap-2">
+                                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                                        <Image
+                                            src={msg.avatarUrl}
+                                            alt={msg.username}
+                                            width={32}
+                                            height={32}
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                    <div>
+                                        <span className="text-sm font-semibold text-rose-400">@{msg.username}</span>
+                                        <p className="text-sm text-gray-200">{msg.content}</p>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
 
                     {/* Input */}
