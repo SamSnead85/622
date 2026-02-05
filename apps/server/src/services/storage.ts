@@ -65,6 +65,18 @@ function createStorageClient(): S3Client | null {
 const s3Client = createStorageClient();
 const BUCKET = process.env.STORAGE_BUCKET || 'caravan-media';
 
+// Log storage configuration at startup
+console.log('[Storage] Provider:', STORAGE_PROVIDER);
+console.log('[Storage] Bucket:', BUCKET);
+if (STORAGE_PROVIDER !== 'local') {
+    console.log('[Storage] S3 Client initialized:', !!s3Client);
+    if (STORAGE_PROVIDER === 'supabase') {
+        console.log('[Storage] Supabase URL:', process.env.SUPABASE_URL ? 'configured' : 'MISSING');
+        console.log('[Storage] Access Key ID:', process.env.SUPABASE_ACCESS_KEY_ID ? 'configured' : 'MISSING');
+        console.log('[Storage] Secret Access Key:', process.env.SUPABASE_SECRET_ACCESS_KEY ? 'configured' : 'MISSING');
+    }
+}
+
 // ============================================
 // PUBLIC API
 // ============================================
@@ -104,13 +116,26 @@ export async function uploadFile(
     }
 
     // S3-compatible storage
-    await s3Client.send(new PutObjectCommand({
-        Bucket: BUCKET,
-        Key: key,
-        Body: buffer,
-        ContentType: mimeType,
-        CacheControl: 'public, max-age=31536000', // 1 year cache
-    }));
+    console.log('[Storage] Uploading to S3:', { bucket: BUCKET, key, mimeType, size: buffer.length });
+    try {
+        await s3Client.send(new PutObjectCommand({
+            Bucket: BUCKET,
+            Key: key,
+            Body: buffer,
+            ContentType: mimeType,
+            CacheControl: 'public, max-age=31536000', // 1 year cache
+        }));
+        console.log('[Storage] Upload successful:', key);
+    } catch (s3Error: unknown) {
+        const errorDetails = s3Error instanceof Error ? {
+            name: s3Error.name,
+            message: s3Error.message,
+            // @ts-expect-error S3 errors have additional properties
+            code: s3Error.Code || s3Error.$metadata?.httpStatusCode,
+        } : s3Error;
+        console.error('[Storage] S3 upload failed:', errorDetails);
+        throw new Error(`Storage upload failed: ${s3Error instanceof Error ? s3Error.message : 'Unknown S3 error'}`);
+    }
 
     return {
         key,
