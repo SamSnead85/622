@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 // ============================================
 // TYPES
@@ -63,8 +64,8 @@ export function AIRecommendations({ recommendations, title = 'For You', onSelect
                         className="group flex gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 cursor-pointer"
                         onClick={() => onSelect(rec.id, rec.type)}>
                         {rec.imageUrl && (
-                            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 overflow-hidden flex-shrink-0">
-                                <img src={rec.imageUrl} alt="" className="w-full h-full object-cover" />
+                            <div className="relative w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 overflow-hidden flex-shrink-0">
+                                <Image src={rec.imageUrl} alt="" fill className="object-cover" />
                             </div>
                         )}
                         <div className="flex-1 min-w-0">

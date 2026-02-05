@@ -303,7 +303,7 @@ function NewChatModal({
                             >
                                 <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
                                     {user.avatarUrl ? (
-                                        <img src={user.avatarUrl} alt={user.displayName} className="w-full h-full object-cover" />
+                                        <Image src={user.avatarUrl} alt={user.displayName} fill className="object-cover" />
                                     ) : (
                                         <span className="text-white font-bold text-lg">{user.displayName?.[0] || 'U'}</span>
                                     )}

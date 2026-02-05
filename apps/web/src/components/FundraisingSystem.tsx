@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 // ============================================
 // TYPES
@@ -57,7 +58,7 @@ export function FundraiserCard({ campaign, onView, onDonate }: FundraiserCardPro
         <motion.div whileHover={{ scale: 1.02 }} onClick={() => onView(campaign.id)}
             className="group overflow-hidden rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 cursor-pointer">
             <div className="relative h-40 bg-gradient-to-br from-pink-500/20 to-rose-500/20">
-                {campaign.coverImage && <img src={campaign.coverImage} alt="" className="w-full h-full object-cover" />}
+                {campaign.coverImage && <Image src={campaign.coverImage} alt="" fill className="object-cover" />}
                 <span className="absolute top-2 left-2 px-2 py-1 rounded-full bg-black/50 text-white text-xs">{categoryIcons[campaign.category]} {campaign.category}</span>
                 {campaign.isVerified && <span className="absolute top-2 right-2 px-2 py-1 rounded-full bg-green-500 text-white text-xs">✓ Verified</span>}
             </div>

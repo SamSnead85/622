@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { GlobeIcon, VoteIcon, HeartIcon, VideoIcon, UnlockIcon, DollarIcon, ShieldIcon, CpuIcon } from '@/components/icons';
+import { GlobeIcon, VoteIcon, HeartIcon, VideoIcon, UnlockIcon, ShieldIcon, CpuIcon } from '@/components/icons';
 import { ImpactSection } from '@/components/ImpactHub';
 
 // ============================================
@@ -514,7 +514,7 @@ function StoryTellersSection() {
                 >
                     {[
                         { Icon: UnlockIcon, label: 'No Lock-In', desc: 'Export all, anytime', color: 'text-emerald-400' },
-                        { Icon: DollarIcon, label: 'Creators Keep 90%', desc: 'Not 50% like others', color: 'text-amber-400' },
+                        { Icon: HeartIcon, label: 'Zero-Profit Mission', desc: 'No fees. No coins.', color: 'text-amber-400' },
                         { Icon: ShieldIcon, label: 'Privacy First', desc: 'Your data is yours', color: 'text-violet-400' },
                         { Icon: CpuIcon, label: 'AI Co-Director', desc: 'Pro tools for all', color: 'text-cyan-400' },
                     ].map((item) => (

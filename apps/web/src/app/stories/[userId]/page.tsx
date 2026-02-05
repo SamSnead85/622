@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { CloseIcon, ChevronLeftIcon, ChevronRightIcon, HeartIcon, SendIcon } from '@/components/icons';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -253,11 +254,14 @@ export default function StoriesViewerPage() {
                 <div className="absolute top-8 left-4 right-4 z-40 flex items-center gap-3">
                     <Link href={`/profile/${currentStory.user.username}`}>
                         {currentStory.user.avatarUrl ? (
-                            <img
-                                src={currentStory.user.avatarUrl}
-                                alt={currentStory.user.displayName}
-                                className="w-10 h-10 rounded-full object-cover border-2 border-white"
-                            />
+                            <div className="relative w-10 h-10 rounded-full border-2 border-white overflow-hidden">
+                                <Image
+                                    src={currentStory.user.avatarUrl}
+                                    alt={currentStory.user.displayName}
+                                    fill
+                                    className="object-cover"
+                                />
+                            </div>
                         ) : (
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold border-2 border-white">
                                 {currentStory.user.displayName?.[0] || 'U'}
@@ -284,7 +288,7 @@ export default function StoriesViewerPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="w-full h-full rounded-2xl overflow-hidden"
+                        className="relative w-full h-full rounded-2xl overflow-hidden"
                     >
                         {currentStory.type === 'VIDEO' ? (
                             <video
@@ -295,10 +299,11 @@ export default function StoriesViewerPage() {
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            <img
+                            <Image
                                 src={currentStory.mediaUrl}
                                 alt=""
-                                className="w-full h-full object-cover"
+                                fill
+                                className="object-cover"
                             />
                         )}
                     </motion.div>
@@ -343,7 +348,7 @@ export default function StoriesViewerPage() {
                     <div className="w-1/3 h-full" onClick={goToNextStory} />
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 

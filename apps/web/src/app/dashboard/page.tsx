@@ -25,7 +25,7 @@ import {
     GlobeIcon,
     LockIcon,
     UnlockIcon,
-    DollarIcon,
+
     ShieldIcon,
     HeartIcon,
     ShareIcon,
@@ -1268,10 +1268,10 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                                        <DollarIcon size={20} className="text-[#00D4FF]" />
+                                        <HeartIcon size={20} className="text-[#00D4FF]" />
                                         <div>
-                                            <p className="text-xs font-medium text-white">Creators Keep 90%</p>
-                                            <p className="text-[10px] text-white/40">vs 50% on TikTok</p>
+                                            <p className="text-xs font-medium text-white">100% Zero-Profit Mission</p>
+                                            <p className="text-[10px] text-white/40">No fees. No coins. No fraud.</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">

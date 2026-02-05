@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
     HeartIcon,
     MessageIcon,
@@ -148,9 +149,9 @@ function ActivityItemCard({ activity }: ActivityItemCardProps) {
         >
             {/* Avatar */}
             <div className="relative flex-shrink-0">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
+                <div className="relative overflow-hidden w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
                     {activity.actor.avatarUrl ? (
-                        <img src={activity.actor.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
+                        <Image src={activity.actor.avatarUrl} alt="" fill className="object-cover" />
                     ) : (
                         activity.actor.displayName[0]
                     )}

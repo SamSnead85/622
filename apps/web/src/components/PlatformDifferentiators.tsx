@@ -178,10 +178,10 @@ interface CreatorEarningsProps {
 
 export function CreatorEarnings({
     earnings = 1247.50,
-    platformFee = 10, // 0G takes only 10% vs TikTok's 50%
-    nextPayout = 'Feb 15'
+    platformFee = 0, // 0G takes 0%
+    nextPayout = 'Instant'
 }: CreatorEarningsProps) {
-    const netEarnings = earnings * (1 - platformFee / 100);
+    const netEarnings = earnings;
     const tiktokComparison = earnings * 0.5; // TikTok would give you this
 
     return (
@@ -195,9 +195,9 @@ export function CreatorEarnings({
                     <span className="text-2xl">💰</span>
                 </div>
                 <div>
-                    <h3 className="font-semibold text-white mb-1">Your Earnings</h3>
+                    <h3 className="font-semibold text-white mb-1">100% Yours</h3>
                     <p className="text-sm text-white/50">
-                        You keep 90% — not 50% like other platforms
+                        We take $0. You keep everything.
                     </p>
                 </div>
             </div>
@@ -208,18 +208,18 @@ export function CreatorEarnings({
                         ${netEarnings.toFixed(2)}
                     </div>
                     <div className="text-xs text-white/40">
-                        Next payout: {nextPayout}
+                        Status: Direct
                     </div>
                 </div>
                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                     <div
                         className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"
-                        style={{ width: '90%' }}
+                        style={{ width: '100%' }}
                     />
                 </div>
                 <div className="flex justify-between mt-2 text-xs text-white/40">
-                    <span>Your share: 90%</span>
-                    <span>Platform: 10%</span>
+                    <span>Your share: 100%</span>
+                    <span>Platform: 0%</span>
                 </div>
             </div>
 
