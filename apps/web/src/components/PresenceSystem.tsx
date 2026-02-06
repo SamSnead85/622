@@ -238,14 +238,8 @@ interface OnlineUsersBarProps {
 }
 
 export function OnlineUsersBar({ maxShow = 5 }: OnlineUsersBarProps) {
-    // Use real presence context
-    let contextUsers: PresenceUser[] = [];
-    try {
-        const { onlineUsers } = usePresence();
-        contextUsers = Array.from(onlineUsers.values());
-    } catch {
-        // Fallback or empty if used outside provider
-    }
+    const { onlineUsers: presenceMap } = usePresence();
+    const contextUsers = Array.from(presenceMap.values());
 
     const onlineUsers = contextUsers.filter(u => u.status === 'online');
     const displayUsers = onlineUsers.slice(0, maxShow);
