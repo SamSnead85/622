@@ -1,5 +1,9 @@
 'use client';
 
+// Tell Next.js to skip static generation for this page
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
+
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
