@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiFetch, API_URL } from '@/lib/api';
 
 // ============================================
 // TYPES
@@ -44,8 +45,6 @@ const INITIAL_SETTINGS: TribeSettings = {
     createdAt: new Date().toISOString(),
 };
 
-// TODO: Fetch real community settings and members from API
-
 // ============================================
 // TAB TYPES
 // ============================================
@@ -63,12 +62,49 @@ export default function TribeSettingsPage() {
     const [members, setMembers] = useState<TribeMember[]>(INITIAL_MEMBERS);
     const [inviteLink, setInviteLink] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+    // Fetch real community settings and members from API
     useEffect(() => {
-        // Generate invite link
         const tribeId = params.id as string;
         setInviteLink(`https://0g.social/tribe/invite/${tribeId}`);
+
+        async function fetchCommunity() {
+            setIsLoading(true);
+            try {
+                const data = await apiFetch(`${API_URL}/api/v1/communities/${tribeId}`);
+                const community = data.community || data;
+                setSettings({
+                    id: community.id || tribeId,
+                    name: community.name || '',
+                    description: community.description || '',
+                    coverImage: community.coverImageUrl || community.coverImage,
+                    privacy: community.isPrivate ? 'private' : 'public',
+                    approvalRequired: community.approvalRequired ?? true,
+                    memberCount: community.membersCount ?? community.memberCount ?? 0,
+                    createdAt: community.createdAt || new Date().toISOString(),
+                });
+
+                // Fetch members if available
+                if (community.members && Array.isArray(community.members)) {
+                    setMembers(community.members.map((m: any) => ({
+                        id: m.user?.id || m.id,
+                        username: m.user?.username || m.username || '',
+                        displayName: m.user?.displayName || m.displayName || '',
+                        avatarUrl: m.user?.avatarUrl || m.avatarUrl,
+                        role: m.role?.toLowerCase() || 'member',
+                        joinedAt: m.joinedAt || m.createdAt || '',
+                    })));
+                }
+            } catch (err) {
+                console.error('Failed to load community settings:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        fetchCommunity();
     }, [params.id]);
 
     const tabs: { id: SettingsTab; label: string; icon: string }[] = [
@@ -81,8 +117,23 @@ export default function TribeSettingsPage() {
 
     const handleSave = async () => {
         setIsSaving(true);
-        await new Promise(r => setTimeout(r, 1000));
-        setIsSaving(false);
+        try {
+            const tribeId = params.id as string;
+            await apiFetch(`${API_URL}/api/v1/communities/${tribeId}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    name: settings.name,
+                    description: settings.description,
+                    isPrivate: settings.privacy === 'private',
+                    approvalRequired: settings.approvalRequired,
+                }),
+            });
+        } catch (err) {
+            console.error('Failed to save settings:', err);
+            alert('Failed to save settings. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const copyInviteLink = () => {
@@ -137,6 +188,11 @@ export default function TribeSettingsPage() {
             </header>
 
             <main className="relative z-10 max-w-5xl mx-auto px-6 py-8">
+                {isLoading ? (
+                    <div className="flex items-center justify-center py-24">
+                        <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+                    </div>
+                ) : (
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Sidebar Tabs */}
                     <nav className="lg:w-56 flex-shrink-0">
@@ -478,6 +534,7 @@ export default function TribeSettingsPage() {
                         </AnimatePresence>
                     </div>
                 </div>
+                )}
             </main>
 
             {/* Delete Confirmation Modal */}

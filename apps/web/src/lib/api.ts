@@ -7,7 +7,7 @@ const getApiUrl = () => {
     if (!envUrl && typeof window !== 'undefined') {
         if (process.env.NODE_ENV === 'production') {
             console.error(
-                '[Caravan API] CRITICAL: NEXT_PUBLIC_API_URL is not configured. ' +
+                '[ZeroG API] CRITICAL: NEXT_PUBLIC_API_URL is not configured. ' +
                 'Set this in your Netlify environment variables to point to your Railway backend. ' +
                 'Example: https://your-app-name.up.railway.app'
             );

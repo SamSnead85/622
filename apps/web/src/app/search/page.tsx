@@ -229,9 +229,15 @@ export default function SearchPage() {
 
             {/* Empty state */}
             {!isLoading && query.length >= 2 && Object.values(results).every(r => !r || r.length === 0) && (
-                <div className="text-center py-16 text-white/30">
-                    <p className="text-lg mb-1">No results found</p>
-                    <p className="text-sm">Try a different search term</p>
+                <div className="text-center py-16">
+                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                        <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={1.5}>
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+                        </svg>
+                    </div>
+                    <h3 className="text-white/60 font-medium mb-1">No results found</h3>
+                    <p className="text-white/30 text-sm">Try different keywords or check spelling</p>
                 </div>
             )}
 

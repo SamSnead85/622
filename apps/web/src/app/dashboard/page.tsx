@@ -2,7 +2,6 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -236,39 +235,32 @@ export default function DashboardPage() {
                                 />
 
                                 {/* PINNED: HEAL Palestine Town Hall */}
-                                <div className="relative w-full min-h-[450px] rounded-3xl overflow-hidden mb-6 group border border-emerald-500/30 shadow-[0_0_50px_rgba(16,185,129,0.15)]">
-                                    {/* Background Visual */}
-                                    <Image
-                                        src="https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=1600&q=80" // Placeholder: Philanthropy/Community
-                                        alt="HEAL Palestine Background"
-                                        fill
-                                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                        priority
-                                    />
-
-                                    {/* Dark Overlay for Readability */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/40" />
+                                <div className="relative w-full rounded-3xl overflow-hidden mb-6 group border border-emerald-500/30 shadow-[0_0_50px_rgba(16,185,129,0.15)]">
+                                    {/* Gradient Background */}
+                                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/80 via-[#0A1628] to-teal-900/60" />
+                                    <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-emerald-500/10 blur-[80px]" />
+                                    <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-teal-500/10 blur-[60px]" />
 
                                     {/* Content Container */}
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10">
+                                    <div className="relative flex flex-col items-center justify-center text-center p-8 py-12 z-10">
 
                                         {/* Badge */}
-                                        <div className="mb-6 animate-fade-in-up">
+                                        <div className="mb-6">
                                             <span className="px-4 py-1.5 rounded-full bg-emerald-500/90 text-black text-xs font-bold uppercase tracking-widest shadow-lg backdrop-blur-md">
                                                 Pinned Invite
                                             </span>
                                         </div>
 
                                         {/* Headline */}
-                                        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight max-w-3xl drop-shadow-xl font-display">
+                                        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight max-w-3xl drop-shadow-xl">
                                             Community Town Hall:<br />
                                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200">
-                                                Strengthening Dignity & Healing
+                                                Strengthening Dignity &amp; Healing
                                             </span>
                                         </h2>
 
                                         {/* Description */}
-                                        <p className="text-white/90 text-lg md:text-xl leading-relaxed max-w-2xl mb-8 drop-shadow-md">
+                                        <p className="text-white/90 text-lg md:text-xl leading-relaxed max-w-2xl mb-8">
                                             Join HEAL Palestine&apos;s leadership to reflect on 2025&apos;s impact and strengthen our community-led efforts for children and families.
                                         </p>
 

@@ -106,7 +106,7 @@ export function ShareSheet({ isOpen, onClose, content }: ShareSheetProps) {
 
         const text = content.description
             ? `${content.title || 'Check this out'} - ${content.description}`
-            : content.title || 'Check this out on Caravan!';
+            : content.title || 'Check this out on ZeroG!';
 
         const shareLink = target.id === 'email' || target.id === 'sms'
             ? `${target.url}${encodeURIComponent(`${text}\n\n${shareUrl}`)}`

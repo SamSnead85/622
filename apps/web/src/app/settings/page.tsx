@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ProfileEditor, Avatar, useProfile } from '@/components/ProfileEditor';
 import { loadPreferences, savePreferences, clearAllData, exportUserData } from '@/lib/persistence';
 import { useAuth, ProtectedRoute, type User } from '@/contexts/AuthContext';
+import { apiFetch, API_URL } from '@/lib/api';
 import { InviteFriends } from '@/components/InviteFriends';
 import { TwoFactorSetup } from '@/components/TwoFactorSetup';
 import { Navigation } from '@/components/Navigation';
@@ -123,6 +124,121 @@ const settingSections = [
     },
 ];
 
+// Change Password Modal
+function ChangePasswordModal({ onClose }: { onClose: () => void }) {
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        if (newPassword.length < 8) {
+            setError('New password must be at least 8 characters.');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            setError('New passwords do not match.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await apiFetch(`${API_URL}/api/v1/auth/change-password`, {
+                method: 'POST',
+                body: JSON.stringify({ currentPassword, newPassword }),
+            });
+            setSuccess(true);
+            setTimeout(() => onClose(), 1500);
+        } catch (err: any) {
+            setError(err?.message || 'Failed to change password.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-[#111] rounded-2xl border border-white/10 w-full max-w-md mx-4 overflow-hidden"
+            >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                    <h3 className="font-semibold text-white">Change Password</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-white/50 hover:text-white transition-colors"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    {success ? (
+                        <div className="text-center py-4">
+                            <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-3">
+                                <span className="text-green-400 text-xl">✓</span>
+                            </div>
+                            <p className="text-green-400 font-medium">Password changed successfully!</p>
+                        </div>
+                    ) : (
+                        <>
+                            <div>
+                                <label className="block text-sm text-white/60 mb-1">Current Password</label>
+                                <input
+                                    type="password"
+                                    value={currentPassword}
+                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    required
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30"
+                                    placeholder="Enter current password"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-white/60 mb-1">New Password</label>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    required
+                                    minLength={8}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30"
+                                    placeholder="At least 8 characters"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-white/60 mb-1">Confirm New Password</label>
+                                <input
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    required
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30"
+                                    placeholder="Confirm new password"
+                                />
+                            </div>
+                            {error && (
+                                <p className="text-red-400 text-sm">{error}</p>
+                            )}
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+                            >
+                                {isSubmitting ? 'Changing...' : 'Change Password'}
+                            </button>
+                        </>
+                    )}
+                </form>
+            </motion.div>
+        </div>
+    );
+}
+
 function SettingsPageContent() {
     const { profile, updateProfile } = useProfile();
     const { user, logout, updateUser } = useAuth();
@@ -132,6 +248,7 @@ function SettingsPageContent() {
     const [show2FASetup, setShow2FASetup] = useState(false);
     const [showNotificationCenter, setShowNotificationCenter] = useState(false);
     const [showBlockedAccounts, setShowBlockedAccounts] = useState(false);
+    const [showChangePassword, setShowChangePassword] = useState(false);
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [toggles, setToggles] = useState<Record<string, boolean>>({
         'dark-mode': true,
@@ -183,7 +300,7 @@ function SettingsPageContent() {
         }));
     }, []);
 
-    const handleToggle = useCallback((id: string) => {
+    const handleToggle = useCallback(async (id: string) => {
         // Special handling for 2FA toggle
         if (id === 'two-factor') {
             if (!twoFactorEnabled) {
@@ -191,9 +308,17 @@ function SettingsPageContent() {
                 setShow2FASetup(true);
             } else {
                 // Show confirmation to disable 2FA
-                if (confirm('Are you sure you want to disable Two-Factor Authentication?')) {
-                    // TODO: Call API to disable 2FA
-                    setTwoFactorEnabled(false);
+                const code = prompt('Enter your 2FA code to disable Two-Factor Authentication:');
+                if (code) {
+                    try {
+                        await apiFetch(`${API_URL}/api/v1/auth/2fa/disable`, {
+                            method: 'POST',
+                            body: JSON.stringify({ code }),
+                        });
+                        setTwoFactorEnabled(false);
+                    } catch (err: any) {
+                        alert(err?.message || 'Failed to disable 2FA. Please check your code.');
+                    }
                 }
             }
             return;
@@ -224,7 +349,7 @@ function SettingsPageContent() {
                 setShowProfileEditor(true);
                 break;
             case 'change-password':
-                // TODO: implement change password modal
+                setShowChangePassword(true);
                 break;
             case 'blocked':
                 setShowBlockedAccounts(true);
@@ -448,6 +573,11 @@ function SettingsPageContent() {
                 isOpen={showNotificationCenter}
                 onClose={() => setShowNotificationCenter(false)}
             />
+
+            {/* Change Password Modal */}
+            {showChangePassword && (
+                <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+            )}
 
             {/* Blocked Accounts Modal */}
             {showBlockedAccounts && (

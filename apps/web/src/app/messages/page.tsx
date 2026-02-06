@@ -493,19 +493,14 @@ function MessagesPageContent() {
                                 <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                             </div>
                         ) : conversations.length === 0 ? (
-                            <div className="text-center p-8">
-                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 flex items-center justify-center">
-                                    <WaveIcon size={32} className="text-[#00D4FF]" />
+                            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                                <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+                                    <svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={1.5}>
+                                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
                                 </div>
-                                <h3 className="text-lg font-semibold text-white mb-2">No Messages Yet</h3>
-                                <p className="text-white/50 text-sm mb-6">Start chatting with your friends and tribe members</p>
-                                <Link
-                                    href="/invite"
-                                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold hover:opacity-90 transition-opacity"
-                                >
-                                    <SendIcon size={18} />
-                                    Invite Friends to 0G
-                                </Link>
+                                <h3 className="text-white/60 font-medium mb-1">No messages yet</h3>
+                                <p className="text-white/30 text-sm max-w-[200px]">Start a conversation with someone you follow</p>
                             </div>
                         ) : (
                             conversations.map((convo) => (

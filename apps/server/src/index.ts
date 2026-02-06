@@ -34,6 +34,7 @@ import analyticsRouter from './routes/analytics.js';
 import searchRouter from './routes/search.js';
 import exportRouter from './routes/export.js';
 import inviteRouter from './routes/invite.js';
+import circlesRouter from './routes/circles.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 import { setupSocketHandlers } from './socket/index.js';
@@ -190,6 +191,7 @@ app.use('/api/v1/analytics', analyticsRouter);
 app.use('/api/v1/search', searchRouter);
 app.use('/api/v1/account/export', exportRouter);
 app.use('/api/v1/invite', inviteRouter);
+app.use('/api/v1/circles', circlesRouter);
 
 
 // Sentry error handler (must be before custom error handler)

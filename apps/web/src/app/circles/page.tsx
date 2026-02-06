@@ -144,7 +144,7 @@ export default function CirclesPage() {
                         className="text-center mb-8"
                     >
                         <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/80 text-sm font-medium mb-6">
-                            🐪 The Caravan Moves Forward
+                            🚀 The ZeroG Moves Forward
                         </span>
                         <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
                             Build. Organize. <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-500">Rise.</span>

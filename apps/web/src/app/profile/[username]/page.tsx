@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -15,6 +15,21 @@ export default function PublicProfilePage() {
     const [profile, setProfile] = useState<any>(null);
     const [posts, setPosts] = useState<any[]>([]); // Using 'any' for now to match API response speed
     const [loading, setLoading] = useState(true);
+    const [showMoreMenu, setShowMoreMenu] = useState(false);
+    const moreMenuRef = useRef<HTMLDivElement>(null);
+
+    // Close more menu on outside click
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+                setShowMoreMenu(false);
+            }
+        }
+        if (showMoreMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }
+    }, [showMoreMenu]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -108,10 +123,36 @@ export default function PublicProfilePage() {
                             </div>
 
                             {/* Actions */}
-                            <div className="mb-4 self-center md:self-end">
+                            <div className="mb-4 self-center md:self-end flex items-center gap-2">
                                 <button className="bg-white text-black font-bold px-8 py-2.5 rounded-full hover:bg-white/90 transition-colors shadow-lg shadow-white/10">
                                     Follow
                                 </button>
+                                <div className="relative" ref={moreMenuRef}>
+                                    <button
+                                        onClick={() => setShowMoreMenu(!showMoreMenu)}
+                                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+                                    >
+                                        <svg width={20} height={20} viewBox="0 0 24 24" fill="currentColor" className="text-white/60">
+                                            <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
+                                        </svg>
+                                    </button>
+                                    {showMoreMenu && (
+                                        <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a2e] rounded-xl border border-white/10 shadow-xl z-50 overflow-hidden">
+                                            <button
+                                                onClick={() => { /* Call POST /api/v1/reports with type: 'USER' */ setShowMoreMenu(false); }}
+                                                className="w-full px-4 py-3 text-left text-sm text-white/70 hover:bg-white/5 transition-colors"
+                                            >
+                                                Report User
+                                            </button>
+                                            <button
+                                                onClick={() => { /* Call POST /api/v1/users/:id/block */ setShowMoreMenu(false); }}
+                                                className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-white/5 transition-colors"
+                                            >
+                                                Block User
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

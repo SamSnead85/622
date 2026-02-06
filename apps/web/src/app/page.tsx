@@ -151,7 +151,7 @@ function Navigation() {
 // ============================================
 
 const heroImages = [
-    // Desert Caravan - Opening theme (authentic documentary-style)
+    // Desert landscape - Opening theme (authentic documentary-style)
     { id: 'caravan', src: 'https://images.unsplash.com/photo-1548111395-36c5857f89c5?w=2000&h=1200&fit=crop&q=90' },
     // Modern African life - Contemporary community scene
     { id: 'african-modern', src: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=2000&h=1200&fit=crop&q=90' },
@@ -636,19 +636,16 @@ function TestimonialsSection() {
             quote: "Finally, a platform where I can share family moments without worrying about privacy or algorithms.",
             author: "Sarah Chen",
             role: "Mother of 3",
-            avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
         },
         {
             quote: "0G has become our family's digital home. It's exactly what social media should have been from the start.",
             author: "Marcus Williams",
             role: "Community Builder",
-            avatar: "https://ui-avatars.com/api/?name=User&background=random",
         },
         {
             quote: "The transparency around the algorithm is refreshing. I finally understand why I see what I see.",
             author: "Aisha Rahman",
             role: "Privacy Advocate",
-            avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
         },
     ];
 
@@ -680,13 +677,8 @@ function TestimonialsSection() {
                                 &ldquo;{testimonial.quote}&rdquo;
                             </p>
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full overflow-hidden relative">
-                                    <Image
-                                        src={testimonial.avatar}
-                                        alt={testimonial.author}
-                                        fill
-                                        className="object-cover"
-                                    />
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                                    {testimonial.author[0]}
                                 </div>
                                 <div>
                                     <p className="text-white font-medium">{testimonial.author}</p>
@@ -757,6 +749,18 @@ function CTASection() {
 // Sophisticated, comprehensive
 // ============================================
 function Footer() {
+    const platformLinks = [
+        { label: 'Features', href: '#platform' },
+        { label: 'Security', href: '/transparency' },
+        { label: 'Roadmap', href: '/about' },
+    ];
+
+    const companyLinks = [
+        { label: 'About', href: '/about' },
+        { label: 'Help', href: 'mailto:support@0g.social' },
+        { label: 'Contact', href: 'mailto:support@0g.social' },
+    ];
+
     return (
         <footer className="border-t border-white/5 py-16 bg-black/50">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -772,11 +776,11 @@ function Footer() {
                     <div>
                         <h4 className="text-white/50 text-xs tracking-widest uppercase mb-4">Platform</h4>
                         <ul className="space-y-3">
-                            {['Features', 'Security', 'Roadmap', 'Download'].map((item) => (
-                                <li key={item}>
-                                    <a href="#" className="text-white/40 hover:text-white transition-colors text-sm font-light">
-                                        {item}
-                                    </a>
+                            {platformLinks.map((item) => (
+                                <li key={item.label}>
+                                    <Link href={item.href} className="text-white/40 hover:text-white transition-colors text-sm font-light">
+                                        {item.label}
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
@@ -785,11 +789,17 @@ function Footer() {
                     <div>
                         <h4 className="text-white/50 text-xs tracking-widest uppercase mb-4">Company</h4>
                         <ul className="space-y-3">
-                            {['About', 'Blog', 'Careers', 'Contact'].map((item) => (
-                                <li key={item}>
-                                    <a href="#" className="text-white/40 hover:text-white transition-colors text-sm font-light">
-                                        {item}
-                                    </a>
+                            {companyLinks.map((item) => (
+                                <li key={item.label}>
+                                    {item.href.startsWith('mailto:') ? (
+                                        <a href={item.href} className="text-white/40 hover:text-white transition-colors text-sm font-light">
+                                            {item.label}
+                                        </a>
+                                    ) : (
+                                        <Link href={item.href} className="text-white/40 hover:text-white transition-colors text-sm font-light">
+                                            {item.label}
+                                        </Link>
+                                    )}
                                 </li>
                             ))}
                         </ul>
@@ -801,9 +811,8 @@ function Footer() {
                         © 2026 ZeroG. All rights reserved.
                     </p>
                     <div className="flex items-center gap-6 text-xs text-white/30">
-                        <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-                        <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-                        <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
+                        <Link href="/transparency" className="hover:text-white transition-colors">Privacy Policy</Link>
+                        <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
                     </div>
                 </div>
             </div>

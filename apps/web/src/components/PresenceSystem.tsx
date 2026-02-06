@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useCallback, useRef, createContext, useContext, ReactNode } from 'react';
+import { useSocket } from '@/hooks/useSocket';
 
 // ============================================
 // TYPES
@@ -56,27 +57,64 @@ export function PresenceProvider({ children, userId }: PresenceProviderProps) {
         onlineUsers: new Map(),
         typingUsers: new Map(),
     });
+    const { emit, on, isConnected } = useSocket();
 
-    // WebSocket connection logic (Stubbed for future implementation)
+    // WebSocket connection & presence event listeners
     useEffect(() => {
         if (!userId) return;
 
-        // Connect
-        setState(prev => ({ ...prev, isConnected: true }));
+        setState(prev => ({ ...prev, isConnected }));
 
-        // Real implementation: Connect to WebSocket here
-        // socket.on('presence_update', ...)
+        // Listen for presence updates from other users
+        const offPresence = on<{ userId: string; status: PresenceUser['status'] }>('presence:update', (data) => {
+            setState(prev => {
+                const newOnline = new Map(prev.onlineUsers);
+                const existing = newOnline.get(data.userId);
+                if (existing) {
+                    newOnline.set(data.userId, { ...existing, status: data.status });
+                } else {
+                    newOnline.set(data.userId, {
+                        id: data.userId,
+                        displayName: '',
+                        status: data.status,
+                    });
+                }
+                return { ...prev, onlineUsers: newOnline };
+            });
+        });
 
-        // Cleanup on unmount
+        const offOnline = on<{ userId: string }>('user:online', (data) => {
+            setState(prev => {
+                const newOnline = new Map(prev.onlineUsers);
+                const existing = newOnline.get(data.userId);
+                if (existing) {
+                    newOnline.set(data.userId, { ...existing, status: 'online' });
+                } else {
+                    newOnline.set(data.userId, { id: data.userId, displayName: '', status: 'online' });
+                }
+                return { ...prev, onlineUsers: newOnline };
+            });
+        });
+
+        const offOffline = on<{ userId: string }>('user:offline', (data) => {
+            setState(prev => {
+                const newOnline = new Map(prev.onlineUsers);
+                newOnline.delete(data.userId);
+                return { ...prev, onlineUsers: newOnline };
+            });
+        });
+
         return () => {
+            offPresence();
+            offOnline();
+            offOffline();
             setState(prev => ({ ...prev, isConnected: false }));
         };
-    }, [userId]);
+    }, [userId, isConnected, on]);
 
     const setStatus = useCallback((status: PresenceUser['status']) => {
-        // TODO: Send status update to server
-        // socket.emit('status_update', { status });
-    }, []);
+        emit('presence:update', status);
+    }, [emit]);
 
     const setTyping = useCallback((roomId: string, isTyping: boolean) => {
         setState(prev => {

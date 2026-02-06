@@ -8,7 +8,7 @@ import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 
 // ============================================
 // INVITE FRIENDS MODAL
-// Revolutionary "Send a Caravan Invitation" UI
+// Revolutionary "Send a ZeroG Invitation" UI
 // ============================================
 
 interface InviteFriendsProps {
