@@ -30,26 +30,21 @@ interface TribeSettings {
 }
 
 // ============================================
-// MOCK DATA
+// INITIAL DATA
 // ============================================
-const MOCK_MEMBERS: TribeMember[] = [
-    { id: '1', username: 'samsweilem', displayName: 'Sam Sweilem', role: 'owner', joinedAt: '2024-01-15', avatarUrl: '' },
-    { id: '2', username: 'fatima_h', displayName: 'Fatima Hassan', role: 'admin', joinedAt: '2024-01-20', avatarUrl: '' },
-    { id: '3', username: 'omar_m', displayName: 'Omar Mohamed', role: 'moderator', joinedAt: '2024-02-01', avatarUrl: '' },
-    { id: '4', username: 'amira_k', displayName: 'Amira Khalil', role: 'member', joinedAt: '2024-02-10', avatarUrl: '' },
-    { id: '5', username: 'yusuf_a', displayName: 'Yusuf Ali', role: 'member', joinedAt: '2024-02-15', avatarUrl: '' },
-];
+const INITIAL_MEMBERS: TribeMember[] = [];
 
-const MOCK_SETTINGS: TribeSettings = {
-    id: '1',
-    name: 'Family Circle',
-    description: 'A private space for our extended family to stay connected.',
-    coverImage: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&h=400&fit=crop',
+const INITIAL_SETTINGS: TribeSettings = {
+    id: '',
+    name: '',
+    description: '',
     privacy: 'private',
     approvalRequired: true,
-    memberCount: 24,
-    createdAt: '2024-01-15',
+    memberCount: 0,
+    createdAt: new Date().toISOString(),
 };
+
+// TODO: Fetch real community settings and members from API
 
 // ============================================
 // TAB TYPES
@@ -64,8 +59,8 @@ export default function TribeSettingsPage() {
     const params = useParams();
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<SettingsTab>('general');
-    const [settings, setSettings] = useState<TribeSettings>(MOCK_SETTINGS);
-    const [members, setMembers] = useState<TribeMember[]>(MOCK_MEMBERS);
+    const [settings, setSettings] = useState<TribeSettings>(INITIAL_SETTINGS);
+    const [members, setMembers] = useState<TribeMember[]>(INITIAL_MEMBERS);
     const [inviteLink, setInviteLink] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

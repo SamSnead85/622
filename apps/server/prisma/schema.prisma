@@ -69,6 +69,12 @@ model User {
   connectionSettings         UserConnectionSettings?
   interests                  UserInterest[]
   presence                   UserPresence?
+  keyBundle                  UserKeyBundle?
+  scheduledPosts             ScheduledPost[]
+  feedPreferences            UserFeedPreferences?
+  proposals                  Proposal[]
+  notificationPrefs          NotificationPreferences?
+  pushSubscriptions          PushSubscription[]
 
   @@index([username])
   @@index([email])
@@ -218,22 +224,27 @@ model Post {
   viewCount    Int           @default(0)
   isPublic     Boolean       @default(true)
   isPinned     Boolean       @default(false)
+  deletedAt    DateTime?     // Soft delete support
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   comments     Comment[]
   likes        Like[]
-  community    Community?    @relation(fields: [communityId], references: [id])
-  music        Music?        @relation(fields: [musicId], references: [id])
+  community    Community?    @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  music        Music?        @relation(fields: [musicId], references: [id], onDelete: SetNull)
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   hashtags     PostHashtag[]
   rsvps        PostRSVP[]
   topics       PostTopic[]
   saves        Save[]
   shares       Share[]
+  analytics    PostAnalytics[]
 
   @@index([userId])
   @@index([communityId])
   @@index([createdAt])
+  @@index([isPublic, createdAt(sort: Desc), isPinned]) // Feed query optimization
+  @@index([isPublic, isPinned, createdAt(sort: Desc)]) // Feed ranking optimization
+  @@index([deletedAt]) // Soft delete filter
 }
 
 model Music {
@@ -269,6 +280,7 @@ model Comment {
   @@index([postId])
   @@index([userId])
   @@index([parentId])
+  @@index([postId, parentId, createdAt(sort: Desc)]) // Thread queries optimization
 }
 
 model Like {
@@ -281,6 +293,7 @@ model Like {
 
   @@unique([userId, postId])
   @@index([postId])
+  @@index([userId]) // User's liked posts optimization
 }
 
 model Share {
@@ -352,13 +365,64 @@ model Community {
   postCount   Int               @default(0)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
-  creator     User              @relation("CommunityCreator", fields: [creatorId], references: [id])
-  members     CommunityMember[]
-  rules       CommunityRule[]
-  posts       Post[]
+  creator        User              @relation("CommunityCreator", fields: [creatorId], references: [id])
+  members        CommunityMember[]
+  rules          CommunityRule[]
+  posts          Post[]
+  proposals      Proposal[]
+  moderationLogs ModerationLog[]
 
   @@index([name])
   @@index([slug])
+}
+
+model Proposal {
+  id            String         @id @default(uuid())
+  communityId   String
+  authorId      String
+  title         String
+  description   String
+  type          ProposalType
+  status        ProposalStatus @default(ACTIVE)
+  targetData    Json?
+  votesFor      Int            @default(0)
+  votesAgainst  Int            @default(0)
+  quorum        Int            @default(10)
+  expiresAt     DateTime
+  resolvedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  community     Community      @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author        User           @relation(fields: [authorId], references: [id])
+  votes         ProposalVote[]
+
+  @@index([communityId, status])
+}
+
+model ProposalVote {
+  id         String   @id @default(uuid())
+  proposalId String
+  userId     String
+  vote       Boolean
+  createdAt  DateTime @default(now())
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, userId])
+  @@index([userId])
+}
+
+model ModerationLog {
+  id          String    @id @default(uuid())
+  communityId String
+  moderatorId String
+  action      String
+  targetType  String
+  targetId    String
+  reason      String?
+  createdAt   DateTime  @default(now())
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, createdAt])
+  @@index([moderatorId])
 }
 
 model CommunityMember {
@@ -442,6 +506,8 @@ model Notification {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([userId, isRead, createdAt(sort: Desc)]) // Unread notifications query
+  @@index([actorId]) // Actor lookup optimization
 }
 
 model Migration {
@@ -538,6 +604,8 @@ model Territory {
   slug                      String                      @unique
   description               String?
   type                      TerritoryType
+  tier                      TerritoryTier               @default(TIER_2_SOVEREIGN)
+  maxMembers                Int?
   avatarUrl                 String?
   coverUrl                  String?
   primaryColor              String?                     @default("#D4AF37")
@@ -549,6 +617,8 @@ model Territory {
   createdAt                 DateTime                    @default(now())
   updatedAt                 DateTime                    @updatedAt
   contentModerationSettings ContentModerationSettings?
+  encryptionSettings        CommunityEncryption?
+  feedCaches                TerritoryFeedCache[]
   geoBlocks                 GeoBlock[]
   parent                    Territory?                  @relation("TerritoryHierarchy", fields: [parentId], references: [id])
   children                  Territory[]                 @relation("TerritoryHierarchy")
@@ -561,6 +631,7 @@ model Territory {
   strikes                   TerritoryStrike[]
 
   @@index([type])
+  @@index([tier])
   @@index([parentId])
   @@index([slug])
 }
@@ -612,20 +683,53 @@ model TerritoryConnection {
 }
 
 model TerritoryAlgorithmSettings {
-  id                String         @id @default(uuid())
-  territoryId       String         @unique
-  recencyWeight     Int            @default(50)
-  engagementWeight  Int            @default(30)
-  familiarityWeight Int            @default(60)
-  noveltyWeight     Int            @default(20)
-  contentRatings    String[]       @default(["G", "PG", "PG13"])
-  whoCanPost        PostPermission @default(MEMBERS)
-  whoCanComment     PostPermission @default(MEMBERS)
-  whoCanInvite      PostPermission @default(ELDERS)
-  allowCrossPosting Boolean        @default(false)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  territory         Territory      @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+  id                   String            @id @default(uuid())
+  territoryId          String            @unique
+  recencyWeight        Int               @default(50)
+  engagementWeight     Int               @default(30)
+  familiarityWeight    Int               @default(60)
+  noveltyWeight        Int               @default(20)
+  contentSourceWeights Json?             // { "memberPosts": 40, "sharedLinks": 20, "externalRSS": 15, "crossCommunity": 10, "aiCurated": 15 }
+  rankingSignals       Json?             // { "recency": 80, "engagement": 60, "personalConnections": 0, "contentQuality": 40, "diversity": 20 }
+  safetyFilters        Json?             // { "blockExternalUrls": true, "aiModeration": true, "reputationThreshold": 4, "requireFactCheck": false }
+  algorithmTemplate    AlgorithmTemplate @default(BALANCED)
+  isCustomized         Boolean           @default(false)
+  contentRatings       String[]          @default(["G", "PG", "PG13"])
+  whoCanPost           PostPermission    @default(MEMBERS)
+  whoCanComment        PostPermission    @default(MEMBERS)
+  whoCanInvite         PostPermission    @default(ELDERS)
+  allowCrossPosting    Boolean           @default(false)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  territory            Territory         @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+}
+
+model CommunityEncryption {
+  id                String            @id @default(uuid())
+  territoryId       String            @unique
+  encryptionScheme  EncryptionScheme  @default(STANDARD)
+  keyRotationPolicy KeyRotationPolicy @default(MONTHLY)
+  publicKey         String?
+  keyDerivationSalt String?
+  mediaEncryption   Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  territory         Territory         @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+}
+
+model TerritoryFeedCache {
+  id            String    @id @default(uuid())
+  territoryId   String
+  userId        String?   // null = community-wide feed
+  feedSignature String    // Hash of algorithm settings
+  cachedContent Json      // Array of post IDs + scores
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+  territory     Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+
+  @@unique([territoryId, userId, feedSignature])
+  @@index([territoryId])
+  @@index([expiresAt])
 }
 
 model TerritoryModerationRule {
@@ -945,6 +1049,114 @@ model UserInterest {
   @@index([level])
 }
 
+model UserKeyBundle {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  identityKey     String
+  signedPreKey    String
+  preKeySignature String
+  oneTimePreKeys  String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ScheduledPost {
+  id           String         @id @default(uuid())
+  userId       String
+  type         PostType
+  caption      String?
+  mediaUrl     String?
+  thumbnailUrl String?
+  communityId  String?
+  topicIds     String[]
+  scheduledFor DateTime
+  status       ScheduleStatus @default(PENDING)
+  createdAt    DateTime       @default(now())
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([scheduledFor, status])
+}
+
+model UserFeedPreferences {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  recencyWeight    Int      @default(50)
+  engagementWeight Int      @default(50)
+  followingRatio   Int      @default(70)
+  contentTypes     Json     @default("{}")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NotificationPreferences {
+  id             String  @id @default(uuid())
+  userId         String  @unique
+  pushEnabled    Boolean @default(true)
+  emailDigest    String  @default("daily")
+  quietHoursFrom String?
+  quietHoursTo   String?
+  quietTimezone  String?
+  channels       Json    @default("{}")
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PostAnalytics {
+  id         String   @id @default(uuid())
+  postId     String
+  views      Int      @default(0)
+  likes      Int      @default(0)
+  comments   Int      @default(0)
+  shares     Int      @default(0)
+  saves      Int      @default(0)
+  avgViewSec Float    @default(0)
+  date       DateTime @db.Date
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, date])
+  @@index([postId])
+  @@index([date])
+}
+
+enum ProposalType {
+  RULE_CHANGE
+  MODERATOR_ELECTION
+  BAN_APPEAL
+  FEATURE_REQUEST
+  POLICY_CHANGE
+}
+
+enum ProposalStatus {
+  ACTIVE
+  PASSED
+  REJECTED
+  EXPIRED
+  WITHDRAWN
+}
+
+enum ScheduleStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+  CANCELLED
+}
+
 enum Role {
   USER
   MODERATOR
@@ -1207,4 +1419,33 @@ enum InterestLevel {
   NOT_INTERESTED
   INTERESTED
   VERY_INTERESTED
+}
+
+enum TerritoryTier {
+  TIER_1_PERSONAL    // 5-50 members, E2E encryption
+  TIER_2_SOVEREIGN   // 50-10K members, custom algorithms
+  TIER_3_FEDERATED   // 10K+ members, dedicated infrastructure
+}
+
+enum EncryptionScheme {
+  NONE
+  STANDARD
+  SIGNAL_PROTOCOL
+  PGP
+}
+
+enum KeyRotationPolicy {
+  DAILY
+  WEEKLY
+  MONTHLY
+  NEVER
+}
+
+enum AlgorithmTemplate {
+  CHRONOLOGICAL   // Pure time-based
+  FAMILY_FEED     // Family-optimized
+  ACTIVIST        // Activism-focused
+  NEWS_HUB        // News/credibility priority
+  BALANCED        // Default balanced
+  CUSTOM          // Fully custom
 }

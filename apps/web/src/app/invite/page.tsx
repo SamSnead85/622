@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
+import { apiFetch, API_URL } from '@/lib/api';
 import {
     MessageIcon,
     SmartphoneIcon,
@@ -97,20 +98,56 @@ function InvitePageContent() {
     const [mounted, setMounted] = useState(false);
     const [copied, setCopied] = useState(false);
     const [showQR, setShowQR] = useState(false);
+    const [inviteLink, setInviteLink] = useState('');
     const [inviteStats, setInviteStats] = useState({
         sent: 0,
         pending: 0,
         joined: 0,
     });
 
-    useEffect(() => {
-        setMounted(true);
-        // Load invite stats from localStorage for now
+    // Fetch invite stats from API with localStorage fallback
+    const fetchInviteStats = useCallback(async () => {
+        try {
+            const res = await apiFetch(`${API_URL}/api/v1/invite/stats`);
+            if (res.ok) {
+                const data = await res.json();
+                setInviteStats({ sent: data.sent ?? 0, pending: data.pending ?? 0, joined: data.joined ?? 0 });
+                localStorage.setItem('0g_invite_stats', JSON.stringify(data));
+                return;
+            }
+        } catch {
+            // API unavailable – fall through to localStorage
+        }
         const storedStats = localStorage.getItem('0g_invite_stats');
         if (storedStats) {
-            setInviteStats(JSON.parse(storedStats));
+            try { setInviteStats(JSON.parse(storedStats)); } catch { /* ignore */ }
         }
     }, []);
+
+    // Generate invite link from API with local fallback
+    const fetchInviteLink = useCallback(async () => {
+        try {
+            const res = await apiFetch(`${API_URL}/api/v1/invite/generate`, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.inviteLink) {
+                    setInviteLink(data.inviteLink);
+                    return;
+                }
+            }
+        } catch {
+            // API unavailable – fall through to local generation
+        }
+        // Fallback: generate locally
+        const code = user?.id ? btoa(user.id).slice(0, 8) : 'INVITE';
+        setInviteLink(`https://0gravity.ai/r/${code}`);
+    }, [user?.id]);
+
+    useEffect(() => {
+        setMounted(true);
+        fetchInviteStats();
+        fetchInviteLink();
+    }, [fetchInviteStats, fetchInviteLink]);
 
     if (!mounted) {
         return (
@@ -120,21 +157,34 @@ function InvitePageContent() {
         );
     }
 
-    // Generate unique invite link
-    const inviteCode = user?.id ? btoa(user.id).slice(0, 8) : 'INVITE';
-    // Using standard referral path '/r/' for clean redirection
-    const inviteLink = `https://0gravity.ai/r/${inviteCode}`;
-
     const inviteMessage = `Join me on 0G (ZeroG) - the Sovereign Social Network. No agendas, no algorithms, just pure human connection.`;
+
+    // Track an invite-sent event via API, falling back to localStorage
+    const trackInviteSent = async () => {
+        const newStats = { ...inviteStats, sent: inviteStats.sent + 1 };
+        setInviteStats(newStats);
+        try {
+            const res = await apiFetch(`${API_URL}/api/v1/invite/stats`, {
+                method: 'POST',
+                body: JSON.stringify({ event: 'sent' }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setInviteStats({ sent: data.sent ?? newStats.sent, pending: data.pending ?? newStats.pending, joined: data.joined ?? newStats.joined });
+                localStorage.setItem('0g_invite_stats', JSON.stringify(data));
+                return;
+            }
+        } catch {
+            // API unavailable – persist locally
+        }
+        localStorage.setItem('0g_invite_stats', JSON.stringify(newStats));
+    };
 
     const handleCopyLink = async () => {
         try {
             await navigator.clipboard.writeText(inviteLink);
             setCopied(true);
-            // Track invite sent
-            const newStats = { ...inviteStats, sent: inviteStats.sent + 1 };
-            setInviteStats(newStats);
-            localStorage.setItem('0g_invite_stats', JSON.stringify(newStats));
+            await trackInviteSent();
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
             console.error('Failed to copy:', err);
@@ -147,10 +197,8 @@ function InvitePageContent() {
             return;
         }
 
-        // Track invite sent
-        const newStats = { ...inviteStats, sent: inviteStats.sent + 1 };
-        setInviteStats(newStats);
-        localStorage.setItem('0g_invite_stats', JSON.stringify(newStats));
+        // Track invite sent via API (falls back to localStorage)
+        await trackInviteSent();
 
         // Try native share first on mobile
         if (navigator.share && platform.id === 'native') {
@@ -179,9 +227,7 @@ function InvitePageContent() {
                     text: inviteMessage,
                     url: inviteLink,
                 });
-                const newStats = { ...inviteStats, sent: inviteStats.sent + 1 };
-                setInviteStats(newStats);
-                localStorage.setItem('0g_invite_stats', JSON.stringify(newStats));
+                await trackInviteSent();
             } catch (err) {
                 console.log('Share cancelled');
             }

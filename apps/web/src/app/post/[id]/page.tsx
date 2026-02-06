@@ -7,10 +7,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     ArrowLeftIcon,
-    HeartIcon,
-    SendIcon,
     ShareIcon,
 } from '@/components/icons';
+import { API_URL } from '@/lib/api';
+import { ThreadedComments } from '@/components/comments/ThreadedComments';
 
 interface Post {
     id: string;
@@ -25,18 +25,6 @@ interface Post {
     commentsCount: number;
     rsvpCount?: number;
     isRsvped?: boolean;
-    author: {
-        id: string;
-        username: string;
-        displayName: string;
-        avatarUrl?: string;
-    };
-}
-
-interface Comment {
-    id: string;
-    content: string;
-    createdAt: string;
     author: {
         id: string;
         username: string;
@@ -104,10 +92,7 @@ export default function PostDetailPage() {
     const postId = params.id as string;
 
     const [post, setPost] = useState<Post | null>(null);
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [newComment, setNewComment] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // RSVP and Edit states
@@ -115,10 +100,6 @@ export default function PostDetailPage() {
     const [rsvpCount, setRsvpCount] = useState(0);
     const [isEditingPost, setIsEditingPost] = useState(false);
     const [editedCaption, setEditedCaption] = useState('');
-    const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-    const [editedCommentContent, setEditedCommentContent] = useState('');
-
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app';
 
     const fetchPost = useCallback(async () => {
         try {
@@ -162,37 +143,6 @@ export default function PostDetailPage() {
         } catch (err) {
             console.error('Error fetching post:', err);
             setError('Failed to load post');
-        }
-    }, [postId, API_URL]);
-
-    const fetchComments = useCallback(async () => {
-        try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
-            const response = await fetch(`${API_URL}/api/v1/posts/${postId}/comments`, {
-                headers: {
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-                },
-                credentials: 'include',
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                // Map user to author for our Comment interface
-                const mappedComments = (data.comments || []).map((c: any) => ({
-                    id: c.id,
-                    content: c.content,
-                    createdAt: c.createdAt,
-                    author: {
-                        id: c.user?.id || '',
-                        username: c.user?.username || '',
-                        displayName: c.user?.displayName || 'User',
-                        avatarUrl: c.user?.avatarUrl,
-                    },
-                }));
-                setComments(mappedComments);
-            }
-        } catch (err) {
-            console.error('Error fetching comments:', err);
         } finally {
             setIsLoading(false);
         }
@@ -201,9 +151,8 @@ export default function PostDetailPage() {
     useEffect(() => {
         if (postId) {
             fetchPost();
-            fetchComments();
         }
-    }, [postId, fetchPost, fetchComments]);
+    }, [postId, fetchPost]);
 
     const handleLike = async () => {
         if (!isAuthenticated) {
@@ -232,34 +181,9 @@ export default function PostDetailPage() {
         }
     };
 
-    const handleSubmitComment = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newComment.trim() || !isAuthenticated) return;
-
-        setIsSubmitting(true);
-        try {
-            const token = localStorage.getItem('0g_token');
-            const response = await fetch(`${API_URL}/api/v1/posts/${postId}/comments`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ content: newComment }),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setComments(prev => [data.comment, ...prev]);
-                setNewComment('');
-                if (post) {
-                    setPost({ ...post, commentsCount: post.commentsCount + 1 });
-                }
-            }
-        } catch (err) {
-            console.error('Error posting comment:', err);
-        } finally {
-            setIsSubmitting(false);
+    const handleCommentCountChange = (delta: number) => {
+        if (post) {
+            setPost({ ...post, commentsCount: post.commentsCount + delta });
         }
     };
 
@@ -336,57 +260,6 @@ export default function PostDetailPage() {
         }
     };
 
-    const handleEditComment = async (commentId: string) => {
-        if (!editedCommentContent.trim()) return;
-
-        try {
-            const token = localStorage.getItem('0g_token');
-            const response = await fetch(`${API_URL}/api/v1/posts/${postId}/comments/${commentId}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ content: editedCommentContent }),
-            });
-
-            if (response.ok) {
-                const updatedComment = await response.json();
-                setComments(prev => prev.map(c =>
-                    c.id === commentId
-                        ? { ...c, content: updatedComment.content }
-                        : c
-                ));
-                setEditingCommentId(null);
-                setEditedCommentContent('');
-            }
-        } catch (err) {
-            console.error('Error editing comment:', err);
-        }
-    };
-
-    const handleDeleteComment = async (commentId: string) => {
-        if (!confirm('Delete this comment?')) return;
-
-        try {
-            const token = localStorage.getItem('0g_token');
-            const response = await fetch(`${API_URL}/api/v1/posts/${postId}/comments/${commentId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
-
-            if (response.ok) {
-                setComments(prev => prev.filter(c => c.id !== commentId));
-                if (post) {
-                    setPost({ ...post, commentsCount: post.commentsCount - 1 });
-                }
-            }
-        } catch (err) {
-            console.error('Error deleting comment:', err);
-        }
-    };
 
     if (isLoading) {
         return (
@@ -597,153 +470,30 @@ export default function PostDetailPage() {
                     </div>
                 </motion.div>
 
-                {/* Comment Input */}
-                {isAuthenticated ? (
-                    <form onSubmit={handleSubmitComment} className="mt-6">
-                        <div className="flex gap-3">
-                            {user?.avatarUrl ? (
-                                <img
-                                    src={user.avatarUrl}
-                                    alt={user.displayName || 'You'}
-                                    className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                                />
-                            ) : (
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold flex-shrink-0">
-                                    {user?.displayName?.[0] || 'U'}
-                                </div>
-                            )}
-                            <div className="flex-1 flex gap-2">
-                                <input
-                                    type="text"
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    placeholder="Write a comment..."
-                                    className="flex-1 bg-white/5 rounded-xl px-4 py-3 text-white placeholder:text-white/40 border border-white/10 focus:border-[#00D4FF]/50 focus:outline-none transition-colors"
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={!newComment.trim() || isSubmitting}
-                                    className="px-4 py-3 rounded-xl bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <SendIcon size={20} />
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                ) : (
-                    <div className="mt-6 text-center py-4 bg-white/[0.02] rounded-xl border border-white/5">
-                        <p className="text-white/60 mb-3">Sign in to comment</p>
-                        <Link
-                            href="/login"
-                            className="inline-block px-6 py-2 rounded-xl bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity"
-                        >
-                            Log In
-                        </Link>
-                    </div>
-                )}
-
-                {/* Comments List */}
-                <div className="mt-6 space-y-4">
-                    <h2 className="text-lg font-semibold text-white">
-                        Comments ({comments.length})
+                {/* Threaded Comments */}
+                <div className="mt-6">
+                    <h2 className="text-lg font-semibold text-white mb-4">
+                        Comments ({post.commentsCount})
                     </h2>
 
-                    {comments.length === 0 ? (
-                        <div className="text-center py-8 bg-white/[0.02] rounded-xl border border-white/5">
-                            <div className="text-4xl mb-2">💬</div>
-                            <p className="text-white/60">No comments yet. Be the first!</p>
-                        </div>
-                    ) : (
-                        comments.map((comment) => (
-                            <motion.div
-                                key={comment.id}
-                                className="bg-white/[0.02] rounded-xl border border-white/5 p-4"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
+                    {!isAuthenticated && (
+                        <div className="mb-4 text-center py-4 bg-white/[0.02] rounded-xl border border-white/5">
+                            <p className="text-white/60 mb-3">Sign in to comment</p>
+                            <Link
+                                href="/login"
+                                className="inline-block px-6 py-2 rounded-xl bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity"
                             >
-                                <div className="flex gap-3">
-                                    <Link href={`/profile/${comment.author.username}`}>
-                                        {comment.author.avatarUrl ? (
-                                            <img
-                                                src={comment.author.avatarUrl}
-                                                alt={comment.author.displayName}
-                                                className="w-10 h-10 rounded-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-sm">
-                                                {comment.author.displayName?.[0] || 'U'}
-                                            </div>
-                                        )}
-                                    </Link>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <Link
-                                                href={`/profile/${comment.author.username}`}
-                                                className="font-semibold text-white text-sm hover:text-[#00D4FF] transition-colors"
-                                            >
-                                                {comment.author.displayName}
-                                            </Link>
-                                            <span className="text-white/30 text-xs">
-                                                {new Date(comment.createdAt).toLocaleDateString()}
-                                            </span>
-
-                                            {/* Edit/Delete buttons for comment owner or admin */}
-                                            {(user?.id === comment.author.id || isAdmin) && editingCommentId !== comment.id && (
-                                                <div className="flex gap-2 ml-auto">
-                                                    <button
-                                                        onClick={() => {
-                                                            setEditingCommentId(comment.id);
-                                                            setEditedCommentContent(comment.content);
-                                                        }}
-                                                        className="text-white/40 hover:text-amber-400 transition-colors text-xs"
-                                                    >
-                                                        ✏️ Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteComment(comment.id)}
-                                                        className="text-white/40 hover:text-rose-400 transition-colors text-xs"
-                                                    >
-                                                        🗑️ Delete
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Comment content - editable or display */}
-                                        {editingCommentId === comment.id ? (
-                                            <div className="space-y-2">
-                                                <textarea
-                                                    value={editedCommentContent}
-                                                    onChange={(e) => setEditedCommentContent(e.target.value)}
-                                                    className="w-full bg-white/5 rounded-xl px-3 py-2 text-white text-sm border border-white/10 focus:border-[#00D4FF]/50 focus:outline-none transition-colors resize-none"
-                                                    rows={2}
-                                                />
-                                                <div className="flex gap-2 justify-end">
-                                                    <button
-                                                        onClick={() => {
-                                                            setEditingCommentId(null);
-                                                            setEditedCommentContent('');
-                                                        }}
-                                                        className="px-3 py-1 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 transition-colors text-sm"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleEditComment(comment.id)}
-                                                        className="px-3 py-1 rounded-lg bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity text-sm"
-                                                    >
-                                                        Save
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <p className="text-white/80 text-sm">{comment.content}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))
+                                Log In
+                            </Link>
+                        </div>
                     )}
+
+                    <ThreadedComments
+                        postId={postId}
+                        currentUserId={user?.id}
+                        isAdmin={isAdmin}
+                        onCommentCountChange={handleCommentCountChange}
+                    />
                 </div>
             </main>
         </div>

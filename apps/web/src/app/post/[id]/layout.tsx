@@ -1,7 +1,6 @@
 import type { Metadata, ResolvingMetadata } from 'next';
 import type { ReactNode } from 'react';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app';
+import { API_URL } from '@/lib/api';
 
 type Props = {
     params: Promise<{ id: string }>;

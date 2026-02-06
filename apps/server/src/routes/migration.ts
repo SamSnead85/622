@@ -48,13 +48,12 @@ const requireAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
  * GET /api/migration
  * Get user's migration history
  */
-router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
+router.get('/', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const migrations = await migrationService.getUserMigrations(req.user!.id);
         res.json({ migrations });
     } catch (error) {
-        console.error('Error getting migrations:', error);
-        res.status(500).json({ error: 'Failed to get migrations' });
+        next(error);
     }
 });
 
@@ -62,7 +61,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
  * GET /api/migration/:id
  * Get migration status by ID
  */
-router.get('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+router.get('/:id', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const migration = await migrationService.getMigrationStatus(req.params.id);
 
@@ -72,8 +71,7 @@ router.get('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
 
         res.json({ migration });
     } catch (error) {
-        console.error('Error getting migration:', error);
-        res.status(500).json({ error: 'Failed to get migration status' });
+        next(error);
     }
 });
 
@@ -85,7 +83,7 @@ router.post(
     '/upload',
     requireAuth,
     upload.single('file'),
-    async (req: AuthRequest, res: Response) => {
+    async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {
             const { platform } = req.body;
 
@@ -107,10 +105,9 @@ router.post(
                 message: 'Migration started',
                 migrationId,
             });
-        } catch (error) {
-            console.error('Error starting migration:', error);
-            res.status(500).json({ error: 'Failed to start migration' });
-        }
+    } catch (error) {
+        next(error);
+    }
     }
 );
 
@@ -118,13 +115,12 @@ router.post(
  * POST /api/migration/:id/cancel
  * Cancel a pending or processing migration
  */
-router.post('/:id/cancel', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/:id/cancel', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         await migrationService.cancelMigration(req.params.id, req.user!.id);
         res.json({ message: 'Migration cancelled' });
     } catch (error) {
-        console.error('Error cancelling migration:', error);
-        res.status(500).json({ error: 'Failed to cancel migration' });
+        next(error);
     }
 });
 

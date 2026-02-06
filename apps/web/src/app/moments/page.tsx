@@ -16,6 +16,7 @@ import {
     PlusIcon,
     UserIcon,
 } from '@/components/icons';
+import { API_URL } from '@/lib/api';
 
 // ============================================
 // TYPES
@@ -246,8 +247,6 @@ export default function MomentsPage() {
     // For parallax effect
     const y = useMotionValue(0);
     const opacity = useTransform(y, [-100, 0, 100], [0.5, 1, 0.5]);
-
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app';
 
     // Fetch video posts
     useEffect(() => {

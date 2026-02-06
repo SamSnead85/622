@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useCommunities, type Community } from '@/hooks';
 import { Navigation } from '@/components/Navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_URL } from '@/lib/api';
 
 // ============================================
 // ASSETS & ICONS
@@ -49,52 +50,25 @@ const DEFAULT_COVERS = [
 ];
 
 // ============================================
-// MOCK DATA FOR "THE AGORA" (VISION)
+// TYPES
 // ============================================
-const BREAKING_NEWS = [
-    { id: 1, title: "Global Summit: Tech Sovereignty in 2026", source: "0G News", time: "2h ago", isLive: true },
-    { id: 2, title: "Community Alert: Helping relief efforts in Sudan", source: "Humanitarian", time: "5h ago", isLive: false },
-    { id: 3, title: "Market Update: Decentralized Networks hit ATH", source: "Finance", time: "8h ago", isLive: false },
-];
+interface BulletinItem {
+    id: number | string;
+    type: string;
+    title: string;
+    desc: string;
+    author: string;
+    tags: string[];
+    date: string;
+}
 
-const BULLETIN_BOARD = [
-    {
-        id: 1,
-        type: 'JOB',
-        title: 'Senior React Developer Wanted',
-        desc: 'Join a sovereign network team. Remote, high pay. Looking for visionaries.',
-        author: 'SovereignTech',
-        tags: ['Remote', 'Crypto', 'React'],
-        date: 'Today'
-    },
-    {
-        id: 2,
-        type: 'EVENT',
-        title: 'Local Art Walk - Downtown',
-        desc: 'Gathering of local artists and creators this Saturday. Support local talent!',
-        author: 'CityGuild',
-        tags: ['Art', 'Meetup'],
-        date: 'Saturday'
-    },
-    {
-        id: 3,
-        type: 'ANNOUNCEMENT',
-        title: 'Protest: Digital Rights March',
-        desc: 'Stand up for your right to privacy. City Hall, 10 AM. Bring signs.',
-        author: 'PrivacyNow',
-        tags: ['Activism', 'Important'],
-        date: 'Tomorrow'
-    },
-    {
-        id: 4,
-        type: 'JOB',
-        title: 'Graphic Designer for Non-Profit',
-        desc: 'Need a logo and branding package for a new water charity.',
-        author: 'CleanWater',
-        tags: ['Design', 'Charity'],
-        date: '2d ago'
-    }
-];
+interface NewsItem {
+    id: number | string;
+    title: string;
+    source: string;
+    time: string;
+    isLive: boolean;
+}
 
 // ============================================
 // COMPONENTS
@@ -103,18 +77,20 @@ const BULLETIN_BOARD = [
 // Navigation is now imported from '@/components/Navigation'
 
 // 2. Pulse Ticker
-function PulseTicker() {
+function PulseTicker({ news }: { news: NewsItem[] }) {
+    if (news.length === 0) return null;
+
     return (
         <div className="relative w-full overflow-hidden bg-gradient-to-r from-red-900/20 to-black border-y border-white/5 py-2">
             <div className="flex animate-marquee whitespace-nowrap gap-12 text-sm font-medium">
-                {BREAKING_NEWS.concat(BREAKING_NEWS).map((news, i) => (
+                {news.concat(news).map((item, i) => (
                     <div key={i} className="flex items-center gap-3">
-                        {news.isLive && (
+                        {item.isLive && (
                             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgb(239,68,68)]" />
                         )}
-                        <span className="text-red-400 uppercase tracking-widest text-xs font-bold">{news.source}</span>
-                        <span className="text-white/90">{news.title}</span>
-                        <span className="text-white/30 text-xs">{news.time}</span>
+                        <span className="text-red-400 uppercase tracking-widest text-xs font-bold">{item.source}</span>
+                        <span className="text-white/90">{item.title}</span>
+                        <span className="text-white/30 text-xs">{item.time}</span>
                     </div>
                 ))}
             </div>
@@ -126,7 +102,7 @@ function PulseTicker() {
 }
 
 // 3. Bulletin Item
-function BulletinCard({ item }: { item: typeof BULLETIN_BOARD[0] }) {
+function BulletinCard({ item }: { item: BulletinItem }) {
     const getTypeColor = (type: string) => {
         switch (type) {
             case 'JOB': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
@@ -211,10 +187,36 @@ function CommunityCard({ community, index }: { community: Community; index: numb
 export default function CommunityHub() {
     const [mounted, setMounted] = useState(false);
     const { communities, isLoading } = useCommunities();
+    const [bulletins, setBulletins] = useState<BulletinItem[]>([]);
+    const [news, setNews] = useState<NewsItem[]>([]);
 
     useEffect(() => { setMounted(true); }, []);
 
     const { user } = useAuth();
+
+    // Fetch bulletins from API
+    useEffect(() => {
+        const fetchBulletins = async () => {
+            try {
+                const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+                const res = await fetch(`${API_URL}/api/v1/community/bulletins`, {
+                    headers: {
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    },
+                    credentials: 'include',
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    // Populate bulletins and news from API response
+                    if (data.bulletins) setBulletins(data.bulletins);
+                    if (data.news) setNews(data.news);
+                }
+            } catch (err) {
+                console.error('Failed to fetch bulletins:', err);
+            }
+        };
+        fetchBulletins();
+    }, []);
 
     if (!mounted) return <div className="min-h-screen bg-[#050508]" />;
 
@@ -230,7 +232,7 @@ export default function CommunityHub() {
 
             <main className="relative z-10 lg:ml-20 xl:ml-64 pb-20 lg:pb-0">
                 {/* 1. The Pulse (News Ticker) */}
-                <PulseTicker />
+                <PulseTicker news={news} />
 
                 <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-12">
 
@@ -259,11 +261,17 @@ export default function CommunityHub() {
                             <span className="text-[#00D4FF]">{Icons.megaphone}</span>
                             <h2 className="text-xl font-bold uppercase tracking-widest text-white/80">Community Bulletin</h2>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {BULLETIN_BOARD.map((item) => (
-                                <BulletinCard key={item.id} item={item} />
-                            ))}
-                        </div>
+                        {bulletins.length === 0 ? (
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
+                                <p className="text-white/50">No bulletins yet. Check back soon for community posts, events, and announcements.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {bulletins.map((item) => (
+                                    <BulletinCard key={item.id} item={item} />
+                                ))}
+                            </div>
+                        )}
                     </section>
 
                     {/* 4. My Sovereign Circles (User's Tribes) */}

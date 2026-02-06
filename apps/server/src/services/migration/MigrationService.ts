@@ -95,7 +95,7 @@ export class MigrationService {
             );
 
             // Import posts
-            const postStats = await this.importPosts(migrationId, parsedContent.posts);
+            const postStats = await this.importPosts(migrationId, migration.platform, parsedContent.posts);
 
             // Import connections
             const connectionStats = await this.importConnections(
@@ -166,6 +166,7 @@ export class MigrationService {
      */
     private async importPosts(
         migrationId: string,
+        platform: string,
         posts: ParsedPost[]
     ): Promise<{ imported: number; failed: number }> {
         let imported = 0;
@@ -176,7 +177,7 @@ export class MigrationService {
                 await prisma.importedPost.create({
                     data: {
                         migrationId,
-                        originalPlatform: 'INSTAGRAM', // Will be dynamic
+                        originalPlatform: platform,
                         originalId: post.originalId,
                         originalTimestamp: post.originalTimestamp,
                         type: post.type as PostType,

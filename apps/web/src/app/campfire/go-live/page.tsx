@@ -25,8 +25,6 @@ interface ChatMessage {
     avatarUrl: string;
 }
 
-const INITIAL_MESSAGES: ChatMessage[] = [];
-
 export default function CampfireGoLive() {
     const { user } = useAuth();
     const router = useRouter();
@@ -37,7 +35,7 @@ export default function CampfireGoLive() {
     const [title, setTitle] = useState('');
     const [viewerCount, setViewerCount] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [hasCamera, setHasCamera] = useState(false);
     const [reactions, setReactions] = useState<{ id: string; emoji: string; x: number }[]>([]);

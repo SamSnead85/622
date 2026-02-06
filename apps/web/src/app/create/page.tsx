@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { usePosts } from '@/hooks/usePosts';
 import { PremiumCreateFlow } from '@/components/PremiumCreateFlow';
 import { ProtectedRoute } from '@/contexts/AuthContext';
+import { API_URL } from '@/lib/api';
 
 function CreateContent() {
     const router = useRouter();
@@ -13,7 +14,6 @@ function CreateContent() {
     const handlePublish = useCallback(async (data: { mediaUrl: string; caption: string; type: 'post' | 'moment' | 'journey'; file?: File | null; topicIds?: string[] }) => {
         try {
             const token = localStorage.getItem('0g_token');
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app';
 
             // MOMENT CREATION
             if (data.type === 'moment') {

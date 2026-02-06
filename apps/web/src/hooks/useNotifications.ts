@@ -9,7 +9,7 @@ import { useSocket } from './useSocket';
 // ============================================
 export interface Notification {
     id: string;
-    type: 'LIKE' | 'COMMENT' | 'FOLLOW' | 'MENTION' | 'MESSAGE' | 'COMMUNITY' | 'COMMUNITY_INVITE' | 'JOURNEY';
+    type: 'LIKE' | 'COMMENT' | 'FOLLOW' | 'MENTION' | 'MESSAGE' | 'COMMUNITY' | 'COMMUNITY_INVITE' | 'JOURNEY' | 'WAVE';
     message: string;
     read: boolean;
     actorId: string;

@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMessages, type Message as ApiMessage, type Conversation } from '@/hooks';
 import { ProtectedRoute, useAuth } from '@/contexts/AuthContext';
 import { Navigation } from '@/components/Navigation';
+import { API_URL } from '@/lib/api';
 import {
     HomeIcon,
     SearchIcon,
@@ -187,7 +188,7 @@ function NewChatModal({
             try {
                 const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
                 const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app'}/api/v1/users/search?q=${encodeURIComponent(searchQuery)}&limit=10`,
+                    `${API_URL}/api/v1/users/search?q=${encodeURIComponent(searchQuery)}&limit=10`,
                     {
                         headers: {
                             ...(token ? { 'Authorization': `Bearer ${token}` } : {}),

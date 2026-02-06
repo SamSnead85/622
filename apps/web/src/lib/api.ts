@@ -4,19 +4,17 @@
 const getApiUrl = () => {
     const envUrl = process.env.NEXT_PUBLIC_API_URL;
 
-    // Log warning if API URL is not set in production
-    if (!envUrl && typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-        console.warn(
-            '[Six22 API] NEXT_PUBLIC_API_URL not configured. ' +
-            'Set this in your Netlify environment variables to point to your Railway backend. ' +
-            'Example: https://your-app-name.up.railway.app'
-        );
+    if (!envUrl && typeof window !== 'undefined') {
+        if (process.env.NODE_ENV === 'production') {
+            console.error(
+                '[Caravan API] CRITICAL: NEXT_PUBLIC_API_URL is not configured. ' +
+                'Set this in your Netlify environment variables to point to your Railway backend. ' +
+                'Example: https://your-app-name.up.railway.app'
+            );
+        }
     }
 
-    // In browser or server, check for production fallback
-    if (process.env.NODE_ENV === 'production' && !envUrl) {
-        return 'https://caravanserver-production-d7da.up.railway.app';
-    }
+    // Development fallback only - production MUST set NEXT_PUBLIC_API_URL
     return envUrl || 'http://localhost:5180';
 };
 
@@ -89,7 +87,7 @@ export const API_ENDPOINTS = {
 export const apiFetch = async (
     url: string,
     options: RequestInit = {}
-): Promise<Response> => {
+): Promise<any> => {
     const token = typeof window !== 'undefined'
         ? localStorage.getItem('0g_token')
         : null;
@@ -103,11 +101,35 @@ export const apiFetch = async (
         (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
 
-    return fetch(url, {
+    const res = await fetch(url, {
         ...options,
         headers,
         credentials: 'include',
     });
+
+    // Auto-parse JSON responses; return an object that also has .ok, .status, .json() for backward compat
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        // Attach response metadata and a no-op .json() for callers that still call .json()
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+            data.ok = res.ok;
+            data.status = res.status;
+            data.json = () => Promise.resolve(data);
+        }
+        if (!res.ok) {
+            const err = new Error(data?.error || `API error: ${res.status}`);
+            (err as any).status = res.status;
+            (err as any).data = data;
+            throw err;
+        }
+        return data;
+    }
+
+    if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+    }
+    return res;
 };
 
 // Typed API helpers
@@ -134,10 +156,6 @@ export const apiUpload = async (
         ? localStorage.getItem('0g_token')
         : null;
 
-    console.log('[apiUpload] Starting upload to:', url);
-    console.log('[apiUpload] Token present:', !!token);
-    console.log('[apiUpload] File:', file.name, file.size, file.type);
-
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         const formData = new FormData();
@@ -151,8 +169,6 @@ export const apiUpload = async (
         });
 
         xhr.addEventListener('load', () => {
-            console.log('[apiUpload] Response status:', xhr.status);
-            console.log('[apiUpload] Response text:', xhr.responseText);
             if (xhr.status >= 200 && xhr.status < 300) {
                 try {
                     const result = JSON.parse(xhr.responseText);
@@ -170,8 +186,7 @@ export const apiUpload = async (
             }
         });
 
-        xhr.addEventListener('error', (e) => {
-            console.error('[apiUpload] Network error:', e);
+        xhr.addEventListener('error', () => {
             reject(new Error('Network error'));
         });
         xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
@@ -179,8 +194,6 @@ export const apiUpload = async (
         xhr.open('POST', url);
         if (token) {
             xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        } else {
-            console.warn('[apiUpload] No auth token - request will likely fail');
         }
         xhr.withCredentials = true;
         xhr.send(formData);

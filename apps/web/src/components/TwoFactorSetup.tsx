@@ -21,7 +21,9 @@ interface SetupData {
 // ============================================
 // API FUNCTIONS
 // ============================================
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { API_URL } from '@/lib/api';
+
+const API_BASE = `${API_URL}/api/v1/auth`;
 
 async function setupTwoFactor(): Promise<{ success: boolean; data?: SetupData; error?: string }> {
     try {

@@ -67,7 +67,7 @@ export default function PublicProfilePage() {
                 <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-violet-500/5 blur-[100px]" />
             </div>
 
-            <Navigation />
+            <Navigation activeTab="profile" />
             <RightSidebar />
 
             <main className="lg:ml-20 xl:ml-64 lg:mr-80 min-h-screen pb-20 lg:pb-8 relative z-10">

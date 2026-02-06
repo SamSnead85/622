@@ -97,7 +97,7 @@ export function CampfireInvite({ isOpen, onClose, streamTitle }: CampfireInviteP
                                     </div>
                                 ) : friends.length === 0 ? (
                                     <div className="text-center py-8 text-white/50">
-                                        You aren't following anyone yet.
+                                        You aren&apos;t following anyone yet.
                                     </div>
                                 ) : (
                                     friends.map(friend => (

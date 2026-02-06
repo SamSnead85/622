@@ -1,5 +1,5 @@
 
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -19,7 +19,7 @@ const createStreamSchema = z.object({
 // GET /api/v1/livestream/active
 // Get all active livestreams
 // ============================================
-router.get('/active', optionalAuth, async (req: AuthRequest, res) => {
+router.get('/active', optionalAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const streams = await prisma.liveStream.findMany({
             where: {
@@ -45,8 +45,7 @@ router.get('/active', optionalAuth, async (req: AuthRequest, res) => {
             count: streams.length,
         });
     } catch (error) {
-        console.error('Fetch active streams error:', error);
-        res.status(500).json({ error: 'Failed to fetch streams' });
+        next(error);
     }
 });
 
@@ -103,7 +102,7 @@ router.post('/create', authenticate, async (req: AuthRequest, res, next) => {
 // POST /api/v1/livestream/:id/join
 // Join a livestream as viewer
 // ============================================
-router.post('/:id/join', optionalAuth, async (req: AuthRequest, res) => {
+router.post('/:id/join', optionalAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
 
@@ -127,7 +126,7 @@ router.post('/:id/join', optionalAuth, async (req: AuthRequest, res) => {
             joined: true,
         });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to join stream' });
+        next(error);
     }
 });
 
@@ -135,7 +134,7 @@ router.post('/:id/join', optionalAuth, async (req: AuthRequest, res) => {
 // POST /api/v1/livestream/:id/leave
 // Leave a livestream
 // ============================================
-router.post('/:id/leave', optionalAuth, async (req: AuthRequest, res) => {
+router.post('/:id/leave', optionalAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
 
@@ -148,7 +147,7 @@ router.post('/:id/leave', optionalAuth, async (req: AuthRequest, res) => {
 
         res.json({ left: true });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to leave stream' });
+        next(error);
     }
 });
 
@@ -156,7 +155,7 @@ router.post('/:id/leave', optionalAuth, async (req: AuthRequest, res) => {
 // POST /api/v1/livestream/:id/end
 // End a livestream (streamer only)
 // ============================================
-router.post('/:id/end', authenticate, async (req: AuthRequest, res) => {
+router.post('/:id/end', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
 
@@ -183,7 +182,7 @@ router.post('/:id/end', authenticate, async (req: AuthRequest, res) => {
 
         res.json({ ended: true });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to end stream' });
+        next(error);
     }
 });
 
@@ -191,7 +190,7 @@ router.post('/:id/end', authenticate, async (req: AuthRequest, res) => {
 // GET /api/v1/livestream/:id
 // Get stream details
 // ============================================
-router.get('/:id', optionalAuth, async (req: AuthRequest, res) => {
+router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const stream = await prisma.liveStream.findUnique({
@@ -213,7 +212,7 @@ router.get('/:id', optionalAuth, async (req: AuthRequest, res) => {
 
         res.json({ stream });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch stream' });
+        next(error);
     }
 });
 

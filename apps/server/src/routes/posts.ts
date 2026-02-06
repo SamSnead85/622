@@ -4,6 +4,7 @@ import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
 import { cache } from '../services/cache/RedisCache.js';
+import { queueNotification } from '../services/notifications/NotificationQueue.js';
 
 const router = Router();
 
@@ -13,7 +14,7 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
         const { cursor, limit = '20' } = req.query;
 
         const posts = await prisma.post.findMany({
-            where: { isPublic: true },
+            where: { isPublic: true, deletedAt: null },
             take: parseInt(limit as string) + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: { createdAt: 'desc' },
@@ -74,11 +75,15 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
         });
         const isNewUser = followCount === 0;
 
-        console.log(`[Feed] User ${req.userId} follow count: ${followCount}, isNewUser: ${isNewUser}`);
+        // Log only in development
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`[Feed] User ${req.userId} follow count: ${followCount}, isNewUser: ${isNewUser}`);
+        }
 
         // Fetch real posts from database
         let whereClause: any = {
-            isPublic: true, // Always show public posts
+            isPublic: true,
+            deletedAt: null, // Exclude soft-deleted posts
         };
 
         if (type === 'following') {
@@ -96,11 +101,11 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
 
             if (following.length === 0) {
                 // No follows yet - show all public posts instead of empty feed
-                console.log('[Feed] User has no follows, showing all public posts for "following" tab');
-                whereClause = { isPublic: true };
+                whereClause = { isPublic: true, deletedAt: null };
             } else {
                 whereClause = {
                     isPublic: true,
+                    deletedAt: null,
                     userId: { in: following.map((f) => f.followingId) },
                 };
             }
@@ -149,7 +154,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                 },
             });
 
-            console.log(`[Feed] Fetched ${posts.length} posts for user ${req.userId}`);
+            // Posts fetched successfully
         } catch (dbError) {
             console.error('Database error fetching posts:', dbError);
             throw new AppError('Failed to load posts', 503);
@@ -158,27 +163,61 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
         // Smart ranking algorithm for "For You" feed
         if (type === 'foryou' && !cursor) {
             const now = Date.now();
-            const oneDayMs = 24 * 60 * 60 * 1000;
+            const oneHourMs = 60 * 60 * 1000;
+
+            // Fetch user interests for personalization
+            let userInterestTopicIds: Set<string> = new Set();
+            try {
+                const interests = await prisma.userInterest.findMany({
+                    where: { userId: req.userId, level: { not: 'NOT_INTERESTED' } },
+                    select: { topicId: true, level: true },
+                });
+                userInterestTopicIds = new Set(interests.map(i => i.topicId));
+            } catch { /* Graceful degradation - no personalization */ }
+
+            // Get post-topic mappings for personalization
+            const postIds = posts.map(p => p.id);
+            let postTopics: Map<string, string[]> = new Map();
+            try {
+                const topics = await prisma.postTopic.findMany({
+                    where: { postId: { in: postIds } },
+                    select: { postId: true, topicId: true },
+                });
+                for (const t of topics) {
+                    if (!postTopics.has(t.postId)) postTopics.set(t.postId, []);
+                    postTopics.get(t.postId)!.push(t.topicId);
+                }
+            } catch { /* Graceful degradation */ }
 
             // Calculate engagement score for each post
             const rankedPosts = posts.map(post => {
                 const engagementScore =
                     (post._count.likes * 3) +      // Likes worth 3 points
-                    (post._count.comments * 5) +   // Comments worth 5 points (higher engagement)
-                    (post._count.shares * 7);      // Shares worth 7 points (viral signal)
+                    (post._count.comments * 5) +    // Comments worth 5 points (higher engagement)
+                    (post._count.shares * 7);       // Shares worth 7 points (viral signal)
 
-                // Recency boost: posts under 24h get 3x multiplier
-                const postAge = now - new Date(post.createdAt).getTime();
-                const recencyBoost = postAge < oneDayMs ? 3 : 1;
+                // Gradual time decay (Reddit-style gravity)
+                // Score decays by half every 12 hours
+                const ageInHours = (now - new Date(post.createdAt).getTime()) / oneHourMs;
+                const timeDecay = Math.pow(0.5, ageInHours / 12);
+
+                // Topic interest boost: 2x if matches user interests
+                const postTopicIds = postTopics.get(post.id) || [];
+                const interestMatch = postTopicIds.some(tid => userInterestTopicIds.has(tid));
+                const interestBoost = interestMatch ? 2.0 : 1.0;
 
                 // Pinned posts always show first
                 const pinnedBoost = post.isPinned ? 10000 : 0;
 
-                // NEW USER BOOST: If user is new, boost all posts slightly
-                // This ensures they see a vibrant feed even with low engagement
+                // New user boost
                 const newUserBoost = isNewUser ? 1.5 : 1;
 
-                const finalScore = pinnedBoost + (engagementScore * recencyBoost * newUserBoost);
+                const finalScore = pinnedBoost + (
+                    (engagementScore + 1) * // +1 to give new posts a baseline score
+                    timeDecay *
+                    interestBoost *
+                    newUserBoost
+                );
 
                 return {
                     ...post,
@@ -189,8 +228,17 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             // Sort by engagement score
             rankedPosts.sort((a, b) => b._engagementScore - a._engagementScore);
 
+            // Diversity filter: limit to max 3 posts per author in top results
+            const authorPostCount: Record<string, number> = {};
+            const diversePosts = rankedPosts.filter(post => {
+                const count = authorPostCount[post.userId] || 0;
+                if (count >= 3) return false;
+                authorPostCount[post.userId] = count + 1;
+                return true;
+            });
+
             // Take only the requested limit
-            posts = rankedPosts.slice(0, parseInt(limit as string) + 1);
+            posts = diversePosts.slice(0, parseInt(limit as string) + 1);
         }
 
         const hasMore = posts.length > parseInt(limit as string);
@@ -223,7 +271,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             nextCursor: hasMore ? results[results.length - 1].id : null,
         };
 
-        console.log(`[Feed] Returning ${response.posts.length} posts to user ${req.userId}`);
+        // Feed response ready
 
         // Cache the initial page for 30 seconds
         if (!cursor) {
@@ -385,8 +433,22 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             );
         }
 
-        // Invalidate feed cache for user and their followers
+        // Invalidate feed cache for the post creator
         await cache.invalidate(`feed:${req.userId}:*`);
+
+        // Invalidate followers' "foryou" feed caches so they see the new post
+        const followers = await prisma.follow.findMany({
+            where: { followingId: req.userId! },
+            select: { followerId: true },
+            take: 1000, // Cap to prevent excessive invalidation
+        });
+
+        // Batch invalidate follower caches (non-blocking)
+        if (followers.length > 0) {
+            Promise.all(
+                followers.map(f => cache.invalidate(`feed:${f.followerId}:foryou:initial:*`))
+            ).catch(err => console.error('Feed cache invalidation error:', err));
+        }
 
         res.status(201).json(post);
     } catch (error) {
@@ -394,7 +456,7 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
     }
 });
 
-// DELETE /api/v1/posts/:postId
+// DELETE /api/v1/posts/:postId (soft delete - preserves data)
 router.delete('/:postId', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
@@ -415,8 +477,10 @@ router.delete('/:postId', authenticate, async (req: AuthRequest, res, next) => {
             throw new AppError('Not authorized', 403);
         }
 
-        await prisma.post.delete({
+        // Soft delete: set deletedAt timestamp instead of hard delete
+        await prisma.post.update({
             where: { id: postId },
+            data: { deletedAt: new Date() },
         });
 
         // Invalidate feed cache
@@ -658,16 +722,14 @@ router.post('/:postId/like', authenticate, async (req: AuthRequest, res, next) =
             },
         });
 
-        // Create notification if not own post
+        // Queue notification asynchronously (doesn't block response)
         if (post.userId !== req.userId) {
-            await prisma.notification.create({
-                data: {
-                    userId: post.userId,
-                    type: 'LIKE',
-                    actorId: req.userId,
-                    targetId: postId,
-                    message: 'liked your post',
-                },
+            queueNotification({
+                userId: post.userId,
+                type: 'LIKE',
+                actorId: req.userId,
+                targetId: postId,
+                message: 'liked your post',
             });
         }
 
@@ -739,13 +801,13 @@ router.delete('/:postId/save', authenticate, async (req: AuthRequest, res, next)
 router.get('/:postId/comments', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
-        const { cursor, limit = '20' } = req.query;
+        const { cursor, limit = '50' } = req.query;
 
         const comments = await prisma.comment.findMany({
-            where: { postId, parentId: null },
+            where: { postId },
             take: parseInt(limit as string) + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: 'asc' },
             include: {
                 user: {
                     select: {
@@ -768,6 +830,7 @@ router.get('/:postId/comments', optionalAuth, async (req: AuthRequest, res, next
         res.json({
             comments: results.map((c) => ({
                 ...c,
+                parentId: c.parentId,
                 repliesCount: c._count.replies,
             })),
             nextCursor: hasMore ? results[results.length - 1].id : null,
@@ -797,12 +860,28 @@ router.post('/:postId/comments', authenticate, async (req: AuthRequest, res, nex
             throw new AppError('Post not found', 404);
         }
 
+        // Validate parent comment exists and belongs to the same post
+        let parentComment = null;
+        if (parentId) {
+            parentComment = await prisma.comment.findUnique({
+                where: { id: parentId },
+            });
+
+            if (!parentComment) {
+                throw new AppError('Parent comment not found', 404);
+            }
+
+            if (parentComment.postId !== postId) {
+                throw new AppError('Parent comment does not belong to this post', 400);
+            }
+        }
+
         const comment = await prisma.comment.create({
             data: {
                 postId,
                 userId: req.userId!,
                 content,
-                parentId,
+                parentId: parentId || null,
             },
             include: {
                 user: {
@@ -814,23 +893,39 @@ router.post('/:postId/comments', authenticate, async (req: AuthRequest, res, nex
                         isVerified: true,
                     },
                 },
+                _count: {
+                    select: { replies: true },
+                },
             },
         });
 
-        // Create notification
+        // Queue notification to post author
         if (post.userId !== req.userId) {
-            await prisma.notification.create({
-                data: {
-                    userId: post.userId,
-                    type: 'COMMENT',
-                    actorId: req.userId,
-                    targetId: postId,
-                    message: 'commented on your post',
-                },
+            queueNotification({
+                userId: post.userId,
+                type: 'COMMENT',
+                actorId: req.userId,
+                targetId: postId,
+                message: parentId ? 'replied to a comment on your post' : 'commented on your post',
             });
         }
 
-        res.status(201).json(comment);
+        // Queue notification to parent comment author (for replies)
+        if (parentComment && parentComment.userId !== req.userId && parentComment.userId !== post.userId) {
+            queueNotification({
+                userId: parentComment.userId,
+                type: 'COMMENT',
+                actorId: req.userId,
+                targetId: postId,
+                message: 'replied to your comment',
+            });
+        }
+
+        res.status(201).json({
+            ...comment,
+            parentId: comment.parentId,
+            repliesCount: comment._count.replies,
+        });
     } catch (error) {
         next(error);
     }

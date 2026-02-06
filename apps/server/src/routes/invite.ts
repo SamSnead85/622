@@ -22,15 +22,14 @@ const requireAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
  * GET /api/invite
  * Get user's sent invites
  */
-router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
+router.get('/', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const invites = await inviteService.getUserInvites(req.user!.id);
         const remaining = await inviteService.getRemainingInvites(req.user!.id);
 
         res.json({ invites, remainingToday: remaining });
     } catch (error) {
-        console.error('Error getting invites:', error);
-        res.status(500).json({ error: 'Failed to get invites' });
+        next(error);
     }
 });
 
@@ -38,7 +37,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
  * POST /api/invite/email
  * Send an email invite
  */
-router.post('/email', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/email', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { email, message } = req.body;
 
@@ -60,8 +59,7 @@ router.post('/email', requireAuth, async (req: AuthRequest, res: Response) => {
 
         res.json({ success: true, inviteId: result.inviteId });
     } catch (error) {
-        console.error('Error sending invite:', error);
-        res.status(500).json({ error: 'Failed to send invite' });
+        next(error);
     }
 });
 
@@ -69,13 +67,12 @@ router.post('/email', requireAuth, async (req: AuthRequest, res: Response) => {
  * POST /api/invite/link
  * Create a shareable invite link
  */
-router.post('/link', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/link', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { code, url } = await inviteService.createInviteLink(req.user!.id);
         res.json({ code, url });
     } catch (error) {
-        console.error('Error creating invite link:', error);
-        res.status(500).json({ error: 'Failed to create invite link' });
+        next(error);
     }
 });
 
@@ -83,7 +80,7 @@ router.post('/link', requireAuth, async (req: AuthRequest, res: Response) => {
  * POST /api/invite/bulk
  * Send invites to multiple pending connections
  */
-router.post('/bulk', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/bulk', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { connectionIds, message } = req.body;
 
@@ -103,8 +100,7 @@ router.post('/bulk', requireAuth, async (req: AuthRequest, res: Response) => {
 
         res.json(result);
     } catch (error) {
-        console.error('Error sending bulk invites:', error);
-        res.status(500).json({ error: 'Failed to send invites' });
+        next(error);
     }
 });
 
@@ -112,7 +108,7 @@ router.post('/bulk', requireAuth, async (req: AuthRequest, res: Response) => {
  * GET /api/invite/connections
  * Get pending connections that can be invited
  */
-router.get('/connections', requireAuth, async (req: AuthRequest, res: Response) => {
+router.get('/connections', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { status, platform } = req.query;
 
@@ -152,8 +148,7 @@ router.get('/connections', requireAuth, async (req: AuthRequest, res: Response) 
 
         res.json({ connections: grouped, total: connections.length });
     } catch (error) {
-        console.error('Error getting connections:', error);
-        res.status(500).json({ error: 'Failed to get connections' });
+        next(error);
     }
 });
 
@@ -161,7 +156,7 @@ router.get('/connections', requireAuth, async (req: AuthRequest, res: Response) 
  * POST /api/invite/validate/:code
  * Validate a referral code (for join flow)
  */
-router.post('/validate/:code', async (req: Request, res: Response) => {
+router.post('/validate/:code', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const invite = await prisma.invite.findUnique({
             where: { referralCode: req.params.code },
@@ -193,8 +188,7 @@ router.post('/validate/:code', async (req: Request, res: Response) => {
             sender: invite.sender,
         });
     } catch (error) {
-        console.error('Error validating invite:', error);
-        res.status(500).json({ error: 'Failed to validate invite' });
+        next(error);
     }
 });
 
@@ -202,7 +196,7 @@ router.post('/validate/:code', async (req: Request, res: Response) => {
  * POST /api/invite/complete/:code
  * Mark invite as completed when user joins
  */
-router.post('/complete/:code', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/complete/:code', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const success = await inviteService.handleReferralJoin(
             req.params.code,
@@ -215,8 +209,7 @@ router.post('/complete/:code', requireAuth, async (req: AuthRequest, res: Respon
 
         res.json({ success: true });
     } catch (error) {
-        console.error('Error completing invite:', error);
-        res.status(500).json({ error: 'Failed to complete invite' });
+        next(error);
     }
 });
 

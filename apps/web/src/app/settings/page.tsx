@@ -24,6 +24,9 @@ import {
     DownloadIcon,
     ShieldIcon
 } from '@/components/icons';
+import { PrivacyScore } from '@/components/security/PrivacyScore';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { useRouter } from 'next/navigation';
 
 // Navigation
 // Local Navigation removed in favor of shared component
@@ -123,9 +126,12 @@ const settingSections = [
 function SettingsPageContent() {
     const { profile, updateProfile } = useProfile();
     const { user, logout, updateUser } = useAuth();
+    const router = useRouter();
     const [showProfileEditor, setShowProfileEditor] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [show2FASetup, setShow2FASetup] = useState(false);
+    const [showNotificationCenter, setShowNotificationCenter] = useState(false);
+    const [showBlockedAccounts, setShowBlockedAccounts] = useState(false);
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [toggles, setToggles] = useState<Record<string, boolean>>({
         'dark-mode': true,
@@ -212,6 +218,37 @@ function SettingsPageContent() {
         setShow2FASetup(false);
     }, []);
 
+    const handleLinkClick = useCallback((id: string) => {
+        switch (id) {
+            case 'edit-profile':
+                setShowProfileEditor(true);
+                break;
+            case 'change-password':
+                // TODO: implement change password modal
+                break;
+            case 'blocked':
+                setShowBlockedAccounts(true);
+                break;
+            case 'help':
+                window.location.href = 'mailto:support@0g.social?subject=Help Request';
+                break;
+            case 'report':
+                window.location.href = 'mailto:support@0g.social?subject=Bug Report';
+                break;
+            case 'feedback':
+                window.location.href = 'mailto:feedback@0g.social?subject=Feedback';
+                break;
+            case 'terms':
+                router.push('/terms');
+                break;
+            case 'privacy-policy':
+                router.push('/privacy');
+                break;
+            default:
+                break;
+        }
+    }, [router]);
+
     const handleExportData = useCallback(() => {
         const data = exportUserData();
         const blob = new Blob([data], { type: 'application/json' });
@@ -276,6 +313,27 @@ function SettingsPageContent() {
                         </button>
                     </div>
 
+                    {/* Privacy & Security */}
+                    <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden mb-6">
+                        <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+                            <ShieldIcon size={18} className="text-white/70" />
+                            <h2 className="font-semibold text-white">Privacy &amp; Security</h2>
+                        </div>
+                        <div className="p-4 space-y-3">
+                            <PrivacyScore compact />
+                            <div className="divide-y divide-white/5">
+                                <Link href="/transparency" className="flex items-center justify-between py-3 hover:bg-white/5 transition-colors rounded-lg px-2 -mx-2">
+                                    <span className="text-white/80">What We Don&apos;t Track</span>
+                                    <span className="text-white/30">→</span>
+                                </Link>
+                                <Link href="/settings/export" className="flex items-center justify-between py-3 hover:bg-white/5 transition-colors rounded-lg px-2 -mx-2">
+                                    <span className="text-white/80">Export My Data</span>
+                                    <span className="text-white/30">→</span>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Settings Sections */}
                     <div className="space-y-6">
                         {settingSections.map((section, sectionIndex) => (
@@ -292,7 +350,14 @@ function SettingsPageContent() {
                                 </div>
                                 <div className="divide-y divide-white/5">
                                     {section.items.map((item) => (
-                                        <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors">
+                                        <div
+                                            key={item.id}
+                                            className={`flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors ${item.type === 'link' ? 'cursor-pointer' : ''}`}
+                                            onClick={item.type === 'link' ? () => handleLinkClick(item.id) : undefined}
+                                            role={item.type === 'link' ? 'button' : undefined}
+                                            tabIndex={item.type === 'link' ? 0 : undefined}
+                                            onKeyDown={item.type === 'link' ? (e) => { if (e.key === 'Enter') handleLinkClick(item.id); } : undefined}
+                                        >
                                             <span className="text-white/80">{item.label}</span>
                                             {item.type === 'toggle' && (
                                                 <Toggle
@@ -309,6 +374,16 @@ function SettingsPageContent() {
                                         </div>
                                     ))}
                                 </div>
+                                {section.title === 'Notifications' && (
+                                    <div className="px-4 py-3 border-t border-white/10">
+                                        <button
+                                            onClick={() => setShowNotificationCenter(true)}
+                                            className="text-sm text-[#00D4FF] hover:text-[#00D4FF]/80 transition-colors font-medium"
+                                        >
+                                            Manage All Notification Preferences →
+                                        </button>
+                                    </div>
+                                )}
                             </motion.div>
                         ))}
                     </div>
@@ -367,6 +442,40 @@ function SettingsPageContent() {
                 onClose={() => setShow2FASetup(false)}
                 onComplete={handle2FAComplete}
             />
+
+            {/* Notification Center Modal */}
+            <NotificationCenter
+                isOpen={showNotificationCenter}
+                onClose={() => setShowNotificationCenter(false)}
+            />
+
+            {/* Blocked Accounts Modal */}
+            {showBlockedAccounts && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-[#111] rounded-2xl border border-white/10 w-full max-w-md mx-4 overflow-hidden"
+                    >
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                            <h3 className="font-semibold text-white">Blocked Accounts</h3>
+                            <button
+                                onClick={() => setShowBlockedAccounts(false)}
+                                className="text-white/50 hover:text-white transition-colors"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="p-6 text-center">
+                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
+                                <ShieldIcon size={24} className="text-white/30" />
+                            </div>
+                            <p className="text-white/50 text-sm">No blocked accounts</p>
+                            <p className="text-white/30 text-xs mt-1">Accounts you block will appear here</p>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 }

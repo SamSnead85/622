@@ -1,4 +1,5 @@
 import express, { Application } from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -24,9 +25,20 @@ import { subscriptionRouter } from './routes/subscriptions.js';
 import { reportRouter } from './routes/reports.js';
 import migrationRouter from './routes/migration.js';
 import topicsRouter from './routes/topics.js';
+import e2eRouter from './routes/e2e.js';
+import scheduleRouter from './routes/schedule.js';
+import preferencesRouter from './routes/preferences.js';
+import governanceRouter from './routes/governance.js';
+import pushRouter from './routes/push.js';
+import analyticsRouter from './routes/analytics.js';
+import searchRouter from './routes/search.js';
+import exportRouter from './routes/export.js';
+import inviteRouter from './routes/invite.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 import { setupSocketHandlers } from './socket/index.js';
+import { initNotificationQueue, shutdownNotificationQueue } from './services/notifications/NotificationQueue.js';
+import { initScheduleWorker, shutdownScheduleWorker } from './services/schedule/ScheduleWorker.js';
 
 // Load environment variables
 dotenv.config();
@@ -38,26 +50,35 @@ if (process.env.SENTRY_DSN) {
     Sentry.init({
         dsn: process.env.SENTRY_DSN,
         environment: process.env.NODE_ENV || 'development',
-        tracesSampleRate: 1.0,
+        tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0, // 10% sampling in production
     });
     logger.info('✅ Sentry error monitoring initialized');
 }
 const httpServer = createServer(app);
 
 // Parse allowed origins from environment
-const allowedOrigins = (process.env.CORS_ORIGIN || '*').split(',').map(o => o.trim());
+const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').map(o => o.trim()).filter(Boolean);
 
 // Dynamic origin validation function
 const corsOriginHandler = (origin: string | undefined, callback: (err: Error | null, allow?: boolean | string) => void) => {
-    // Allow requests with no origin (like mobile apps or curl)
+    // Allow requests with no origin (mobile apps, server-to-server, curl)
     if (!origin) return callback(null, true);
 
-    // If wildcard, allow all
-    if (allowedOrigins.includes('*')) return callback(null, true);
+    // In development, allow localhost origins
+    if (process.env.NODE_ENV !== 'production') {
+        if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+            return callback(null, origin);
+        }
+    }
 
     // Check if origin is in allowed list
-    if (allowedOrigins.includes(origin)) {
+    if (allowedOrigins.length > 0 && allowedOrigins.includes(origin)) {
         return callback(null, origin);
+    }
+
+    // If no origins configured in production, log warning and reject
+    if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'production') {
+        logger.warn(`CORS: No CORS_ORIGIN configured. Rejecting origin: ${origin}`);
     }
 
     callback(new Error('CORS not allowed'), false);
@@ -70,6 +91,9 @@ const io = new SocketServer(httpServer, {
         methods: ['GET', 'POST'],
         credentials: true,
     },
+    maxHttpBufferSize: 1e6, // 1MB max WebSocket payload
+    pingTimeout: 30000,
+    pingInterval: 25000,
 });
 
 // Middleware
@@ -83,17 +107,50 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting
+// Trust proxy for Railway/Heroku (must be before rate limiter)
+app.set('trust proxy', 1);
+
+// Rate limiting - 100 requests per minute per IP (production-safe)
 const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000'), // 1 minute
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000'), // 1000 requests per IP (Safe for events)
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // 100 requests per IP
     message: { error: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
-    // Trust proxy if behind a load balancer (important for Railway/Heroku)
     validate: { xForwardedForHeader: false }
 });
 app.use(limiter);
+
+// CSRF Protection: Reject state-changing requests without proper origin
+app.use((req, res, next) => {
+    // Only check state-changing methods
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+        const origin = req.headers.origin;
+        const referer = req.headers.referer;
+
+        // Skip CSRF check for:
+        // - Requests with no origin (mobile apps, server-to-server)
+        // - Development environment
+        // - API key authenticated requests (future)
+        if (!origin && !referer) {
+            return next(); // Mobile app or server-to-server
+        }
+
+        if (process.env.NODE_ENV !== 'production') {
+            return next(); // Skip in development
+        }
+
+        // In production, verify origin matches allowed origins
+        if (origin && allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
+            logger.warn(`CSRF: Blocked request from origin ${origin}`);
+            return res.status(403).json({ error: 'Forbidden: Invalid origin' });
+        }
+    }
+    next();
+});
+
+// Compress responses
+app.use(compression());
 
 // Health check
 app.get('/health', (_, res) => {
@@ -124,6 +181,15 @@ app.use('/api/v1/subscriptions', subscriptionRouter);
 app.use('/api/v1/reports', reportRouter);
 app.use('/api/v1/migration', migrationRouter);
 app.use('/api/v1/topics', topicsRouter);
+app.use('/api/v1/e2e', e2eRouter);
+app.use('/api/v1/posts/scheduled', scheduleRouter);
+app.use('/api/v1/users/preferences', preferencesRouter);
+app.use('/api/v1/governance', governanceRouter);
+app.use('/api/v1/push', pushRouter);
+app.use('/api/v1/analytics', analyticsRouter);
+app.use('/api/v1/search', searchRouter);
+app.use('/api/v1/account/export', exportRouter);
+app.use('/api/v1/invite', inviteRouter);
 
 
 // Sentry error handler (must be before custom error handler)
@@ -137,6 +203,12 @@ app.use(errorHandler);
 // Socket.io handlers
 setupSocketHandlers(io);
 
+// Initialize notification queue (BullMQ)
+initNotificationQueue();
+
+// Initialize scheduled post worker
+initScheduleWorker();
+
 // Start server
 const PORT = parseInt(process.env.PORT || '5180');
 const HOST = '0.0.0.0';
@@ -148,8 +220,10 @@ httpServer.listen(PORT, HOST, () => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
     logger.info('SIGTERM received. Shutting down gracefully...');
+    await shutdownNotificationQueue();
+    await shutdownScheduleWorker();
     httpServer.close(() => {
         logger.info('Server closed');
         process.exit(0);

@@ -12,6 +12,31 @@ interface AuthenticatedSocket extends Socket {
 
 const connectedUsers = new Map<string, Set<string>>(); // userId -> Set<socketId>
 
+// Active WebRTC calls: callId -> { from, to, offer }
+const activeCalls = new Map<string, { from: string; to: string; offer?: any }>();
+
+// Socket-level rate limiting
+const socketRateLimits = new Map<string, { count: number; resetAt: number }>();
+const SOCKET_RATE_LIMIT = 30; // Max events per window
+const SOCKET_RATE_WINDOW = 10000; // 10 second window
+const MAX_MESSAGE_SIZE = 5000; // 5KB max message content
+
+function checkSocketRateLimit(userId: string): boolean {
+    const now = Date.now();
+    const entry = socketRateLimits.get(userId);
+
+    if (!entry || now > entry.resetAt) {
+        socketRateLimits.set(userId, { count: 1, resetAt: now + SOCKET_RATE_WINDOW });
+        return true;
+    }
+
+    entry.count++;
+    if (entry.count > SOCKET_RATE_LIMIT) {
+        return false; // Rate limited
+    }
+    return true;
+}
+
 export const setupSocketHandlers = (io: SocketServer) => {
     // Redis Adapter Setup for Horizontal Scaling
     if (process.env.REDIS_URL) {
@@ -102,7 +127,7 @@ export const setupSocketHandlers = (io: SocketServer) => {
             socket.leave(`conversation:${conversationId}`);
         });
 
-        // Handle new messages
+        // Handle new messages (with rate limiting and size validation)
         socket.on('message:send', async (data: {
             conversationId: string;
             content: string;
@@ -110,7 +135,19 @@ export const setupSocketHandlers = (io: SocketServer) => {
             mediaType?: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'FILE';
         }) => {
             try {
+                // Rate limit check
+                if (!checkSocketRateLimit(userId)) {
+                    socket.emit('error', { message: 'Too many messages. Please slow down.' });
+                    return;
+                }
+
                 const { conversationId, content, mediaUrl, mediaType } = data;
+
+                // Validate message size
+                if (content && content.length > MAX_MESSAGE_SIZE) {
+                    socket.emit('error', { message: 'Message too long. Max 5000 characters.' });
+                    return;
+                }
 
                 // Verify user is participant
                 const participant = await prisma.conversationParticipant.findUnique({
@@ -186,8 +223,9 @@ export const setupSocketHandlers = (io: SocketServer) => {
             }
         });
 
-        // Handle typing indicators
+        // Handle typing indicators (rate limited)
         socket.on('typing:start', (conversationId: string) => {
+            if (!checkSocketRateLimit(userId)) return;
             socket.to(`conversation:${conversationId}`).emit('typing:start', {
                 userId,
                 username: socket.username,
@@ -233,6 +271,97 @@ export const setupSocketHandlers = (io: SocketServer) => {
             });
 
             socket.broadcast.emit('presence:update', { userId, status });
+        });
+
+        // === WebRTC Call Signaling ===
+        socket.on('call:initiate', (data: { callId: string; userId: string; type: 'audio' | 'video'; offer: any }) => {
+            const { callId, userId: targetUserId, type, offer } = data;
+            activeCalls.set(callId, { from: userId, to: targetUserId, offer });
+
+            // Find target user's socket and send incoming call
+            const targetSockets = connectedUsers.get(targetUserId);
+            if (targetSockets) {
+                targetSockets.forEach(socketId => {
+                    io.to(socketId).emit('call:incoming', {
+                        callId,
+                        type,
+                        from: { id: userId },
+                        offer,
+                    });
+                });
+            }
+        });
+
+        socket.on('call:answer', (data: { callId: string; answer: any }) => {
+            const call = activeCalls.get(data.callId);
+            if (call) {
+                const callerSockets = connectedUsers.get(call.from);
+                if (callerSockets) {
+                    callerSockets.forEach(socketId => {
+                        io.to(socketId).emit('call:answered', { answer: data.answer });
+                    });
+                }
+            }
+        });
+
+        socket.on('call:get-offer', (data: { callId: string }, callback: (offer: any) => void) => {
+            const call = activeCalls.get(data.callId);
+            if (call?.offer && typeof callback === 'function') {
+                callback(call.offer);
+            }
+        });
+
+        socket.on('call:ice-candidate', (data: { userId: string; candidate: any }) => {
+            const targetSockets = connectedUsers.get(data.userId);
+            if (targetSockets) {
+                targetSockets.forEach(socketId => {
+                    io.to(socketId).emit('call:ice-candidate', { candidate: data.candidate });
+                });
+            }
+        });
+
+        socket.on('call:reject', (data: { callId: string }) => {
+            const call = activeCalls.get(data.callId);
+            if (call) {
+                const callerSockets = connectedUsers.get(call.from);
+                if (callerSockets) {
+                    callerSockets.forEach(socketId => {
+                        io.to(socketId).emit('call:rejected');
+                    });
+                }
+                activeCalls.delete(data.callId);
+            }
+        });
+
+        socket.on('call:end', (data: { callId: string }) => {
+            const call = activeCalls.get(data.callId);
+            if (call) {
+                // Notify both parties
+                [call.from, call.to].forEach(uid => {
+                    if (uid !== userId) {
+                        const sockets = connectedUsers.get(uid);
+                        if (sockets) {
+                            sockets.forEach(socketId => {
+                                io.to(socketId).emit('call:ended');
+                            });
+                        }
+                    }
+                });
+                activeCalls.delete(data.callId);
+            }
+        });
+
+        socket.on('call:mute', (data: { callId: string; muted: boolean }) => {
+            const call = activeCalls.get(data.callId);
+            if (call) {
+                const targetId = call.from === userId ? call.to : call.from;
+                const targetSockets = connectedUsers.get(targetId);
+                if (targetSockets) {
+                    targetSockets.forEach(socketId => {
+                        io.to(socketId).emit('call:mute', { muted: data.muted });
+                    });
+                }
+            }
         });
 
         // Handle disconnect

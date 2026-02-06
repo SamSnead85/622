@@ -11,8 +11,6 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { cursor, limit = '20', search } = req.query;
 
-        console.log(`[Users List] Cursor: ${cursor}, Limit: ${limit}, Search: "${search}", UserId: ${req.userId}`);
-
         const users = await prisma.user.findMany({
             where: search ? {
                 OR: [
@@ -35,8 +33,6 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
                 },
             },
         });
-
-        console.log(`[Users List] Found ${users.length} users`);
 
         const hasMore = users.length > parseInt(limit as string);
         const results = hasMore ? users.slice(0, -1) : users;
@@ -72,11 +68,8 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { q, limit = '20' } = req.query;
 
-        console.log(`[User Search] Query: "${q}", UserId: ${req.userId}`);
-
         // If no search query, return all users (for new user discovery)
         if (!q || typeof q !== 'string' || q.trim() === '') {
-            console.log('[User Search] No query - returning all users');
             const users = await prisma.user.findMany({
                 take: parseInt(limit as string),
                 orderBy: { createdAt: 'desc' },
@@ -105,8 +98,6 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
                 followingIds = new Set(follows.map((f) => f.followingId));
             }
 
-            console.log(`[User Search] Returning ${users.length} users`);
-
             return res.json({
                 users: users.map((u) => ({
                     ...u,
@@ -117,7 +108,6 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
         }
 
         const searchTerm = q.toLowerCase();
-        console.log(`[User Search] Searching for: "${searchTerm}"`);
 
         const users = await prisma.user.findMany({
             where: {
@@ -139,8 +129,6 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
                 },
             },
         });
-
-        console.log(`[User Search] Found ${users.length} users matching "${searchTerm}"`);
 
         let followingIds = new Set<string>();
         if (req.userId && users.length > 0) {

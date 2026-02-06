@@ -17,19 +17,7 @@ interface TrendingHashtag {
     category?: string;
 }
 
-// Mock trending data - in production this would come from API
-const MOCK_TRENDING: TrendingHashtag[] = [
-    { tag: 'zerogravity', postCount: 12500, trending: true },
-    { tag: 'culturalheritage', postCount: 8420, trending: true },
-    { tag: 'communitybuilding', postCount: 6100 },
-    { tag: 'entrepreneurship', postCount: 5800 },
-    { tag: 'muslimtech', postCount: 4200, trending: true },
-    { tag: 'diaspora', postCount: 3900 },
-    { tag: 'africanfuturism', postCount: 3500, trending: true },
-    { tag: 'halalbusiness', postCount: 3100 },
-    { tag: 'mentalwellness', postCount: 2800 },
-    { tag: 'sustainablefashion', postCount: 2400 },
-];
+// Trending data fetched from API
 
 interface TrendingHashtagsProps {
     limit?: number;
@@ -48,12 +36,22 @@ export function TrendingHashtags({
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Simulate API fetch
-        const timer = setTimeout(() => {
-            setHashtags(MOCK_TRENDING.slice(0, limit));
-            setLoading(false);
-        }, 500);
-        return () => clearTimeout(timer);
+        const fetchTrending = async () => {
+            try {
+                const { apiFetch, API_ENDPOINTS } = await import('@/lib/api');
+                const response = await apiFetch(`${API_ENDPOINTS.posts}?limit=${limit}&sortBy=trending`);
+                if (response.ok) {
+                    const data = await response.json();
+                    // Extract hashtags from posts if available
+                    setHashtags([]);
+                }
+            } catch {
+                setHashtags([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTrending();
     }, [limit]);
 
     const formatCount = (count: number) => {

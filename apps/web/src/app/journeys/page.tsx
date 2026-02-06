@@ -8,67 +8,7 @@ import { useJourneys, Journey } from '@/hooks/useJourneys';
 
 // Note: Journey interface imported from useJourneys hook
 
-// Mock data - Family & Community focused content
-const MOCK_JOURNEYS: Journey[] = [
-    {
-        id: '1',
-        userId: '1',
-        videoUrl: '', // Will show thumbnail as placeholder
-        thumbnailUrl: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=400&h=700&fit=crop',
-        caption: 'Eid Mubarak from our family to yours! The kids were so excited to see everyone together again after so long.',
-        musicName: 'Family Gathering',
-        musicArtist: 'Peaceful Moments',
-        likes: 342,
-        comments: 89,
-        shares: 45,
-        createdAt: new Date().toISOString(),
-        user: {
-            id: '1',
-            username: 'fatima_h',
-            displayName: 'Fatima Hassan',
-            avatarUrl: 'https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?w=100&h=100&fit=crop&crop=face',
-            isFollowing: true,
-        },
-    },
-    {
-        id: '2',
-        userId: '2',
-        videoUrl: '',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=700&fit=crop',
-        caption: 'Grandma teaching me her famous biryani recipe. These moments are priceless. Save this for when you want to try it!',
-        musicName: 'Kitchen Memories',
-        musicArtist: 'Home Sounds',
-        likes: 567,
-        comments: 124,
-        shares: 89,
-        createdAt: new Date().toISOString(),
-        user: {
-            id: '2',
-            username: 'amira_k',
-            displayName: 'Amira Khalil',
-            avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=face',
-            isFollowing: true,
-        },
-    },
-    {
-        id: '3',
-        userId: '3',
-        videoUrl: '',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=700&fit=crop',
-        caption: 'Family reunion after 3 years! 25 cousins, 4 aunties, and endless food. This is what life is about.',
-        likes: 892,
-        comments: 234,
-        shares: 156,
-        createdAt: new Date().toISOString(),
-        user: {
-            id: '3',
-            username: 'omar_family',
-            displayName: 'Omar & Family',
-            avatarUrl: 'https://ui-avatars.com/api/?name=User&background=random',
-            isFollowing: false,
-        },
-    },
-];
+// Mock data removed - using real API data only
 
 function formatCount(num: number): string {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -276,8 +216,8 @@ export default function JourneysPage() {
     const containerRef = useRef<HTMLDivElement>(null);
     const [viewportHeight, setViewportHeight] = useState(0);
 
-    // Use API data or fall back to mock data if empty
-    const journeys = apiJourneys.length > 0 ? apiJourneys : MOCK_JOURNEYS;
+    // Use API data only
+    const journeys = apiJourneys;
 
     // Initialize viewport height on client mount
     useEffect(() => {

@@ -1,5 +1,5 @@
 
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -10,7 +10,7 @@ const router = Router();
 // GET /api/v1/subscriptions
 // Get current user's subscription status
 // ============================================
-router.get('/', authenticate, async (req: AuthRequest, res) => {
+router.get('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const subscription = await prisma.subscription.findUnique({
             where: { userId: req.userId }
@@ -28,8 +28,7 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
             isSubscribed: subscription?.status === 'active'
         });
     } catch (error) {
-        console.error('Subscription fetch error:', error);
-        res.status(500).json({ error: 'Failed to fetch subscription' });
+        next(error);
     }
 });
 
@@ -37,7 +36,7 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
 // POST /api/v1/subscriptions/checkout
 // Create a checkout session (Mock)
 // ============================================
-router.post('/checkout', authenticate, async (req: AuthRequest, res) => {
+router.post('/checkout', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { planId } = req.body;
 
@@ -73,7 +72,7 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res) => {
         res.status(501).json({ error: 'Stripe not configured' });
 
     } catch (error) {
-        res.status(500).json({ error: 'Checkout creation failed' });
+        next(error);
     }
 });
 
@@ -81,7 +80,7 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res) => {
 // POST /api/v1/subscriptions/portal
 // Create customer portal session (Mock)
 // ============================================
-router.post('/portal', authenticate, async (req: AuthRequest, res) => {
+router.post('/portal', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!process.env.STRIPE_SECRET_KEY) {
         return res.json({
             url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/settings/billing`

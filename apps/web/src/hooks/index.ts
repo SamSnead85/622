@@ -8,6 +8,7 @@ export { useUpload } from './useUpload';
 export { useMoments } from './useMoments';
 export { useJourneys } from './useJourneys';
 export { useNotifications } from './useNotifications';
+export { useCall } from './useCall';
 export { useInfiniteScroll, usePullToRefresh } from './useInfiniteScroll';
 export type { Message, Conversation, User } from './useMessages';
 export type { Community } from './useCommunities';

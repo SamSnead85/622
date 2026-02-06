@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CloseIcon, ChevronLeftIcon, ChevronRightIcon, HeartIcon, SendIcon } from '@/components/icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_URL } from '@/lib/api';
 
 interface Story {
     id: string;
@@ -49,7 +50,6 @@ export default function StoriesViewerPage() {
     const [isPaused, setIsPaused] = useState(false);
     const [reply, setReply] = useState('');
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app';
     const STORY_DURATION = 5000; // 5 seconds per story
 
     // Fetch all stories

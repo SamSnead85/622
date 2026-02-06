@@ -422,46 +422,4 @@ export function CreatorAnalyticsDashboard({
     );
 }
 
-// ============================================================================
-// SAMPLE DATA GENERATOR
-// ============================================================================
-
-export const SAMPLE_CREATOR_METRICS: CreatorMetrics = {
-    followers: 48234,
-    followersGrowth: 12.4,
-    totalViews: 2847123,
-    viewsGrowth: 8.2,
-    engagement: 4.7,
-    engagementGrowth: 0.8,
-    earnings: 14892,
-    earningsGrowth: 23.1,
-};
-
-export const SAMPLE_CONTENT: ContentPerformance[] = [
-    { id: '1', title: 'The Truth About What They Wont Tell You', type: 'video', views: 234521, likes: 18234, shares: 4521, comments: 892, earnings: 4892, publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
-    { id: '2', title: 'Breaking: Exclusive Investigation Results', type: 'post', views: 156234, likes: 12847, shares: 3214, comments: 567, earnings: 2341, publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-    { id: '3', title: 'Live from the Ground - Gaza Update', type: 'stream', views: 89234, likes: 7892, shares: 2134, comments: 1234, earnings: 3421, publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
-    { id: '4', title: 'Behind the Scenes: Investigative Process', type: 'story', views: 45678, likes: 3456, shares: 892, comments: 234, earnings: 891, publishedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-];
-
-export const SAMPLE_DEMOGRAPHICS: AudienceDemographic[] = [
-    { category: 'age', value: '25-34', percentage: 38 },
-    { category: 'age', value: '35-44', percentage: 27 },
-    { category: 'age', value: '18-24', percentage: 21 },
-    { category: 'age', value: '45+', percentage: 14 },
-];
-
-export const SAMPLE_LOCATIONS = [
-    { location: 'United States', percentage: 34 },
-    { location: 'United Kingdom', percentage: 18 },
-    { location: 'Canada', percentage: 12 },
-    { location: 'Australia', percentage: 9 },
-    { location: 'Germany', percentage: 7 },
-];
-
-export const SAMPLE_ENGAGEMENT: TimeSeriesData[] = Array.from({ length: 14 }, (_, i) => ({
-    date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    value: Math.floor(Math.random() * 50000) + 10000,
-}));
-
 export default CreatorAnalyticsDashboard;

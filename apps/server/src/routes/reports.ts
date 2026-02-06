@@ -1,5 +1,5 @@
 
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -17,7 +17,7 @@ const createReportSchema = z.object({
 // POST /api/v1/reports
 // Submit a report
 // ============================================
-router.post('/', authenticate, async (req: AuthRequest, res) => {
+router.post('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const input = createReportSchema.parse(req.body);
 
@@ -36,7 +36,7 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ error: 'Invalid input', details: error.errors });
         }
-        res.status(500).json({ error: 'Failed to submit report' });
+        next(error);
     }
 });
 
@@ -44,7 +44,7 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
 // GET /api/v1/reports
 // List reports (Admin only)
 // ============================================
-router.get('/', authenticate, async (req: AuthRequest, res) => {
+router.get('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPERADMIN') {
             return res.status(403).json({ error: 'Forbidden' });
@@ -61,7 +61,7 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
 
         res.json({ reports });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to list reports' });
+        next(error);
     }
 });
 
@@ -69,7 +69,7 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
 // PUT /api/v1/reports/:id
 // Update report status (Admin only)
 // ============================================
-router.put('/:id', authenticate, async (req: AuthRequest, res) => {
+router.put('/:id', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPERADMIN') {
             return res.status(403).json({ error: 'Forbidden' });
@@ -89,7 +89,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
         res.json({ report });
 
     } catch (error) {
-        res.status(500).json({ error: 'Failed to update report' });
+        next(error);
     }
 });
 

@@ -87,15 +87,31 @@ export class CacheService {
 
     /**
      * Invalidate all keys matching pattern (e.g., "feed:user123:*")
+     * Uses SCAN instead of KEYS to avoid blocking Redis at scale
      */
     async invalidate(pattern: string): Promise<void> {
         if (!this.redis || !this.isEnabled) return;
 
         try {
-            const keys = await this.redis.keys(pattern);
-            if (keys.length > 0) {
-                await this.redis.del(...keys);
-                logger.info(`Invalidated ${keys.length} cache keys matching ${pattern}`);
+            let cursor = '0';
+            let totalDeleted = 0;
+
+            do {
+                const [nextCursor, keys] = await this.redis.scan(
+                    cursor,
+                    'MATCH', pattern,
+                    'COUNT', 100
+                );
+                cursor = nextCursor;
+
+                if (keys.length > 0) {
+                    await this.redis.del(...keys);
+                    totalDeleted += keys.length;
+                }
+            } while (cursor !== '0');
+
+            if (totalDeleted > 0) {
+                logger.info(`Invalidated ${totalDeleted} cache keys matching ${pattern}`);
             }
         } catch (error) {
             logger.error(`Cache invalidate error for pattern ${pattern}:`, error);

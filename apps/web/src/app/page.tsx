@@ -328,9 +328,9 @@ function StatsSection() {
     const isInView = useInView(ref, { once: true, margin: '-100px' });
 
     const stats = [
-        { value: '50K+', label: 'Early Members' },
-        { value: '180+', label: 'Countries' },
-        { value: '4.9', label: 'App Store Rating' },
+        { value: 'Growing', label: 'Early Members' },
+        { value: 'Global', label: 'Community' },
+        { value: 'Open', label: 'Source Platform' },
         { value: '0', label: 'Ads, Forever' },
     ];
 

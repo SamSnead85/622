@@ -2,9 +2,10 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
+import { apiFetch, API_ENDPOINTS } from '@/lib/api';
 import { Navigation } from '@/components/Navigation';
 import { HeartIcon, UserIcon, MessageIcon, BellIcon, UsersIcon, VideoIcon } from '@/components/icons';
 import React from 'react';
@@ -44,14 +45,62 @@ function formatTimeAgo(dateString: string): string {
 }
 
 export default function NotificationsPage() {
+    const router = useRouter();
     const [filter, setFilter] = useState<'all' | 'unread'>('all');
     const [mounted, setMounted] = useState(false);
+    const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
     const { notifications: apiNotifications, isLoading, error, markAsRead, markAllAsRead } = useNotifications();
 
     useEffect(() => { setMounted(true); }, []);
 
     // Use API data only
     const notifications = apiNotifications;
+
+    const getNotificationHref = (notif: Notification): string | null => {
+        switch (notif.type) {
+            case 'LIKE':
+            case 'COMMENT':
+            case 'MENTION':
+                return notif.targetId ? `/post/${notif.targetId}` : null;
+            case 'FOLLOW':
+                return `/profile/${notif.actor?.username || notif.actorId}`;
+            case 'MESSAGE':
+                return '/messages';
+            case 'COMMUNITY':
+            case 'COMMUNITY_INVITE':
+                return notif.targetId ? `/communities/${notif.targetId}` : null;
+            case 'JOURNEY':
+                return notif.targetId ? `/journeys/${notif.targetId}` : null;
+            default:
+                return null;
+        }
+    };
+
+    const handleNotificationClick = (notif: Notification) => {
+        if (!notif.read) markAsRead(notif.id);
+        const href = getNotificationHref(notif);
+        if (href) router.push(href);
+    };
+
+    const handleFollow = async (e: React.MouseEvent, userId: string) => {
+        e.stopPropagation();
+        try {
+            const res = await apiFetch(API_ENDPOINTS.follow(userId), { method: 'POST' });
+            if (res.ok) {
+                setFollowedUsers(prev => {
+                    const next = new Set(prev);
+                    if (next.has(userId)) {
+                        next.delete(userId);
+                    } else {
+                        next.add(userId);
+                    }
+                    return next;
+                });
+            }
+        } catch (err) {
+            console.error('Failed to follow user:', err);
+        }
+    };
 
     const filteredNotifications = filter === 'unread'
         ? notifications.filter(n => !n.read)
@@ -132,7 +181,7 @@ export default function NotificationsPage() {
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: i * 0.03 }}
-                                    onClick={() => !notif.read && markAsRead(notif.id)}
+                                    onClick={() => handleNotificationClick(notif)}
                                     className={`flex items-center gap-3 p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${!notif.read ? 'bg-white/[0.02]' : ''}`}
                                 >
                                     {/* Icon/Avatar */}
@@ -161,8 +210,15 @@ export default function NotificationsPage() {
 
                                     {/* Follow button for follow notifications */}
                                     {notif.type === 'FOLLOW' && (
-                                        <button className="px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-colors">
-                                            Follow
+                                        <button
+                                            onClick={(e) => handleFollow(e, notif.actorId)}
+                                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                                                followedUsers.has(notif.actorId)
+                                                    ? 'bg-white/10 text-white border border-white/20 hover:bg-white/15'
+                                                    : 'bg-white text-black hover:bg-white/90'
+                                            }`}
+                                        >
+                                            {followedUsers.has(notif.actorId) ? 'Following' : 'Follow'}
                                         </button>
                                     )}
 

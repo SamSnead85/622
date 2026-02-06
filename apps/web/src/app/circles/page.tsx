@@ -1,57 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CircleOrganizer, Circle, CircleMember, CircleTask } from '@/components/CircleOrganizer';
-
-// ============================================================================
-// SAMPLE DATA
-// ============================================================================
-
-const SAMPLE_MEMBERS: CircleMember[] = [
-    { id: '1', name: 'Fatima Hassan', avatar: '👤', role: 'organizer', joinedAt: new Date('2024-01-15'), tasksCompleted: 47, isOnline: true },
-    { id: '2', name: 'Ahmed Khan', avatar: '👨', role: 'coordinator', joinedAt: new Date('2024-02-01'), tasksCompleted: 32, isOnline: true },
-    { id: '3', name: 'Zara Ali', avatar: '👩', role: 'coordinator', joinedAt: new Date('2024-02-10'), tasksCompleted: 28, isOnline: false },
-    { id: '4', name: 'Omar Syed', avatar: '👨', role: 'volunteer', joinedAt: new Date('2024-03-05'), tasksCompleted: 15, isOnline: true },
-    { id: '5', name: 'Aisha Rahman', avatar: '👩', role: 'volunteer', joinedAt: new Date('2024-03-10'), tasksCompleted: 12, isOnline: false },
-    { id: '6', name: 'Yusuf Ibrahim', avatar: '👨', role: 'member', joinedAt: new Date('2024-03-15'), tasksCompleted: 5, isOnline: true },
-];
-
-const SAMPLE_TASKS: CircleTask[] = [
-    { id: '1', title: 'Finalize protest route with city permits', description: 'Need to confirm the march route and ensure all permits are filed', assignee: SAMPLE_MEMBERS[1], priority: 'urgent', status: 'in-progress', dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), createdAt: new Date(), tags: ['logistics', 'legal'] },
-    { id: '2', title: 'Create social media graphics for event', description: 'Design Instagram stories and posts for the upcoming rally', assignee: SAMPLE_MEMBERS[2], priority: 'high', status: 'pending', dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), createdAt: new Date(), tags: ['media', 'design'] },
-    { id: '3', title: 'Coordinate with speakers and confirm availability', description: 'Reach out to all confirmed speakers and get final confirmation', assignee: SAMPLE_MEMBERS[0], priority: 'high', status: 'completed', createdAt: new Date(), completedAt: new Date(), tags: ['speakers'] },
-    { id: '4', title: 'Arrange transportation for volunteers', description: 'Book buses for volunteer pickup from 3 locations', assignee: SAMPLE_MEMBERS[3], priority: 'medium', status: 'pending', dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), createdAt: new Date(), tags: ['logistics'] },
-    { id: '5', title: 'Prepare first aid supplies', description: 'Stock up on water, first aid kits, and emergency supplies', priority: 'medium', status: 'pending', createdAt: new Date(), tags: ['safety'] },
-    { id: '6', title: 'Draft press release', description: 'Write and review the press release for media distribution', assignee: SAMPLE_MEMBERS[2], priority: 'high', status: 'blocked', createdAt: new Date(), tags: ['media'] },
-];
-
-const SAMPLE_CIRCLE: Circle = {
-    id: '1',
-    name: 'Palestine Action Coalition',
-    description: 'Organizing direct action and community support for Palestine',
-    members: SAMPLE_MEMBERS,
-    tasks: SAMPLE_TASKS,
-    resources: [
-        { id: '1', title: 'Protest Safety Guide', type: 'document', url: '#', addedBy: SAMPLE_MEMBERS[0], addedAt: new Date() },
-        { id: '2', title: 'Legal Rights for Protesters', type: 'document', url: '#', addedBy: SAMPLE_MEMBERS[1], addedAt: new Date() },
-        { id: '3', title: 'Media Toolkit', type: 'link', url: '#', addedBy: SAMPLE_MEMBERS[2], addedAt: new Date() },
-    ],
-    announcements: [
-        { id: '1', title: '🚨 Emergency Action This Saturday', content: 'We need all hands on deck for the solidarity march. Meet at City Hall at 10 AM sharp. Bring water, wear comfortable shoes, and stay with your buddies.', author: SAMPLE_MEMBERS[0], createdAt: new Date(), isPinned: true, reactions: [{ emoji: '✊', count: 24 }, { emoji: '❤️', count: 18 }] },
-        { id: '2', title: 'Thank You Volunteers!', content: 'Last weeks phone banking was a huge success - we reached over 500 community members. Special thanks to everyone who participated!', author: SAMPLE_MEMBERS[0], createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), isPinned: false, reactions: [{ emoji: '🎉', count: 15 }, { emoji: '💪', count: 12 }] },
-    ],
-    createdAt: new Date('2024-01-01'),
-    isPublic: false,
-    tags: ['palestine', 'activism', 'solidarity'],
-};
-
-const ALL_CIRCLES: Partial<Circle>[] = [
-    SAMPLE_CIRCLE,
-    { id: '2', name: 'Muslim Entrepreneurs Network', description: 'Building halal businesses together', members: SAMPLE_MEMBERS.slice(0, 3), tasks: [], resources: [], announcements: [], createdAt: new Date(), isPublic: true, tags: ['business', 'entrepreneurship'] },
-    { id: '3', name: 'Youth Mentorship Program', description: 'Connecting Muslim youth with successful mentors', members: SAMPLE_MEMBERS.slice(0, 4), tasks: [], resources: [], announcements: [], createdAt: new Date(), isPublic: true, tags: ['youth', 'mentorship'] },
-    { id: '4', name: 'Boycott BDS Campaign', description: 'Coordinating ethical consumer choices', members: SAMPLE_MEMBERS.slice(0, 5), tasks: [], resources: [], announcements: [], createdAt: new Date(), isPublic: false, tags: ['bds', 'activism'] },
-];
+import { API_URL } from '@/lib/api';
 
 // ============================================================================
 // CIRCLE CARD
@@ -113,6 +65,36 @@ function CircleCard({ circle, onSelect }: CircleCardProps) {
 export default function CirclesPage() {
     const [selectedCircle, setSelectedCircle] = useState<Circle | null>(null);
     const [showCreateCircle, setShowCreateCircle] = useState(false);
+    const [circles, setCircles] = useState<Partial<Circle>[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [stats, setStats] = useState({ activeTasks: 0, members: 0, completed: 0 });
+
+    // Fetch circles from API
+    useEffect(() => {
+        const fetchCircles = async () => {
+            try {
+                const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+                const res = await fetch(`${API_URL}/api/v1/circles`, {
+                    headers: {
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    },
+                    credentials: 'include',
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setCircles(data.circles || []);
+                    if (data.stats) {
+                        setStats(data.stats);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to fetch circles:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchCircles();
+    }, []);
 
     if (selectedCircle) {
         return (
@@ -207,10 +189,10 @@ export default function CirclesPage() {
                 {/* Stats */}
                 <div className="grid grid-cols-4 gap-4 mb-8">
                     {[
-                        { label: 'Your Circles', value: ALL_CIRCLES.length, icon: '⭕' },
-                        { label: 'Active Tasks', value: 12, icon: '✓' },
-                        { label: 'Members', value: 47, icon: '👥' },
-                        { label: 'Completed', value: 156, icon: '🎯' },
+                        { label: 'Your Circles', value: circles.length, icon: '⭕' },
+                        { label: 'Active Tasks', value: stats.activeTasks, icon: '✓' },
+                        { label: 'Members', value: stats.members, icon: '👥' },
+                        { label: 'Completed', value: stats.completed, icon: '🎯' },
                     ].map(({ label, value, icon }) => (
                         <div key={label} className="bg-white/5 rounded-xl p-5 border border-white/10">
                             <div className="flex items-center gap-2 mb-2">
@@ -224,15 +206,32 @@ export default function CirclesPage() {
 
                 {/* My Circles */}
                 <h2 className="text-xl font-semibold text-white mb-4">My Circles</h2>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {ALL_CIRCLES.map((circle) => (
-                        <CircleCard
-                            key={circle.id}
-                            circle={circle}
-                            onSelect={() => setSelectedCircle(circle as Circle)}
-                        />
-                    ))}
-                </div>
+                {isLoading ? (
+                    <div className="flex justify-center py-12">
+                        <div className="w-8 h-8 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+                    </div>
+                ) : circles.length === 0 ? (
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
+                        <span className="text-4xl mb-4 block">⭕</span>
+                        <p className="text-white/50 mb-4">You haven&apos;t joined any circles yet. Create one to start organizing.</p>
+                        <button
+                            onClick={() => setShowCreateCircle(true)}
+                            className="px-6 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-medium text-sm"
+                        >
+                            Create Your First Circle
+                        </button>
+                    </div>
+                ) : (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {circles.map((circle) => (
+                            <CircleCard
+                                key={circle.id}
+                                circle={circle}
+                                onSelect={() => setSelectedCircle(circle as Circle)}
+                            />
+                        ))}
+                    </div>
+                )}
 
                 {/* Call to Action */}
                 <div className="mt-12 bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 rounded-2xl p-8 border border-violet-500/20 text-center">

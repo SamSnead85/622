@@ -124,36 +124,10 @@ const GAMES: Game[] = [
     },
 ];
 
-// Mock data
-const MOCK_ACTIVE_ROOMS: ActiveRoom[] = [
-    {
-        id: 'room1',
-        gameId: 'trivia-quiz',
-        gameName: 'Trivia Night',
-        gameIcon: '🧠',
-        hostAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face',
-        hostName: 'Sarah',
-        players: 4,
-        maxPlayers: 10,
-    },
-    {
-        id: 'room2',
-        gameId: 'drawing-guess',
-        gameName: 'Draw & Guess',
-        gameIcon: '🎨',
-        hostAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face',
-        hostName: 'Marcus',
-        players: 5,
-        maxPlayers: 8,
-    },
-];
-
-const MOCK_ONLINE_FRIENDS: OnlineFriend[] = [
-    { id: '1', name: 'Sarah Chen', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face', status: 'in-game', currentGame: 'Trivia Night' },
-    { id: '2', name: 'Marcus J', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face', status: 'online' },
-    { id: '3', name: 'Emily Park', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face', status: 'online' },
-    { id: '4', name: 'Jordan Lee', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&crop=face', status: 'idle' },
-];
+// Active rooms and online friends - fetched from API in production
+// Empty defaults until real-time data is available
+const ACTIVE_ROOMS: ActiveRoom[] = [];
+const ONLINE_FRIENDS: OnlineFriend[] = [];
 
 // ============================================
 // GAME CARD
@@ -307,7 +281,7 @@ function GameInviteModal({
                 <div className="p-4">
                     <h3 className="text-sm font-medium text-white/70 mb-3">Invite Friends</h3>
                     <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-                        {MOCK_ONLINE_FRIENDS.map(friend => (
+                        {ONLINE_FRIENDS.map(friend => (
                             <button
                                 key={friend.id}
                                 onClick={() => toggleFriend(friend.id)}
@@ -465,11 +439,11 @@ export function GamingHub() {
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-semibold text-white">Active Rooms</h3>
                                 <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">
-                                    {MOCK_ACTIVE_ROOMS.length} live
+                                    {ACTIVE_ROOMS.length} live
                                 </span>
                             </div>
                             <div className="space-y-3">
-                                {MOCK_ACTIVE_ROOMS.map(room => (
+                                {ACTIVE_ROOMS.map(room => (
                                     <ActiveRoomCard key={room.id} room={room} />
                                 ))}
                             </div>
@@ -479,7 +453,7 @@ export function GamingHub() {
                         <div className="bg-white/5 rounded-3xl border border-white/10 p-5">
                             <h3 className="font-semibold text-white mb-4">Friends Online</h3>
                             <div className="space-y-1">
-                                {MOCK_ONLINE_FRIENDS.map(friend => (
+                                {ONLINE_FRIENDS.map(friend => (
                                     <FriendRow
                                         key={friend.id}
                                         friend={friend}

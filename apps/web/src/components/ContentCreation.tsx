@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback, ChangeEvent } from 'react';
+import React, { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -363,23 +363,47 @@ interface LocationPickerProps {
     onClose: () => void;
 }
 
-// Mock locations - in production would use API
-const MOCK_LOCATIONS: Location[] = [
-    { id: '1', name: 'Central Park', address: 'New York, NY' },
-    { id: '2', name: 'Golden Gate Bridge', address: 'San Francisco, CA' },
-    { id: '3', name: 'Las Vegas Strip', address: 'Las Vegas, NV' },
-    { id: '4', name: 'Times Square', address: 'New York, NY' },
-    { id: '5', name: 'Hollywood Walk of Fame', address: 'Los Angeles, CA' },
-];
-
 export function LocationPicker({ selectedLocation, onLocationSelect, isOpen, onClose }: LocationPickerProps) {
     const [search, setSearch] = useState('');
-    const [locations, setLocations] = useState<Location[]>(MOCK_LOCATIONS);
+    const [locations, setLocations] = useState<Location[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
 
-    const filteredLocations = locations.filter(
-        l => l.name.toLowerCase().includes(search.toLowerCase()) ||
-            l.address.toLowerCase().includes(search.toLowerCase())
-    );
+    // Search locations via API when search query changes
+    useEffect(() => {
+        if (!search.trim()) {
+            setLocations([]);
+            return;
+        }
+
+        const debounce = setTimeout(async () => {
+            setIsSearching(true);
+            try {
+                const { API_URL } = await import('@/lib/api');
+                const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+                const res = await fetch(
+                    `${API_URL}/api/v1/search/locations?q=${encodeURIComponent(search)}`,
+                    {
+                        headers: {
+                            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                        },
+                        credentials: 'include',
+                    }
+                );
+                if (res.ok) {
+                    const data = await res.json();
+                    setLocations(data.locations || []);
+                }
+            } catch (err) {
+                console.error('Location search failed:', err);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(debounce);
+    }, [search]);
+
+    const filteredLocations = locations;
 
     if (!isOpen) return null;
 
@@ -424,6 +448,18 @@ export function LocationPicker({ selectedLocation, onLocationSelect, isOpen, onC
                             <span className="text-red-400">✕</span>
                             <span className="text-white/70">Remove location</span>
                         </button>
+                    )}
+
+                    {isSearching && (
+                        <div className="p-4 text-center text-white/40 text-sm">Searching...</div>
+                    )}
+
+                    {!isSearching && search.trim() && filteredLocations.length === 0 && (
+                        <div className="p-4 text-center text-white/40 text-sm">No locations found. Try a different search.</div>
+                    )}
+
+                    {!isSearching && !search.trim() && filteredLocations.length === 0 && (
+                        <div className="p-4 text-center text-white/40 text-sm">Type to search for a location...</div>
                     )}
 
                     {filteredLocations.map((location) => (

@@ -22,54 +22,42 @@ const upload = multer({
 // ============================================
 // UPLOAD AVATAR
 // ============================================
-router.post('/avatar', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, _next: NextFunction) => {
-    console.log('[UPLOAD] Avatar upload request received');
-    console.log('[UPLOAD] User ID:', req.userId);
-    console.log('[UPLOAD] File received:', req.file ? `${req.file.originalname} (${req.file.size} bytes, ${req.file.mimetype})` : 'NO FILE');
-
+router.post('/avatar', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
     try {
         const file = req.file;
         if (!file) {
-            console.log('[UPLOAD] Error: No file provided');
             res.status(400).json({ error: 'No file provided' });
             return;
         }
 
         if (!isValidMediaType(file.mimetype, 'image')) {
-            console.log('[UPLOAD] Error: Invalid file type:', file.mimetype);
             res.status(400).json({ error: 'Invalid file type. Use JPG, PNG, GIF, or WebP.' });
             return;
         }
 
         if (file.size > getMaxFileSize('image')) {
-            console.log('[UPLOAD] Error: File too large:', file.size);
             res.status(400).json({ error: 'File too large. Max 10 MB for images.' });
             return;
         }
 
-        console.log('[UPLOAD] Uploading file to storage...');
         const result = await uploadFile(file.buffer, 'avatars', file.mimetype, file.originalname);
-        console.log('[UPLOAD] Upload result:', result);
 
         // Update user profile
-        console.log('[UPLOAD] Updating user profile...');
         await prisma.user.update({
             where: { id: req.user!.id },
             data: { avatarUrl: result.url },
         });
-        console.log('[UPLOAD] User profile updated successfully');
 
         res.json({ url: result.url });
     } catch (error) {
-        console.error('[UPLOAD] Avatar upload error:', error);
-        res.status(500).json({ error: 'Failed to upload avatar' });
+        next(error);
     }
 });
 
 // ============================================
 // UPLOAD COVER IMAGE
 // ============================================
-router.post('/cover', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, _next: NextFunction) => {
+router.post('/cover', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
     try {
         const file = req.file;
         if (!file) {
@@ -97,15 +85,14 @@ router.post('/cover', authenticate, upload.single('file'), async (req: MulterReq
 
         res.json({ url: result.url });
     } catch (error) {
-        console.error('Cover upload error:', error);
-        res.status(500).json({ error: 'Failed to upload cover image' });
+        next(error);
     }
 });
 
 // ============================================
 // UPLOAD POST MEDIA
 // ============================================
-router.post('/post', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, _next: NextFunction) => {
+router.post('/post', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
     try {
         const file = req.file;
         if (!file) {
@@ -117,7 +104,6 @@ router.post('/post', authenticate, upload.single('file'), async (req: MulterRequ
         const isVideo = isValidMediaType(file.mimetype, 'video');
 
         if (!isImage && !isVideo) {
-            console.log('[UPLOAD] Rejected file type:', file.mimetype);
             res.status(400).json({ error: `Invalid file type: ${file.mimetype}. Supported: images (JPG, PNG, GIF, WebP, HEIC) and videos (MP4, MOV, WebM).` });
             return;
         }
@@ -139,16 +125,14 @@ router.post('/post', authenticate, upload.single('file'), async (req: MulterRequ
             size: result.size,
         });
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Post media upload error:', error);
-        res.status(500).json({ error: `Failed to upload media: ${errorMessage}` });
+        next(error);
     }
 });
 
 // ============================================
 // UPLOAD MOMENT MEDIA
 // ============================================
-router.post('/moment', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, _next: NextFunction) => {
+router.post('/moment', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
     try {
         const file = req.file;
         if (!file) {
@@ -181,16 +165,14 @@ router.post('/moment', authenticate, upload.single('file'), async (req: MulterRe
             size: result.size,
         });
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Moment media upload error:', error);
-        res.status(500).json({ error: `Failed to upload media: ${errorMessage}` });
+        next(error);
     }
 });
 
 // ============================================
 // UPLOAD MESSAGE ATTACHMENT
 // ============================================
-router.post('/message', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, _next: NextFunction) => {
+router.post('/message', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
     try {
         const file = req.file;
         if (!file) {
@@ -229,25 +211,52 @@ router.post('/message', authenticate, upload.single('file'), async (req: MulterR
             size: result.size,
         });
     } catch (error) {
-        console.error('Message attachment upload error:', error);
-        res.status(500).json({ error: 'Failed to upload attachment' });
+        next(error);
     }
 });
 
 // ============================================
-// DELETE FILE (admin/cleanup)
+// DELETE FILE (admin only - requires ADMIN/SUPERADMIN role)
 // ============================================
-router.delete('/:key(*)', authenticate, async (req: AuthRequest, res: Response, _next: NextFunction) => {
+router.delete('/:key(*)', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { key } = req.params;
 
-        // TODO: Verify ownership of the file before deleting
-        await deleteFile(key);
+        // Verify the user is an admin before allowing arbitrary file deletion
+        const userRole = req.user?.role;
+        const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
 
+        if (!isAdmin) {
+            // Non-admins can only delete files they own
+            // Check if the file key matches their avatar, cover, or a post they own
+            const user = await prisma.user.findUnique({
+                where: { id: req.user!.id },
+                select: { avatarUrl: true, coverUrl: true },
+            });
+
+            const userPosts = await prisma.post.findMany({
+                where: { userId: req.user!.id },
+                select: { mediaUrl: true, thumbnailUrl: true },
+            });
+
+            const ownedUrls = [
+                user?.avatarUrl,
+                user?.coverUrl,
+                ...userPosts.map(p => p.mediaUrl),
+                ...userPosts.map(p => p.thumbnailUrl),
+            ].filter(Boolean);
+
+            const ownsFile = ownedUrls.some(url => url && url.includes(key));
+            if (!ownsFile) {
+                res.status(403).json({ error: 'You can only delete your own files' });
+                return;
+            }
+        }
+
+        await deleteFile(key);
         res.json({ success: true });
     } catch (error) {
-        console.error('File delete error:', error);
-        res.status(500).json({ error: 'Failed to delete file' });
+        next(error);
     }
 });
 

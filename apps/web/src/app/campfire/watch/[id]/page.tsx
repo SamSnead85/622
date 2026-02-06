@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
+import { API_URL } from '@/lib/api';
 
 interface ChatMessage {
     id: string;
@@ -15,60 +16,76 @@ interface ChatMessage {
     avatarUrl: string;
 }
 
-// Mock stream data
-const MOCK_STREAM = {
-    id: '1',
-    title: 'Late night coding session 💻',
-    description: 'Building cool stuff with React and TypeScript',
-    viewerCount: 1243,
-    startedAt: new Date(Date.now() - 45 * 60 * 1000),
+interface StreamData {
+    id: string;
+    title: string;
+    description: string;
+    viewerCount: number;
+    startedAt: Date;
     user: {
-        username: 'devguru',
-        displayName: 'Dev Guru',
-        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face',
-        followers: 12500,
-    },
-};
-
-const MOCK_MESSAGES: ChatMessage[] = [
-    { id: '1', username: 'sarah_designs', content: 'Welcome everyone! 👋', type: 'message', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50' },
-    { id: '2', username: 'techbro99', content: 'What IDE are you using?', type: 'message', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=50' },
-    { id: '3', username: 'coder_jane', content: 'Love the vibe! 🔥', type: 'message', avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50' },
-];
+        username: string;
+        displayName: string;
+        avatarUrl: string;
+        followers: number;
+    };
+}
 
 export default function WatchStreamPage() {
     const params = useParams();
     const streamId = params.id as string;
 
-    const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
+    const [stream, setStream] = useState<StreamData>({
+        id: '',
+        title: 'Live Stream',
+        description: '',
+        viewerCount: 0,
+        startedAt: new Date(),
+        user: { username: '', displayName: 'Loading...', avatarUrl: '', followers: 0 },
+    });
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
-    const [viewerCount, setViewerCount] = useState(MOCK_STREAM.viewerCount);
+    const [viewerCount, setViewerCount] = useState(0);
     const [isFollowing, setIsFollowing] = useState(false);
     const [reactions, setReactions] = useState<{ id: string; emoji: string; x: number }[]>([]);
+    const [isStreamLoading, setIsStreamLoading] = useState(true);
     const chatRef = useRef<HTMLDivElement>(null);
 
-    // Simulate chat messages
+    // Fetch stream data from API
     useEffect(() => {
-        const interval = setInterval(() => {
-            const randomMessages = [
-                'This is amazing! 🔥',
-                'Can you explain that again?',
-                'Love it!',
-                'First time here, hi everyone!',
-                '👏👏👏',
-                'Great stream!',
-            ];
-            const msg: ChatMessage = {
-                id: Date.now().toString(),
-                username: `user_${Math.floor(Math.random() * 1000)}`,
-                content: randomMessages[Math.floor(Math.random() * randomMessages.length)],
-                type: 'message',
-                avatarUrl: `https://i.pravatar.cc/50?u=${Date.now()}`,
-            };
-            setMessages(prev => [...prev.slice(-50), msg]);
-        }, 4000);
-        return () => clearInterval(interval);
-    }, []);
+        const fetchStream = async () => {
+            try {
+                const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+                const res = await fetch(`${API_URL}/api/v1/livestream/${streamId}`, {
+                    headers: {
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    },
+                    credentials: 'include',
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setStream({
+                        id: data.id || streamId,
+                        title: data.title || 'Live Stream',
+                        description: data.description || '',
+                        viewerCount: data.viewerCount || 0,
+                        startedAt: new Date(data.startedAt || Date.now()),
+                        user: {
+                            username: data.user?.username || '',
+                            displayName: data.user?.displayName || 'Unknown',
+                            avatarUrl: data.user?.avatarUrl || '',
+                            followers: data.user?.followers || 0,
+                        },
+                    });
+                    setViewerCount(data.viewerCount || 0);
+                }
+            } catch (err) {
+                console.error('Failed to fetch stream:', err);
+            } finally {
+                setIsStreamLoading(false);
+            }
+        };
+        fetchStream();
+    }, [streamId]);
 
     // Auto-scroll chat
     useEffect(() => {
@@ -77,13 +94,6 @@ export default function WatchStreamPage() {
         }
     }, [messages]);
 
-    // Viewer count fluctuation
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setViewerCount(v => v + (Math.random() > 0.5 ? 1 : -1) * Math.floor(Math.random() * 5));
-        }, 5000);
-        return () => clearInterval(interval);
-    }, []);
 
     const sendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -109,7 +119,7 @@ export default function WatchStreamPage() {
     };
 
     const formatDuration = () => {
-        const diff = Date.now() - MOCK_STREAM.startedAt.getTime();
+        const diff = Date.now() - stream.startedAt.getTime();
         const mins = Math.floor(diff / 60000);
         if (mins < 60) return `${mins}m`;
         const hours = Math.floor(mins / 60);
@@ -173,20 +183,26 @@ export default function WatchStreamPage() {
                     <div className="flex items-start justify-between">
                         <div className="flex gap-4">
                             <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-red-500">
-                                <Image
-                                    src={MOCK_STREAM.user.avatarUrl}
-                                    alt={MOCK_STREAM.user.displayName}
-                                    width={48}
-                                    height={48}
-                                    className="object-cover"
-                                />
+                                {stream.user.avatarUrl ? (
+                                    <Image
+                                        src={stream.user.avatarUrl}
+                                        alt={stream.user.displayName}
+                                        width={48}
+                                        height={48}
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center text-white font-bold">
+                                        {stream.user.displayName?.[0] || '?'}
+                                    </div>
+                                )}
                             </div>
                             <div>
-                                <h1 className="font-bold text-lg">{MOCK_STREAM.title}</h1>
+                                <h1 className="font-bold text-lg">{stream.title}</h1>
                                 <div className="flex items-center gap-2 text-sm text-gray-400">
-                                    <span>@{MOCK_STREAM.user.username}</span>
-                                    <span>•</span>
-                                    <span>{MOCK_STREAM.user.followers.toLocaleString()} followers</span>
+                                    {stream.user.username && <span>@{stream.user.username}</span>}
+                                    {stream.user.username && <span>•</span>}
+                                    <span>{stream.user.followers.toLocaleString()} followers</span>
                                 </div>
                             </div>
                         </div>

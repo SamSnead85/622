@@ -4,20 +4,23 @@ import { Providers } from './providers';
 
 export const metadata: Metadata = {
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://0gravity.ai'),
-    title: '0G - ZeroG | The Journey. Together.',
-    description: 'The next generation social network. Where authentic connections transcend algorithms. Join the caravan of creators, communities, and changemakers building a weightless digital future.',
-    keywords: ['social media', 'zero gravity', '0G', 'creator economy', 'AI', 'transparent algorithm', 'privacy', 'community', 'caravan', 'authentic connections'],
+    title: {
+        default: 'ZeroG - Social Media Without the Weight',
+        template: '%s | ZeroG',
+    },
+    description: 'A platform where truth-tellers share their stories, communities decide what matters, and you own everything you create.',
+    keywords: ['social media', 'community', 'privacy', 'zero gravity', 'content creation'],
     openGraph: {
-        title: '0G - ZeroG | The Journey. Together.',
-        description: 'Where authentic connections transcend algorithms. Join the caravan of creators, communities, and changemakers.',
         type: 'website',
-        siteName: '0G - ZeroG',
+        siteName: 'ZeroG',
+        title: 'ZeroG - Social Media Without the Weight',
+        description: 'A platform where truth-tellers share their stories, communities decide what matters, and you own everything you create.',
         images: ['/og-image.png'],
     },
     twitter: {
         card: 'summary_large_image',
-        title: '0G - ZeroG | The Journey. Together.',
-        description: 'Where authentic connections transcend algorithms. Join the caravan of creators, communities, and changemakers.',
+        title: 'ZeroG - Social Media Without the Weight',
+        description: 'A platform where truth-tellers share their stories, communities decide what matters, and you own everything you create.',
         images: ['/og-image.png'],
     },
     manifest: '/manifest.json',
@@ -41,6 +44,10 @@ export const viewport: Viewport = {
 };
 
 import { GlobalMessageListener } from '@/components/GlobalMessageListener';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { PageTransition } from '@/components/transitions/PageTransition';
+import { SkipLinks } from '@/components/a11y/SkipLinks';
+import { LiveRegionProvider } from '@/components/a11y/LiveRegion';
 
 export default function RootLayout({
     children,
@@ -50,10 +57,17 @@ export default function RootLayout({
     return (
         <html lang="en" className="dark">
             <body className="bg-black text-gray-50 antialiased">
-                <Providers>
-                    <GlobalMessageListener />
-                    {children}
-                </Providers>
+                <SkipLinks />
+                <ErrorBoundary>
+                    <Providers>
+                        <LiveRegionProvider>
+                            <PageTransition>
+                                <GlobalMessageListener />
+                                {children}
+                            </PageTransition>
+                        </LiveRegionProvider>
+                    </Providers>
+                </ErrorBoundary>
             </body>
         </html>
     );

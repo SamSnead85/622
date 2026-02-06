@@ -58,15 +58,14 @@ router.use(requireRole('SUPERADMIN'));
  * GET /admin/security/policies
  * List all security policies
  */
-router.get('/policies', async (req: Request, res: Response) => {
+router.get('/policies', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const policies = await prisma.platformSecurityPolicy.findMany({
             orderBy: { type: 'asc' },
         });
         res.json(policies);
     } catch (error) {
-        console.error('Failed to list policies:', error);
-        res.status(500).json({ error: 'Failed to list security policies' });
+        next(error);
     }
 });
 
@@ -74,7 +73,7 @@ router.get('/policies', async (req: Request, res: Response) => {
  * POST /admin/security/policies/initialize
  * Initialize default security policies
  */
-router.post('/policies/initialize', async (req: Request, res: Response) => {
+router.post('/policies/initialize', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user?.id;
         await initializeSecurityPolicies(userId);
@@ -89,8 +88,7 @@ router.post('/policies/initialize', async (req: Request, res: Response) => {
 
         res.json({ success: true, message: 'Security policies initialized' });
     } catch (error) {
-        console.error('Failed to initialize policies:', error);
-        res.status(500).json({ error: 'Failed to initialize security policies' });
+        next(error);
     }
 });
 
@@ -98,7 +96,7 @@ router.post('/policies/initialize', async (req: Request, res: Response) => {
  * PUT /admin/security/policies/:id
  * Update a security policy
  */
-router.put('/policies/:id', async (req: Request, res: Response) => {
+router.put('/policies/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const { isActive, config } = req.body;
@@ -116,8 +114,7 @@ router.put('/policies/:id', async (req: Request, res: Response) => {
 
         res.json(updated);
     } catch (error) {
-        console.error('Failed to update policy:', error);
-        res.status(500).json({ error: 'Failed to update security policy' });
+        next(error);
     }
 });
 
@@ -129,13 +126,12 @@ router.put('/policies/:id', async (req: Request, res: Response) => {
  * GET /admin/security/geo-blocks
  * List platform-wide geo-blocks
  */
-router.get('/geo-blocks', async (req: Request, res: Response) => {
+router.get('/geo-blocks', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const blocks = await listGeoBlocks(null); // null = platform-wide
         res.json(blocks);
     } catch (error) {
-        console.error('Failed to list geo-blocks:', error);
-        res.status(500).json({ error: 'Failed to list geo-blocks' });
+        next(error);
     }
 });
 
@@ -143,7 +139,7 @@ router.get('/geo-blocks', async (req: Request, res: Response) => {
  * POST /admin/security/geo-blocks
  * Add a platform-wide geo-block
  */
-router.post('/geo-blocks', async (req: Request, res: Response) => {
+router.post('/geo-blocks', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { countryCode, countryName, reason, blockType, expiresAt } = req.body;
         const userId = (req as any).user?.id;
@@ -171,8 +167,7 @@ router.post('/geo-blocks', async (req: Request, res: Response) => {
 
         res.status(201).json(block);
     } catch (error) {
-        console.error('Failed to add geo-block:', error);
-        res.status(500).json({ error: 'Failed to add geo-block' });
+        next(error);
     }
 });
 
@@ -180,7 +175,7 @@ router.post('/geo-blocks', async (req: Request, res: Response) => {
  * DELETE /admin/security/geo-blocks/:id
  * Remove a geo-block
  */
-router.delete('/geo-blocks/:id', async (req: Request, res: Response) => {
+router.delete('/geo-blocks/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const userId = (req as any).user?.id;
@@ -197,8 +192,7 @@ router.delete('/geo-blocks/:id', async (req: Request, res: Response) => {
 
         res.json({ success: true });
     } catch (error) {
-        console.error('Failed to remove geo-block:', error);
-        res.status(500).json({ error: 'Failed to remove geo-block' });
+        next(error);
     }
 });
 
@@ -221,13 +215,12 @@ router.get('/countries', (req: Request, res: Response) => {
  * GET /admin/security/blocked-ips
  * List all blocked IPs
  */
-router.get('/blocked-ips', async (req: Request, res: Response) => {
+router.get('/blocked-ips', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const ips = await listBlockedIPs();
         res.json(ips);
     } catch (error) {
-        console.error('Failed to list blocked IPs:', error);
-        res.status(500).json({ error: 'Failed to list blocked IPs' });
+        next(error);
     }
 });
 
@@ -235,7 +228,7 @@ router.get('/blocked-ips', async (req: Request, res: Response) => {
  * POST /admin/security/blocked-ips
  * Block an IP address
  */
-router.post('/blocked-ips', async (req: Request, res: Response) => {
+router.post('/blocked-ips', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { ipAddress, reason, threatLevel, expiresAt } = req.body;
         const userId = (req as any).user?.id;
@@ -263,8 +256,7 @@ router.post('/blocked-ips', async (req: Request, res: Response) => {
 
         res.status(201).json(block);
     } catch (error) {
-        console.error('Failed to block IP:', error);
-        res.status(500).json({ error: 'Failed to block IP' });
+        next(error);
     }
 });
 
@@ -272,7 +264,7 @@ router.post('/blocked-ips', async (req: Request, res: Response) => {
  * DELETE /admin/security/blocked-ips/:ip
  * Unblock an IP address
  */
-router.delete('/blocked-ips/:ip', async (req: Request, res: Response) => {
+router.delete('/blocked-ips/:ip', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { ip } = req.params;
         const userId = (req as any).user?.id;
@@ -289,8 +281,7 @@ router.delete('/blocked-ips/:ip', async (req: Request, res: Response) => {
 
         res.json({ success: true });
     } catch (error) {
-        console.error('Failed to unblock IP:', error);
-        res.status(500).json({ error: 'Failed to unblock IP' });
+        next(error);
     }
 });
 
@@ -302,7 +293,7 @@ router.delete('/blocked-ips/:ip', async (req: Request, res: Response) => {
  * GET /admin/security/audit-log
  * Get security audit log entries
  */
-router.get('/audit-log', async (req: Request, res: Response) => {
+router.get('/audit-log', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const {
             action,
@@ -330,8 +321,7 @@ router.get('/audit-log', async (req: Request, res: Response) => {
 
         res.json({ entries, total });
     } catch (error) {
-        console.error('Failed to get audit log:', error);
-        res.status(500).json({ error: 'Failed to get audit log' });
+        next(error);
     }
 });
 
