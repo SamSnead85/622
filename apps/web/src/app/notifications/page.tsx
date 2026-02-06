@@ -11,13 +11,6 @@ import React from 'react';
 
 
 // Mock notifications for fallback
-const MOCK_NOTIFICATIONS = [
-    { id: '1', type: 'LIKE' as const, message: 'liked your photo', read: false, actorId: '1', actor: { id: '1', username: 'sarah_chen', displayName: 'Sarah Chen', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face' }, createdAt: new Date().toISOString() },
-    { id: '2', type: 'FOLLOW' as const, message: 'started following you', read: false, actorId: '2', actor: { id: '2', username: 'marcus_j', displayName: 'Marcus Johnson', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face' }, createdAt: new Date().toISOString() },
-    { id: '3', type: 'COMMENT' as const, message: 'commented: "Amazing shot! 📸"', read: false, actorId: '3', actor: { id: '3', username: 'emily_park', displayName: 'Emily Park', avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face' }, createdAt: new Date().toISOString() },
-    { id: '4', type: 'MENTION' as const, message: 'mentioned you in a post', read: true, actorId: '4', actor: { id: '4', username: 'jordan_lee', displayName: 'Jordan Lee', avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&crop=face' }, createdAt: new Date().toISOString() },
-];
-
 function getNotificationIcon(type: Notification['type']): React.ReactNode {
     const iconProps = { size: 14, className: 'text-white' };
     switch (type) {
@@ -57,8 +50,8 @@ export default function NotificationsPage() {
 
     useEffect(() => { setMounted(true); }, []);
 
-    // Use API data or fall back to mock
-    const notifications = apiNotifications.length > 0 ? apiNotifications : MOCK_NOTIFICATIONS;
+    // Use API data only
+    const notifications = apiNotifications;
 
     const filteredNotifications = filter === 'unread'
         ? notifications.filter(n => !n.read)
