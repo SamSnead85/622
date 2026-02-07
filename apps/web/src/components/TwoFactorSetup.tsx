@@ -37,7 +37,12 @@ async function setupTwoFactor(): Promise<{ success: boolean; data?: SetupData; e
         });
         const data = await response.json();
         if (response.ok) {
-            return { success: true, data: { qrCodeUrl: data.qrCodeUrl, secret: data.secret } };
+            // Server returns otpauthUrl -- generate a QR code image URL from it
+            const otpauthUrl = data.otpauthUrl || data.qrCodeUrl || '';
+            const qrCodeUrl = otpauthUrl
+                ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(otpauthUrl)}`
+                : '';
+            return { success: true, data: { qrCodeUrl, secret: data.secret } };
         }
         return { success: false, error: data.error || 'Failed to set up 2FA' };
     } catch (error) {

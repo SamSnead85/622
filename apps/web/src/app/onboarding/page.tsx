@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_URL, apiFetch } from '@/lib/api';
+import { TwoFactorSetup } from '@/components/TwoFactorSetup';
 
 // ============================================
 // TYPES
@@ -381,7 +382,9 @@ export default function OnboardingPage() {
 
     // Step 3: Shield
     const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+    const [show2FASetup, setShow2FASetup] = useState(false);
     const [e2eEnabled, setE2eEnabled] = useState(false);
+    const [e2eGenerating, setE2eGenerating] = useState(false);
     const [transparencyViewed, setTransparencyViewed] = useState(false);
 
     // General
@@ -507,6 +510,73 @@ export default function OnboardingPage() {
             setSaving(false);
         }
     }, [selectedTopics]);
+
+    // 2FA: open the real setup modal when toggling on
+    const handle2FAToggle = useCallback(() => {
+        if (!twoFAEnabled) {
+            // Opening 2FA setup
+            setShow2FASetup(true);
+        } else {
+            // Toggling off (can re-enable later from settings)
+            setTwoFAEnabled(false);
+        }
+    }, [twoFAEnabled]);
+
+    const handle2FAComplete = useCallback(() => {
+        setTwoFAEnabled(true);
+        setShow2FASetup(false);
+    }, []);
+
+    const handle2FAClose = useCallback(() => {
+        setShow2FASetup(false);
+        // Don't mark as enabled if setup was cancelled
+    }, []);
+
+    // E2E: generate real encryption keys when toggling on
+    const handleE2EToggle = useCallback(async () => {
+        if (!e2eEnabled && !e2eGenerating) {
+            setE2eGenerating(true);
+            try {
+                // Dynamically import to avoid SSR issues with Web Crypto / IndexedDB
+                const { generateKeyBundle } = await import('@/lib/encryption/keys');
+                const bundle = await generateKeyBundle();
+                // Optionally upload public keys to server for key exchange
+                try {
+                    await apiFetch(`${API_URL}/api/v1/users/me/keys`, {
+                        method: 'PUT',
+                        body: JSON.stringify({
+                            identityKey: bundle.identityKey,
+                            signedPreKey: bundle.signedPreKey,
+                            preKeySignature: bundle.preKeySignature,
+                            oneTimePreKeys: bundle.oneTimePreKeys,
+                        }),
+                    });
+                } catch {
+                    // Key upload failure is non-fatal during onboarding
+                    // Keys are stored locally in IndexedDB regardless
+                }
+                setE2eEnabled(true);
+            } catch (err) {
+                console.error('E2E key generation failed:', err);
+                // Still mark as attempted so user can retry from settings
+            } finally {
+                setE2eGenerating(false);
+            }
+        } else if (e2eEnabled) {
+            setE2eEnabled(false);
+        }
+    }, [e2eEnabled, e2eGenerating]);
+
+    // Transparency: open the transparency page and mark as viewed
+    const handleTransparencyToggle = useCallback(() => {
+        if (!transparencyViewed) {
+            setTransparencyViewed(true);
+            // Open transparency page in a new tab so user can actually review it
+            window.open('/transparency', '_blank');
+        } else {
+            setTransparencyViewed(false);
+        }
+    }, [transparencyViewed]);
 
     const handleNext = useCallback(async () => {
         if (step === 'interests' && selectedTopics.size >= 3) {
@@ -1060,7 +1130,7 @@ export default function OnboardingPage() {
                                                     title="Two-Factor Authentication"
                                                     description="Add an extra layer of security. Even if someone gets your password, they can't get in."
                                                     enabled={twoFAEnabled}
-                                                    onToggle={() => setTwoFAEnabled((p) => !p)}
+                                                    onToggle={handle2FAToggle}
                                                     points={25}
                                                     accent="#10B981"
                                                 />
@@ -1069,14 +1139,25 @@ export default function OnboardingPage() {
                                             <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}>
                                                 <PrivacyCard
                                                     icon={
-                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                                                        </svg>
+                                                        e2eGenerating ? (
+                                                            <motion.div
+                                                                className="w-6 h-6 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full"
+                                                                animate={{ rotate: 360 }}
+                                                                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                                                            />
+                                                        ) : (
+                                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                                            </svg>
+                                                        )
                                                     }
-                                                    title="End-to-End Encryption"
-                                                    description="Your messages are encrypted so only you and the recipient can read them. Not even we can."
+                                                    title={e2eGenerating ? 'Generating Keys...' : 'End-to-End Encryption'}
+                                                    description={e2eGenerating
+                                                        ? 'Creating your private encryption keys. These never leave your device.'
+                                                        : 'Your messages are encrypted so only you and the recipient can read them. Not even we can.'
+                                                    }
                                                     enabled={e2eEnabled}
-                                                    onToggle={() => setE2eEnabled((p) => !p)}
+                                                    onToggle={handleE2EToggle}
                                                     points={30}
                                                     accent="#00D4FF"
                                                 />
@@ -1093,7 +1174,7 @@ export default function OnboardingPage() {
                                                     title="Review What We Don't Track"
                                                     description="See our transparency report. We believe you deserve to know exactly what data exists."
                                                     enabled={transparencyViewed}
-                                                    onToggle={() => setTransparencyViewed((p) => !p)}
+                                                    onToggle={handleTransparencyToggle}
                                                     points={15}
                                                     accent="#8B5CF6"
                                                 />
@@ -1107,7 +1188,9 @@ export default function OnboardingPage() {
                                             animate={{ opacity: 1 }}
                                             transition={{ delay: 2 }}
                                         >
-                                            You can configure these anytime in Settings → Privacy & Security
+                                            {e2eEnabled && '🔑 Your encryption keys are stored on this device only. '}
+                                            {twoFAEnabled && '🛡️ 2FA is active on your account. '}
+                                            You can manage these anytime in Settings → Privacy & Security
                                         </motion.p>
                                     </div>
                                 </div>
@@ -1257,6 +1340,13 @@ export default function OnboardingPage() {
                     </motion.div>
                 )}
             </div>
+
+            {/* 2FA Setup Modal - real TOTP flow */}
+            <TwoFactorSetup
+                isOpen={show2FASetup}
+                onClose={handle2FAClose}
+                onComplete={handle2FAComplete}
+            />
         </div>
     );
 }
