@@ -114,13 +114,19 @@ function Navigation() {
                 </Link>
 
                 <div className="hidden md:flex items-center gap-10">
-                    {['Vision', 'Platform', 'Community'].map((item) => (
+                    {[
+                        { label: 'Vision', href: '#vision' },
+                        { label: 'Platform', href: '#platform' },
+                        { label: 'Security', href: '#security' },
+                        { label: 'About', href: '/about' },
+                        { label: 'Developers', href: '/developers' },
+                    ].map((item) => (
                         <a
-                            key={item}
-                            href={`#${item.toLowerCase()}`}
+                            key={item.label}
+                            href={item.href}
                             className="text-white/40 hover:text-white transition-colors text-sm font-light tracking-wide"
                         >
-                            {item}
+                            {item.label}
                         </a>
                     ))}
                 </div>
@@ -533,91 +539,406 @@ function StoryTellersSection() {
 }
 
 // ============================================
-// FEATURES SECTION
-// Premium feature cards
+// FULL PLATFORM CAPABILITIES
+// Deep-dive marketing of every feature
 // ============================================
-function FeaturesSection() {
+function FullCapabilitiesSection() {
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, margin: '-100px' });
 
-    const features = [
+    const capabilities = [
         {
-            title: 'Your Circle, Your Rules',
-            description: 'Create private spaces for family, friends, or communities. You decide who joins, what gets shared, and how moderation works.',
-            image: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=900&h=600&fit=crop&q=90',
-            gradient: 'from-violet-500/20 to-indigo-500/20',
+            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+            title: 'Private Groups & Communities',
+            desc: 'Create branded spaces for family, organizations, clubs, or movements. Full admin controls, role management, custom branding, and contained environments where members exist only within their circle.',
+            gradient: 'from-violet-500 to-indigo-500',
         },
         {
-            title: 'Go Live, Stay Connected',
-            description: 'Stream moments in real-time to the people who matter. No follower counts, no performance metrics—just presence.',
-            image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=900&h=600&fit=crop&q=90',
-            gradient: 'from-rose-500/20 to-orange-500/20',
+            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+            title: 'Real-Time Group Chat',
+            desc: 'Integrated messaging within every community. Typing indicators, read receipts, media sharing, and persistent chat history. Move your family WhatsApp group here in seconds.',
+            gradient: 'from-blue-500 to-cyan-500',
         },
         {
-            title: 'Stories That Matter',
-            description: 'Share short-form moments with your tribe. Not to go viral, but to document the journey you are on together.',
-            image: 'https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=900&h=600&fit=crop&q=90',
-            gradient: 'from-cyan-500/20 to-emerald-500/20',
+            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M15.05 5A5 5 0 0119 8.95M15.05 1A9 9 0 0123 8.94M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
+            title: 'Voice & Video Calling',
+            desc: 'Crystal-clear peer-to-peer calls with WebRTC. Voice calls, video calls, screen sharing, and group calling. No third-party app needed. Your conversations stay on the platform.',
+            gradient: 'from-emerald-500 to-teal-500',
+        },
+        {
+            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>,
+            title: 'Check-In Status Updates',
+            desc: 'Lightweight status signals for group members. Let your family know you arrived safely, share your mood, or signal availability. Quick, contextual, and ephemeral.',
+            gradient: 'from-amber-500 to-orange-500',
+        },
+        {
+            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h18v18H3zM21 9H3M21 15H3M12 3v18"/></svg>,
+            title: 'Community Polls',
+            desc: 'Democratic decision-making built into every group. Create polls, vote anonymously, and see real-time results. Perfect for planning events, making group decisions, or gauging sentiment.',
+            gradient: 'from-pink-500 to-rose-500',
+        },
+        {
+            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>,
+            title: 'Shared Photo Albums',
+            desc: 'Collaborative photo collections within your groups. Organize memories by event, date, or theme. Everyone in the group can contribute. No cloud storage limits on privacy.',
+            gradient: 'from-fuchsia-500 to-purple-500',
+        },
+        {
+            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>,
+            title: 'WhatsApp Migration Tool',
+            desc: 'One-click import of your WhatsApp chat history. Paste your exported chat and we preserve every message, every memory. Switching platforms has never been easier.',
+            gradient: 'from-green-500 to-emerald-500',
+        },
+        {
+            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><polygon points="23,7 16,12 23,17 23,7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
+            title: 'Live Streaming',
+            desc: 'Go live to your community with sub-second latency. Multi-platform simulcast support. The audience is your community, not an algorithm-driven recommendation.',
+            gradient: 'from-red-500 to-rose-500',
+        },
+        {
+            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>,
+            title: 'Bulletin Board',
+            desc: 'A dedicated space for events, jobs, collaborations, and announcements. Not buried in a feed. Organized, searchable, and community-curated for maximum visibility.',
+            gradient: 'from-sky-500 to-blue-500',
         },
     ];
 
     return (
         <section id="platform" ref={ref} className="relative py-32 md:py-48">
-            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] rounded-full bg-[#00D4FF]/[0.02] blur-[150px]" />
+            </div>
+            <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
                 <motion.div
-                    className="mb-20"
+                    className="mb-20 max-w-3xl"
                     initial={{ opacity: 0, y: 30 }}
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                     transition={{ duration: 0.8 }}
                 >
-                    <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-4 font-light">Platform</p>
-                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-light text-white">
-                        Built for meaningful
+                    <p className="text-[#00D4FF]/60 text-xs tracking-[0.4em] uppercase mb-4 font-light">Complete Platform</p>
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-light text-white mb-6">
+                        Everything you need.
                         <br />
-                        <span className="text-white/50">connection</span>
+                        <span className="text-white/50">Nothing you don&apos;t.</span>
                     </h2>
+                    <p className="text-lg text-white/40 font-light leading-relaxed">
+                        Every feature on 0G was designed with one question: does this serve the member? If it doesn&apos;t protect privacy,
+                        strengthen community, or empower connection, it doesn&apos;t ship.
+                    </p>
                 </motion.div>
 
-                <div className="space-y-24 md:space-y-32">
-                    {features.map((feature, index) => (
+                <div className="grid md:grid-cols-3 gap-5">
+                    {capabilities.map((cap, i) => (
                         <motion.div
-                            key={feature.title}
-                            className={`grid md:grid-cols-2 gap-12 md:gap-20 items-center ${index % 2 === 1 ? 'md:flex-row-reverse' : ''
-                                }`}
-                            initial={{ opacity: 0, y: 60 }}
+                            key={cap.title}
+                            className="group bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 hover:border-white/15 transition-all duration-300 hover:bg-white/[0.04]"
+                            initial={{ opacity: 0, y: 30 }}
                             animate={isInView ? { opacity: 1, y: 0 } : {}}
-                            transition={{ duration: 0.8, delay: index * 0.2 }}
+                            transition={{ duration: 0.5, delay: i * 0.05 }}
                         >
-                            <div className={index % 2 === 1 ? 'md:order-2' : ''}>
-                                <h3 className="text-3xl md:text-4xl font-light text-white mb-6 leading-tight">
-                                    {feature.title}
-                                </h3>
-                                <p className="text-lg text-white/40 font-light leading-relaxed mb-8">
-                                    {feature.description}
-                                </p>
-                                <Link
-                                    href="/signup"
-                                    className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm"
-                                >
-                                    Learn more
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                    </svg>
-                                </Link>
+                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${cap.gradient} bg-opacity-20 flex items-center justify-center text-white mb-4`} style={{ background: `linear-gradient(135deg, var(--tw-gradient-stops))`, opacity: 0.8 }}>
+                                {cap.icon}
                             </div>
-                            <div className={`relative aspect-[4/3] rounded-2xl overflow-hidden group ${index % 2 === 1 ? 'md:order-1' : ''}`}>
-                                <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} z-10 mix-blend-overlay`} />
-                                <Image
-                                    src={feature.image}
-                                    alt={feature.title}
-                                    fill
-                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                />
-                                <div className="absolute inset-0 border border-white/10 rounded-2xl z-20" />
-                            </div>
+                            <h3 className="text-white font-medium text-lg mb-2 group-hover:text-[#00D4FF] transition-colors">{cap.title}</h3>
+                            <p className="text-white/40 text-sm leading-relaxed">{cap.desc}</p>
                         </motion.div>
                     ))}
                 </div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
+// TRAVEL SHIELD SECTION
+// Unique security differentiator
+// ============================================
+function TravelShieldSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+    return (
+        <section ref={ref} className="relative py-32 md:py-40 border-y border-white/5">
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-1/2 right-0 w-[600px] h-[600px] rounded-full bg-amber-500/[0.03] blur-[120px]" />
+            </div>
+            <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+                <div className="grid md:grid-cols-2 gap-16 items-center">
+                    <motion.div
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={isInView ? { opacity: 1, x: 0 } : {}}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium mb-6">
+                            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            Industry First
+                        </div>
+                        <h2 className="text-3xl md:text-5xl font-light text-white mb-6 leading-tight">
+                            Travel Shield
+                            <br />
+                            <span className="text-white/40">Your privacy, even at the border</span>
+                        </h2>
+                        <p className="text-white/50 leading-relaxed mb-6">
+                            When you&apos;re at an airport, a checkpoint, or any situation where your device might be inspected, activate Travel Shield.
+                            Your real profile, conversations, groups, and content instantly disappear behind a convincing decoy identity.
+                        </p>
+                        <p className="text-white/50 leading-relaxed mb-6">
+                            A generic profile loads with innocent content — casual photos, everyday conversations, mundane group chats.
+                            There is <em className="text-white/70 not-italic font-medium">no forensic evidence</em> that a second profile exists.
+                            The only way to return to your real identity is a passphrase that only you know.
+                        </p>
+                        <div className="space-y-3">
+                            {[
+                                'Cryptographically secured with SHA-256 hashed passphrases',
+                                'Plausible deniability — no hidden menus or suspicious UI',
+                                'Instant activation and deactivation',
+                                'Decoy content that looks authentically lived-in',
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-start gap-3">
+                                    <svg className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    <span className="text-white/60 text-sm">{item}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+
+                    {/* Visual mockup */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={isInView ? { opacity: 1, x: 0 } : {}}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                    >
+                        <div className="relative">
+                            {/* Phone mockup */}
+                            <div className="bg-[#0A0A0F] rounded-3xl border border-white/10 p-6 shadow-2xl max-w-sm mx-auto">
+                                <div className="flex items-center justify-between mb-6">
+                                    <span className="text-amber-400 text-xs font-medium flex items-center gap-1.5">
+                                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                                        Travel Shield Active
+                                    </span>
+                                    <span className="text-white/20 text-xs">9:41 AM</span>
+                                </div>
+                                <div className="flex items-center gap-3 mb-5">
+                                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-xl">
+                                        🐱
+                                    </div>
+                                    <div>
+                                        <p className="text-white font-medium">Alex Thompson</p>
+                                        <p className="text-white/30 text-xs">Cat lover | Gardening enthusiast</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="bg-white/[0.03] rounded-xl p-3 border border-white/5">
+                                        <p className="text-white/40 text-xs font-medium mb-1">Sewing Circle</p>
+                                        <p className="text-white/30 text-[11px]">Does anyone have a pattern for a tote bag?</p>
+                                    </div>
+                                    <div className="bg-white/[0.03] rounded-xl p-3 border border-white/5">
+                                        <p className="text-white/40 text-xs font-medium mb-1">Mom</p>
+                                        <p className="text-white/30 text-[11px]">Don&apos;t forget to water the plants this weekend!</p>
+                                    </div>
+                                    <div className="bg-white/[0.03] rounded-xl p-3 border border-white/5">
+                                        <p className="text-white/40 text-xs font-medium mb-1">Recipe Exchange</p>
+                                        <p className="text-white/30 text-[11px]">New cookie recipe posted</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="absolute -bottom-3 -left-3 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-400 text-[10px] font-medium backdrop-blur-sm">
+                                Real identity cryptographically hidden
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
+// DEVELOPER PLATFORM SECTION
+// API & Integration marketing
+// ============================================
+function DeveloperPlatformSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+    return (
+        <section ref={ref} className="relative py-32 md:py-40">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                <div className="grid md:grid-cols-2 gap-16 items-center">
+                    {/* Code block visual */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={isInView ? { opacity: 1, x: 0 } : {}}
+                        transition={{ duration: 0.8 }}
+                        className="md:order-1"
+                    >
+                        <div className="bg-[#0A1628] rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+                            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
+                                <div className="w-3 h-3 rounded-full bg-red-500/60" />
+                                <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+                                <div className="w-3 h-3 rounded-full bg-green-500/60" />
+                                <span className="text-xs text-white/30 ml-2 font-mono">integration.js</span>
+                            </div>
+                            <pre className="p-5 text-xs sm:text-sm text-white/70 font-mono overflow-x-auto leading-relaxed">
+{`// Create a community via API
+const community = await fetch(
+  '/api/v1/developer/public/communities',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer 0gat_...',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name: 'My Organization',
+      description: 'Built with the 0G API',
+      isPublic: false,
+      brandColor: '#00D4FF'
+    })
+  }
+);`}
+                            </pre>
+                        </div>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={isInView ? { opacity: 1, x: 0 } : {}}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="md:order-2"
+                    >
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00D4FF]/10 border border-[#00D4FF]/20 text-[#00D4FF] text-xs font-medium mb-6">
+                            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+                            Developer Platform
+                        </div>
+                        <h2 className="text-3xl md:text-5xl font-light text-white mb-6 leading-tight">
+                            Build on 0G
+                            <br />
+                            <span className="text-white/40">with full API access</span>
+                        </h2>
+                        <p className="text-white/50 leading-relaxed mb-6">
+                            A comprehensive RESTful API with OAuth 2.0 authentication, granular permission scopes, and real-time webhooks.
+                            Build integrations, automate workflows, or create entirely new experiences on top of the 0G platform.
+                        </p>
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                            {[
+                                { label: 'OAuth 2.0', desc: 'Secure auth flow' },
+                                { label: 'Webhooks', desc: 'Real-time events' },
+                                { label: 'API Keys', desc: 'Server-to-server' },
+                                { label: 'Scoped Access', desc: '6 permission levels' },
+                            ].map(item => (
+                                <div key={item.label} className="bg-white/[0.03] border border-white/5 rounded-xl p-3">
+                                    <p className="text-white font-medium text-sm">{item.label}</p>
+                                    <p className="text-white/30 text-xs">{item.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-white/40 text-sm leading-relaxed mb-6">
+                            Designed for AI agents, no-code app builders, agentic dev tools, streaming platforms, podcast tools,
+                            and any third-party wanting to programmatically create communities and content on 0G.
+                        </p>
+                        <Link href="/developers" className="inline-flex items-center gap-2 text-[#00D4FF] text-sm font-medium hover:underline">
+                            Explore Developer Portal
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                        </Link>
+                    </motion.div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
+// BUILT BY PALESTINIANS SECTION
+// Origin story and identity
+// ============================================
+function OriginSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+    return (
+        <section ref={ref} className="relative py-32 md:py-40 border-t border-white/5">
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full bg-emerald-500/[0.03] blur-[120px]" />
+            </div>
+            <div className="max-w-5xl mx-auto px-6 lg:px-8 relative z-10 text-center">
+                <motion.div
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 1 }}
+                >
+                    <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-6 font-light">Our Story</p>
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.15] mb-8">
+                        100%{' '}
+                        <span className="bg-gradient-to-r from-emerald-400 via-white to-red-400 bg-clip-text text-transparent">
+                            Palestinian
+                        </span>
+                        {' '}built.
+                    </h2>
+                    <p className="text-lg md:text-xl text-white/40 font-light leading-relaxed max-w-3xl mx-auto mb-8">
+                        0G was conceived, designed, architected, and built entirely by Palestinian engineers and creators.
+                        We didn&apos;t ask for permission. We didn&apos;t wait for a seat at the table.
+                        We built our own table.
+                    </p>
+                    <p className="text-lg text-white/40 font-light leading-relaxed max-w-3xl mx-auto mb-12">
+                        Born from the lived experience of communities whose voices have been suppressed, shadow-banned,
+                        and algorithmically silenced on mainstream platforms, 0G exists because we know firsthand what it means
+                        to have your story erased. This platform is proof that the people whose stories are most at risk
+                        are also the ones most capable of building the tools to protect them.
+                    </p>
+                </motion.div>
+
+                <motion.div
+                    className="grid md:grid-cols-3 gap-6 text-left"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.8, delay: 0.3 }}
+                >
+                    {[
+                        {
+                            title: 'By the community',
+                            desc: 'Every design decision is informed by the needs of communities who have been underserved, surveilled, or silenced by existing platforms. We don\'t hypothesize about oppression. We\'ve lived it.',
+                            icon: '🌍',
+                        },
+                        {
+                            title: 'For the community',
+                            desc: 'We will never sell your data. We will never run ads. We will never build features that exploit attention or manufacture outrage. Our only stakeholder is the person using this platform.',
+                            icon: '🤝',
+                        },
+                        {
+                            title: 'Open to the world',
+                            desc: 'Built by Palestinians, but built for everyone. From Lagos to Lahore, from Detroit to Dhaka. For every community that deserves a platform that respects them.',
+                            icon: '🕊️',
+                        },
+                    ].map((item, i) => (
+                        <motion.div
+                            key={item.title}
+                            className="bg-white/[0.02] border border-white/5 rounded-2xl p-6"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={isInView ? { opacity: 1, y: 0 } : {}}
+                            transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
+                        >
+                            <span className="text-3xl mb-4 block">{item.icon}</span>
+                            <h3 className="text-white font-medium mb-2">{item.title}</h3>
+                            <p className="text-white/40 text-sm leading-relaxed">{item.desc}</p>
+                        </motion.div>
+                    ))}
+                </motion.div>
+
+                <motion.div
+                    className="mt-12"
+                    initial={{ opacity: 0 }}
+                    animate={isInView ? { opacity: 1 } : {}}
+                    transition={{ duration: 0.8, delay: 0.8 }}
+                >
+                    <Link
+                        href="/about"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 text-white/60 hover:text-white rounded-xl text-sm font-medium hover:bg-white/10 transition-all"
+                    >
+                        Read our full story, architecture &amp; security principles
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </Link>
+                </motion.div>
             </div>
         </section>
     );
@@ -1152,12 +1473,12 @@ function CTASection() {
 function Footer() {
     const platformLinks = [
         { label: 'Features', href: '#platform' },
+        { label: 'Developer API', href: '/developers' },
         { label: 'Security', href: '/transparency' },
-        { label: 'Roadmap', href: '/about' },
     ];
 
     const companyLinks = [
-        { label: 'About', href: '/about' },
+        { label: 'About & Architecture', href: '/about' },
         { label: 'Help', href: 'mailto:support@0g.social' },
         { label: 'Contact', href: 'mailto:support@0g.social' },
     ];
@@ -1284,10 +1605,13 @@ export default function HomePage() {
             <HeroSection />
             <VisionSection />
             <StoryTellersSection />
-            <ManifestoSection />
-            <ImpactSection />
-            <FeaturesSection />
+            <FullCapabilitiesSection />
+            <TravelShieldSection />
             <ContainedCommunitiesSection />
+            <DeveloperPlatformSection />
+            <ManifestoSection />
+            <OriginSection />
+            <ImpactSection />
             <PressSection />
             <CTASection />
             <Footer />
