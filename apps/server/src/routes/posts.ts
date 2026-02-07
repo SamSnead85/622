@@ -317,21 +317,32 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             // Sort by engagement score
             rankedPosts.sort((a, b) => b._engagementScore - a._engagementScore);
 
-            // Diversity filter: limit posts per author in top results
-            // In private feed, allow more posts per author (it's your circle, not discovery)
-            const maxPerAuthor = feedView === 'private' ? 20 : 3;
-            const authorPostCount: Record<string, number> = {};
-            const diversePosts = rankedPosts.filter(post => {
-                // Never limit the current user's own posts
-                if (post.userId === req.userId) return true;
-                const count = authorPostCount[post.userId] || 0;
-                if (count >= maxPerAuthor) return false;
-                authorPostCount[post.userId] = count + 1;
-                return true;
-            });
+            // Diversity reorder: spread out posts from the same author
+            // instead of removing them. No posts are ever dropped — only reordered.
+            // In community feed, after 3 consecutive posts from one author,
+            // push extras further down the list (interleave with other authors).
+            if (feedView === 'community') {
+                const maxConsecutive = 3;
+                const reordered: typeof rankedPosts = [];
+                const deferred: typeof rankedPosts = [];
+                const authorCount: Record<string, number> = {};
 
-            // Take only the requested limit
-            posts = diversePosts.slice(0, parseInt(limit as string) + 1);
+                for (const post of rankedPosts) {
+                    const count = authorCount[post.userId] || 0;
+                    if (count >= maxConsecutive) {
+                        deferred.push(post); // Push down, don't remove
+                    } else {
+                        authorCount[post.userId] = count + 1;
+                        reordered.push(post);
+                    }
+                }
+                // Append deferred posts at the end — they still show up, just lower
+                rankedPosts.length = 0;
+                rankedPosts.push(...reordered, ...deferred);
+            }
+
+            // Take only the requested limit — all posts are in the pool, none removed
+            posts = rankedPosts.slice(0, parseInt(limit as string) + 1);
         }
 
         const hasMore = posts.length > parseInt(limit as string);
