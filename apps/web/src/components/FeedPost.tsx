@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAudioFocus } from '@/contexts/AudioFocusContext';
 import { Post } from '@/hooks/usePosts';
 import { PostActions } from '@/components/PostActions';
 import {
@@ -106,13 +107,29 @@ export function YouTubeEmbed({ src }: { src: string }) {
 }
 
 // ============================================
-// AUTOPLAY VIDEO
+// AUTOPLAY VIDEO (with AudioFocus integration)
 // ============================================
-export function AutoPlayVideo({ src, className = '' }: { src: string; className?: string }) {
+interface AutoPlayVideoProps {
+    src: string;
+    postId?: string;       // Unique ID for audio focus tracking
+    className?: string;
+    aspectRatio?: string;  // e.g. "16:9", "4:5", "1:1"
+    cropY?: number;        // 0-100 vertical position
+}
+
+export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY }: AutoPlayVideoProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isMuted, setIsMuted] = useState(false);
+    const [isMuted, setIsMuted] = useState(true); // Start muted by default
     const [showControls, setShowControls] = useState(false);
+    const audioFocus = useAudioFocus();
+    const videoId = postId || src; // Fallback to src as unique ID
+
+    // Convert ratio string to CSS value
+    const cssAspectRatio = aspectRatio ? {
+        '16:9': '16/9', '4:3': '4/3', '1:1': '1/1', '4:5': '4/5',
+    }[aspectRatio] : undefined;
+    const useCrop = !!cssAspectRatio;
 
     useEffect(() => {
         const video = videoRef.current;
@@ -122,20 +139,24 @@ export function AutoPlayVideo({ src, className = '' }: { src: string; className?
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-                        video.muted = false;
+                        // Register with audio focus — it decides if we get audio
+                        const getsAudio = audioFocus.registerVisible(videoId, video);
+                        video.muted = !getsAudio;
+                        setIsMuted(!getsAudio);
+
                         video.play()
-                            .then(() => {
-                                setIsMuted(false);
-                                setIsPlaying(true);
-                            })
+                            .then(() => setIsPlaying(true))
                             .catch(() => {
+                                // Browser may block unmuted autoplay — retry muted
                                 video.muted = true;
                                 setIsMuted(true);
-                                video.play().then(() => setIsPlaying(true)).catch(() => { });
+                                video.play().then(() => setIsPlaying(true)).catch(() => {});
                             });
                     } else {
+                        // Scrolled out of view — pause and unregister
                         video.pause();
                         setIsPlaying(false);
+                        audioFocus.unregisterVisible(videoId);
                     }
                 });
             },
@@ -143,37 +164,69 @@ export function AutoPlayVideo({ src, className = '' }: { src: string; className?
         );
 
         observer.observe(video);
-        return () => observer.disconnect();
-    }, []);
+        return () => {
+            observer.disconnect();
+            audioFocus.unregisterVisible(videoId);
+        };
+    }, [videoId, audioFocus]);
+
+    // Sync muted state with audio focus changes (check periodically is not ideal,
+    // so we check on mouse enter / interaction)
+    const syncMuteState = useCallback(() => {
+        if (videoRef.current) {
+            const focused = audioFocus.hasFocus(videoId);
+            if (videoRef.current.muted !== !focused) {
+                videoRef.current.muted = !focused;
+                setIsMuted(!focused);
+            }
+        }
+    }, [audioFocus, videoId]);
 
     const toggleMute = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (videoRef.current) {
-            videoRef.current.muted = !videoRef.current.muted;
-            setIsMuted(!isMuted);
+        if (!videoRef.current) return;
+
+        if (isMuted) {
+            // User wants to unmute — claim audio focus (mutes other videos)
+            audioFocus.claimFocus(videoId);
+            videoRef.current.muted = false;
+            setIsMuted(false);
+        } else {
+            // User wants to mute — release focus (no auto-transfer)
+            audioFocus.releaseFocus(videoId);
+            videoRef.current.muted = true;
+            setIsMuted(true);
         }
     };
 
     return (
         <div
             className="relative group"
-            onMouseEnter={() => setShowControls(true)}
+            style={cssAspectRatio ? { aspectRatio: cssAspectRatio } : undefined}
+            onMouseEnter={() => { setShowControls(true); syncMuteState(); }}
             onMouseLeave={() => setShowControls(false)}
         >
             <video
                 ref={videoRef}
                 src={src}
-                className={`w-full max-h-[600px] object-contain bg-black ${className}`}
+                className={`w-full h-full ${useCrop ? 'object-cover' : 'object-contain max-h-[500px]'} bg-black ${className}`}
+                style={useCrop && cropY != null ? { objectPosition: `center ${cropY}%` } : undefined}
                 loop
                 playsInline
                 muted={isMuted}
             />
-            {showControls && (
-                <div className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm z-20">
-                    <button onClick={toggleMute} className="text-white hover:text-[#00D4FF]">
-                        <span className="text-lg">{isMuted ? '🔇' : '🔊'}</span>
-                    </button>
-                </div>
+            {/* Audio indicator — always visible when playing */}
+            {isPlaying && (
+                <button
+                    onClick={toggleMute}
+                    className={`absolute bottom-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-sm z-20 transition-all ${
+                        showControls ? 'opacity-100' : 'opacity-60'
+                    } ${isMuted ? 'bg-white/10' : 'bg-black/60'}`}
+                >
+                    <span className="text-lg text-white hover:text-[#00D4FF] transition-colors">
+                        {isMuted ? '🔇' : '🔊'}
+                    </span>
+                </button>
             )}
         </div>
     );
@@ -271,11 +324,12 @@ interface FeedPostProps {
     likePost: (id: string) => void;
     toggleRsvp: (id: string) => void;
     deletePost: (id: string) => Promise<{ success: boolean; error?: string }>;
+    pinPost?: (id: string) => void;
     zenMode?: boolean;
     colorPalette?: ColorPalette;
 }
 
-export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = false, colorPalette }: FeedPostProps) {
+export function FeedPost({ post, likePost, toggleRsvp, deletePost, pinPost, zenMode = false, colorPalette }: FeedPostProps) {
     const { user, isAdmin } = useAuth();
     const router = useRouter();
 
@@ -283,6 +337,13 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
     const isVideoPost = post.type === 'VIDEO' || post.mediaType === 'VIDEO';
     const isImagePost = post.type === 'IMAGE' || (post.mediaUrl && !isVideoPost);
     const isTextOnly = !post.mediaUrl;
+
+    // Resolve display aspect ratio for consistent feed layout
+    const resolvedRatio = post.mediaAspectRatio || (isVideoPost ? '16:9' : undefined);
+    const ratioMap: Record<string, string> = { '16:9': '16/9', '4:3': '4/3', '1:1': '1/1', '4:5': '4/5' };
+    const feedAspectCSS = resolvedRatio ? ratioMap[resolvedRatio] : undefined;
+    const useFeedCrop = !!feedAspectCSS;
+    const feedCropY = post.mediaCropY ?? 50;
 
     // Content-aware tinting via colorPalette
     const tintStyle = colorPalette ? {
@@ -292,7 +353,7 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
     return (
         <motion.div
             layoutId={`post-${post.id}`}
-            className={`bg-gradient-to-b from-white/[0.04] to-white/[0.01] rounded-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-sm overflow-hidden mb-6 transition-all duration-300 hover:border-[#00D4FF]/20 hover:shadow-[0_8px_32px_rgba(0,212,255,0.08)] hover:from-white/[0.06] hover:to-white/[0.02] group ${isVideoPost ? 'aspect-auto' : ''}`}
+            className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] rounded-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-sm overflow-hidden mb-6 transition-all duration-300 hover:border-[#00D4FF]/20 hover:shadow-[0_8px_32px_rgba(0,212,255,0.08)] hover:from-white/[0.06] hover:to-white/[0.02] group"
             style={tintStyle}
             transition={{ type: 'spring', stiffness: 350, damping: 30 }}
         >
@@ -332,6 +393,12 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                                 {post.type === 'RALLY' ? 'Rally' : 'Public'}
                             </span>
                             <span className="text-white/30 text-xs flex-shrink-0">• {new Date(post.createdAt).toLocaleDateString()}</span>
+                            {post.isPinned && (
+                                <span className="px-2 py-0.5 rounded-full bg-[#00D4FF]/10 text-[#00D4FF] text-[10px] font-medium flex-shrink-0 border border-[#00D4FF]/20 flex items-center gap-1">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+                                    Pinned
+                                </span>
+                            )}
                         </div>
                         {post.content && (
                             <p className="text-white/70 text-sm mt-1 line-clamp-3">{post.content}</p>
@@ -341,7 +408,9 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                         <PostActions
                             postId={post.id}
                             isOwner={post.author.id === user?.id}
+                            isPinned={post.isPinned}
                             onDelete={() => deletePost(post.id)}
+                            onPin={pinPost ? () => pinPost(post.id) : undefined}
                             postContent={post.content}
                             authorName={post.author.displayName}
                             mediaUrl={post.mediaUrl}
@@ -352,25 +421,33 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                 </div>
             </div>
 
-            {/* Media - Adaptive sizing based on post type */}
+            {/* Media - Consistent aspect-ratio containers */}
             {post.mediaUrl && (
                 <DoubleTapHeart onDoubleTap={() => !post.isLiked && likePost(post.id)}>
-                    <div className={`relative w-full bg-black/30 overflow-hidden cursor-pointer ${isVideoPost ? 'aspect-video' : ''}`} onClick={() => router.push(`/post/${post.id}`)}>
+                    <div
+                        className="relative w-full bg-black/30 overflow-hidden cursor-pointer"
+                        style={feedAspectCSS ? { aspectRatio: feedAspectCSS } : undefined}
+                        onClick={() => router.push(`/post/${post.id}`)}
+                    >
                         {isYouTubeUrl(post.mediaUrl) ? (
                             <YouTubeEmbed src={post.mediaUrl} />
                         ) : isKickUrl(post.mediaUrl) ? (
                             <KickEmbed src={post.mediaUrl} />
                         ) : isVideoPost ? (
-                            <div className="w-full">
-                                <AutoPlayVideo src={post.mediaUrl} />
-                            </div>
+                            <AutoPlayVideo
+                                src={post.mediaUrl}
+                                postId={post.id}
+                                aspectRatio={resolvedRatio}
+                                cropY={post.mediaCropY ?? undefined}
+                            />
                         ) : (
                             <Image
                                 src={post.mediaUrl}
                                 alt="Post media"
                                 width={800}
                                 height={600}
-                                className="w-full h-auto max-h-[500px] object-contain"
+                                className={`w-full ${useFeedCrop ? 'h-full object-cover' : 'h-auto max-h-[500px] object-contain'}`}
+                                style={useFeedCrop ? { objectPosition: `center ${feedCropY}%` } : undefined}
                                 loading="lazy"
                                 placeholder="blur"
                                 blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMGEwYTBmIi8+PC9zdmc+"

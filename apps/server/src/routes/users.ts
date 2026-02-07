@@ -459,7 +459,7 @@ router.get('/:userId/posts', optionalAuth, async (req: AuthRequest, res, next) =
             where: whereClause,
             take: parseInt(limit as string) + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
-            orderBy: { createdAt: 'desc' },
+            orderBy: [{ sortOrder: 'desc' }, { createdAt: 'desc' }],
             include: {
                 user: {
                     select: {

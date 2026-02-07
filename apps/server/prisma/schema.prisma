@@ -86,9 +86,8 @@ model User {
   receivedStrikes            UserStrike[]              @relation("StrikeTarget")
   issuedStrikes              UserStrike[]              @relation("StrikeIssuer")
   creatorProfile             CreatorProfile?
-  // Growth Partner Program
-  growthPartnerId            String?
-  growthPartner              GrowthPartner?            @relation(fields: [growthPartnerId], references: [id])
+  // Growth Partner Program (one-to-one via GrowthPartner.userId)
+  growthPartner              GrowthPartner?
   // Emergency lockdown
   isLocked                   Boolean                   @default(false)
   lockedAt                   DateTime?
@@ -261,6 +260,9 @@ model Post {
   caption      String?
   mediaUrl     String?
   thumbnailUrl String?
+  mediaCropY       Float?        // Vertical crop position 0-100 (50 = center)
+  mediaAspectRatio String?       // Display aspect ratio: "16:9" | "4:3" | "1:1" | "4:5" | "original"
+  sortOrder    Int           @default(0) // User-defined sort order (higher = shown first on profile)
   duration     Int?
   musicId      String?
   viewCount    Int           @default(0)
@@ -1917,7 +1919,7 @@ model GrowthPartner {
   createdAt                       DateTime @default(now())
   updatedAt                       DateTime @updatedAt
 
-  user       User[]    // back-relation via growthPartnerId
+  user       User     @relation(fields: [userId], references: [id])
   referrals  GrowthReferral[]
   earnings   Earning[]
 

@@ -19,11 +19,15 @@ export interface Post {
     content: string;
     mediaUrl?: string;
     mediaType?: 'IMAGE' | 'VIDEO';
+    mediaCropY?: number; // Vertical crop position 0-100 (50 = center)
+    mediaAspectRatio?: '16:9' | '4:3' | '1:1' | '4:5' | 'original';
     type: 'IMAGE' | 'VIDEO' | 'TEXT' | 'POLL' | 'RALLY';
     embedUrl?: string;
     likes: number;
     commentsCount: number;
     rsvpCount: number;
+    isPinned?: boolean;
+    sortOrder?: number;
     isLiked: boolean;
     isRsvped: boolean;
     createdAt: string;
@@ -89,7 +93,11 @@ export function usePosts(options?: UsePostsOptions) {
                     content: post.caption || '',
                     mediaUrl: post.mediaUrl,
                     mediaType: (post.type === 'IMAGE' || post.type === 'VIDEO') ? post.type as 'IMAGE' | 'VIDEO' : undefined,
+                    mediaCropY: post.mediaCropY ?? undefined,
+                    mediaAspectRatio: post.mediaAspectRatio ?? undefined,
                     type: post.type,
+                    isPinned: post.isPinned || false,
+                    sortOrder: post.sortOrder ?? 0,
                     likes: post._count?.likes || post.likesCount || 0,
                     commentsCount: post._count?.comments || post.commentsCount || 0,
                     rsvpCount: post._count?.rsvps || post.rsvpCount || 0,
@@ -269,6 +277,25 @@ export function usePosts(options?: UsePostsOptions) {
         }
     }, [fetchFeed, options?.communityId]);
 
+    const pinPost = useCallback(async (postId: string) => {
+        try {
+            const response = await apiFetch(`${API_ENDPOINTS.posts}/${postId}/pin`, {
+                method: 'PATCH',
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setPosts(prev => prev.map(p =>
+                    p.id === postId
+                        ? { ...p, isPinned: data.isPinned, sortOrder: data.sortOrder }
+                        : p
+                ));
+            }
+        } catch (err) {
+            console.error('Error pinning post:', err);
+        }
+    }, []);
+
     const deletePost = useCallback(async (postId: string): Promise<{ success: boolean; error?: string }> => {
         try {
             const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
@@ -316,6 +343,7 @@ export function usePosts(options?: UsePostsOptions) {
         loadMore,
         likePost,
         toggleRsvp,
+        pinPost,
         createPost,
         deletePost,
         refetch: () => fetchFeed(null, true),

@@ -18,6 +18,8 @@ interface Post {
     content: string;
     mediaUrl?: string;
     mediaType?: 'IMAGE' | 'VIDEO';
+    mediaCropY?: number;
+    mediaAspectRatio?: string;
     type: 'IMAGE' | 'VIDEO' | 'TEXT' | 'POLL' | 'RALLY';
     createdAt: string;
     updatedAt?: string;
@@ -115,6 +117,8 @@ export default function PostDetailClient() {
                     content: data.caption || '',
                     mediaUrl: data.mediaUrl,
                     mediaType: (data.type === 'IMAGE' || data.type === 'VIDEO') ? data.type : undefined,
+                    mediaCropY: data.mediaCropY ?? undefined,
+                    mediaAspectRatio: data.mediaAspectRatio ?? undefined,
                     type: data.type,
                     createdAt: data.createdAt,
                     updatedAt: data.updatedAt,
@@ -406,10 +410,18 @@ export default function PostDetailClient() {
                     )}
 
                     {/* Media */}
-                    {post.mediaUrl && (
-                        <div className="relative">
+                    {post.mediaUrl && (() => {
+                        const detailRatioMap: Record<string, string> = { '16:9': '16/9', '4:3': '4/3', '1:1': '1/1', '4:5': '4/5' };
+                        const detailAspectCSS = post.mediaAspectRatio ? detailRatioMap[post.mediaAspectRatio] : undefined;
+                        const useCrop = !!detailAspectCSS;
+                        const cropPos = post.mediaCropY ?? 50;
+                        return (
+                        <div
+                            className="relative bg-black/50 overflow-hidden"
+                            style={detailAspectCSS ? { aspectRatio: detailAspectCSS } : undefined}
+                        >
                             {post.mediaType === 'VIDEO' ? (
-                                post.mediaUrl.includes('youtube') || post.mediaUrl.includes('youtu.be') ? (
+                                post.mediaUrl!.includes('youtube') || post.mediaUrl!.includes('youtu.be') ? (
                                     <div className="relative w-full aspect-video bg-black">
                                         <iframe
                                             src={getYouTubeEmbedUrl(post.mediaUrl!)}
@@ -421,17 +433,19 @@ export default function PostDetailClient() {
                                         />
                                     </div>
                                 ) : (
-                                    <VideoPlayer src={post.mediaUrl} />
+                                    <VideoPlayer src={post.mediaUrl!} />
                                 )
                             ) : (
                                 <img
                                     src={post.mediaUrl}
                                     alt="Post media"
-                                    className="w-full max-h-[600px] object-contain bg-black/50"
+                                    className={`w-full ${useCrop ? 'h-full object-cover' : 'max-h-[600px] object-contain'}`}
+                                    style={useCrop ? { objectPosition: `center ${cropPos}%` } : undefined}
                                 />
                             )}
                         </div>
-                    )}
+                        );
+                    })()}
 
                     {/* Timestamp */}
                     <div className="px-4 py-3 border-t border-white/5">

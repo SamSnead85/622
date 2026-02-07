@@ -34,23 +34,153 @@ function CreateContent() {
     const [selectedTopics, setSelectedTopics] = useState<Topic[]>([]);
     const [isPublishing, setIsPublishing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [cropY, setCropY] = useState(50); // 0=top, 50=center, 100=bottom
+    const [isRepositioning, setIsRepositioning] = useState(false);
+    const [nativeRatio, setNativeRatio] = useState<number | null>(null);
+    const [chosenRatio, setChosenRatio] = useState<'16:9' | '4:3' | '1:1' | '4:5' | 'original'>('original');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const dragCounterRef = useRef(0);
+    const repositionRef = useRef<{ startY: number; startCropY: number } | null>(null);
+    const mediaContainerRef = useRef<HTMLDivElement>(null);
+
+    const detectAndSetRatio = useCallback((w: number, h: number) => {
+        const ratio = w / h;
+        setNativeRatio(ratio);
+        if (ratio >= 1.5) setChosenRatio('16:9');
+        else if (ratio >= 1.1) setChosenRatio('4:3');
+        else if (ratio >= 0.9) setChosenRatio('1:1');
+        else setChosenRatio('4:5');
+        setCropY(50);
+    }, []);
+
+    const acceptFile = useCallback((file: File) => {
+        if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) return;
+        setMediaFile(file);
+        const url = URL.createObjectURL(file);
+        setMediaPreview(url);
+        setMediaType(file.type.startsWith('video') ? 'video' : 'image');
+
+        if (file.type.startsWith('video/')) {
+            const vid = document.createElement('video');
+            vid.preload = 'metadata';
+            vid.onloadedmetadata = () => {
+                detectAndSetRatio(vid.videoWidth, vid.videoHeight);
+                URL.revokeObjectURL(vid.src);
+            };
+            vid.src = url;
+        } else {
+            const img = new window.Image();
+            img.onload = () => detectAndSetRatio(img.naturalWidth, img.naturalHeight);
+            img.src = url;
+        }
+    }, [detectAndSetRatio]);
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            setMediaFile(file);
-            setMediaPreview(URL.createObjectURL(file));
-            setMediaType(file.type.startsWith('video') ? 'video' : 'image');
+        if (file) acceptFile(file);
+    }, [acceptFile]);
+
+    // --- Drag-and-drop handlers ---
+    const handleDragEnter = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current++;
+        if (e.dataTransfer.types.includes('Files')) {
+            setIsDragging(true);
         }
     }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current--;
+        if (dragCounterRef.current === 0) {
+            setIsDragging(false);
+        }
+    }, []);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        dragCounterRef.current = 0;
+        const file = e.dataTransfer.files?.[0];
+        if (file) acceptFile(file);
+    }, [acceptFile]);
+
+    // --- Media reposition handlers (drag to adjust crop) ---
+    const onRepositionStart = useCallback((clientY: number) => {
+        repositionRef.current = { startY: clientY, startCropY: cropY };
+        setIsRepositioning(true);
+    }, [cropY]);
+
+    const onRepositionMove = useCallback((clientY: number) => {
+        if (!repositionRef.current || !mediaContainerRef.current) return;
+        const containerHeight = mediaContainerRef.current.offsetHeight;
+        const deltaPixels = clientY - repositionRef.current.startY;
+        // Moving mouse/finger down → show higher part → decrease cropY
+        const deltaPct = (deltaPixels / containerHeight) * 100;
+        const newCropY = Math.max(0, Math.min(100, repositionRef.current.startCropY - deltaPct));
+        setCropY(Math.round(newCropY));
+    }, []);
+
+    const onRepositionEnd = useCallback(() => {
+        repositionRef.current = null;
+        setIsRepositioning(false);
+    }, []);
+
+    const handleRepositionMouseDown = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        onRepositionStart(e.clientY);
+        const onMouseMove = (ev: MouseEvent) => onRepositionMove(ev.clientY);
+        const onMouseUp = () => {
+            onRepositionEnd();
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    }, [onRepositionStart, onRepositionMove, onRepositionEnd]);
+
+    const handleRepositionTouchStart = useCallback((e: React.TouchEvent) => {
+        const touch = e.touches[0];
+        if (touch) onRepositionStart(touch.clientY);
+        const onTouchMove = (ev: TouchEvent) => {
+            const t = ev.touches[0];
+            if (t) onRepositionMove(t.clientY);
+        };
+        const onTouchEnd = () => {
+            onRepositionEnd();
+            window.removeEventListener('touchmove', onTouchMove);
+            window.removeEventListener('touchend', onTouchEnd);
+        };
+        window.addEventListener('touchmove', onTouchMove, { passive: true });
+        window.addEventListener('touchend', onTouchEnd);
+    }, [onRepositionStart, onRepositionMove, onRepositionEnd]);
 
     const removeMedia = useCallback(() => {
         setMediaFile(null);
         setMediaPreview(null);
+        setCropY(50);
+        setNativeRatio(null);
+        setChosenRatio('original');
         if (fileInputRef.current) fileInputRef.current.value = '';
     }, []);
+
+    // Aspect ratio helpers
+    const ratioToNumber = useCallback((r: string): number => {
+        const map: Record<string, number> = { '16:9': 16/9, '4:3': 4/3, '1:1': 1, '4:5': 4/5 };
+        return map[r] || (nativeRatio || 4/3);
+    }, [nativeRatio]);
+    const containerAspect = chosenRatio === 'original' ? undefined : ratioToNumber(chosenRatio);
+    const needsCrop = chosenRatio !== 'original';
 
     const handlePublish = useCallback(async () => {
         if (!caption.trim() && !mediaFile) {
@@ -128,6 +258,8 @@ function CreateContent() {
                         mediaUrl,
                         isPublic: true,
                         topicIds: selectedTopics.map(t => t.id),
+                        ...(mediaFile && cropY !== 50 ? { mediaCropY: cropY } : {}),
+                        ...(mediaFile && chosenRatio !== 'original' ? { mediaAspectRatio: chosenRatio } : {}),
                     }),
                 });
 
@@ -141,7 +273,7 @@ function CreateContent() {
             setError('Failed to publish. Please try again.');
             setIsPublishing(false);
         }
-    }, [caption, mediaFile, activeTab, selectedTopics, router]);
+    }, [caption, mediaFile, activeTab, selectedTopics, router, cropY, chosenRatio]);
 
     const canPublish = caption.trim().length > 0 || mediaFile;
 
@@ -190,7 +322,33 @@ function CreateContent() {
                 </div>
             </header>
 
-            <div className="max-w-2xl mx-auto px-4 py-6">
+            <div
+                className="max-w-2xl mx-auto px-4 py-6 relative"
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+            >
+                {/* Drag-and-drop overlay */}
+                <AnimatePresence>
+                    {isDragging && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 z-30 rounded-2xl border-2 border-dashed border-[#00D4FF] bg-[#00D4FF]/5 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-none"
+                        >
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth="2" className="mb-3">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <path d="M21 15l-5-5L5 21" />
+                            </svg>
+                            <p className="text-[#00D4FF] font-semibold">Drop photo or video here</p>
+                            <p className="text-[#00D4FF]/50 text-sm mt-1">Supports images and videos</p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 {/* Error */}
                 <AnimatePresence>
                     {error && (
@@ -244,36 +402,90 @@ function CreateContent() {
                             {caption.length}/{activeTab === 'moment' ? 500 : 5000}
                         </div>
 
-                        {/* Media preview */}
+                        {/* Media preview with reposition + aspect ratio picker */}
                         {mediaPreview && (
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="relative rounded-2xl overflow-hidden mb-4 border border-white/10"
+                                className="mb-4"
                             >
-                                {mediaType === 'video' ? (
-                                    <video
-                                        src={mediaPreview}
-                                        className="w-full max-h-[400px] object-cover"
-                                        controls
-                                    />
-                                ) : (
-                                    <Image
-                                        src={mediaPreview}
-                                        alt="Upload preview"
-                                        width={600}
-                                        height={400}
-                                        className="w-full max-h-[400px] object-cover"
-                                    />
+                                {/* Aspect ratio picker */}
+                                {nativeRatio !== null && (
+                                    <div className="flex items-center gap-1.5 mb-3">
+                                        <span className="text-white/30 text-xs mr-1">Crop:</span>
+                                        {(['original', '16:9', '4:3', '1:1', '4:5'] as const).map((r) => (
+                                            <button
+                                                key={r}
+                                                onClick={() => { setChosenRatio(r); setCropY(50); }}
+                                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${chosenRatio === r
+                                                    ? 'bg-[#00D4FF]/20 text-[#00D4FF] ring-1 ring-[#00D4FF]/30'
+                                                    : 'bg-white/[0.04] text-white/40 hover:bg-white/[0.08] hover:text-white/60'
+                                                }`}
+                                            >
+                                                <span className={`inline-block border border-current rounded-[2px] ${
+                                                    r === '16:9' ? 'w-5 h-3' :
+                                                    r === '4:3' ? 'w-4 h-3' :
+                                                    r === '1:1' ? 'w-3.5 h-3.5' :
+                                                    r === '4:5' ? 'w-3 h-[15px]' :
+                                                    'w-3.5 h-4'
+                                                }`} />
+                                                {r === 'original' ? 'Original' : r}
+                                            </button>
+                                        ))}
+                                    </div>
                                 )}
-                                <button
-                                    onClick={removeMedia}
-                                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center hover:bg-black/90 transition-colors"
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                                        <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
-                                    </svg>
-                                </button>
+
+                                <div className="relative rounded-2xl overflow-hidden border border-white/10">
+                                    <div
+                                        ref={mediaContainerRef}
+                                        className={`relative group/media bg-black/30 ${isRepositioning ? 'cursor-grabbing' : ''}`}
+                                        style={containerAspect ? { aspectRatio: `${containerAspect}` } : { maxHeight: '400px' }}
+                                    >
+                                        {mediaType === 'video' ? (
+                                            <video
+                                                src={mediaPreview}
+                                                className={`w-full h-full ${needsCrop ? 'object-cover' : 'object-contain'}`}
+                                                controls={!isRepositioning}
+                                                style={needsCrop ? { objectPosition: `center ${cropY}%` } : undefined}
+                                            />
+                                        ) : (
+                                            <img
+                                                src={mediaPreview}
+                                                alt="Upload preview"
+                                                className={`w-full h-full select-none ${needsCrop ? 'object-cover' : 'object-contain'}`}
+                                                style={needsCrop ? { objectPosition: `center ${cropY}%` } : undefined}
+                                                draggable={false}
+                                            />
+                                        )}
+
+                                        {/* Reposition handle (only when cropping) */}
+                                        {needsCrop && (
+                                            <div
+                                                className={`absolute inset-0 transition-opacity ${isRepositioning ? 'opacity-100 bg-black/10' : 'opacity-0 group-hover/media:opacity-100'}`}
+                                                onMouseDown={handleRepositionMouseDown}
+                                                onTouchStart={handleRepositionTouchStart}
+                                                style={{ cursor: isRepositioning ? 'grabbing' : 'grab' }}
+                                            >
+                                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full bg-black/70 backdrop-blur-sm text-white/90 text-xs font-medium select-none pointer-events-none">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                        <path d="M12 2v20M5 9l7-7 7 7M5 15l7 7 7-7" />
+                                                    </svg>
+                                                    Drag to reposition
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Close button */}
+                                        <button
+                                            onClick={removeMedia}
+                                            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center hover:bg-black/90 transition-colors z-10"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                                                <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </motion.div>
                         )}
 

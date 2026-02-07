@@ -408,6 +408,8 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             caption: z.string().max(2200).optional(),
             mediaUrl: z.string().url().optional(),
             thumbnailUrl: z.string().url().optional(),
+            mediaCropY: z.number().min(0).max(100).optional(), // Vertical crop position 0-100
+            mediaAspectRatio: z.enum(['16:9', '4:3', '1:1', '4:5', 'original']).optional(),
             duration: z.number().optional(),
             musicId: z.string().optional(),
             communityId: z.string().optional(),
@@ -417,6 +419,77 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
 
         const data = createSchema.parse(req.body);
         const { topicIds, ...postData } = data;
+
+        // === Content filter enforcement (server-side, defense-in-depth) ===
+        if (data.communityId && data.caption) {
+            const filters = await prisma.contentFilter.findMany({
+                where: { communityId: data.communityId, isActive: true },
+            });
+
+            if (filters.length > 0) {
+                const lowerText = data.caption.toLowerCase();
+                let blocked = false;
+                let blockReason = '';
+
+                for (const filter of filters) {
+                    let hit = false;
+
+                    switch (filter.type) {
+                        case 'keyword': {
+                            const keywords = filter.pattern.split(',').map(k => k.trim().toLowerCase());
+                            hit = keywords.some(kw => kw && lowerText.includes(kw));
+                            break;
+                        }
+                        case 'link': {
+                            const urlRegex = /https?:\/\/[^\s]+|www\.[^\s]+/i;
+                            if (filter.pattern === '*') {
+                                hit = urlRegex.test(data.caption);
+                            } else {
+                                const domains = filter.pattern.split(',').map(d => d.trim().toLowerCase());
+                                hit = domains.some(d => d && lowerText.includes(d));
+                            }
+                            break;
+                        }
+                        case 'spam': {
+                            const capsRatio = (data.caption.match(/[A-Z]/g) || []).length / Math.max(data.caption.length, 1);
+                            const repeatedChars = /(.)\1{4,}/g.test(data.caption);
+                            const excessivePunctuation = (data.caption.match(/[!?]{3,}/g) || []).length > 0;
+                            hit = capsRatio > 0.7 || repeatedChars || excessivePunctuation;
+                            break;
+                        }
+                        case 'newuser': {
+                            const days = parseInt(filter.pattern) || 7;
+                            const membership = await prisma.communityMember.findUnique({
+                                where: { userId_communityId: { userId: req.userId!, communityId: data.communityId } },
+                            });
+                            if (membership) {
+                                const joinedDaysAgo = (Date.now() - new Date(membership.joinedAt).getTime()) / (1000 * 60 * 60 * 24);
+                                hit = joinedDaysAgo < days;
+                            }
+                            break;
+                        }
+                    }
+
+                    if (hit) {
+                        // Increment hit count (non-blocking)
+                        prisma.contentFilter.update({
+                            where: { id: filter.id },
+                            data: { hitCount: { increment: 1 } },
+                        }).catch(() => {});
+
+                        if (filter.action === 'block') {
+                            blocked = true;
+                            blockReason = `Content blocked by community filter (${filter.type})`;
+                            break;
+                        }
+                    }
+                }
+
+                if (blocked) {
+                    throw new AppError(blockReason || 'Content not allowed in this community.', 403);
+                }
+            }
+        }
 
         // Extract hashtags from caption
         const hashtags = data.caption?.match(/#\w+/g) || [];
@@ -1068,6 +1141,73 @@ router.get('/feed/stats', authenticate, async (req: AuthRequest, res, next) => {
             ),
             totalAnalyzed: recentPosts.length,
         });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// PATCH /api/v1/posts/:postId/pin - Toggle pin on a post (owner only)
+router.patch('/:postId/pin', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { postId } = req.params;
+        const post = await prisma.post.findUnique({ where: { id: postId } });
+        if (!post) throw new AppError('Post not found', 404);
+
+        const userRole = req.user?.role;
+        const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
+        if (post.userId !== req.userId && !isAdmin) {
+            throw new AppError('Not authorized', 403);
+        }
+
+        const updatedPost = await prisma.post.update({
+            where: { id: postId },
+            data: { isPinned: !post.isPinned, sortOrder: !post.isPinned ? 9999 : 0 },
+        });
+
+        // Invalidate cache
+        await cache.invalidate(`feed:${post.userId}:*`);
+
+        res.json({ id: updatedPost.id, isPinned: updatedPost.isPinned, sortOrder: updatedPost.sortOrder });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// PUT /api/v1/posts/reorder - Reorder user's own posts (set sortOrder for multiple posts)
+router.put('/reorder', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const reorderSchema = z.object({
+            posts: z.array(z.object({
+                id: z.string(),
+                sortOrder: z.number().int().min(0),
+            })).min(1).max(100),
+        });
+
+        const { posts: postOrders } = reorderSchema.parse(req.body);
+
+        // Verify all posts belong to the user
+        const postIds = postOrders.map(p => p.id);
+        const userPosts = await prisma.post.findMany({
+            where: { id: { in: postIds }, userId: req.userId!, deletedAt: null },
+            select: { id: true },
+        });
+        const ownedIds = new Set(userPosts.map(p => p.id));
+        const unauthorized = postIds.filter(id => !ownedIds.has(id));
+        if (unauthorized.length > 0) {
+            throw new AppError(`Cannot reorder posts you don't own: ${unauthorized.join(', ')}`, 403);
+        }
+
+        // Batch update sort orders
+        await prisma.$transaction(
+            postOrders.map(({ id, sortOrder }) =>
+                prisma.post.update({ where: { id }, data: { sortOrder } })
+            )
+        );
+
+        // Invalidate cache
+        await cache.invalidate(`feed:${req.userId}:*`);
+
+        res.json({ success: true, updated: postOrders.length });
     } catch (error) {
         next(error);
     }

@@ -21,6 +21,8 @@ export interface User {
     primaryCommunityId?: string | null;
     createdAt: string;
     role?: 'USER' | 'MODERATOR' | 'ADMIN' | 'SUPERADMIN';
+    isGrowthPartner?: boolean;
+    growthPartnerTier?: string;
     postsCount?: number;
     followersCount?: number;
     followingCount?: number;

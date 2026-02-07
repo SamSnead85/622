@@ -144,7 +144,7 @@ export default function CommunityDetailPage() {
         setTimeout(() => window.location.reload(), 500);
     };
 
-    const { posts, isLoading: postsLoading, hasMore, loadMore, likePost, toggleRsvp, deletePost } = usePosts({ communityId });
+    const { posts, isLoading: postsLoading, hasMore, loadMore, likePost, toggleRsvp, deletePost, pinPost } = usePosts({ communityId });
 
     // ============================================
     // FETCH COMMUNITY
@@ -556,7 +556,7 @@ export default function CommunityDetailPage() {
                                 ) : posts.length > 0 ? (
                                     <>
                                         {posts.map(post => (
-                                            <FeedPost key={post.id} post={post} likePost={likePost} toggleRsvp={toggleRsvp} deletePost={deletePost} />
+                                            <FeedPost key={post.id} post={post} likePost={likePost} toggleRsvp={toggleRsvp} deletePost={deletePost} pinPost={pinPost} />
                                         ))}
                                         {hasMore && (
                                             <div className="flex justify-center py-4">

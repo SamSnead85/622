@@ -14,41 +14,42 @@ const requireAdmin = (req: AuthRequest, res: any, next: any) => {
 const router = Router();
 
 // ============================================
-// ENROLL AS GROWTH PARTNER
+// ENROLL AS GROWTH PARTNER (invite-only)
+// User must already have a pre-created GrowthPartner
+// record with status 'invited' (created by admin).
+// This endpoint activates the invitation.
 // ============================================
 router.post('/enroll', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const userId = req.user!.id;
 
-        // Check if already enrolled
+        // Check if user has a pre-created invitation
         const existing = await prisma.growthPartner.findUnique({ where: { userId } });
-        if (existing) {
-            res.status(400).json({ error: 'You are already enrolled as a Growth Partner.' });
+
+        if (existing && existing.status === 'active') {
+            res.status(400).json({ error: 'You are already an active Growth Partner.' });
             return;
         }
 
+        if (!existing || existing.status !== 'invited') {
+            res.status(403).json({
+                error: 'The Growth Partner program is invite-only. Contact an admin to request access.',
+            });
+            return;
+        }
+
+        // Activate the invitation with provided details
         const { paymentEmail, legalName, country } = req.body;
 
-        // Generate unique referral code from username
-        const user = await prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
-        const code = `${user?.username || 'gp'}-${uuid().slice(0, 6)}`;
-
-        const partner = await prisma.growthPartner.create({
+        const partner = await prisma.growthPartner.update({
+            where: { userId },
             data: {
-                userId,
                 paymentEmail: paymentEmail || null,
                 legalName: legalName || null,
                 country: country || null,
-                referralCode: code,
                 status: 'active',
-                tier: 'affiliate',
+                enrolledAt: new Date(),
             },
-        });
-
-        // Link to user
-        await prisma.user.update({
-            where: { id: userId },
-            data: { growthPartnerId: partner.id },
         });
 
         res.status(201).json({
@@ -226,9 +227,9 @@ router.get('/leaderboard', authenticate, async (req: AuthRequest, res, next) => 
         res.json({
             leaderboard: partners.map((p, i) => ({
                 rank: i + 1,
-                username: (p.user as any)[0]?.username || 'unknown',
-                displayName: (p.user as any)[0]?.displayName || 'Unknown',
-                avatarUrl: (p.user as any)[0]?.avatarUrl,
+                username: p.user?.username || 'unknown',
+                displayName: p.user?.displayName || 'Unknown',
+                avatarUrl: p.user?.avatarUrl,
                 qualifiedReferrals: p.directReferralsQualified + p.secondLevelReferralsQualified,
                 tier: p.tier,
             })),
@@ -274,7 +275,7 @@ router.get('/admin/all', authenticate, requireAdmin, async (req: AuthRequest, re
         res.json({
             partners: partners.map(p => ({
                 ...p,
-                user: (p.user as any)[0] || null,
+                user: p.user || null,
             })),
             total,
             programTotals: {
@@ -310,7 +311,7 @@ router.get('/admin/flagged', authenticate, requireAdmin, async (req: AuthRequest
             flagged: flagged.map(r => ({
                 id: r.id,
                 partnerId: r.growthPartnerId,
-                partnerUsername: (r.growthPartner.user as any)[0]?.username,
+                partnerUsername: r.growthPartner.user?.username,
                 referredUserId: r.referredUserId,
                 level: r.referralLevel,
                 flagReason: r.flagReason,
@@ -401,6 +402,79 @@ router.patch('/admin/:id', authenticate, requireAdmin, async (req: AuthRequest, 
         });
 
         res.json({ success: true, partner: updated });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// ADMIN: INVITE A USER TO THE GROWTH PARTNER PROGRAM
+// Pre-creates a GrowthPartner record with status 'invited'.
+// The user can then activate via POST /enroll.
+// ============================================
+router.post('/admin/invite', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+    try {
+        const { userId, username, tier } = req.body;
+
+        // Resolve user by userId or username
+        let targetUserId = userId;
+        if (!targetUserId && username) {
+            const targetUser = await prisma.user.findUnique({
+                where: { username: username.toLowerCase() },
+                select: { id: true, username: true, displayName: true },
+            });
+            if (!targetUser) {
+                res.status(404).json({ error: `User @${username} not found.` });
+                return;
+            }
+            targetUserId = targetUser.id;
+        }
+
+        if (!targetUserId) {
+            res.status(400).json({ error: 'Provide userId or username.' });
+            return;
+        }
+
+        // Check if already a partner
+        const existing = await prisma.growthPartner.findUnique({ where: { userId: targetUserId } });
+        if (existing) {
+            res.status(400).json({ error: `User already has a growth partner record (status: ${existing.status}).` });
+            return;
+        }
+
+        // Generate referral code
+        const user = await prisma.user.findUnique({ where: { id: targetUserId }, select: { username: true } });
+        const code = `${user?.username || 'gp'}-${uuid().slice(0, 6)}`;
+
+        const partner = await prisma.growthPartner.create({
+            data: {
+                userId: targetUserId,
+                referralCode: code,
+                status: 'invited',
+                tier: tier || 'affiliate',
+            },
+        });
+
+        // Notify the user
+        await prisma.notification.create({
+            data: {
+                userId: targetUserId,
+                type: 'SYSTEM',
+                actorId: req.user!.id,
+                message: 'You have been invited to the Growth Partner program! Visit your Growth dashboard to activate your account and start earning.',
+            },
+        }).catch(() => {});
+
+        res.status(201).json({
+            success: true,
+            partner: {
+                id: partner.id,
+                userId: partner.userId,
+                referralCode: partner.referralCode,
+                tier: partner.tier,
+                status: partner.status,
+            },
+        });
     } catch (error) {
         next(error);
     }

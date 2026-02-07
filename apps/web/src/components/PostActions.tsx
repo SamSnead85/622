@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShareIcon, BookmarkIcon, FlagIcon, TrashIcon, PlayIcon, AlertIcon, MoreHorizontalIcon } from '@/components/icons';
+import { ShareIcon, BookmarkIcon, FlagIcon, TrashIcon, PlayIcon, AlertIcon, MoreHorizontalIcon, MapPinIcon } from '@/components/icons';
 
 // ============================================
 // POST ACTIONS MENU
@@ -12,7 +12,9 @@ import { ShareIcon, BookmarkIcon, FlagIcon, TrashIcon, PlayIcon, AlertIcon, More
 interface PostActionsProps {
     postId: string;
     isOwner: boolean;
+    isPinned?: boolean;
     onDelete: (postId: string) => Promise<{ success: boolean; error?: string }>;
+    onPin?: (postId: string) => void;
     onReport?: (postId: string) => void;
     onSave?: (postId: string) => void;
     postContent?: string;
@@ -22,7 +24,7 @@ interface PostActionsProps {
     postType?: 'IMAGE' | 'VIDEO' | 'TEXT' | 'POLL' | 'RALLY';
 }
 
-export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postContent, authorName, mediaUrl, thumbnailUrl, postType }: PostActionsProps) {
+export function PostActions({ postId, isOwner, isPinned, onDelete, onPin, onReport, onSave, postContent, authorName, mediaUrl, thumbnailUrl, postType }: PostActionsProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -164,13 +166,26 @@ export function PostActions({ postId, isOwner, onDelete, onReport, onSave, postC
                                 </button>
                             )}
 
+                            {isOwner && onPin && (
+                                <button
+                                    onClick={() => {
+                                        onPin(postId);
+                                        setIsOpen(false);
+                                    }}
+                                    className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-3 border-t border-white/10 ${isPinned ? 'text-[#00D4FF]' : 'text-white hover:bg-white/5'}`}
+                                >
+                                    <MapPinIcon size={18} />
+                                    <span>{isPinned ? 'Unpin from top' : 'Pin to top'}</span>
+                                </button>
+                            )}
+
                             {isOwner && (
                                 <button
                                     onClick={() => {
                                         setShowDeleteConfirm(true);
                                         setIsOpen(false);
                                     }}
-                                    className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 border-t border-white/10"
+                                    className={`w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 ${!onPin ? 'border-t border-white/10' : ''}`}
                                 >
                                     <TrashIcon size={18} />
                                     <span>Delete</span>

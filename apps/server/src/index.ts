@@ -45,6 +45,7 @@ import { logger } from './utils/logger.js';
 import { setupSocketHandlers } from './socket/index.js';
 import { initNotificationQueue, shutdownNotificationQueue } from './services/notifications/NotificationQueue.js';
 import { initScheduleWorker, shutdownScheduleWorker } from './services/schedule/ScheduleWorker.js';
+import { initGrowthQualificationWorker, shutdownGrowthQualificationWorker } from './services/schedule/GrowthQualificationWorker.js';
 
 // Load environment variables
 dotenv.config();
@@ -223,6 +224,9 @@ async function startServer() {
     // Initialize scheduled post worker (async — must await before accepting requests)
     await initScheduleWorker();
 
+    // Initialize growth partner qualification worker (daily job)
+    await initGrowthQualificationWorker();
+
     // Start server
     const PORT = parseInt(process.env.PORT || '5180');
     const HOST = '0.0.0.0';
@@ -244,6 +248,7 @@ process.on('SIGTERM', async () => {
     logger.info('SIGTERM received. Shutting down gracefully...');
     await shutdownNotificationQueue();
     await shutdownScheduleWorker();
+    await shutdownGrowthQualificationWorker();
     httpServer.close(() => {
         logger.info('Server closed');
         process.exit(0);

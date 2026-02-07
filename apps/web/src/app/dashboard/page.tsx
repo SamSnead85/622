@@ -28,7 +28,7 @@ import { DECOY_POSTS } from '@/lib/stealth/decoyData';
 // ============================================
 export default function DashboardPage() {
     const { user, isLoading, isAdmin, isStealth } = useAuth();
-    const { posts: realPosts, likePost, deletePost, isLoading: postsLoading, refetch, hasMore, loadMore, toggleRsvp } = usePosts();
+    const { posts: realPosts, likePost, deletePost, pinPost, isLoading: postsLoading, refetch, hasMore, loadMore, toggleRsvp } = usePosts();
 
     // Travel Shield: Use decoy posts when stealth is active
     const posts = isStealth ? (DECOY_POSTS as unknown as typeof realPosts) : realPosts;
@@ -322,6 +322,7 @@ export default function DashboardPage() {
                                             likePost={likePost}
                                             toggleRsvp={toggleRsvp}
                                             deletePost={deletePost}
+                                            pinPost={pinPost}
                                             zenMode={zenMode}
                                         />
                                     </motion.div>

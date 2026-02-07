@@ -683,6 +683,17 @@ function SettingsPageContent() {
                             <span>Invite Friends to 0G</span>
                         </button>
 
+                        {/* Growth Partner — only visible to tagged partners & admins */}
+                        {(user?.isGrowthPartner || user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') && (
+                            <Link
+                                href="/dashboard/growth-partner"
+                                className="w-full py-3 rounded-xl bg-emerald-500/10 text-emerald-400 font-medium hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <span>💰</span>
+                                <span>Growth Partner Program</span>
+                            </Link>
+                        )}
+
                         <button
                             onClick={handleExportData}
                             className="w-full py-3 rounded-xl bg-violet-500/10 text-violet-400 font-medium hover:bg-violet-500/20 transition-colors flex items-center justify-center gap-2"

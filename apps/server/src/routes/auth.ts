@@ -190,6 +190,49 @@ router.post('/signup', async (req, res, next) => {
             ip: req.ip,
         });
 
+        // === Growth Partner referral tracking (non-blocking) ===
+        // Check if the access code was created by a Growth Partner
+        if (codeRecord.createdById) {
+            (async () => {
+                try {
+                    const partnerRecord = await prisma.growthPartner.findUnique({
+                        where: { userId: codeRecord.createdById! },
+                    });
+                    if (partnerRecord) {
+                        // Create direct referral
+                        await prisma.growthReferral.create({
+                            data: {
+                                growthPartnerId: partnerRecord.id,
+                                referredUserId: user.id,
+                                referralLevel: 'direct',
+                                status: 'pending',
+                                invitedAt: new Date(),
+                            },
+                        });
+
+                        // Check for second-level: was this partner themselves referred by another partner?
+                        const parentReferral = await prisma.growthReferral.findFirst({
+                            where: { referredUserId: partnerRecord.userId, status: 'qualified' },
+                        });
+                        if (parentReferral) {
+                            await prisma.growthReferral.create({
+                                data: {
+                                    growthPartnerId: parentReferral.growthPartnerId,
+                                    referredUserId: user.id,
+                                    referralLevel: 'second_level',
+                                    parentReferralId: parentReferral.id,
+                                    status: 'pending',
+                                    invitedAt: new Date(),
+                                },
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error('[Auth] Growth referral tracking error:', err);
+                }
+            })();
+        }
+
         // === Post-signup automation (non-blocking) ===
         (async () => {
             try {
@@ -389,6 +432,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
                     primaryCommunityId: true,
                     role: true, // Include role for admin detection
                     createdAt: true,
+                    growthPartner: { select: { id: true, status: true, tier: true } },
                     _count: {
                         select: {
                             followers: true,
@@ -407,9 +451,16 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
             throw new AppError('User not found', 404);
         }
 
+        // Growth partner: 'active' or 'invited' both grant access to the module
+        const gpStatus = user.growthPartner?.status;
+        const isGrowthPartner = gpStatus === 'active' || gpStatus === 'invited';
+
         res.json({
             user: {
                 ...user,
+                growthPartner: undefined, // Don't leak raw relation data
+                isGrowthPartner,
+                growthPartnerTier: isGrowthPartner ? user.growthPartner!.tier : undefined,
                 followersCount: user._count.followers,
                 followingCount: user._count.following,
                 postsCount: user._count.posts,
@@ -1074,6 +1125,48 @@ router.post('/provisional-signup', async (req, res, next) => {
                     data: { followerId: inviterId, followingId: user.id },
                 }).catch(() => {});
             }
+        }
+
+        // === Growth Partner referral tracking (non-blocking) ===
+        if (inviterId) {
+            (async () => {
+                try {
+                    const partnerRecord = await prisma.growthPartner.findUnique({
+                        where: { userId: inviterId },
+                    });
+                    if (partnerRecord) {
+                        // Create direct referral
+                        await prisma.growthReferral.create({
+                            data: {
+                                growthPartnerId: partnerRecord.id,
+                                referredUserId: user.id,
+                                referralLevel: 'direct',
+                                status: 'pending',
+                                invitedAt: new Date(),
+                            },
+                        });
+
+                        // Check for second-level referral
+                        const parentReferral = await prisma.growthReferral.findFirst({
+                            where: { referredUserId: partnerRecord.userId, status: 'qualified' },
+                        });
+                        if (parentReferral) {
+                            await prisma.growthReferral.create({
+                                data: {
+                                    growthPartnerId: parentReferral.growthPartnerId,
+                                    referredUserId: user.id,
+                                    referralLevel: 'second_level',
+                                    parentReferralId: parentReferral.id,
+                                    status: 'pending',
+                                    invitedAt: new Date(),
+                                },
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error('[Auth] Provisional growth referral tracking error:', err);
+                }
+            })();
         }
 
         // Generate a short-lived session token (7 days for provisional)

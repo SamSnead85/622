@@ -138,8 +138,35 @@ export function RightSidebar() {
                 )}
             </div>
 
+            {/* Discover Links */}
+            <div className="mt-6 bg-white/[0.03] rounded-2xl border border-white/[0.06] p-4">
+                <h3 className="font-bold text-white text-sm mb-3">Discover</h3>
+                <div className="space-y-1">
+                    <Link
+                        href="/creators"
+                        className="flex items-center gap-3 px-2 py-2.5 rounded-xl text-white/60 hover:text-white hover:bg-white/[0.04] transition-all"
+                    >
+                        <span className="text-base">🎨</span>
+                        <div>
+                            <p className="text-sm font-medium">Creators</p>
+                            <p className="text-[11px] text-white/40">Ambassadors & content creators</p>
+                        </div>
+                    </Link>
+                    <Link
+                        href="/needs"
+                        className="flex items-center gap-3 px-2 py-2.5 rounded-xl text-white/60 hover:text-white hover:bg-white/[0.04] transition-all"
+                    >
+                        <span className="text-base">🤝</span>
+                        <div>
+                            <p className="text-sm font-medium">Needs Board</p>
+                            <p className="text-[11px] text-white/40">Community requests & help</p>
+                        </div>
+                    </Link>
+                </div>
+            </div>
+
             {/* Footer Links */}
-            <div className="mt-8 flex flex-wrap gap-x-4 gap-y-2 text-xs text-white/30 px-2">
+            <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-xs text-white/30 px-2">
                 <Link href="/about" className="hover:text-white/50">About</Link>
                 <Link href="/privacy" className="hover:text-white/50">Privacy</Link>
                 <Link href="/terms" className="hover:text-white/50">Terms</Link>

@@ -516,6 +516,36 @@ function InvitePageContent() {
                         Create a Tribe for Your Community
                     </Link>
                 </motion.div>
+
+                {/* Growth Partner Program CTA — only visible to tagged partners & admins */}
+                {(user?.isGrowthPartner || user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') && (
+                    <motion.div
+                        className="mt-6"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                    >
+                        <Link
+                            href="/dashboard/growth-partner"
+                            className="block w-full p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-[#00D4FF]/10 border border-emerald-500/20 hover:border-emerald-500/40 active:scale-[0.98] transition-all"
+                        >
+                            <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-lg">💰</span>
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="font-semibold text-white text-sm">Your Growth Dashboard</h3>
+                                    <p className="text-white/50 text-xs mt-1 leading-relaxed">
+                                        Track referrals, earnings, and your leaderboard rank.
+                                    </p>
+                                    <span className="inline-flex items-center gap-1 mt-2 text-emerald-400 text-xs font-medium">
+                                        View dashboard &rarr;
+                                    </span>
+                                </div>
+                            </div>
+                        </Link>
+                    </motion.div>
+                )}
             </main>
 
             {/* Bottom Navigation */}

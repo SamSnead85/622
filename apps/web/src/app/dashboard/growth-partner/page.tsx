@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { API_URL } from '@/lib/api';
@@ -68,7 +69,8 @@ interface LeaderboardEntry {
 // MAIN PAGE
 // ============================================
 export default function GrowthPartnerPage() {
-    const { user } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState<'dashboard' | 'referrals' | 'leaderboard' | 'settings'>('dashboard');
     const [loading, setLoading] = useState(true);
     const [isEnrolled, setIsEnrolled] = useState(false);
@@ -90,7 +92,15 @@ export default function GrowthPartnerPage() {
     // Copy state
     const [copied, setCopied] = useState(false);
 
+    // Access gate: only growth partners and admins can view this page
+    const hasAccess = !!(
+        user?.isGrowthPartner ||
+        user?.role === 'ADMIN' ||
+        user?.role === 'SUPERADMIN'
+    );
+
     const fetchDashboard = useCallback(async () => {
+        if (!hasAccess) return;
         try {
             const res = await fetch(`${API}/api/v1/growth/me`, {
                 headers: { Authorization: `Bearer ${getToken()}` },
@@ -112,9 +122,10 @@ export default function GrowthPartnerPage() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [hasAccess]);
 
     const fetchLeaderboard = useCallback(async () => {
+        if (!hasAccess) return;
         try {
             const res = await fetch(`${API}/api/v1/growth/leaderboard`, {
                 headers: { Authorization: `Bearer ${getToken()}` },
@@ -125,12 +136,38 @@ export default function GrowthPartnerPage() {
                 setMyRank(data.myRank);
             }
         } catch { /* ignore */ }
-    }, []);
+    }, [hasAccess]);
+
+    useEffect(() => {
+        if (!authLoading && user && !hasAccess) {
+            router.replace('/dashboard');
+        }
+    }, [authLoading, user, hasAccess, router]);
 
     useEffect(() => {
         fetchDashboard();
         fetchLeaderboard();
     }, [fetchDashboard, fetchLeaderboard]);
+
+    // Show access-denied while redirecting
+    if (!authLoading && user && !hasAccess) {
+        return (
+            <div className="min-h-screen bg-[#0a0a0f] text-white">
+                <NavigationSidebar />
+                <div className="lg:ml-20 xl:ml-64 flex items-center justify-center min-h-screen">
+                    <div className="text-center max-w-md mx-auto px-6">
+                        <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                            <span className="text-2xl">🔒</span>
+                        </div>
+                        <h2 className="text-xl font-bold mb-2">Invite-Only Program</h2>
+                        <p className="text-white/50 text-sm leading-relaxed">
+                            The Growth Partner program is available by invitation only for select content creators and community leaders.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     const handleEnroll = async () => {
         setEnrolling(true);

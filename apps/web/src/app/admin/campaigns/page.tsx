@@ -4,8 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
-
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { API_URL as API } from '@/lib/api';
 
 interface Campaign {
     id: string;

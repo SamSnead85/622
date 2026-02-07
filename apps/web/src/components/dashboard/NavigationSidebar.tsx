@@ -13,6 +13,8 @@ import {
     MessageIcon,
     PlusIcon,
     MegaphoneIcon,
+    TrendingIcon,
+    ShieldIcon,
 } from '@/components/icons';
 import { ZeroGLogo } from './ZeroGLogo';
 import { isShieldConfigured, activateStealth } from '@/lib/stealth/engine';
@@ -105,6 +107,13 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
         }
     }, [router]);
 
+    // Growth Partner nav is invite-only — only visible to tagged partners and admins
+    const isGrowthPartnerOrAdmin = !!(
+        user?.isGrowthPartner ||
+        user?.role === 'ADMIN' ||
+        user?.role === 'SUPERADMIN'
+    );
+
     // Desktop sidebar shows all items
     const navItems = [
         { id: 'feed', Icon: HomeIcon, label: 'Feed', href: '/dashboard' },
@@ -113,8 +122,10 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
         { id: 'communities', Icon: UsersIcon, label: 'Communities', href: '/communities' },
         { id: 'bulletin', Icon: MegaphoneIcon, label: 'Bulletin', href: '/bulletin' },
         { id: 'messages', Icon: MessageIcon, label: 'Messages', href: '/messages', hasNotification: true },
-        { id: 'growth', Icon: SendIcon, label: 'Growth', href: '/dashboard/growth-partner' },
-        { id: 'security', Icon: HomeIcon, label: 'Security', href: '/security' },
+        ...(isGrowthPartnerOrAdmin
+            ? [{ id: 'growth', Icon: TrendingIcon, label: 'Growth', href: '/dashboard/growth-partner' }]
+            : []),
+        { id: 'security', Icon: ShieldIcon, label: 'Security', href: '/security' },
         { id: 'invite', Icon: SendIcon, label: 'Invite', href: '/invite', highlight: true },
     ];
 
@@ -212,6 +223,16 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
                     <PlusIcon size={18} />
                     <span className="hidden xl:block">Create Post</span>
                 </button>
+
+                {/* Quick-access Emergency / Security button */}
+                <Link
+                    href="/security#emergency"
+                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group"
+                    title="Emergency lockdown"
+                >
+                    <ShieldIcon size={18} />
+                    <span className="hidden xl:block text-xs font-medium group-hover:text-red-400">Emergency</span>
+                </Link>
 
                 {/* Profile -- Triple-tap for Travel Shield */}
                 <div
