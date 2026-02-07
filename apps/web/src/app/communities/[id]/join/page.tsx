@@ -455,9 +455,16 @@ export default function CommunityJoinPage() {
                                                 }
                                             </p>
 
-                                            {/* Google Sign-in — only for full platform */}
+                                            {/* Google Sign-in — redirect to login with return path */}
                                             {joinMode === 'full' && (
-                                                <button className="group w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl bg-white hover:bg-white/95 transition-all text-[#1f1f1f] font-medium shadow-sm relative overflow-hidden">
+                                                <button
+                                                    onClick={() => {
+                                                        // Store pending community for post-login auto-join
+                                                        localStorage.setItem('0g_pending_community', slug);
+                                                        router.push(`/login?redirect=${encodeURIComponent(`/communities/${slug}/join`)}`);
+                                                    }}
+                                                    className="group w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl bg-white hover:bg-white/95 transition-all text-[#1f1f1f] font-medium shadow-sm relative overflow-hidden"
+                                                >
                                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
                                                     <svg className="w-4 h-4 relative z-10" viewBox="0 0 24 24">
                                                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

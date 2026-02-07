@@ -101,18 +101,11 @@ function GoLiveContent() {
     // Camera init (browser mode) -- keep running through setup AND live phases
     const streamRef = useRef<MediaStream | null>(null);
 
+    // Start camera once, keep it alive across phase changes
     useEffect(() => {
         if (mode !== 'browser') return;
-        // Only start camera during setup and live, stop on ended
         if (phase !== 'setup' && phase !== 'live') return;
-
-        // If stream already exists and is active, just reattach to video element
-        if (streamRef.current && streamRef.current.active) {
-            if (videoRef.current && !videoRef.current.srcObject) {
-                videoRef.current.srcObject = streamRef.current;
-            }
-            return;
-        }
+        if (streamRef.current && streamRef.current.active) return; // Already running
 
         async function startCamera() {
             try {
@@ -123,20 +116,27 @@ function GoLiveContent() {
                 streamRef.current = stream;
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
-                    setHasCamera(true);
                 }
+                setHasCamera(true);
             } catch {
                 showError('Camera access denied');
             }
         }
         startCamera();
-
-        // Only stop the camera when unmounting entirely or switching modes
-        return () => {
-            // Don't stop camera when transitioning from setup -> live
-            // Only stop if we're leaving browser mode or component unmounts
-        };
     }, [mode, phase, showError]);
+
+    // Re-attach stream to video element when phase changes (setup -> live swaps the <video> element)
+    useEffect(() => {
+        if (mode !== 'browser') return;
+        if (!streamRef.current || !streamRef.current.active) return;
+        // Small delay to let React render the new video element
+        const timer = setTimeout(() => {
+            if (videoRef.current && videoRef.current.srcObject !== streamRef.current) {
+                videoRef.current.srcObject = streamRef.current;
+            }
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [phase, mode]);
 
     // Stop camera when phase becomes 'ended' or component unmounts
     useEffect(() => {

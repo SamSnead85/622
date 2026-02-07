@@ -30,6 +30,7 @@ const NAV_ITEMS: NavItem[] = [
     { id: 'home', label: 'Home', href: '/dashboard', Icon: HomeIcon },
     { id: 'explore', label: 'Explore', href: '/explore', Icon: SearchIcon },
     { id: 'communities', label: 'Tribes', href: '/communities', Icon: UsersIcon },
+    { id: 'bulletin', label: 'Bulletin', href: '/bulletin', Icon: MegaphoneIcon },
     { id: 'profile', label: 'Profile', href: '/profile', Icon: UserIcon },
 ];
 

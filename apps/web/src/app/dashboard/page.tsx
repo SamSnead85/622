@@ -232,17 +232,56 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* ===== EMPTY STATE: Only when zero posts ===== */}
+                    {/* ===== EMPTY STATE: Welcome cards when zero posts ===== */}
                     {posts.length === 0 && !postsLoading && (
-                        <div className="py-12 text-center">
-                            <p className="text-white/40 text-sm mb-3">No posts yet — be the first</p>
-                            <Link
-                                href="/create"
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 text-white font-medium text-sm"
-                            >
-                                <PlusIcon size={16} />
-                                Create Post
-                            </Link>
+                        <div className="space-y-4 py-4">
+                            {/* Welcome card */}
+                            <div className="bg-gradient-to-br from-[#00D4FF]/10 via-[#8B5CF6]/5 to-transparent rounded-2xl border border-[#00D4FF]/20 p-6 text-center">
+                                <div className="text-4xl mb-3">🚀</div>
+                                <h3 className="text-xl font-bold text-white mb-2">Welcome to 0G</h3>
+                                <p className="text-white/50 text-sm mb-5 max-w-md mx-auto">
+                                    Your feed is empty because you&apos;re early! Create your first post, explore communities, or invite friends to get started.
+                                </p>
+                                <div className="flex flex-wrap justify-center gap-3">
+                                    <Link
+                                        href="/create"
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold text-sm hover:opacity-90 transition-opacity"
+                                    >
+                                        <PlusIcon size={16} />
+                                        Create Post
+                                    </Link>
+                                    <Link
+                                        href="/communities"
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 text-white font-medium text-sm hover:bg-white/15 transition-colors"
+                                    >
+                                        Join Communities
+                                    </Link>
+                                </div>
+                            </div>
+
+                            {/* Quick actions */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <Link href="/explore" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
+                                    <div className="text-2xl mb-2">🔍</div>
+                                    <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Explore</h4>
+                                    <p className="text-xs text-white/40 mt-0.5">Discover people &amp; content</p>
+                                </Link>
+                                <Link href="/bulletin" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
+                                    <div className="text-2xl mb-2">📋</div>
+                                    <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Bulletin Board</h4>
+                                    <p className="text-xs text-white/40 mt-0.5">Events, jobs &amp; more</p>
+                                </Link>
+                                <Link href="/communities/create" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
+                                    <div className="text-2xl mb-2">👥</div>
+                                    <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Create a Group</h4>
+                                    <p className="text-xs text-white/40 mt-0.5">Bring your people here</p>
+                                </Link>
+                                <Link href="/invite" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
+                                    <div className="text-2xl mb-2">💌</div>
+                                    <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Invite Friends</h4>
+                                    <p className="text-xs text-white/40 mt-0.5">Share invite links</p>
+                                </Link>
+                            </div>
                         </div>
                     )}
 

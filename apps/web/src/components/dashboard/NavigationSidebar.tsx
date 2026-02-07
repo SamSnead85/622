@@ -12,6 +12,7 @@ import {
     SendIcon,
     MessageIcon,
     PlusIcon,
+    MegaphoneIcon,
 } from '@/components/icons';
 import { ZeroGLogo } from './ZeroGLogo';
 import { isShieldConfigured, activateStealth } from '@/lib/stealth/engine';
@@ -81,8 +82,9 @@ export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeCh
         { id: 'explore', Icon: SearchIcon, label: 'Explore', href: '/explore' },
         { id: 'live', Icon: VideoIcon, label: 'Live', href: '/campfire' },
         { id: 'communities', Icon: UsersIcon, label: 'Communities', href: '/communities' },
-        { id: 'invite', Icon: SendIcon, label: 'Invite', href: '/invite', highlight: true },
+        { id: 'bulletin', Icon: MegaphoneIcon, label: 'Bulletin', href: '/bulletin' },
         { id: 'messages', Icon: MessageIcon, label: 'Messages', href: '/messages', hasNotification: true },
+        { id: 'invite', Icon: SendIcon, label: 'Invite', href: '/invite', highlight: true },
     ];
 
     // Mobile bottom bar: focused on 5 core actions

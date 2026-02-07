@@ -35,10 +35,12 @@ export default function TopicSelector({
     const fetchTopics = async () => {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/topics`);
+            if (!response.ok) throw new Error('Failed to fetch');
             const data = await response.json();
-            setTopics(data.topics);
+            setTopics(Array.isArray(data.topics) ? data.topics : []);
         } catch (error) {
             console.error('Failed to fetch topics:', error);
+            setTopics([]);
         } finally {
             setLoading(false);
         }
