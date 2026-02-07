@@ -224,29 +224,29 @@ function ExplorePageContent() {
 
             <main className="relative z-10 lg:ml-20 xl:ml-64 pb-24 lg:pb-8 transition-all duration-300">
                 {/* Header */}
-                <header className="sticky top-0 z-30 px-4 lg:px-6 py-4 bg-black/80 backdrop-blur-xl border-b border-white/5 supports-[backdrop-filter]:bg-black/60">
+                <header className="sticky top-0 z-30 px-4 lg:px-6 py-2.5 lg:py-4 bg-black/80 backdrop-blur-xl border-b border-white/5 supports-[backdrop-filter]:bg-black/60">
                     <div className="max-w-6xl mx-auto">
                         <div className="flex items-center gap-4">
                             {/* Search */}
-                            <div className="flex-1 flex items-center gap-3 bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-3 focus-within:border-[#00D4FF]/30 focus-within:shadow-[0_0_20px_rgba(0,212,255,0.08)] transition-all duration-300 group">
+                            <div className="flex-1 flex items-center gap-3 bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-2.5 lg:py-3 focus-within:border-[#00D4FF]/30 focus-within:shadow-[0_0_20px_rgba(0,212,255,0.08)] transition-all duration-300 group">
                                 <SearchIcon className="w-5 h-5 text-white/40 group-focus-within:text-[#00D4FF] transition-colors" />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Search people, tags, and vibes..."
-                                    className="flex-1 bg-transparent text-white placeholder:text-white/30 focus:outline-none font-medium"
+                                    className="flex-1 bg-transparent text-white placeholder:text-white/30 focus:outline-none font-medium text-sm lg:text-base"
                                 />
                             </div>
                         </div>
 
                         {/* Categories */}
-                        <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide py-1">
+                        <div className="flex gap-2 mt-2.5 lg:mt-4 overflow-x-auto scrollbar-hide py-1">
                             {categories.map((cat) => (
                                 <button
                                     key={cat.id}
                                     onClick={() => setActiveCategory(cat.id)}
-                                    className={`rounded-full px-4 py-1.5 text-sm transition-all ${activeCategory === cat.id
+                                    className={`rounded-full px-3.5 lg:px-4 py-1 lg:py-1.5 text-xs lg:text-sm transition-all ${activeCategory === cat.id
                                         ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/20 font-medium'
                                         : 'bg-white/[0.04] text-white/50 border border-white/[0.06] hover:text-white/70 hover:bg-white/[0.06] duration-200'
                                         }`}
@@ -258,7 +258,7 @@ function ExplorePageContent() {
                     </div>
                 </header>
 
-                <div className="max-w-6xl mx-auto px-4 lg:px-6 py-8">
+                <div className="max-w-6xl mx-auto px-4 lg:px-6 py-4 lg:py-8">
                     {loading ? (
                         <div className="space-y-8">
                             {/* People grid skeleton */}

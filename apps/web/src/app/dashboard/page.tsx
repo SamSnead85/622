@@ -1,54 +1,25 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
-import { ReactionSpectrum, IntentionBadge, REACTION_SPECTRUM } from '@/components/ReactionSpectrum';
-import { DataOwnershipPanel, PrivacyFirstBadge, LiveLatencyIndicator } from '@/components/PlatformDifferentiators';
 import { API_URL } from '@/lib/api';
-import { PostActions } from '@/components/PostActions';
 import { FeedPost, PostSkeleton } from '@/components/FeedPost';
 import { InlineComposer } from '@/components/InlineComposer';
-import { TheCompass, ViewMode, ScopeMode } from '@/components/TheCompass';
 import {
-    HomeIcon,
-    SearchIcon,
-    VideoIcon,
-    UsersIcon,
-    SendIcon,
     MessageIcon,
     PlusIcon,
     BellIcon,
     SettingsIcon,
-    CameraIcon,
-    GlobeIcon,
-    LockIcon,
-    UnlockIcon,
-
-    ShieldIcon,
-    HeartIcon,
-    ShareIcon,
-    MapPinIcon,
-    ZapIcon,
-    WaveIcon
 } from '@/components/icons';
-import React from 'react';
-
-// Dashboard sub-components
-import { ZeroGLogo } from '@/components/dashboard/ZeroGLogo';
-import { isYouTubeUrl, getYouTubeEmbedUrl, YouTubeEmbed, AutoPlayVideo } from '@/components/dashboard/VideoPlayers';
-import { DoubleTapHeart } from '@/components/dashboard/DoubleTapHeart';
 import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
-import { NewMembersBanner } from '@/components/dashboard/NewMembersBanner';
-import { StoriesRow } from '@/components/dashboard/StoriesRow';
 import { EnhancedStoriesBar } from '@/components/stories/EnhancedStoriesBar';
 import { PeopleToFollow } from '@/components/dashboard/PeopleToFollow';
-import { FEATURED_LOCATIONS, FeaturedLocationCard } from '@/components/dashboard/FeaturedLocations';
 import { TrendingSection } from '@/components/feed/TrendingSection';
-import { FeedModeToggle, useFeedMode } from '@/components/feed/FeedModeToggle';
+import { useFeedMode } from '@/components/feed/FeedModeToggle';
 import { FullscreenVideoFeed } from '@/components/feed/FullscreenVideoFeed';
 import { usePullToRefresh } from '@/hooks/useInfiniteScroll';
 import { DECOY_POSTS } from '@/lib/stealth/decoyData';
@@ -65,9 +36,7 @@ export default function DashboardPage() {
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
     const loadMoreRef = useRef<HTMLDivElement>(null);
-    const [viewMode, setViewMode] = useState<ViewMode>('standard');
-    const [scopeMode, setScopeMode] = useState<ScopeMode>('orbit');
-    const [zenMode, setZenMode] = useState(false);
+    const [zenMode] = useState(false);
     const [feedMode, setFeedMode] = useFeedMode();
 
     const { pullDistance, isRefreshing, containerRef: pullRef } = usePullToRefresh({
@@ -243,14 +212,14 @@ export default function DashboardPage() {
                         </div>
                     </header>
 
-                    {/* ===== STORIES: Slim, directly under header ===== */}
-                    <div className="pt-2 lg:pt-0">
+                    {/* ===== STORIES: Directly under header, no extra padding ===== */}
+                    <div className="pt-1 lg:pt-0">
                         <EnhancedStoriesBar />
                     </div>
 
-                    {/* ===== INLINE COMPOSER: Compact tap-to-expand ===== */}
-                    <div className="my-3">
-                        <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl hover:border-white/[0.12] focus-within:border-[#00D4FF]/30 transition-all duration-300 p-3 lg:p-4">
+                    {/* ===== INLINE COMPOSER: Desktop only — mobile uses bottom nav Create button ===== */}
+                    <div className="hidden lg:block my-3">
+                        <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl hover:border-white/[0.12] focus-within:border-[#00D4FF]/30 transition-all duration-300 p-4">
                             <InlineComposer
                                 user={user}
                                 onPostSuccess={() => { refetch(); }}
@@ -258,22 +227,18 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* ===== FIRST-TIME EMPTY STATE (only when zero posts) ===== */}
+                    {/* ===== EMPTY STATE: Only when zero posts ===== */}
                     {posts.length === 0 && !postsLoading && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="mb-4 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-center"
-                        >
-                            <p className="text-white/50 text-sm mb-3">Be the first to share something with the community</p>
+                        <div className="py-12 text-center">
+                            <p className="text-white/40 text-sm mb-3">No posts yet — be the first</p>
                             <Link
                                 href="/create"
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold text-sm"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 text-white font-medium text-sm"
                             >
                                 <PlusIcon size={16} />
                                 Create Post
                             </Link>
-                        </motion.div>
+                        </div>
                     )}
 
                     {/* Fullscreen Video Feed Mode */}

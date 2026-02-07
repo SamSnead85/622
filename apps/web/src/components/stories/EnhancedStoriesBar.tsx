@@ -65,8 +65,8 @@ export function EnhancedStoriesBar() {
 
     return (
         <div className="relative">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-3 px-1">
+            {/* Header — desktop only, mobile goes straight to avatars */}
+            <div className="hidden lg:flex items-center justify-between mb-3 px-1">
                 <h3 className="text-white font-semibold text-sm flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#00D4FF] animate-pulse" />
                     Stories

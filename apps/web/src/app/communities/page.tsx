@@ -238,36 +238,35 @@ export default function CommunityHub() {
                 {/* 1. The Pulse (News Ticker) */}
                 <PulseTicker news={news} />
 
-                <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-12">
+                <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 lg:py-8 space-y-6 lg:space-y-12">
 
-                    {/* 2. Hero Header */}
-                    <div className="flex flex-col md:flex-row items-end justify-between gap-6 border-b border-white/10 pb-8">
-                        <div>
-                            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 tracking-tight">The Nexus</h1>
-                            <p className="text-lg text-white/50 max-w-xl">
+                    {/* 2. Hero Header — compact on mobile */}
+                    <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4 lg:pb-8">
+                        <div className="min-w-0">
+                            <h1 className="text-2xl lg:text-5xl font-bold text-white tracking-tight">The Nexus</h1>
+                            <p className="text-sm lg:text-lg text-white/50 max-w-xl hidden lg:block">
                                 The central connection point. Discover tribes, find opportunities, and connect with the sovereign network.
                             </p>
                         </div>
 
-                        <div className="flex gap-3">
-                            <Link href="/communities/create">
-                                <button className="bg-[#00D4FF] text-black font-semibold text-sm px-5 py-2 rounded-xl hover:shadow-[0_0_16px_rgba(0,212,255,0.3)] transition-all duration-200 flex items-center gap-2">
-                                    {Icons.plus}
-                                    Establish Tribe
-                                </button>
-                            </Link>
-                        </div>
+                        <Link href="/communities/create" className="flex-shrink-0">
+                            <button className="bg-[#00D4FF] text-black font-semibold text-xs lg:text-sm px-3 lg:px-5 py-2 rounded-xl hover:shadow-[0_0_16px_rgba(0,212,255,0.3)] transition-all duration-200 flex items-center gap-1.5 lg:gap-2">
+                                {Icons.plus}
+                                <span className="hidden sm:inline">Establish Tribe</span>
+                                <span className="sm:hidden">New</span>
+                            </button>
+                        </Link>
                     </div>
 
                     {/* 3. The Exchange (Bulletin Board) */}
                     <section>
-                        <div className="flex items-center gap-2 mb-6">
+                        <div className="flex items-center gap-2 mb-3 lg:mb-6">
                             <span className="text-[#00D4FF]">{Icons.megaphone}</span>
-                            <h2 className="text-xl font-bold uppercase tracking-widest text-white/80">Community Bulletin</h2>
+                            <h2 className="text-base lg:text-xl font-bold uppercase tracking-widest text-white/80">Bulletin</h2>
                         </div>
                         {bulletins.length === 0 ? (
-                            <div className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden p-12 text-center">
-                                <p className="text-white/50">No bulletins yet. Check back soon for community posts, events, and announcements.</p>
+                            <div className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden p-6 lg:p-12 text-center">
+                                <p className="text-white/50 text-sm lg:text-base">No bulletins yet. Check back soon.</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -280,12 +279,12 @@ export default function CommunityHub() {
 
                     {/* 4. My Sovereign Circles (User's Tribes) */}
                     <section>
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center justify-between mb-3 lg:mb-6">
                             <div className="flex items-center gap-2">
                                 <span className="text-[#8B5CF6]">{Icons.users}</span>
-                                <h2 className="text-xl font-bold uppercase tracking-widest text-white/80">Your Sovereign Circles</h2>
+                                <h2 className="text-base lg:text-xl font-bold uppercase tracking-widest text-white/80">Your Circles</h2>
                             </div>
-                            <span className="text-sm text-white/40">{communities.length} Active Memberships</span>
+                            <span className="text-xs lg:text-sm text-white/40">{communities.length} Active</span>
                         </div>
 
                         {isLoading ? (
