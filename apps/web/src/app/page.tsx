@@ -5,7 +5,7 @@ import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'fra
 import Link from 'next/link';
 import Image from 'next/image';
 import { GlobeIcon, VoteIcon, HeartIcon, VideoIcon, UnlockIcon, ShieldIcon, CpuIcon } from '@/components/icons';
-import { ImpactSection } from '@/components/ImpactHub';
+// ImpactHub moved to dedicated /impact page — removed from landing for cleaner design
 
 // ============================================
 // ULTRA-PREMIUM DESIGN SYSTEM
@@ -1604,7 +1604,6 @@ export default function HomePage() {
             <DeveloperPlatformSection />
             <ManifestoSection />
             <OriginSection />
-            <ImpactSection />
             <PressSection />
             <CTASection />
             <Footer />
