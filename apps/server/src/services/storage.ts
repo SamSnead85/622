@@ -14,8 +14,20 @@ import path from 'path';
 
 const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local'; // local | supabase | s3 | r2
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
-const SERVER_URL = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5180}`;
 const BUCKET = process.env.STORAGE_BUCKET || 'og-media';
+
+// SERVER_URL is required in production for generating file URLs
+const SERVER_URL = (() => {
+    const url = process.env.SERVER_URL;
+    if (url) return url;
+    if (process.env.NODE_ENV === 'production' && STORAGE_PROVIDER === 'local') {
+        throw new Error(
+            'FATAL: SERVER_URL must be set in production when using local storage. ' +
+            'File URLs will be broken without it. Example: https://your-server.up.railway.app'
+        );
+    }
+    return `http://localhost:${process.env.PORT || 5180}`;
+})();
 
 // ============================================
 // SUPABASE CLIENT (for native SDK uploads)

@@ -16,22 +16,31 @@ const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
 const SALT_LENGTH = 32;
 
-// Get encryption key from environment or generate a warning
+// Get encryption key from environment — NEVER fall back to random bytes
 function getEncryptionKey(): Buffer {
     const key = process.env.ENCRYPTION_KEY;
 
     if (!key) {
-        console.warn('⚠️  WARNING: ENCRYPTION_KEY not set. Using temporary key. Set this in production!');
-        return crypto.randomBytes(32);
+        // In production: hard fail. Data encrypted with a random key is permanently lost on restart.
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error(
+                'FATAL: ENCRYPTION_KEY is not set. Cannot start in production without a stable encryption key. ' +
+                'Generate one with: openssl rand -hex 32'
+            );
+        }
+        // In development: use a deterministic dev-only key so data survives restarts
+        console.warn('⚠️  ENCRYPTION_KEY not set — using deterministic dev key. NOT SAFE FOR PRODUCTION.');
+        return crypto.scryptSync('zerog-dev-key-not-for-production', 'og-dev-salt', 32);
     }
 
-    // If key is hex-encoded, decode it
+    // If key is hex-encoded (64 hex chars = 32 bytes), decode it directly
     if (/^[0-9a-fA-F]{64}$/.test(key)) {
         return Buffer.from(key, 'hex');
     }
 
-    // Otherwise, derive a key from the passphrase
-    return crypto.scryptSync(key, 'og-salt', 32);
+    // Otherwise, derive a 32-byte key from the passphrase using scrypt
+    // Use a fixed application-specific salt (not random, so derivation is deterministic)
+    return crypto.scryptSync(key, 'og-encryption-key-derivation', 32);
 }
 
 const ENCRYPTION_KEY = getEncryptionKey();

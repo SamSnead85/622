@@ -50,6 +50,31 @@ import { initGrowthQualificationWorker, shutdownGrowthQualificationWorker } from
 // Load environment variables
 dotenv.config();
 
+// ============================================
+// STARTUP VALIDATION — fail fast on misconfiguration
+// ============================================
+if (process.env.NODE_ENV === 'production') {
+    const requiredVars = ['DATABASE_URL', 'JWT_SECRET', 'CORS_ORIGIN'];
+    const missing = requiredVars.filter(v => !process.env[v]);
+    if (missing.length > 0) {
+        logger.error(`FATAL: Missing required environment variables: ${missing.join(', ')}`);
+        process.exit(1);
+    }
+
+    // CORS wildcard is never acceptable in production
+    if (process.env.CORS_ORIGIN === '*') {
+        logger.error('FATAL: CORS_ORIGIN cannot be "*" in production. Set it to your actual domain(s).');
+        process.exit(1);
+    }
+
+    // JWT secret must be strong (at least 32 chars, not a placeholder)
+    const jwt = process.env.JWT_SECRET!;
+    if (jwt.length < 32 || jwt.includes('change-me') || jwt.includes('your-') || jwt.includes('secret-here')) {
+        logger.error('FATAL: JWT_SECRET is too weak or appears to be a placeholder. Generate with: openssl rand -base64 32');
+        process.exit(1);
+    }
+}
+
 const app: Application = express();
 
 // Initialize Sentry for error monitoring

@@ -83,11 +83,22 @@ export const API_ENDPOINTS = {
     health: `${API_URL}/health`,
 };
 
+// ============================================
+// API RESPONSE WRAPPER
+// Clean separation between response metadata and payload data
+// ============================================
+export interface ApiResponse<T = any> {
+    ok: boolean;
+    status: number;
+    data: T;
+    json(): Promise<T>; // Backward-compat shim for callers that still call .json()
+}
+
 // API fetch helper with auth
 export const apiFetch = async (
     url: string,
     options: RequestInit = {}
-): Promise<any> => {
+): Promise<ApiResponse> => {
     const token = typeof window !== 'undefined'
         ? localStorage.getItem('0g_token')
         : null;
@@ -107,29 +118,40 @@ export const apiFetch = async (
         credentials: 'include',
     });
 
-    // Auto-parse JSON responses; return an object that also has .ok, .status, .json() for backward compat
     const contentType = res.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
         const data = await res.json();
-        // Attach response metadata and a no-op .json() for callers that still call .json()
-        if (data && typeof data === 'object' && !Array.isArray(data)) {
-            data.ok = res.ok;
-            data.status = res.status;
-            data.json = () => Promise.resolve(data);
-        }
+
         if (!res.ok) {
             const err = new Error(data?.error || `API error: ${res.status}`);
             (err as any).status = res.status;
             (err as any).data = data;
             throw err;
         }
-        return data;
+
+        // Return a clean wrapper — never mutate the parsed data object
+        const wrapper: ApiResponse = {
+            ok: res.ok,
+            status: res.status,
+            data,
+            json: () => Promise.resolve(data),
+        };
+
+        // Spread data properties onto wrapper for backward compatibility
+        // (many callers access response.posts, response.users, etc. directly)
+        return Object.assign(wrapper, data);
     }
 
     if (!res.ok) {
         throw new Error(`API error: ${res.status}`);
     }
-    return res;
+
+    return {
+        ok: res.ok,
+        status: res.status,
+        data: res,
+        json: () => res.json(),
+    } as ApiResponse;
 };
 
 // Typed API helpers

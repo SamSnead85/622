@@ -64,7 +64,7 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response, n
             });
 
             return res.json({
-                url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/settings/billing?success=true`
+                url: `${process.env.CLIENT_URL || process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000'}/settings/billing?success=true`
             });
         }
 
@@ -83,7 +83,7 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response, n
 router.post('/portal', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!process.env.STRIPE_SECRET_KEY) {
         return res.json({
-            url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/settings/billing`
+            url: `${process.env.CLIENT_URL || process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000'}/settings/billing`
         });
     }
     res.status(501).json({ error: 'Stripe not configured' });

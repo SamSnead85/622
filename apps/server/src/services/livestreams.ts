@@ -49,7 +49,7 @@ export function parseStreamUrl(url: string): ParsedStream | null {
         return {
             platform: 'TWITCH',
             externalId: twitchMatch[1],
-            embedUrl: `https://player.twitch.tv/?channel=${twitchMatch[1]}&parent=${process.env.DOMAIN || 'localhost'}`,
+            embedUrl: `https://player.twitch.tv/?channel=${twitchMatch[1]}&parent=${process.env.DOMAIN || new URL(process.env.APP_URL || 'http://localhost:3000').hostname}`,
         };
     }
 

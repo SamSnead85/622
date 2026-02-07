@@ -3,10 +3,28 @@ const nextConfig = {
     images: {
         formats: ['image/avif', 'image/webp'],
         remotePatterns: [
-            {
-                protocol: 'https',
-                hostname: '**',
-            },
+            // Supabase Storage
+            { protocol: 'https', hostname: '*.supabase.co' },
+            { protocol: 'https', hostname: '*.supabase.in' },
+            // Google profile pictures (OAuth avatars)
+            { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+            // YouTube thumbnails (post embeds)
+            { protocol: 'https', hostname: 'img.youtube.com' },
+            { protocol: 'https', hostname: 'i.ytimg.com' },
+            // Gravatar fallback
+            { protocol: 'https', hostname: '*.gravatar.com' },
+            // Railway deployment (file uploads served by backend)
+            { protocol: 'https', hostname: '*.up.railway.app' },
+            // Production domains
+            { protocol: 'https', hostname: '0gravity.ai' },
+            { protocol: 'https', hostname: '*.0gravity.ai' },
+            { protocol: 'https', hostname: 'zerog.social' },
+            { protocol: 'https', hostname: '*.zerog.social' },
+            // Local development
+            ...(process.env.NODE_ENV !== 'production' ? [
+                { protocol: 'http', hostname: 'localhost' },
+                { protocol: 'http', hostname: '127.0.0.1' },
+            ] : []),
         ],
     },
     eslint: {
