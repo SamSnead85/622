@@ -123,7 +123,7 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(true);
-    const [userPaused, setUserPaused] = useState(false); // User manually paused
+    const [userPaused, setUserPaused] = useState(false);
     const audioFocus = useAudioFocus();
     const videoId = postId || src;
 
@@ -132,7 +132,6 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
     }[aspectRatio] : undefined;
     const useCrop = !!cssAspectRatio;
 
-    // Ref to track userPaused without re-creating the observer
     const userPausedRef = useRef(userPaused);
     userPausedRef.current = userPaused;
 
@@ -140,25 +139,14 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
         const video = videoRef.current;
         if (!video) return;
 
-        // Event-driven focus callback — called by AudioFocusContext when focus changes
-        const handleFocusChange = (gained: boolean) => {
-            if (userPausedRef.current) return; // User manually paused — don't auto-play
-            if (gained) {
+        // Audio focus callback — only controls mute/unmute, NOT play/pause
+        const handleAudioFocusChange = (hasAudio: boolean) => {
+            if (hasAudio) {
                 video.muted = false;
                 setIsMuted(false);
-                video.play()
-                    .then(() => setIsPlaying(true))
-                    .catch(() => {
-                        // Autoplay blocked — try muted
-                        video.muted = true;
-                        setIsMuted(true);
-                        video.play().then(() => setIsPlaying(true)).catch(() => {});
-                    });
             } else {
-                video.pause();
                 video.muted = true;
                 setIsMuted(true);
-                setIsPlaying(false);
             }
         };
 
@@ -166,19 +154,24 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-                        // Register with audio focus + pass callback (no polling needed)
-                        const getsAudio = audioFocus.registerVisible(videoId, video, handleFocusChange);
+                        // Register for audio focus tracking
+                        const getsAudio = audioFocus.registerVisible(videoId, video, handleAudioFocusChange);
 
-                        if (getsAudio && !userPausedRef.current) {
-                            handleFocusChange(true);
-                        } else {
-                            video.muted = true;
-                            setIsMuted(true);
-                            video.pause();
-                            setIsPlaying(false);
+                        // Always autoplay when visible (muted unless we have audio focus)
+                        if (!userPausedRef.current) {
+                            video.muted = !getsAudio;
+                            setIsMuted(!getsAudio);
+                            video.play()
+                                .then(() => setIsPlaying(true))
+                                .catch(() => {
+                                    // Browser blocked autoplay — try muted
+                                    video.muted = true;
+                                    setIsMuted(true);
+                                    video.play().then(() => setIsPlaying(true)).catch(() => {});
+                                });
                         }
                     } else {
-                        // Scrolled out of view — always pause and unregister
+                        // Scrolled out of view — pause and unregister
                         video.pause();
                         setIsPlaying(false);
                         setUserPaused(false);
@@ -208,17 +201,9 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
             setUserPaused(true);
         } else {
             setUserPaused(false);
-            // Claim focus so this becomes the active video
-            audioFocus.claimFocus(videoId);
-            video.muted = false;
-            setIsMuted(false);
-            video.play().then(() => setIsPlaying(true)).catch(() => {
-                video.muted = true;
-                setIsMuted(true);
-                video.play().then(() => setIsPlaying(true)).catch(() => {});
-            });
+            video.play().then(() => setIsPlaying(true)).catch(() => {});
         }
-    }, [isPlaying, audioFocus, videoId]);
+    }, [isPlaying]);
 
     const toggleMute = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -227,10 +212,11 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
         if (!video) return;
 
         if (isMuted) {
+            // Claim audio focus — mutes the previous owner
             audioFocus.claimFocus(videoId);
             video.muted = false;
             setIsMuted(false);
-            // If paused, also start playing
+            // If somehow paused, also resume
             if (!isPlaying) {
                 setUserPaused(false);
                 video.play().then(() => setIsPlaying(true)).catch(() => {});
@@ -298,8 +284,8 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
                 </button>
             </div>
 
-            {/* Paused overlay — visual indicator when manually paused */}
-            {!isPlaying && (
+            {/* Paused overlay — only shown when user manually paused */}
+            {userPaused && !isPlaying && (
                 <div
                     className="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer"
                     onClick={togglePlayPause}
