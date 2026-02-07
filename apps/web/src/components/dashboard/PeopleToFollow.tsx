@@ -34,12 +34,16 @@ export function PeopleToFollow({ currentUserId }: { currentUserId?: string }) {
 
                 if (response.ok) {
                     const data = await response.json();
-                    // Filter out current user and add isFollowing status
+                    // Filter out current user, preserve server isFollowing status
                     const filteredUsers = (data.users || [])
                         .filter((u: { id: string }) => u.id !== currentUserId)
-                        .slice(0, 5)
-                        .map((u: any) => ({ ...u, isFollowing: false }));
+                        .slice(0, 5);
                     setUsers(filteredUsers);
+                    // Initialize followingIds from server data
+                    const alreadyFollowing = new Set<string>(
+                        filteredUsers.filter((u: any) => u.isFollowing).map((u: any) => u.id)
+                    );
+                    setFollowingIds(alreadyFollowing);
                 }
             } catch (err) {
                 console.error('Error fetching users:', err);

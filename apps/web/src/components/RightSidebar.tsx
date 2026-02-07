@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { apiFetch } from '@/lib/api';
+import { API_URL, apiFetch } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface UserSuggestion {
@@ -23,11 +23,17 @@ export function RightSidebar() {
         if (!user) return;
         const fetchSuggestions = async () => {
             try {
-                // Fetch real users to follow. Using public users endpoint.
-                const res = await apiFetch('/users?limit=5');
+                // Fetch real users to follow from the backend API
+                const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+                const res = await fetch(`${API_URL}/api/v1/users?limit=6`, {
+                    headers: {
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    },
+                    credentials: 'include',
+                });
                 if (res.ok) {
                     const data = await res.json();
-                    // Filter out self and already following (if API doesn't)
+                    // Filter out self; preserve isFollowing from server
                     const users = (data.users || []).filter((u: any) => u.id !== user.id);
                     setSuggestions(users.slice(0, 3));
                 }
@@ -40,20 +46,31 @@ export function RightSidebar() {
     }, [user]);
 
     const handleFollow = async (targetId: string) => {
-        try {
-            // Optimistic update
-            setSuggestions(prev => prev.map(u =>
-                u.id === targetId ? { ...u, isFollowing: true } : u
-            ));
+        const target = suggestions.find(u => u.id === targetId);
+        const wasFollowing = target?.isFollowing ?? false;
 
-            const res = await apiFetch(`/users/${targetId}/follow`, { method: 'POST' });
+        // Optimistic toggle
+        setSuggestions(prev => prev.map(u =>
+            u.id === targetId ? { ...u, isFollowing: !wasFollowing } : u
+        ));
+
+        try {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+            const res = await fetch(`${API_URL}/api/v1/users/${targetId}/follow`, {
+                method: wasFollowing ? 'DELETE' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+                credentials: 'include',
+            });
             if (!res.ok) throw new Error('Failed');
         } catch (error) {
             // Revert on failure
             setSuggestions(prev => prev.map(u =>
-                u.id === targetId ? { ...u, isFollowing: false } : u
+                u.id === targetId ? { ...u, isFollowing: wasFollowing } : u
             ));
-            console.error('Follow failed', error);
+            console.error('Follow/unfollow failed', error);
         }
     };
 
@@ -106,10 +123,9 @@ export function RightSidebar() {
                                         </div>
                                     </Link>
                                     <button
-                                        onClick={() => handleFollow(u.id)}
-                                        disabled={u.isFollowing}
-                                        className={`text-xs font-semibold px-4 py-1.5 rounded-full transition-all duration-200 ${u.isFollowing
-                                                ? 'bg-white/10 text-white/50 cursor-default'
+                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleFollow(u.id); }}
+                                        className={`text-xs font-semibold px-4 py-1.5 rounded-full transition-all duration-200 min-h-[32px] active:scale-95 ${u.isFollowing
+                                                ? 'bg-white/10 text-white/70 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 border border-white/10'
                                                 : 'bg-[#00D4FF] text-black hover:bg-[#00D4FF]/80 hover:shadow-[0_0_12px_rgba(0,212,255,0.3)]'
                                             }`}
                                     >

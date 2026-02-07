@@ -110,6 +110,18 @@ function CreateContent() {
         { id: 'schedule', label: 'Schedule', icon: '📅' },
     ];
 
+    // When on the post tab, PremiumCreateFlow renders its own header/layout inline
+    if (activeTab === 'post') {
+        return (
+            <PremiumCreateFlow
+                isOpen={true}
+                onClose={() => router.push('/dashboard')}
+                onPublish={handlePublish}
+                inline
+            />
+        );
+    }
+
     return (
         <div className="min-h-screen bg-[#050508]">
             {/* Tab bar */}
@@ -145,13 +157,6 @@ function CreateContent() {
             </div>
 
             {/* Tab content */}
-            {activeTab === 'post' && (
-                <PremiumCreateFlow
-                    isOpen={true}
-                    onClose={() => router.push('/dashboard')}
-                    onPublish={handlePublish}
-                />
-            )}
 
             {activeTab === 'photo' && (
                 <div className="max-w-4xl mx-auto p-4">

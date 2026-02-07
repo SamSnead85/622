@@ -22,6 +22,8 @@ interface CreateFlowProps {
     isOpen: boolean;
     onClose: () => void;
     onPublish?: (post: { mediaUrl: string; caption: string; type: 'post' | 'moment' | 'journey'; file?: File | null; topicIds?: string[] }) => void;
+    /** When true, renders inline (as page content) instead of a fixed fullscreen overlay */
+    inline?: boolean;
 }
 
 type Step = 'select' | 'edit' | 'caption' | 'share';
@@ -30,7 +32,7 @@ type ContentType = 'post' | 'moment' | 'journey';
 // ============================================
 // PREMIUM CREATE FLOW COMPONENT
 // ============================================
-export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProps) {
+export function PremiumCreateFlow({ isOpen, onClose, onPublish, inline = false }: CreateFlowProps) {
     const [step, setStep] = useState<Step>('select');
     const [contentType, setContentType] = useState<ContentType>('post');
     const [mediaFile, setMediaFile] = useState<File | null>(null);
@@ -123,7 +125,10 @@ export function PremiumCreateFlow({ isOpen, onClose, onPublish }: CreateFlowProp
 
     return (
         <motion.div
-            className="fixed inset-0 z-50 bg-black/95"
+            className={inline
+                ? "min-h-screen bg-[#050508]"
+                : "fixed inset-0 z-50 bg-black/95"
+            }
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
