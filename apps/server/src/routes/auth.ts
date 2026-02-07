@@ -101,6 +101,25 @@ router.post('/signup', async (req, res, next) => {
             ip: req.ip,
         });
 
+        // Notify all admins/superadmins about new signup (non-blocking)
+        prisma.user.findMany({
+            where: { role: { in: ['ADMIN', 'SUPERADMIN'] } },
+            select: { id: true },
+        }).then(async (admins) => {
+            if (admins.length > 0) {
+                await prisma.notification.createMany({
+                    data: admins.map((admin) => ({
+                        userId: admin.id,
+                        type: 'SYSTEM' as const,
+                        actorId: user.id,
+                        message: `New member joined: ${user.displayName || user.username} (@${user.username})`,
+                    })),
+                });
+            }
+        }).catch((err) => {
+            console.error('[Auth] Failed to notify admins of new signup:', err);
+        });
+
         res.status(201).json({
             user: {
                 id: user.id,

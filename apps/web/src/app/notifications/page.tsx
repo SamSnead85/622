@@ -24,6 +24,7 @@ function getNotificationIcon(type: Notification['type']): React.ReactNode {
         case 'COMMUNITY_INVITE': return <UsersIcon {...iconProps} />;
         case 'JOURNEY': return <VideoIcon {...iconProps} />;
         case 'WAVE': return <span className="text-sm">👋</span>;
+        case 'SYSTEM': return <span className="text-sm">🆕</span>;
         default: return <BellIcon {...iconProps} />;
     }
 }
@@ -71,6 +72,9 @@ export default function NotificationsPage() {
                 return notif.targetId ? `/communities/${notif.targetId}` : null;
             case 'JOURNEY':
                 return notif.targetId ? `/journeys/${notif.targetId}` : null;
+            case 'SYSTEM':
+                // System notifications about new members link to their profile
+                return notif.actor?.username ? `/profile/${notif.actor.username}` : null;
             default:
                 return null;
         }
@@ -208,8 +212,8 @@ export default function NotificationsPage() {
                                         <p className="text-sm text-white/40">{formatTimeAgo(notif.createdAt)}</p>
                                     </div>
 
-                                    {/* Follow button for follow notifications */}
-                                    {notif.type === 'FOLLOW' && (
+                                    {/* Follow button for follow & new member notifications */}
+                                    {(notif.type === 'FOLLOW' || notif.type === 'SYSTEM') && notif.actorId && (
                                         <button
                                             onClick={(e) => handleFollow(e, notif.actorId)}
                                             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
