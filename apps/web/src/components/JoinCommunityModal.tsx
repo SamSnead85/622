@@ -104,14 +104,14 @@ export function JoinCommunityModal() {
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium text-white">Switch back anytime</p>
-                                        <p className="text-xs text-white/40 mt-0.5">Toggle between your private circle and community feed with one tap</p>
+                                        <p className="text-xs text-white/40 mt-0.5">Toggle between your private circle and community feed with one tap from your dashboard, or leave the community entirely in Settings</p>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
                                 <p className="text-xs text-amber-300 leading-relaxed">
-                                    <strong>Your private groups stay private.</strong> Community members will never see your private posts, group conversations, or even know your groups exist. This is a one-way door into the public space — your private world remains completely separate.
+                                    <strong>Your private groups stay private.</strong> Community members will never see your private posts, group conversations, or even know your groups exist. Your private world remains completely separate. <strong>This is fully reversible</strong> — you can leave the community and return to private-only mode anytime from Settings.
                                 </p>
                             </div>
 

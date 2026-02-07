@@ -8,6 +8,7 @@ import { loadPreferences, savePreferences, clearAllData, exportUserData } from '
 import { useAuth, ProtectedRoute, type User } from '@/contexts/AuthContext';
 import { apiFetch, API_URL } from '@/lib/api';
 import { isShieldConfigured, setupShield, removeShield } from '@/lib/stealth/engine';
+import { useFeedView } from '@/contexts/FeedViewContext';
 import { InviteFriends } from '@/components/InviteFriends';
 import { TwoFactorSetup } from '@/components/TwoFactorSetup';
 import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
@@ -243,7 +244,9 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 function SettingsPageContent() {
     const { profile, updateProfile } = useProfile();
     const { user, logout, updateUser } = useAuth();
+    const { communityOptIn, leaveCommunity } = useFeedView();
     const router = useRouter();
+    const [leavingCommunity, setLeavingCommunity] = useState(false);
     const [showProfileEditor, setShowProfileEditor] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [show2FASetup, setShow2FASetup] = useState(false);
@@ -615,6 +618,51 @@ function SettingsPageContent() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                             </Link>
+                        </div>
+                    </div>
+
+                    {/* Community Membership */}
+                    <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden mb-6">
+                        <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70">
+                                <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                            </svg>
+                            <h2 className="font-semibold text-white">Community Membership</h2>
+                        </div>
+                        <div className="p-4">
+                            {communityOptIn ? (
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                                        <p className="text-sm text-white/80">You&apos;re part of the community feed</p>
+                                    </div>
+                                    <p className="text-xs text-white/40 leading-relaxed">
+                                        You can see the community feed and your public profile is visible to other community members. Your private groups and posts remain completely separate.
+                                    </p>
+                                    <button
+                                        onClick={async () => {
+                                            if (!confirm('Leave the community? You\'ll return to private-only mode. Your private groups are unaffected. You can rejoin anytime.')) return;
+                                            setLeavingCommunity(true);
+                                            await leaveCommunity();
+                                            setLeavingCommunity(false);
+                                        }}
+                                        disabled={leavingCommunity}
+                                        className="w-full py-2.5 rounded-xl bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                                    >
+                                        {leavingCommunity ? 'Leaving...' : 'Leave Community & Go Private'}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-white/30" />
+                                        <p className="text-sm text-white/60">Private-only mode</p>
+                                    </div>
+                                    <p className="text-xs text-white/40 leading-relaxed">
+                                        You&apos;re not part of the community feed. Only your private groups, family, and friends can see you. You can join the community anytime from the feed toggle on your dashboard.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
