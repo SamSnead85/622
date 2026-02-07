@@ -51,13 +51,17 @@ import { TrendingSection } from '@/components/feed/TrendingSection';
 import { FeedModeToggle, useFeedMode } from '@/components/feed/FeedModeToggle';
 import { FullscreenVideoFeed } from '@/components/feed/FullscreenVideoFeed';
 import { usePullToRefresh } from '@/hooks/useInfiniteScroll';
+import { DECOY_POSTS } from '@/lib/stealth/decoyData';
 
 // ============================================
 // MAIN DASHBOARD PAGE
 // ============================================
 export default function DashboardPage() {
-    const { user, isLoading, isAdmin } = useAuth();
-    const { posts, likePost, deletePost, isLoading: postsLoading, refetch, hasMore, loadMore, toggleRsvp } = usePosts();
+    const { user, isLoading, isAdmin, isStealth } = useAuth();
+    const { posts: realPosts, likePost, deletePost, isLoading: postsLoading, refetch, hasMore, loadMore, toggleRsvp } = usePosts();
+
+    // Travel Shield: Use decoy posts when stealth is active
+    const posts = isStealth ? (DECOY_POSTS as unknown as typeof realPosts) : realPosts;
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
     const loadMoreRef = useRef<HTMLDivElement>(null);

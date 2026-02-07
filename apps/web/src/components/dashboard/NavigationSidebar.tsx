@@ -14,6 +14,7 @@ import {
     PlusIcon,
 } from '@/components/icons';
 import { ZeroGLogo } from './ZeroGLogo';
+import { isShieldConfigured, activateStealth } from '@/lib/stealth/engine';
 
 // ============================================
 // NAVIGATION SIDEBAR
@@ -27,6 +28,29 @@ export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeCh
     onViewModeChange?: (mode: FeedViewMode) => void;
 }) {
     const router = useRouter();
+
+    // Travel Shield: Triple-tap avatar to activate stealth mode
+    const tapCountRef = useRef(0);
+    const tapTimerRef = useRef<ReturnType<typeof setTimeout>>();
+    const handleAvatarTap = useCallback((e: React.MouseEvent) => {
+        tapCountRef.current += 1;
+        if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+        if (tapCountRef.current >= 3) {
+            e.preventDefault();
+            tapCountRef.current = 0;
+            if (isShieldConfigured()) {
+                activateStealth();
+                window.location.href = '/dashboard';
+            }
+            return;
+        }
+        tapTimerRef.current = setTimeout(() => {
+            if (tapCountRef.current < 3) {
+                router.push('/profile');
+            }
+            tapCountRef.current = 0;
+        }, 400);
+    }, [router]);
 
     // Feed view mode (persisted in localStorage)
     const [viewMode, setViewMode] = useState<FeedViewMode>('standard');
@@ -146,8 +170,11 @@ export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeCh
                     <span className="hidden xl:block">Create Post</span>
                 </button>
 
-                {/* Profile */}
-                <Link href="/profile" className="flex items-center gap-3 px-3 py-3 border-t border-white/[0.06] pt-4 mt-4">
+                {/* Profile -- Triple-tap for Travel Shield */}
+                <div
+                    onClick={handleAvatarTap}
+                    className="flex items-center gap-3 px-3 py-3 border-t border-white/[0.06] pt-4 mt-4 cursor-pointer hover:bg-white/5 rounded-lg transition-colors"
+                >
                     {user?.avatarUrl ? (
                         <img
                             src={user.avatarUrl}
@@ -163,7 +190,7 @@ export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeCh
                         <p className="font-semibold text-white text-sm">{user?.displayName || 'User'}</p>
                         <p className="text-xs text-white/50">@{user?.username || 'username'}</p>
                     </div>
-                </Link>
+                </div>
             </aside>
 
             {/* Mobile swipe-to-go-back gesture area */}

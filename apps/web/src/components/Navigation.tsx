@@ -1,8 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { isShieldConfigured, activateStealth } from '@/lib/stealth/engine';
 import {
     HomeIcon,
     SearchIcon,
@@ -62,10 +65,36 @@ export function Navigation({ activeTab, variant = 'default', userAvatarUrl, disp
     const items = variant === 'messages' ? NAV_ITEMS_MESSAGES
         : variant === 'create' ? NAV_ITEMS_CREATE
             : NAV_ITEMS;
+    const navRouter = useRouter();
 
     const avatarSrc = userAvatarUrl && !userAvatarUrl.startsWith('preset:')
         ? userAvatarUrl
         : `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || 'User')}&background=random`;
+
+    // Travel Shield: Triple-tap avatar to activate stealth mode
+    const tapCountRef = useRef(0);
+    const tapTimerRef = useRef<ReturnType<typeof setTimeout>>();
+    const handleAvatarTap = useCallback((e: React.MouseEvent) => {
+        tapCountRef.current += 1;
+        if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+        if (tapCountRef.current >= 3) {
+            e.preventDefault();
+            tapCountRef.current = 0;
+            if (isShieldConfigured()) {
+                activateStealth();
+                // Force full page reload so AuthContext picks up stealth state
+                window.location.href = '/dashboard';
+            }
+            return;
+        }
+        tapTimerRef.current = setTimeout(() => {
+            // Single/double tap - navigate to profile normally
+            if (tapCountRef.current < 3) {
+                navRouter.push('/profile');
+            }
+            tapCountRef.current = 0;
+        }, 400);
+    }, [navRouter]);
 
     return (
         <>
@@ -109,9 +138,12 @@ export function Navigation({ activeTab, variant = 'default', userAvatarUrl, disp
                     })}
                 </nav>
 
-                {/* Optional: Navigation Footer / Profile Link */}
+                {/* Optional: Navigation Footer / Profile Link -- Triple-tap for Travel Shield */}
                 {userAvatarUrl && (
-                    <Link href="/profile" className="flex items-center gap-3 px-3 py-3 mt-4 border-t border-[var(--border-default)] group hover:bg-white/5 rounded-lg transition-colors">
+                    <div
+                        onClick={handleAvatarTap}
+                        className="flex items-center gap-3 px-3 py-3 mt-4 border-t border-[var(--border-default)] group hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                    >
                         <div className="w-9 h-9 rounded-lg overflow-hidden relative ring-1 ring-white/10 group-hover:ring-white/20 transition-all">
                             <Image src={avatarSrc} alt="Profile" fill className="object-cover" />
                         </div>
@@ -119,7 +151,7 @@ export function Navigation({ activeTab, variant = 'default', userAvatarUrl, disp
                             <p className="font-medium text-white text-sm truncate">{displayName || 'Profile'}</p>
                             <p className="text-xs text-[var(--text-tertiary)] truncate">@{username || 'user'}</p>
                         </div>
-                    </Link>
+                    </div>
                 )}
             </aside>
 

@@ -8,6 +8,7 @@ import { useMessages, type Message as ApiMessage, type Conversation } from '@/ho
 import { ProtectedRoute, useAuth } from '@/contexts/AuthContext';
 import { Navigation } from '@/components/Navigation';
 import { API_URL } from '@/lib/api';
+import { DECOY_MESSAGES } from '@/lib/stealth/decoyData';
 import {
     HomeIcon,
     SearchIcon,
@@ -345,7 +346,7 @@ function NewChatModal({
 // ============================================
 function MessagesPageContent() {
     const {
-        conversations,
+        conversations: realConversations,
         messages,
         activeConversation,
         typingUsers,
@@ -355,7 +356,19 @@ function MessagesPageContent() {
         startTyping,
         stopTyping,
     } = useMessages();
-    const { user } = useAuth();
+    const { user, isStealth } = useAuth();
+
+    // Travel Shield: Show decoy conversations when stealth is active
+    const conversations = isStealth
+        ? DECOY_MESSAGES.map(d => ({
+            id: d.id,
+            participants: [{ id: 'decoy', username: d.name, displayName: d.name, avatarUrl: d.avatarUrl }],
+            lastMessage: { content: d.lastMessage, createdAt: new Date().toISOString(), senderId: 'other' },
+            unreadCount: d.unread,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        } as unknown as typeof realConversations[0]))
+        : realConversations;
 
     const [selectedConvo, setSelectedConvo] = useState<Conversation | null>(null);
     const [messageInput, setMessageInput] = useState('');

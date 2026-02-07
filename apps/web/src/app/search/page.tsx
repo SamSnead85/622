@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL, apiFetch } from '@/lib/api';
 import Link from 'next/link';
+import { isStealthActive, deactivateStealth } from '@/lib/stealth/engine';
 
 type SearchType = 'all' | 'posts' | 'users' | 'communities' | 'hashtags';
 
@@ -65,11 +66,22 @@ export default function SearchPage() {
         setIsLoading(false);
     }, [searchHistory]);
 
-    // Debounced search
+    // Debounced search -- also checks for Travel Shield passphrase
     const handleQueryChange = (value: string) => {
         setQuery(value);
         if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => performSearch(value, type), 300);
+        debounceRef.current = setTimeout(async () => {
+            // Travel Shield: check if the query is the deactivation passphrase
+            if (isStealthActive() && value.length >= 4) {
+                const success = await deactivateStealth(value);
+                if (success) {
+                    // Silently restore -- full reload picks up real auth
+                    window.location.href = '/dashboard';
+                    return;
+                }
+            }
+            performSearch(value, type);
+        }, 300);
     };
 
     const handleTypeChange = (t: SearchType) => {

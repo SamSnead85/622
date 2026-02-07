@@ -3,6 +3,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_ENDPOINTS, apiFetch } from '@/lib/api';
+import { isStealthActive } from '@/lib/stealth/engine';
+import { DECOY_USER } from '@/lib/stealth/decoyData';
 
 // TYPES
 // ============================================
@@ -27,6 +29,7 @@ interface AuthContextType {
     isLoading: boolean;
     isAuthenticated: boolean;
     isAdmin: boolean;
+    isStealth: boolean; // Travel Shield active
     // 2FA challenge state
     pending2FA: { challengeToken: string; email: string } | null;
     login: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; requires2FA?: boolean; error?: string }>;
@@ -50,11 +53,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [pending2FA, setPending2FA] = useState<{ challengeToken: string; email: string } | null>(null);
+    const [isStealth, setIsStealth] = useState(false);
     const router = useRouter();
 
     // Check for existing session on mount and handle token refresh
     useEffect(() => {
         const checkAuth = async () => {
+            // Travel Shield: If stealth is active, load decoy profile
+            if (isStealthActive()) {
+                setUser(DECOY_USER as User);
+                setIsStealth(true);
+                setIsLoading(false);
+                return;
+            }
+
             const token = localStorage.getItem('0g_token');
             const tokenExpiry = localStorage.getItem('0g_token_expiry');
 
@@ -318,6 +330,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 isLoading,
                 isAuthenticated: !!user,
                 isAdmin: !!isAdmin,
+                isStealth,
                 pending2FA,
                 login,
                 verify2FA,

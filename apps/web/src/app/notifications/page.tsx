@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
 import { apiFetch, API_ENDPOINTS } from '@/lib/api';
+import { isStealthActive } from '@/lib/stealth/engine';
+import { DECOY_NOTIFICATIONS } from '@/lib/stealth/decoyData';
 import { Navigation } from '@/components/Navigation';
 import { HeartIcon, UserIcon, MessageIcon, BellIcon, UsersIcon, VideoIcon } from '@/components/icons';
 import React from 'react';
@@ -50,7 +52,10 @@ export default function NotificationsPage() {
     const [filter, setFilter] = useState<'all' | 'unread'>('all');
     const [mounted, setMounted] = useState(false);
     const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
-    const { notifications: apiNotifications, isLoading, error, markAsRead, markAllAsRead } = useNotifications();
+    const { notifications: realNotifications, isLoading, error, markAsRead, markAllAsRead } = useNotifications();
+
+    // Travel Shield: swap notifications with decoy data
+    const apiNotifications = isStealthActive() ? (DECOY_NOTIFICATIONS as unknown as typeof realNotifications) : realNotifications;
 
     useEffect(() => { setMounted(true); }, []);
 

@@ -9,6 +9,7 @@ import { Avatar, useProfile, SECONDARY_LANGUAGES } from '@/components/ProfileEdi
 import { Navigation } from '@/components/Navigation';
 import { SettingsIcon, CameraIcon, PlusIcon, PlayIcon, HeartIcon } from '@/components/icons';
 import { API_URL, API_ENDPOINTS, apiFetch } from '@/lib/api';
+import { DECOY_USER, DECOY_POSTS } from '@/lib/stealth/decoyData';
 
 interface Post {
     id: string;
@@ -24,7 +25,7 @@ interface Post {
 }
 
 function ProfilePageContent() {
-    const { user, updateUser } = useAuth();
+    const { user, updateUser, isStealth } = useAuth();
     const { profile } = useProfile();
     const [activeTab, setActiveTab] = useState<'posts' | 'journeys' | 'saved'>('posts');
     const [mounted, setMounted] = useState(false);
@@ -119,9 +120,30 @@ function ProfilePageContent() {
 
     useEffect(() => {
         if (mounted && user?.id) {
-            fetchPosts();
+            if (isStealth) {
+                // Travel Shield: load decoy posts
+                const myDecoyPosts = DECOY_POSTS.filter(p => p.author.id === DECOY_USER.id);
+                setUserPosts(myDecoyPosts.map(p => ({
+                    id: p.id,
+                    type: (p.type || 'IMAGE') as Post['type'],
+                    mediaUrl: p.mediaUrl,
+                    content: p.content,
+                    likesCount: p.likes,
+                    commentsCount: p.commentsCount,
+                    viewCount: 0,
+                    createdAt: p.createdAt,
+                })));
+                setStats({
+                    postsCount: DECOY_USER.postsCount,
+                    followersCount: DECOY_USER.followersCount,
+                    followingCount: DECOY_USER.followingCount,
+                });
+                setLoading(false);
+            } else {
+                fetchPosts();
+            }
         }
-    }, [mounted, user?.id, fetchPosts]);
+    }, [mounted, user?.id, fetchPosts, isStealth]);
 
     // Fetch saved posts when switching to saved tab
     useEffect(() => {

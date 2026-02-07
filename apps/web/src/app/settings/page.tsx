@@ -1,12 +1,13 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import { ProfileEditor, Avatar, useProfile } from '@/components/ProfileEditor';
 import { loadPreferences, savePreferences, clearAllData, exportUserData } from '@/lib/persistence';
 import { useAuth, ProtectedRoute, type User } from '@/contexts/AuthContext';
 import { apiFetch, API_URL } from '@/lib/api';
+import { isShieldConfigured, setupShield, removeShield } from '@/lib/stealth/engine';
 import { InviteFriends } from '@/components/InviteFriends';
 import { TwoFactorSetup } from '@/components/TwoFactorSetup';
 import { Navigation } from '@/components/Navigation';
@@ -257,6 +258,14 @@ function SettingsPageContent() {
     });
     const [mounted, setMounted] = useState(false);
 
+    // Travel Shield state
+    const [shieldConfigured, setShieldConfigured] = useState(false);
+    const [shieldExpanded, setShieldExpanded] = useState(false);
+    const [shieldPassphrase, setShieldPassphrase] = useState('');
+    const [shieldConfirm, setShieldConfirm] = useState('');
+    const [shieldError, setShieldError] = useState('');
+    const [shieldSuccess, setShieldSuccess] = useState(false);
+
     // Handler that syncs profile changes to both useProfile AND Auth Context
     const handleProfileSave = useCallback(async (updatedProfile: Parameters<typeof updateProfile>[0]) => {
         updateProfile(updatedProfile);
@@ -288,6 +297,7 @@ function SettingsPageContent() {
 
     useEffect(() => {
         setMounted(true);
+        setShieldConfigured(isShieldConfigured());
         // Load saved preferences
         const prefs = loadPreferences();
         setToggles(prev => ({
@@ -455,6 +465,141 @@ function SettingsPageContent() {
                                     <span className="text-white/80">Export My Data</span>
                                     <span className="text-white/30">→</span>
                                 </Link>
+                            </div>
+
+                            {/* ======== TRAVEL SHIELD ======== */}
+                            <div className="mt-4 pt-4 border-t border-white/10">
+                                <button
+                                    onClick={() => setShieldExpanded(!shieldExpanded)}
+                                    className="w-full flex items-center justify-between py-2 group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 flex items-center justify-center">
+                                            <span className="text-sm">🛡</span>
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-white font-medium text-sm">Travel Shield</p>
+                                            <p className="text-white/40 text-xs">
+                                                {shieldConfigured ? 'Configured — ready to activate' : 'Protect your privacy while traveling'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <motion.span
+                                        animate={{ rotate: shieldExpanded ? 90 : 0 }}
+                                        className="text-white/30"
+                                    >
+                                        →
+                                    </motion.span>
+                                </button>
+
+                                <AnimatePresence>
+                                    {shieldExpanded && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="pt-3 pb-2 space-y-3">
+                                                <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+                                                    <p className="text-xs text-white/60 leading-relaxed">
+                                                        Travel Shield instantly replaces your profile with a safe decoy when you need privacy
+                                                        — at border crossings, security checkpoints, or anywhere your device might be inspected.
+                                                        Your real content is encrypted and invisible until you enter your safe word.
+                                                    </p>
+                                                    <div className="mt-2 text-xs text-white/40 space-y-1">
+                                                        <p><strong className="text-white/60">Activate:</strong> Triple-tap your avatar in the sidebar</p>
+                                                        <p><strong className="text-white/60">Deactivate:</strong> Type your safe word in the search bar</p>
+                                                    </div>
+                                                </div>
+
+                                                {shieldConfigured && !shieldSuccess ? (
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2 px-1">
+                                                            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                                            <span className="text-sm text-emerald-400 font-medium">Shield is configured and ready</span>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                removeShield();
+                                                                setShieldConfigured(false);
+                                                                setShieldPassphrase('');
+                                                                setShieldConfirm('');
+                                                            }}
+                                                            className="w-full py-2 rounded-lg text-red-400 text-xs font-medium bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                                                        >
+                                                            Remove Travel Shield
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        {shieldSuccess ? (
+                                                            <div className="text-center py-3">
+                                                                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-2">
+                                                                    <span className="text-emerald-400">✓</span>
+                                                                </div>
+                                                                <p className="text-emerald-400 text-sm font-medium">Travel Shield activated!</p>
+                                                                <p className="text-white/40 text-xs mt-1">Triple-tap your avatar to engage</p>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <div>
+                                                                    <label className="block text-xs text-white/50 mb-1">Choose a safe word or passphrase</label>
+                                                                    <input
+                                                                        type="password"
+                                                                        value={shieldPassphrase}
+                                                                        onChange={(e) => { setShieldPassphrase(e.target.value); setShieldError(''); }}
+                                                                        placeholder="Something only you would know"
+                                                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500/50"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-xs text-white/50 mb-1">Confirm safe word</label>
+                                                                    <input
+                                                                        type="password"
+                                                                        value={shieldConfirm}
+                                                                        onChange={(e) => { setShieldConfirm(e.target.value); setShieldError(''); }}
+                                                                        placeholder="Re-enter your safe word"
+                                                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500/50"
+                                                                    />
+                                                                </div>
+                                                                {shieldError && (
+                                                                    <p className="text-red-400 text-xs">{shieldError}</p>
+                                                                )}
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        if (shieldPassphrase.length < 4) {
+                                                                            setShieldError('Safe word must be at least 4 characters');
+                                                                            return;
+                                                                        }
+                                                                        if (shieldPassphrase !== shieldConfirm) {
+                                                                            setShieldError('Safe words do not match');
+                                                                            return;
+                                                                        }
+                                                                        const ok = await setupShield(shieldPassphrase);
+                                                                        if (ok) {
+                                                                            setShieldConfigured(true);
+                                                                            setShieldSuccess(true);
+                                                                            setShieldPassphrase('');
+                                                                            setShieldConfirm('');
+                                                                            setTimeout(() => setShieldSuccess(false), 3000);
+                                                                        } else {
+                                                                            setShieldError('Setup failed. Try again.');
+                                                                        }
+                                                                    }}
+                                                                    className="w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+                                                                >
+                                                                    Enable Travel Shield
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
                     </div>
