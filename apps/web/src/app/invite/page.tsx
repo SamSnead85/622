@@ -112,9 +112,17 @@ function InvitePageContent() {
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
     const [inviteLink, setInviteLink] = useState('');
     const [inviteStats, setInviteStats] = useState({ sent: 0, pending: 0, joined: 0 });
-    const [customMessage, setCustomMessage] = useState(
-        `Join me on 0G (ZeroG) - the Sovereign Social Network. No agendas, no algorithms, just pure human connection.`
-    );
+    const displayName = user?.displayName || user?.username || 'Someone';
+    const [customMessage, setCustomMessage] = useState('');
+
+    // Set personalized message once user data is available
+    useEffect(() => {
+        if (user?.displayName) {
+            setCustomMessage(
+                `${user.displayName} invited you to join their community on ZeroG — the social platform built for real people. No algorithms, no ads, you own your data.`
+            );
+        }
+    }, [user?.displayName]);
     const [isEditingMessage, setIsEditingMessage] = useState(false);
 
     // Fetch real invite data from server
@@ -131,19 +139,26 @@ function InvitePageContent() {
         }
     }, []);
 
-    // Generate real invite link from server
+    // Generate real invite link from server — now uses /join/ format
     const fetchInviteLink = useCallback(async () => {
         try {
             const data = await apiFetch(`${API_URL}/api/v1/invite/link`, { method: 'POST' });
+            if (data.code) {
+                // Use the new branded join page format
+                setInviteLink(`https://0gravity.ai/join/${data.code}`);
+                return;
+            }
             if (data.url) {
-                setInviteLink(data.url);
+                // Convert old /r/ URLs to /join/ format
+                const oldCode = data.url.split('/').pop() || '';
+                setInviteLink(`https://0gravity.ai/join/${oldCode}`);
                 return;
             }
         } catch {
             // Fallback
         }
         const code = user?.id ? btoa(user.id).slice(0, 8) : 'INVITE';
-        setInviteLink(`https://0gravity.ai/r/${code}`);
+        setInviteLink(`https://0gravity.ai/join/${code}`);
     }, [user?.id]);
 
     // Generate real QR code when link changes or QR is shown
@@ -338,6 +353,42 @@ function InvitePageContent() {
                         >
                             {copied ? '✓ Copied!' : 'Copy'}
                         </button>
+                    </div>
+                </motion.div>
+
+                {/* Branded Share Preview */}
+                <motion.div
+                    className="mb-6 rounded-2xl overflow-hidden border border-white/[0.06]"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.18 }}
+                >
+                    <div className="relative h-28 bg-gradient-to-br from-violet-900/50 to-[#00D4FF]/20 overflow-hidden">
+                        {user?.coverUrl && (
+                            <img src={user.coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0a0a0f]/90" />
+                        <div className="absolute bottom-3 left-4 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/20 bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0">
+                                {user?.avatarUrl && !user.avatarUrl.startsWith('preset:') ? (
+                                    <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-white font-bold text-sm">{displayName.charAt(0).toUpperCase()}</span>
+                                )}
+                            </div>
+                            <div>
+                                <p className="text-sm font-semibold text-white">{displayName}</p>
+                                <p className="text-[10px] text-white/50">invites you to join ZeroG</p>
+                            </div>
+                        </div>
+                        <div className="absolute top-2.5 right-2.5">
+                            <div className="w-6 h-6 rounded-md bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                                <span className="text-[7px] font-bold text-[#00D4FF]">0G</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="px-4 py-3 bg-white/[0.02]">
+                        <p className="text-[10px] text-white/25">This is how your invite will appear when shared. Your background and avatar make it personal.</p>
                     </div>
                 </motion.div>
 

@@ -973,5 +973,301 @@ router.delete('/admin/access-codes/:id', authenticate, requireAdmin, async (req:
     }
 });
 
+// ============================================
+// PROVISIONAL ACCOUNT SYSTEM
+// ============================================
+
+// POST /api/v1/auth/provisional-signup — Create a lightweight provisional account
+router.post('/provisional-signup', async (req, res, next) => {
+    try {
+        const { username, displayName, inviteCode, communityId } = req.body;
+
+        if (!username || username.length < 3 || username.length > 30) {
+            throw new AppError('Username must be between 3 and 30 characters.', 400);
+        }
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            throw new AppError('Username can only contain letters, numbers, and underscores.', 400);
+        }
+
+        // Check username uniqueness
+        const existing = await prisma.user.findUnique({ where: { username: username.toLowerCase() } });
+        if (existing) {
+            throw new AppError('Username already taken.', 409);
+        }
+
+        // Validate invite code if provided
+        let invite = null;
+        let inviterId: string | null = null;
+        if (inviteCode) {
+            invite = await prisma.invite.findUnique({ where: { referralCode: inviteCode } });
+            if (invite) {
+                inviterId = invite.senderId;
+            }
+        }
+
+        // Resolve community - from invite context or explicit param
+        let targetCommunityId = communityId || null;
+
+        // Create provisional user with placeholder email
+        const placeholderEmail = `provisional_${uuid()}@0g.internal`;
+        const user = await prisma.user.create({
+            data: {
+                email: placeholderEmail,
+                username: username.toLowerCase(),
+                displayName: displayName || username,
+                isProvisional: true,
+                provisionedAt: new Date(),
+                invitedToCommunityId: targetCommunityId,
+                invitedById: inviterId,
+                isGroupOnly: !!targetCommunityId,
+                primaryCommunityId: targetCommunityId,
+            },
+        });
+
+        // Auto-join the community if provided
+        if (targetCommunityId) {
+            try {
+                await prisma.communityMember.create({
+                    data: {
+                        userId: user.id,
+                        communityId: targetCommunityId,
+                        role: 'MEMBER',
+                    },
+                });
+                // Increment member count
+                await prisma.community.update({
+                    where: { id: targetCommunityId },
+                    data: { memberCount: { increment: 1 } },
+                });
+            } catch {
+                // Community may not exist or user is already a member
+            }
+        }
+
+        // Link invite to user
+        if (invite) {
+            await prisma.invite.update({
+                where: { id: invite.id },
+                data: {
+                    status: 'JOINED',
+                    joinedAt: new Date(),
+                    joinedUserId: user.id,
+                },
+            }).catch(() => {});
+
+            // Auto-follow the inviter
+            if (inviterId) {
+                await prisma.follow.create({
+                    data: { followerId: user.id, followingId: inviterId },
+                }).catch(() => {});
+                await prisma.follow.create({
+                    data: { followerId: inviterId, followingId: user.id },
+                }).catch(() => {});
+            }
+        }
+
+        // Generate a short-lived session token (7 days for provisional)
+        const { token, expiresAt } = await generateTokens(user.id, {
+            type: req.headers['x-device-type'] as string,
+            name: req.headers['x-device-name'] as string,
+            ip: req.ip,
+        }, false);
+
+        res.status(201).json({
+            user: {
+                id: user.id,
+                username: user.username,
+                displayName: user.displayName,
+                isProvisional: true,
+            },
+            token,
+            expiresAt,
+            communityId: targetCommunityId,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/auth/complete-signup — Upgrade provisional account to full account
+router.post('/complete-signup', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            throw new AppError('Email and password are required.', 400);
+        }
+        if (password.length < 8) {
+            throw new AppError('Password must be at least 8 characters.', 400);
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            throw new AppError('Invalid email format.', 400);
+        }
+
+        // Check current user is provisional
+        const currentUser = await prisma.user.findUnique({ where: { id: req.user!.id } });
+        if (!currentUser) {
+            throw new AppError('User not found.', 404);
+        }
+        if (!currentUser.isProvisional) {
+            throw new AppError('Account is already fully registered.', 400);
+        }
+
+        // Check if email is already taken by a real user
+        const emailTaken = await prisma.user.findFirst({
+            where: {
+                email: email.toLowerCase(),
+                NOT: { id: req.user!.id },
+            },
+        });
+        if (emailTaken) {
+            throw new AppError('Email already registered.', 409);
+        }
+
+        // Hash password
+        const passwordHash = await bcrypt.hash(password, 12);
+
+        // Upgrade the account
+        const updatedUser = await prisma.user.update({
+            where: { id: req.user!.id },
+            data: {
+                email: email.toLowerCase(),
+                passwordHash,
+                isProvisional: false,
+            },
+        });
+
+        // Post-signup automation (non-blocking)
+        (async () => {
+            try {
+                // Notify admins about upgrade
+                const admins = await prisma.user.findMany({
+                    where: { role: { in: ['ADMIN', 'SUPERADMIN'] } },
+                    select: { id: true },
+                });
+                if (admins.length > 0) {
+                    await prisma.notification.createMany({
+                        data: admins.map((admin) => ({
+                            userId: admin.id,
+                            type: 'SYSTEM' as const,
+                            actorId: updatedUser.id,
+                            message: `Provisional member completed signup: ${updatedUser.displayName} (@${updatedUser.username})`,
+                        })),
+                    });
+                }
+                // Welcome notification
+                await prisma.notification.create({
+                    data: {
+                        userId: updatedUser.id,
+                        type: 'SYSTEM' as const,
+                        message: `Welcome to 0G, ${updatedUser.displayName}! Your account is now fully set up. Explore communities, share content, and connect with people who matter to you.`,
+                    },
+                });
+            } catch (err) {
+                console.error('[Auth] Complete-signup automation error:', err);
+            }
+        })();
+
+        // Generate new full-scope token
+        const { token, expiresAt } = await generateTokens(updatedUser.id, {
+            type: req.headers['x-device-type'] as string,
+            name: req.headers['x-device-name'] as string,
+            ip: req.ip,
+        }, true);
+
+        res.json({
+            success: true,
+            user: {
+                id: updatedUser.id,
+                email: updatedUser.email,
+                username: updatedUser.username,
+                displayName: updatedUser.displayName,
+                isProvisional: false,
+            },
+            token,
+            expiresAt,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/auth/validate-invite — Public endpoint to validate invite and get sender info
+router.post('/validate-invite', async (req, res, next) => {
+    try {
+        const { code } = req.body;
+        if (!code) {
+            return res.status(400).json({ error: 'Invite code required.' });
+        }
+
+        const invite = await prisma.invite.findUnique({
+            where: { referralCode: code },
+            include: {
+                sender: {
+                    select: {
+                        id: true,
+                        displayName: true,
+                        username: true,
+                        avatarUrl: true,
+                        coverUrl: true,
+                    },
+                },
+            },
+        });
+
+        if (!invite || invite.status === 'JOINED') {
+            return res.status(404).json({ error: 'Invalid or used invite code.' });
+        }
+
+        // Check if the sender has a primary community to invite into
+        let community = null;
+        const sender = invite.sender;
+        if (sender) {
+            // Find the first community this user administers
+            const membership = await prisma.communityMember.findFirst({
+                where: {
+                    userId: sender.id,
+                    role: { in: ['ADMIN', 'MODERATOR'] },
+                },
+                include: {
+                    community: {
+                        select: {
+                            id: true,
+                            name: true,
+                            slug: true,
+                            avatarUrl: true,
+                            coverUrl: true,
+                            description: true,
+                            memberCount: true,
+                        },
+                    },
+                },
+            });
+            if (membership) {
+                community = membership.community;
+            }
+        }
+
+        // Mark as opened
+        if (invite.status === 'SENT' || invite.status === 'NOT_SENT') {
+            await prisma.invite.update({
+                where: { id: invite.id },
+                data: { status: 'OPENED', openedAt: new Date() },
+            }).catch(() => {});
+        }
+
+        res.json({
+            valid: true,
+            sender: invite.sender,
+            community,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 export { router as authRouter };
 

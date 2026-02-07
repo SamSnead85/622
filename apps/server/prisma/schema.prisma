@@ -27,6 +27,10 @@ model User {
   isPrivate                  Boolean                   @default(false)
   isGroupOnly                Boolean                   @default(false)
   primaryCommunityId         String?
+  isProvisional              Boolean                   @default(false)
+  provisionedAt              DateTime?
+  invitedToCommunityId       String?
+  invitedById                String?
   isBanned                   Boolean                   @default(false)
   strikeCount                Int                       @default(0)
   suspendedUntil             DateTime?

@@ -32,6 +32,37 @@ const PRESET_AVATARS = [
 ];
 
 // ============================================
+// PRESET BACKGROUNDS - Curated cover images
+// ============================================
+const PRESET_BACKGROUNDS = [
+    // Jerusalem & Palestine
+    { id: 'bg-dome-rock', url: 'https://images.unsplash.com/photo-1552423314-cf29ab68ad73?w=1200&h=400&fit=crop&q=80', label: 'Dome of the Rock', category: 'Palestine' },
+    { id: 'bg-jerusalem-old', url: 'https://images.unsplash.com/photo-1547483238-f400e65ccd56?w=1200&h=400&fit=crop&q=80', label: 'Jerusalem Old City', category: 'Palestine' },
+    { id: 'bg-olive-grove', url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&h=400&fit=crop&q=80', label: 'Olive Groves', category: 'Palestine' },
+    { id: 'bg-western-wall', url: 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1200&h=400&fit=crop&q=80', label: 'Western Wall at Dawn', category: 'Palestine' },
+    // Global Icons
+    { id: 'bg-pyramids', url: 'https://images.unsplash.com/photo-1539768942893-daf53e736b68?w=1200&h=400&fit=crop&q=80', label: 'Pyramids of Giza', category: 'Landmarks' },
+    { id: 'bg-petra', url: 'https://images.unsplash.com/photo-1579606032821-4e6161c81571?w=1200&h=400&fit=crop&q=80', label: 'Petra Treasury', category: 'Landmarks' },
+    { id: 'bg-taj-mahal', url: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=1200&h=400&fit=crop&q=80', label: 'Taj Mahal', category: 'Landmarks' },
+    { id: 'bg-redwoods', url: 'https://images.unsplash.com/photo-1542202229-7d93c33f5d07?w=1200&h=400&fit=crop&q=80', label: 'Redwood Forest', category: 'Landmarks' },
+    { id: 'bg-alhambra', url: 'https://images.unsplash.com/photo-1591118947128-d95b48c20e8d?w=1200&h=400&fit=crop&q=80', label: 'Alhambra Palace', category: 'Landmarks' },
+    { id: 'bg-blue-mosque', url: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?w=1200&h=400&fit=crop&q=80', label: 'Blue Mosque', category: 'Landmarks' },
+    // Nature & Landscape
+    { id: 'bg-desert-dunes', url: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1200&h=400&fit=crop&q=80', label: 'Desert Dunes', category: 'Nature' },
+    { id: 'bg-night-sky', url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&h=400&fit=crop&q=80', label: 'Night Sky', category: 'Nature' },
+    { id: 'bg-ocean-sunset', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&h=400&fit=crop&q=80', label: 'Ocean Sunset', category: 'Nature' },
+    { id: 'bg-mountain-lake', url: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=1200&h=400&fit=crop&q=80', label: 'Mountain Lake', category: 'Nature' },
+    { id: 'bg-aurora', url: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1200&h=400&fit=crop&q=80', label: 'Northern Lights', category: 'Nature' },
+    // Abstract & Artistic
+    { id: 'bg-geometric', url: 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=1200&h=400&fit=crop&q=80', label: 'Geometric Pattern', category: 'Abstract' },
+    { id: 'bg-calligraphy', url: 'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?w=1200&h=400&fit=crop&q=80', label: 'Arabic Calligraphy', category: 'Abstract' },
+    { id: 'bg-gradient-warm', url: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=1200&h=400&fit=crop&q=80', label: 'Warm Gradient', category: 'Abstract' },
+    { id: 'bg-marble', url: 'https://images.unsplash.com/photo-1533035353720-f1c6a75cd8ab?w=1200&h=400&fit=crop&q=80', label: 'Marble Texture', category: 'Abstract' },
+];
+
+const BG_CATEGORIES = ['Palestine', 'Landmarks', 'Nature', 'Abstract'] as const;
+
+// ============================================
 // TYPES
 // ============================================
 // Supported secondary languages for display name
@@ -64,6 +95,7 @@ interface UserProfile {
     avatarType: 'preset' | 'custom';
     avatarPreset?: string;
     avatarCustomUrl?: string;
+    coverUrl?: string;                 // Background / cover image URL
     theme: 'dark' | 'light' | 'auto';
     notificationsEnabled: boolean;
     privateProfile: boolean;
@@ -288,6 +320,11 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
 
                 updateData.isPrivate = profile.privateProfile;
 
+                // Cover / background URL
+                if (profile.coverUrl) {
+                    updateData.coverUrl = profile.coverUrl;
+                }
+
                 // Call the API to persist changes
                 console.log('📤 Sending profile update:', updateData);
                 const response = await fetch(`${API_URL}/api/v1/users/profile`, {
@@ -443,6 +480,84 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                                 </p>
                             </div>
                         )}
+                    </div>
+
+                    {/* Background / Cover Section */}
+                    <div>
+                        <label className="block text-sm font-medium text-white/70 mb-3">Cover Background</label>
+
+                        {/* Current Background Preview */}
+                        {profile.coverUrl && (
+                            <div className="relative h-24 rounded-xl overflow-hidden mb-3">
+                                <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
+                                <button
+                                    onClick={() => setProfile(p => ({ ...p, coverUrl: undefined }))}
+                                    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white/70 hover:text-white text-xs"
+                                >
+                                    x
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Category Tabs */}
+                        <div className="flex gap-2 mb-3 overflow-x-auto scrollbar-hide">
+                            {BG_CATEGORIES.map(cat => (
+                                <button
+                                    key={cat}
+                                    type="button"
+                                    className="px-3 py-1 rounded-full text-[11px] font-medium whitespace-nowrap bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70 transition-colors"
+                                    onClick={() => {
+                                        const el = document.getElementById(`bg-cat-${cat}`);
+                                        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                    }}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Background Grid */}
+                        <div className="max-h-48 overflow-y-auto space-y-3 pr-1">
+                            {BG_CATEGORIES.map(cat => (
+                                <div key={cat} id={`bg-cat-${cat}`}>
+                                    <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1.5">{cat}</p>
+                                    <div className="grid grid-cols-3 gap-1.5">
+                                        {PRESET_BACKGROUNDS.filter(bg => bg.category === cat).map(bg => (
+                                            <button
+                                                key={bg.id}
+                                                type="button"
+                                                onClick={() => setProfile(p => ({ ...p, coverUrl: bg.url }))}
+                                                className={`relative aspect-[3/1] rounded-lg overflow-hidden transition-all ${profile.coverUrl === bg.url
+                                                    ? 'ring-2 ring-[#00D4FF] ring-offset-1 ring-offset-[#0a0a0f]'
+                                                    : 'hover:opacity-80'
+                                                    }`}
+                                                title={bg.label}
+                                            >
+                                                <img src={bg.url} alt={bg.label} className="w-full h-full object-cover" loading="lazy" />
+                                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-1">
+                                                    <span className="text-[8px] text-white/80 leading-tight">{bg.label}</span>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* AI Coming Soon */}
+                        <div className="mt-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                            <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-lg bg-[#00D4FF]/10 flex items-center justify-center shrink-0">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-white/50 font-medium">AI Backgrounds</p>
+                                    <p className="text-[10px] text-white/25">Upload your photo and place yourself in any location. Coming soon.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Profile Info */}
@@ -680,6 +795,7 @@ export function useProfile() {
                             avatarType: user.avatarUrl ? 'custom' : 'preset',
                             avatarPreset: 'gradient-1',
                             avatarCustomUrl: user.avatarUrl,
+                            coverUrl: user.coverUrl || undefined,
                             theme: 'dark',
                             notificationsEnabled: true,
                             privateProfile: user.isPrivate || false,
@@ -738,6 +854,7 @@ export function useProfile() {
                 if (updates.displayName !== undefined) backendUpdates.displayName = updates.displayName;
                 if (updates.bio !== undefined) backendUpdates.bio = updates.bio;
                 if (updates.avatarCustomUrl !== undefined) backendUpdates.avatarUrl = updates.avatarCustomUrl;
+                if (updates.coverUrl !== undefined) backendUpdates.coverUrl = updates.coverUrl;
                 if (updates.privateProfile !== undefined) backendUpdates.isPrivate = updates.privateProfile;
 
                 if (Object.keys(backendUpdates).length > 0) {

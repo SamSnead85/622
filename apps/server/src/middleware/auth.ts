@@ -105,6 +105,39 @@ export const authenticate = async (
 // Attaches user if authenticated, continues if not
 // ============================================
 
+// ============================================
+// REQUIRE FULL ACCOUNT MIDDLEWARE
+// Blocks provisional users from restricted actions
+// ============================================
+
+export const requireFullAccount = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+    }
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: { isProvisional: true },
+        });
+        if (user?.isProvisional) {
+            res.status(403).json({
+                error: 'signup_required',
+                message: 'Complete your signup to access this feature.',
+                redirect: '/complete-signup',
+            });
+            return;
+        }
+        next();
+    } catch {
+        next();
+    }
+};
+
 export const optionalAuth = async (
     req: AuthRequest,
     res: Response,
