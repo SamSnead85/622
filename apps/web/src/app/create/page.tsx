@@ -1,14 +1,12 @@
 'use client';
 
 import { Suspense, useCallback, useState, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
-import { API_URL, API_ENDPOINTS } from '@/lib/api';
+import { API_ENDPOINTS } from '@/lib/api';
 import TopicSelector from '@/components/TopicSelector';
-
-type CreateTab = 'post' | 'moment';
 
 interface Topic {
     id: string;
@@ -20,11 +18,7 @@ interface Topic {
 
 function CreateContent() {
     const router = useRouter();
-    const searchParams = useSearchParams();
     const { user } = useAuth();
-
-    const initialType = searchParams.get('type') as CreateTab || 'post';
-    const [activeTab, setActiveTab] = useState<CreateTab>(initialType);
 
     // Post content
     const [caption, setCaption] = useState('');
@@ -193,87 +187,52 @@ function CreateContent() {
         try {
             const token = localStorage.getItem('0g_token');
 
-            if (activeTab === 'moment') {
-                // Moment flow: requires media
-                if (!mediaFile) {
-                    setError('Moments require a photo or video');
-                    setIsPublishing(false);
-                    return;
-                }
+            // Upload media first if present, then create post
+            let mediaUrl: string | undefined;
+            let postType = 'TEXT';
 
+            if (mediaFile) {
                 const formData = new FormData();
                 formData.append('file', mediaFile);
 
-                const uploadRes = await fetch(`${API_URL}/api/v1/upload/moment`, {
+                const uploadRes = await fetch(API_ENDPOINTS.upload.post, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
+                    headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
                     body: formData,
                 });
-                if (!uploadRes.ok) throw new Error('Failed to upload');
+                if (!uploadRes.ok) throw new Error('Failed to upload media');
                 const uploadData = await uploadRes.json();
-
-                const momentRes = await fetch(`${API_URL}/api/v1/moments`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        type: mediaFile.type.startsWith('video') ? 'VIDEO' : 'IMAGE',
-                        mediaUrl: uploadData.url,
-                        caption,
-                    }),
-                });
-                if (!momentRes.ok) throw new Error('Failed to create moment');
-                router.replace('/dashboard');
-            } else {
-                // Regular post: upload media first if present, then create post
-                let mediaUrl: string | undefined;
-                let postType = 'TEXT';
-
-                if (mediaFile) {
-                    const formData = new FormData();
-                    formData.append('file', mediaFile);
-
-                    const uploadRes = await fetch(API_ENDPOINTS.upload.post, {
-                        method: 'POST',
-                        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
-                        body: formData,
-                    });
-                    if (!uploadRes.ok) throw new Error('Failed to upload media');
-                    const uploadData = await uploadRes.json();
-                    mediaUrl = uploadData.url;
-                    postType = mediaFile.type.startsWith('video') ? 'VIDEO' : 'IMAGE';
-                }
-
-                const postRes = await fetch(API_ENDPOINTS.posts, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-                    },
-                    body: JSON.stringify({
-                        type: postType,
-                        caption: caption.trim(),
-                        mediaUrl,
-                        isPublic: true,
-                        topicIds: selectedTopics.map(t => t.id),
-                        ...(mediaFile && cropY !== 50 ? { mediaCropY: cropY } : {}),
-                        ...(mediaFile && chosenRatio !== 'original' ? { mediaAspectRatio: chosenRatio } : {}),
-                    }),
-                });
-
-                if (!postRes.ok) throw new Error('Failed to create post');
-
-                // Navigate immediately -- dashboard will fetch its own feed
-                router.replace('/dashboard');
+                mediaUrl = uploadData.url;
+                postType = mediaFile.type.startsWith('video') ? 'VIDEO' : 'IMAGE';
             }
+
+            const postRes = await fetch(API_ENDPOINTS.posts, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({
+                    type: postType,
+                    caption: caption.trim(),
+                    mediaUrl,
+                    isPublic: true,
+                    topicIds: selectedTopics.map(t => t.id),
+                    ...(mediaFile && cropY !== 50 ? { mediaCropY: cropY } : {}),
+                    ...(mediaFile && chosenRatio !== 'original' ? { mediaAspectRatio: chosenRatio } : {}),
+                }),
+            });
+
+            if (!postRes.ok) throw new Error('Failed to create post');
+
+            // Navigate immediately -- dashboard will fetch its own feed
+            router.replace('/dashboard');
         } catch (err) {
             console.error('Publish error:', err);
             setError('Failed to publish. Please try again.');
             setIsPublishing(false);
         }
-    }, [caption, mediaFile, activeTab, selectedTopics, router, cropY, chosenRatio]);
+    }, [caption, mediaFile, selectedTopics, router, cropY, chosenRatio]);
 
     const canPublish = caption.trim().length > 0 || mediaFile;
 
@@ -289,35 +248,14 @@ function CreateContent() {
                         Cancel
                     </button>
 
-                    <div className="flex items-center bg-white/[0.04] rounded-lg p-0.5">
-                        <button
-                            onClick={() => setActiveTab('post')}
-                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                                activeTab === 'post'
-                                    ? 'bg-[#00D4FF]/20 text-[#00D4FF]'
-                                    : 'text-white/50 hover:text-white/70'
-                            }`}
-                        >
-                            Post
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('moment')}
-                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                                activeTab === 'moment'
-                                    ? 'bg-[#8B5CF6]/20 text-[#8B5CF6]'
-                                    : 'text-white/50 hover:text-white/70'
-                            }`}
-                        >
-                            Story
-                        </button>
-                    </div>
+                    <h1 className="text-white font-semibold text-base">New Post</h1>
 
                     <button
                         onClick={handlePublish}
                         disabled={!canPublish || isPublishing}
                         className="px-5 py-2 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold text-sm disabled:opacity-30 transition-all hover:opacity-90 active:scale-95"
                     >
-                        {isPublishing ? 'Posting...' : activeTab === 'moment' ? 'Share Story' : 'Post'}
+                        {isPublishing ? 'Posting...' : 'Post'}
                     </button>
                 </div>
             </header>
@@ -391,15 +329,15 @@ function CreateContent() {
                                 e.target.style.height = 'auto';
                                 e.target.style.height = e.target.scrollHeight + 'px';
                             }}
-                            placeholder={activeTab === 'moment' ? "What's happening right now?" : "What's on your mind?"}
+                            placeholder="What's on your mind?"
                             className="w-full bg-transparent text-white text-lg placeholder:text-white/25 resize-none focus:outline-none min-h-[120px] leading-relaxed"
-                            maxLength={activeTab === 'moment' ? 500 : 5000}
+                            maxLength={5000}
                             autoFocus
                         />
 
                         {/* Character count */}
                         <div className="text-right text-xs text-white/20 mb-3">
-                            {caption.length}/{activeTab === 'moment' ? 500 : 5000}
+                            {caption.length}/5000
                         </div>
 
                         {/* Media preview with reposition + aspect ratio picker */}
@@ -522,15 +460,13 @@ function CreateContent() {
                         </div>
 
                         {/* Topic Selector */}
-                        {activeTab === 'post' && (
-                            <div className="mt-4">
-                                <TopicSelector
+                        <div className="mt-4">
+                            <TopicSelector
                                     selectedTopics={selectedTopics}
                                     onChange={setSelectedTopics}
                                     maxSelection={3}
                                 />
-                            </div>
-                        )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -549,7 +485,7 @@ function CreateContent() {
                             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                             className="w-12 h-12 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full mb-4"
                         />
-                        <p className="text-white font-semibold">Sharing your {activeTab === 'moment' ? 'story' : 'post'}...</p>
+                        <p className="text-white font-semibold">Sharing your post...</p>
                         <p className="text-white/40 text-sm mt-1">This won&apos;t take long</p>
                     </motion.div>
                 )}

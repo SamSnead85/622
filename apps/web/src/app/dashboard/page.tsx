@@ -15,7 +15,6 @@ import {
     SettingsIcon,
 } from '@/components/icons';
 import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
-import { EnhancedStoriesBar } from '@/components/stories/EnhancedStoriesBar';
 import { PeopleToFollow } from '@/components/dashboard/PeopleToFollow';
 import { TrendingSection } from '@/components/feed/TrendingSection';
 import { useFeedMode } from '@/components/feed/FeedModeToggle';
@@ -282,11 +281,6 @@ export default function DashboardPage() {
                                 </>
                             )}
                         </div>
-                    </div>
-
-                    {/* ===== STORIES: Directly under header, no extra padding ===== */}
-                    <div className="pt-1 lg:pt-0">
-                        <EnhancedStoriesBar />
                     </div>
 
                     {/* Join Community Modal */}
