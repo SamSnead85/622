@@ -72,8 +72,14 @@ export default function NotificationsPage() {
                 return notif.targetId ? `/communities/${notif.targetId}` : null;
             case 'JOURNEY':
                 return notif.targetId ? `/journeys/${notif.targetId}` : null;
+            case 'WAVE':
+                // Live stream invites link to the stream watch page
+                if (notif.targetId && notif.message?.toLowerCase().includes('live')) {
+                    return `/campfire/watch/${notif.targetId}`;
+                }
+                // Regular waves link to the actor's profile
+                return notif.actor?.username ? `/profile/${notif.actor.username}` : null;
             case 'SYSTEM':
-                // System notifications about new members link to their profile
                 return notif.actor?.username ? `/profile/${notif.actor.username}` : null;
             default:
                 return null;

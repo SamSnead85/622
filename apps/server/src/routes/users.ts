@@ -529,34 +529,60 @@ router.get('/:userId/posts', optionalAuth, async (req: AuthRequest, res, next) =
     }
 });
 
-// POST /api/v1/users/:id/wave - Send a wave/greeting
+// POST /api/v1/users/:id/wave - Send a wave/greeting or live stream invite
 router.post('/:id/wave', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { id } = req.params;
         const senderId = req.userId!;
-        const { message = 'waved at you! 👋' } = req.body;
+        const { message = 'waved at you! 👋', targetId, targetType } = req.body;
 
         if (id === senderId) {
             throw new AppError('Cannot wave at yourself', 400);
         }
 
-        const targetUser = await prisma.user.findUnique({
-            where: { id }
-        });
+        const [targetUser, sender] = await Promise.all([
+            prisma.user.findUnique({ where: { id }, select: { id: true, username: true } }),
+            prisma.user.findUnique({
+                where: { id: senderId },
+                select: { id: true, username: true, displayName: true, avatarUrl: true },
+            }),
+        ]);
 
         if (!targetUser) {
             throw new AppError('User not found', 404);
         }
 
-        // Create notification
-        await prisma.notification.create({
+        // Create notification with optional targetId (e.g. streamId for live invites)
+        const notification = await prisma.notification.create({
             data: {
                 userId: id,
                 actorId: senderId,
                 type: 'WAVE' as any,
                 message: message,
-            }
+                ...(targetId && { targetId }),
+            },
         });
+
+        // Emit real-time socket event so the user sees it instantly
+        try {
+            const { io } = await import('../index.js');
+            if (io) {
+                io.to(`user:${id}`).emit('notification:new', {
+                    id: notification.id,
+                    type: 'WAVE',
+                    message: message,
+                    read: false,
+                    actorId: senderId,
+                    actor: sender,
+                    targetId: targetId || null,
+                    targetType: targetType || null, // Not in DB but sent via socket for real-time UI
+                    createdAt: notification.createdAt,
+                });
+            }
+        } catch (socketErr) {
+            // Non-critical: notification is already in DB
+            console.error('Socket emit failed:', socketErr);
+        }
 
         res.json({ success: true, message: 'Wave sent!' });
     } catch (error) {

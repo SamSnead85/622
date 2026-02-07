@@ -647,7 +647,7 @@ function GoLiveContent() {
                 </div>
             </div>
 
-            <CampfireInvite isOpen={showInvite} onClose={() => setShowInvite(false)} streamTitle={title} />
+            <CampfireInvite isOpen={showInvite} onClose={() => setShowInvite(false)} streamTitle={title} streamId={streamId} />
         </div>
     );
 }

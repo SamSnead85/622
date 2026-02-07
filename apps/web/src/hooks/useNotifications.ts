@@ -20,7 +20,7 @@ export interface Notification {
         avatarUrl?: string;
     };
     targetId?: string;
-    targetType?: string;
+    targetType?: string; // e.g. 'LIVESTREAM', 'POST', etc.
     createdAt: string;
 }
 

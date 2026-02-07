@@ -16,9 +16,10 @@ interface CampfireInviteProps {
     isOpen: boolean;
     onClose: () => void;
     streamTitle: string;
+    streamId?: string | null;
 }
 
-export function CampfireInvite({ isOpen, onClose, streamTitle }: CampfireInviteProps) {
+export function CampfireInvite({ isOpen, onClose, streamTitle, streamId }: CampfireInviteProps) {
     const { user } = useAuth();
     const [friends, setFriends] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -46,15 +47,15 @@ export function CampfireInvite({ isOpen, onClose, streamTitle }: CampfireInviteP
         }
     };
 
-    const handlePing = async (targetId: string) => {
-        setPinged(prev => new Set(prev).add(targetId));
+    const handlePing = async (targetUserId: string) => {
+        setPinged(prev => new Set(prev).add(targetUserId));
         try {
-            // Using the "Wave" endpoint as a generic "Ping" mechanism for now
-            // Message format: "is LIVE: [Title]"
-            await apiFetch(`${API_ENDPOINTS.users}/${targetId}/wave`, {
+            await apiFetch(`${API_ENDPOINTS.users}/${targetUserId}/wave`, {
                 method: 'POST',
                 body: JSON.stringify({
-                    message: `is LIVE right now: "${streamTitle}" 🔥 Tap to watch!`
+                    message: `is LIVE right now: "${streamTitle}" 🔥 Tap to watch!`,
+                    targetId: streamId || undefined,
+                    targetType: 'LIVESTREAM',
                 })
             });
         } catch (error) {
