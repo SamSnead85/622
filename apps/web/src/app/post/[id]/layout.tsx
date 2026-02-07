@@ -1,6 +1,9 @@
 import type { Metadata, ResolvingMetadata } from 'next';
 import type { ReactNode } from 'react';
-import { API_URL } from '@/lib/api';
+
+// Use env vars directly — this runs server-side only
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://0gravity.ai';
 
 type Props = {
     params: Promise<{ id: string }>;
@@ -10,7 +13,7 @@ type Props = {
 async function getPost(id: string) {
     try {
         const response = await fetch(`${API_URL}/api/v1/posts/${id}`, {
-            next: { revalidate: 60 }, // Cache for 60 seconds
+            next: { revalidate: 60 },
         });
         if (!response.ok) return null;
         return response.json();
@@ -26,53 +29,98 @@ export async function generateMetadata(
     const { id } = await params;
     const post = await getPost(id);
 
-    // Get parent metadata (fallback)
     const previousImages = (await parent).openGraph?.images || [];
 
     if (!post) {
         return {
-            title: 'Post Not Found | 0G - ZeroG',
-            description: 'This post may have been deleted or does not exist.',
+            title: 'Post Not Found | 0G',
+            description: 'This post may have been deleted or doesn\'t exist.',
         };
     }
 
-    // Build description from caption or generate default
-    const description = post.caption
-        ? post.caption.slice(0, 160) + (post.caption.length > 160 ? '...' : '')
-        : `Check out this ${post.type?.toLowerCase() || 'post'} by ${post.user?.displayName || 'a user'} on 0G - ZeroG`;
+    const authorName = post.user?.displayName || post.user?.username || 'Someone';
+    const authorHandle = post.user?.username ? `@${post.user.username}` : '';
+    const caption = post.caption || '';
+    const isVideo = post.type === 'VIDEO';
+    const isImage = post.type === 'IMAGE';
+    const postUrl = `${SITE_URL}/post/${id}`;
 
-    const title = post.user?.displayName
-        ? `${post.user.displayName} on 0G - ZeroG`
-        : '0G - ZeroG | The Journey. Together.';
+    // Rich title for link previews
+    const title = caption
+        ? `${authorName}: "${caption.slice(0, 60)}${caption.length > 60 ? '...' : ''}" | 0G`
+        : `${authorName} shared ${isVideo ? 'a video' : isImage ? 'a photo' : 'a post'} on 0G`;
 
-    // Use post media as OG image if available
-    const images = post.mediaUrl && post.type === 'IMAGE'
-        ? [{ url: post.mediaUrl, width: 1200, height: 630, alt: description }]
-        : post.thumbnailUrl
-            ? [{ url: post.thumbnailUrl, width: 1200, height: 630, alt: description }]
-            : previousImages;
+    // Description for search engines and link previews
+    const description = caption
+        ? `${caption.slice(0, 200)}${caption.length > 200 ? '...' : ''} — ${authorHandle} on 0G`
+        : `Check out ${authorName}'s ${isVideo ? 'video' : isImage ? 'photo' : 'post'} on 0G — social media without the weight.`;
 
-    return {
+    // Determine OG images
+    let ogImages: any[] = [];
+    if (post.mediaUrl && isImage) {
+        ogImages = [{ url: post.mediaUrl, width: 1200, height: 630, alt: caption || `Photo by ${authorName}` }];
+    } else if (post.thumbnailUrl) {
+        ogImages = [{ url: post.thumbnailUrl, width: 1200, height: 630, alt: description }];
+    } else if (post.user?.avatarUrl) {
+        ogImages = [{ url: post.user.avatarUrl, width: 400, height: 400, alt: authorName }];
+    } else {
+        ogImages = previousImages.length > 0 ? previousImages : [{ url: `${SITE_URL}/og-image.png`, width: 1200, height: 630, alt: '0G' }];
+    }
+
+    // Base metadata
+    const metadata: Metadata = {
         title,
         description,
         openGraph: {
             title,
             description,
+            url: postUrl,
+            siteName: '0G — ZeroG',
+            locale: 'en_US',
             type: 'article',
-            url: `https://0gravity.ai/post/${id}`,
-            siteName: '0G - ZeroG',
-            images,
-            authors: post.user?.displayName ? [post.user.displayName] : undefined,
+            images: ogImages,
+            authors: authorName ? [authorName] : undefined,
             publishedTime: post.createdAt,
         },
         twitter: {
-            card: post.mediaUrl ? 'summary_large_image' : 'summary',
+            card: 'summary_large_image',
             title,
             description,
-            images: images.length > 0 ? [images[0]] : undefined,
-            creator: post.user?.username ? `@${post.user.username}` : undefined,
+            images: ogImages.length > 0 ? [ogImages[0]] : undefined,
+            creator: authorHandle || undefined,
         },
     };
+
+    // Video-specific OG tags for native video playback in link previews
+    if (isVideo && post.mediaUrl && !post.mediaUrl.includes('youtube') && !post.mediaUrl.includes('youtu.be')) {
+        metadata.openGraph = {
+            ...metadata.openGraph,
+            type: 'video.other',
+            videos: [
+                {
+                    url: post.mediaUrl,
+                    type: 'video/mp4',
+                    width: 1280,
+                    height: 720,
+                },
+            ],
+        };
+        // Twitter player card for inline video
+        metadata.twitter = {
+            ...metadata.twitter,
+            card: 'player',
+            players: [
+                {
+                    playerUrl: `${SITE_URL}/embed/${id}`,
+                    streamUrl: post.mediaUrl,
+                    width: 480,
+                    height: 270,
+                },
+            ],
+        };
+    }
+
+    return metadata;
 }
 
 export default function PostLayout({ children }: { children: ReactNode }) {
