@@ -192,11 +192,11 @@ export default function CommunityDetailPage() {
         if (!chatInput.trim() || sendingChat) return;
         setSendingChat(true);
         try {
-            const msg = await apiFetch(`${API_URL}/api/v1/communities/${communityId}/chat/messages`, {
+            const res = await apiFetch(`${API_URL}/api/v1/communities/${communityId}/chat/messages`, {
                 method: 'POST',
                 body: JSON.stringify({ content: chatInput.trim() }),
             });
-            setChatMessages(prev => [...prev, msg]);
+            setChatMessages(prev => [...prev, res.data as ChatMessage]);
             setChatInput('');
             setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
         } catch (err) {
