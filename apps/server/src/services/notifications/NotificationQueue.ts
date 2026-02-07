@@ -90,9 +90,89 @@ export function initNotificationQueue(): void {
 }
 
 /**
- * Process a single notification
+ * Check if current time is within user's quiet hours
+ */
+async function isInQuietHours(userId: string): Promise<boolean> {
+    try {
+        const prefs = await prisma.notificationPreferences.findUnique({
+            where: { userId },
+            select: { quietHoursFrom: true, quietHoursTo: true, quietTimezone: true },
+        });
+
+        if (!prefs?.quietHoursFrom || !prefs?.quietHoursTo) return false;
+
+        const now = new Date();
+        // Simple hour comparison (timezone handling simplified)
+        const currentHour = now.getUTCHours();
+        const currentMinute = now.getUTCMinutes();
+        const currentTime = currentHour * 60 + currentMinute;
+
+        const [fromH, fromM] = prefs.quietHoursFrom.split(':').map(Number);
+        const [toH, toM] = prefs.quietHoursTo.split(':').map(Number);
+        const fromTime = fromH * 60 + fromM;
+        const toTime = toH * 60 + toM;
+
+        if (fromTime <= toTime) {
+            return currentTime >= fromTime && currentTime <= toTime;
+        } else {
+            // Wraps midnight (e.g., 22:00 to 08:00)
+            return currentTime >= fromTime || currentTime <= toTime;
+        }
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Check if notification channel is enabled for user
+ */
+async function isChannelEnabled(userId: string, notificationType: string): Promise<boolean> {
+    try {
+        const prefs = await prisma.notificationPreferences.findUnique({
+            where: { userId },
+            select: { channels: true },
+        });
+
+        if (!prefs?.channels) return true; // Default: all enabled
+
+        const channels = prefs.channels as Record<string, boolean>;
+        const channelMap: Record<string, string> = {
+            LIKE: 'social',
+            COMMENT: 'social',
+            FOLLOW: 'social',
+            MENTION: 'social',
+            MESSAGE: 'messages',
+            COMMUNITY_INVITE: 'communities',
+            PROPOSAL: 'communities',
+            SYSTEM: 'system',
+        };
+
+        const channel = channelMap[notificationType] || 'system';
+        return channels[channel] !== false; // Default to enabled
+    } catch {
+        return true;
+    }
+}
+
+/**
+ * Process a single notification with quiet hours and channel checks
  */
 async function processNotification(payload: NotificationPayload): Promise<void> {
+    // Check channel preferences
+    const channelEnabled = await isChannelEnabled(payload.userId, payload.type);
+    if (!channelEnabled) {
+        logger.info(`Notification channel disabled for user ${payload.userId}, type ${payload.type}`);
+        return;
+    }
+
+    // Check quiet hours (defer notification if in quiet hours)
+    const inQuietHours = await isInQuietHours(payload.userId);
+    if (inQuietHours) {
+        logger.info(`User ${payload.userId} is in quiet hours, deferring notification`);
+        // Still create the notification but don't send push
+        // The notification will be visible when user opens the app
+    }
+
     // Deduplication: Check if a similar notification was created in the last 60 seconds
     const recentDuplicate = await prisma.notification.findFirst({
         where: {
@@ -109,6 +189,44 @@ async function processNotification(payload: NotificationPayload): Promise<void> 
     if (recentDuplicate) {
         logger.info(`Skipping duplicate notification for user ${payload.userId}`);
         return;
+    }
+
+    // Batch similar notifications: Check for recent similar ones to aggregate
+    // e.g., "5 people liked your post" instead of 5 separate notifications
+    if (payload.type === 'LIKE' && payload.targetId) {
+        const recentLikes = await prisma.notification.count({
+            where: {
+                userId: payload.userId,
+                type: 'LIKE' as any,
+                targetId: payload.targetId,
+                isRead: false,
+                createdAt: { gte: new Date(Date.now() - 3600000) }, // Last hour
+            },
+        });
+
+        if (recentLikes > 0) {
+            // Update existing notification with aggregated count
+            const existingNotif = await prisma.notification.findFirst({
+                where: {
+                    userId: payload.userId,
+                    type: 'LIKE' as any,
+                    targetId: payload.targetId,
+                    isRead: false,
+                },
+                orderBy: { createdAt: 'desc' },
+            });
+
+            if (existingNotif) {
+                await prisma.notification.update({
+                    where: { id: existingNotif.id },
+                    data: {
+                        message: `${recentLikes + 1} people liked your post`,
+                        createdAt: new Date(), // Bump timestamp
+                    },
+                });
+                return;
+            }
+        }
     }
 
     await prisma.notification.create({

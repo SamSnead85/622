@@ -171,6 +171,12 @@ model LiveStream {
   startedAt       DateTime?
   endedAt         DateTime?
   scheduledFor    DateTime?
+  muxStreamId     String?          @unique
+  muxPlaybackId   String?
+  muxAssetId      String?
+  category        String?
+  tags            String[]         @default([])
+  isRecorded      Boolean          @default(true)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -179,6 +185,8 @@ model LiveStream {
   @@index([userId])
   @@index([status])
   @@index([startedAt])
+  @@index([category])
+  @@index([muxStreamId])
 }
 
 model LiveStreamChat {

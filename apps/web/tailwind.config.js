@@ -61,7 +61,7 @@ module.exports = {
             },
             fontFamily: {
                 sans: [
-                    'Inter',
+                    'var(--font-inter, Inter)',
                     '-apple-system',
                     'BlinkMacSystemFont',
                     'Segoe UI',
@@ -69,9 +69,15 @@ module.exports = {
                     'sans-serif',
                 ],
                 display: [
-                    'Inter',
+                    'var(--font-inter, Inter)',
                     '-apple-system',
                     'BlinkMacSystemFont',
+                    'sans-serif',
+                ],
+                arabic: [
+                    'Noto Sans Arabic',
+                    'Segoe UI',
+                    'Tahoma',
                     'sans-serif',
                 ],
             },
@@ -216,5 +222,11 @@ module.exports = {
             },
         },
     },
-    plugins: [],
+    plugins: [
+        // RTL variant plugin
+        function ({ addVariant }) {
+            addVariant('rtl', '[dir="rtl"] &');
+            addVariant('ltr', '[dir="ltr"] &');
+        },
+    ],
 };

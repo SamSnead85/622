@@ -78,8 +78,8 @@ export default function PublicProfilePage() {
         <div className="min-h-screen bg-[#050508] relative">
             {/* Ambient Background matching Premium Theme */}
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-0 left-1/3 w-96 h-96 rounded-full bg-orange-500/5 blur-[100px]" />
-                <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-violet-500/5 blur-[100px]" />
+                <div className="absolute top-0 left-1/3 w-96 h-96 rounded-full bg-[#00D4FF]/[0.03] blur-[120px]" />
+                <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-[#7C3AED]/[0.03] blur-[120px]" />
             </div>
 
             <Navigation activeTab="profile" />
@@ -88,15 +88,18 @@ export default function PublicProfilePage() {
             <main className="lg:ml-20 xl:ml-64 lg:mr-80 min-h-screen pb-20 lg:pb-8 relative z-10">
                 {/* Cover & Header */}
                 <div className="relative">
-                    <div className="h-48 lg:h-64 bg-gradient-to-br from-slate-900 to-black relative overflow-hidden">
-                        {/* Generic pleasant cover gradient/placeholder if no user cover */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-orange-900/20 via-rose-900/20 to-violet-900/20" />
+                    <div className="h-48 lg:h-64 bg-gradient-to-br from-[#0a0a1a] via-[#1a0a2e] to-[#0a1a2e] relative overflow-hidden">
+                        {/* Decorative blur orbs for cover */}
+                        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-[#00D4FF]/10 blur-[80px]" />
+                        <div className="absolute bottom-0 right-1/3 w-48 h-48 rounded-full bg-[#7C3AED]/10 blur-[60px]" />
+                        {/* Overlay gradient for text readability */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     </div>
 
                     <div className="max-w-4xl mx-auto px-6 relative">
                         <div className="flex flex-col md:flex-row items-start md:items-end gap-6 -mt-20 md:-mt-16 mb-8">
                             {/* Avatar */}
-                            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-[#050508] p-1.5 relative z-10">
+                            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-[#050508] p-1.5 relative z-10 ring-4 ring-black ring-offset-2 ring-offset-[#00D4FF]/20 shadow-[0_0_20px_rgba(0,212,255,0.2)]">
                                 <div className="w-full h-full rounded-full overflow-hidden bg-gray-800 relative">
                                     {profile.avatarUrl ? (
                                         <Image src={profile.avatarUrl} alt={profile.displayName} fill className="object-cover" />
@@ -113,10 +116,19 @@ export default function PublicProfilePage() {
                                 <h1 className="text-3xl font-bold text-white mb-1">{profile.displayName}</h1>
                                 <p className="text-white/60 mb-4">@{profile.username}</p>
 
-                                <div className="flex gap-6 text-sm mb-4">
-                                    <span className="text-white"><strong className="text-white">{posts.length}</strong> <span className="text-white/50">Posts</span></span>
-                                    <span className="text-white"><strong className="text-white">{profile._count?.followers || 0}</strong> <span className="text-white/50">Followers</span></span>
-                                    <span className="text-white"><strong className="text-white">{profile._count?.following || 0}</strong> <span className="text-white/50">Following</span></span>
+                                <div className="flex divide-x divide-white/10 mb-4">
+                                    <div className="text-center px-4 first:pl-0">
+                                        <div className="text-xl font-bold text-white">{posts.length}</div>
+                                        <div className="text-xs text-white/40 uppercase tracking-wider">Posts</div>
+                                    </div>
+                                    <div className="text-center px-4">
+                                        <div className="text-xl font-bold text-white">{profile._count?.followers || 0}</div>
+                                        <div className="text-xs text-white/40 uppercase tracking-wider">Followers</div>
+                                    </div>
+                                    <div className="text-center px-4">
+                                        <div className="text-xl font-bold text-white">{profile._count?.following || 0}</div>
+                                        <div className="text-xs text-white/40 uppercase tracking-wider">Following</div>
+                                    </div>
                                 </div>
 
                                 <p className="text-white/80 max-w-lg leading-relaxed">{profile.bio || 'Member of ZeroG'}</p>
@@ -124,8 +136,11 @@ export default function PublicProfilePage() {
 
                             {/* Actions */}
                             <div className="mb-4 self-center md:self-end flex items-center gap-2">
-                                <button className="bg-white text-black font-bold px-8 py-2.5 rounded-full hover:bg-white/90 transition-colors shadow-lg shadow-white/10">
+                                <button className="bg-gradient-to-r from-[#00D4FF] to-[#7C3AED] text-white font-semibold px-6 py-2.5 rounded-xl hover:shadow-[0_4px_20px_rgba(0,212,255,0.3)] transition-all duration-300 hover:scale-[1.02]">
                                     Follow
+                                </button>
+                                <button className="bg-white/[0.06] border border-white/[0.1] text-white font-medium px-6 py-2.5 rounded-xl hover:bg-white/[0.1] hover:border-[#00D4FF]/20 transition-all duration-300">
+                                    Message
                                 </button>
                                 <div className="relative" ref={moreMenuRef}>
                                     <button
@@ -160,7 +175,14 @@ export default function PublicProfilePage() {
 
                 {/* Content Grid */}
                 <div className="max-w-4xl mx-auto px-6">
-                    <div className="border-t border-white/10 pt-8">
+                    {/* Tab Navigation */}
+                    <div className="flex gap-8 border-b border-white/[0.06] mb-8">
+                        <button className="text-[#00D4FF] border-b-2 border-[#00D4FF] pb-3 font-semibold text-sm">Posts</button>
+                        <button className="text-white/40 hover:text-white/70 pb-3 transition-colors duration-200 text-sm">Likes</button>
+                        <button className="text-white/40 hover:text-white/70 pb-3 transition-colors duration-200 text-sm">Media</button>
+                    </div>
+
+                    <div className="pt-0">
                         {posts.length > 0 ? (
                             <div className="grid grid-cols-3 gap-2 md:gap-4">
                                 {posts.map((post) => (
@@ -168,7 +190,7 @@ export default function PublicProfilePage() {
                                         key={post.id}
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
-                                        className="aspect-square bg-white/5 rounded-xl overflow-hidden relative group cursor-pointer"
+                                        className="aspect-square bg-white/5 rounded-xl overflow-hidden relative group cursor-pointer hover:ring-2 hover:ring-[#00D4FF]/30 transition-all duration-300"
                                     >
                                         {post.mediaUrl ? (
                                             <Image src={post.mediaUrl} alt="" fill className="object-cover transition-transform duration-500 group-hover:scale-110" />

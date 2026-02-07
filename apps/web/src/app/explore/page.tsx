@@ -215,7 +215,7 @@ function ExplorePageContent() {
                     <div className="max-w-6xl mx-auto">
                         <div className="flex items-center gap-4">
                             {/* Search */}
-                            <div className="flex-1 flex items-center gap-3 px-5 py-3.5 rounded-full bg-white/5 border border-white/10 focus-within:border-[#00D4FF]/50 focus-within:bg-white/10 transition-all group shadow-inner">
+                            <div className="flex-1 flex items-center gap-3 bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-3 focus-within:border-[#00D4FF]/30 focus-within:shadow-[0_0_20px_rgba(0,212,255,0.08)] transition-all duration-300 group">
                                 <SearchIcon className="w-5 h-5 text-white/40 group-focus-within:text-[#00D4FF] transition-colors" />
                                 <input
                                     type="text"
@@ -233,9 +233,9 @@ function ExplorePageContent() {
                                 <button
                                     key={cat.id}
                                     onClick={() => setActiveCategory(cat.id)}
-                                    className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${activeCategory === cat.id
-                                        ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.3)]'
-                                        : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/5 hover:border-white/10'
+                                    className={`rounded-full px-4 py-1.5 text-sm transition-all ${activeCategory === cat.id
+                                        ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/20 font-medium'
+                                        : 'bg-white/[0.04] text-white/50 border border-white/[0.06] hover:text-white/70 hover:bg-white/[0.06] duration-200'
                                         }`}
                                 >
                                     {cat.label}
@@ -265,7 +265,7 @@ function ExplorePageContent() {
                             </h2>
 
                             {users.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-24 bg-white/5 rounded-3xl border border-white/5 border-dashed">
+                                <div className="flex flex-col items-center justify-center py-24 bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden border-dashed">
                                     <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
                                         <UsersIcon size={40} className="text-white/20" />
                                     </div>
@@ -281,7 +281,7 @@ function ExplorePageContent() {
                                         return (
                                             <motion.div
                                                 key={u.id}
-                                                className="group relative bg-[#121216] hover:bg-[#16161c] rounded-3xl p-5 border border-white/5 hover:border-[#00D4FF]/30 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] overflow-hidden"
+                                                className="group relative bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden p-5 hover:border-[#00D4FF]/20 transition-all duration-300"
                                                 initial={{ opacity: 0, y: 15 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 layoutId={`user-${u.id}`}
@@ -383,7 +383,7 @@ function ExplorePageContent() {
                             </h2>
 
                             {posts.length === 0 ? (
-                                <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5 border-dashed">
+                                <div className="text-center py-20 bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden border-dashed">
                                     <PlayIcon size={40} className="mx-auto text-white/20 mb-4" />
                                     <p className="text-white/50 font-medium">The feed is quiet.</p>
                                 </div>
@@ -392,7 +392,7 @@ function ExplorePageContent() {
                                     {posts.map((post, i) => (
                                         <motion.div
                                             key={post.id}
-                                            className="relative overflow-hidden rounded-xl bg-gray-900 aspect-square group cursor-pointer"
+                                            className="relative bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden aspect-square group cursor-pointer hover:border-[#00D4FF]/20 transition-all duration-300"
                                             initial={{ opacity: 0, scale: 0.95 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             transition={{ delay: i * 0.05 }}
@@ -423,7 +423,7 @@ function ExplorePageContent() {
                         </div>
                     ) : (
                         /* Tribes Link */
-                        <div className="flex flex-col items-center justify-center py-32 bg-[#121216] rounded-3xl border border-white/5">
+                        <div className="flex flex-col items-center justify-center py-32 bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden hover:border-[#00D4FF]/20 transition-all duration-300">
                             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center mb-6 ring-1 ring-white/10">
                                 <UsersIcon size={48} className="text-violet-400" />
                             </div>

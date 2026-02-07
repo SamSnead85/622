@@ -4,6 +4,21 @@ import { prisma } from '../db/client.js';
 
 const router = Router();
 
+// Helper: Try FTS query with fallback to LIKE
+async function ftsSearch(table: string, query: string, limit: number, offset: number): Promise<any[] | null> {
+    try {
+        const tsQuery = query.split(/\s+/).filter(Boolean).join(' & ');
+        const results = await prisma.$queryRawUnsafe(
+            `SELECT id FROM "${table}" WHERE search_vector @@ plainto_tsquery('english', $1) ORDER BY ts_rank(search_vector, plainto_tsquery('english', $1)) DESC LIMIT $2 OFFSET $3`,
+            query, limit, offset
+        );
+        return results as any[];
+    } catch {
+        // FTS not available (migration not run), return null for fallback
+        return null;
+    }
+}
+
 // Unified search endpoint
 router.get('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
@@ -23,30 +38,51 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
         const results: any = {};
         const counts: any = {};
 
-        // Search posts
+        // Search posts (try FTS first, fallback to LIKE)
         if (searchType === 'all' || searchType === 'posts') {
-            const [posts, postCount] = await Promise.all([
-                prisma.post.findMany({
-                    where: {
-                        deletedAt: null,
-                        isPublic: true,
-                        caption: { contains: query, mode: 'insensitive' },
-                    },
-                    include: {
-                        user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    take: searchType === 'posts' ? limitNum : 5,
-                    skip: searchType === 'posts' ? skip : 0,
-                }),
-                prisma.post.count({
-                    where: {
-                        deletedAt: null,
-                        isPublic: true,
-                        caption: { contains: query, mode: 'insensitive' },
-                    },
-                }),
-            ]);
+            const postLimit = searchType === 'posts' ? limitNum : 5;
+            const postSkip = searchType === 'posts' ? skip : 0;
+
+            const ftsResults = await ftsSearch('Post', query, postLimit, postSkip);
+
+            let posts, postCount;
+            if (ftsResults && ftsResults.length > 0) {
+                const ftsIds = ftsResults.map((r: any) => r.id);
+                [posts, postCount] = await Promise.all([
+                    prisma.post.findMany({
+                        where: { id: { in: ftsIds }, deletedAt: null, isPublic: true },
+                        include: {
+                            user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+                        },
+                    }),
+                    prisma.post.count({
+                        where: { deletedAt: null, isPublic: true, caption: { contains: query, mode: 'insensitive' } },
+                    }),
+                ]);
+            } else {
+                [posts, postCount] = await Promise.all([
+                    prisma.post.findMany({
+                        where: {
+                            deletedAt: null,
+                            isPublic: true,
+                            caption: { contains: query, mode: 'insensitive' },
+                        },
+                        include: {
+                            user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+                        },
+                        orderBy: { createdAt: 'desc' },
+                        take: postLimit,
+                        skip: postSkip,
+                    }),
+                    prisma.post.count({
+                        where: {
+                            deletedAt: null,
+                            isPublic: true,
+                            caption: { contains: query, mode: 'insensitive' },
+                        },
+                    }),
+                ]);
+            }
             results.posts = posts;
             counts.posts = postCount;
         }

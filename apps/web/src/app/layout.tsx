@@ -48,6 +48,14 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { PageTransition } from '@/components/transitions/PageTransition';
 import { SkipLinks } from '@/components/a11y/SkipLinks';
 import { LiveRegionProvider } from '@/components/a11y/LiveRegion';
+import { I18nProvider } from '@/components/layout/RTLProvider';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({
+    subsets: ['latin', 'latin-ext'],
+    variable: '--font-inter',
+    display: 'swap',
+});
 
 export default function RootLayout({
     children,
@@ -55,17 +63,19 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" className="dark">
-            <body className="bg-black text-gray-50 antialiased">
+        <html lang="en" className={`dark ${inter.variable}`}>
+            <body className={`bg-black text-gray-50 antialiased ${inter.className}`}>
                 <SkipLinks />
                 <ErrorBoundary>
                     <Providers>
-                        <LiveRegionProvider>
-                            <PageTransition>
-                                <GlobalMessageListener />
-                                {children}
-                            </PageTransition>
-                        </LiveRegionProvider>
+                        <I18nProvider>
+                            <LiveRegionProvider>
+                                <PageTransition>
+                                    <GlobalMessageListener />
+                                    {children}
+                                </PageTransition>
+                            </LiveRegionProvider>
+                        </I18nProvider>
                     </Providers>
                 </ErrorBoundary>
             </body>

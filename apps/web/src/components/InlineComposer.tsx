@@ -192,9 +192,9 @@ export function InlineComposer({ user, onPostSuccess }: InlineComposerProps) {
                         <button
                             onClick={handlePost}
                             disabled={(!content.trim() && !mediaFile) || isPosting}
-                            className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${(!content.trim() && !mediaFile) || isPosting
+                            className={`px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-200 ${(!content.trim() && !mediaFile) || isPosting
                                 ? 'bg-white/10 text-white/30 cursor-not-allowed'
-                                : 'bg-[#00D4FF] text-black hover:opacity-90'
+                                : 'bg-gradient-to-r from-[#00D4FF] to-[#00D4FF]/80 text-black hover:shadow-[0_2px_12px_rgba(0,212,255,0.3)]'
                                 }`}
                         >
                             {isPosting ? 'Posting...' : 'Post'}

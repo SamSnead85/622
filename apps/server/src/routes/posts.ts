@@ -160,10 +160,30 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             throw new AppError('Failed to load posts', 503);
         }
 
+        // Load user feed preferences for personalized ranking
+        let feedPrefs = { recencyWeight: 50, engagementWeight: 50, followingRatio: 70, contentTypes: {} as Record<string, number> };
+        try {
+            const prefs = await prisma.userFeedPreferences.findUnique({ where: { userId: req.userId! } });
+            if (prefs) {
+                feedPrefs = {
+                    recencyWeight: prefs.recencyWeight,
+                    engagementWeight: prefs.engagementWeight,
+                    followingRatio: prefs.followingRatio,
+                    contentTypes: (prefs.contentTypes as Record<string, number>) || {},
+                };
+            }
+        } catch { /* Use defaults */ }
+
+        const explain = req.query.explain === 'true';
+
         // Smart ranking algorithm for "For You" feed
         if (type === 'foryou' && !cursor) {
             const now = Date.now();
             const oneHourMs = 60 * 60 * 1000;
+
+            // Normalize weights to 0-1 range
+            const recencyW = feedPrefs.recencyWeight / 100;
+            const engagementW = feedPrefs.engagementWeight / 100;
 
             // Fetch user interests for personalization
             let userInterestTopicIds: Set<string> = new Set();
@@ -191,20 +211,26 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
 
             // Calculate engagement score for each post
             const rankedPosts = posts.map(post => {
-                const engagementScore =
+                const rawEngagement =
                     (post._count.likes * 3) +      // Likes worth 3 points
                     (post._count.comments * 5) +    // Comments worth 5 points (higher engagement)
                     (post._count.shares * 7);       // Shares worth 7 points (viral signal)
 
-                // Gradual time decay (Reddit-style gravity)
-                // Score decays by half every 12 hours
-                const ageInHours = (now - new Date(post.createdAt).getTime()) / oneHourMs;
-                const timeDecay = Math.pow(0.5, ageInHours / 12);
+                // Apply user engagement weight preference
+                const engagementScore = rawEngagement * engagementW;
 
-                // Topic interest boost: 2x if matches user interests
+                // Time decay influenced by recency weight
+                const ageInHours = (now - new Date(post.createdAt).getTime()) / oneHourMs;
+                const decayRate = 12 / (recencyW * 2 + 0.1); // Higher recency weight = slower decay
+                const timeDecay = Math.pow(0.5, ageInHours / decayRate);
+
+                // Topic interest boost
                 const postTopicIds = postTopics.get(post.id) || [];
                 const interestMatch = postTopicIds.some(tid => userInterestTopicIds.has(tid));
                 const interestBoost = interestMatch ? 2.0 : 1.0;
+
+                // Content type weight from user preferences
+                const contentTypeWeight = feedPrefs.contentTypes[post.type] ?? 1.0;
 
                 // Pinned posts always show first
                 const pinnedBoost = post.isPinned ? 10000 : 0;
@@ -213,15 +239,25 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                 const newUserBoost = isNewUser ? 1.5 : 1;
 
                 const finalScore = pinnedBoost + (
-                    (engagementScore + 1) * // +1 to give new posts a baseline score
+                    (engagementScore + 1) *
                     timeDecay *
                     interestBoost *
+                    contentTypeWeight *
                     newUserBoost
                 );
 
+                const rankingFactors = explain ? {
+                    engagement: { score: rawEngagement, weight: engagementW },
+                    timeDecay: { ageHours: Math.round(ageInHours), decay: parseFloat(timeDecay.toFixed(4)) },
+                    interestMatch,
+                    contentTypeWeight,
+                    finalScore: parseFloat(finalScore.toFixed(2)),
+                } : undefined;
+
                 return {
                     ...post,
-                    _engagementScore: finalScore
+                    _engagementScore: finalScore,
+                    _rankingFactors: rankingFactors,
                 };
             });
 
@@ -258,15 +294,18 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
         const savedPostIds = new Set(saves.map((s) => s.postId));
 
         const response = {
-            posts: results.map((post) => ({
+            posts: results.map((post: any) => ({
                 ...post,
                 likesCount: post._count.likes,
                 commentsCount: post._count.comments,
                 sharesCount: post._count.shares,
                 isLiked: likedPostIds.has(post.id),
                 isSaved: savedPostIds.has(post.id),
-                // Remove internal ranking score
+                // Include ranking factors if explain=true
+                ...(post._rankingFactors ? { rankingFactors: post._rankingFactors } : {}),
+                // Remove internal fields
                 _engagementScore: undefined,
+                _rankingFactors: undefined,
             })),
             nextCursor: hasMore ? results[results.length - 1].id : null,
         };
@@ -804,10 +843,10 @@ router.get('/:postId/comments', optionalAuth, async (req: AuthRequest, res, next
         const { cursor, limit = '50' } = req.query;
 
         const comments = await prisma.comment.findMany({
-            where: { postId },
+            where: { postId, parentId: null },
             take: parseInt(limit as string) + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
-            orderBy: { createdAt: 'asc' },
+            orderBy: { createdAt: 'desc' },
             include: {
                 user: {
                     select: {
@@ -925,6 +964,60 @@ router.post('/:postId/comments', authenticate, async (req: AuthRequest, res, nex
             ...comment,
             parentId: comment.parentId,
             repliesCount: comment._count.replies,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/posts/feed/stats - Content source breakdown
+router.get('/feed/stats', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const userId = req.userId!;
+
+        // Get following IDs
+        const following = await prisma.follow.findMany({
+            where: { followerId: userId },
+            select: { followingId: true },
+        });
+        const followingIds = new Set(following.map(f => f.followingId));
+
+        // Get recent feed posts (last 50)
+        const recentPosts = await prisma.post.findMany({
+            where: { isPublic: true, deletedAt: null },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+            select: { userId: true, type: true },
+        });
+
+        // Calculate source breakdown
+        let fromFollowing = 0;
+        let fromDiscovery = 0;
+        const typeBreakdown: Record<string, number> = {};
+
+        for (const post of recentPosts) {
+            if (followingIds.has(post.userId)) {
+                fromFollowing++;
+            } else {
+                fromDiscovery++;
+            }
+            typeBreakdown[post.type] = (typeBreakdown[post.type] || 0) + 1;
+        }
+
+        const total = recentPosts.length || 1;
+
+        res.json({
+            sources: {
+                following: { count: fromFollowing, percentage: Math.round((fromFollowing / total) * 100) },
+                discovery: { count: fromDiscovery, percentage: Math.round((fromDiscovery / total) * 100) },
+            },
+            contentTypes: Object.fromEntries(
+                Object.entries(typeBreakdown).map(([type, count]) => [
+                    type,
+                    { count, percentage: Math.round((count / total) * 100) },
+                ])
+            ),
+            totalAnalyzed: recentPosts.length,
         });
     } catch (error) {
         next(error);

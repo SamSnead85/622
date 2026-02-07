@@ -60,7 +60,7 @@ export function RightSidebar() {
     if (!user) return null;
 
     return (
-        <aside className="fixed right-0 top-0 bottom-0 w-80 border-l border-white/10 bg-[#050508] hidden xl:block pt-24 px-6 overflow-y-auto">
+        <aside className="fixed right-0 top-0 bottom-0 w-80 border-l border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-transparent hidden xl:block pt-24 px-6 overflow-y-auto">
             {/* Search */}
             <div className="mb-6">
                 <input
@@ -71,7 +71,7 @@ export function RightSidebar() {
             </div>
 
             {/* Suggestions */}
-            <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+            <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-4">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="font-bold text-white">People to Follow</h3>
                     <Link href="/explore" className="text-xs text-rose-500 hover:text-rose-400">See All</Link>
@@ -87,7 +87,7 @@ export function RightSidebar() {
                             <p className="text-white/40 text-sm text-center">No suggestions yet</p>
                         ) : (
                             suggestions.map((u) => (
-                                <div key={u.id} className="flex items-center justify-between group">
+                                <div key={u.id} className="flex items-center justify-between group hover:bg-white/[0.04] rounded-xl px-2 py-2 -mx-2 transition-all duration-200">
                                     <Link href={`/profile/${u.username}`} className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 p-0.5">
                                             <div className="w-full h-full rounded-full overflow-hidden bg-black relative">
@@ -108,9 +108,9 @@ export function RightSidebar() {
                                     <button
                                         onClick={() => handleFollow(u.id)}
                                         disabled={u.isFollowing}
-                                        className={`text-xs font-bold px-4 py-1.5 rounded-full transition-colors ${u.isFollowing
+                                        className={`text-xs font-semibold px-4 py-1.5 rounded-full transition-all duration-200 ${u.isFollowing
                                                 ? 'bg-white/10 text-white/50 cursor-default'
-                                                : 'bg-white text-black hover:bg-rose-500 hover:text-white'
+                                                : 'bg-[#00D4FF] text-black hover:bg-[#00D4FF]/80 hover:shadow-[0_0_12px_rgba(0,212,255,0.3)]'
                                             }`}
                                     >
                                         {u.isFollowing ? 'Following' : 'Follow'}

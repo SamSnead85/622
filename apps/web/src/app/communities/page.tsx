@@ -144,7 +144,7 @@ function CommunityCard({ community, index }: { community: Community; index: numb
     const coverImage = community.coverUrl || DEFAULT_COVERS[index % DEFAULT_COVERS.length];
     return (
         <motion.div
-            className="group relative h-64 rounded-2xl overflow-hidden cursor-pointer"
+            className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden hover:border-[#00D4FF]/20 hover:shadow-[0_8px_32px_rgba(0,212,255,0.06)] transition-all duration-300 group relative h-64 cursor-pointer"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: index * 0.05 }}
@@ -168,11 +168,15 @@ function CommunityCard({ community, index }: { community: Community; index: numb
                 </div>
                 <h3 className="text-xl font-bold text-white mb-1 group-hover:text-[#00D4FF] transition-colors">{community.name}</h3>
                 <p className="text-sm text-white/50 line-clamp-1">{community.description}</p>
+                <div className="flex items-center gap-1 mt-2">
+                    {Icons.users}
+                    <span className="text-white/40 text-xs">Members</span>
+                </div>
             </div>
 
             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Link href={`/communities/${community.slug || community.id}`}>
-                    <button className="px-4 py-2 bg-[#00D4FF] text-black font-bold rounded-lg shadow-[0_0_20px_rgba(0,212,255,0.4)] transform hover:scale-105 transition-all">
+                    <button className="bg-[#00D4FF] text-black font-semibold text-sm px-5 py-2 rounded-xl hover:shadow-[0_0_16px_rgba(0,212,255,0.3)] transition-all duration-200">
                         Enter
                     </button>
                 </Link>
@@ -247,7 +251,7 @@ export default function CommunityHub() {
 
                         <div className="flex gap-3">
                             <Link href="/communities/create">
-                                <button className="px-6 py-3 rounded-full bg-[#00D4FF] text-black font-bold hover:bg-[#00D4FF]/90 hover:scale-105 transition-all shadow-[0_0_20px_rgba(0,212,255,0.2)] flex items-center gap-2">
+                                <button className="bg-[#00D4FF] text-black font-semibold text-sm px-5 py-2 rounded-xl hover:shadow-[0_0_16px_rgba(0,212,255,0.3)] transition-all duration-200 flex items-center gap-2">
                                     {Icons.plus}
                                     Establish Tribe
                                 </button>
@@ -262,7 +266,7 @@ export default function CommunityHub() {
                             <h2 className="text-xl font-bold uppercase tracking-widest text-white/80">Community Bulletin</h2>
                         </div>
                         {bulletins.length === 0 ? (
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
+                            <div className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden p-12 text-center">
                                 <p className="text-white/50">No bulletins yet. Check back soon for community posts, events, and announcements.</p>
                             </div>
                         ) : (
@@ -289,7 +293,7 @@ export default function CommunityHub() {
                                 <div className="w-8 h-8 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full animate-spin" />
                             </div>
                         ) : communities.length === 0 ? (
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
+                            <div className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden p-12 text-center">
                                 <p className="text-white/50 mb-4">You have not joined any tribes yet.</p>
                                 <Link href="/communities/create">
                                     <button className="text-[#00D4FF] hover:underline font-medium">Create your first circle</button>

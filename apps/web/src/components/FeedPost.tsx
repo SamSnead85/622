@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { Post } from '@/hooks/usePosts';
 import { PostActions } from '@/components/PostActions';
@@ -234,21 +235,22 @@ export function DoubleTapHeart({
 // ============================================
 export function PostSkeleton() {
     return (
-        <div className="bg-white/[0.02] rounded-2xl border border-white/5 overflow-hidden animate-pulse">
+        <div className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] rounded-2xl border border-white/[0.06] overflow-hidden">
             <div className="p-4 pb-2">
                 <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-white/10" />
+                    <div className="w-10 h-10 rounded-full bg-white/[0.06] animate-pulse" />
                     <div className="flex-1">
-                        <div className="h-4 w-32 bg-white/10 rounded mb-2" />
-                        <div className="h-3 w-48 bg-white/5 rounded" />
+                        <div className="h-4 w-32 bg-white/[0.06] rounded-lg mb-2 animate-pulse" />
+                        <div className="h-3 w-48 bg-white/[0.04] rounded-lg animate-pulse" />
                     </div>
                 </div>
             </div>
-            <div className="aspect-[4/3] bg-white/5" />
-            <div className="p-4 border-t border-white/5">
-                <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-full bg-white/10" />
-                    <div className="w-8 h-8 rounded-full bg-white/10" />
+            <div className="aspect-[4/3] bg-gradient-to-br from-white/[0.04] to-white/[0.02] animate-pulse" />
+            <div className="px-4 py-3 border-t border-white/[0.04]">
+                <div className="flex items-center gap-6">
+                    <div className="w-16 h-6 rounded-lg bg-white/[0.04] animate-pulse" />
+                    <div className="w-16 h-6 rounded-lg bg-white/[0.04] animate-pulse" />
+                    <div className="w-16 h-6 rounded-lg bg-white/[0.04] animate-pulse" />
                 </div>
             </div>
         </div>
@@ -258,33 +260,57 @@ export function PostSkeleton() {
 // ============================================
 // FEED POST COMPONENT
 // ============================================
+interface ColorPalette {
+    dominant: string;
+    muted: string;
+    vibrant: string;
+}
+
 interface FeedPostProps {
     post: Post;
     likePost: (id: string) => void;
     toggleRsvp: (id: string) => void;
     deletePost: (id: string) => Promise<{ success: boolean; error?: string }>;
     zenMode?: boolean;
+    colorPalette?: ColorPalette;
 }
 
-export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = false }: FeedPostProps) {
+export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = false, colorPalette }: FeedPostProps) {
     const { user, isAdmin } = useAuth();
     const router = useRouter();
 
+    // Adaptive sizing based on post type
+    const isVideoPost = post.type === 'VIDEO' || post.mediaType === 'VIDEO';
+    const isImagePost = post.type === 'IMAGE' || (post.mediaUrl && !isVideoPost);
+    const isTextOnly = !post.mediaUrl;
+
+    // Content-aware tinting via colorPalette
+    const tintStyle = colorPalette ? {
+        background: `linear-gradient(to bottom, ${colorPalette.dominant}08, ${colorPalette.muted}04)`,
+    } : undefined;
+
     return (
-        <div className="bg-white/[0.02] rounded-2xl border border-white/10 shadow-lg shadow-black/20 overflow-hidden mb-6 transition-all duration-200 hover:border-[#00D4FF]/30 hover:shadow-[#00D4FF]/10 group">
+        <motion.div
+            layoutId={`post-${post.id}`}
+            className={`bg-gradient-to-b from-white/[0.04] to-white/[0.01] rounded-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-sm overflow-hidden mb-6 transition-all duration-300 hover:border-[#00D4FF]/20 hover:shadow-[0_8px_32px_rgba(0,212,255,0.08)] hover:from-white/[0.06] hover:to-white/[0.02] group ${isVideoPost ? 'aspect-auto' : ''}`}
+            style={tintStyle}
+            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+        >
             {/* Header */}
             <div className="p-4 pb-2">
                 <div className="flex items-start gap-3">
                     {post.author.avatarUrl ? (
-                        <img
+                        <Image
                             src={post.author.avatarUrl}
                             alt={post.author.displayName}
-                            className="w-10 h-10 rounded-full object-cover flex-shrink-0 cursor-pointer"
+                            width={40}
+                            height={40}
+                            className="w-10 h-10 rounded-full object-cover flex-shrink-0 cursor-pointer ring-2 ring-white/10 hover:ring-[#00D4FF]/40 transition-all duration-300"
                             onClick={() => router.push(`/profile/${post.author.username}`)}
                         />
                     ) : (
                         <div
-                            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-sm flex-shrink-0 cursor-pointer"
+                            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] via-[#7C3AED] to-[#F472B6] flex items-center justify-center text-white font-bold text-sm flex-shrink-0 cursor-pointer ring-2 ring-white/10 hover:ring-[#00D4FF]/40 transition-all duration-300"
                             onClick={() => router.push(`/profile/${post.author.username}`)}
                         >
                             {post.author.displayName?.[0] || 'U'}
@@ -299,7 +325,7 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                                 {post.author.displayName}
                             </span>
                             <span className="text-white/40 text-xs">@{post.author.username}</span>
-                            <span className="px-2 py-0.5 rounded-full bg-[#00D4FF]/20 text-[#00D4FF] text-[10px] flex-shrink-0">
+                            <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#00D4FF]/20 to-[#7C3AED]/20 text-[#00D4FF] text-[10px] font-medium flex-shrink-0 border border-[#00D4FF]/10">
                                 {post.type === 'RALLY' ? '📅 Rally' : '🌍 Public'}
                             </span>
                             <span className="text-white/30 text-xs flex-shrink-0">• {new Date(post.createdAt).toLocaleDateString()}</span>
@@ -323,23 +349,29 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                 </div>
             </div>
 
-            {/* Media */}
+            {/* Media - Adaptive sizing based on post type */}
             {post.mediaUrl && (
                 <DoubleTapHeart onDoubleTap={() => !post.isLiked && likePost(post.id)}>
-                    <div className="relative w-full bg-black/30 overflow-hidden cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
+                    <div className={`relative w-full bg-black/30 overflow-hidden cursor-pointer ${isVideoPost ? 'aspect-video' : ''}`} onClick={() => router.push(`/post/${post.id}`)}>
                         {isYouTubeUrl(post.mediaUrl) ? (
                             <YouTubeEmbed src={post.mediaUrl} />
                         ) : isKickUrl(post.mediaUrl) ? (
                             <KickEmbed src={post.mediaUrl} />
-                        ) : post.mediaType === 'VIDEO' ? (
-                            <div className="aspect-[4/3]">
+                        ) : isVideoPost ? (
+                            <div className="w-full">
                                 <AutoPlayVideo src={post.mediaUrl} />
                             </div>
                         ) : (
-                            <img
+                            <Image
                                 src={post.mediaUrl}
                                 alt="Post media"
+                                width={800}
+                                height={600}
                                 className="w-full h-auto max-h-[500px] object-contain"
+                                loading="lazy"
+                                placeholder="blur"
+                                blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMGEwYTBmIi8+PC9zdmc+"
+                                sizes="(max-width: 768px) 100vw, 800px"
                             />
                         )}
                     </div>
@@ -348,9 +380,13 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
 
             {!post.mediaUrl && (
                 <div
-                    className="px-4 py-6 flex items-center justify-center min-h-[120px] bg-gradient-to-br from-[#00D4FF]/5 to-[#8B5CF6]/5 cursor-pointer"
+                    className="px-6 py-8 flex items-center justify-center min-h-[140px] bg-gradient-to-br from-[#00D4FF]/[0.06] via-transparent to-[#8B5CF6]/[0.06] cursor-pointer relative overflow-hidden"
                     onClick={() => router.push(`/post/${post.id}`)}
                 >
+                    <div className="absolute inset-0 opacity-30">
+                        <div className="absolute top-0 -left-1/4 w-1/2 h-1/2 rounded-full bg-[#00D4FF]/10 blur-[60px]" />
+                        <div className="absolute bottom-0 -right-1/4 w-1/2 h-1/2 rounded-full bg-[#8B5CF6]/10 blur-[60px]" />
+                    </div>
                     <div className="text-center">
                         <span className="text-4xl">{post.content?.length && post.content.length > 100 ? '📝' : '💭'}</span>
                         {post.type === 'RALLY' && <span className="text-4xl ml-2">📣</span>}
@@ -359,7 +395,7 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
             )}
 
             {/* Actions */}
-            <div className="p-4 border-t border-white/5">
+            <div className="px-4 py-3 border-t border-white/[0.04] bg-white/[0.01]">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
                         <button
@@ -367,7 +403,7 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                             className={`flex items-center gap-2 transition-all group ${post.isLiked ? 'text-rose-500' : 'text-white/60 hover:text-rose-400'}`}
                         >
                             <div className="relative">
-                                <HeartIcon size={24} className={`transition-transform duration-300 group-hover:scale-110 ${post.isLiked ? 'fill-rose-500' : ''}`} />
+                                <HeartIcon size={22} className={`transition-all duration-300 group-hover:scale-125 ${post.isLiked ? 'fill-rose-500 scale-110 drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]' : ''}`} />
                             </div>
                             <span className={`text-sm font-medium transition-opacity ${zenMode ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
                                 {post.likes || 0}
@@ -406,20 +442,20 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                                     // Could show toast here
                                 }
                             }}
-                            className="text-white/60 hover:text-[#00D4FF] transition-all hover:scale-110"
+                            className="text-white/40 hover:text-[#00D4FF] transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(0,212,255,0.3)]"
                         >
                             <ShareIcon size={24} />
                         </button>
 
                         <button
                             onClick={() => router.push(`/create?repost=${post.id}`)}
-                            className="text-white/60 hover:text-green-400 transition-all hover:scale-110"
+                            className="text-white/40 hover:text-green-400 transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(0,212,255,0.3)]"
                         >
                             <RefreshIcon size={22} className="rotate-90" />
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }

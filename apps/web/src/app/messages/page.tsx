@@ -480,9 +480,9 @@ function MessagesPageContent() {
                                 <EditIcon size={20} className="text-white" />
                             </button>
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
+                        <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-3 focus-within:border-[#00D4FF]/30 focus-within:shadow-[0_0_20px_rgba(0,212,255,0.08)] transition-all duration-300">
                             <SearchIcon size={16} className="text-white/40" />
-                            <input type="text" placeholder="Search messages..." className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none text-sm" />
+                            <input type="text" placeholder="Search messages..." className="flex-1 bg-transparent text-white placeholder:text-white/30 focus:outline-none text-sm" />
                         </div>
                     </div>
 
@@ -507,7 +507,7 @@ function MessagesPageContent() {
                                 <motion.button
                                     key={convo.id}
                                     onClick={() => handleSelectConversation(convo)}
-                                    className={`w-full flex items-center gap-3 p-4 hover:bg-white/5 transition-colors ${activeConversation === convo.id ? 'bg-white/10' : ''}`}
+                                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/[0.04] transition-all duration-200 cursor-pointer ${activeConversation === convo.id ? 'bg-[#00D4FF]/[0.06] border-l-2 border-[#00D4FF]' : ''}`}
                                     whileTap={{ scale: 0.98 }}
                                 >
                                     <div className="relative">
@@ -535,9 +535,7 @@ function MessagesPageContent() {
                                         </p>
                                     </div>
                                     {convo.unreadCount > 0 && (
-                                        <span className="w-5 h-5 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white text-xs flex items-center justify-center">
-                                            {convo.unreadCount}
-                                        </span>
+                                        <span className="w-2 h-2 rounded-full bg-[#00D4FF]" />
                                     )}
                                 </motion.button>
                             ))
@@ -594,9 +592,9 @@ function MessagesPageContent() {
                                             className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                                         >
                                             <div className="relative group">
-                                                <div className={`max-w-[70%] px-4 py-2 rounded-2xl ${isMe
-                                                    ? 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white rounded-br-md'
-                                                    : 'bg-white/10 text-white rounded-bl-md'
+                                                <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl ${isMe
+                                                    ? 'bg-gradient-to-r from-[#00D4FF] to-[#00D4FF]/80 text-black rounded-br-md'
+                                                    : 'bg-white/[0.06] text-white rounded-bl-md'
                                                     }`}>
                                                     {msg.mediaType === 'AUDIO' ? (
                                                         <VoiceMessage duration={15} sender={isMe ? 'me' : 'them'} />
@@ -604,7 +602,7 @@ function MessagesPageContent() {
                                                         <p>{msg.content}</p>
                                                     )}
                                                     <div className="flex items-center justify-between mt-1 gap-2">
-                                                        <p className={`text-xs ${isMe ? 'text-white/70' : 'text-white/40'}`}>
+                                                        <p className={`text-xs ${isMe ? 'text-black/60' : 'text-white/40'}`}>
                                                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </p>
                                                         {isMe && (
@@ -658,7 +656,7 @@ function MessagesPageContent() {
                                 <motion.div
                                     initial={{ y: 20, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
-                                    className="relative bg-[#0A0A0F]/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-visible"
+                                    className="relative bg-white/[0.04] border border-white/[0.08] rounded-2xl shadow-2xl overflow-visible focus-within:border-[#00D4FF]/30 focus-within:shadow-[0_0_16px_rgba(0,212,255,0.06)] transition-all duration-300 backdrop-blur-xl"
                                 >
                                     {/* Emoji Picker Popover */}
                                     <AnimatePresence>
@@ -732,7 +730,7 @@ function MessagesPageContent() {
                                                 {messageInput.trim() ? (
                                                     <motion.button
                                                         onClick={handleSendMessage}
-                                                        className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center shadow-[0_0_20px_rgba(0,212,255,0.3)]"
+                                                        className="bg-gradient-to-r from-[#00D4FF] to-[#7C3AED] text-white rounded-xl px-4 py-2.5 hover:shadow-[0_0_16px_rgba(0,212,255,0.3)] transition-all duration-200 flex items-center justify-center"
                                                         whileTap={{ scale: 0.95 }}
                                                         initial={{ scale: 0 }}
                                                         animate={{ scale: 1 }}

@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 import { useSocket } from './useSocket';
+import { encryptMessage as e2eEncrypt, decryptMessage as e2eDecrypt, type EncryptedPayload } from '@/lib/encryption/messages';
+import { getSessionKey } from '@/lib/encryption/session';
 
 // ============================================
 // TYPES
@@ -26,6 +28,7 @@ export interface Message {
     createdAt: string;
     reactions?: string[];
     read?: boolean;
+    isEncrypted?: boolean;
 }
 
 export interface Conversation {
@@ -44,6 +47,7 @@ export interface Conversation {
     unreadCount: number;
     isMuted: boolean;
     updatedAt: string;
+    isEncrypted?: boolean;
 }
 
 interface TypingUser {
@@ -115,31 +119,85 @@ export function useMessages() {
         apiFetch(`${API_ENDPOINTS.messages(conversationId)}/read`, { method: 'PUT' }).catch(console.error);
     }, [activeConversation, joinRoom, leaveRoom, fetchMessages]);
 
-    // Send a message (with HTTP fallback)
+    // E2E encryption session keys stored per conversation
+    const sessionKeysRef = useRef<Map<string, CryptoKey>>(new Map());
+
+    // Get or retrieve session key for a conversation
+    const getConversationKey = useCallback(async (conversationId: string): Promise<CryptoKey | null> => {
+        let sessionKey = sessionKeysRef.current.get(conversationId);
+        if (sessionKey) return sessionKey;
+        try {
+            sessionKey = await getSessionKey(conversationId);
+            if (sessionKey) {
+                sessionKeysRef.current.set(conversationId, sessionKey);
+                return sessionKey;
+            }
+        } catch {
+            // Session key not available
+        }
+        return null;
+    }, []);
+
+    // Try to encrypt a message for a conversation
+    const tryEncrypt = useCallback(async (conversationId: string, plaintext: string): Promise<{ encrypted: boolean; content: string }> => {
+        try {
+            const sessionKey = await getConversationKey(conversationId);
+            if (sessionKey) {
+                const payload = await e2eEncrypt(plaintext, sessionKey);
+                // Serialize the encrypted payload as JSON string for transport
+                return { encrypted: true, content: JSON.stringify(payload) };
+            }
+        } catch {
+            // Encryption not available, send plaintext
+        }
+        return { encrypted: false, content: plaintext };
+    }, [getConversationKey]);
+
+    // Try to decrypt a message
+    const tryDecrypt = useCallback(async (conversationId: string, content: string, isEncrypted?: boolean): Promise<string> => {
+        if (!isEncrypted) return content;
+        try {
+            const sessionKey = await getConversationKey(conversationId);
+            if (sessionKey) {
+                const payload: EncryptedPayload = JSON.parse(content);
+                return await e2eDecrypt(payload, sessionKey);
+            }
+        } catch {
+            // Decryption failed
+        }
+        return '[Encrypted message]';
+    }, [getConversationKey]);
+
+    // Send a message (with HTTP fallback + E2E encryption)
     const sendMessage = useCallback(async (content: string, mediaUrl?: string, mediaType?: Message['mediaType']) => {
         if (!activeConversation || !content.trim()) return { success: false, error: 'No active conversation' };
 
         try {
+            // Attempt E2E encryption
+            const { encrypted, content: messageContent } = await tryEncrypt(activeConversation, content);
+
             // First try HTTP to ensure message is persisted
             const response = await apiFetch(`${API_ENDPOINTS.messages(activeConversation)}/messages`, {
                 method: 'POST',
                 body: JSON.stringify({
-                    content,
+                    content: messageContent,
                     mediaUrl,
                     mediaType,
+                    isEncrypted: encrypted,
                 }),
             });
 
             if (response.ok) {
                 const data = await response.json();
-                // Add message to local state
-                setMessages(prev => [...prev, data.message]);
+                // Add message to local state (show decrypted content locally)
+                setMessages(prev => [...prev, { ...data.message, content, isEncrypted: encrypted }]);
                 // Also emit via socket for real-time updates to others
                 emit('message:send', {
                     conversationId: activeConversation,
-                    content,
+                    content: messageContent,
                     mediaUrl,
                     mediaType,
+                    isEncrypted: encrypted,
                 });
                 return { success: true };
             } else {
@@ -150,7 +208,7 @@ export function useMessages() {
             console.error('Error sending message:', err);
             return { success: false, error: 'Network error' };
         }
-    }, [activeConversation, emit]);
+    }, [activeConversation, emit, tryEncrypt]);
 
     // Typing indicators
     const startTyping = useCallback(() => {
@@ -184,12 +242,18 @@ export function useMessages() {
 
     // Socket event listeners
     useEffect(() => {
-        // New message received
-        const unsubMessage = on<Message>('message:new', (message) => {
+        // New message received - decrypt if encrypted
+        const unsubMessage = on<Message>('message:new', async (message) => {
+            let decryptedContent = message.content;
+            if (message.isEncrypted) {
+                decryptedContent = await tryDecrypt(message.conversationId, message.content, true);
+            }
+            const processedMessage = { ...message, content: decryptedContent };
+
             if (message.conversationId === activeConversation) {
                 setMessages(prev => {
                     if (prev.some(m => m.id === message.id)) return prev;
-                    return [...prev, message];
+                    return [...prev, processedMessage];
                 });
             }
             // Update conversation list

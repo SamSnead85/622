@@ -364,9 +364,217 @@ export const setupSocketHandlers = (io: SocketServer) => {
             }
         });
 
+        // === Live Stream Events ===
+
+        // Join a stream room as a viewer
+        socket.on('stream:join', async (streamId: string) => {
+            try {
+                if (!checkSocketRateLimit(userId)) return;
+
+                socket.join(`stream:${streamId}`);
+
+                // Increment viewer count
+                const stream = await prisma.liveStream.update({
+                    where: { id: streamId },
+                    data: {
+                        viewerCount: { increment: 1 },
+                        totalViews: { increment: 1 },
+                    },
+                });
+
+                // Update peak if needed
+                if (stream.viewerCount > stream.peakViewerCount) {
+                    await prisma.liveStream.update({
+                        where: { id: streamId },
+                        data: { peakViewerCount: stream.viewerCount },
+                    });
+                }
+
+                // Broadcast updated viewer count
+                io.to(`stream:${streamId}`).emit('stream:viewers', {
+                    streamId,
+                    viewerCount: stream.viewerCount,
+                });
+
+                // Persist join message
+                await prisma.liveStreamChat.create({
+                    data: {
+                        streamId,
+                        userId,
+                        content: 'joined the stream',
+                        type: 'JOIN',
+                    },
+                });
+
+                // Notify room
+                io.to(`stream:${streamId}`).emit('stream:user-joined', {
+                    userId,
+                    username: socket.username,
+                });
+
+                logger.info(`User ${socket.username} joined stream ${streamId}`);
+            } catch (error) {
+                logger.error('Error joining stream:', error);
+            }
+        });
+
+        // Leave a stream room
+        socket.on('stream:leave', async (streamId: string) => {
+            try {
+                socket.leave(`stream:${streamId}`);
+
+                await prisma.liveStream.updateMany({
+                    where: { id: streamId, viewerCount: { gt: 0 } },
+                    data: { viewerCount: { decrement: 1 } },
+                });
+
+                const stream = await prisma.liveStream.findUnique({
+                    where: { id: streamId },
+                    select: { viewerCount: true },
+                });
+
+                io.to(`stream:${streamId}`).emit('stream:viewers', {
+                    streamId,
+                    viewerCount: stream?.viewerCount || 0,
+                });
+
+                logger.info(`User ${socket.username} left stream ${streamId}`);
+            } catch (error) {
+                logger.error('Error leaving stream:', error);
+            }
+        });
+
+        // Send a chat message in a stream
+        socket.on('stream:chat', async (data: { streamId: string; content: string }) => {
+            try {
+                if (!checkSocketRateLimit(userId)) {
+                    socket.emit('error', { message: 'Too many messages. Slow down.' });
+                    return;
+                }
+
+                const { streamId, content } = data;
+
+                if (!content || content.length > 500) {
+                    socket.emit('error', { message: 'Message must be 1-500 characters.' });
+                    return;
+                }
+
+                const message = await prisma.liveStreamChat.create({
+                    data: {
+                        streamId,
+                        userId,
+                        content,
+                        type: 'MESSAGE',
+                    },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                username: true,
+                                displayName: true,
+                                avatarUrl: true,
+                                isVerified: true,
+                            },
+                        },
+                    },
+                });
+
+                io.to(`stream:${streamId}`).emit('stream:chat-message', message);
+            } catch (error) {
+                logger.error('Error sending stream chat:', error);
+            }
+        });
+
+        // Send an ephemeral reaction (not persisted)
+        socket.on('stream:reaction', (data: { streamId: string; emoji: string }) => {
+            if (!checkSocketRateLimit(userId)) return;
+            const { streamId, emoji } = data;
+
+            // Validate emoji (basic check)
+            if (!emoji || emoji.length > 4) return;
+
+            io.to(`stream:${streamId}`).emit('stream:reaction', {
+                userId,
+                username: socket.username,
+                emoji,
+            });
+        });
+
+        // Send a gift in a stream (persisted)
+        socket.on('stream:gift', async (data: { streamId: string; giftType: string; giftAmount: number; message?: string }) => {
+            try {
+                if (!checkSocketRateLimit(userId)) return;
+
+                const { streamId, giftType, giftAmount, message } = data;
+
+                // Validate gift
+                const validGifts: Record<string, number> = {
+                    'star': 0,
+                    'fire': 100,
+                    'diamond': 500,
+                    'crown': 2500,
+                };
+
+                if (!validGifts.hasOwnProperty(giftType)) {
+                    socket.emit('error', { message: 'Invalid gift type.' });
+                    return;
+                }
+
+                const chatMessage = await prisma.liveStreamChat.create({
+                    data: {
+                        streamId,
+                        userId,
+                        content: message || `sent a ${giftType}`,
+                        type: 'GIFT',
+                        giftType,
+                        giftAmount: giftAmount || validGifts[giftType],
+                    },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                username: true,
+                                displayName: true,
+                                avatarUrl: true,
+                                isVerified: true,
+                            },
+                        },
+                    },
+                });
+
+                io.to(`stream:${streamId}`).emit('stream:gift-received', chatMessage);
+            } catch (error) {
+                logger.error('Error processing stream gift:', error);
+            }
+        });
+
         // Handle disconnect
-        socket.on('disconnect', () => {
+        socket.on('disconnect', async () => {
             logger.info(`User disconnected: ${socket.username}`);
+
+            // Clean up stream rooms -- decrement viewer counts for any streams this socket was in
+            const rooms = Array.from(socket.rooms);
+            for (const room of rooms) {
+                if (room.startsWith('stream:')) {
+                    const streamId = room.replace('stream:', '');
+                    try {
+                        await prisma.liveStream.updateMany({
+                            where: { id: streamId, viewerCount: { gt: 0 } },
+                            data: { viewerCount: { decrement: 1 } },
+                        });
+                        const stream = await prisma.liveStream.findUnique({
+                            where: { id: streamId },
+                            select: { viewerCount: true },
+                        });
+                        io.to(room).emit('stream:viewers', {
+                            streamId,
+                            viewerCount: stream?.viewerCount || 0,
+                        });
+                    } catch {
+                        // Non-critical, ignore
+                    }
+                }
+            }
 
             // Remove from connected users
             const userSockets = connectedUsers.get(userId);

@@ -123,7 +123,7 @@ export default function DashboardPage() {
                                     )}
                                 </Link>
                                 <div>
-                                    <h1 className="text-xl md:text-2xl font-bold text-white">
+                                    <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
                                         Welcome back{user.displayName ? `, ${user.displayName}` : ''}
                                     </h1>
                                 </div>
@@ -148,14 +148,14 @@ export default function DashboardPage() {
                     <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
                         {[
                             { name: 'Share Moment', Icon: CameraIcon, href: '/create', color: 'text-[#00D4FF]' },
-                            { name: 'Invite Friends', Icon: SendIcon, href: '/invite', color: 'text-[#8B5CF6]' },
-                            { name: 'Go Live', Icon: VideoIcon, href: '/campfire', color: 'text-red-500' },
-                            { name: 'Find People', Icon: UsersIcon, href: '/explore', color: 'text-emerald-500' },
+                            { name: 'Invite Friends', Icon: SendIcon, href: '/invite', color: 'text-[#00D4FF]' },
+                            { name: 'Go Live', Icon: VideoIcon, href: '/campfire', color: 'text-[#00D4FF]' },
+                            { name: 'Find People', Icon: UsersIcon, href: '/explore', color: 'text-[#00D4FF]' },
                         ].map((action, i) => (
                             <Link
                                 key={i}
                                 href={action.href}
-                                className="group flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all active:scale-95"
+                                className="group flex items-center justify-center gap-3 px-4 py-3 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-[#00D4FF]/20 transition-all duration-300 rounded-xl hover:shadow-[0_0_20px_rgba(0,212,255,0.1)] active:scale-95"
                             >
                                 <div className={`p-2 rounded-lg bg-black/40 ${action.color} group-hover:scale-110 transition-transform`}>
                                     <action.Icon size={18} />
@@ -212,7 +212,7 @@ export default function DashboardPage() {
                         <div className="lg:col-span-2 space-y-3">
                             {/* Quick post with privacy controls */}
                             {/* Quick post - Inline Composer (X-Style) */}
-                            <div className="bg-white/[0.02] rounded-2xl border border-white/5 p-4">
+                            <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl hover:border-white/[0.12] focus-within:border-[#00D4FF]/30 focus-within:shadow-[0_0_20px_rgba(0,212,255,0.08)] transition-all duration-300 p-4">
                                 <InlineComposer
                                     user={user}
                                     onPostSuccess={() => {
@@ -369,9 +369,9 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Sidebar - 0G Differentiators */}
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             {/* People to Follow - Real Users */}
-                            <div className="bg-white/[0.02] rounded-2xl border border-white/5 p-4">
+                            <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="text-sm font-semibold text-white">People to Follow</h3>
                                     <Link href="/explore" className="text-xs text-[#00D4FF] hover:underline">See All</Link>
@@ -380,7 +380,7 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Trending / Discovery */}
-                            <div className="bg-white/[0.02] rounded-2xl border border-white/5 p-4">
+                            <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-4">
                                 <TrendingSection />
                             </div>
 
@@ -390,34 +390,34 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Privacy & Latency Indicators */}
-                            <div className="bg-white/[0.02] rounded-2xl border border-white/5 p-5">
+                            <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 rounded-2xl border border-emerald-500/20 p-5">
                                 <h3 className="text-sm font-semibold text-white mb-4">Why 0G is Different</h3>
                                 <div className="space-y-3">
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04]">
                                         <UnlockIcon size={20} className="text-[#00D4FF]" />
                                         <div>
                                             <p className="text-xs font-medium text-white">No Platform Lock-in</p>
                                             <p className="text-[10px] text-white/40">Export all data anytime</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04]">
                                         <HeartIcon size={20} className="text-[#00D4FF]" />
                                         <div>
                                             <p className="text-xs font-medium text-white">100% Zero-Profit Mission</p>
                                             <p className="text-[10px] text-white/40">No fees. No coins. No fraud.</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04]">
                                         <ZapIcon size={20} className="text-[#00D4FF]" />
                                         <div>
                                             <p className="text-xs font-medium text-white">&lt;1s Live Latency</p>
                                             <p className="text-[10px] text-white/40">Others: 3-5s delay</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                                        <ShieldIcon size={20} className="text-[#00D4FF]" />
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04]">
+                                        <ShieldIcon size={20} className="text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
                                         <div>
-                                            <p className="text-xs font-medium text-white">Privacy-First</p>
+                                            <p className="text-xs font-medium text-white">Your Privacy Matters</p>
                                             <p className="text-[10px] text-white/40">Your data stays yours</p>
                                         </div>
                                     </div>

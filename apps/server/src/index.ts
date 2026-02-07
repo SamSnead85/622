@@ -205,20 +205,28 @@ app.use(errorHandler);
 // Socket.io handlers
 setupSocketHandlers(io);
 
-// Initialize notification queue (BullMQ)
-initNotificationQueue();
+// Initialize background services and start server
+async function startServer() {
+    // Initialize notification queue (BullMQ)
+    initNotificationQueue();
 
-// Initialize scheduled post worker
-initScheduleWorker();
+    // Initialize scheduled post worker (async — must await before accepting requests)
+    await initScheduleWorker();
 
-// Start server
-const PORT = parseInt(process.env.PORT || '5180');
-const HOST = '0.0.0.0';
+    // Start server
+    const PORT = parseInt(process.env.PORT || '5180');
+    const HOST = '0.0.0.0';
 
-httpServer.listen(PORT, HOST, () => {
-    logger.info(`🚀 Caravan Server running on http://${HOST}:${PORT}`);
-    logger.info(`📡 WebSocket server ready for real-time connections`);
-    logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    httpServer.listen(PORT, HOST, () => {
+        logger.info(`🚀 Caravan Server running on http://${HOST}:${PORT}`);
+        logger.info(`📡 WebSocket server ready for real-time connections`);
+        logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+}
+
+startServer().catch((err) => {
+    logger.error('Failed to start server:', err);
+    process.exit(1);
 });
 
 // Graceful shutdown
