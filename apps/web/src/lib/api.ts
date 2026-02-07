@@ -92,6 +92,7 @@ export interface ApiResponse<T = any> {
     status: number;
     data: T;
     json(): Promise<T>; // Backward-compat shim for callers that still call .json()
+    [key: string]: any; // Dynamic properties spread via Object.assign for backward compat
 }
 
 // API fetch helper with auth
