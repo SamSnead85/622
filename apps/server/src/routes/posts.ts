@@ -317,11 +317,15 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             // Sort by engagement score
             rankedPosts.sort((a, b) => b._engagementScore - a._engagementScore);
 
-            // Diversity filter: limit to max 3 posts per author in top results
+            // Diversity filter: limit posts per author in top results
+            // In private feed, allow more posts per author (it's your circle, not discovery)
+            const maxPerAuthor = feedView === 'private' ? 20 : 3;
             const authorPostCount: Record<string, number> = {};
             const diversePosts = rankedPosts.filter(post => {
+                // Never limit the current user's own posts
+                if (post.userId === req.userId) return true;
                 const count = authorPostCount[post.userId] || 0;
-                if (count >= 3) return false;
+                if (count >= maxPerAuthor) return false;
                 authorPostCount[post.userId] = count + 1;
                 return true;
             });
