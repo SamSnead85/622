@@ -191,135 +191,90 @@ export default function DashboardPage() {
                         </span>
                     </div>
                 </div>
-                <div className="max-w-6xl mx-auto px-4 lg:px-8 py-4 pb-24 lg:pb-8">
-                    {/* Sticky Header - Compact */}
-                    <header className="mb-4 sticky top-0 z-20 -mx-4 lg:-mx-8 px-4 lg:px-8 py-3 bg-black/80 backdrop-blur-xl border-b border-white/5">
+                <div className="max-w-6xl mx-auto px-4 lg:px-8 pb-24 lg:pb-8">
+                    {/* ===== MOBILE HEADER: Clean, minimal — logo + icons only ===== */}
+                    <header className="sticky top-0 z-20 -mx-4 px-4 py-2.5 bg-black/80 backdrop-blur-xl border-b border-white/5 lg:hidden">
                         <div className="flex items-center justify-between">
-                            {/* Welcome & Profile */}
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
+                                    <span className="text-black font-bold text-xs">0G</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <Link href="/notifications" className="p-2 rounded-full hover:bg-white/5 transition-colors">
+                                    <BellIcon size={20} className="text-white/70" />
+                                </Link>
+                                <Link href="/messages" className="p-2 rounded-full hover:bg-white/5 transition-colors">
+                                    <MessageIcon size={20} className="text-white/70" />
+                                </Link>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* ===== DESKTOP HEADER: Full welcome with settings ===== */}
+                    <header className="hidden lg:block mb-4 sticky top-0 z-20 -mx-8 px-8 py-3 bg-black/80 backdrop-blur-xl border-b border-white/5">
+                        <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <Link href="/profile">
                                     {user.avatarUrl ? (
                                         <img
                                             src={user.avatarUrl}
                                             alt={user.displayName || 'Profile'}
-                                            className="w-12 h-12 rounded-full object-cover ring-2 ring-[#00D4FF]/30"
+                                            className="w-10 h-10 rounded-full object-cover ring-2 ring-[#00D4FF]/30"
                                         />
                                     ) : (
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold text-lg">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold">
                                             {user.displayName?.[0] || 'U'}
                                         </div>
                                     )}
                                 </Link>
-                                <div>
-                                    <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-                                        Welcome back{user.displayName ? `, ${user.displayName}` : ''}
-                                    </h1>
-                                </div>
+                                <h1 className="text-lg font-semibold text-white">
+                                    Welcome back{user.displayName ? `, ${user.displayName}` : ''}
+                                </h1>
                             </div>
-
-                            {/* Header Actions */}
-                            <div className="flex items-center gap-3">
-                                {/* Notifications */}
-                                <Link href="/notifications" className="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-                                    <BellIcon size={22} />
+                            <div className="flex items-center gap-2">
+                                <Link href="/notifications" className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                                    <BellIcon size={20} />
                                 </Link>
-
-                                {/* Settings */}
                                 <Link href="/settings" className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-                                    <SettingsIcon size={22} />
+                                    <SettingsIcon size={20} />
                                 </Link>
                             </div>
                         </div>
                     </header>
 
-                    {/* Quick Actions Bar - Premium Glassmorphism */}
-                    <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {[
-                            { name: 'Share Moment', Icon: CameraIcon, href: '/create', color: 'text-[#00D4FF]' },
-                            { name: 'Invite Friends', Icon: SendIcon, href: '/invite', color: 'text-[#00D4FF]' },
-                            { name: 'Go Live', Icon: VideoIcon, href: '/campfire', color: 'text-[#00D4FF]' },
-                            { name: 'Find People', Icon: UsersIcon, href: '/explore', color: 'text-[#00D4FF]' },
-                        ].map((action, i) => (
-                            <Link
-                                key={i}
-                                href={action.href}
-                                className="group flex items-center justify-center gap-3 px-4 py-3 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-[#00D4FF]/20 transition-all duration-300 rounded-xl hover:shadow-[0_0_20px_rgba(0,212,255,0.1)] active:scale-95"
-                            >
-                                <div className={`p-2 rounded-lg bg-black/40 ${action.color} group-hover:scale-110 transition-transform`}>
-                                    <action.Icon size={18} />
-                                </div>
-                                <span className="font-semibold text-sm text-white/70 group-hover:text-white transition-colors">{action.name}</span>
-                            </Link>
-                        ))}
+                    {/* ===== STORIES: Slim, directly under header ===== */}
+                    <div className="pt-2 lg:pt-0">
+                        <EnhancedStoriesBar />
                     </div>
 
-                    {/* Stories Row - Enhanced Stories Bar */}
-                    <EnhancedStoriesBar />
-
-                    {/* New Members Welcome Banner */}
-                    <NewMembersBanner />
-
-                    {/* Invite Friends CTA - Compact */}
-                    <div className="mb-4 p-3 rounded-xl bg-gradient-to-r from-[#00D4FF]/10 to-[#8B5CF6]/10 border border-[#00D4FF]/20">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
-                                <UsersIcon size={24} className="text-white" />
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-sm font-semibold text-white">Build Your Network</h3>
-                                <p className="text-xs text-white/50">Invite friends and family to connect on 0G</p>
-                            </div>
-                            <Link
-                                href="/invite"
-                                className="px-4 py-2 rounded-xl bg-[#00D4FF] text-black font-medium text-sm hover:opacity-90 transition-opacity"
-                            >
-                                Invite
-                            </Link>
+                    {/* ===== INLINE COMPOSER: Compact tap-to-expand ===== */}
+                    <div className="my-3">
+                        <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl hover:border-white/[0.12] focus-within:border-[#00D4FF]/30 transition-all duration-300 p-3 lg:p-4">
+                            <InlineComposer
+                                user={user}
+                                onPostSuccess={() => { refetch(); }}
+                            />
                         </div>
                     </div>
 
-
-                    {/* First-time user: Introduce yourself prompt */}
+                    {/* ===== FIRST-TIME EMPTY STATE (only when zero posts) ===== */}
                     {posts.length === 0 && !postsLoading && (
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="mb-4 p-5 rounded-2xl bg-gradient-to-br from-[#00D4FF]/5 via-[#8B5CF6]/5 to-transparent border border-[#00D4FF]/20"
+                            className="mb-4 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-center"
                         >
-                            <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center shrink-0">
-                                    <WaveIcon size={24} className="text-white" />
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="text-lg font-bold text-white mb-1">Welcome to 0G! 👋</h3>
-                                    <p className="text-white/50 text-sm mb-4 leading-relaxed">
-                                        You&apos;re one of the first people here. Introduce yourself to the community -- share who you are, what you&apos;re passionate about, or just say hello. Your post will be one of the first things new members see.
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                        <Link
-                                            href="/create"
-                                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold text-sm hover:opacity-90 transition-opacity active:scale-95"
-                                        >
-                                            <PlusIcon size={16} />
-                                            Create Your First Post
-                                        </Link>
-                                        <Link
-                                            href="/explore"
-                                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/70 font-medium text-sm hover:bg-white/10 transition-colors active:scale-95"
-                                        >
-                                            <SearchIcon size={16} />
-                                            Explore First
-                                        </Link>
-                                    </div>
-                                </div>
-                            </div>
+                            <p className="text-white/50 text-sm mb-3">Be the first to share something with the community</p>
+                            <Link
+                                href="/create"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold text-sm"
+                            >
+                                <PlusIcon size={16} />
+                                Create Post
+                            </Link>
                         </motion.div>
                     )}
-
-                    {/* Feed Mode Toggle */}
-                    <div className="mb-4 flex items-center justify-between">
-                        <FeedModeToggle mode={feedMode} onChange={setFeedMode} />
-                    </div>
 
                     {/* Fullscreen Video Feed Mode */}
                     {feedMode === 'video' && (
@@ -333,96 +288,9 @@ export default function DashboardPage() {
                     )}
 
                     <div className="grid lg:grid-cols-3 gap-4">
-                        {/* Feed - Main column */}
+                        {/* ===== FEED: Main column — CONTENT FIRST ===== */}
                         <div className="lg:col-span-2 space-y-3">
-                            {/* Quick post with privacy controls */}
-                            {/* Quick post - Inline Composer (X-Style) */}
-                            <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl hover:border-white/[0.12] focus-within:border-[#00D4FF]/30 focus-within:shadow-[0_0_20px_rgba(0,212,255,0.08)] transition-all duration-300 p-4">
-                                <InlineComposer
-                                    user={user}
-                                    onPostSuccess={() => {
-                                        refetch();
-                                        // Optional: Scroll to top or show toast
-                                    }}
-                                />
-                            </div>
-
-                            {/* Your Feed - Real Posts from API */}
                             <div className="space-y-3">
-                                {/* THE COMPASS - Navigation Singularity */}
-                                <TheCompass
-                                    viewMode={viewMode}
-                                    setViewMode={setViewMode}
-                                    scopeMode={scopeMode}
-                                    setScopeMode={setScopeMode}
-                                    zenMode={zenMode}
-                                    setZenMode={setZenMode}
-                                />
-
-                                {/* PINNED: HEAL Palestine Town Hall */}
-                                <div className="relative w-full rounded-3xl overflow-hidden mb-6 group border border-emerald-500/30 shadow-[0_0_50px_rgba(16,185,129,0.15)]">
-                                    {/* Gradient Background */}
-                                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/80 via-[#0A1628] to-teal-900/60" />
-                                    <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-emerald-500/10 blur-[80px]" />
-                                    <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-teal-500/10 blur-[60px]" />
-
-                                    {/* Content Container */}
-                                    <div className="relative flex flex-col items-center justify-center text-center p-8 py-12 z-10">
-
-                                        {/* Badge */}
-                                        <div className="mb-6">
-                                            <span className="px-4 py-1.5 rounded-full bg-emerald-500/90 text-black text-xs font-bold uppercase tracking-widest shadow-lg backdrop-blur-md">
-                                                Pinned Invite
-                                            </span>
-                                        </div>
-
-                                        {/* Headline */}
-                                        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight max-w-3xl drop-shadow-xl">
-                                            Community Town Hall:<br />
-                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200">
-                                                Strengthening Dignity &amp; Healing
-                                            </span>
-                                        </h2>
-
-                                        {/* Description */}
-                                        <p className="text-white/90 text-lg md:text-xl leading-relaxed max-w-2xl mb-8">
-                                            Join HEAL Palestine&apos;s leadership to reflect on 2025&apos;s impact and strengthen our community-led efforts for children and families.
-                                        </p>
-
-                                        {/* Date Widget */}
-                                        <div className="flex items-center gap-3 px-5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 mb-8">
-                                            <span className="text-2xl">📅</span>
-                                            <div className="text-left">
-                                                <p className="text-xs text-white/60 font-bold uppercase">Date</p>
-                                                <p className="text-white font-semibold">Monday, Feb 16, 2026</p>
-                                            </div>
-                                            <div className="w-px h-8 bg-white/20 mx-2" />
-                                            <span className="text-2xl">⏰</span>
-                                            <div className="text-left">
-                                                <p className="text-xs text-white/60 font-bold uppercase">Time</p>
-                                                <p className="text-white font-semibold">11:00 AM - 12:00 PM (ET)</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Actions */}
-                                        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-                                            <a
-                                                href="https://healpalestine.org/register"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex-1 px-8 py-4 rounded-xl bg-emerald-500 text-black font-bold text-lg hover:bg-emerald-400 hover:scale-105 transition-all shadow-[0_0_30px_rgba(16,185,129,0.4)]"
-                                            >
-                                                Register Now
-                                            </a>
-                                            <a
-                                                href="mailto:info@healpalestine.org"
-                                                className="px-8 py-4 rounded-xl bg-white/10 backdrop-blur-md text-white font-bold text-lg border border-white/20 hover:bg-white/20 transition-all hover:scale-105"
-                                            >
-                                                Contact Us
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
 
                                 {/* Loading State - Premium Skeletons */}
                                 {postsLoading && posts.length === 0 && (
@@ -493,9 +361,9 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        {/* Sidebar - 0G Differentiators */}
-                        <div className="space-y-4">
-                            {/* People to Follow - Real Users */}
+                        {/* Sidebar - Desktop only, clean & focused */}
+                        <div className="hidden lg:block space-y-4">
+                            {/* People to Follow */}
                             <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="text-sm font-semibold text-white">People to Follow</h3>
@@ -504,57 +372,16 @@ export default function DashboardPage() {
                                 <PeopleToFollow currentUserId={user?.id} />
                             </div>
 
-                            {/* Trending / Discovery */}
+                            {/* Trending */}
                             <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-4">
                                 <TrendingSection />
                             </div>
 
-                            {/* Data Ownership - No Lock-in */}
-                            <div>
-                                <DataOwnershipPanel />
-                            </div>
-
-                            {/* Privacy & Latency Indicators */}
-                            <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 rounded-2xl border border-emerald-500/20 p-5">
-                                <h3 className="text-sm font-semibold text-white mb-4">Why 0G is Different</h3>
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04]">
-                                        <UnlockIcon size={20} className="text-[#00D4FF]" />
-                                        <div>
-                                            <p className="text-xs font-medium text-white">No Platform Lock-in</p>
-                                            <p className="text-[10px] text-white/40">Export all data anytime</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04]">
-                                        <HeartIcon size={20} className="text-[#00D4FF]" />
-                                        <div>
-                                            <p className="text-xs font-medium text-white">100% Zero-Profit Mission</p>
-                                            <p className="text-[10px] text-white/40">No fees. No coins. No fraud.</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04]">
-                                        <ZapIcon size={20} className="text-[#00D4FF]" />
-                                        <div>
-                                            <p className="text-xs font-medium text-white">&lt;1s Live Latency</p>
-                                            <p className="text-[10px] text-white/40">Others: 3-5s delay</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04]">
-                                        <ShieldIcon size={20} className="text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                                        <div>
-                                            <p className="text-xs font-medium text-white">Your Privacy Matters</p>
-                                            <p className="text-[10px] text-white/40">Your data stays yours</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             {/* Invite Card */}
-                            <div className="bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 rounded-2xl border border-[#00D4FF]/20 p-5">
-                                <WaveIcon size={28} className="text-[#00D4FF] mb-2" />
+                            <div className="bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 rounded-2xl border border-[#00D4FF]/20 p-4">
                                 <h3 className="text-sm font-semibold text-white mb-1">Invite Your People</h3>
                                 <p className="text-xs text-white/50 mb-3">
-                                    0G is better with your tribe.
+                                    0G is better with your community.
                                 </p>
                                 <Link
                                     href="/invite"

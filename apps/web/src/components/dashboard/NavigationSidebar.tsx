@@ -75,6 +75,7 @@ export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeCh
         }
     }, [router]);
 
+    // Desktop sidebar shows all items
     const navItems = [
         { id: 'feed', Icon: HomeIcon, label: 'Feed', href: '/dashboard' },
         { id: 'explore', Icon: SearchIcon, label: 'Explore', href: '/explore' },
@@ -82,6 +83,15 @@ export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeCh
         { id: 'communities', Icon: UsersIcon, label: 'Communities', href: '/communities' },
         { id: 'invite', Icon: SendIcon, label: 'Invite', href: '/invite', highlight: true },
         { id: 'messages', Icon: MessageIcon, label: 'Messages', href: '/messages', hasNotification: true },
+    ];
+
+    // Mobile bottom bar: focused on 5 core actions
+    const mobileNavItems = [
+        { id: 'feed', Icon: HomeIcon, label: 'Home', href: '/dashboard' },
+        { id: 'explore', Icon: SearchIcon, label: 'Search', href: '/explore' },
+        { id: 'create', Icon: PlusIcon, label: 'Post', href: '/create', isCreate: true },
+        { id: 'messages', Icon: MessageIcon, label: 'Messages', href: '/messages', hasNotification: true },
+        { id: 'profile', Icon: UsersIcon, label: 'Profile', href: '/profile' },
     ];
 
     return (
@@ -208,52 +218,53 @@ export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeCh
                 />
             </motion.div>
 
-            {/* Mobile Bottom Nav */}
+            {/* Mobile Bottom Nav — 5 core items: Home, Search, Create, Messages, Profile */}
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0A0A0F]/95 backdrop-blur-xl border-t border-white/10 z-50 safe-area-pb">
                 <div className="flex items-center justify-around py-1.5">
-                    {navItems.slice(0, 5).map((item) => (
+                    {mobileNavItems.map((item) => (
                         <Link
                             key={item.id}
                             href={item.href}
-                            className={`relative flex flex-col items-center gap-0.5 min-w-[56px] min-h-[44px] justify-center active:scale-95 transition-transform ${activeTab === item.id ? 'text-[#00D4FF]' : 'text-white/50'
-                                }`}
+                            className={`relative flex flex-col items-center gap-0.5 min-w-[56px] min-h-[44px] justify-center active:scale-95 transition-transform ${
+                                item.isCreate
+                                    ? ''
+                                    : activeTab === item.id ? 'text-[#00D4FF]' : 'text-white/50'
+                            }`}
                         >
-                            {activeTab === item.id && (
-                                <motion.div
-                                    layoutId="mobileActiveTab"
-                                    className="absolute inset-0 bg-[#00D4FF]/10 rounded-xl"
-                                    transition={{
-                                        type: 'spring',
-                                        stiffness: 350,
-                                        damping: 30,
-                                        mass: 0.8,
-                                    }}
-                                />
+                            {/* Create button gets a prominent style */}
+                            {item.isCreate ? (
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center shadow-lg shadow-[#00D4FF]/20 -mt-3">
+                                    <item.Icon size={20} className="text-black" />
+                                </div>
+                            ) : (
+                                <>
+                                    {activeTab === item.id && (
+                                        <motion.div
+                                            layoutId="mobileActiveTab"
+                                            className="absolute inset-0 bg-[#00D4FF]/10 rounded-xl"
+                                            transition={{
+                                                type: 'spring',
+                                                stiffness: 350,
+                                                damping: 30,
+                                                mass: 0.8,
+                                            }}
+                                        />
+                                    )}
+                                    <span className="relative z-10">
+                                        <item.Icon size={22} />
+                                        {item.hasNotification && (
+                                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#00D4FF] rounded-full" />
+                                        )}
+                                    </span>
+                                </>
                             )}
-                            <span className="relative z-10">
-                                <item.Icon size={22} />
-                                {item.hasNotification && (
-                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#00D4FF] rounded-full" />
-                                )}
-                            </span>
                             <span className="text-xs relative z-10">{item.label}</span>
                         </Link>
                     ))}
                 </div>
             </nav>
 
-            {/* Mobile Floating Action Button */}
-            <motion.button
-                onClick={onCreateClick}
-                className="lg:hidden fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] shadow-lg shadow-[#00D4FF]/30 flex items-center justify-center"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                initial={false}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            >
-                <PlusIcon size={24} className="text-black" />
-            </motion.button>
+            {/* Mobile FAB removed — Create is now in the bottom nav */}
         </>
     );
 }
