@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { apiFetch } from '@/lib/api';
+import { API_URL } from '@/lib/api';
 import { usePullToRefresh } from '@/hooks/useInfiniteScroll';
 import { Navigation } from '@/components/Navigation';
 import { RightSidebar } from '@/components/RightSidebar';
@@ -33,15 +33,25 @@ export default function PublicProfilePage() {
     }, [showMoreMenu]);
 
     const loadProfileData = useCallback(async () => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
         try {
-            const userRes = await apiFetch(`/users/username/${username}`);
+            // GET /api/v1/users/:username returns user object directly (not wrapped in .user)
+            const userRes = await fetch(`${API_URL}/api/v1/users/${encodeURIComponent(username)}`, {
+                headers,
+                credentials: 'include',
+            });
             if (!userRes.ok) throw new Error('User not found');
             const userData = await userRes.json();
-            setProfile(userData.user);
+            setProfile(userData);
 
-            if (userData.user?.id) {
-                const userId = userData.user.id;
-                const postsRes = await apiFetch(`/users/${userId}/posts`);
+            if (userData?.id) {
+                const postsRes = await fetch(`${API_URL}/api/v1/users/${userData.id}/posts`, {
+                    headers,
+                    credentials: 'include',
+                });
                 if (postsRes.ok) {
                     const postsData = await postsRes.json();
                     setPosts(postsData.posts || []);

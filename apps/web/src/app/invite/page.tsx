@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 import { apiFetch, API_URL } from '@/lib/api';
+import QRCode from 'qrcode';
 import {
     MessageIcon,
     SmartphoneIcon,
@@ -18,11 +19,38 @@ import {
     SendIcon,
     UserIcon,
     QRCodeIcon,
-    LightbulbIcon,
     TentIcon
 } from '@/components/icons';
 
-// Platform share configurations
+// ============================================
+// GAMIFICATION TIERS
+// ============================================
+const TIERS = [
+    { name: 'Newcomer', minJoined: 0, icon: '🌱', color: 'text-white/50', bg: 'from-white/5 to-white/5', border: 'border-white/10' },
+    { name: 'Spark', minJoined: 1, icon: '✨', color: 'text-amber-400', bg: 'from-amber-500/10 to-amber-600/5', border: 'border-amber-500/20' },
+    { name: 'Catalyst', minJoined: 5, icon: '🔥', color: 'text-orange-400', bg: 'from-orange-500/10 to-red-500/5', border: 'border-orange-500/20' },
+    { name: 'Torchbearer', minJoined: 15, icon: '🏆', color: 'text-[#00D4FF]', bg: 'from-[#00D4FF]/10 to-[#8B5CF6]/5', border: 'border-[#00D4FF]/30' },
+    { name: 'Pioneer', minJoined: 50, icon: '🚀', color: 'text-violet-400', bg: 'from-violet-500/15 to-fuchsia-500/10', border: 'border-violet-500/30' },
+];
+
+function getCurrentTier(joined: number) {
+    let tier = TIERS[0];
+    for (const t of TIERS) {
+        if (joined >= t.minJoined) tier = t;
+    }
+    return tier;
+}
+
+function getNextTier(joined: number) {
+    for (const t of TIERS) {
+        if (joined < t.minJoined) return t;
+    }
+    return null;
+}
+
+// ============================================
+// SHARE PLATFORMS
+// ============================================
 const SHARE_PLATFORMS = [
     {
         id: 'whatsapp',
@@ -73,71 +101,62 @@ const SHARE_PLATFORMS = [
     },
 ];
 
-// Generate a simple QR code as SVG
-function generateQRCodeSVG(data: string, size: number = 200): string {
-    // This is a placeholder - in production use a proper QR library
-    // For now, we'll create a visual placeholder
-    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-        <rect width="${size}" height="${size}" fill="white"/>
-        <rect x="10" y="10" width="60" height="60" fill="black"/>
-        <rect x="20" y="20" width="40" height="40" fill="white"/>
-        <rect x="30" y="30" width="20" height="20" fill="black"/>
-        <rect x="${size - 70}" y="10" width="60" height="60" fill="black"/>
-        <rect x="${size - 60}" y="20" width="40" height="40" fill="white"/>
-        <rect x="${size - 50}" y="30" width="20" height="20" fill="black"/>
-        <rect x="10" y="${size - 70}" width="60" height="60" fill="black"/>
-        <rect x="20" y="${size - 60}" width="40" height="40" fill="white"/>
-        <rect x="30" y="${size - 50}" width="20" height="20" fill="black"/>
-        <text x="${size / 2}" y="${size / 2}" text-anchor="middle" font-size="12" fill="black">QR Code</text>
-        <text x="${size / 2}" y="${size / 2 + 15}" text-anchor="middle" font-size="10" fill="gray">(Scan to join)</text>
-    </svg>`;
-}
-
+// ============================================
+// INVITE PAGE
+// ============================================
 function InvitePageContent() {
     const { user } = useAuth();
     const [mounted, setMounted] = useState(false);
     const [copied, setCopied] = useState(false);
     const [showQR, setShowQR] = useState(false);
+    const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
     const [inviteLink, setInviteLink] = useState('');
-    const [inviteStats, setInviteStats] = useState({
-        sent: 0,
-        pending: 0,
-        joined: 0,
-    });
+    const [inviteStats, setInviteStats] = useState({ sent: 0, pending: 0, joined: 0 });
+    const [customMessage, setCustomMessage] = useState(
+        `Join me on 0G (ZeroG) - the Sovereign Social Network. No agendas, no algorithms, just pure human connection.`
+    );
+    const [isEditingMessage, setIsEditingMessage] = useState(false);
 
     // Fetch real invite data from server
     const fetchInviteData = useCallback(async () => {
         try {
-            // GET /api/v1/invite returns { invites, remainingToday }
             const data = await apiFetch(`${API_URL}/api/v1/invite`);
             const invites = data.invites || [];
-
-            // Compute real stats from actual invite records
             const sent = invites.length;
             const pending = invites.filter((inv: any) => ['SENT', 'OPENED', 'REMINDED'].includes(inv.status)).length;
             const joined = invites.filter((inv: any) => inv.status === 'JOINED').length;
             setInviteStats({ sent, pending, joined });
         } catch {
-            // API unavailable -- stats stay at 0
+            // API unavailable
         }
     }, []);
 
     // Generate real invite link from server
     const fetchInviteLink = useCallback(async () => {
         try {
-            // POST /api/v1/invite/link returns { code, url }
             const data = await apiFetch(`${API_URL}/api/v1/invite/link`, { method: 'POST' });
             if (data.url) {
                 setInviteLink(data.url);
                 return;
             }
         } catch {
-            // API unavailable -- fall through to fallback
+            // Fallback
         }
-        // Fallback only if server is unreachable
         const code = user?.id ? btoa(user.id).slice(0, 8) : 'INVITE';
         setInviteLink(`https://0gravity.ai/r/${code}`);
     }, [user?.id]);
+
+    // Generate real QR code when link changes or QR is shown
+    useEffect(() => {
+        if (showQR && inviteLink) {
+            QRCode.toDataURL(inviteLink, {
+                width: 200,
+                margin: 2,
+                color: { dark: '#000000', light: '#ffffff' },
+                errorCorrectionLevel: 'M',
+            }).then(setQrDataUrl).catch(() => setQrDataUrl(null));
+        }
+    }, [showQR, inviteLink]);
 
     useEffect(() => {
         setMounted(true);
@@ -152,8 +171,6 @@ function InvitePageContent() {
             </div>
         );
     }
-
-    const inviteMessage = `Join me on 0G (ZeroG) - the Sovereign Social Network. No agendas, no algorithms, just pure human connection.`;
 
     const handleCopyLink = async () => {
         try {
@@ -170,23 +187,7 @@ function InvitePageContent() {
             handleCopyLink();
             return;
         }
-
-        // Try native share first on mobile
-        if (navigator.share && platform.id === 'native') {
-            try {
-                await navigator.share({
-                    title: 'Join ZeroG',
-                    text: inviteMessage,
-                    url: inviteLink,
-                });
-                return;
-            } catch (err) {
-                console.log('Native share cancelled');
-            }
-        }
-
-        // Open share URL
-        const url = platform.getUrl(inviteLink, inviteMessage);
+        const url = platform.getUrl(inviteLink, customMessage);
         window.open(url, '_blank', 'noopener,noreferrer');
     };
 
@@ -195,14 +196,22 @@ function InvitePageContent() {
             try {
                 await navigator.share({
                     title: 'Join ZeroG',
-                    text: inviteMessage,
+                    text: customMessage,
                     url: inviteLink,
                 });
-            } catch (err) {
-                console.log('Share cancelled');
+            } catch {
+                // cancelled
             }
         }
     };
+
+    // Gamification
+    const currentTier = getCurrentTier(inviteStats.joined);
+    const nextTier = getNextTier(inviteStats.joined);
+    const progress = nextTier
+        ? ((inviteStats.joined - (TIERS[TIERS.indexOf(currentTier)]?.minJoined || 0)) /
+           (nextTier.minJoined - (TIERS[TIERS.indexOf(currentTier)]?.minJoined || 0))) * 100
+        : 100;
 
     return (
         <div className="min-h-screen bg-black text-white">
@@ -224,7 +233,7 @@ function InvitePageContent() {
                         <span className="text-[#00D4FF]">0</span>
                         <span className="text-white">G</span>
                     </div>
-                    <div className="w-16" /> {/* Spacer */}
+                    <div className="w-16" />
                 </div>
             </header>
 
@@ -232,31 +241,68 @@ function InvitePageContent() {
             <main className="relative z-10 max-w-2xl mx-auto px-4 py-8 pb-24">
                 {/* Hero Section */}
                 <motion.div
-                    className="text-center mb-10"
+                    className="text-center mb-8"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center shadow-[0_0_30px_rgba(0,212,255,0.2)]">
                         <SendIcon className="text-white" size={32} />
                     </div>
                     <h1 className="text-3xl font-bold text-white mb-3">
-                        Ignite the Migration
+                        Grow Your Tribe
                     </h1>
                     <p className="text-white/60 max-w-md mx-auto">
-                        Lead your tribe away from the noise. Invite your people to a space built for sovereignty, not profit.
+                        Every person you bring makes this space stronger. Share your link and watch your community grow.
                     </p>
+                </motion.div>
+
+                {/* Gamification Tier Card */}
+                <motion.div
+                    className={`rounded-2xl p-5 mb-8 border bg-gradient-to-br ${currentTier.bg} ${currentTier.border}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                >
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl">{currentTier.icon}</span>
+                            <div>
+                                <p className={`font-bold ${currentTier.color}`}>{currentTier.name}</p>
+                                <p className="text-xs text-white/40">{inviteStats.joined} people joined via your link</p>
+                            </div>
+                        </div>
+                        {nextTier && (
+                            <div className="text-right">
+                                <p className="text-xs text-white/40">Next: {nextTier.icon} {nextTier.name}</p>
+                                <p className="text-xs text-white/30">{nextTier.minJoined - inviteStats.joined} more needed</p>
+                            </div>
+                        )}
+                    </div>
+                    {nextTier && (
+                        <div className="w-full h-2 bg-black/30 rounded-full overflow-hidden">
+                            <motion.div
+                                className="h-full rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6]"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(progress, 100)}%` }}
+                                transition={{ duration: 1, ease: 'easeOut' }}
+                            />
+                        </div>
+                    )}
+                    {!nextTier && (
+                        <p className="text-xs text-white/50 mt-1">You&apos;ve reached the highest tier! You&apos;re a true pioneer.</p>
+                    )}
                 </motion.div>
 
                 {/* Invite Stats */}
                 <motion.div
-                    className="grid grid-cols-3 gap-4 mb-8"
+                    className="grid grid-cols-3 gap-3 mb-8"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                 >
                     <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
                         <p className="text-2xl font-bold text-[#00D4FF]">{inviteStats.sent}</p>
-                        <p className="text-xs text-white/50">Invites Sent</p>
+                        <p className="text-xs text-white/50">Links Created</p>
                     </div>
                     <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
                         <p className="text-2xl font-bold text-yellow-400">{inviteStats.pending}</p>
@@ -273,7 +319,7 @@ function InvitePageContent() {
                     className="bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 rounded-2xl p-6 border border-[#00D4FF]/20 mb-8"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
+                    transition={{ delay: 0.15 }}
                 >
                     <p className="text-sm text-white/60 mb-3">Your Personal Invite Link</p>
                     <div className="flex items-center gap-3">
@@ -285,7 +331,7 @@ function InvitePageContent() {
                         />
                         <button
                             onClick={handleCopyLink}
-                            className={`px-5 py-3 rounded-xl font-semibold text-sm transition-all ${copied
+                            className={`px-5 py-3 rounded-xl font-semibold text-sm transition-all active:scale-95 ${copied
                                 ? 'bg-green-500 text-white'
                                 : 'bg-[#00D4FF] text-black hover:opacity-90'
                                 }`}
@@ -296,32 +342,68 @@ function InvitePageContent() {
                 </motion.div>
 
                 {/* Native Share Button (Mobile) */}
-                {'share' in navigator && (
+                {typeof navigator !== 'undefined' && 'share' in navigator && (
                     <motion.button
                         onClick={handleNativeShare}
-                        className="w-full mb-6 py-4 rounded-2xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-bold text-lg flex items-center justify-center gap-3 hover:opacity-90 transition-opacity"
+                        className="w-full mb-6 py-4 rounded-2xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-bold text-lg flex items-center justify-center gap-3 hover:opacity-90 transition-opacity active:scale-[0.98]"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
+                        transition={{ delay: 0.2 }}
                     >
                         <SendIcon size={20} />
                         Share Invite
                     </motion.button>
                 )}
 
+                {/* Editable Invite Message */}
+                <motion.div
+                    className="mb-8 bg-white/[0.03] rounded-2xl p-5 border border-white/[0.06]"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                >
+                    <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm font-medium text-white/70">Your Invite Message</p>
+                        <button
+                            onClick={() => setIsEditingMessage(!isEditingMessage)}
+                            className="text-xs text-[#00D4FF] hover:text-[#00D4FF]/80 transition-colors"
+                        >
+                            {isEditingMessage ? 'Done' : 'Edit'}
+                        </button>
+                    </div>
+                    {isEditingMessage ? (
+                        <textarea
+                            value={customMessage}
+                            onChange={(e) => setCustomMessage(e.target.value)}
+                            maxLength={280}
+                            rows={3}
+                            className="w-full bg-black/50 rounded-xl px-4 py-3 text-white text-sm border border-white/10 focus:outline-none focus:border-[#00D4FF]/30 resize-none transition-colors"
+                            placeholder="Write your invite message..."
+                        />
+                    ) : (
+                        <p className="text-white/60 text-sm leading-relaxed">{customMessage}</p>
+                    )}
+                    <div className="flex items-center justify-between mt-2">
+                        <p className="text-[10px] text-white/30">This message is sent along with your invite link</p>
+                        {isEditingMessage && (
+                            <p className="text-[10px] text-white/30">{customMessage.length}/280</p>
+                        )}
+                    </div>
+                </motion.div>
+
                 {/* Share Platforms Grid */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
+                    transition={{ delay: 0.3 }}
                 >
-                    <p className="text-sm text-white/60 mb-4">Or share via:</p>
+                    <p className="text-sm text-white/60 mb-4">Share via:</p>
                     <div className="grid grid-cols-3 gap-3">
                         {SHARE_PLATFORMS.map((platform) => (
                             <button
                                 key={platform.id}
                                 onClick={() => handleShare(platform)}
-                                className={`p-4 rounded-2xl bg-gradient-to-br ${platform.color} hover:opacity-90 transition-opacity flex flex-col items-center gap-2`}
+                                className={`p-4 rounded-2xl bg-gradient-to-br ${platform.color} hover:opacity-90 active:scale-95 transition-all flex flex-col items-center gap-2`}
                             >
                                 <platform.Icon className="text-white" size={24} />
                                 <span className="text-xs font-medium text-white">{platform.name}</span>
@@ -335,11 +417,11 @@ function InvitePageContent() {
                     className="mt-8"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
+                    transition={{ delay: 0.35 }}
                 >
                     <button
                         onClick={() => setShowQR(!showQR)}
-                        className="w-full py-4 rounded-2xl border border-white/10 text-white/70 hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
+                        className="w-full py-4 rounded-2xl border border-white/10 text-white/70 hover:bg-white/5 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                     >
                         <QRCodeIcon size={20} />
                         {showQR ? 'Hide QR Code' : 'Show QR Code'}
@@ -351,12 +433,16 @@ function InvitePageContent() {
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="mt-4 flex flex-col items-center"
+                                className="mt-4 flex flex-col items-center overflow-hidden"
                             >
-                                <div className="bg-white p-4 rounded-2xl">
-                                    <div
-                                        dangerouslySetInnerHTML={{ __html: generateQRCodeSVG(inviteLink, 180) }}
-                                    />
+                                <div className="bg-white p-4 rounded-2xl shadow-[0_0_40px_rgba(0,212,255,0.15)]">
+                                    {qrDataUrl ? (
+                                        <img src={qrDataUrl} alt="Invite QR Code" width={200} height={200} />
+                                    ) : (
+                                        <div className="w-[200px] h-[200px] flex items-center justify-center">
+                                            <div className="w-6 h-6 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                        </div>
+                                    )}
                                 </div>
                                 <p className="text-xs text-white/40 mt-3">Scan to join ZeroG</p>
                             </motion.div>
@@ -364,59 +450,16 @@ function InvitePageContent() {
                     </AnimatePresence>
                 </motion.div>
 
-                {/* Invite Message Preview */}
-                <motion.div
-                    className="mt-8 bg-white/5 rounded-2xl p-5 border border-white/5"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                >
-                    <p className="text-sm text-white/60 mb-3">Message Preview:</p>
-                    <p className="text-white/80 text-sm leading-relaxed">
-                        {inviteMessage}
-                    </p>
-                    <p className="text-[#00D4FF] text-sm mt-2 break-all">
-                        {inviteLink}
-                    </p>
-                </motion.div>
-
-                {/* Tips Section */}
-                <motion.div
-                    className="mt-8"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.7 }}
-                >
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <LightbulbIcon className="text-amber-400" size={20} />
-                        Tips for Growing Your Tribe
-                    </h3>
-                    <div className="space-y-3">
-                        <div className="flex items-start gap-3 text-sm">
-                            <span className="text-[#00D4FF]">1.</span>
-                            <p className="text-white/60">Share to your WhatsApp groups and family chats</p>
-                        </div>
-                        <div className="flex items-start gap-3 text-sm">
-                            <span className="text-[#00D4FF]">2.</span>
-                            <p className="text-white/60">Post your invite link on Instagram/TikTok stories</p>
-                        </div>
-                        <div className="flex items-start gap-3 text-sm">
-                            <span className="text-[#00D4FF]">3.</span>
-                            <p className="text-white/60">Create a tribe and invite your community to join</p>
-                        </div>
-                    </div>
-                </motion.div>
-
                 {/* CTA to Create Tribe */}
                 <motion.div
                     className="mt-8"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.8 }}
+                    transition={{ delay: 0.4 }}
                 >
                     <Link
                         href="/communities/create"
-                        className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-center text-white font-medium hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+                        className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-center text-white font-medium hover:bg-white/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                     >
                         <TentIcon size={20} />
                         Create a Tribe for Your Community
