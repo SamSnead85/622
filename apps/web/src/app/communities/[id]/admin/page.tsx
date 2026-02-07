@@ -91,7 +91,7 @@ export default function CommunityAdminPage() {
     const router = useRouter();
     const { user } = useAuth();
 
-    const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'moderation' | 'settings'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'moderation' | 'filters' | 'settings'>('overview');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -109,6 +109,11 @@ export default function CommunityAdminPage() {
     const [members, setMembers] = useState<Member[]>([]);
     const [memberSearch, setMemberSearch] = useState('');
     const [memberPage, setMemberPage] = useState(1);
+
+    // Content filters
+    const [filters, setFilters] = useState<Array<{
+        id: string; type: string; pattern: string; action: string; isActive: boolean; hitCount: number; createdAt: string;
+    }>>([]);
 
     const [communityName, setCommunityName] = useState('');
 
@@ -159,6 +164,18 @@ export default function CommunityAdminPage() {
         } catch { /* ignore */ }
     }, [id, memberPage]);
 
+    const fetchFilters = useCallback(async () => {
+        try {
+            const res = await fetch(`${API}/api/v1/communities/${id}/filters`, {
+                headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setFilters(data.filters || []);
+            }
+        } catch { /* ignore */ }
+    }, [id]);
+
     const fetchCommunityName = useCallback(async () => {
         try {
             const res = await fetch(`${API}/api/v1/communities/${id}`, {
@@ -174,11 +191,11 @@ export default function CommunityAdminPage() {
     useEffect(() => {
         const load = async () => {
             setLoading(true);
-            await Promise.all([fetchAnalytics(), fetchModeration(), fetchMembers(), fetchCommunityName()]);
+            await Promise.all([fetchAnalytics(), fetchModeration(), fetchMembers(), fetchFilters(), fetchCommunityName()]);
             setLoading(false);
         };
         load();
-    }, [fetchAnalytics, fetchModeration, fetchMembers, fetchCommunityName]);
+    }, [fetchAnalytics, fetchModeration, fetchMembers, fetchFilters, fetchCommunityName]);
 
     const handleMemberAction = async (userId: string, action: 'mute' | 'unmute' | 'ban' | 'unban' | 'promote' | 'demote') => {
         try {
@@ -245,7 +262,7 @@ export default function CommunityAdminPage() {
 
                     {/* Tabs */}
                     <div className="flex gap-1">
-                        {(['overview', 'members', 'moderation', 'settings'] as const).map(tab => (
+                        {(['overview', 'members', 'moderation', 'filters', 'settings'] as const).map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
@@ -300,6 +317,14 @@ export default function CommunityAdminPage() {
                                 flaggedMembers={flaggedMembers}
                                 communityId={id as string}
                                 onRefresh={() => { fetchModeration(); fetchMembers(); }}
+                            />
+                        )}
+                        {activeTab === 'filters' && (
+                            <FiltersTab
+                                key="filters"
+                                filters={filters}
+                                communityId={id as string}
+                                onRefresh={fetchFilters}
                             />
                         )}
                         {activeTab === 'settings' && (
@@ -676,6 +701,206 @@ function ModerationTab({ reports, flaggedMembers, communityId, onRefresh }: {
                         <p className="text-xs text-white/40">No flagged members</p>
                     </div>
                 )}
+            </div>
+        </motion.div>
+    );
+}
+
+// ============================================
+// FILTERS TAB
+// ============================================
+function FiltersTab({ filters, communityId, onRefresh }: {
+    filters: Array<{ id: string; type: string; pattern: string; action: string; isActive: boolean; hitCount: number; createdAt: string }>;
+    communityId: string;
+    onRefresh: () => void;
+}) {
+    const [showAdd, setShowAdd] = useState(false);
+    const [newFilter, setNewFilter] = useState({ type: 'keyword', pattern: '', action: 'flag' });
+    const [saving, setSaving] = useState(false);
+
+    const handleAdd = async () => {
+        if (!newFilter.pattern.trim()) return;
+        setSaving(true);
+        try {
+            await fetch(`${API}/api/v1/communities/${communityId}/filters`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+                body: JSON.stringify(newFilter),
+            });
+            setNewFilter({ type: 'keyword', pattern: '', action: 'flag' });
+            setShowAdd(false);
+            onRefresh();
+        } catch { /* ignore */ }
+        setSaving(false);
+    };
+
+    const handleDelete = async (filterId: string) => {
+        try {
+            await fetch(`${API}/api/v1/communities/${communityId}/filters/${filterId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            onRefresh();
+        } catch { /* ignore */ }
+    };
+
+    const handleToggle = async (filterId: string, isActive: boolean) => {
+        try {
+            await fetch(`${API}/api/v1/communities/${communityId}/filters/${filterId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+                body: JSON.stringify({ isActive: !isActive }),
+            });
+            onRefresh();
+        } catch { /* ignore */ }
+    };
+
+    const typeLabels: Record<string, string> = {
+        keyword: 'Keyword Filter',
+        link: 'Link Filter',
+        spam: 'Spam Detection',
+        newuser: 'New Member Restriction',
+    };
+
+    const actionLabels: Record<string, string> = {
+        flag: 'Flag for review',
+        block: 'Block post',
+        mute_author: 'Mute author',
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-4"
+        >
+            <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider">Content Filters</h2>
+                <button
+                    onClick={() => setShowAdd(!showAdd)}
+                    className="px-3 py-1.5 bg-[#00D4FF]/10 text-[#00D4FF] rounded-lg text-xs font-medium hover:bg-[#00D4FF]/20 transition"
+                >
+                    {showAdd ? 'Cancel' : '+ Add Filter'}
+                </button>
+            </div>
+
+            {/* Add Filter Form */}
+            {showAdd && (
+                <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="rounded-xl border border-[#00D4FF]/20 bg-[#00D4FF]/[0.03] p-4 space-y-3"
+                >
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-[10px] text-white/40 block mb-1">Filter Type</label>
+                            <select
+                                value={newFilter.type}
+                                onChange={e => setNewFilter(f => ({ ...f, type: e.target.value }))}
+                                className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs text-white focus:outline-none"
+                            >
+                                <option value="keyword">Keyword</option>
+                                <option value="link">Link/URL</option>
+                                <option value="spam">Spam Pattern</option>
+                                <option value="newuser">New Member Restriction</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[10px] text-white/40 block mb-1">Action</label>
+                            <select
+                                value={newFilter.action}
+                                onChange={e => setNewFilter(f => ({ ...f, action: e.target.value }))}
+                                className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs text-white focus:outline-none"
+                            >
+                                <option value="flag">Flag for review</option>
+                                <option value="block">Block post</option>
+                                <option value="mute_author">Mute author</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-[10px] text-white/40 block mb-1">
+                            {newFilter.type === 'keyword' ? 'Keywords (comma-separated)' :
+                             newFilter.type === 'link' ? 'Domains to block (comma-separated, or * for all links)' :
+                             newFilter.type === 'spam' ? 'Spam sensitivity (auto-detected)' :
+                             'Days before new members can post'}
+                        </label>
+                        <input
+                            value={newFilter.pattern}
+                            onChange={e => setNewFilter(f => ({ ...f, pattern: e.target.value }))}
+                            placeholder={
+                                newFilter.type === 'keyword' ? 'spam, scam, buy now' :
+                                newFilter.type === 'link' ? 'tiktok.com, facebook.com or *' :
+                                newFilter.type === 'spam' ? 'auto' :
+                                '7'
+                            }
+                            className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs text-white placeholder-white/20 focus:outline-none focus:border-[#00D4FF]/30"
+                        />
+                    </div>
+                    <button
+                        onClick={handleAdd}
+                        disabled={saving || !newFilter.pattern.trim()}
+                        className="w-full py-2 bg-[#00D4FF]/10 text-[#00D4FF] rounded-lg text-xs font-medium hover:bg-[#00D4FF]/20 transition disabled:opacity-50"
+                    >
+                        {saving ? 'Creating...' : 'Create Filter'}
+                    </button>
+                </motion.div>
+            )}
+
+            {/* Filters List */}
+            {filters.length > 0 ? (
+                <div className="space-y-2">
+                    {filters.map(f => (
+                        <div key={f.id} className={`rounded-xl border p-4 flex items-center gap-3 ${
+                            f.isActive ? 'border-white/[0.06] bg-white/[0.02]' : 'border-white/[0.03] bg-white/[0.01] opacity-50'
+                        }`}>
+                            <button
+                                onClick={() => handleToggle(f.id, f.isActive)}
+                                className={`w-8 h-5 rounded-full transition-colors relative ${f.isActive ? 'bg-[#00D4FF]' : 'bg-white/10'}`}
+                            >
+                                <div className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-all ${f.isActive ? 'left-4' : 'left-0.5'}`} />
+                            </button>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-white/70 font-medium">{typeLabels[f.type] || f.type}</span>
+                                    <span className="text-[9px] text-white/20">{actionLabels[f.action] || f.action}</span>
+                                </div>
+                                <p className="text-[10px] text-white/30 truncate mt-0.5">
+                                    {f.type === 'spam' ? 'Auto-detect spam patterns' : f.pattern}
+                                </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                                <div className="text-[10px] text-white/20">{f.hitCount} hits</div>
+                            </div>
+                            <button
+                                onClick={() => handleDelete(f.id)}
+                                className="p-1.5 rounded-lg hover:bg-red-500/10 transition text-white/20 hover:text-red-400"
+                            >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-12 text-center">
+                    <div className="text-3xl mb-2">🔍</div>
+                    <p className="text-sm text-white/40 mb-1">No content filters configured</p>
+                    <p className="text-[10px] text-white/20">Add keyword, link, or spam filters to automatically moderate content in this community.</p>
+                </div>
+            )}
+
+            {/* Help Text */}
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <h4 className="text-xs font-semibold text-white/50 mb-2">Filter Types</h4>
+                <div className="space-y-1.5 text-[10px] text-white/30">
+                    <p><span className="text-white/50 font-medium">Keyword:</span> Block posts containing specific words or phrases (comma-separated).</p>
+                    <p><span className="text-white/50 font-medium">Link:</span> Block posts with URLs. Use * to block all links, or specific domains.</p>
+                    <p><span className="text-white/50 font-medium">Spam:</span> Auto-detect spam patterns like excessive caps, repeated characters, or excessive punctuation.</p>
+                    <p><span className="text-white/50 font-medium">New Member:</span> Restrict posting for members who joined within the specified number of days.</p>
+                </div>
             </div>
         </motion.div>
     );

@@ -427,6 +427,7 @@ model Community {
   creator        User              @relation("CommunityCreator", fields: [creatorId], references: [id])
   members        CommunityMember[]
   rules          CommunityRule[]
+  contentFilters ContentFilter[]
   posts          Post[]
   proposals      Proposal[]
   moderationLogs ModerationLog[]
@@ -510,6 +511,26 @@ model CommunityRule {
   community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
 
   @@index([communityId])
+}
+
+// ============================================
+// AUTOMATED CONTENT FILTERS
+// ============================================
+model ContentFilter {
+  id          String    @id @default(uuid())
+  communityId String
+  type        String    @default("keyword") // keyword | link | spam | newuser
+  pattern     String    // keyword, regex, or config value
+  action      String    @default("flag")    // flag | block | mute_author
+  isActive    Boolean   @default(true)
+  createdById String
+  hitCount    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, isActive])
+  @@index([type])
 }
 
 model Conversation {

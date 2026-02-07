@@ -601,6 +601,25 @@ function SettingsPageContent() {
                                     )}
                                 </AnimatePresence>
                             </div>
+
+                            {/* Security Center Link */}
+                            <Link
+                                href="/security"
+                                className="flex items-center justify-between px-4 py-3 hover:bg-white/[0.03] transition-colors group"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                                        <span className="text-sm">🛡️</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-white font-medium">Security Center</p>
+                                        <p className="text-[10px] text-white/30">Safety guides, panic button, and feature status</p>
+                                    </div>
+                                </div>
+                                <svg className="w-4 h-4 text-white/20 group-hover:text-white/40 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </Link>
                         </div>
                     </div>
 

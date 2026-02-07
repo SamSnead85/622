@@ -1539,4 +1539,255 @@ router.get('/:communityId/moderation', authenticate, async (req: AuthRequest, re
     }
 });
 
+// ============================================
+// CONTENT FILTERS MANAGEMENT
+// ============================================
+
+// GET /:communityId/filters — List all content filters
+router.get('/:communityId/filters', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const userId = req.user!.id;
+
+        const membership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId, communityId } },
+        });
+        if (!membership || !['ADMIN', 'MODERATOR'].includes(membership.role)) {
+            res.status(403).json({ error: 'Moderator access required.' });
+            return;
+        }
+
+        const filters = await prisma.contentFilter.findMany({
+            where: { communityId },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        res.json({ filters });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /:communityId/filters — Create a content filter
+router.post('/:communityId/filters', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const userId = req.user!.id;
+
+        const membership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId, communityId } },
+        });
+        if (!membership || membership.role !== 'ADMIN') {
+            res.status(403).json({ error: 'Admin access required.' });
+            return;
+        }
+
+        const { type, pattern, action } = req.body;
+
+        if (!type || !pattern) {
+            res.status(400).json({ error: 'Type and pattern are required.' });
+            return;
+        }
+
+        const validTypes = ['keyword', 'link', 'spam', 'newuser'];
+        const validActions = ['flag', 'block', 'mute_author'];
+
+        if (!validTypes.includes(type)) {
+            res.status(400).json({ error: `Invalid type. Use: ${validTypes.join(', ')}` });
+            return;
+        }
+
+        const filter = await prisma.contentFilter.create({
+            data: {
+                communityId,
+                type,
+                pattern,
+                action: validActions.includes(action) ? action : 'flag',
+                createdById: userId,
+            },
+        });
+
+        // Log moderation action
+        await prisma.moderationLog.create({
+            data: {
+                communityId,
+                moderatorId: userId,
+                action: 'create_filter',
+                targetType: 'content_filter',
+                targetId: filter.id,
+                reason: `Created ${type} filter: "${pattern}" → ${action || 'flag'}`,
+            },
+        });
+
+        res.status(201).json({ filter });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// DELETE /:communityId/filters/:filterId — Delete a content filter
+router.delete('/:communityId/filters/:filterId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, filterId } = req.params;
+        const userId = req.user!.id;
+
+        const membership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId, communityId } },
+        });
+        if (!membership || membership.role !== 'ADMIN') {
+            res.status(403).json({ error: 'Admin access required.' });
+            return;
+        }
+
+        const filter = await prisma.contentFilter.findFirst({
+            where: { id: filterId, communityId },
+        });
+        if (!filter) {
+            res.status(404).json({ error: 'Filter not found.' });
+            return;
+        }
+
+        await prisma.contentFilter.delete({ where: { id: filterId } });
+
+        await prisma.moderationLog.create({
+            data: {
+                communityId,
+                moderatorId: userId,
+                action: 'delete_filter',
+                targetType: 'content_filter',
+                targetId: filterId,
+                reason: `Deleted ${filter.type} filter: "${filter.pattern}"`,
+            },
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// PATCH /:communityId/filters/:filterId — Toggle a content filter
+router.patch('/:communityId/filters/:filterId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, filterId } = req.params;
+        const userId = req.user!.id;
+
+        const membership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId, communityId } },
+        });
+        if (!membership || membership.role !== 'ADMIN') {
+            res.status(403).json({ error: 'Admin access required.' });
+            return;
+        }
+
+        const { isActive, action } = req.body;
+
+        const updated = await prisma.contentFilter.update({
+            where: { id: filterId },
+            data: {
+                ...(typeof isActive === 'boolean' && { isActive }),
+                ...(action && { action }),
+            },
+        });
+
+        res.json({ filter: updated });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /:communityId/check-content — Check content against filters (used before posting)
+router.post('/:communityId/check-content', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const { text } = req.body;
+
+        if (!text) {
+            res.json({ allowed: true, matches: [] });
+            return;
+        }
+
+        const filters = await prisma.contentFilter.findMany({
+            where: { communityId, isActive: true },
+        });
+
+        const matches: Array<{ filterId: string; type: string; action: string; pattern: string }> = [];
+        const lowerText = text.toLowerCase();
+
+        for (const filter of filters) {
+            let hit = false;
+
+            switch (filter.type) {
+                case 'keyword': {
+                    // Check for keyword match (supports comma-separated keywords)
+                    const keywords = filter.pattern.split(',').map(k => k.trim().toLowerCase());
+                    hit = keywords.some(kw => lowerText.includes(kw));
+                    break;
+                }
+                case 'link': {
+                    // Check for any URLs
+                    const urlRegex = /https?:\/\/[^\s]+|www\.[^\s]+/i;
+                    if (filter.pattern === '*') {
+                        hit = urlRegex.test(text);
+                    } else {
+                        // Block specific domains
+                        const domains = filter.pattern.split(',').map(d => d.trim().toLowerCase());
+                        hit = domains.some(d => lowerText.includes(d));
+                    }
+                    break;
+                }
+                case 'spam': {
+                    // Check for spam patterns: excessive caps, repeated chars, too many exclamation marks
+                    const capsRatio = (text.match(/[A-Z]/g) || []).length / Math.max(text.length, 1);
+                    const repeatedChars = /(.)\1{4,}/g.test(text);
+                    const excessivePunctuation = (text.match(/[!?]{3,}/g) || []).length > 0;
+                    hit = capsRatio > 0.7 || repeatedChars || excessivePunctuation;
+                    break;
+                }
+                case 'newuser': {
+                    // Restrict new users (check if user joined within X days)
+                    const days = parseInt(filter.pattern) || 7;
+                    const membership = await prisma.communityMember.findUnique({
+                        where: { userId_communityId: { userId: req.user!.id, communityId } },
+                    });
+                    if (membership) {
+                        const joinedDaysAgo = (Date.now() - new Date(membership.joinedAt).getTime()) / (1000 * 60 * 60 * 24);
+                        hit = joinedDaysAgo < days;
+                    }
+                    break;
+                }
+            }
+
+            if (hit) {
+                matches.push({
+                    filterId: filter.id,
+                    type: filter.type,
+                    action: filter.action,
+                    pattern: filter.pattern,
+                });
+
+                // Increment hit count
+                await prisma.contentFilter.update({
+                    where: { id: filter.id },
+                    data: { hitCount: { increment: 1 } },
+                });
+            }
+        }
+
+        // Determine the strictest action
+        const blocked = matches.some(m => m.action === 'block');
+        const flagged = matches.some(m => m.action === 'flag');
+        const muteAuthor = matches.some(m => m.action === 'mute_author');
+
+        res.json({
+            allowed: !blocked,
+            flagged,
+            muteAuthor,
+            matches: matches.map(m => ({ type: m.type, action: m.action })),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 export { router as communitiesRouter };
