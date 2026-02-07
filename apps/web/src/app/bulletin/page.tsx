@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
-import { Navigation } from '@/components/Navigation';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { BulletinBoard } from '@/components/BulletinBoard';
 import { BulletinComposer } from '@/components/BulletinComposer';
 
@@ -29,12 +29,7 @@ function BulletinPageContent() {
     return (
         <div className="min-h-screen bg-[#050508] text-white">
             {/* Shared Navigation */}
-            <Navigation
-                activeTab="bulletin"
-                userAvatarUrl={user?.avatarUrl}
-                displayName={user?.displayName}
-                username={user?.username}
-            />
+            <NavigationSidebar />
 
             {/* Main Content */}
             <main className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">

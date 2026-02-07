@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Navigation } from '@/components/Navigation';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     AdventureList,
@@ -74,7 +74,7 @@ export default function AdventuresPage() {
     if (!user) {
         return (
             <div className="min-h-screen bg-[#0A0A0F]">
-                <Navigation activeTab="explore" />
+                <NavigationSidebar />
                 <main className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
                     <div className="max-w-4xl mx-auto px-4 py-16 text-center">
                         <div className="text-6xl mb-4">🗺️</div>
@@ -94,7 +94,7 @@ export default function AdventuresPage() {
 
     return (
         <div className="min-h-screen bg-[#0A0A0F]">
-            <Navigation activeTab="explore" />
+            <NavigationSidebar />
 
             <main className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
                 {/* Hero Header */}

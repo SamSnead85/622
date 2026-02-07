@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { API_URL } from '@/lib/api';
 
 // ============================================
@@ -245,6 +246,8 @@ export default function CommunityAdminPage() {
 
     return (
         <div className="min-h-screen bg-[#0a0a0f] text-white">
+            <NavigationSidebar />
+            <div className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
             {/* Header */}
             <div className="border-b border-white/[0.06] bg-[#0a0a0f]/80 backdrop-blur-xl sticky top-0 z-30">
                 <div className="max-w-6xl mx-auto px-4 py-4">
@@ -346,6 +349,7 @@ export default function CommunityAdminPage() {
                         )}
                     </AnimatePresence>
                 )}
+            </div>
             </div>
         </div>
     );

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { API_URL } from '@/lib/api';
 
 const API = API_URL;
@@ -178,7 +179,8 @@ export default function GrowthPartnerPage() {
     if (!isEnrolled) {
         return (
             <div className="min-h-screen bg-[#0a0a0f] text-white">
-                <div className="max-w-lg mx-auto px-4 py-12">
+                <NavigationSidebar />
+                <div className="lg:ml-20 xl:ml-64 max-w-lg mx-auto px-4 py-12">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -268,6 +270,8 @@ export default function GrowthPartnerPage() {
     // Dashboard (enrolled)
     return (
         <div className="min-h-screen bg-[#0a0a0f] text-white">
+            <NavigationSidebar />
+            <div className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
             {/* Header */}
             <div className="border-b border-white/[0.06] bg-[#0a0a0f]/80 backdrop-blur-xl sticky top-0 z-30">
                 <div className="max-w-5xl mx-auto px-4 py-4">
@@ -608,6 +612,7 @@ export default function GrowthPartnerPage() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+            </div>
             </div>
         </div>
     );

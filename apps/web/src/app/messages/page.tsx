@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMessages, type Message as ApiMessage, type Conversation } from '@/hooks';
 import { ProtectedRoute, useAuth } from '@/contexts/AuthContext';
-import { Navigation } from '@/components/Navigation';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { API_URL } from '@/lib/api';
 import { DECOY_MESSAGES } from '@/lib/stealth/decoyData';
 import { useCall } from '@/hooks/useCall';
@@ -465,13 +465,7 @@ function MessagesPageContent() {
                 <div className="absolute top-1/4 right-1/3 w-80 h-80 rounded-full bg-violet-500/5 blur-[100px]" />
             </div>
 
-            <Navigation
-                activeTab="messages"
-                variant="messages"
-                userAvatarUrl={user?.avatarUrl}
-                displayName={user?.displayName}
-                username={user?.username}
-            />
+            <NavigationSidebar />
 
             {/* New Chat Modal */}
             <AnimatePresence>

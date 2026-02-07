@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCommunities, type Community } from '@/hooks';
-import { Navigation } from '@/components/Navigation';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_URL } from '@/lib/api';
 
@@ -226,7 +226,7 @@ export default function CommunityHub() {
 
     return (
         <div className="min-h-screen bg-[#050508] text-white selection:bg-[#00D4FF]/30">
-            <Navigation activeTab="communities" />
+            <NavigationSidebar />
 
             {/* Ambient Background */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">

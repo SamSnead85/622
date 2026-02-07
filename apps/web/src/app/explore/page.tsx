@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 import { usePullToRefresh } from '@/hooks/useInfiniteScroll';
-import { Navigation } from '@/components/Navigation';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import {
     HomeIcon,
     SearchIcon,
@@ -215,12 +215,7 @@ function ExplorePageContent() {
                 <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-cyan-600/5 blur-[120px]" />
             </div>
 
-            <Navigation
-                activeTab="explore"
-                userAvatarUrl={userAvatarUrl}
-                displayName={user?.displayName}
-                username={user?.username}
-            />
+            <NavigationSidebar />
 
             <main className="relative z-10 lg:ml-20 xl:ml-64 pb-24 lg:pb-8 transition-all duration-300">
                 {/* Header */}

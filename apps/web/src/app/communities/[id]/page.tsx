@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { API_URL, API_ENDPOINTS, apiFetch } from '@/lib/api';
 import { usePosts } from '@/hooks/usePosts';
 import { useCommunities } from '@/hooks/useCommunities';
@@ -375,6 +376,8 @@ export default function CommunityDetailPage() {
 
     return (
         <div className="min-h-screen bg-black text-white">
+            <NavigationSidebar />
+            <div className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
             {/* Cover Image */}
             <div className="relative h-44 md:h-56">
                 <Image src={coverImage} alt={community.name} fill className="object-cover" priority />
@@ -930,6 +933,7 @@ export default function CommunityDetailPage() {
                 onAcceptVideo={() => incomingCall && answerCall(incomingCall.callId)}
                 onReject={() => incomingCall && rejectCall(incomingCall.callId)}
             />
+            </div>
         </div>
     );
 }

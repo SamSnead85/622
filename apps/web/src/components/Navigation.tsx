@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * @deprecated Use NavigationSidebar from '@/components/dashboard/NavigationSidebar' instead.
+ * This component is kept only for legacy _community_backup pages.
+ * All active pages have been migrated to the unified NavigationSidebar.
+ */
+
 import Link from 'next/link';
 import { useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 import { Avatar, useProfile, SECONDARY_LANGUAGES } from '@/components/ProfileEditor';
-import { Navigation } from '@/components/Navigation';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { SettingsIcon, CameraIcon, PlusIcon, PlayIcon, HeartIcon } from '@/components/icons';
 import { API_URL, API_ENDPOINTS, apiFetch } from '@/lib/api';
 import { InlineComposer } from '@/components/InlineComposer';
@@ -174,7 +174,7 @@ function ProfilePageContent() {
                 <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-violet-500/5 blur-[100px]" />
             </div>
 
-            <Navigation activeTab="profile" />
+            <NavigationSidebar />
 
             <main className="relative z-10 lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
                 {/* Profile Header */}

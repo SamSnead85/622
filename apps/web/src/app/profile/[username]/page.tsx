@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { API_URL } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePullToRefresh } from '@/hooks/useInfiniteScroll';
-import { Navigation } from '@/components/Navigation';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { RightSidebar } from '@/components/RightSidebar';
 import { HeartIcon, PlayIcon, PhoneIcon, VideoIcon } from '@/components/icons';
 import { useCall } from '@/hooks/useCall';
@@ -224,7 +224,7 @@ export default function PublicProfilePage() {
                 <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-[#7C3AED]/[0.03] blur-[120px]" />
             </div>
 
-            <Navigation activeTab="profile" />
+            <NavigationSidebar />
             <RightSidebar />
 
             <main className="lg:ml-20 xl:ml-64 lg:mr-80 min-h-screen pb-20 lg:pb-8 relative z-10">

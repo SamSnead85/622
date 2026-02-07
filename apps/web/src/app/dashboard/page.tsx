@@ -140,11 +140,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Navigation */}
-            <NavigationSidebar
-                activeTab="feed"
-                user={user}
-                onCreateClick={() => router.push('/create')}
-            />
+            <NavigationSidebar />
 
             {/* Main Content */}
             <div ref={pullRef} className="lg:pl-20 xl:pl-64 h-screen overflow-y-auto">

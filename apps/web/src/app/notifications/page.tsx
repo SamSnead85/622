@@ -8,7 +8,7 @@ import { useNotifications, Notification } from '@/hooks/useNotifications';
 import { apiFetch, API_ENDPOINTS } from '@/lib/api';
 import { isStealthActive } from '@/lib/stealth/engine';
 import { DECOY_NOTIFICATIONS } from '@/lib/stealth/decoyData';
-import { Navigation } from '@/components/Navigation';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { HeartIcon, UserIcon, MessageIcon, BellIcon, UsersIcon, VideoIcon } from '@/components/icons';
 import React from 'react';
 
@@ -129,7 +129,7 @@ export default function NotificationsPage() {
                 <div className="absolute top-1/3 left-1/4 w-80 h-80 rounded-full bg-orange-500/5 blur-[100px]" />
             </div>
 
-            <Navigation activeTab="notifications" />
+            <NavigationSidebar />
 
             <main className="relative z-10 lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
                 {/* Header */}

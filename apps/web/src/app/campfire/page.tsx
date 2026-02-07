@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { TrendingIcon, VideoIcon, ArrowLeftIcon } from '@/components/icons';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { apiFetch } from '@/lib/api';
 
 // ============================================
@@ -305,6 +306,8 @@ export default function CampfireDiscoverPage() {
 
     return (
         <div className="min-h-screen bg-[#050508] text-white">
+            <NavigationSidebar />
+            <div className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
             {/* Header */}
             <header className="sticky top-0 z-20 bg-[#050508]/90 backdrop-blur-xl border-b border-white/[0.06]">
                 <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -425,6 +428,7 @@ export default function CampfireDiscoverPage() {
                     </section>
                 )}
             </main>
+            </div>
         </div>
     );
 }

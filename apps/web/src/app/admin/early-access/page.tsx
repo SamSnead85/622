@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProtectedRoute, useAuth } from '@/contexts/AuthContext';
 import { API_URL } from '@/lib/api';
-import { Navigation } from '@/components/Navigation';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 
 interface EarlyAccessRequest {
     id: string;
@@ -109,7 +109,7 @@ function AdminContent() {
 
     return (
         <div className="min-h-screen bg-[#030305]">
-            <Navigation activeTab="" />
+            <NavigationSidebar />
             <main className="pt-20 pb-16 px-4 md:px-8 max-w-7xl mx-auto">
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-white mb-2">Early Access Management</h1>

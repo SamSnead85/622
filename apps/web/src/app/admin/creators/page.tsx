@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
-import { Navigation } from '@/components/Navigation';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -62,7 +62,7 @@ function CreatorsContent() {
 
     return (
         <div className="min-h-screen bg-[#050508] text-white">
-            <Navigation activeTab="" userAvatarUrl={user?.avatarUrl} displayName={user?.displayName} username={user?.username} />
+            <NavigationSidebar />
             <main className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
                 <div className="max-w-5xl mx-auto px-4 py-6 lg:py-8">
                     <div className="flex items-center justify-between mb-6">

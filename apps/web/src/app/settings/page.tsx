@@ -10,7 +10,7 @@ import { apiFetch, API_URL } from '@/lib/api';
 import { isShieldConfigured, setupShield, removeShield } from '@/lib/stealth/engine';
 import { InviteFriends } from '@/components/InviteFriends';
 import { TwoFactorSetup } from '@/components/TwoFactorSetup';
-import { Navigation } from '@/components/Navigation';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import {
     HomeIcon,
     SearchIcon,
@@ -413,12 +413,7 @@ function SettingsPageContent() {
                 <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-violet-500/5 blur-[100px]" />
             </div>
 
-            <Navigation
-                activeTab="profile"
-                userAvatarUrl={user?.avatarUrl || profile?.avatarCustomUrl}
-                displayName={user?.displayName || profile?.displayName}
-                username={user?.username || profile?.username}
-            />
+            <NavigationSidebar />
 
 
             <main className="relative z-10 lg:ml-20 xl:ml-64 pb-24 lg:pb-8">

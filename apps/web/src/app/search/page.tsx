@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL, apiFetch } from '@/lib/api';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import Link from 'next/link';
 import { isStealthActive, deactivateStealth } from '@/lib/stealth/engine';
 
@@ -95,7 +96,9 @@ export default function SearchPage() {
     };
 
     return (
-        <div className="min-h-screen bg-black text-white p-4 sm:p-8 max-w-4xl mx-auto">
+        <div className="min-h-screen bg-black text-white">
+            <NavigationSidebar />
+            <div className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8 p-4 sm:p-8 max-w-4xl mx-auto">
             {/* Search input */}
             <div className="relative mb-6">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30">
@@ -273,6 +276,7 @@ export default function SearchPage() {
                     </div>
                 </div>
             )}
+            </div>
         </div>
     );
 }

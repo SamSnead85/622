@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { apiFetch, API_URL } from '@/lib/api';
 
 // ============================================
@@ -204,6 +205,8 @@ export default function DeveloperPortal() {
 
     return (
         <div className="min-h-screen bg-black text-white">
+            <NavigationSidebar />
+            <div className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
             {/* Background */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute inset-0 bg-gradient-to-b from-[#020818] via-black to-black" />
@@ -794,6 +797,7 @@ curl -H "X-Api-Key: 0g_your_api_key_here" \\
                     </div>
                 </div>
             </footer>
+            </div>
         </div>
     );
 }

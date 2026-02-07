@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { motion, PanInfo } from 'framer-motion';
 import {
@@ -16,19 +16,48 @@ import {
 } from '@/components/icons';
 import { ZeroGLogo } from './ZeroGLogo';
 import { isShieldConfigured, activateStealth } from '@/lib/stealth/engine';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ============================================
-// NAVIGATION SIDEBAR
+// NAVIGATION SIDEBAR — Self-contained
+// All props optional. Auto-detects activeTab
+// from pathname and user from AuthContext.
 // ============================================
 export type FeedViewMode = 'standard' | 'immersive' | 'video';
 
-export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeChange }: {
-    activeTab: string;
-    user: any;
-    onCreateClick: () => void;
+/** Detect active tab from the current pathname */
+function detectActiveTab(pathname: string): string {
+    if (pathname.startsWith('/dashboard/growth-partner')) return 'growth';
+    if (pathname === '/dashboard') return 'feed';
+    if (pathname.startsWith('/explore') || pathname.startsWith('/adventures')) return 'explore';
+    if (pathname.startsWith('/campfire')) return 'live';
+    if (pathname.startsWith('/communities')) return 'communities';
+    if (pathname.startsWith('/bulletin')) return 'bulletin';
+    if (pathname.startsWith('/messages')) return 'messages';
+    if (pathname.startsWith('/security')) return 'security';
+    if (pathname.startsWith('/invite')) return 'invite';
+    if (pathname.startsWith('/profile') || pathname.startsWith('/settings') || pathname.startsWith('/my-posts')) return 'profile';
+    if (pathname.startsWith('/admin')) return '';
+    if (pathname.startsWith('/developers')) return '';
+    if (pathname.startsWith('/search')) return 'explore';
+    if (pathname.startsWith('/notifications')) return '';
+    if (pathname.startsWith('/moments')) return '';
+    return 'feed';
+}
+
+export function NavigationSidebar({ activeTab: activeTabOverride, user: userOverride, onCreateClick, onViewModeChange }: {
+    activeTab?: string;
+    user?: any;
+    onCreateClick?: () => void;
     onViewModeChange?: (mode: FeedViewMode) => void;
-}) {
+} = {}) {
     const router = useRouter();
+    const pathname = usePathname();
+    const { user: authUser } = useAuth();
+
+    // Use overrides if provided, otherwise auto-detect
+    const activeTab = activeTabOverride ?? detectActiveTab(pathname);
+    const user = userOverride ?? authUser;
 
     // Travel Shield: Triple-tap avatar to activate stealth mode
     const tapCountRef = useRef(0);
@@ -147,8 +176,8 @@ export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeCh
                     ))}
                 </nav>
 
-                {/* Feed view mode toggle */}
-                {activeTab === 'feed' && (
+                {/* Feed view mode toggle — only on dashboard */}
+                {pathname === '/dashboard' && onViewModeChange && (
                     <div className="hidden xl:block mb-4 px-2">
                         <p className="text-white/30 text-[10px] uppercase tracking-wider mb-2 px-1">View</p>
                         <div className="flex gap-1 bg-white/[0.03] rounded-lg p-1">
@@ -177,7 +206,7 @@ export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeCh
 
                 {/* Create button */}
                 <button
-                    onClick={onCreateClick}
+                    onClick={onCreateClick ?? (() => router.push('/create'))}
                     className="flex items-center justify-center xl:justify-start gap-3 w-full px-4 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#7C3AED] text-white font-semibold hover:shadow-[0_4px_20px_rgba(0,212,255,0.3)] transition-all duration-300 hover:scale-[1.02] mb-4"
                 >
                     <PlusIcon size={18} />

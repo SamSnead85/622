@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { useCommunities } from '@/hooks/useCommunities';
 import { API_ENDPOINTS } from '@/lib/api';
 import Image from 'next/image';
@@ -189,6 +190,8 @@ export default function CreateTribePage() {
 
     return (
         <div className="min-h-screen bg-[#050508] text-white font-sans selection:bg-[#00D4FF]/30">
+            <NavigationSidebar />
+            <div className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
             {/* Ambient Background */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute top-0 right-0 w-[800px] h-[800px] blur-[120px] opacity-20" style={{ background: `radial-gradient(circle, ${brandColor}22, transparent 70%)` }} />
@@ -758,6 +761,7 @@ export default function CreateTribePage() {
                     </div>
                 </div>
             )}
+            </div>
         </div>
     );
 }
