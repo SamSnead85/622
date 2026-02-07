@@ -378,6 +378,14 @@ model Community {
   tagline     String?           // Short invite tagline e.g. "The Smith Family Circle"
   logoUrl     String?           // Custom group logo/icon image
   category    String?           // family, friends, business, faith, hobby, local
+  websiteUrl  String?           // Group website URL
+  // Admin configuration
+  approvalRequired Boolean      @default(false)
+  postingPermission String      @default("all")      // "all" | "admins_mods" | "admins_only"
+  invitePermission  String      @default("all")      // "all" | "admins_mods" | "admins_only"
+  isAnnouncementOnly Boolean    @default(false)       // Only admins/mods can post
+  welcomeMessage    String?                            // Auto-sent to new members
+  pinnedMessageId   String?                            // Pinned post ID
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   creator        User              @relation("CommunityCreator", fields: [creatorId], references: [id])
@@ -445,6 +453,9 @@ model CommunityMember {
   userId      String
   communityId String
   role        CommunityRole @default(MEMBER)
+  isMuted     Boolean       @default(false)
+  isBanned    Boolean       @default(false)
+  nickname    String?
   joinedAt    DateTime      @default(now())
   community   Community     @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)

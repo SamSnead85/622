@@ -26,6 +26,7 @@ interface TribeData {
     brandColor: string;
     tagline: string;
     logoUrl: string | null;
+    websiteUrl: string;
 }
 
 // ============================================
@@ -71,6 +72,7 @@ export default function CreateTribePage() {
         brandColor: '#00D4FF',
         tagline: '',
         logoUrl: null,
+        websiteUrl: '',
     });
 
     // Upload refs
@@ -151,6 +153,7 @@ export default function CreateTribePage() {
             brandColor: tribeData.brandColor,
             tagline: tribeData.tagline,
             logoUrl: tribeData.logoUrl || undefined,
+            websiteUrl: tribeData.websiteUrl || undefined,
         });
         if (result.success) {
             const slug = tribeData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -322,6 +325,18 @@ export default function CreateTribePage() {
                                         maxLength={120}
                                     />
                                     <p className="text-xs text-white/20 mt-1">Shown on the invite page your members will see</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-white/70 mb-2">Website <span className="text-white/30 font-normal">(optional)</span></label>
+                                    <input
+                                        type="url"
+                                        value={tribeData.websiteUrl}
+                                        onChange={(e) => setTribeData({ ...tribeData, websiteUrl: e.target.value })}
+                                        placeholder="https://your-organization.com"
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-[#00D4FF]/50 transition-all text-sm"
+                                    />
+                                    <p className="text-xs text-white/20 mt-1">Link your organization&apos;s website for members to reference</p>
                                 </div>
                             </div>
                         </motion.div>

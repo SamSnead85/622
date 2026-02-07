@@ -29,6 +29,7 @@ export interface CreateCommunityData {
     brandColor?: string;
     tagline?: string;
     logoUrl?: string;
+    websiteUrl?: string;
 }
 
 // ============================================
@@ -75,6 +76,7 @@ export function useCommunities() {
                     brandColor: data.brandColor,
                     tagline: data.tagline,
                     logoUrl: data.logoUrl,
+                    websiteUrl: data.websiteUrl,
                 }),
             });
 

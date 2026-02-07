@@ -182,6 +182,7 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             brandColor: z.string().max(20).optional(),
             tagline: z.string().max(120).optional(),
             logoUrl: z.string().url().optional(),
+            websiteUrl: z.string().max(200).optional(),
         });
 
         const data = createSchema.parse(req.body);
@@ -399,6 +400,267 @@ router.get('/:communityId/posts', optionalAuth, async (req: AuthRequest, res, ne
             })),
             nextCursor: hasMore ? results[results.length - 1].id : null,
         });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// ADMIN: UPDATE COMMUNITY SETTINGS
+// ============================================
+router.put('/:communityId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+
+        // Verify admin
+        const membership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!membership || membership.role !== 'ADMIN') {
+            throw new AppError('Only admins can update community settings', 403);
+        }
+
+        const updateSchema = z.object({
+            name: z.string().min(3).max(50).optional(),
+            description: z.string().max(500).optional(),
+            avatarUrl: z.string().optional().nullable(),
+            coverUrl: z.string().optional().nullable(),
+            isPublic: z.boolean().optional(),
+            brandColor: z.string().max(20).optional(),
+            tagline: z.string().max(120).optional(),
+            logoUrl: z.string().optional().nullable(),
+            category: z.string().max(50).optional(),
+            websiteUrl: z.string().max(200).optional().nullable(),
+            approvalRequired: z.boolean().optional(),
+            postingPermission: z.enum(['all', 'admins_mods', 'admins_only']).optional(),
+            invitePermission: z.enum(['all', 'admins_mods', 'admins_only']).optional(),
+            isAnnouncementOnly: z.boolean().optional(),
+            welcomeMessage: z.string().max(500).optional().nullable(),
+        });
+
+        const data = updateSchema.parse(req.body);
+
+        const community = await prisma.community.update({
+            where: { id: communityId },
+            data,
+        });
+
+        res.json(community);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// ADMIN: GET MEMBERS LIST
+// ============================================
+router.get('/:communityId/members', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const { search, role } = req.query;
+
+        const community = await prisma.community.findUnique({ where: { id: communityId }, select: { isPublic: true } });
+        if (!community) throw new AppError('Community not found', 404);
+
+        // Private community: must be a member to see members
+        if (!community.isPublic && req.userId) {
+            const membership = await prisma.communityMember.findUnique({
+                where: { userId_communityId: { userId: req.userId, communityId } },
+            });
+            if (!membership) throw new AppError('Access denied', 403);
+        }
+
+        const where: any = { communityId };
+        if (role) where.role = (role as string).toUpperCase();
+
+        const members = await prisma.communityMember.findMany({
+            where,
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true,
+                        isVerified: true,
+                    },
+                },
+            },
+            orderBy: [
+                { role: 'asc' },  // ADMIN first, then MODERATOR, then MEMBER
+                { joinedAt: 'asc' },
+            ],
+        });
+
+        // Filter by search if provided
+        let results = members;
+        if (search) {
+            const q = (search as string).toLowerCase();
+            results = members.filter(m =>
+                m.user.displayName?.toLowerCase().includes(q) ||
+                m.user.username.toLowerCase().includes(q)
+            );
+        }
+
+        res.json({
+            members: results.map(m => ({
+                id: m.id,
+                userId: m.userId,
+                role: m.role,
+                isMuted: m.isMuted,
+                isBanned: m.isBanned,
+                joinedAt: m.joinedAt,
+                user: m.user,
+            })),
+            total: results.length,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// ADMIN: UPDATE MEMBER ROLE / MUTE / BAN
+// ============================================
+router.put('/:communityId/members/:userId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, userId } = req.params;
+
+        // Verify caller is admin (or moderator for limited actions)
+        const callerMembership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!callerMembership || (callerMembership.role !== 'ADMIN' && callerMembership.role !== 'MODERATOR')) {
+            throw new AppError('Only admins and moderators can manage members', 403);
+        }
+
+        const targetMembership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId, communityId } },
+        });
+        if (!targetMembership) throw new AppError('Member not found', 404);
+
+        // Moderators can only mute/unmute regular members
+        if (callerMembership.role === 'MODERATOR') {
+            if (targetMembership.role !== 'MEMBER') {
+                throw new AppError('Moderators cannot manage other moderators or admins', 403);
+            }
+        }
+
+        // Prevent demoting yourself from admin (last admin check)
+        if (userId === req.userId && callerMembership.role === 'ADMIN') {
+            const updateRole = req.body.role;
+            if (updateRole && updateRole !== 'ADMIN') {
+                const otherAdmins = await prisma.communityMember.count({
+                    where: { communityId, role: 'ADMIN', userId: { not: req.userId } },
+                });
+                if (otherAdmins === 0) {
+                    throw new AppError('Cannot demote yourself as the only admin', 400);
+                }
+            }
+        }
+
+        const updateSchema = z.object({
+            role: z.enum(['MEMBER', 'MODERATOR', 'ADMIN']).optional(),
+            isMuted: z.boolean().optional(),
+            isBanned: z.boolean().optional(),
+        });
+
+        const data = updateSchema.parse(req.body);
+
+        // Only admins can change roles
+        if (data.role && callerMembership.role !== 'ADMIN') {
+            throw new AppError('Only admins can change roles', 403);
+        }
+
+        const updated = await prisma.communityMember.update({
+            where: { userId_communityId: { userId, communityId } },
+            data,
+            include: {
+                user: {
+                    select: { id: true, username: true, displayName: true, avatarUrl: true },
+                },
+            },
+        });
+
+        res.json({
+            id: updated.id,
+            userId: updated.userId,
+            role: updated.role,
+            isMuted: updated.isMuted,
+            isBanned: updated.isBanned,
+            user: updated.user,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// ADMIN: REMOVE MEMBER
+// ============================================
+router.delete('/:communityId/members/:userId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, userId } = req.params;
+
+        const callerMembership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!callerMembership || (callerMembership.role !== 'ADMIN' && callerMembership.role !== 'MODERATOR')) {
+            throw new AppError('Only admins and moderators can remove members', 403);
+        }
+
+        const targetMembership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId, communityId } },
+        });
+        if (!targetMembership) throw new AppError('Member not found', 404);
+
+        // Cannot remove admins (only admins can remove other admins, not mods)
+        if (targetMembership.role === 'ADMIN' && callerMembership.role !== 'ADMIN') {
+            throw new AppError('Only admins can remove other admins', 403);
+        }
+        // Cannot remove yourself (use leave instead)
+        if (userId === req.userId) {
+            throw new AppError('Use the leave endpoint to leave', 400);
+        }
+
+        await prisma.$transaction([
+            prisma.communityMember.delete({
+                where: { userId_communityId: { userId, communityId } },
+            }),
+            prisma.community.update({
+                where: { id: communityId },
+                data: { memberCount: { decrement: 1 } },
+            }),
+        ]);
+
+        res.json({ removed: true });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// ADMIN: DELETE COMMUNITY
+// ============================================
+router.delete('/:communityId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+
+        const membership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!membership || membership.role !== 'ADMIN') {
+            throw new AppError('Only admins can delete communities', 403);
+        }
+
+        // Check if creator
+        const community = await prisma.community.findUnique({ where: { id: communityId } });
+        if (community?.creatorId !== req.userId) {
+            throw new AppError('Only the creator can delete the community', 403);
+        }
+
+        await prisma.community.delete({ where: { id: communityId } });
+        res.json({ deleted: true });
     } catch (error) {
         next(error);
     }
