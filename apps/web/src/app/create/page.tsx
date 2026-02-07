@@ -156,10 +156,12 @@ function CreateContent() {
             {activeTab === 'photo' && (
                 <div className="max-w-4xl mx-auto p-4">
                     <PhotoEditor
-                        onSave={(dataUrl: string) => {
-                            // Convert data URL to use as media in post
+                        imageUrl=""
+                        onSave={(editedBlob: Blob) => {
+                            // Convert blob to use as media in post
                             setActiveTab('post');
                         }}
+                        onCancel={() => setActiveTab('post')}
                     />
                 </div>
             )}
@@ -167,9 +169,11 @@ function CreateContent() {
             {activeTab === 'video' && (
                 <div className="max-w-4xl mx-auto p-4">
                     <VideoEditor
-                        onExport={(blob: Blob) => {
+                        videoUrl=""
+                        onSave={(editedBlob: Blob) => {
                             setActiveTab('post');
                         }}
+                        onCancel={() => setActiveTab('post')}
                     />
                 </div>
             )}
@@ -209,7 +213,12 @@ function CreateContent() {
                         </button>
                     </div>
                     <div className="mt-8">
-                        <DraftManager />
+                        <DraftManager
+                            onSelectDraft={(draft) => {
+                                setActiveTab('post');
+                            }}
+                            onClose={() => setActiveTab('post')}
+                        />
                     </div>
                 </div>
             )}

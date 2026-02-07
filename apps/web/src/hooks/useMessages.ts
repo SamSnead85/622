@@ -124,10 +124,10 @@ export function useMessages() {
 
     // Get or retrieve session key for a conversation
     const getConversationKey = useCallback(async (conversationId: string): Promise<CryptoKey | null> => {
-        let sessionKey = sessionKeysRef.current.get(conversationId);
-        if (sessionKey) return sessionKey;
+        const cached = sessionKeysRef.current.get(conversationId);
+        if (cached) return cached;
         try {
-            sessionKey = await getSessionKey(conversationId);
+            const sessionKey = await getSessionKey(conversationId);
             if (sessionKey) {
                 sessionKeysRef.current.set(conversationId, sessionKey);
                 return sessionKey;

@@ -237,7 +237,7 @@ export default function WatchStreamPage() {
                             accentColor="#00D4FF"
                             primaryColor="#ffffff"
                             secondaryColor="#050508"
-                            style={{ width: '100%', height: '100%', aspectRatio: undefined } as React.CSSProperties}
+                            className="w-full h-full [aspect-ratio:unset]"
                             metadata={{
                                 video_title: stream.title,
                                 viewer_user_id: user?.id || 'anonymous',
@@ -252,7 +252,7 @@ export default function WatchStreamPage() {
                             accentColor="#00D4FF"
                             primaryColor="#ffffff"
                             secondaryColor="#050508"
-                            style={{ width: '100%', height: '100%', aspectRatio: undefined } as React.CSSProperties}
+                            className="w-full h-full [aspect-ratio:unset]"
                             metadata={{
                                 video_title: `${stream.title} (VOD)`,
                                 viewer_user_id: user?.id || 'anonymous',
