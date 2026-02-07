@@ -6,7 +6,7 @@ import { ReactNode, useState, useRef, useEffect, useCallback } from 'react';
 
 // ============================================
 // MESSAGING COMPONENTS
-// Six22 Silk Road Renaissance Chat UI
+// ZeroG Silk Road Renaissance Chat UI
 // ============================================
 
 // ============================================

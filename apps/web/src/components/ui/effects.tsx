@@ -5,7 +5,7 @@ import { ReactNode, useState, useEffect, useCallback, useRef } from 'react';
 
 // ============================================
 // PREMIUM EFFECTS LIBRARY
-// Six22 Silk Road Renaissance Motion System
+// ZeroG Silk Road Renaissance Motion System
 // ============================================
 
 // ============================================

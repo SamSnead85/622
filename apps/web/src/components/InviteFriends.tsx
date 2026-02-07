@@ -18,7 +18,7 @@ interface InviteFriendsProps {
     communityName?: string;
 }
 
-// Share platforms with Six22 branding
+// Share platforms with ZeroG branding
 const SHARE_PLATFORMS = [
     { id: 'whatsapp', name: 'WhatsApp', icon: '💬', gradient: 'from-green-500 to-green-600' },
     { id: 'sms', name: 'Message', icon: '📱', gradient: 'from-blue-500 to-blue-600' },

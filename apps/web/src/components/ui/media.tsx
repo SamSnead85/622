@@ -5,7 +5,7 @@ import { ReactNode, useState, useRef, useEffect, useCallback } from 'react';
 
 // ============================================
 // MEDIA COMPONENTS
-// Six22 Silk Road Renaissance Media Players
+// ZeroG Silk Road Renaissance Media Players
 // ============================================
 
 // ============================================

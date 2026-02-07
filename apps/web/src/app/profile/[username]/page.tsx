@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { apiFetch } from '@/lib/api';
+import { usePullToRefresh } from '@/hooks/useInfiniteScroll';
 import { Navigation } from '@/components/Navigation';
 import { RightSidebar } from '@/components/RightSidebar';
 import { HeartIcon, PlayIcon } from '@/components/icons'; // Ensure PlayIcon is imported if referenced
@@ -31,37 +32,63 @@ export default function PublicProfilePage() {
         }
     }, [showMoreMenu]);
 
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                // 1. Fetch Profile
-                const userRes = await apiFetch(`/users/username/${username}`);
-                if (!userRes.ok) throw new Error('User not found');
-                const userData = await userRes.json();
-                setProfile(userData.user);
+    const loadProfileData = useCallback(async () => {
+        try {
+            const userRes = await apiFetch(`/users/username/${username}`);
+            if (!userRes.ok) throw new Error('User not found');
+            const userData = await userRes.json();
+            setProfile(userData.user);
 
-                // 2. Fetch Posts (using ID from profile)
-                if (userData.user?.id) {
-                    const userId = userData.user.id;
-                    const postsRes = await apiFetch(`/users/${userId}/posts`);
-                    if (postsRes.ok) {
-                        const postsData = await postsRes.json();
-                        setPosts(postsData.posts || []);
-                    }
+            if (userData.user?.id) {
+                const userId = userData.user.id;
+                const postsRes = await apiFetch(`/users/${userId}/posts`);
+                if (postsRes.ok) {
+                    const postsData = await postsRes.json();
+                    setPosts(postsData.posts || []);
                 }
-            } catch (error) {
-                console.error('Failed to load profile', error);
-            } finally {
-                setLoading(false);
             }
-        };
-        loadData();
+        } catch (error) {
+            console.error('Failed to load profile', error);
+        } finally {
+            setLoading(false);
+        }
     }, [username]);
+
+    const { pullDistance, isRefreshing, containerRef: pullRef } = usePullToRefresh({
+        onRefresh: loadProfileData,
+    });
+
+    useEffect(() => {
+        loadProfileData();
+    }, [loadProfileData]);
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#050508] flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-white/20 border-t-rose-500 rounded-full animate-spin" />
+            <div className="min-h-screen bg-[#050508]">
+                <div className="max-w-4xl mx-auto">
+                    {/* Cover skeleton */}
+                    <div className="skeleton h-48 md:h-64 w-full" />
+                    {/* Profile info skeleton */}
+                    <div className="px-4 -mt-16 relative z-10">
+                        <div className="skeleton w-28 h-28 rounded-full border-4 border-[#050508]" />
+                        <div className="mt-4 space-y-2">
+                            <div className="skeleton skeleton-text w-48" />
+                            <div className="skeleton skeleton-text-sm w-32" />
+                            <div className="skeleton skeleton-text w-72 mt-3" />
+                        </div>
+                        <div className="flex gap-6 mt-4">
+                            <div className="skeleton w-20 h-8 rounded-lg" />
+                            <div className="skeleton w-20 h-8 rounded-lg" />
+                            <div className="skeleton w-20 h-8 rounded-lg" />
+                        </div>
+                    </div>
+                    {/* Posts grid skeleton */}
+                    <div className="grid grid-cols-3 gap-1 mt-8 px-4">
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className="skeleton aspect-square rounded-lg" />
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }
@@ -75,7 +102,13 @@ export default function PublicProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#050508] relative">
+        <div ref={pullRef} className="min-h-screen bg-[#050508] relative">
+            {/* Pull-to-refresh indicator */}
+            {pullDistance > 0 && (
+                <div className="flex items-center justify-center py-2 relative z-50" style={{ height: pullDistance }}>
+                    <div className={`w-5 h-5 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full ${isRefreshing ? 'animate-spin' : ''}`} />
+                </div>
+            )}
             {/* Ambient Background matching Premium Theme */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute top-0 left-1/3 w-96 h-96 rounded-full bg-[#00D4FF]/[0.03] blur-[120px]" />

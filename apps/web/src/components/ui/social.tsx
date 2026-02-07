@@ -6,7 +6,7 @@ import { ReactNode, useState, useRef, useCallback } from 'react';
 
 // ============================================
 // SOCIAL COMPONENTS
-// Six22 Silk Road Renaissance Social Features
+// ZeroG Silk Road Renaissance Social Features
 // ============================================
 
 // ============================================

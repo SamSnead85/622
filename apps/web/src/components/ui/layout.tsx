@@ -5,7 +5,7 @@ import { ReactNode, useState, useEffect, useRef, createContext, useContext } fro
 
 // ============================================
 // ADVANCED LAYOUT COMPONENTS
-// Six22 Silk Road Renaissance Layout System
+// ZeroG Silk Road Renaissance Layout System
 // ============================================
 
 // ============================================

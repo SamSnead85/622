@@ -125,7 +125,7 @@ export function WelcomeOnboarding({ onComplete }: OnboardingProps) {
                             >
                                 🌙
                             </motion.div>
-                            <h1 className="text-3xl font-bold text-white mb-4">Welcome to Six22</h1>
+                            <h1 className="text-3xl font-bold text-white mb-4">Welcome to ZeroG</h1>
                             <p className="text-white/60 text-lg mb-8">
                                 Your sovereign space for family, friends, and communities who matter.
                             </p>

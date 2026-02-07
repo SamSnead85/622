@@ -50,6 +50,7 @@ import { FEATURED_LOCATIONS, FeaturedLocationCard } from '@/components/dashboard
 import { TrendingSection } from '@/components/feed/TrendingSection';
 import { FeedModeToggle, useFeedMode } from '@/components/feed/FeedModeToggle';
 import { FullscreenVideoFeed } from '@/components/feed/FullscreenVideoFeed';
+import { usePullToRefresh } from '@/hooks/useInfiniteScroll';
 
 // ============================================
 // MAIN DASHBOARD PAGE
@@ -65,6 +66,10 @@ export default function DashboardPage() {
     const [zenMode, setZenMode] = useState(false);
     const [feedMode, setFeedMode] = useFeedMode();
 
+    const { pullDistance, isRefreshing, containerRef: pullRef } = usePullToRefresh({
+        onRefresh: async () => { await refetch(); },
+    });
+
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -77,8 +82,41 @@ export default function DashboardPage() {
 
     if (!mounted || isLoading) {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full border-4 border-[#00D4FF]/20 border-t-[#00D4FF] animate-spin" />
+            <div className="min-h-screen bg-black">
+                <div className="max-w-2xl mx-auto px-4 pt-20 space-y-6">
+                    {/* Header skeleton */}
+                    <div className="flex items-center gap-3">
+                        <div className="skeleton skeleton-avatar" />
+                        <div className="flex-1 space-y-2">
+                            <div className="skeleton skeleton-text w-48" />
+                            <div className="skeleton skeleton-text-sm w-32" />
+                        </div>
+                    </div>
+                    {/* Composer skeleton */}
+                    <div className="skeleton rounded-2xl h-24" />
+                    {/* Post skeletons */}
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="space-y-3 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04]">
+                            <div className="flex items-center gap-3">
+                                <div className="skeleton w-10 h-10 rounded-full" />
+                                <div className="flex-1 space-y-1.5">
+                                    <div className="skeleton skeleton-text w-32" />
+                                    <div className="skeleton skeleton-text-sm w-20" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="skeleton skeleton-text w-full" />
+                                <div className="skeleton skeleton-text w-3/4" />
+                            </div>
+                            <div className="skeleton rounded-xl h-64" />
+                            <div className="flex gap-6 pt-2">
+                                <div className="skeleton w-16 h-8 rounded-lg" />
+                                <div className="skeleton w-16 h-8 rounded-lg" />
+                                <div className="skeleton w-16 h-8 rounded-lg" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }
@@ -102,7 +140,21 @@ export default function DashboardPage() {
             />
 
             {/* Main Content */}
-            <div className="lg:pl-20 xl:pl-64">
+            <div ref={pullRef} className="lg:pl-20 xl:pl-64 h-screen overflow-y-auto">
+                {/* Pull-to-refresh indicator */}
+                <div
+                    className="flex items-center justify-center overflow-hidden transition-all"
+                    style={{ height: pullDistance > 0 ? pullDistance : 0 }}
+                >
+                    <div className={`flex items-center gap-2 ${isRefreshing ? 'animate-pulse' : ''}`}>
+                        <div className={`w-5 h-5 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full ${isRefreshing ? 'animate-spin' : ''}`}
+                            style={{ transform: `rotate(${pullDistance * 3}deg)` }}
+                        />
+                        <span className="text-xs text-white/40">
+                            {isRefreshing ? 'Refreshing...' : pullDistance > 60 ? 'Release to refresh' : 'Pull to refresh'}
+                        </span>
+                    </div>
+                </div>
                 <div className="max-w-6xl mx-auto px-4 lg:px-8 py-4 pb-24 lg:pb-8">
                     {/* Sticky Header - Compact */}
                     <header className="mb-4 sticky top-0 z-20 -mx-4 lg:-mx-8 px-4 lg:px-8 py-3 bg-black/80 backdrop-blur-xl border-b border-white/5">

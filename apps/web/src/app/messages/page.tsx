@@ -108,7 +108,7 @@ function ReactionPicker({ onSelect, onClose }: { onSelect: (emoji: string) => vo
                 <button
                     key={emoji}
                     onClick={() => { onSelect(emoji); onClose(); }}
-                    className="w-8 h-8 flex items-center justify-center hover:scale-125 transition-transform"
+                    className="w-10 h-10 flex items-center justify-center hover:scale-125 transition-transform active:scale-90 rounded-lg"
                 >
                     {emoji}
                 </button>
@@ -489,8 +489,17 @@ function MessagesPageContent() {
                     {/* List */}
                     <div className="flex-1 overflow-y-auto">
                         {isLoading ? (
-                            <div className="flex items-center justify-center p-8">
-                                <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                            <div className="p-3 space-y-1">
+                                {[1, 2, 3, 4, 5, 6].map(i => (
+                                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl">
+                                        <div className="skeleton w-12 h-12 rounded-full flex-shrink-0" />
+                                        <div className="flex-1 space-y-1.5">
+                                            <div className="skeleton skeleton-text w-28" />
+                                            <div className="skeleton skeleton-text-sm w-44" />
+                                        </div>
+                                        <div className="skeleton skeleton-text-sm w-8" />
+                                    </div>
+                                ))}
                             </div>
                         ) : conversations.length === 0 ? (
                             <div className="flex-1 flex flex-col items-center justify-center text-center p-8">

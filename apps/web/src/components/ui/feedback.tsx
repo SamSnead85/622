@@ -5,7 +5,7 @@ import { ReactNode, useState, useEffect, createContext, useContext, useCallback 
 
 // ============================================
 // MODAL & FEEDBACK COMPONENTS
-// Six22 Silk Road Renaissance Overlays
+// ZeroG Silk Road Renaissance Overlays
 // ============================================
 
 // ============================================

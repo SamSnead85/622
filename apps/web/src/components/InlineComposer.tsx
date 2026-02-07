@@ -164,14 +164,14 @@ export function InlineComposer({ user, onPostSuccess }: InlineComposerProps) {
                             />
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="p-2 rounded-full text-[#00D4FF] hover:bg-[#00D4FF]/10 transition-colors"
+                                className="p-2.5 rounded-full text-[#00D4FF] hover:bg-[#00D4FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-90"
                                 title="Photo/Video"
                             >
                                 <CameraIcon size={20} />
                             </button>
                             <button
                                 onClick={() => router.push('/campfire')}
-                                className="p-2 rounded-full text-white/40 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 transition-colors"
+                                className="p-2.5 rounded-full text-white/40 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-90"
                                 title="Go Live"
                             >
                                 <VideoIcon size={20} />
@@ -192,7 +192,7 @@ export function InlineComposer({ user, onPostSuccess }: InlineComposerProps) {
                         <button
                             onClick={handlePost}
                             disabled={(!content.trim() && !mediaFile) || isPosting}
-                            className={`px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-200 ${(!content.trim() && !mediaFile) || isPosting
+                            className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 min-h-[44px] active:scale-95 ${(!content.trim() && !mediaFile) || isPosting
                                 ? 'bg-white/10 text-white/30 cursor-not-allowed'
                                 : 'bg-gradient-to-r from-[#00D4FF] to-[#00D4FF]/80 text-black hover:shadow-[0_2px_12px_rgba(0,212,255,0.3)]'
                                 }`}

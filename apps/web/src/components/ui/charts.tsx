@@ -5,7 +5,7 @@ import { ReactNode, useMemo } from 'react';
 
 // ============================================
 // DATA VISUALIZATION COMPONENTS
-// Six22 Silk Road Renaissance Charts
+// ZeroG Silk Road Renaissance Charts
 // ============================================
 
 // ============================================

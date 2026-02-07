@@ -7,7 +7,7 @@ import { ReactNode, useState, useEffect } from 'react';
 
 // ============================================
 // NAVIGATION COMPONENTS
-// Six22 Silk Road Renaissance Navigation
+// ZeroG Silk Road Renaissance Navigation
 // ============================================
 
 // ============================================

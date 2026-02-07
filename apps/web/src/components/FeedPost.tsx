@@ -400,7 +400,7 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                     <div className="flex items-center gap-6">
                         <button
                             onClick={() => likePost(post.id)}
-                            className={`flex items-center gap-2 transition-all group ${post.isLiked ? 'text-rose-500' : 'text-white/60 hover:text-rose-400'}`}
+                            className={`flex items-center gap-2 transition-all group min-h-[44px] px-1 active:scale-90 ${post.isLiked ? 'text-rose-500' : 'text-white/60 hover:text-rose-400'}`}
                         >
                             <div className="relative">
                                 <HeartIcon size={22} className={`transition-all duration-300 group-hover:scale-125 ${post.isLiked ? 'fill-rose-500 scale-110 drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]' : ''}`} />
@@ -412,7 +412,7 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
 
                         <button
                             onClick={() => router.push(`/post/${post.id}`)}
-                            className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-all group"
+                            className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-all group min-h-[44px] px-1 active:scale-90"
                         >
                             <MessageIcon size={24} className="transition-transform duration-300 group-hover:scale-110" />
                             <span className={`text-sm font-medium transition-opacity ${zenMode ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
@@ -442,7 +442,7 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                                     // Could show toast here
                                 }
                             }}
-                            className="text-white/40 hover:text-[#00D4FF] transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(0,212,255,0.3)]"
+                            className="text-white/40 hover:text-[#00D4FF] transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(0,212,255,0.3)] min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-90"
                         >
                             <ShareIcon size={24} />
                         </button>

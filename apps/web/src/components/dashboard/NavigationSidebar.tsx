@@ -183,18 +183,18 @@ export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeCh
 
             {/* Mobile Bottom Nav */}
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0A0A0F]/95 backdrop-blur-xl border-t border-white/10 z-50 safe-area-pb">
-                <div className="flex items-center justify-around py-2">
+                <div className="flex items-center justify-around py-1.5">
                     {navItems.slice(0, 5).map((item) => (
                         <Link
                             key={item.id}
                             href={item.href}
-                            className={`relative flex flex-col items-center gap-1 p-2 ${activeTab === item.id ? 'text-[#00D4FF]' : 'text-white/50'
+                            className={`relative flex flex-col items-center gap-0.5 min-w-[56px] min-h-[44px] justify-center active:scale-95 transition-transform ${activeTab === item.id ? 'text-[#00D4FF]' : 'text-white/50'
                                 }`}
                         >
                             {activeTab === item.id && (
                                 <motion.div
                                     layoutId="mobileActiveTab"
-                                    className="absolute inset-0 bg-[#00D4FF]/10 rounded-lg"
+                                    className="absolute inset-0 bg-[#00D4FF]/10 rounded-xl"
                                     transition={{
                                         type: 'spring',
                                         stiffness: 350,
@@ -209,7 +209,7 @@ export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeCh
                                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#00D4FF] rounded-full" />
                                 )}
                             </span>
-                            <span className="text-[10px] relative z-10">{item.label}</span>
+                            <span className="text-xs relative z-10">{item.label}</span>
                         </Link>
                     ))}
                 </div>

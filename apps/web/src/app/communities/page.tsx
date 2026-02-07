@@ -289,8 +289,21 @@ export default function CommunityHub() {
                         </div>
 
                         {isLoading ? (
-                            <div className="flex justify-center py-12">
-                                <div className="w-8 h-8 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full animate-spin" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
+                                {[1, 2, 3, 4, 5, 6].map(i => (
+                                    <div key={i} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="skeleton w-12 h-12 rounded-xl" />
+                                            <div className="flex-1 space-y-1.5">
+                                                <div className="skeleton skeleton-text w-32" />
+                                                <div className="skeleton skeleton-text-sm w-20" />
+                                            </div>
+                                        </div>
+                                        <div className="skeleton skeleton-text w-full" />
+                                        <div className="skeleton skeleton-text w-2/3" />
+                                        <div className="skeleton skeleton-button w-full" />
+                                    </div>
+                                ))}
                             </div>
                         ) : communities.length === 0 ? (
                             <div className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden p-12 text-center">
