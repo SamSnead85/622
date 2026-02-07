@@ -284,6 +284,7 @@ model Post {
   analytics    PostAnalytics[]
 
   @@index([userId])
+  @@index([userId, sortOrder(sort: Desc), createdAt(sort: Desc)]) // Profile page: posts sorted by pin/sort then date
   @@index([communityId])
   @@index([createdAt])
   @@index([isPublic, createdAt(sort: Desc), isPinned]) // Feed query optimization

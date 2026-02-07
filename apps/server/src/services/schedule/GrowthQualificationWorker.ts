@@ -30,21 +30,39 @@ async function processGrowthQualification() {
         const now = new Date();
         const recentThreshold = new Date(now.getTime() - 48 * 60 * 60 * 1000); // Active within 48h
 
+        // --- Batch-load all referred users in ONE query (eliminates N+1) ---
+        const referredUserIds = [...new Set(pendingReferrals.map(r => r.referredUserId))];
+        const referredUsers = await prisma.user.findMany({
+            where: { id: { in: referredUserIds } },
+            select: { id: true, lastActiveAt: true, email: true, createdAt: true },
+        });
+        const userMap = new Map(referredUsers.map(u => [u.id, u]));
+
+        // --- Batch-load suspicious-timing counts per partner (eliminates N queries) ---
+        // Group referrals by partner to check for burst patterns
+        const partnerIds = [...new Set(pendingReferrals.map(r => r.growthPartnerId))];
+        const allPartnerReferrals = await prisma.growthReferral.findMany({
+            where: { growthPartnerId: { in: partnerIds } },
+            select: { id: true, growthPartnerId: true, invitedAt: true },
+        });
+        // Build a lookup: for each referral, count how many sibling referrals were created within ±60s
+        const siblingCounts = new Map<string, number>();
+        for (const ref of allPartnerReferrals) {
+            const refTime = new Date(ref.invitedAt).getTime();
+            const siblings = allPartnerReferrals.filter(r =>
+                r.growthPartnerId === ref.growthPartnerId &&
+                r.id !== ref.id &&
+                Math.abs(new Date(r.invitedAt).getTime() - refTime) <= 60000
+            );
+            siblingCounts.set(ref.id, siblings.length);
+        }
+
+        // --- Process each referral (now using in-memory lookups, not individual queries) ---
         for (const referral of pendingReferrals) {
             try {
-                // Fetch the referred user's activity
-                const referredUser = await prisma.user.findUnique({
-                    where: { id: referral.referredUserId },
-                    select: {
-                        id: true,
-                        lastActiveAt: true,
-                        email: true,
-                        createdAt: true,
-                    },
-                });
+                const referredUser = userMap.get(referral.referredUserId);
 
                 if (!referredUser) {
-                    // User was deleted — mark inactive
                     await prisma.growthReferral.update({
                         where: { id: referral.id },
                         data: { status: 'inactive', flagReason: 'user_deleted' },
@@ -52,7 +70,7 @@ async function processGrowthQualification() {
                     continue;
                 }
 
-                // --- Fraud detection ---
+                // --- Fraud detection (all in-memory, no DB queries) ---
                 const flagReasons: string[] = [];
 
                 // 1. Disposable email check
@@ -66,27 +84,15 @@ async function processGrowthQualification() {
                     flagReasons.push('disposable_email');
                 }
 
-                // 2. Suspicious timing: account created and last active at nearly the same time
-                //    with very little actual activity (could be bot/fake signup)
+                // 2. Superficial engagement: account old but no activity
                 const timeSinceCreation = now.getTime() - new Date(referredUser.createdAt).getTime();
                 const daysSinceCreation = timeSinceCreation / (24 * 60 * 60 * 1000);
                 if (daysSinceCreation > 3 && referral.daysActive === 0) {
                     flagReasons.push('superficial_engagement');
                 }
 
-                // 3. Check for IP duplicates: same partner has multiple referrals from similar patterns
-                //    (simplified — check if multiple referrals were created in same minute)
-                const sameMinuteReferrals = await prisma.growthReferral.count({
-                    where: {
-                        growthPartnerId: referral.growthPartnerId,
-                        id: { not: referral.id },
-                        invitedAt: {
-                            gte: new Date(new Date(referral.invitedAt).getTime() - 60000),
-                            lte: new Date(new Date(referral.invitedAt).getTime() + 60000),
-                        },
-                    },
-                });
-                if (sameMinuteReferrals >= 3) {
+                // 3. Suspicious timing: multiple referrals from same partner in same minute
+                if ((siblingCounts.get(referral.id) || 0) >= 3) {
                     flagReasons.push('suspicious_timing');
                 }
 
@@ -150,7 +156,6 @@ async function processGrowthQualification() {
 
                     logger.info(`[GrowthQualification] Qualified referral ${referral.id} — $${rewardAmount} earned`);
                 } else {
-                    // Just update daysActive
                     await prisma.growthReferral.update({
                         where: { id: referral.id },
                         data: {
