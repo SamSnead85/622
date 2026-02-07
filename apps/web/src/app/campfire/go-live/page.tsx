@@ -98,19 +98,31 @@ function GoLiveContent() {
 
     const chatRef = useRef<HTMLDivElement>(null);
 
-    // Camera init (browser mode)
-    useEffect(() => {
-        if (mode !== 'browser' || phase !== 'setup') return;
+    // Camera init (browser mode) -- keep running through setup AND live phases
+    const streamRef = useRef<MediaStream | null>(null);
 
-        const videoElement = videoRef.current;
+    useEffect(() => {
+        if (mode !== 'browser') return;
+        // Only start camera during setup and live, stop on ended
+        if (phase !== 'setup' && phase !== 'live') return;
+
+        // If stream already exists and is active, just reattach to video element
+        if (streamRef.current && streamRef.current.active) {
+            if (videoRef.current && !videoRef.current.srcObject) {
+                videoRef.current.srcObject = streamRef.current;
+            }
+            return;
+        }
+
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'user', width: 1280, height: 720 },
                     audio: true,
                 });
-                if (videoElement) {
-                    videoElement.srcObject = stream;
+                streamRef.current = stream;
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
                     setHasCamera(true);
                 }
             } catch {
@@ -119,12 +131,22 @@ function GoLiveContent() {
         }
         startCamera();
 
+        // Only stop the camera when unmounting entirely or switching modes
         return () => {
-            if (videoElement?.srcObject) {
-                (videoElement.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-            }
+            // Don't stop camera when transitioning from setup -> live
+            // Only stop if we're leaving browser mode or component unmounts
         };
     }, [mode, phase, showError]);
+
+    // Stop camera when phase becomes 'ended' or component unmounts
+    useEffect(() => {
+        return () => {
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(t => t.stop());
+                streamRef.current = null;
+            }
+        };
+    }, []);
 
     // Duration timer
     useEffect(() => {
@@ -224,8 +246,12 @@ function GoLiveContent() {
 
         setPhase('ended');
         // Stop camera
-        if (videoRef.current?.srcObject) {
-            (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(t => t.stop());
+            streamRef.current = null;
+        }
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
         }
     };
 
