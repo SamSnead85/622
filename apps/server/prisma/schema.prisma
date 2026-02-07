@@ -1586,3 +1586,96 @@ enum AlgorithmTemplate {
   BALANCED        // Default balanced
   CUSTOM          // Fully custom
 }
+
+// ============================================
+// DEVELOPER PLATFORM
+// ============================================
+model DeveloperApp {
+  id            String   @id @default(uuid())
+  ownerId       String
+  name          String
+  slug          String   @unique
+  description   String?
+  websiteUrl    String?
+  callbackUrl   String?               // OAuth2 redirect URI
+  logoUrl       String?
+  clientId      String   @unique @default(uuid())
+  clientSecret  String                 // Hashed
+  scopes        String   @default("read")  // Comma-separated: read,write,communities,messages,calls
+  isApproved    Boolean  @default(true)    // Auto-approve for now
+  isActive      Boolean  @default(true)
+  rateLimitTier String   @default("free")  // free, pro, enterprise
+  requestCount  Int      @default(0)
+  lastUsedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  apiKeys       ApiKey[]
+  webhooks      Webhook[]
+  oauthTokens   OAuthToken[]
+
+  @@index([ownerId])
+  @@index([clientId])
+}
+
+model ApiKey {
+  id           String   @id @default(uuid())
+  appId        String
+  name         String   @default("Default")
+  keyHash      String   @unique           // SHA-256 of the key (never store raw)
+  keyPrefix    String                      // First 8 chars for identification
+  scopes       String   @default("read")
+  isActive     Boolean  @default(true)
+  expiresAt    DateTime?
+  lastUsedAt   DateTime?
+  requestCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  app          DeveloperApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([appId])
+  @@index([keyHash])
+}
+
+model OAuthToken {
+  id            String   @id @default(uuid())
+  appId         String
+  userId        String
+  accessToken   String   @unique
+  refreshToken  String?  @unique
+  scopes        String
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  app           DeveloperApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([appId])
+  @@index([userId])
+  @@index([accessToken])
+}
+
+model Webhook {
+  id          String   @id @default(uuid())
+  appId       String
+  url         String
+  secret      String               // For HMAC signature verification
+  events      String               // Comma-separated: post.created, member.joined, etc.
+  isActive    Boolean  @default(true)
+  failCount   Int      @default(0)
+  lastFiredAt DateTime?
+  createdAt   DateTime @default(now())
+  app         DeveloperApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([appId])
+}
+
+model WebhookLog {
+  id         String   @id @default(uuid())
+  webhookId  String
+  event      String
+  payload    String               // JSON stringified
+  statusCode Int?
+  response   String?
+  success    Boolean  @default(false)
+  firedAt    DateTime @default(now())
+
+  @@index([webhookId])
+  @@index([firedAt])
+}

@@ -18,6 +18,14 @@ import {
     MegaphoneIcon
 } from '@/components/icons';
 
+function DevIcon({ className = '' }: { className?: string; size?: number }) {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <polyline points="16,18 22,12 16,6" /><polyline points="8,6 2,12 8,18" />
+        </svg>
+    );
+}
+
 interface NavItem {
     id: string;
     label: string;
@@ -31,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
     { id: 'explore', label: 'Explore', href: '/explore', Icon: SearchIcon },
     { id: 'communities', label: 'Tribes', href: '/communities', Icon: UsersIcon },
     { id: 'bulletin', label: 'Bulletin', href: '/bulletin', Icon: MegaphoneIcon },
+    { id: 'developers', label: 'Developers', href: '/developers', Icon: DevIcon },
     { id: 'profile', label: 'Profile', href: '/profile', Icon: UserIcon },
 ];
 
