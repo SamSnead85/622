@@ -31,7 +31,7 @@ function getEncryptionKey(): Buffer {
     }
 
     // Otherwise, derive a key from the passphrase
-    return crypto.scryptSync(key, 'caravan-salt', 32);
+    return crypto.scryptSync(key, 'og-salt', 32);
 }
 
 const ENCRYPTION_KEY = getEncryptionKey();

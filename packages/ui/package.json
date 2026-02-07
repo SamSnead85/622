@@ -1,5 +1,5 @@
 {
-    "name": "@caravan/ui",
+    "name": "@zerog/ui",
     "version": "1.0.0",
     "private": true,
     "main": "./src/index.ts",
@@ -12,7 +12,7 @@
         "react-native": ">=0.72.0"
     },
     "dependencies": {
-        "@caravan/types": "*"
+        "@zerog/types": "*"
     },
     "devDependencies": {
         "typescript": "^5.3.3",

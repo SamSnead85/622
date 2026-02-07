@@ -141,7 +141,7 @@ export const useAuthStore = create<AuthState>()(
             clearError: () => set({ error: null }),
         }),
         {
-            name: 'caravan-auth',
+            name: 'zerog-auth',
             storage: createJSONStorage(() => AsyncStorage),
             partialize: (state) => ({
                 user: state.user,
@@ -255,7 +255,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
                 type: i % 2 === 0 ? 'video' : 'image',
                 mediaUrl: `https://picsum.photos/400/600?random=${i}`,
                 thumbnailUrl: `https://picsum.photos/400/600?random=${i}`,
-                caption: `This is caption for post ${i} #trending #caravan`,
+                caption: `This is caption for post ${i} #trending #zerog`,
                 likesCount: Math.floor(Math.random() * 10000),
                 commentsCount: Math.floor(Math.random() * 500),
                 sharesCount: Math.floor(Math.random() * 100),

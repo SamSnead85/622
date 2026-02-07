@@ -15,7 +15,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { colors, typography, spacing, Avatar, Button } from '@caravan/ui';
+import { colors, typography, spacing, Avatar, Button } from '@zerog/ui';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

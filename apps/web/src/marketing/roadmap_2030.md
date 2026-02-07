@@ -1,4 +1,4 @@
-# Caravan / 0G Platform: 2030 Vision & Architectural Roadmap
+# 0G Platform: 2030 Vision & Architectural Roadmap
 **"Power to the People: Building the Sovereign Web"**
 
 ## 1. Executive Summary

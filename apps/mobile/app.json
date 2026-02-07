@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Six22",
-    "slug": "six22",
+    "name": "ZeroG",
+    "slug": "zerog",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "six22",
+    "scheme": "zerog",
     "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash.png",
@@ -17,12 +17,12 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.six22.mobile",
+      "bundleIdentifier": "ai.zerog.mobile",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow Six22 to access your camera to create posts and moments",
-        "NSPhotoLibraryUsageDescription": "Allow Six22 to access your photos to share with your community",
-        "NSMicrophoneUsageDescription": "Allow Six22 to access your microphone to record videos and voice messages",
+        "NSCameraUsageDescription": "Allow 0G to access your camera to create posts and moments",
+        "NSPhotoLibraryUsageDescription": "Allow 0G to access your photos to share with your community",
+        "NSMicrophoneUsageDescription": "Allow 0G to access your microphone to record videos and voice messages",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -31,7 +31,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0A0908"
       },
-      "package": "app.six22.mobile",
+      "package": "ai.zerog.mobile",
       "versionCode": 1,
       "permissions": [
         "android.permission.CAMERA",
@@ -51,13 +51,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Six22 to access your camera to create amazing content."
+          "cameraPermission": "Allow 0G to access your camera to create amazing content."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Six22 to access your photos to share with your community."
+          "photosPermission": "Allow 0G to access your photos to share with your community."
         }
       ]
     ],

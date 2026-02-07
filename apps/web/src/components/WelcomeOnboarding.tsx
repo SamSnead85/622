@@ -74,7 +74,7 @@ export function WelcomeOnboarding({ onComplete }: OnboardingProps) {
             avatarPreset: selectedAvatar || 'gradient-1',
         });
         // Mark onboarding complete
-        localStorage.setItem('caravan_onboarding_complete', 'true');
+        localStorage.setItem('og_onboarding_complete', 'true');
         onComplete();
     }, [name, generatedUsername, selectedAvatar, updateProfile, onComplete]);
 

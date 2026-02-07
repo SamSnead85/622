@@ -31,7 +31,7 @@
 
 ### Storage
 - **Provider**: Supabase Storage
-- **Bucket**: `caravan-media`
+- **Bucket**: `og-media`
 
 ### Authentication
 - **Method**: JWT tokens
@@ -39,7 +39,7 @@
 
 ### Email
 - **Provider**: Resend
-- **From**: `Caravan <noreply@caravan.app>`
+- **From**: `0G <noreply@0gravity.ai>`
 
 ### Monitoring
 - **Error Tracking**: Sentry (`@sentry/node`)
@@ -118,11 +118,11 @@ JWT_EXPIRES_IN=7d
 STORAGE_PROVIDER=supabase
 SUPABASE_URL=https://[PROJECT].supabase.co
 SUPABASE_SERVICE_KEY=[SERVICE_KEY]
-STORAGE_BUCKET=caravan-media
+STORAGE_BUCKET=og-media
 
 # Email (Resend)
 RESEND_API_KEY=re_[KEY]
-FROM_EMAIL=Caravan <noreply@caravan.app>
+FROM_EMAIL=0G <noreply@0gravity.ai>
 
 # Redis (Railway - when provisioned)
 REDIS_URL=redis://[HOST]:[PORT]

@@ -38,7 +38,7 @@ async function main() {
                 passwordHash,
                 role: 'SUPERADMIN',
                 isVerified: true,
-                bio: 'Founder & Superadmin of Six22',
+                bio: 'Founder & Superadmin of 0G',
             },
         });
 

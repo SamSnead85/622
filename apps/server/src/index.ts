@@ -218,7 +218,7 @@ async function startServer() {
     const HOST = '0.0.0.0';
 
     httpServer.listen(PORT, HOST, () => {
-        logger.info(`🚀 Caravan Server running on http://${HOST}:${PORT}`);
+        logger.info(`🚀 0G Server running on http://${HOST}:${PORT}`);
         logger.info(`📡 WebSocket server ready for real-time connections`);
         logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     });

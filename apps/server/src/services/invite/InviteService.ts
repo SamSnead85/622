@@ -118,7 +118,7 @@ export class InviteService {
         try {
             await this.sendEmail({
                 to: recipientEmail,
-                subject: `${sender.displayName} invited you to join Caravan`,
+                subject: `${sender.displayName} invited you to join 0G`,
                 html: this.generateInviteEmailHtml(sender.displayName, referralCode, customMessage),
             });
 
@@ -159,7 +159,7 @@ export class InviteService {
         });
 
         // In production, use actual domain
-        const baseUrl = process.env.APP_URL || 'https://caravan.app';
+        const baseUrl = process.env.APP_URL || 'https://0gravity.ai';
         const url = `${baseUrl}/join?ref=${referralCode}`;
 
         return { code: referralCode, url };
@@ -308,7 +308,7 @@ export class InviteService {
         referralCode: string,
         customMessage?: string
     ): string {
-        const joinUrl = `${process.env.APP_URL || 'https://caravan.app'}/join?ref=${referralCode}`;
+        const joinUrl = `${process.env.APP_URL || 'https://0gravity.ai'}/join?ref=${referralCode}`;
 
         return `
 <!DOCTYPE html>
@@ -324,13 +324,13 @@ export class InviteService {
   </div>
 
   <h1 style="font-size: 24px; font-weight: 600; margin: 0 0 16px;">
-    ${senderName} invited you to join Caravan
+    ${senderName} invited you to join 0G
   </h1>
 
   ${customMessage ? `<p style="color: #666; margin: 0 0 24px;">"${customMessage}"</p>` : ''}
 
   <p style="margin: 0 0 24px;">
-    Caravan is a new social platform that's:
+    0G is a new social platform that's:
   </p>
 
   <ul style="margin: 0 0 24px; padding-left: 24px; color: #333;">
@@ -344,7 +344,7 @@ export class InviteService {
   </p>
 
   <a href="${joinUrl}" style="display: inline-block; background: #000; color: #fff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
-    Join Caravan Free →
+    Join 0G Free →
   </a>
 
   <p style="margin: 40px 0 0; font-size: 13px; color: #999;">
@@ -366,7 +366,7 @@ export class InviteService {
 
         // In production, integrate with email service:
         // await resend.emails.send({
-        //   from: 'Caravan <invites@caravan.app>',
+        //   from: '0G <invites@0gravity.ai>',
         //   to: config.to,
         //   subject: config.subject,
         //   html: config.html,

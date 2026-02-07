@@ -152,7 +152,7 @@ function Navigation() {
 
 const heroImages = [
     // Desert landscape - Opening theme (authentic documentary-style)
-    { id: 'caravan', src: 'https://images.unsplash.com/photo-1548111395-36c5857f89c5?w=2000&h=1200&fit=crop&q=90' },
+    { id: 'journey', src: 'https://images.unsplash.com/photo-1548111395-36c5857f89c5?w=2000&h=1200&fit=crop&q=90' },
     // Modern African life - Contemporary community scene
     { id: 'african-modern', src: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=2000&h=1200&fit=crop&q=90' },
     // Black family/community - Modern, natural, warm family moment

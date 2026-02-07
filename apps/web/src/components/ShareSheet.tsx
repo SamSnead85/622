@@ -87,7 +87,7 @@ export function ShareSheet({ isOpen, onClose, content }: ShareSheetProps) {
     }, []);
 
     // Generate share URL
-    const shareUrl = content.url || `https://caravan.app/share/${content.type}`;
+    const shareUrl = content.url || `https://0gravity.ai/share/${content.type}`;
 
     // Copy link to clipboard
     const handleCopyLink = useCallback(async () => {

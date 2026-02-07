@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, typography } from '@caravan/ui';
+import { colors, typography } from '@zerog/ui';
 
 export default function SplashIndex() {
     const router = useRouter();
@@ -60,7 +60,7 @@ export default function SplashIndex() {
                 </View>
 
                 {/* Brand Name */}
-                <Text style={styles.brandName}>Caravan</Text>
+                <Text style={styles.brandName}>0G</Text>
                 <Text style={styles.tagline}>Your Community, Your Story</Text>
             </Animated.View>
 

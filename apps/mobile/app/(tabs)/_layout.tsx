@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing } from '@caravan/ui';
+import { colors, spacing } from '@zerog/ui';
 
 interface TabIconProps {
     name: string;

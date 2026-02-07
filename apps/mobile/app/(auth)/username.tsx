@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
-import { Button, Input, colors, typography, spacing } from '@caravan/ui';
+import { Button, Input, colors, typography, spacing } from '@zerog/ui';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -190,7 +190,7 @@ export default function UsernameScreen() {
         const timer = setTimeout(async () => {
             // Simulate API check
             await new Promise((resolve) => setTimeout(resolve, 600));
-            const available = !['admin', 'caravan', 'official', 'support'].includes(username.toLowerCase());
+            const available = !['admin', 'zerog', 'official', 'support'].includes(username.toLowerCase());
             setIsAvailable(available);
             setChecking(false);
 
@@ -324,7 +324,7 @@ export default function UsernameScreen() {
 
                         <Text style={styles.title}>Choose your identity</Text>
                         <Text style={styles.subtitle}>
-                            This is how others will find and recognize you on Caravan
+                            This is how others will find and recognize you on 0G
                         </Text>
                     </Animated.View>
 
@@ -368,7 +368,7 @@ export default function UsernameScreen() {
                                             @{username || 'username'}
                                         </Text>
                                         <Text style={styles.previewMeta}>
-                                            caravan.social/{username || 'username'}
+                                            0gravity.ai/{username || 'username'}
                                         </Text>
                                     </View>
                                 </View>
@@ -478,7 +478,7 @@ export default function UsernameScreen() {
                                     </View>
                                 ) : (
                                     <>
-                                        <Text style={styles.premiumButtonText}>Continue to Caravan</Text>
+                                        <Text style={styles.premiumButtonText}>Continue to 0G</Text>
                                         <Text style={styles.premiumButtonArrow}>→</Text>
                                     </>
                                 )}

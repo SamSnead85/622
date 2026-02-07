@@ -14,7 +14,7 @@ import path from 'path';
 const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local'; // local | supabase | s3 | r2
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const SERVER_URL = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5180}`;
-const BUCKET = process.env.STORAGE_BUCKET || 'caravan-media';
+const BUCKET = process.env.STORAGE_BUCKET || 'og-media';
 
 // ============================================
 // SUPABASE CLIENT (for native SDK uploads)

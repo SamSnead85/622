@@ -4,7 +4,7 @@
 [build]
   base = "."
   # .npmrc at root sets ignore-scripts=true so Netlify's auto-install skips postinstall
-  command = "npm run build --workspace=@caravan/web"
+  command = "npm run build --workspace=@zerog/web"
   publish = "apps/web/.next"
 
 # Next.js on Netlify requires the Next.js plugin

@@ -211,7 +211,7 @@ export class MigrationService {
 
         for (const connection of connections) {
             try {
-                // Try to find existing Caravan user with matching username
+                // Try to find existing 0G user with matching username
                 const matchedUser = await prisma.user.findUnique({
                     where: { username: connection.username.toLowerCase() },
                 });

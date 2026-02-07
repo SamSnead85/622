@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { colors, typography, spacing, Avatar } from '@caravan/ui';
+import { colors, typography, spacing, Avatar } from '@zerog/ui';
 
 // Mock conversations data
 const MOCK_CONVERSATIONS = [

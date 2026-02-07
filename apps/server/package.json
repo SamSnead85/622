@@ -1,8 +1,8 @@
 {
-    "name": "@caravan/server",
+    "name": "@zerog/server",
     "version": "1.0.0",
     "private": true,
-    "description": "Caravan Social Network Backend Services",
+    "description": "0G Social Network Backend Services",
     "type": "module",
     "scripts": {
         "dev": "tsx watch src/index.ts",

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, colors, typography, spacing } from '@caravan/ui';
+import { Button, colors, typography, spacing } from '@zerog/ui';
 
 export default function WelcomeScreen() {
     const router = useRouter();
@@ -56,7 +56,7 @@ export default function WelcomeScreen() {
                     </LinearGradient>
                 </View>
 
-                <Text style={styles.title}>Welcome to Caravan</Text>
+                <Text style={styles.title}>Welcome to 0G</Text>
                 <Text style={styles.subtitle}>
                     Share moments, build communities, and connect with people who matter.
                 </Text>

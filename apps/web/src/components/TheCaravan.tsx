@@ -462,7 +462,7 @@ export function CaravanDashboard({ currentMember, members, meetings, deals }: Ca
                     className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30 mb-4"
                 >
                     <span className="text-2xl">🐪</span>
-                    <span className="text-amber-400 font-bold">THE CARAVAN</span>
+                    <span className="text-amber-400 font-bold">THE INNER CIRCLE</span>
                 </motion.div>
                 <h1 className="text-4xl font-bold text-white mb-2">
                     Elite Founder Network

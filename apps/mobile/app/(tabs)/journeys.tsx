@@ -21,7 +21,7 @@ import Animated, {
     withTiming,
     runOnJS,
 } from 'react-native-reanimated';
-import { colors, typography, spacing } from '@caravan/ui';
+import { colors, typography, spacing } from '@zerog/ui';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 

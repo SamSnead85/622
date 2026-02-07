@@ -13,7 +13,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Video, ResizeMode } from 'expo-av';
 import * as Haptics from 'expo-haptics';
-import { colors, typography, spacing } from '@caravan/ui';
+import { colors, typography, spacing } from '@zerog/ui';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 

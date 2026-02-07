@@ -1,5 +1,5 @@
 // ============================================
-// SIX22 UI COMPONENT LIBRARY
+// 0G UI COMPONENT LIBRARY
 // The Silk Road Renaissance Design System
 // ============================================
 

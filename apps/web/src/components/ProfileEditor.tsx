@@ -79,7 +79,7 @@ interface ProfileEditorProps {
 // ============================================
 // LOCAL STORAGE HELPERS
 // ============================================
-const STORAGE_KEY = 'six22_user_profile';
+const STORAGE_KEY = 'og_user_profile';
 
 export function saveProfileToStorage(profile: UserProfile): void {
     if (typeof window !== 'undefined') {

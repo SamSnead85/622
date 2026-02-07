@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Video, ResizeMode } from 'expo-av';
-import { colors, typography, spacing, Avatar } from '@caravan/ui';
+import { colors, typography, spacing, Avatar } from '@zerog/ui';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 

@@ -1,6 +1,6 @@
 /* ============================================
-   SIX22 DESIGN TOKENS
-   Sovereign Social Network Design System
+   0G DESIGN TOKENS
+   Zero Gravity Design System
    
    Inspired by the Year 622 CE (1 AH)
    The year of the Hijra - a journey to community
@@ -10,7 +10,7 @@
 
 :root {
     /* ============================================
-     BRAND COLORS - Six22 Identity
+     BRAND COLORS - 0G Identity
      Colors inspired by:
      - Desert gold (amber) - the sands of Arabia
      - Rose water (rose) - traditional perfumery
@@ -19,61 +19,61 @@
      ============================================ */
 
     /* Primary Gradient Colors */
-    --six22-amber: #F59E0B;
-    --six22-amber-light: #FBBF24;
-    --six22-amber-dark: #D97706;
-    --six22-gold: #D4AF37;
-    --six22-gold-light: #E8C547;
-    --six22-gold-dark: #B8942A;
+    --og-amber: #F59E0B;
+    --og-amber-light: #FBBF24;
+    --og-amber-dark: #D97706;
+    --og-gold: #D4AF37;
+    --og-gold-light: #E8C547;
+    --og-gold-dark: #B8942A;
 
-    --six22-rose: #F43F5E;
-    --six22-rose-light: #FB7185;
-    --six22-rose-dark: #E11D48;
+    --og-rose: #F43F5E;
+    --og-rose-light: #FB7185;
+    --og-rose-dark: #E11D48;
 
-    --six22-violet: #8B5CF6;
-    --six22-violet-light: #A78BFA;
-    --six22-violet-dark: #7C3AED;
+    --og-violet: #8B5CF6;
+    --og-violet-light: #A78BFA;
+    --og-violet-dark: #7C3AED;
 
     /* Desert & Earth Tones */
-    --six22-sand: #C2A06A;
-    --six22-terracotta: #B87333;
-    --six22-olive: #556B2F;
-    --six22-deep-teal: #004D4D;
+    --og-sand: #C2A06A;
+    --og-terracotta: #B87333;
+    --og-olive: #556B2F;
+    --og-deep-teal: #004D4D;
 
     /* Semantic Colors */
-    --six22-success: #10B981;
-    --six22-warning: #F59E0B;
-    --six22-error: #EF4444;
-    --six22-info: #3B82F6;
+    --og-success: #10B981;
+    --og-warning: #F59E0B;
+    --og-error: #EF4444;
+    --og-info: #3B82F6;
 
     /* Neutral Palette - Premium Dark with warm undertones */
-    --six22-void: #030305;
-    --six22-obsidian: #050508;
-    --six22-charcoal: #0a0a0f;
-    --six22-slate: #1a1a25;
-    --six22-steel: #2a2a3a;
-    --six22-silver: #4a4a5a;
-    --six22-mist: #8a8a9a;
-    --six22-cloud: #cacad0;
-    --six22-snow: #fafaff;
+    --og-void: #030305;
+    --og-obsidian: #050508;
+    --og-charcoal: #0a0a0f;
+    --og-slate: #1a1a25;
+    --og-steel: #2a2a3a;
+    --og-silver: #4a4a5a;
+    --og-mist: #8a8a9a;
+    --og-cloud: #cacad0;
+    --og-snow: #fafaff;
 
     /* ============================================
-     GRADIENTS - Signature Six22 Look
+     GRADIENTS - Signature 0G Look
      Inspired by desert sunsets and starlit nights
      ============================================ */
 
-    --gradient-brand: linear-gradient(135deg, var(--six22-gold) 0%, var(--six22-amber) 30%, var(--six22-rose) 70%, var(--six22-violet) 100%);
-    --gradient-brand-vertical: linear-gradient(180deg, var(--six22-gold) 0%, var(--six22-amber) 30%, var(--six22-rose) 70%, var(--six22-violet) 100%);
-    --gradient-brand-radial: radial-gradient(circle, var(--six22-gold) 0%, var(--six22-amber) 30%, var(--six22-rose) 60%, var(--six22-violet) 100%);
+    --gradient-brand: linear-gradient(135deg, var(--og-gold) 0%, var(--og-amber) 30%, var(--og-rose) 70%, var(--og-violet) 100%);
+    --gradient-brand-vertical: linear-gradient(180deg, var(--og-gold) 0%, var(--og-amber) 30%, var(--og-rose) 70%, var(--og-violet) 100%);
+    --gradient-brand-radial: radial-gradient(circle, var(--og-gold) 0%, var(--og-amber) 30%, var(--og-rose) 60%, var(--og-violet) 100%);
 
     --gradient-sunset: linear-gradient(135deg, #D4AF37 0%, #F59E0B 25%, #F43F5E 50%, #8B5CF6 75%, #1a1a40 100%);
     --gradient-desert: linear-gradient(180deg, #C2A06A 0%, #B87333 50%, #8B5CF6 100%);
     --gradient-night-sky: linear-gradient(180deg, #030305 0%, #1a1a40 50%, #2a2a5a 100%);
 
-    --gradient-amber: linear-gradient(135deg, var(--six22-amber-light) 0%, var(--six22-amber-dark) 100%);
-    --gradient-rose: linear-gradient(135deg, var(--six22-rose-light) 0%, var(--six22-rose-dark) 100%);
-    --gradient-violet: linear-gradient(135deg, var(--six22-violet-light) 0%, var(--six22-violet-dark) 100%);
-    --gradient-gold: linear-gradient(135deg, var(--six22-gold-light) 0%, var(--six22-gold-dark) 100%);
+    --gradient-amber: linear-gradient(135deg, var(--og-amber-light) 0%, var(--og-amber-dark) 100%);
+    --gradient-rose: linear-gradient(135deg, var(--og-rose-light) 0%, var(--og-rose-dark) 100%);
+    --gradient-violet: linear-gradient(135deg, var(--og-violet-light) 0%, var(--og-violet-dark) 100%);
+    --gradient-gold: linear-gradient(135deg, var(--og-gold-light) 0%, var(--og-gold-dark) 100%);
 
     --gradient-glow-amber: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
     --gradient-glow-rose: radial-gradient(circle, rgba(244, 63, 94, 0.12) 0%, transparent 70%);
@@ -225,7 +225,7 @@
      Inspired by traditional arabesque patterns
      ============================================ */
 
-    /* Hexagon - 6 sides for Six22 */
+    /* Hexagon - Geometric motif */
     --clip-hex: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
     --clip-hex-sm: polygon(50% 5%, 90% 27%, 90% 73%, 50% 95%, 10% 73%, 10% 27%);
     --clip-hex-rounded: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
@@ -508,5 +508,5 @@
 
 /* Arabesque Border Pattern */
 .border-arabesque {
-    border-image: linear-gradient(135deg, var(--six22-gold), var(--six22-amber), var(--six22-rose)) 1;
+    border-image: linear-gradient(135deg, var(--og-gold), var(--og-amber), var(--og-rose)) 1;
 }

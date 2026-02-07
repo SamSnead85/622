@@ -5,11 +5,11 @@
 
 // Storage keys
 const STORAGE_KEYS = {
-    PROFILE: 'caravan_user_profile',
-    PREFERENCES: 'caravan_preferences',
-    DRAFT_CONTENT: 'caravan_drafts',
-    RECENT_SEARCHES: 'caravan_recent_searches',
-    VIEW_HISTORY: 'caravan_view_history',
+    PROFILE: 'og_user_profile',
+    PREFERENCES: 'og_preferences',
+    DRAFT_CONTENT: 'og_drafts',
+    RECENT_SEARCHES: 'og_recent_searches',
+    VIEW_HISTORY: 'og_view_history',
 } as const;
 
 // ============================================

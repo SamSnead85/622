@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Button, Input, colors, typography, spacing } from '@caravan/ui';
+import { Button, Input, colors, typography, spacing } from '@zerog/ui';
 
 export default function LoginScreen() {
     const router = useRouter();

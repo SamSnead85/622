@@ -206,7 +206,7 @@ export interface PostDraft {
     updatedAt: Date;
 }
 
-const DRAFT_KEY = 'caravan_post_drafts';
+const DRAFT_KEY = 'og_post_drafts';
 
 export function useDraftManager() {
     const [drafts, setDrafts] = useState<PostDraft[]>([]);
@@ -425,7 +425,7 @@ export interface Bookmark {
     collection?: string;
 }
 
-const BOOKMARK_KEY = 'caravan_bookmarks';
+const BOOKMARK_KEY = 'og_bookmarks';
 
 export function useBookmarks() {
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);

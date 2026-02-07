@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Camera, CameraType, FlashMode } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { colors, typography, spacing } from '@caravan/ui';
+import { colors, typography, spacing } from '@zerog/ui';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -160,7 +160,7 @@ export default function CreateScreen() {
             <View style={styles.permissionContainer}>
                 <Text style={styles.permissionTitle}>Camera Access Needed</Text>
                 <Text style={styles.permissionText}>
-                    Allow Caravan to access your camera to create amazing content
+                    Allow 0G to access your camera to create amazing content
                 </Text>
                 <TouchableOpacity style={styles.permissionButton}>
                     <Text style={styles.permissionButtonText}>Open Settings</Text>

@@ -1,5 +1,5 @@
 {
-    "name": "@six22/mobile",
+    "name": "@zerog/mobile",
     "version": "1.0.0",
     "private": true,
     "main": "expo-router/entry",
@@ -15,8 +15,8 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "@caravan/types": "*",
-        "@caravan/ui": "*",
+        "@zerog/types": "*",
+        "@zerog/ui": "*",
         "@expo/vector-icons": "^14.0.0",
         "ajv": "^8.17.1",
         "expo": "~51.0.0",

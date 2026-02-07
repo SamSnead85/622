@@ -6,10 +6,10 @@
             "@/*": [
                 "./src/*"
             ],
-            "@caravan/ui": [
+            "@zerog/ui": [
                 "../../packages/ui/src"
             ],
-            "@caravan/types": [
+            "@zerog/types": [
                 "../../packages/types/src"
             ]
         }

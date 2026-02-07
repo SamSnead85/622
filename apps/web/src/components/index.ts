@@ -1,5 +1,5 @@
 // ============================================
-// CARAVAN COMPONENTS INDEX
+// 0G COMPONENTS INDEX
 // ============================================
 
 // Premium Create & Edit
@@ -22,4 +22,4 @@ export { WelcomeOnboarding } from './WelcomeOnboarding';
 export { default as MomentsViewer } from './MomentsViewer';
 
 // Branding
-export { Six22Logo, GatewayHero } from './Six22Logo';
+export { ZeroGLogo, GatewayHero } from './ZeroGLogo';

@@ -130,7 +130,7 @@ export default function CirclesPage() {
                 {/* Background Image */}
                 <div
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                    style={{ backgroundImage: 'url(/caravan-hero.png)' }}
+                    style={{ backgroundImage: 'url(/og-hero.png)' }}
                 />
                 {/* Dark Overlay for Text Readability */}
                 <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f]/70 via-[#0a0a0f]/60 to-[#0a0a0f]" />

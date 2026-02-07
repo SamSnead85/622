@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 
-interface Six22LogoProps {
+interface ZeroGLogoProps {
     size?: 'sm' | 'md' | 'lg' | 'xl' | 'hero';
     animated?: boolean;
     variant?: 'full' | 'mark' | 'minimal';
@@ -19,7 +19,7 @@ const sizeMap = {
 };
 
 /**
- * SIX22 LOGO - "The Path"
+ * ZEROG LOGO - "The Path"
  * 
  * Design Philosophy:
  * - Subtle, modern, and inclusive
@@ -31,13 +31,13 @@ const sizeMap = {
  * The number 622 is historically significant as the year of the Hijra,
  * but this is represented abstractly as a "path" - universal and inclusive.
  */
-export function Six22Logo({
+export function ZeroGLogo({
     size = 'md',
     animated = true,
     variant = 'full',
     className = '',
     showTagline = false
-}: Six22LogoProps) {
+}: ZeroGLogoProps) {
     const dims = sizeMap[size];
     const isLarge = size === 'lg' || size === 'xl' || size === 'hero';
 
@@ -153,14 +153,14 @@ export function Six22Logo({
                             backgroundClip: 'text',
                         }}
                     >
-                        six22
+                        0G
                     </span>
                     {(showTagline || isLarge) && (
                         <span
                             className="text-white/40 font-medium tracking-wide"
                             style={{ fontSize: Math.max(10, dims.text * 0.35) }}
                         >
-                            your journey
+                            without the weight
                         </span>
                     )}
                 </motion.div>
@@ -180,7 +180,7 @@ export function Six22Logo({
                     animate={animated ? { opacity: 1 } : {}}
                     transition={{ duration: 0.4, delay: 0.3 }}
                 >
-                    six22
+                    0G
                 </motion.span>
             )}
         </div>
@@ -328,4 +328,4 @@ export function JourneyHero({ className = '' }: { className?: string }) {
 
 // Keep backward compatibility
 export { JourneyHero as GatewayHero };
-export default Six22Logo;
+export default ZeroGLogo;

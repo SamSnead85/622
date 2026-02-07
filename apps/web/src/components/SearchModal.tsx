@@ -25,7 +25,7 @@ interface SearchModalProps {
 // ============================================
 // RECENT SEARCHES (localStorage backed)
 // ============================================
-const RECENT_SEARCHES_KEY = 'six22_recent_searches';
+const RECENT_SEARCHES_KEY = 'og_recent_searches';
 const getRecentSearches = (): string[] => {
     if (typeof window === 'undefined') return [];
     try {
