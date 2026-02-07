@@ -37,6 +37,8 @@ import inviteRouter from './routes/invite.js';
 import circlesRouter from './routes/circles.js';
 import { developerRouter } from './routes/developer.js';
 import adminRouter from './routes/admin.js';
+import campaignsRouter from './routes/campaigns.js';
+import creatorsRouter from './routes/creators.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 import { setupSocketHandlers } from './socket/index.js';
@@ -196,6 +198,8 @@ app.use('/api/v1/invite', inviteRouter);
 app.use('/api/v1/circles', circlesRouter);
 app.use('/api/v1/developer', developerRouter);
 app.use('/api/v1/admin', adminRouter);
+app.use('/api/v1/campaigns', campaignsRouter);
+app.use('/api/v1/creators', creatorsRouter);
 
 
 // Sentry error handler (must be before custom error handler)

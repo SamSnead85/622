@@ -81,6 +81,7 @@ model User {
   pushSubscriptions          PushSubscription[]
   receivedStrikes            UserStrike[]              @relation("StrikeTarget")
   issuedStrikes              UserStrike[]              @relation("StrikeIssuer")
+  creatorProfile             CreatorProfile?
 
   @@index([username])
   @@index([email])
@@ -1727,14 +1728,137 @@ model EarlyAccessRequest {
 model AccessCode {
   id          String    @id @default(uuid())
   code        String    @unique
-  type        String    @default("early_access") // early_access | founder_invite | admin
+  type        String    @default("early_access") // early_access | founder_invite | admin | campaign | creator
   maxUses     Int       @default(1)
   useCount    Int       @default(0)
   expiresAt   DateTime?
   createdById String?
+  campaignId  String?
   createdAt   DateTime  @default(now())
   isActive    Boolean   @default(true)
+  campaign    Campaign? @relation(fields: [campaignId], references: [id])
 
   @@index([code])
   @@index([isActive])
+  @@index([campaignId])
+}
+
+// ============================================
+// CAMPAIGNS & SPONSORSHIPS
+// ============================================
+model Campaign {
+  id             String           @id @default(uuid())
+  slug           String           @unique
+  title          String
+  description    String           @db.Text
+  type           String           @default("event")  // event | sponsorship | partnership | fundraiser | raffle
+  status         String           @default("draft")  // draft | active | ended | cancelled
+  // Visual
+  coverUrl       String?
+  logoUrl        String?
+  brandColor     String?          @default("#00D4FF")
+  // Event details
+  eventDate      DateTime?
+  eventLocation  String?
+  eventCity      String?
+  // Incentives
+  incentiveType  String?          // raffle | gift_card | early_access | badge | custom
+  incentiveValue String?          // "$100 Gift Card" or "Founder Badge"
+  incentiveRules String?          @db.Text  // Description of how to win
+  raffleDrawDate DateTime?
+  // Tracking
+  signupGoal     Int              @default(100)
+  signupCount    Int              @default(0)
+  viewCount      Int              @default(0)
+  // Organization
+  partnerName    String?          // "Tampa Bay Muslim Community"
+  partnerLogo    String?
+  partnerUrl     String?
+  // Metadata
+  createdById    String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  expiresAt      DateTime?
+  // Relations
+  signups        CampaignSignup[]
+  accessCodes    AccessCode[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([type])
+}
+
+model CampaignSignup {
+  id          String   @id @default(uuid())
+  campaignId  String
+  name        String
+  email       String
+  phone       String?
+  source      String?  // qr | link | social | referral
+  referredBy  String?  // referral code of person who shared
+  isConverted Boolean  @default(false) // signed up for platform
+  userId      String?  // linked when they create account
+  createdAt   DateTime @default(now())
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, email])
+  @@index([campaignId])
+  @@index([email])
+}
+
+// ============================================
+// CREATOR / AMBASSADOR PROGRAM
+// ============================================
+model CreatorProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  tier            String   @default("ambassador") // ambassador | creator | partner | elite
+  status          String   @default("pending")    // pending | approved | active | suspended
+  // Platform presence
+  platform        String?  // instagram | tiktok | youtube | twitter | podcast | other
+  platformHandle  String?
+  followerCount   Int      @default(0)
+  contentNiche    String?  // food, fashion, faith, comedy, education, etc.
+  // Referral tracking
+  referralCode    String   @unique
+  totalReferrals  Int      @default(0)
+  activeReferrals Int      @default(0) // users who stayed active 30+ days
+  // Incentives
+  earlyAccessSlots Int     @default(10) // how many early access codes they can give out
+  slotsUsed        Int     @default(0)
+  hasVerifiedBadge Boolean @default(false)
+  hasPrioritySupport Boolean @default(false)
+  // Agreement
+  agreedToTerms   Boolean  @default(false)
+  agreedAt        DateTime?
+  // Metadata
+  bio             String?  @db.Text
+  applicationNote String?  @db.Text
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tier])
+  @@index([status])
+  @@index([referralCode])
+}
+
+// ============================================
+// REFERRAL REWARDS
+// ============================================
+model ReferralReward {
+  id          String   @id @default(uuid())
+  userId      String   // person earning the reward
+  type        String   // signup_bonus | milestone_5 | milestone_25 | milestone_100 | raffle_entry
+  description String
+  value       String?  // "$10 credit" or "Founder Badge" or "1 Raffle Entry"
+  status      String   @default("pending") // pending | fulfilled | expired
+  referralId  String?  // the invite that triggered this
+  createdAt   DateTime @default(now())
+  fulfilledAt DateTime?
+
+  @@index([userId])
+  @@index([status])
 }
