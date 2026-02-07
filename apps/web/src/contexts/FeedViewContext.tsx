@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_URL, apiFetch } from '@/lib/api';
 
@@ -67,14 +67,27 @@ export function useFeedView() {
 
 export function FeedViewProvider({ children }: { children: React.ReactNode }) {
     const { user, updateUser } = useAuth();
-    const [feedView, setFeedViewState] = useState<FeedView>('private');
+    // Initialize directly from user data — avoids a re-render + double-fetch cycle
+    const [feedView, setFeedViewState] = useState<FeedView>(() =>
+        (user?.activeFeedView as FeedView) || 'private'
+    );
     const [showJoinModal, setShowJoinModal] = useState(false);
 
-    // Sync from user data on mount
+    // Only sync if the server-side value changes AFTER initial mount (e.g. user switches tab)
+    const initializedRef = useRef(false);
     useEffect(() => {
-        if (user) {
-            setFeedViewState((user.activeFeedView as FeedView) || 'private');
+        if (!user) return;
+        if (!initializedRef.current) {
+            // First time user data arrives — sync if different from default
+            initializedRef.current = true;
+            const serverView = (user.activeFeedView as FeedView) || 'private';
+            if (serverView !== feedView) {
+                setFeedViewState(serverView);
+            }
+            return;
         }
+        // Subsequent changes (e.g. updated from another tab)
+        setFeedViewState((user.activeFeedView as FeedView) || 'private');
     }, [user?.activeFeedView]);
 
     const communityOptIn = user?.communityOptIn ?? false;

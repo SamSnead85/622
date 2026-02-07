@@ -12,17 +12,21 @@ import { createContext, useContext, useCallback, useRef } from 'react';
  * 4. When the focused video leaves the viewport, focus transfers to the next topmost.
  * 5. New videos entering while another has focus stay paused.
  * 6. Manual play/unmute on any video immediately steals focus from the current owner.
+ *
+ * Event-driven: focus changes notify affected components via callbacks (no polling).
  */
 
 interface VideoEntry {
     id: string;
     element: HTMLVideoElement;
     top: number;
+    /** Called when this video gains or loses focus */
+    onFocusChange?: (hasFocus: boolean) => void;
 }
 
 interface AudioFocusContextType {
-    /** Register a video as visible in the viewport. Returns true if this video gets focus (should play). */
-    registerVisible: (id: string, element: HTMLVideoElement) => boolean;
+    /** Register a video as visible. Returns true if this video gets focus. */
+    registerVisible: (id: string, element: HTMLVideoElement, onFocusChange?: (hasFocus: boolean) => void) => boolean;
     /** Unregister a video (scrolled out of view or unmounted). */
     unregisterVisible: (id: string) => void;
     /** Manually claim focus (user pressed play/unmute). Pauses the previous owner. */
@@ -61,23 +65,28 @@ export function AudioFocusProvider({ children }: { children: React.ReactNode }) 
         return topmost;
     }, []);
 
-    /** Switch focus: pause+mute the old owner, mark the new owner */
+    /** Switch focus: pause+mute the old owner, notify both old and new */
     const applyFocus = useCallback((newOwnerId: string | null) => {
         const prevOwner = focusOwnerRef.current;
 
-        // Pause + mute previous owner
+        // Pause + mute + notify previous owner
         if (prevOwner && prevOwner !== newOwnerId) {
             const prevEntry = visibleRef.current.get(prevOwner);
             if (prevEntry?.element) {
                 prevEntry.element.pause();
                 prevEntry.element.muted = true;
             }
+            // Notify previous owner they lost focus
+            prevEntry?.onFocusChange?.(false);
         }
 
         focusOwnerRef.current = newOwnerId;
 
-        // The new owner's play/unmute is handled by the component itself
-        // (we just set focus — the component's useEffect picks it up)
+        // Notify new owner they gained focus
+        if (newOwnerId) {
+            const newEntry = visibleRef.current.get(newOwnerId);
+            newEntry?.onFocusChange?.(true);
+        }
     }, []);
 
     const reassignFocus = useCallback(() => {
@@ -88,9 +97,9 @@ export function AudioFocusProvider({ children }: { children: React.ReactNode }) 
         applyFocus(topmost ? topmost.id : null);
     }, [getTopmostVisible, applyFocus]);
 
-    const registerVisible = useCallback((id: string, element: HTMLVideoElement): boolean => {
+    const registerVisible = useCallback((id: string, element: HTMLVideoElement, onFocusChange?: (hasFocus: boolean) => void): boolean => {
         const rect = element.getBoundingClientRect();
-        visibleRef.current.set(id, { id, element, top: rect.top });
+        visibleRef.current.set(id, { id, element, top: rect.top, onFocusChange });
 
         if (!focusOwnerRef.current || !visibleRef.current.has(focusOwnerRef.current)) {
             applyFocus(id);

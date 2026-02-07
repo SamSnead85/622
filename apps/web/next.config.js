@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    // Strip console.log/warn/error from production builds (via SWC compiler)
+    compiler: {
+        removeConsole: process.env.NODE_ENV === 'production'
+            ? { exclude: ['error'] } // Keep console.error for critical issues
+            : false,
+    },
     images: {
         formats: ['image/avif', 'image/webp'],
         remotePatterns: [

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -132,30 +132,46 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
     }[aspectRatio] : undefined;
     const useCrop = !!cssAspectRatio;
 
+    // Ref to track userPaused without re-creating the observer
+    const userPausedRef = useRef(userPaused);
+    userPausedRef.current = userPaused;
+
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
+
+        // Event-driven focus callback — called by AudioFocusContext when focus changes
+        const handleFocusChange = (gained: boolean) => {
+            if (userPausedRef.current) return; // User manually paused — don't auto-play
+            if (gained) {
+                video.muted = false;
+                setIsMuted(false);
+                video.play()
+                    .then(() => setIsPlaying(true))
+                    .catch(() => {
+                        // Autoplay blocked — try muted
+                        video.muted = true;
+                        setIsMuted(true);
+                        video.play().then(() => setIsPlaying(true)).catch(() => {});
+                    });
+            } else {
+                video.pause();
+                video.muted = true;
+                setIsMuted(true);
+                setIsPlaying(false);
+            }
+        };
 
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-                        // Register with audio focus — only the focus owner actually plays
-                        const getsAudio = audioFocus.registerVisible(videoId, video);
+                        // Register with audio focus + pass callback (no polling needed)
+                        const getsAudio = audioFocus.registerVisible(videoId, video, handleFocusChange);
 
-                        if (getsAudio && !userPaused) {
-                            // This is the focused video — play with audio
-                            video.muted = false;
-                            setIsMuted(false);
-                            video.play()
-                                .then(() => setIsPlaying(true))
-                                .catch(() => {
-                                    video.muted = true;
-                                    setIsMuted(true);
-                                    video.play().then(() => setIsPlaying(true)).catch(() => {});
-                                });
+                        if (getsAudio && !userPausedRef.current) {
+                            handleFocusChange(true);
                         } else {
-                            // NOT the focused video — stay paused and muted
                             video.muted = true;
                             setIsMuted(true);
                             video.pause();
@@ -165,7 +181,7 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
                         // Scrolled out of view — always pause and unregister
                         video.pause();
                         setIsPlaying(false);
-                        setUserPaused(false); // Reset manual pause when scrolled away
+                        setUserPaused(false);
                         audioFocus.unregisterVisible(videoId);
                     }
                 });
@@ -178,35 +194,7 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
             observer.disconnect();
             audioFocus.unregisterVisible(videoId);
         };
-    }, [videoId, audioFocus, userPaused]);
-
-    // When audio focus changes, sync this video's play/pause state
-    useEffect(() => {
-        const video = videoRef.current;
-        if (!video || userPaused) return;
-
-        const interval = setInterval(() => {
-            const hasFocusNow = audioFocus.hasFocus(videoId);
-            if (hasFocusNow && video.paused && !userPaused) {
-                // We gained focus — start playing
-                video.muted = false;
-                setIsMuted(false);
-                video.play().then(() => setIsPlaying(true)).catch(() => {
-                    video.muted = true;
-                    setIsMuted(true);
-                    video.play().then(() => setIsPlaying(true)).catch(() => {});
-                });
-            } else if (!hasFocusNow && !video.paused) {
-                // We lost focus — pause
-                video.pause();
-                video.muted = true;
-                setIsMuted(true);
-                setIsPlaying(false);
-            }
-        }, 300);
-
-        return () => clearInterval(interval);
-    }, [audioFocus, videoId, userPaused]);
+    }, [videoId, audioFocus]);
 
     const togglePlayPause = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -424,7 +412,7 @@ interface FeedPostProps {
     colorPalette?: ColorPalette;
 }
 
-export function FeedPost({ post, likePost, toggleRsvp, deletePost, pinPost, zenMode = false, colorPalette }: FeedPostProps) {
+function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, zenMode = false, colorPalette }: FeedPostProps) {
     const { user, isAdmin } = useAuth();
     const router = useRouter();
 
@@ -446,11 +434,9 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, pinPost, zenM
     } : undefined;
 
     return (
-        <motion.div
-            layoutId={`post-${post.id}`}
+        <div
             className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] rounded-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-sm overflow-hidden mb-6 transition-all duration-300 hover:border-[#00D4FF]/20 hover:shadow-[0_8px_32px_rgba(0,212,255,0.08)] hover:from-white/[0.06] hover:to-white/[0.02] group"
             style={tintStyle}
-            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
         >
             {/* Header */}
             <div className="p-4 pb-2">
@@ -632,6 +618,24 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, pinPost, zenM
                     </div>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 }
+
+// Memoize FeedPost — only re-render when this specific post's data changes
+export const FeedPost = memo(FeedPostInner, (prev, next) => {
+    const p = prev.post;
+    const n = next.post;
+    return (
+        p.id === n.id &&
+        p.isLiked === n.isLiked &&
+        p.likes === n.likes &&
+        p.isRsvped === n.isRsvped &&
+        p.rsvpCount === n.rsvpCount &&
+        p.isPinned === n.isPinned &&
+        p.commentsCount === n.commentsCount &&
+        p.content === n.content &&
+        p.mediaUrl === n.mediaUrl &&
+        prev.zenMode === next.zenMode
+    );
+});

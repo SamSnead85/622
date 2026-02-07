@@ -58,6 +58,7 @@ export function usePosts(options?: UsePostsOptions) {
     const [hasMore, setHasMore] = useState(true);
     const [nextCursor, setNextCursor] = useState<string | null>(null);
     const nextCursorRef = useRef<string | null>(null); // Ref to avoid closure staleness
+    const postsRef = useRef<Post[]>([]); // Ref for stable callback access
 
     const fetchFeed = useCallback(async (cursor: string | null = null, reset: boolean = false) => {
         try {
@@ -171,12 +172,15 @@ export function usePosts(options?: UsePostsOptions) {
         }
     }, []);
 
+    // Keep postsRef in sync — avoids putting `posts` in callback deps
+    useEffect(() => { postsRef.current = posts; }, [posts]);
+
     const toggleRsvp = useCallback(async (postId: string) => {
         try {
             const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
             if (!token) return;
 
-            const post = posts.find(p => p.id === postId);
+            const post = postsRef.current.find(p => p.id === postId);
             if (!post) return;
 
             // Optimistic update
@@ -212,7 +216,7 @@ export function usePosts(options?: UsePostsOptions) {
         } catch (err) {
             console.error('Error toggling RSVP:', err);
         }
-    }, [posts]);
+    }, []); // No dependency on `posts` — uses postsRef instead
 
     const createPost = useCallback(async (content: string, mediaFile?: File, topicIds?: string[], typeOverride?: string, communityIdOverride?: string): Promise<{ success: boolean; error?: string }> => {
         try {

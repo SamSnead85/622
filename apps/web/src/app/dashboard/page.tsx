@@ -36,7 +36,6 @@ export default function DashboardPage() {
     // Travel Shield: Use decoy posts when stealth is active
     const posts = isStealth ? (DECOY_POSTS as unknown as typeof realPosts) : realPosts;
     const router = useRouter();
-    const [mounted, setMounted] = useState(false);
     const loadMoreRef = useRef<HTMLDivElement>(null);
     const [zenMode] = useState(false);
     const [feedMode, setFeedMode] = useFeedMode();
@@ -44,10 +43,6 @@ export default function DashboardPage() {
     const { pullDistance, isRefreshing, containerRef: pullRef } = usePullToRefresh({
         onRefresh: async () => { await refetch(); },
     });
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     useEffect(() => {
         if (!isLoading && !user) {
@@ -83,7 +78,7 @@ export default function DashboardPage() {
         })();
     }, [user, isStealth]);
 
-    if (!mounted || isLoading) {
+    if (isLoading) {
         return (
             <div className="min-h-screen bg-black">
                 <div className="max-w-2xl mx-auto px-4 pt-20 space-y-6">
@@ -391,13 +386,9 @@ export default function DashboardPage() {
 
                                 {/* Real Posts - Standardized Card Sizing */}
                                 {posts.map((post) => (
-                                    <motion.div
+                                    <div
                                         key={post.id}
-                                        layout
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, scale: 0.9 }}
-                                        transition={{ duration: 0.3 }}
+                                        className="animate-fade-in"
                                     >
                                         <FeedPost
                                             post={post}
@@ -407,7 +398,7 @@ export default function DashboardPage() {
                                             pinPost={pinPost}
                                             zenMode={zenMode}
                                         />
-                                    </motion.div>
+                                    </div>
                                 ))}
 
                                 {/* Infinite Scroll Sentinel */}
