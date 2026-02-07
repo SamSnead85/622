@@ -84,6 +84,29 @@ export default function DashboardPage() {
         }
     }, [user, isLoading, router]);
 
+    // Auto-join pending community (from invite link signup flow)
+    useEffect(() => {
+        if (!user || isStealth) return;
+        const pendingSlug = localStorage.getItem('0g_pending_community');
+        if (!pendingSlug) return;
+        localStorage.removeItem('0g_pending_community');
+        (async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/v1/communities/${pendingSlug}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.id && !data.isMember) {
+                        const token = localStorage.getItem('0g_token');
+                        await fetch(`${API_URL}/api/v1/communities/${data.id}/join`, {
+                            method: 'POST',
+                            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        });
+                    }
+                }
+            } catch { /* non-critical */ }
+        })();
+    }, [user, isStealth]);
+
     if (!mounted || isLoading) {
         return (
             <div className="min-h-screen bg-black">

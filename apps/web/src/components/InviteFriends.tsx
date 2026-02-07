@@ -16,6 +16,7 @@ interface InviteFriendsProps {
     onClose: () => void;
     communityId?: string;
     communityName?: string;
+    communitySlug?: string;
 }
 
 // Share platforms with ZeroG branding
@@ -27,7 +28,7 @@ const SHARE_PLATFORMS = [
     { id: 'email', name: 'Email', icon: '📧', gradient: 'from-rose-400 to-rose-500' },
 ] as const;
 
-export function InviteFriends({ isOpen, onClose, communityId, communityName }: InviteFriendsProps) {
+export function InviteFriends({ isOpen, onClose, communityId, communityName, communitySlug }: InviteFriendsProps) {
     const { user } = useAuth();
     const {
         isLoading,
@@ -132,26 +133,85 @@ export function InviteFriends({ isOpen, onClose, communityId, communityName }: I
 
     const handleShare = useCallback((platform: typeof SHARE_PLATFORMS[number]['id']) => {
         let url;
+        const senderName = user?.displayName || 'Someone';
+
         if (communityId) {
-            const communityUrl = `${window.location.origin}/communities/${communityId}/join`;
-            const text = `Join ${communityName || 'the tribe'} on 0G!`;
-            // Basic construction for now, ideally generic util
-            if (platform === 'whatsapp') url = `https://wa.me/?text=${encodeURIComponent(text + ' ' + communityUrl)}`;
-            else if (platform === 'email') url = `mailto:?subject=Join Tribe&body=${encodeURIComponent(text + ' ' + communityUrl)}`;
-            else url = communityUrl; // Default fallback copies? No opens blank
+            // Community-specific invite with rich message (use slug for prettier URL)
+            const joinSlug = communitySlug || communityId;
+            const communityUrl = `${window.location.origin}/communities/${joinSlug}/join?ref=${user?.username || ''}`;
+            const groupName = communityName || 'our group';
+
+            const messages: Record<string, string> = {
+                whatsapp: `Hey! 👋 I created *${groupName}* on 0G — a private social platform with end-to-end privacy.\n\nJoin us here: ${communityUrl}\n\n✅ No ads, no tracking\n🔒 Private & encrypted\n⚡ Takes 30 seconds to join`,
+                sms: `Hey! I made a group called "${groupName}" on 0G. Join us: ${communityUrl}`,
+                telegram: `Hey! 👋 I created "${groupName}" on 0G — a private social platform.\n\nJoin here: ${communityUrl}`,
+                twitter: `Join ${groupName} on @ZeroG_Social — the privacy-first social platform 🔒\n\n${communityUrl}`,
+                email: `Hi!\n\nI'd love for you to join "${groupName}" on 0G — a private social network built for real communities.\n\nJoin here: ${communityUrl}\n\nIt only takes 30 seconds to create an account. No ads, no tracking, end-to-end privacy.\n\n— ${senderName}`,
+            };
+
+            const message = messages[platform] || `Join ${groupName} on 0G: ${communityUrl}`;
+
+            switch (platform) {
+                case 'whatsapp':
+                    url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                    break;
+                case 'sms':
+                    url = `sms:?body=${encodeURIComponent(message)}`;
+                    break;
+                case 'telegram':
+                    url = `https://t.me/share/url?url=${encodeURIComponent(communityUrl)}&text=${encodeURIComponent(messages.telegram)}`;
+                    break;
+                case 'twitter':
+                    url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(messages.twitter)}`;
+                    break;
+                case 'email':
+                    url = `mailto:?subject=${encodeURIComponent(`Join ${groupName} on 0G`)}&body=${encodeURIComponent(messages.email)}`;
+                    break;
+            }
         } else {
-            url = getShareUrl(platform as any, user?.displayName);
+            // General invite (personal referral link)
+            const personalUrl = inviteLink || `${window.location.origin}/r/${inviteCode || ''}`;
+
+            const messages: Record<string, string> = {
+                whatsapp: `Hey! 👋 I'm on *0G* — a private social platform with no ads and real privacy.\n\nJoin me: ${personalUrl}\n\n🔒 End-to-end encrypted\n⚡ No tracking or data selling\n✨ Built for real communities`,
+                sms: `Hey! Join me on 0G — a private social platform. ${personalUrl}`,
+                telegram: `Join me on 0G — the privacy-first social network!\n\n${personalUrl}`,
+                twitter: `I'm on @ZeroG_Social — social media built for privacy 🔒\n\nJoin: ${personalUrl}`,
+                email: `Hi!\n\nI've been using 0G, a new private social platform that doesn't track you, sell your data, or show ads.\n\nJoin me here: ${personalUrl}\n\nIt takes 30 seconds to sign up.\n\n— ${senderName}`,
+            };
+
+            const message = messages[platform] || `Join me on 0G: ${personalUrl}`;
+
+            switch (platform) {
+                case 'whatsapp':
+                    url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                    break;
+                case 'sms':
+                    url = `sms:?body=${encodeURIComponent(message)}`;
+                    break;
+                case 'telegram':
+                    url = `https://t.me/share/url?url=${encodeURIComponent(personalUrl)}&text=${encodeURIComponent(messages.telegram)}`;
+                    break;
+                case 'twitter':
+                    url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(messages.twitter)}`;
+                    break;
+                case 'email':
+                    url = `mailto:?subject=${encodeURIComponent(`${senderName} invited you to 0G`)}&body=${encodeURIComponent(messages.email)}`;
+                    break;
+                default:
+                    url = getShareUrl(platform as any, user?.displayName);
+            }
         }
 
         if (url) window.open(url, '_blank', 'width=600,height=500');
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
-    }, [getShareUrl, user?.displayName, communityId, communityName]);
+    }, [getShareUrl, user?.displayName, user?.username, communityId, communityName, inviteLink, inviteCode]);
 
     if (!mounted) return null;
 
     const displayLink = communityId
-        ? `${typeof window !== 'undefined' ? window.location.origin : ''}/communities/${communityId}/join`
+        ? `${typeof window !== 'undefined' ? window.location.origin : ''}/communities/${communitySlug || communityId}/join`
         : (inviteLink || 'Generating link...');
 
     return (

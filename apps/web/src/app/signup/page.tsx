@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_URL, apiFetch } from '@/lib/api';
 
 export default function SignupPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { signup, isAuthenticated, isLoading: authLoading } = useAuth();
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState('');
@@ -16,11 +18,31 @@ export default function SignupPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [mounted, setMounted] = useState(false);
+    const [referralCode, setReferralCode] = useState<string | null>(null);
+    const [referrerName, setReferrerName] = useState<string | null>(null);
 
     // Auto-generate username from name
     const generatedUsername = name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
     useEffect(() => { setMounted(true); }, []);
+
+    // Load referral code from URL or localStorage
+    useEffect(() => {
+        const ref = searchParams.get('ref') || localStorage.getItem('0g_referral_code');
+        if (ref) {
+            setReferralCode(ref);
+            localStorage.setItem('0g_referral_code', ref);
+            // Validate & get referrer info
+            fetch(`${API_URL}/api/v1/invite/validate/${ref}`, { method: 'POST' })
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (data?.sender?.displayName) {
+                        setReferrerName(data.sender.displayName);
+                    }
+                })
+                .catch(() => {});
+        }
+    }, [searchParams]);
 
     // Redirect if already authenticated
     useEffect(() => {
@@ -45,6 +67,32 @@ export default function SignupPage() {
         try {
             const result = await signup(email, password, generatedUsername, name);
             if (result.success) {
+                // Post-signup: complete referral and auto-join pending community
+                const ref = localStorage.getItem('0g_referral_code');
+                const pendingCommunity = localStorage.getItem('0g_pending_community');
+
+                // Complete referral attribution (non-blocking)
+                if (ref) {
+                    fetch(`${API_URL}/api/v1/invite/complete/${ref}`, { method: 'POST' }).catch(() => {});
+                    localStorage.removeItem('0g_referral_code');
+                }
+
+                // Auto-join pending community (non-blocking)
+                if (pendingCommunity) {
+                    (async () => {
+                        try {
+                            const res = await fetch(`${API_URL}/api/v1/communities/${pendingCommunity}`);
+                            if (res.ok) {
+                                const data = await res.json();
+                                if (data.id) {
+                                    await apiFetch(`${API_URL}/api/v1/communities/${data.id}/join`, { method: 'POST' });
+                                }
+                            }
+                        } catch { /* non-critical */ }
+                        localStorage.removeItem('0g_pending_community');
+                    })();
+                }
+
                 router.push('/onboarding');
             } else {
                 setError(result.error || 'Signup failed. Please try again.');
@@ -131,6 +179,22 @@ export default function SignupPage() {
                                     exit={{ opacity: 0, x: -20 }}
                                     transition={{ duration: 0.3 }}
                                 >
+                                    {/* Referral Banner */}
+                                    {referrerName && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="mb-4 px-4 py-3 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/20"
+                                        >
+                                            <p className="text-[#00D4FF] text-sm font-medium">
+                                                {referrerName} invited you to join 0G
+                                            </p>
+                                            <p className="text-white/40 text-xs mt-0.5">
+                                                Create your account to connect
+                                            </p>
+                                        </motion.div>
+                                    )}
+
                                     <h1 className="text-3xl font-bold text-white mb-2">Join ZeroG</h1>
                                     <p className="text-white/50 mb-8">
                                         The next generation of social. Weightless. Authentic. Yours.

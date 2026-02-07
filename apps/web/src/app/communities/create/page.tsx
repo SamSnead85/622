@@ -500,18 +500,21 @@ export default function CreateTribePage() {
                                 </div>
 
                                 <div>
-                                    <p className="text-sm font-semibold uppercase tracking-widest text-[#00D4FF] mb-2">Secure Access Link</p>
+                                    <p className="text-sm font-semibold uppercase tracking-widest text-[#00D4FF] mb-2">Invite Link</p>
+                                    <p className="text-white/40 text-xs mb-3">Share this link — anyone who clicks can join instantly after creating an account</p>
                                     <div className="flex gap-2">
                                         <div className="flex-1 bg-black rounded-lg border border-white/10 px-4 py-3 text-white/60 font-mono text-sm truncate">
-                                            {typeof window !== 'undefined' ? `${window.location.origin}/communities/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}?ref=${user?.username}` : `Calculating...`}
+                                            {typeof window !== 'undefined' ? `${window.location.origin}/communities/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}/join?ref=${user?.username}` : `Calculating...`}
                                         </div>
                                         <button
                                             onClick={() => {
-                                                const url = `${window.location.origin}/communities/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}?ref=${user?.username}`;
+                                                const url = `${window.location.origin}/communities/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}/join?ref=${user?.username}`;
                                                 navigator.clipboard.writeText(url);
-                                                alert('Link copied');
+                                                const btn = document.getElementById('copy-btn');
+                                                if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy'; }, 2000); }
                                             }}
-                                            className="px-4 py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 font-semibold"
+                                            id="copy-btn"
+                                            className="px-4 py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 font-semibold transition-colors"
                                         >
                                             Copy
                                         </button>
@@ -519,10 +522,45 @@ export default function CreateTribePage() {
                                 </div>
 
                                 <div className="grid grid-cols-3 gap-3">
-                                    <button className="py-3 rounded-xl bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 hover:bg-[#25D366]/20 font-medium">WhatsApp</button>
-                                    <button className="py-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 font-medium">iMessage</button>
-                                    <button className="py-3 rounded-xl bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 font-medium">Email</button>
+                                    <button
+                                        onClick={() => {
+                                            const url = `${window.location.origin}/communities/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}/join?ref=${user?.username}`;
+                                            const msg = `Hey! 👋 I created *${tribeData.name}* on 0G — a private social platform with real privacy.\n\nJoin us: ${url}\n\n✅ No ads\n🔒 Encrypted\n⚡ 30 sec signup`;
+                                            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                                        }}
+                                        className="py-3 rounded-xl bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 hover:bg-[#25D366]/20 font-medium transition-colors"
+                                    >
+                                        WhatsApp
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const url = `${window.location.origin}/communities/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}/join?ref=${user?.username}`;
+                                            const msg = `Join ${tribeData.name} on 0G! ${url}`;
+                                            window.open(`sms:?body=${encodeURIComponent(msg)}`, '_blank');
+                                        }}
+                                        className="py-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 font-medium transition-colors"
+                                    >
+                                        iMessage
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const url = `${window.location.origin}/communities/${tribeData.name.toLowerCase().replace(/\s+/g, '-')}/join?ref=${user?.username}`;
+                                            const msg = `I'd love for you to join "${tribeData.name}" on 0G — a private social network.\n\nJoin here: ${url}\n\nTakes 30 seconds. No ads, no tracking.`;
+                                            window.open(`mailto:?subject=${encodeURIComponent(`Join ${tribeData.name} on 0G`)}&body=${encodeURIComponent(msg)}`, '_blank');
+                                        }}
+                                        className="py-3 rounded-xl bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 font-medium transition-colors"
+                                    >
+                                        Email
+                                    </button>
                                 </div>
+
+                                {/* Quick tip for WhatsApp groups */}
+                                {tribeData.category === 'family' && (
+                                    <div className="mt-2 px-4 py-3 rounded-xl bg-[#25D366]/5 border border-[#25D366]/10">
+                                        <p className="text-[#25D366] text-xs font-medium mb-1">Moving from WhatsApp?</p>
+                                        <p className="text-white/40 text-xs">Share this link directly in your existing WhatsApp group — everyone can join with one tap.</p>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     )}
