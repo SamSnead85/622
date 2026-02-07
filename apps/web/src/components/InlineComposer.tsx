@@ -244,6 +244,7 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
                 mediaUrl,
                 type: mediaType,
                 privacy,
+                ...(communityId ? { communityId } : {}),
                 ...(mediaFile && cropY !== 50 ? { mediaCropY: cropY } : {}),
                 ...(mediaFile && chosenRatio !== 'original' ? { mediaAspectRatio: chosenRatio } : {}),
             });
