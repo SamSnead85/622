@@ -56,16 +56,37 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
 // GET /api/v1/posts/feed
 router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        const { cursor, limit = '10', type = 'foryou' } = req.query;
+        const { cursor, limit = '10', type = 'foryou', view } = req.query;
 
-        // Create cache key based on user, pagination, and type
-        const cacheKey = `feed:${req.userId}:${type}:${cursor || 'initial'}:${limit}`;
+        // ── Privacy-First Feed Isolation ──
+        // Determine which feed view the user is requesting.
+        // "private" = only posts from groups/communities user belongs to + people they follow.
+        // "community" = the broader public feed (only available if communityOptIn is true).
+        const currentUser = await prisma.user.findUnique({
+            where: { id: req.userId },
+            select: { communityOptIn: true, activeFeedView: true },
+        });
+        const feedView = (view as string) || currentUser?.activeFeedView || 'private';
+
+        // Block community feed access for users who haven't opted in
+        if (feedView === 'community' && !currentUser?.communityOptIn) {
+            return res.json({
+                posts: [],
+                nextCursor: null,
+                feedView: 'private',
+                communityOptIn: false,
+                message: 'Join the community to see the community feed',
+            });
+        }
+
+        // Create cache key based on user, pagination, type, AND view
+        const cacheKey = `feed:${req.userId}:${feedView}:${type}:${cursor || 'initial'}:${limit}`;
 
         // Try cache first (only for initial page, no cursor)
         if (!cursor) {
             const cached = await cache.get(cacheKey);
             if (cached) {
-                return res.json(cached);
+                return res.json({ ...cached, feedView });
             }
         }
 
@@ -75,19 +96,45 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
         });
         const isNewUser = followCount === 0;
 
-        // Log only in development
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`[Feed] User ${req.userId} follow count: ${followCount}, isNewUser: ${isNewUser}`);
-        }
-
         // Fetch real posts from database
+        // Community feed default: only show posts from users who opted into the community
         let whereClause: any = {
             isPublic: true,
-            deletedAt: null, // Exclude soft-deleted posts
+            deletedAt: null,
+            user: { communityOptIn: true }, // Privacy wall: only community members' posts
         };
 
-        if (type === 'following') {
-            // Get posts from users the current user follows
+        if (feedView === 'private') {
+            // ── PRIVATE FEED: Only groups + followed users ──
+            // 1. Get community IDs the user belongs to
+            const memberships = await prisma.communityMember.findMany({
+                where: { userId: req.userId!, isBanned: false },
+                select: { communityId: true },
+            });
+            const communityIds = memberships.map((m) => m.communityId);
+
+            // 2. Get user IDs the current user follows
+            const following = await prisma.follow.findMany({
+                where: { followerId: req.userId },
+                select: { followingId: true },
+            });
+            const followingIds = following.map((f) => f.followingId);
+
+            // Combine: posts from my communities + posts from people I follow + my own posts
+            whereClause = {
+                deletedAt: null,
+                OR: [
+                    // Posts in communities I belong to
+                    ...(communityIds.length > 0 ? [{ communityId: { in: communityIds } }] : []),
+                    // Posts from people I follow (non-community posts)
+                    ...(followingIds.length > 0 ? [{ userId: { in: followingIds }, communityId: null }] : []),
+                    // My own posts
+                    { userId: req.userId },
+                ],
+            };
+        } else if (type === 'following') {
+            // ── COMMUNITY FEED — Following tab ──
+            // Get posts from users the current user follows (public posts only)
             let following;
             try {
                 following = await prisma.follow.findMany({
@@ -100,7 +147,6 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             }
 
             if (following.length === 0) {
-                // No follows yet - show all public posts instead of empty feed
                 whereClause = { isPublic: true, deletedAt: null };
             } else {
                 whereClause = {
@@ -110,6 +156,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                 };
             }
         }
+        // else: community "foryou" feed — use default whereClause (all public posts)
 
         let posts;
         try {
@@ -134,6 +181,12 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                             displayName: true,
                             avatarUrl: true,
                             isVerified: true,
+                            // Privacy-first: include public profile fields for identity masking
+                            usePublicProfile: true,
+                            publicDisplayName: true,
+                            publicUsername: true,
+                            publicAvatarUrl: true,
+                            communityOptIn: true,
                         },
                     },
                     music: {
@@ -293,21 +346,40 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
         const likedPostIds = new Set(likes.map((l) => l.postId));
         const savedPostIds = new Set(saves.map((s) => s.postId));
 
+        // ── Public profile masking for community feed ──
+        // When viewing the community feed, authors who use a public profile
+        // appear under their public persona — their real identity is hidden.
+        const maskAuthor = (user: any) => {
+            if (feedView === 'community' && user?.usePublicProfile) {
+                return {
+                    id: user.id,
+                    username: user.publicUsername || user.username,
+                    displayName: user.publicDisplayName || user.displayName,
+                    avatarUrl: user.publicAvatarUrl || user.avatarUrl,
+                    isVerified: user.isVerified,
+                };
+            }
+            // Strip privacy fields from response regardless
+            const { usePublicProfile, publicDisplayName, publicUsername, publicAvatarUrl, communityOptIn, ...cleanUser } = user || {};
+            return cleanUser;
+        };
+
         const response = {
             posts: results.map((post: any) => ({
                 ...post,
+                user: maskAuthor(post.user),
                 likesCount: post._count.likes,
                 commentsCount: post._count.comments,
                 sharesCount: post._count.shares,
                 isLiked: likedPostIds.has(post.id),
                 isSaved: savedPostIds.has(post.id),
-                // Include ranking factors if explain=true
                 ...(post._rankingFactors ? { rankingFactors: post._rankingFactors } : {}),
-                // Remove internal fields
                 _engagementScore: undefined,
                 _rankingFactors: undefined,
             })),
             nextCursor: hasMore ? results[results.length - 1].id : null,
+            feedView,
+            communityOptIn: currentUser?.communityOptIn ?? false,
         };
 
         // Feed response ready

@@ -43,6 +43,7 @@ export interface FeedUser {
 
 export interface UsePostsOptions {
     communityId?: string;
+    feedView?: 'private' | 'community';
 }
 
 // ============================================
@@ -68,9 +69,10 @@ export function usePosts(options?: UsePostsOptions) {
             setError(null);
 
             // Construct URL based on context (Community vs Main Feed)
+            // Pass feedView parameter for privacy-first feed isolation
             let url = options?.communityId
                 ? `${API_ENDPOINTS.communities}/${options.communityId}/posts?limit=20`
-                : `${API_ENDPOINTS.posts}/feed?limit=20`;
+                : `${API_ENDPOINTS.posts}/feed?limit=20${options?.feedView ? `&view=${options.feedView}` : ''}`;
 
             if (cursor) {
                 url += `&cursor=${cursor}`;
@@ -131,7 +133,7 @@ export function usePosts(options?: UsePostsOptions) {
         } finally {
             if (reset) setIsLoading(false);
         }
-    }, [options?.communityId]);
+    }, [options?.communityId, options?.feedView]);
 
     const fetchFriends = useCallback(async () => {
         try {

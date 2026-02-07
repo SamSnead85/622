@@ -432,6 +432,14 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
                     primaryCommunityId: true,
                     role: true, // Include role for admin detection
                     createdAt: true,
+                    // Privacy-first fields
+                    communityOptIn: true,
+                    activeFeedView: true,
+                    usePublicProfile: true,
+                    publicDisplayName: true,
+                    publicUsername: true,
+                    publicAvatarUrl: true,
+                    publicBio: true,
                     growthPartner: { select: { id: true, status: true, tier: true } },
                     _count: {
                         select: {

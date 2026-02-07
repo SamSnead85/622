@@ -6,18 +6,39 @@ import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
-// GET /api/v1/users - List all users
+// ── Privacy helper: mask user identity if they use a public profile ──
+function maskUserForDiscovery(u: any) {
+    if (u.usePublicProfile) {
+        return {
+            id: u.id,
+            username: u.publicUsername || u.username,
+            displayName: u.publicDisplayName || u.displayName,
+            bio: u.publicBio || u.bio,
+            avatarUrl: u.publicAvatarUrl || u.avatarUrl,
+            isVerified: u.isVerified,
+        };
+    }
+    // Strip privacy fields
+    const { usePublicProfile, publicDisplayName, publicUsername, publicAvatarUrl, publicBio, communityOptIn, ...clean } = u;
+    return clean;
+}
+
+// GET /api/v1/users - List all users (only community-opted-in users are discoverable)
 router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { cursor, limit = '20', search } = req.query;
 
         const users = await prisma.user.findMany({
             where: {
-                isGroupOnly: false, // Hide group-only users from public discovery
+                isGroupOnly: false,
+                communityOptIn: true, // Privacy-first: only show users who joined the community
                 ...(search ? {
                     OR: [
                         { username: { contains: search as string, mode: 'insensitive' } },
                         { displayName: { contains: search as string, mode: 'insensitive' } },
+                        // Also search by public username/name
+                        { publicUsername: { contains: search as string, mode: 'insensitive' } },
+                        { publicDisplayName: { contains: search as string, mode: 'insensitive' } },
                     ]
                 } : {}),
             },
@@ -31,6 +52,12 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
                 bio: true,
                 avatarUrl: true,
                 isVerified: true,
+                usePublicProfile: true,
+                publicDisplayName: true,
+                publicUsername: true,
+                publicAvatarUrl: true,
+                publicBio: true,
+                communityOptIn: true,
                 _count: {
                     select: { followers: true },
                 },
@@ -54,7 +81,7 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
 
         res.json({
             users: results.map((u) => ({
-                ...u,
+                ...maskUserForDiscovery(u),
                 followersCount: u._count.followers,
                 isFollowing: followingIds.has(u.id),
             })),
@@ -67,27 +94,36 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
 });
 
 // GET /api/v1/users/search - Search users by name or username
+// Privacy-first: only users who opted into the community are searchable
 router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { q, limit = '20' } = req.query;
 
-        // If no search query, return all users (for new user discovery)
+        const privacySelect = {
+            id: true,
+            username: true,
+            displayName: true,
+            bio: true,
+            avatarUrl: true,
+            isVerified: true,
+            usePublicProfile: true,
+            publicDisplayName: true,
+            publicUsername: true,
+            publicAvatarUrl: true,
+            publicBio: true,
+            communityOptIn: true,
+            _count: {
+                select: { followers: true },
+            },
+        };
+
+        // If no search query, return discoverable users
         if (!q || typeof q !== 'string' || q.trim() === '') {
             const users = await prisma.user.findMany({
-                where: { isGroupOnly: false }, // Hide group-only users
+                where: { isGroupOnly: false, communityOptIn: true },
                 take: parseInt(limit as string),
                 orderBy: { createdAt: 'desc' },
-                select: {
-                    id: true,
-                    username: true,
-                    displayName: true,
-                    bio: true,
-                    avatarUrl: true,
-                    isVerified: true,
-                    _count: {
-                        select: { followers: true },
-                    },
-                },
+                select: privacySelect,
             });
 
             let followingIds = new Set<string>();
@@ -104,7 +140,7 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
 
             return res.json({
                 users: users.map((u) => ({
-                    ...u,
+                    ...maskUserForDiscovery(u),
                     followersCount: u._count.followers,
                     isFollowing: followingIds.has(u.id),
                 })),
@@ -115,24 +151,17 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
 
         const users = await prisma.user.findMany({
             where: {
-                isGroupOnly: false, // Hide group-only users from search
+                isGroupOnly: false,
+                communityOptIn: true, // Privacy-first: only searchable if opted in
                 OR: [
                     { username: { contains: searchTerm, mode: 'insensitive' } },
                     { displayName: { contains: searchTerm, mode: 'insensitive' } },
+                    { publicUsername: { contains: searchTerm, mode: 'insensitive' } },
+                    { publicDisplayName: { contains: searchTerm, mode: 'insensitive' } },
                 ],
             },
             take: parseInt(limit as string),
-            select: {
-                id: true,
-                username: true,
-                displayName: true,
-                bio: true,
-                avatarUrl: true,
-                isVerified: true,
-                _count: {
-                    select: { followers: true },
-                },
-            },
+            select: privacySelect,
         });
 
         let followingIds = new Set<string>();
@@ -149,7 +178,7 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
 
         res.json({
             users: users.map((u) => ({
-                ...u,
+                ...maskUserForDiscovery(u),
                 followersCount: u._count.followers,
                 isFollowing: followingIds.has(u.id),
             })),
@@ -165,8 +194,14 @@ router.get('/:username', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { username } = req.params;
 
-        const user = await prisma.user.findUnique({
-            where: { username: username.toLowerCase() },
+        // Try to find by real username or public username
+        const user = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { username: username.toLowerCase() },
+                    { publicUsername: username.toLowerCase() },
+                ],
+            },
             select: {
                 id: true,
                 username: true,
@@ -179,6 +214,12 @@ router.get('/:username', optionalAuth, async (req: AuthRequest, res, next) => {
                 coverUrl: true,
                 isVerified: true,
                 isPrivate: true,
+                communityOptIn: true,
+                usePublicProfile: true,
+                publicDisplayName: true,
+                publicUsername: true,
+                publicAvatarUrl: true,
+                publicBio: true,
                 createdAt: true,
                 _count: {
                     select: {
@@ -194,9 +235,40 @@ router.get('/:username', optionalAuth, async (req: AuthRequest, res, next) => {
             throw new AppError('User not found', 404);
         }
 
+        const isOwnProfile = req.userId === user.id;
+
+        // Privacy wall: if user hasn't opted into community and this isn't their own profile,
+        // they are invisible — return 404 as if they don't exist
+        if (!user.communityOptIn && !isOwnProfile) {
+            // Check if the viewer is in the same community as this user
+            // (community/group members CAN see each other)
+            const sharedCommunity = req.userId ? await prisma.communityMember.findFirst({
+                where: {
+                    userId: req.userId,
+                    community: {
+                        members: { some: { userId: user.id } },
+                    },
+                },
+            }) : null;
+
+            // Also allow if the viewer follows this user
+            const isFollower = req.userId ? await prisma.follow.findUnique({
+                where: {
+                    followerId_followingId: {
+                        followerId: req.userId,
+                        followingId: user.id,
+                    },
+                },
+            }) : null;
+
+            if (!sharedCommunity && !isFollower) {
+                throw new AppError('User not found', 404);
+            }
+        }
+
         // Check if current user follows this user
         let isFollowing = false;
-        if (req.userId && req.userId !== user.id) {
+        if (req.userId && !isOwnProfile) {
             const follow = await prisma.follow.findUnique({
                 where: {
                     followerId_followingId: {
@@ -208,13 +280,42 @@ router.get('/:username', optionalAuth, async (req: AuthRequest, res, next) => {
             isFollowing = !!follow;
         }
 
+        // Apply public profile masking when viewed from community context
+        // (if user uses public profile and viewer is not the user themselves and not a group member)
+        const shouldMask = user.usePublicProfile && !isOwnProfile;
+
+        const profileData = shouldMask ? {
+            id: user.id,
+            username: user.publicUsername || user.username,
+            displayName: user.publicDisplayName || user.displayName,
+            bio: user.publicBio || user.bio,
+            avatarUrl: user.publicAvatarUrl || user.avatarUrl,
+            coverUrl: user.coverUrl,
+            isVerified: user.isVerified,
+            isPrivate: user.isPrivate,
+            createdAt: user.createdAt,
+        } : {
+            id: user.id,
+            username: user.username,
+            displayName: user.displayName,
+            displayNameSecondary: user.displayNameSecondary,
+            secondaryLanguage: user.secondaryLanguage,
+            bio: user.bio,
+            website: user.website,
+            avatarUrl: user.avatarUrl,
+            coverUrl: user.coverUrl,
+            isVerified: user.isVerified,
+            isPrivate: user.isPrivate,
+            createdAt: user.createdAt,
+        };
+
         res.json({
-            ...user,
+            ...profileData,
             followersCount: user._count.followers,
             followingCount: user._count.following,
             postsCount: user._count.posts,
             isFollowing,
-            isOwnProfile: req.userId === user.id,
+            isOwnProfile,
         });
     } catch (error) {
         next(error);
@@ -256,6 +357,146 @@ router.put('/profile', authenticate, async (req: AuthRequest, res, next) => {
         });
 
         res.json(user);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ── Privacy-First: Community Opt-In & Public Profile Management ──
+
+// POST /api/v1/users/community-opt-in - Join (or leave) the larger community
+router.post('/community-opt-in', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const schema = z.object({
+            optIn: z.boolean(),
+            // When opting in, optionally set up a public profile in the same request
+            usePublicProfile: z.boolean().optional(),
+            publicDisplayName: z.string().min(1).max(50).optional(),
+            publicUsername: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/).optional(),
+            publicAvatarUrl: z.string().url().optional(),
+            publicBio: z.string().max(300).optional(),
+        });
+        const data = schema.parse(req.body);
+
+        // If setting a public username, verify it's available
+        if (data.publicUsername) {
+            const existing = await prisma.user.findFirst({
+                where: {
+                    OR: [
+                        { username: data.publicUsername },
+                        { publicUsername: data.publicUsername },
+                    ],
+                    NOT: { id: req.userId },
+                },
+            });
+            if (existing) {
+                throw new AppError('Public username is already taken', 409);
+            }
+        }
+
+        const user = await prisma.user.update({
+            where: { id: req.userId },
+            data: {
+                communityOptIn: data.optIn,
+                activeFeedView: data.optIn ? 'community' : 'private', // Switch view on opt-in
+                ...(data.usePublicProfile !== undefined && { usePublicProfile: data.usePublicProfile }),
+                ...(data.publicDisplayName !== undefined && { publicDisplayName: data.publicDisplayName }),
+                ...(data.publicUsername !== undefined && { publicUsername: data.publicUsername }),
+                ...(data.publicAvatarUrl !== undefined && { publicAvatarUrl: data.publicAvatarUrl }),
+                ...(data.publicBio !== undefined && { publicBio: data.publicBio }),
+                // If opting out, clear public profile preference but keep the data
+                ...(!data.optIn && { activeFeedView: 'private' }),
+            },
+            select: {
+                id: true,
+                communityOptIn: true,
+                activeFeedView: true,
+                usePublicProfile: true,
+                publicDisplayName: true,
+                publicUsername: true,
+                publicAvatarUrl: true,
+                publicBio: true,
+            },
+        });
+
+        res.json(user);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// PUT /api/v1/users/public-profile - Update public persona
+router.put('/public-profile', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const schema = z.object({
+            usePublicProfile: z.boolean().optional(),
+            publicDisplayName: z.string().min(1).max(50).optional(),
+            publicUsername: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/).optional(),
+            publicAvatarUrl: z.string().url().optional(),
+            publicBio: z.string().max(300).optional(),
+        });
+        const data = schema.parse(req.body);
+
+        // Verify public username availability
+        if (data.publicUsername) {
+            const existing = await prisma.user.findFirst({
+                where: {
+                    OR: [
+                        { username: data.publicUsername },
+                        { publicUsername: data.publicUsername },
+                    ],
+                    NOT: { id: req.userId },
+                },
+            });
+            if (existing) {
+                throw new AppError('Public username is already taken', 409);
+            }
+        }
+
+        const user = await prisma.user.update({
+            where: { id: req.userId },
+            data,
+            select: {
+                id: true,
+                usePublicProfile: true,
+                publicDisplayName: true,
+                publicUsername: true,
+                publicAvatarUrl: true,
+                publicBio: true,
+            },
+        });
+
+        res.json(user);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// PUT /api/v1/users/feed-view - Switch between private and community feed
+router.put('/feed-view', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const schema = z.object({
+            view: z.enum(['private', 'community']),
+        });
+        const { view } = schema.parse(req.body);
+
+        // Can only switch to community if opted in
+        if (view === 'community') {
+            const user = await prisma.user.findUnique({
+                where: { id: req.userId },
+                select: { communityOptIn: true },
+            });
+            if (!user?.communityOptIn) {
+                throw new AppError('Join the community first to access the community feed', 403);
+            }
+        }
+
+        await prisma.user.update({
+            where: { id: req.userId },
+            data: { activeFeedView: view },
+        });
+
+        res.json({ activeFeedView: view });
     } catch (error) {
         next(error);
     }

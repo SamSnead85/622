@@ -21,6 +21,8 @@ import { TrendingSection } from '@/components/feed/TrendingSection';
 import { useFeedMode } from '@/components/feed/FeedModeToggle';
 import { FullscreenVideoFeed } from '@/components/feed/FullscreenVideoFeed';
 import { usePullToRefresh } from '@/hooks/useInfiniteScroll';
+import { useFeedView } from '@/contexts/FeedViewContext';
+import { JoinCommunityModal } from '@/components/JoinCommunityModal';
 import { DECOY_POSTS } from '@/lib/stealth/decoyData';
 
 // ============================================
@@ -28,7 +30,8 @@ import { DECOY_POSTS } from '@/lib/stealth/decoyData';
 // ============================================
 export default function DashboardPage() {
     const { user, isLoading, isAdmin, isStealth } = useAuth();
-    const { posts: realPosts, likePost, deletePost, pinPost, isLoading: postsLoading, refetch, hasMore, loadMore, toggleRsvp } = usePosts();
+    const { feedView, setFeedView, communityOptIn, showJoinModal, setShowJoinModal } = useFeedView();
+    const { posts: realPosts, likePost, deletePost, pinPost, isLoading: postsLoading, refetch, hasMore, loadMore, toggleRsvp } = usePosts({ feedView });
 
     // Travel Shield: Use decoy posts when stealth is active
     const posts = isStealth ? (DECOY_POSTS as unknown as typeof realPosts) : realPosts;
@@ -210,10 +213,89 @@ export default function DashboardPage() {
                         </div>
                     </header>
 
+                    {/* ===== FEED VIEW TOGGLE: Private <-> Community ===== */}
+                    <div className="flex items-center justify-between py-3 border-b border-white/[0.06] mb-2">
+                        <div className="flex items-center bg-white/[0.04] rounded-full p-0.5">
+                            <button
+                                onClick={() => setFeedView('private')}
+                                className={`relative flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                                    feedView === 'private'
+                                        ? 'text-white'
+                                        : 'text-white/40 hover:text-white/60'
+                                }`}
+                            >
+                                {feedView === 'private' && (
+                                    <motion.div
+                                        layoutId="feedViewToggle"
+                                        className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-full"
+                                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                    />
+                                )}
+                                <span className="relative z-10 flex items-center gap-1.5">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
+                                    </svg>
+                                    My Circle
+                                </span>
+                            </button>
+                            <button
+                                onClick={() => setFeedView('community')}
+                                className={`relative flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                                    feedView === 'community'
+                                        ? 'text-white'
+                                        : 'text-white/40 hover:text-white/60'
+                                }`}
+                            >
+                                {feedView === 'community' && (
+                                    <motion.div
+                                        layoutId="feedViewToggle"
+                                        className="absolute inset-0 bg-gradient-to-r from-[#00D4FF]/20 to-[#8B5CF6]/20 border border-[#00D4FF]/30 rounded-full"
+                                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                    />
+                                )}
+                                <span className="relative z-10 flex items-center gap-1.5">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                                    </svg>
+                                    Community
+                                    {!communityOptIn && (
+                                        <span className="text-[10px] bg-[#00D4FF]/20 text-[#00D4FF] px-1.5 py-0.5 rounded-full ml-1">Join</span>
+                                    )}
+                                </span>
+                            </button>
+                        </div>
+
+                        {/* Privacy indicator */}
+                        <div className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full ${
+                            feedView === 'private'
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/20'
+                        }`}>
+                            {feedView === 'private' ? (
+                                <>
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
+                                    </svg>
+                                    Private
+                                </>
+                            ) : (
+                                <>
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <circle cx="12" cy="12" r="10" />
+                                    </svg>
+                                    Public
+                                </>
+                            )}
+                        </div>
+                    </div>
+
                     {/* ===== STORIES: Directly under header, no extra padding ===== */}
                     <div className="pt-1 lg:pt-0">
                         <EnhancedStoriesBar />
                     </div>
+
+                    {/* Join Community Modal */}
+                    {showJoinModal && <JoinCommunityModal />}
 
                     {/* ===== EMPTY STATE: Welcome cards when zero posts ===== */}
                     {posts.length === 0 && !postsLoading && (

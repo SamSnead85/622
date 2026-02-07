@@ -3,6 +3,7 @@
 import { ReactNode, useEffect } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { AudioFocusProvider } from '@/contexts/AudioFocusContext';
+import { FeedViewProvider } from '@/contexts/FeedViewContext';
 import { I18nProvider } from '@/components/layout/RTLProvider';
 
 function useServiceWorkerRegistration() {
@@ -21,9 +22,11 @@ export function Providers({ children }: { children: ReactNode }) {
     return (
         <I18nProvider>
             <AuthProvider>
-                <AudioFocusProvider>
-                    {children}
-                </AudioFocusProvider>
+                <FeedViewProvider>
+                    <AudioFocusProvider>
+                        {children}
+                    </AudioFocusProvider>
+                </FeedViewProvider>
             </AuthProvider>
         </I18nProvider>
     );

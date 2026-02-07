@@ -26,6 +26,14 @@ export interface User {
     postsCount?: number;
     followersCount?: number;
     followingCount?: number;
+    // Privacy-first architecture
+    communityOptIn?: boolean;
+    activeFeedView?: 'private' | 'community';
+    usePublicProfile?: boolean;
+    publicDisplayName?: string;
+    publicUsername?: string;
+    publicAvatarUrl?: string;
+    publicBio?: string;
 }
 
 interface AuthContextType {

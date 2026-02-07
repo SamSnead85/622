@@ -93,8 +93,20 @@ model User {
   lockedAt                   DateTime?
   lockReason                 String?                   // panic | admin | security
 
+  // ── Privacy-First Architecture ──
+  // By default users are PRIVATE — invisible to the larger community.
+  // They can opt-in to the community feed and optionally use a separate public identity.
+  communityOptIn             Boolean                   @default(false) // Has user opted into the community feed?
+  activeFeedView             String                    @default("private") // "private" | "community" — current feed toggle
+  usePublicProfile           Boolean                   @default(false) // Use separate public persona for community?
+  publicDisplayName          String?                   // Display name shown in community feed (if usePublicProfile)
+  publicUsername             String?                   @unique // Username shown in community feed (if usePublicProfile)
+  publicAvatarUrl            String?                   // Avatar shown in community feed (if usePublicProfile)
+  publicBio                  String?                   // Bio shown in community feed (if usePublicProfile)
+
   @@index([username])
   @@index([email])
+  @@index([communityOptIn])
 }
 
 model UserStrike {
