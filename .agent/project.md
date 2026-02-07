@@ -349,5 +349,14 @@ npm test (in either apps/server or apps/web)
 
 ---
 
-**Last Updated**: 2026-02-06  
-**Current Focus**: Sovereign Communities Database Schema (Week 1-2)
+## Pre-Launch TODO (Mobile App)
+
+- [ ] **Wire up native livestreaming in React Native app** -- The web PWA uses browser `getUserMedia()` for live streaming which works but is limited. The native mobile app (`apps/mobile/`) needs a proper native camera + RTMP library (e.g., `react-native-live-stream` or LiveKit React Native SDK) to push video to Mux. Native gives better quality, lower latency, and direct hardware access vs. browser-based streaming. This is required before App Store launch.
+- [ ] **Wire up mobile app API calls** -- Ensure all mobile app screens call the real backend API (same pattern as web fixes: use full `API_URL` + `/api/v1/...` endpoints with auth headers)
+- [ ] **Test Mux streaming end-to-end on mobile** -- Verify stream creation, RTMP ingest from native camera, HLS playback for viewers, and chat all work on iOS and Android
+- [ ] **Create Mux production environment keys** -- Current keys are dev environment. Create production API keys in Mux dashboard before public launch.
+
+---
+
+**Last Updated**: 2026-02-07  
+**Current Focus**: Platform polish, bug fixes, production readiness
