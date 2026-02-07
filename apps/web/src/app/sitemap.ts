@@ -1,26 +1,31 @@
-import { MetadataRoute } from 'next';
+import type { MetadataRoute } from 'next';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://0gravity.ai';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const now = new Date();
+    const now = new Date().toISOString();
 
-    // Static pages
-    const staticPages: MetadataRoute.Sitemap = [
+    return [
         {
             url: BASE_URL,
             lastModified: now,
-            changeFrequency: 'daily',
-            priority: 1.0,
+            changeFrequency: 'weekly',
+            priority: 1,
         },
         {
-            url: `${BASE_URL}/login`,
+            url: `${BASE_URL}/about`,
             lastModified: now,
             changeFrequency: 'monthly',
-            priority: 0.8,
+            priority: 0.9,
         },
         {
-            url: `${BASE_URL}/signup`,
+            url: `${BASE_URL}/early-access`,
+            lastModified: now,
+            changeFrequency: 'weekly',
+            priority: 0.9,
+        },
+        {
+            url: `${BASE_URL}/developers`,
             lastModified: now,
             changeFrequency: 'monthly',
             priority: 0.8,
@@ -28,8 +33,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
         {
             url: `${BASE_URL}/explore`,
             lastModified: now,
-            changeFrequency: 'hourly',
-            priority: 0.9,
+            changeFrequency: 'daily',
+            priority: 0.7,
         },
         {
             url: `${BASE_URL}/communities`,
@@ -38,18 +43,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 0.7,
         },
         {
-            url: `${BASE_URL}/campfire`,
+            url: `${BASE_URL}/login`,
             lastModified: now,
-            changeFrequency: 'hourly',
-            priority: 0.6,
+            changeFrequency: 'yearly',
+            priority: 0.3,
         },
         {
-            url: `${BASE_URL}/journeys`,
+            url: `${BASE_URL}/signup`,
             lastModified: now,
-            changeFrequency: 'hourly',
-            priority: 0.7,
+            changeFrequency: 'yearly',
+            priority: 0.3,
         },
     ];
-
-    return staticPages;
 }

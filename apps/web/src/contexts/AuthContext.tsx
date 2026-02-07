@@ -38,7 +38,7 @@ interface AuthContextType {
     verify2FA: (code: string) => Promise<{ success: boolean; error?: string }>;
     verifyBackupCode: (code: string) => Promise<{ success: boolean; error?: string }>;
     cancel2FA: () => void;
-    signup: (email: string, password: string, username: string, displayName: string, options?: { groupOnly?: boolean; primaryCommunityId?: string }) => Promise<{ success: boolean; error?: string }>;
+    signup: (email: string, password: string, username: string, displayName: string, options?: { groupOnly?: boolean; primaryCommunityId?: string; accessCode?: string }) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     updateUser: (updates: Partial<User>) => Promise<void>;
 }
@@ -261,7 +261,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password: string,
         username: string,
         displayName: string,
-        options?: { groupOnly?: boolean; primaryCommunityId?: string }
+        options?: { groupOnly?: boolean; primaryCommunityId?: string; accessCode?: string }
     ): Promise<{ success: boolean; error?: string }> => {
         try {
             const response = await apiFetch(API_ENDPOINTS.signup, {
@@ -271,6 +271,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     password,
                     username,
                     displayName,
+                    ...(options?.accessCode && { accessCode: options.accessCode }),
                     ...(options?.groupOnly && {
                         groupOnly: true,
                         primaryCommunityId: options.primaryCommunityId,

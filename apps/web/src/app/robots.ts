@@ -1,8 +1,8 @@
-import { MetadataRoute } from 'next';
+import type { MetadataRoute } from 'next';
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://0gravity.ai';
 
 export default function robots(): MetadataRoute.Robots {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://0gravity.ai';
-
     return {
         rules: [
             {
@@ -12,12 +12,33 @@ export default function robots(): MetadataRoute.Robots {
                     '/api/',
                     '/dashboard/',
                     '/messages/',
+                    '/profile/',
+                    '/onboarding/',
                     '/settings/',
-                    '/create/',
-                    '/admin/',
+                    '/communities/create/',
                 ],
             },
+            {
+                userAgent: 'GPTBot',
+                allow: ['/', '/about', '/early-access', '/developers'],
+                disallow: ['/api/', '/dashboard/', '/messages/'],
+            },
+            {
+                userAgent: 'ChatGPT-User',
+                allow: ['/', '/about', '/early-access', '/developers'],
+                disallow: ['/api/', '/dashboard/', '/messages/'],
+            },
+            {
+                userAgent: 'Claude-Web',
+                allow: ['/', '/about', '/early-access', '/developers'],
+                disallow: ['/api/', '/dashboard/', '/messages/'],
+            },
+            {
+                userAgent: 'Googlebot',
+                allow: '/',
+                disallow: ['/api/', '/dashboard/', '/messages/', '/onboarding/'],
+            },
         ],
-        sitemap: `${baseUrl}/sitemap.xml`,
+        sitemap: `${BASE_URL}/sitemap.xml`,
     };
 }

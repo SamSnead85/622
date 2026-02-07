@@ -344,7 +344,7 @@ export default function DashboardPage() {
                                 {/* Refresh Feed Button */}
                                 {posts.length > 0 && !hasMore && (
                                     <div className="text-center py-6">
-                                        <div className="text-white/30 text-sm mb-3">You&apos;re all caught up! ✨</div>
+                                        <div className="text-white/30 text-sm mb-3">You&apos;re all caught up</div>
                                         <button
                                             onClick={() => refetch()}
                                             className="px-6 py-2.5 rounded-xl bg-white/5 text-white/60 text-sm font-medium hover:bg-white/10 transition-colors border border-white/5"

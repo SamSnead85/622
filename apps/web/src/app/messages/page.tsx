@@ -9,6 +9,9 @@ import { ProtectedRoute, useAuth } from '@/contexts/AuthContext';
 import { Navigation } from '@/components/Navigation';
 import { API_URL } from '@/lib/api';
 import { DECOY_MESSAGES } from '@/lib/stealth/decoyData';
+import { useCall } from '@/hooks/useCall';
+import { CallInterface } from '@/components/calling/CallInterface';
+import { IncomingCallOverlay } from '@/components/calling/IncomingCallOverlay';
 import {
     HomeIcon,
     SearchIcon,
@@ -373,6 +376,11 @@ function MessagesPageContent() {
     const [selectedConvo, setSelectedConvo] = useState<Conversation | null>(null);
     const [messageInput, setMessageInput] = useState('');
     const [mounted, setMounted] = useState(false);
+    const {
+        initiateCall, answerCall, rejectCall, endCall,
+        callState, currentCall, incomingCall, localStream, remoteStream,
+        isMuted, isVideoOn, isScreenSharing, toggleMute, toggleVideo, toggleScreenShare,
+    } = useCall();
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
@@ -594,8 +602,26 @@ function MessagesPageContent() {
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15"><PhoneIcon size={18} /></button>
-                                    <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15"><VideoIcon size={18} /></button>
+                                    <button
+                                        onClick={() => {
+                                            const p = selectedConvo?.participants[0];
+                                            if (p?.id) initiateCall(p.id, 'audio', { username: p.username, displayName: p.displayName, avatarUrl: p.avatarUrl });
+                                        }}
+                                        className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-emerald-500/20 hover:text-emerald-400 transition-colors"
+                                        title="Voice call"
+                                    >
+                                        <PhoneIcon size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const p = selectedConvo?.participants[0];
+                                            if (p?.id) initiateCall(p.id, 'video', { username: p.username, displayName: p.displayName, avatarUrl: p.avatarUrl });
+                                        }}
+                                        className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-blue-500/20 hover:text-blue-400 transition-colors"
+                                        title="Video call"
+                                    >
+                                        <VideoIcon size={18} />
+                                    </button>
                                     <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15"><InfoIcon size={18} /></button>
                                 </div>
                             </div>
@@ -787,6 +813,35 @@ function MessagesPageContent() {
                     )}
                 </div>
             </main >
+
+            {/* Call UI Overlays */}
+            {(callState === 'calling' || callState === 'connected') && currentCall && (
+                <CallInterface
+                    localStream={localStream}
+                    remoteStream={remoteStream}
+                    callState={callState}
+                    isMuted={isMuted}
+                    isVideoOn={isVideoOn}
+                    isScreenSharing={isScreenSharing}
+                    participantName={currentCall.participant.displayName || currentCall.participant.username}
+                    participantAvatar={currentCall.participant.avatarUrl}
+                    onToggleMute={toggleMute}
+                    onToggleVideo={toggleVideo}
+                    onToggleScreenShare={toggleScreenShare}
+                    onEndCall={endCall}
+                />
+            )}
+            {incomingCall && (
+                <IncomingCallOverlay
+                    isVisible={true}
+                    callerName={incomingCall.from.displayName || incomingCall.from.username}
+                    callerAvatar={incomingCall.from.avatarUrl}
+                    callType={incomingCall.type}
+                    onAcceptAudio={() => answerCall(incomingCall.callId)}
+                    onAcceptVideo={() => answerCall(incomingCall.callId)}
+                    onReject={() => rejectCall(incomingCall.callId)}
+                />
+            )}
         </div >
     );
 }

@@ -20,7 +20,7 @@ interface UseCallReturn {
     isScreenSharing: boolean;
     currentCall: { callId: string; type: 'audio' | 'video'; participant: CallParticipant } | null;
     incomingCall: { callId: string; type: 'audio' | 'video'; from: CallParticipant } | null;
-    initiateCall: (userId: string, type: 'audio' | 'video') => Promise<void>;
+    initiateCall: (userId: string, type: 'audio' | 'video', participantInfo?: Partial<CallParticipant>) => Promise<void>;
     answerCall: (callId: string) => Promise<void>;
     rejectCall: (callId: string) => void;
     endCall: () => void;
@@ -50,9 +50,13 @@ export function useCall(): UseCallReturn {
             setIncomingCall({ callId: data.callId, type: data.type, from: data.from });
         });
 
-        socket.on('call:answered', async (data: { answer: RTCSessionDescriptionInit }) => {
+        socket.on('call:answered', async (data: { answer: RTCSessionDescriptionInit; participant?: CallParticipant }) => {
             await pcManagerRef.current?.handleAnswer(data.answer);
             setCallState('connected');
+            // Update participant info from server if available
+            if (data.participant) {
+                setCurrentCall(prev => prev ? { ...prev, participant: data.participant! } : prev);
+            }
         });
 
         socket.on('call:ice-candidate', async (data: { candidate: RTCIceCandidateInit }) => {
@@ -75,66 +79,112 @@ export function useCall(): UseCallReturn {
             setTimeout(() => setCallState('idle'), 2000);
         });
 
+        socket.on('call:unavailable', (data: { callId: string; reason: string }) => {
+            pcManagerRef.current?.close();
+            setLocalStream(null);
+            setRemoteStream(null);
+            setCallState('ended');
+            setCurrentCall(null);
+            setTimeout(() => setCallState('idle'), 2000);
+        });
+
         return () => {
             socket.off('call:incoming');
             socket.off('call:answered');
             socket.off('call:ice-candidate');
             socket.off('call:rejected');
             socket.off('call:ended');
+            socket.off('call:unavailable');
         };
     }, [socket]);
 
-    const initiateCall = useCallback(async (userId: string, type: 'audio' | 'video') => {
+    const initiateCall = useCallback(async (userId: string, type: 'audio' | 'video', participantInfo?: Partial<CallParticipant>) => {
         if (!socket) return;
 
-        const pcManager = new PeerConnectionManager({
-            onRemoteStream: setRemoteStream,
-            onIceCandidate: (candidate) => {
-                socket.emit('call:ice-candidate', { userId, candidate });
-            },
-            onConnectionStateChange: setCallState,
-            onError: (err) => console.error('Call error:', err),
-        });
+        try {
+            const pcManager = new PeerConnectionManager({
+                onRemoteStream: setRemoteStream,
+                onIceCandidate: (candidate) => {
+                    socket.emit('call:ice-candidate', { userId, candidate });
+                },
+                onConnectionStateChange: setCallState,
+                onError: (err) => console.error('Call error:', err),
+            });
 
-        pcManagerRef.current = pcManager;
-        setCallState('calling');
+            pcManagerRef.current = pcManager;
+            setCallState('calling');
 
-        const stream = await pcManager.initialize(true, type === 'video');
-        setLocalStream(stream);
-        setIsVideoOn(type === 'video');
+            const stream = await pcManager.initialize(true, type === 'video');
+            setLocalStream(stream);
+            setIsVideoOn(type === 'video');
 
-        const offer = await pcManager.createOffer();
-        const callId = `call_${Date.now()}`;
+            const offer = await pcManager.createOffer();
+            const callId = `call_${Date.now()}`;
 
-        socket.emit('call:initiate', { callId, userId, type, offer });
-        setCurrentCall({ callId, type, participant: { id: userId, username: '', displayName: '' } });
+            socket.emit('call:initiate', { callId, userId, type, offer });
+            setCurrentCall({
+                callId,
+                type,
+                participant: {
+                    id: userId,
+                    username: participantInfo?.username || '',
+                    displayName: participantInfo?.displayName || participantInfo?.username || 'Calling...',
+                    avatarUrl: participantInfo?.avatarUrl,
+                },
+            });
+
+            // Auto-timeout after 45 seconds if no answer
+            setTimeout(() => {
+                setCurrentCall(prev => {
+                    if (prev?.callId === callId) {
+                        pcManager.close();
+                        setLocalStream(null);
+                        setRemoteStream(null);
+                        setCallState('ended');
+                        setTimeout(() => setCallState('idle'), 2000);
+                        return null;
+                    }
+                    return prev;
+                });
+            }, 45000);
+        } catch (err) {
+            console.error('Failed to initiate call:', err);
+            setCallState('ended');
+            setTimeout(() => setCallState('idle'), 2000);
+        }
     }, [socket]);
 
     const answerCall = useCallback(async (callId: string) => {
         if (!socket || !incomingCall) return;
 
-        const pcManager = new PeerConnectionManager({
-            onRemoteStream: setRemoteStream,
-            onIceCandidate: (candidate) => {
-                socket.emit('call:ice-candidate', { userId: incomingCall.from.id, candidate });
-            },
-            onConnectionStateChange: setCallState,
-            onError: (err) => console.error('Call error:', err),
-        });
+        try {
+            const pcManager = new PeerConnectionManager({
+                onRemoteStream: setRemoteStream,
+                onIceCandidate: (candidate) => {
+                    socket.emit('call:ice-candidate', { userId: incomingCall.from.id, candidate });
+                },
+                onConnectionStateChange: setCallState,
+                onError: (err) => console.error('Call error:', err),
+            });
 
-        pcManagerRef.current = pcManager;
-        const stream = await pcManager.initialize(true, incomingCall.type === 'video');
-        setLocalStream(stream);
-        setIsVideoOn(incomingCall.type === 'video');
+            pcManagerRef.current = pcManager;
+            const stream = await pcManager.initialize(true, incomingCall.type === 'video');
+            setLocalStream(stream);
+            setIsVideoOn(incomingCall.type === 'video');
 
-        // Get the offer from the socket event (cached)
-        socket.emit('call:get-offer', { callId }, async (offer: RTCSessionDescriptionInit) => {
-            const answer = await pcManager.createAnswer(offer);
-            socket.emit('call:answer', { callId, answer });
-        });
+            // Get the offer from the socket event (cached)
+            socket.emit('call:get-offer', { callId }, async (offer: RTCSessionDescriptionInit) => {
+                const answer = await pcManager.createAnswer(offer);
+                socket.emit('call:answer', { callId, answer });
+            });
 
-        setCurrentCall({ callId, type: incomingCall.type, participant: incomingCall.from });
-        setIncomingCall(null);
+            setCurrentCall({ callId, type: incomingCall.type, participant: incomingCall.from });
+            setIncomingCall(null);
+        } catch (err) {
+            console.error('Failed to answer call:', err);
+            setCallState('ended');
+            setTimeout(() => setCallState('idle'), 2000);
+        }
     }, [socket, incomingCall]);
 
     const rejectCall = useCallback((callId: string) => {

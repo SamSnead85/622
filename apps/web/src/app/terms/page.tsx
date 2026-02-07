@@ -1,118 +1,75 @@
-'use client';
-
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'Terms of Service',
+    description: 'ZeroG Terms of Service. Read our terms and conditions for using the ZeroG platform.',
+};
 
 export default function TermsPage() {
     return (
-        <div className="min-h-screen bg-[#030305] text-white">
-            {/* Navigation */}
-            <nav className="sticky top-0 z-50 bg-black/70 backdrop-blur-2xl border-b border-white/5 py-4">
-                <div className="max-w-4xl mx-auto px-6 flex items-center gap-4">
-                    <Link href="/" className="text-white/60 hover:text-white transition-colors">
-                        ← Back
+        <div className="min-h-screen bg-black text-white">
+            <nav className="fixed top-0 left-0 right-0 z-50 bg-black/60 backdrop-blur-2xl border-b border-white/[0.04]">
+                <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-3">
+                        <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center border border-white/10">
+                            <span className="font-bold text-sm text-white tracking-tight">0G</span>
+                        </div>
+                        <span className="font-semibold text-white/90 tracking-tight">ZeroG</span>
                     </Link>
-                    <h1 className="text-lg font-semibold text-white">Terms of Service</h1>
                 </div>
             </nav>
 
-            <main className="max-w-4xl mx-auto px-6 py-16">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                >
-                    <h1 className="text-4xl font-light text-white mb-2">Terms of Service</h1>
-                    <p className="text-white/40 mb-12">Last updated: February 2026</p>
+            <main className="pt-32 pb-24 px-6 max-w-4xl mx-auto">
+                <h1 className="text-4xl font-bold mb-4">Terms of Service</h1>
+                <p className="text-white/40 mb-12">Last updated: February 2026</p>
 
-                    <div className="space-y-10 text-white/60 font-light leading-relaxed">
-                        <section>
-                            <h2 className="text-xl font-medium text-white mb-4">1. Acceptance of Terms</h2>
-                            <p>
-                                By accessing or using ZeroG (&quot;0G&quot;, &quot;the Platform&quot;), you agree to be bound by these Terms
-                                of Service. If you do not agree, please do not use the Platform.
-                            </p>
-                        </section>
+                <div className="prose prose-invert prose-sm max-w-none space-y-8">
+                    <section>
+                        <h2 className="text-xl font-semibold text-white mb-3">1. Acceptance of Terms</h2>
+                        <p className="text-white/60 leading-relaxed">By accessing or using ZeroG (&quot;the Platform&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform. ZeroG reserves the right to modify these terms at any time, and your continued use of the Platform constitutes acceptance of any modifications.</p>
+                    </section>
 
-                        <section>
-                            <h2 className="text-xl font-medium text-white mb-4">2. Your Account</h2>
-                            <p>
-                                You are responsible for maintaining the security of your account and password.
-                                You must be at least 13 years old to use ZeroG. You are responsible for all
-                                activity that occurs under your account.
-                            </p>
-                        </section>
+                    <section>
+                        <h2 className="text-xl font-semibold text-white mb-3">2. Eligibility</h2>
+                        <p className="text-white/60 leading-relaxed">You must be at least 16 years of age to use the Platform. By using ZeroG, you represent that you meet this minimum age requirement. During the early access period, registration requires an access code provided by ZeroG.</p>
+                    </section>
 
-                        <section>
-                            <h2 className="text-xl font-medium text-white mb-4">3. Your Content</h2>
-                            <p>
-                                You retain full ownership of all content you post on ZeroG. By posting content,
-                                you grant us a limited license to display and distribute your content on the
-                                Platform. You can export or delete your content at any time.
-                            </p>
-                        </section>
+                    <section>
+                        <h2 className="text-xl font-semibold text-white mb-3">3. User Accounts</h2>
+                        <p className="text-white/60 leading-relaxed">You are responsible for maintaining the confidentiality of your account credentials. You agree to notify ZeroG immediately of any unauthorized use of your account. You are responsible for all activities that occur under your account.</p>
+                    </section>
 
-                        <section>
-                            <h2 className="text-xl font-medium text-white mb-4">4. Privacy</h2>
-                            <p>
-                                We do not sell your data. We do not run ads. We do not track you across the web.
-                                For full details on what we do and don&apos;t collect, see our{' '}
-                                <Link href="/transparency" className="text-[#00D4FF] hover:underline">
-                                    Privacy &amp; Transparency
-                                </Link>{' '}
-                                page.
-                            </p>
-                        </section>
+                    <section>
+                        <h2 className="text-xl font-semibold text-white mb-3">4. User Content</h2>
+                        <p className="text-white/60 leading-relaxed">You retain ownership of all content you create and share on ZeroG. By posting content, you grant ZeroG a limited, non-exclusive license to display and distribute your content within the Platform as necessary to provide the service. You are solely responsible for the content you share and must ensure it does not violate any laws or third-party rights.</p>
+                    </section>
 
-                        <section>
-                            <h2 className="text-xl font-medium text-white mb-4">5. Acceptable Use</h2>
-                            <p>You agree not to:</p>
-                            <ul className="list-disc pl-6 mt-3 space-y-2">
-                                <li>Post content that is illegal, harmful, threatening, abusive, or hateful</li>
-                                <li>Impersonate others or misrepresent your identity</li>
-                                <li>Spam, harass, or bully other users</li>
-                                <li>Attempt to gain unauthorized access to other accounts or systems</li>
-                                <li>Use the Platform for any unlawful purpose</li>
-                            </ul>
-                        </section>
+                    <section>
+                        <h2 className="text-xl font-semibold text-white mb-3">5. Prohibited Conduct</h2>
+                        <p className="text-white/60 leading-relaxed">You agree not to: (a) harass, abuse, or harm others; (b) post illegal, defamatory, or harmful content; (c) impersonate others or misrepresent your identity; (d) attempt to gain unauthorized access to the Platform or other users&apos; accounts; (e) use the Platform for spam, phishing, or other malicious activities; (f) reverse-engineer or attempt to extract the source code of the Platform.</p>
+                    </section>
 
-                        <section>
-                            <h2 className="text-xl font-medium text-white mb-4">6. Community Governance</h2>
-                            <p>
-                                Communities (Tribes) on ZeroG are self-governed. Community leaders set their own
-                                rules and moderation policies. ZeroG provides tools for governance but does not
-                                intervene in community decisions except when content violates these Terms.
-                            </p>
-                        </section>
+                    <section>
+                        <h2 className="text-xl font-semibold text-white mb-3">6. Privacy</h2>
+                        <p className="text-white/60 leading-relaxed">Your use of the Platform is also governed by our <Link href="/privacy" className="text-[#00D4FF]/70 hover:text-[#00D4FF] underline underline-offset-2">Privacy Policy</Link>. ZeroG is committed to protecting your personal information and will never sell your data to third parties.</p>
+                    </section>
 
-                        <section>
-                            <h2 className="text-xl font-medium text-white mb-4">7. Termination</h2>
-                            <p>
-                                We reserve the right to suspend or terminate accounts that violate these Terms.
-                                You may delete your account at any time. Upon deletion, we will remove your
-                                data from our systems within 30 days.
-                            </p>
-                        </section>
+                    <section>
+                        <h2 className="text-xl font-semibold text-white mb-3">7. Community Guidelines</h2>
+                        <p className="text-white/60 leading-relaxed">ZeroG is a platform built on respect and authentic human connection. Community administrators have sovereignty over their communities and may set their own rules within the bounds of these Terms. ZeroG reserves the right to remove content or suspend accounts that violate these Terms.</p>
+                    </section>
 
-                        <section>
-                            <h2 className="text-xl font-medium text-white mb-4">8. Changes to Terms</h2>
-                            <p>
-                                We may update these Terms from time to time. We will notify users of significant
-                                changes. Continued use of the Platform after changes constitutes acceptance.
-                            </p>
-                        </section>
+                    <section>
+                        <h2 className="text-xl font-semibold text-white mb-3">8. Limitation of Liability</h2>
+                        <p className="text-white/60 leading-relaxed">ZeroG is provided &quot;as is&quot; without warranties of any kind. ZeroG shall not be liable for any indirect, incidental, or consequential damages arising from your use of the Platform. The Platform is in active development and features may change.</p>
+                    </section>
 
-                        <section>
-                            <h2 className="text-xl font-medium text-white mb-4">9. Contact</h2>
-                            <p>
-                                Questions about these Terms? Contact us at{' '}
-                                <a href="mailto:support@0g.social" className="text-[#00D4FF] hover:underline">
-                                    support@0g.social
-                                </a>
-                            </p>
-                        </section>
-                    </div>
-                </motion.div>
+                    <section>
+                        <h2 className="text-xl font-semibold text-white mb-3">9. Contact</h2>
+                        <p className="text-white/60 leading-relaxed">For questions about these Terms, please contact us through the Platform or visit our <Link href="/about" className="text-[#00D4FF]/70 hover:text-[#00D4FF] underline underline-offset-2">About page</Link>.</p>
+                    </section>
+                </div>
             </main>
         </div>
     );

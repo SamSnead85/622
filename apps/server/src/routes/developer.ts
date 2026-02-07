@@ -498,7 +498,7 @@ router.get('/public/posts', authenticateApi, requireScope('read'), async (req: A
 
         res.json({
             data: posts.map(p => ({
-                id: p.id, content: p.content, type: p.type, mediaUrl: p.mediaUrl,
+                id: p.id, content: p.caption, type: p.type, mediaUrl: p.mediaUrl,
                 communityId: p.communityId, createdAt: p.createdAt,
                 author: p.user,
                 stats: { likes: p._count.likes, comments: p._count.comments },
@@ -566,9 +566,9 @@ router.post('/public/posts', authenticateApi, requireScope('write'), async (req:
         const post = await prisma.post.create({
             data: {
                 userId: req.userId,
-                content: data.content,
+                caption: data.content,
                 communityId: data.communityId,
-                type: data.type || 'TEXT',
+                type: (data.type as 'IMAGE' | 'VIDEO' | 'TEXT') || 'TEXT',
                 mediaUrl: data.mediaUrl,
             },
         });

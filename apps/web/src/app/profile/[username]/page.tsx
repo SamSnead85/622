@@ -9,7 +9,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePullToRefresh } from '@/hooks/useInfiniteScroll';
 import { Navigation } from '@/components/Navigation';
 import { RightSidebar } from '@/components/RightSidebar';
-import { HeartIcon, PlayIcon } from '@/components/icons';
+import { HeartIcon, PlayIcon, PhoneIcon, VideoIcon } from '@/components/icons';
+import { useCall } from '@/hooks/useCall';
+import { CallInterface } from '@/components/calling/CallInterface';
+import { IncomingCallOverlay } from '@/components/calling/IncomingCallOverlay';
 
 export default function PublicProfilePage() {
     const params = useParams();
@@ -26,6 +29,11 @@ export default function PublicProfilePage() {
     const [reportReason, setReportReason] = useState('');
     const [reportSubmitted, setReportSubmitted] = useState(false);
     const moreMenuRef = useRef<HTMLDivElement>(null);
+    const {
+        initiateCall, answerCall, rejectCall, endCall,
+        callState, currentCall, incomingCall, localStream, remoteStream,
+        isMuted, isVideoOn, isScreenSharing, toggleMute, toggleVideo, toggleScreenShare,
+    } = useCall();
 
     // Close more menu on outside click
     useEffect(() => {
@@ -299,6 +307,20 @@ export default function PublicProfilePage() {
                                         >
                                             Message
                                         </button>
+                                        <button
+                                            onClick={() => profile?.id && initiateCall(profile.id, 'audio', { username: profile.username, displayName: profile.displayName, avatarUrl: profile.avatarUrl })}
+                                            className="w-10 h-10 rounded-full bg-white/[0.06] border border-white/[0.1] flex items-center justify-center hover:bg-emerald-500/20 hover:border-emerald-500/30 hover:text-emerald-400 transition-all duration-300"
+                                            title="Voice call"
+                                        >
+                                            <PhoneIcon size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => profile?.id && initiateCall(profile.id, 'video', { username: profile.username, displayName: profile.displayName, avatarUrl: profile.avatarUrl })}
+                                            className="w-10 h-10 rounded-full bg-white/[0.06] border border-white/[0.1] flex items-center justify-center hover:bg-blue-500/20 hover:border-blue-500/30 hover:text-blue-400 transition-all duration-300"
+                                            title="Video call"
+                                        >
+                                            <VideoIcon size={16} />
+                                        </button>
                                     </>
                                 )}
                                 <div className="relative" ref={moreMenuRef}>
@@ -427,6 +449,35 @@ export default function PublicProfilePage() {
                         )}
                     </motion.div>
                 </div>
+            )}
+
+            {/* Call UI Overlays */}
+            {(callState === 'calling' || callState === 'connected') && currentCall && (
+                <CallInterface
+                    localStream={localStream}
+                    remoteStream={remoteStream}
+                    callState={callState}
+                    isMuted={isMuted}
+                    isVideoOn={isVideoOn}
+                    isScreenSharing={isScreenSharing}
+                    participantName={currentCall.participant.displayName || currentCall.participant.username}
+                    participantAvatar={currentCall.participant.avatarUrl}
+                    onToggleMute={toggleMute}
+                    onToggleVideo={toggleVideo}
+                    onToggleScreenShare={toggleScreenShare}
+                    onEndCall={endCall}
+                />
+            )}
+            {incomingCall && (
+                <IncomingCallOverlay
+                    isVisible={true}
+                    callerName={incomingCall.from.displayName || incomingCall.from.username}
+                    callerAvatar={incomingCall.from.avatarUrl}
+                    callType={incomingCall.type}
+                    onAcceptAudio={() => answerCall(incomingCall.callId)}
+                    onAcceptVideo={() => answerCall(incomingCall.callId)}
+                    onReject={() => rejectCall(incomingCall.callId)}
+                />
             )}
         </div>
     );

@@ -274,9 +274,30 @@ export const setupSocketHandlers = (io: SocketServer) => {
         });
 
         // === WebRTC Call Signaling ===
-        socket.on('call:initiate', (data: { callId: string; userId: string; type: 'audio' | 'video'; offer: any }) => {
+        socket.on('call:initiate', async (data: { callId: string; userId: string; type: 'audio' | 'video'; offer: any }) => {
             const { callId, userId: targetUserId, type, offer } = data;
             activeCalls.set(callId, { from: userId, to: targetUserId, offer });
+
+            // Fetch caller info so the receiver can see who's calling
+            let callerInfo: { id: string; username: string; displayName: string; avatarUrl?: string } = {
+                id: userId, username: socket.username || 'Unknown', displayName: socket.username || 'Unknown',
+            };
+            try {
+                const callerUser = await prisma.user.findUnique({
+                    where: { id: userId },
+                    select: { id: true, username: true, displayName: true, avatarUrl: true },
+                });
+                if (callerUser) {
+                    callerInfo = {
+                        id: callerUser.id,
+                        username: callerUser.username,
+                        displayName: callerUser.displayName || callerUser.username,
+                        avatarUrl: callerUser.avatarUrl || undefined,
+                    };
+                }
+            } catch (e) {
+                logger.error('Error fetching caller info:', e);
+            }
 
             // Find target user's socket and send incoming call
             const targetSockets = connectedUsers.get(targetUserId);
@@ -285,20 +306,45 @@ export const setupSocketHandlers = (io: SocketServer) => {
                     io.to(socketId).emit('call:incoming', {
                         callId,
                         type,
-                        from: { id: userId },
+                        from: callerInfo,
                         offer,
                     });
                 });
+            } else {
+                // Target user is offline – notify caller
+                socket.emit('call:unavailable', { callId, reason: 'User is offline' });
             }
         });
 
-        socket.on('call:answer', (data: { callId: string; answer: any }) => {
+        socket.on('call:answer', async (data: { callId: string; answer: any }) => {
             const call = activeCalls.get(data.callId);
             if (call) {
+                // Fetch answerer info so the caller can display it
+                let participantInfo: { id: string; username: string; displayName: string; avatarUrl?: string } | null = null;
+                try {
+                    const answerer = await prisma.user.findUnique({
+                        where: { id: call.to },
+                        select: { id: true, username: true, displayName: true, avatarUrl: true },
+                    });
+                    if (answerer) {
+                        participantInfo = {
+                            id: answerer.id,
+                            username: answerer.username,
+                            displayName: answerer.displayName || answerer.username,
+                            avatarUrl: answerer.avatarUrl || undefined,
+                        };
+                    }
+                } catch (e) {
+                    logger.error('Error fetching answerer info:', e);
+                }
+
                 const callerSockets = connectedUsers.get(call.from);
                 if (callerSockets) {
                     callerSockets.forEach(socketId => {
-                        io.to(socketId).emit('call:answered', { answer: data.answer });
+                        io.to(socketId).emit('call:answered', {
+                            answer: data.answer,
+                            participant: participantInfo,
+                        });
                     });
                 }
             }

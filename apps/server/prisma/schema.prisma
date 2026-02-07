@@ -1679,3 +1679,38 @@ model WebhookLog {
   @@index([webhookId])
   @@index([firedAt])
 }
+
+// ============================================
+// EARLY ACCESS & INVITE CODES
+// ============================================
+
+model EarlyAccessRequest {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  reason      String   @db.Text      // Why they want to join
+  role        String?                 // What they do (developer, community builder, etc.)
+  socialUrl   String?                 // Optional social media link
+  status      String   @default("pending") // pending | approved | rejected
+  accessCode  String?  @unique       // Generated when approved
+  createdAt   DateTime @default(now())
+  reviewedAt  DateTime?
+
+  @@index([status])
+  @@index([email])
+}
+
+model AccessCode {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  type        String    @default("early_access") // early_access | founder_invite | admin
+  maxUses     Int       @default(1)
+  useCount    Int       @default(0)
+  expiresAt   DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  isActive    Boolean   @default(true)
+
+  @@index([code])
+  @@index([isActive])
+}

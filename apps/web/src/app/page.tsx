@@ -139,10 +139,10 @@ function Navigation() {
                         Sign In
                     </Link>
                     <Link
-                        href="/signup"
+                        href="/early-access"
                         className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-all hover:scale-[1.02]"
                     >
-                        Get Started
+                        Request Early Access
                     </Link>
                 </div>
             </div>
@@ -280,7 +280,7 @@ function HeroSection() {
                         transition={{ duration: 0.8, delay: 1.2 }}
                     >
                         <Link
-                            href="/signup"
+                            href="/early-access"
                             className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-white/10"
                         >
                             Request Early Access
@@ -1441,10 +1441,10 @@ function CTASection() {
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <Link
-                            href="/signup"
+                            href="/early-access"
                             className="inline-flex items-center gap-3 px-10 py-5 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-white/10"
                         >
-                            Get Early Access
+                            Request Early Access
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                             </svg>

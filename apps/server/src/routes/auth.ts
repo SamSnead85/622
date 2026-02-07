@@ -17,6 +17,15 @@ const signupSchema = z.object({
     displayName: z.string().min(1).max(50).optional(),
     groupOnly: z.boolean().optional(),
     primaryCommunityId: z.string().optional(),
+    accessCode: z.string().optional(),
+});
+
+const earlyAccessSchema = z.object({
+    name: z.string().min(2).max(100),
+    email: z.string().email(),
+    reason: z.string().min(20).max(2000),
+    role: z.string().max(100).optional(),
+    socialUrl: z.string().url().optional().or(z.literal('')),
 });
 
 const loginSchema = z.object({
@@ -61,10 +70,80 @@ const generateTokens = async (
     return { token, expiresAt };
 };
 
+// POST /api/v1/auth/early-access – Submit early access request
+router.post('/early-access', async (req, res, next) => {
+    try {
+        const data = earlyAccessSchema.parse(req.body);
+
+        // Check if already submitted
+        const existing = await prisma.earlyAccessRequest.findUnique({
+            where: { email: data.email.toLowerCase() },
+        });
+        if (existing) {
+            if (existing.status === 'approved' && existing.accessCode) {
+                return res.json({ message: 'You have already been approved! Check your email for your access code.', status: 'approved' });
+            }
+            return res.json({ message: 'Your application is already under review. We will be in touch soon.', status: existing.status });
+        }
+
+        await prisma.earlyAccessRequest.create({
+            data: {
+                name: data.name,
+                email: data.email.toLowerCase(),
+                reason: data.reason,
+                role: data.role || null,
+                socialUrl: data.socialUrl || null,
+            },
+        });
+
+        res.status(201).json({ message: 'Thank you for your interest! We will review your application and be in touch soon.', status: 'submitted' });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/auth/validate-code – Check if an access code is valid
+router.post('/validate-code', async (req, res, next) => {
+    try {
+        const { code } = req.body;
+        if (!code) throw new AppError('Access code is required', 400);
+
+        const accessCode = await prisma.accessCode.findUnique({ where: { code: code.trim().toUpperCase() } });
+        if (!accessCode || !accessCode.isActive) {
+            return res.json({ valid: false, message: 'Invalid access code.' });
+        }
+        if (accessCode.expiresAt && accessCode.expiresAt < new Date()) {
+            return res.json({ valid: false, message: 'This access code has expired.' });
+        }
+        if (accessCode.maxUses > 0 && accessCode.useCount >= accessCode.maxUses) {
+            return res.json({ valid: false, message: 'This access code has reached its usage limit.' });
+        }
+
+        res.json({ valid: true, message: 'Valid access code.' });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // POST /api/v1/auth/signup
 router.post('/signup', async (req, res, next) => {
     try {
-        const { email, password, username, displayName, groupOnly, primaryCommunityId } = signupSchema.parse(req.body);
+        const { email, password, username, displayName, groupOnly, primaryCommunityId, accessCode } = signupSchema.parse(req.body);
+
+        // Validate access code (required for early access period)
+        if (!accessCode) {
+            throw new AppError('An access code is required to sign up during the early access period.', 403);
+        }
+        const codeRecord = await prisma.accessCode.findUnique({ where: { code: accessCode.trim().toUpperCase() } });
+        if (!codeRecord || !codeRecord.isActive) {
+            throw new AppError('Invalid access code.', 403);
+        }
+        if (codeRecord.expiresAt && codeRecord.expiresAt < new Date()) {
+            throw new AppError('This access code has expired.', 403);
+        }
+        if (codeRecord.maxUses > 0 && codeRecord.useCount >= codeRecord.maxUses) {
+            throw new AppError('This access code has reached its usage limit.', 403);
+        }
 
         // Check if email or username exists
         const existingUser = await prisma.user.findFirst({
@@ -96,6 +175,12 @@ router.post('/signup', async (req, res, next) => {
                 isGroupOnly: groupOnly || false,
                 primaryCommunityId: groupOnly ? primaryCommunityId : null,
             },
+        });
+
+        // Increment access code usage
+        await prisma.accessCode.update({
+            where: { id: codeRecord.id },
+            data: { useCount: { increment: 1 } },
         });
 
         // Generate auth token
@@ -769,6 +854,120 @@ router.get('/2fa/status', authenticate, async (req: AuthRequest, res, next) => {
             enabled,
             backupCodesRemaining,
         });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// ADMIN: EARLY ACCESS MANAGEMENT
+// ============================================
+
+// Admin guard middleware
+const requireAdmin = (req: AuthRequest, res: any, next: any) => {
+    if (!req.user || (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN')) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+};
+
+// GET /api/v1/auth/admin/early-access - List all requests
+router.get('/admin/early-access', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+    try {
+        const status = req.query.status as string || undefined;
+        const requests = await prisma.earlyAccessRequest.findMany({
+            where: status ? { status } : undefined,
+            orderBy: { createdAt: 'desc' },
+        });
+        res.json(requests);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/auth/admin/early-access/:id/approve - Approve request & generate code
+router.post('/admin/early-access/:id/approve', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+    try {
+        const { id } = req.params;
+        const request = await prisma.earlyAccessRequest.findUnique({ where: { id } });
+        if (!request) throw new AppError('Request not found', 404);
+        if (request.status === 'approved') throw new AppError('Already approved', 400);
+
+        // Generate unique access code
+        const code = `EA${Date.now().toString(36).toUpperCase().slice(-4)}${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+
+        // Create the access code record
+        await prisma.accessCode.create({
+            data: { code, type: 'early_access', maxUses: 1, createdById: req.userId },
+        });
+
+        // Update the request
+        const updated = await prisma.earlyAccessRequest.update({
+            where: { id },
+            data: { status: 'approved', accessCode: code, reviewedAt: new Date() },
+        });
+
+        res.json({ ...updated, generatedCode: code });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/auth/admin/early-access/:id/reject - Reject request
+router.post('/admin/early-access/:id/reject', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+    try {
+        const { id } = req.params;
+        const updated = await prisma.earlyAccessRequest.update({
+            where: { id },
+            data: { status: 'rejected', reviewedAt: new Date() },
+        });
+        res.json(updated);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/auth/admin/access-codes - Create manual access codes
+router.post('/admin/access-codes', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+    try {
+        const { code, type, maxUses, expiresAt } = req.body;
+        const finalCode = (code || `MAN${Date.now().toString(36).toUpperCase().slice(-4)}${Math.random().toString(36).slice(2, 5).toUpperCase()}`).toUpperCase();
+
+        const accessCode = await prisma.accessCode.create({
+            data: {
+                code: finalCode,
+                type: type || 'early_access',
+                maxUses: maxUses || 1,
+                expiresAt: expiresAt ? new Date(expiresAt) : null,
+                createdById: req.userId,
+            },
+        });
+        res.status(201).json(accessCode);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/auth/admin/access-codes - List all access codes
+router.get('/admin/access-codes', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+    try {
+        const codes = await prisma.accessCode.findMany({
+            orderBy: { createdAt: 'desc' },
+        });
+        res.json(codes);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// DELETE /api/v1/auth/admin/access-codes/:id - Deactivate access code
+router.delete('/admin/access-codes/:id', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+    try {
+        await prisma.accessCode.update({
+            where: { id: req.params.id },
+            data: { isActive: false },
+        });
+        res.json({ success: true });
     } catch (error) {
         next(error);
     }

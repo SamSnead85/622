@@ -33,11 +33,12 @@ interface SuggestedUser {
 // ============================================
 // CONSTANTS
 // ============================================
-const STEPS = ['interests', 'people', 'shield', 'ready'] as const;
+const STEPS = ['interests', 'import', 'people', 'shield', 'ready'] as const;
 type Step = (typeof STEPS)[number];
 
 const STEP_GRADIENTS: Record<Step, string> = {
     interests: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,212,255,0.12) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 80% 100%, rgba(139,92,246,0.08) 0%, transparent 70%)',
+    import: 'radial-gradient(ellipse 80% 60% at 70% 0%, rgba(59,130,246,0.12) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 20% 80%, rgba(139,92,246,0.08) 0%, transparent 70%)',
     people: 'radial-gradient(ellipse 80% 60% at 20% 0%, rgba(139,92,246,0.12) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 90% 80%, rgba(0,212,255,0.08) 0%, transparent 70%)',
     shield: 'radial-gradient(ellipse 80% 60% at 50% 30%, rgba(16,185,129,0.10) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 20% 80%, rgba(0,212,255,0.08) 0%, transparent 70%)',
     ready: 'radial-gradient(ellipse 80% 70% at 50% 40%, rgba(0,212,255,0.15) 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 30% 80%, rgba(139,92,246,0.12) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 80% 20%, rgba(236,72,153,0.08) 0%, transparent 60%)',
@@ -603,6 +604,7 @@ export default function OnboardingPage() {
     const canProceed = useMemo(() => {
         switch (step) {
             case 'interests': return selectedTopics.size >= 3;
+            case 'import': return true;
             case 'people': return true;
             case 'shield': return true;
             case 'ready': return true;
@@ -882,7 +884,71 @@ export default function OnboardingPage() {
                         )}
 
                         {/* ============================================
-                            STEP 2: PEOPLE TO FOLLOW
+                            STEP 2: IMPORT YOUR DATA (optional)
+                            ============================================ */}
+                        {step === 'import' && (
+                            <motion.div
+                                key="import"
+                                variants={pageVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
+                                transition={{ duration: 0.4, ease: smoothEase }}
+                                className="flex flex-col items-center"
+                            >
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="text-center max-w-lg"
+                                >
+                                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
+                                        Bring Your World With You
+                                    </h2>
+                                    <p className="text-white/50 mb-10 leading-relaxed">
+                                        Import your content, photos, and connections from other platforms. You can always do this later from your settings.
+                                    </p>
+                                </motion.div>
+
+                                <div className="w-full max-w-md space-y-3 mb-10">
+                                    {[
+                                        { name: 'Instagram', desc: 'Posts, stories, followers' },
+                                        { name: 'TikTok', desc: 'Videos, likes, connections' },
+                                        { name: 'WhatsApp', desc: 'Chat history & media' },
+                                    ].map((platform, i) => (
+                                        <motion.a
+                                            key={platform.name}
+                                            href="/migrate"
+                                            target="_blank"
+                                            initial={{ opacity: 0, y: 15 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.3 + i * 0.1 }}
+                                            className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/[0.06] rounded-xl hover:bg-white/[0.06] hover:border-white/[0.12] transition-all group"
+                                        >
+                                            <div>
+                                                <p className="font-medium text-white">{platform.name}</p>
+                                                <p className="text-xs text-white/40">{platform.desc}</p>
+                                            </div>
+                                            <svg className="w-5 h-5 text-white/20 group-hover:text-white/50 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                        </motion.a>
+                                    ))}
+                                </div>
+
+                                <motion.p
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.7 }}
+                                    className="text-xs text-white/25 text-center"
+                                >
+                                    You can skip this and import your data later from Settings
+                                </motion.p>
+                            </motion.div>
+                        )}
+
+                        {/* ============================================
+                            STEP 3: PEOPLE TO FOLLOW
                             ============================================ */}
                         {step === 'people' && (
                             <motion.div
