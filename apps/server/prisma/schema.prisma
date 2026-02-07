@@ -86,6 +86,13 @@ model User {
   receivedStrikes            UserStrike[]              @relation("StrikeTarget")
   issuedStrikes              UserStrike[]              @relation("StrikeIssuer")
   creatorProfile             CreatorProfile?
+  // Growth Partner Program
+  growthPartnerId            String?
+  growthPartner              GrowthPartner?            @relation(fields: [growthPartnerId], references: [id])
+  // Emergency lockdown
+  isLocked                   Boolean                   @default(false)
+  lockedAt                   DateTime?
+  lockReason                 String?                   // panic | admin | security
 
   @@index([username])
   @@index([email])
@@ -1865,4 +1872,81 @@ model ReferralReward {
 
   @@index([userId])
   @@index([status])
+}
+
+// ============================================
+// GROWTH PARTNER PROGRAM
+// ============================================
+model GrowthPartner {
+  id                              String   @id @default(uuid())
+  userId                          String   @unique
+  status                          String   @default("active") // active | paused | suspended | graduated
+  enrolledAt                      DateTime @default(now())
+  paymentEmail                    String?
+  paymentMethod                   String   @default("manual") // manual | paypal | stripe | crypto
+  legalName                       String?
+  country                         String?
+  totalEarned                     Float    @default(0)
+  totalPaid                       Float    @default(0)
+  pendingPayout                   Float    @default(0)
+  directReferralsQualified        Int      @default(0)
+  secondLevelReferralsQualified   Int      @default(0)
+  tier                            String   @default("affiliate") // affiliate | community_leader | cofounder_track
+  referralCode                    String   @unique
+  createdAt                       DateTime @default(now())
+  updatedAt                       DateTime @updatedAt
+
+  user       User[]    // back-relation via growthPartnerId
+  referrals  GrowthReferral[]
+  earnings   Earning[]
+
+  @@index([status])
+  @@index([tier])
+  @@index([referralCode])
+}
+
+model GrowthReferral {
+  id                String    @id @default(uuid())
+  growthPartnerId   String
+  referredUserId    String
+  referralLevel     String    @default("direct") // direct | second_level
+  parentReferralId  String?
+  status            String    @default("pending") // pending | qualified | inactive | flagged
+  invitedAt         DateTime  @default(now())
+  qualifiedAt       DateTime?
+  daysActive        Int       @default(0)
+  lastActiveAt      DateTime?
+  rewardAmount      Float     @default(0)
+  rewardPaid        Boolean   @default(false)
+  flagReason        String?   // ip_duplicate | disposable_email | suspicious_timing | superficial_engagement
+
+  growthPartner     GrowthPartner    @relation(fields: [growthPartnerId], references: [id], onDelete: Cascade)
+  parentReferral    GrowthReferral?  @relation("SecondLevel", fields: [parentReferralId], references: [id])
+  childReferrals    GrowthReferral[] @relation("SecondLevel")
+  earnings          Earning[]
+
+  @@index([growthPartnerId])
+  @@index([referredUserId])
+  @@index([status])
+  @@index([parentReferralId])
+}
+
+model Earning {
+  id              String    @id @default(uuid())
+  growthPartnerId String
+  referralId      String?
+  type            String    @default("direct_referral") // direct_referral | second_level_referral | bonus | adjustment
+  amount          Float
+  status          String    @default("pending") // pending | approved | paid | cancelled
+  earnedAt        DateTime  @default(now())
+  approvedAt      DateTime?
+  paidAt          DateTime?
+  note            String?
+
+  growthPartner   GrowthPartner    @relation(fields: [growthPartnerId], references: [id], onDelete: Cascade)
+  referral        GrowthReferral?  @relation(fields: [referralId], references: [id])
+
+  @@index([growthPartnerId])
+  @@index([status])
+  @@index([earnedAt])
 }

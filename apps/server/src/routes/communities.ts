@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -1298,6 +1298,242 @@ router.post('/:communityId/call/log', authenticate, async (req: AuthRequest, res
         });
 
         res.status(201).json(log);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// COMMUNITY ADMIN ANALYTICS
+// ============================================
+router.get('/:communityId/analytics', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const userId = req.user!.id;
+
+        // Verify the user is an admin of this community
+        const membership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId, communityId } },
+        });
+
+        if (!membership || membership.role !== 'ADMIN') {
+            res.status(403).json({ error: 'Only admins can view analytics.' });
+            return;
+        }
+
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        // Parallel data fetches for performance
+        const [
+            totalMembers,
+            newMembersThisMonth,
+            newMembersThisWeek,
+            totalPosts,
+            postsThisWeek,
+            activeMembers,
+            topPosts,
+            topContributors,
+            memberGrowth,
+            bannedCount,
+            mutedCount,
+        ] = await Promise.all([
+            prisma.communityMember.count({
+                where: { communityId, isBanned: false },
+            }),
+            prisma.communityMember.count({
+                where: { communityId, joinedAt: { gte: thirtyDaysAgo } },
+            }),
+            prisma.communityMember.count({
+                where: { communityId, joinedAt: { gte: sevenDaysAgo } },
+            }),
+            prisma.post.count({
+                where: { communityId },
+            }),
+            prisma.post.count({
+                where: { communityId, createdAt: { gte: sevenDaysAgo } },
+            }),
+            prisma.post.findMany({
+                where: { communityId, createdAt: { gte: sevenDaysAgo } },
+                select: { userId: true },
+                distinct: ['userId'],
+            }),
+            // Top posts by view count (the field available on Post model)
+            prisma.post.findMany({
+                where: { communityId },
+                orderBy: { viewCount: 'desc' },
+                take: 10,
+                include: {
+                    user: { select: { username: true, displayName: true, avatarUrl: true } },
+                    _count: { select: { likes: true, comments: true, shares: true } },
+                },
+            }),
+            // Top contributors (most posts)
+            prisma.post.groupBy({
+                by: ['userId'],
+                where: { communityId, createdAt: { gte: thirtyDaysAgo } },
+                _count: { id: true },
+                orderBy: { _count: { id: 'desc' } },
+                take: 10,
+            }),
+            // Member growth by week (last 12 weeks)
+            prisma.communityMember.findMany({
+                where: {
+                    communityId,
+                    joinedAt: { gte: new Date(now.getTime() - 84 * 24 * 60 * 60 * 1000) },
+                },
+                select: { joinedAt: true },
+                orderBy: { joinedAt: 'asc' },
+            }),
+            prisma.communityMember.count({
+                where: { communityId, isBanned: true },
+            }),
+            prisma.communityMember.count({
+                where: { communityId, isMuted: true },
+            }),
+        ]);
+
+        // Resolve top contributor usernames
+        const contributorIds = topContributors.map(c => c.userId);
+        const contributorUsers = await prisma.user.findMany({
+            where: { id: { in: contributorIds } },
+            select: { id: true, username: true, displayName: true, avatarUrl: true },
+        });
+
+        // Bucket member growth by week
+        const weekBuckets: Record<string, number> = {};
+        for (const m of memberGrowth) {
+            const weekStart = new Date(m.joinedAt);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+            const key = weekStart.toISOString().split('T')[0];
+            weekBuckets[key] = (weekBuckets[key] || 0) + 1;
+        }
+
+        res.json({
+            overview: {
+                totalMembers,
+                newMembersThisMonth,
+                newMembersThisWeek,
+                totalPosts,
+                postsThisWeek,
+                activeMembersThisWeek: activeMembers.length,
+                bannedMembers: bannedCount,
+                mutedMembers: mutedCount,
+                engagementRate: totalMembers > 0
+                    ? Math.round((activeMembers.length / totalMembers) * 100)
+                    : 0,
+            },
+            topPosts: topPosts.map(p => ({
+                id: p.id,
+                content: p.caption?.substring(0, 120) || '',
+                likes: p._count.likes,
+                comments: p._count.comments,
+                shares: p._count.shares,
+                createdAt: p.createdAt,
+                author: p.user,
+            })),
+            topContributors: topContributors.map(c => {
+                const user = contributorUsers.find(u => u.id === c.userId);
+                return {
+                    userId: c.userId,
+                    username: user?.username,
+                    displayName: user?.displayName,
+                    avatarUrl: user?.avatarUrl,
+                    postCount: c._count.id,
+                };
+            }),
+            memberGrowth: Object.entries(weekBuckets).map(([week, count]) => ({ week, count })),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// COMMUNITY MODERATION QUEUE
+// ============================================
+router.get('/:communityId/moderation', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const userId = req.user!.id;
+
+        // Verify admin/moderator role
+        const membership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId, communityId } },
+        });
+
+        if (!membership || !['ADMIN', 'MODERATOR'].includes(membership.role)) {
+            res.status(403).json({ error: 'Moderator access required.' });
+            return;
+        }
+
+        // Get community post IDs for report matching
+        const communityPosts = await prisma.post.findMany({
+            where: { communityId },
+            select: { id: true },
+        });
+        const postIds = communityPosts.map(p => p.id);
+
+        // Get reports targeting posts in this community
+        const reports = await prisma.report.findMany({
+            where: {
+                status: 'PENDING',
+                targetType: 'POST',
+                targetId: { in: postIds },
+            },
+            include: {
+                reporter: { select: { username: true, displayName: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        // For each report, fetch the target post
+        const reportPostIds = reports.map(r => r.targetId);
+        const reportPosts = await prisma.post.findMany({
+            where: { id: { in: reportPostIds } },
+            include: {
+                user: { select: { username: true, displayName: true, avatarUrl: true } },
+            },
+        });
+
+        // Get flagged/banned members
+        const flaggedMembers = await prisma.communityMember.findMany({
+            where: {
+                communityId,
+                OR: [{ isBanned: true }, { isMuted: true }],
+            },
+            include: {
+                user: { select: { username: true, displayName: true, avatarUrl: true } },
+            },
+        });
+
+        res.json({
+            reports: reports.map(r => {
+                const post = reportPosts.find(p => p.id === r.targetId);
+                return {
+                    id: r.id,
+                    reason: r.reason,
+                    details: r.notes,
+                    createdAt: r.createdAt,
+                    reporter: r.reporter,
+                    post: post ? {
+                        id: post.id,
+                        content: post.caption,
+                        mediaUrl: post.mediaUrl,
+                        createdAt: post.createdAt,
+                        user: post.user,
+                    } : null,
+                };
+            }),
+            flaggedMembers: flaggedMembers.map(m => ({
+                userId: m.userId,
+                role: m.role,
+                isBanned: m.isBanned,
+                isMuted: m.isMuted,
+                user: m.user,
+            })),
+        });
     } catch (error) {
         next(error);
     }

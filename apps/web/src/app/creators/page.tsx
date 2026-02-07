@@ -173,7 +173,7 @@ export default function CreatorsPage() {
                                     className="text-base sm:text-lg text-white/50 max-w-2xl mx-auto mb-10 leading-relaxed"
                                 >
                                     TikTok gets banned. Instagram changes its algorithm. Your audience disappears overnight.
-                                    ZeroG is the hedge. Build your community on a platform that can't be taken away.
+                                    ZeroG is the hedge. Build your community on a platform that can&apos;t be taken away.
                                 </motion.p>
 
                                 <motion.div
@@ -201,7 +201,7 @@ export default function CreatorsPage() {
                         {/* The Problem */}
                         <section className="py-16 border-t border-white/[0.04]">
                             <div className="max-w-4xl mx-auto px-4">
-                                <h2 className="text-xl sm:text-2xl font-bold text-white mb-8 text-center">The Risk You're Already Taking</h2>
+                                <h2 className="text-xl sm:text-2xl font-bold text-white mb-8 text-center">The Risk You&apos;re Already Taking</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {[
                                         {
@@ -242,7 +242,7 @@ export default function CreatorsPage() {
                             <div className="max-w-4xl mx-auto px-4">
                                 <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 text-center">Why Creators Choose ZeroG</h2>
                                 <p className="text-sm text-white/40 text-center mb-10 max-w-xl mx-auto">
-                                    This isn't about leaving other platforms. It's about not having all your eggs in one basket.
+                                    This isn&apos;t about leaving other platforms. It&apos;s about not having all your eggs in one basket.
                                 </p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {[
@@ -347,7 +347,7 @@ export default function CreatorsPage() {
                             <div className="max-w-3xl mx-auto px-4 text-center">
                                 <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Think of It This Way</h2>
                                 <p className="text-sm text-white/50 leading-relaxed max-w-xl mx-auto mb-8">
-                                    You wouldn't put all your money in one bank account. So why put all your followers on one platform?
+                                    You wouldn&apos;t put all your money in one bank account. So why put all your followers on one platform?
                                     ZeroG is your diversification strategy. Keep creating everywhere — but build your permanent
                                     home here, where no one can take it from you.
                                 </p>
@@ -509,7 +509,7 @@ export default function CreatorsPage() {
                             </button>
 
                             <p className="text-[10px] text-white/20 text-center leading-relaxed">
-                                By applying you agree to ZeroG's <Link href="/terms" className="underline">Terms</Link> and{' '}
+                                By applying you agree to ZeroG&apos;s <Link href="/terms" className="underline">Terms</Link> and{' '}
                                 <Link href="/privacy" className="underline">Privacy Policy</Link>.
                             </p>
                         </form>

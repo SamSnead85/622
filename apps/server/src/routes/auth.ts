@@ -277,6 +277,16 @@ router.post('/login', async (req, res, next) => {
             throw new AppError('Invalid email or password', 401);
         }
 
+        // Check if account is locked (panic button)
+        if (user.isLocked) {
+            res.status(423).json({
+                error: 'account_locked',
+                message: 'This account has been locked for security. Use the unlock flow to recover access.',
+                redirect: '/unlock',
+            });
+            return;
+        }
+
         // Check if user has a password (OAuth users may not have one)
         if (!user.passwordHash) {
             throw new AppError('Please use social login for this account', 400);
@@ -1263,6 +1273,85 @@ router.post('/validate-invite', async (req, res, next) => {
             valid: true,
             sender: invite.sender,
             community,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// PANIC BUTTON - Emergency Account Lockdown
+// ============================================
+router.post('/panic', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const userId = req.user!.id;
+
+        // Lock the account immediately
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                isLocked: true,
+                lockedAt: new Date(),
+                lockReason: 'panic',
+            },
+        });
+
+        // Invalidate ALL active sessions for this user
+        await prisma.session.deleteMany({
+            where: { userId },
+        });
+
+        res.json({
+            success: true,
+            message: 'Emergency lockdown activated. Your account is locked and all sessions have been terminated. Contact support to recover your account.',
+            locked: true,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// UNLOCK ACCOUNT (after panic)
+// ============================================
+router.post('/unlock', async (req, res, next) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            res.status(400).json({ error: 'Email and password required to unlock account.' });
+            return;
+        }
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || !user.passwordHash) {
+            res.status(401).json({ error: 'Invalid credentials.' });
+            return;
+        }
+
+        const valid = await bcrypt.compare(password, user.passwordHash);
+        if (!valid) {
+            res.status(401).json({ error: 'Invalid credentials.' });
+            return;
+        }
+
+        if (!user.isLocked) {
+            res.json({ success: true, message: 'Account is not locked.' });
+            return;
+        }
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                isLocked: false,
+                lockedAt: null,
+                lockReason: null,
+            },
+        });
+
+        res.json({
+            success: true,
+            message: 'Account unlocked. You can now log in normally.',
         });
     } catch (error) {
         next(error);

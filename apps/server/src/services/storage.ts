@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -88,6 +89,30 @@ export interface UploadResult {
 }
 
 /**
+ * Strip EXIF/GPS metadata from image buffers for user safety.
+ * Removes GPS coordinates, device info, timestamps, and all other EXIF data.
+ * Returns the sanitized buffer. Non-image buffers pass through unchanged.
+ */
+export async function stripImageMetadata(buffer: Buffer, mimeType: string): Promise<Buffer> {
+    const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/avif', 'image/tiff'];
+    if (!imageTypes.includes(mimeType)) return buffer;
+
+    try {
+        // sharp.rotate() without arguments auto-orients based on EXIF then strips metadata
+        const stripped = await sharp(buffer)
+            .rotate()           // auto-orient from EXIF rotation, then discard orientation tag
+            .withMetadata({})   // strip ALL metadata (EXIF, GPS, ICC, XMP, IPTC)
+            .toBuffer();
+
+        console.log(`[Storage] Metadata stripped: ${buffer.length} → ${stripped.length} bytes`);
+        return stripped;
+    } catch (err) {
+        console.error('[Storage] Metadata stripping failed, using original buffer:', err);
+        return buffer; // fail-safe: return original if stripping fails
+    }
+}
+
+/**
  * Upload a file buffer to storage
  */
 export async function uploadFile(
@@ -96,6 +121,9 @@ export async function uploadFile(
     mimeType: string,
     originalFilename?: string
 ): Promise<UploadResult> {
+    // Strip metadata from all image uploads for privacy/safety
+    const sanitizedBuffer = await stripImageMetadata(buffer, mimeType);
+
     const extension = getExtensionFromMime(mimeType);
     const key = `${folder}/${uuid()}.${extension}`;
 
@@ -105,18 +133,18 @@ export async function uploadFile(
             const { uploadImage, uploadVideo } = await import('./cloudinary.js');
             const isVideo = mimeType.startsWith('video/');
 
-            console.log('[Storage] Uploading to Cloudinary:', { folder, mimeType, size: buffer.length });
+            console.log('[Storage] Uploading to Cloudinary:', { folder, mimeType, size: sanitizedBuffer.length });
 
             const result: any = isVideo
-                ? await uploadVideo(buffer, { folder, publicId: uuid() })
-                : await uploadImage(buffer, { folder, publicId: uuid() });
+                ? await uploadVideo(sanitizedBuffer, { folder, publicId: uuid() })
+                : await uploadImage(sanitizedBuffer, { folder, publicId: uuid() });
 
             console.log('[Storage] Cloudinary upload successful');
 
             return {
                 key: result.public_id,
                 url: result.secure_url,
-                size: buffer.length,
+                size: sanitizedBuffer.length,
             };
         } catch (cloudinaryError) {
             console.error('[Storage] Cloudinary upload failed, falling back to default storage:', cloudinaryError);
@@ -131,12 +159,12 @@ export async function uploadFile(
             await mkdir(uploadPath, { recursive: true });
         }
         const filePath = path.join(UPLOAD_DIR, key);
-        await writeFile(filePath, buffer);
+        await writeFile(filePath, sanitizedBuffer);
 
         return {
             key,
             url: `${SERVER_URL}/uploads/${key}`,
-            size: buffer.length,
+            size: sanitizedBuffer.length,
         };
     }
 
@@ -147,11 +175,11 @@ export async function uploadFile(
             throw new Error('Supabase client not initialized. Check SUPABASE_URL and SUPABASE_SERVICE_KEY.');
         }
 
-        console.log('[Storage] Uploading to Supabase:', { bucket: BUCKET, key, mimeType, size: buffer.length });
+        console.log('[Storage] Uploading to Supabase:', { bucket: BUCKET, key, mimeType, size: sanitizedBuffer.length });
 
         const { data, error } = await supabase.storage
             .from(BUCKET)
-            .upload(key, buffer, {
+            .upload(key, sanitizedBuffer, {
                 contentType: mimeType,
                 cacheControl: '31536000',
                 upsert: false,
@@ -167,7 +195,7 @@ export async function uploadFile(
         return {
             key,
             url: getPublicUrl(key),
-            size: buffer.length,
+            size: sanitizedBuffer.length,
         };
     }
 
@@ -176,12 +204,12 @@ export async function uploadFile(
         throw new Error('S3 client not initialized');
     }
 
-    console.log('[Storage] Uploading to S3:', { bucket: BUCKET, key, mimeType, size: buffer.length });
+    console.log('[Storage] Uploading to S3:', { bucket: BUCKET, key, mimeType, size: sanitizedBuffer.length });
     try {
         await s3Client.send(new PutObjectCommand({
             Bucket: BUCKET,
             Key: key,
-            Body: buffer,
+            Body: sanitizedBuffer,
             ContentType: mimeType,
             CacheControl: 'public, max-age=31536000',
         }));
@@ -194,7 +222,7 @@ export async function uploadFile(
     return {
         key,
         url: getPublicUrl(key),
-        size: buffer.length,
+        size: sanitizedBuffer.length,
     };
 }
 

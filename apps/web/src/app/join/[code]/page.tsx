@@ -309,7 +309,7 @@ export default function JoinPage() {
                                 </button>
 
                                 <p className="text-[10px] text-white/15 text-center mt-4 leading-relaxed">
-                                    You'll be able to browse and message right away.
+                                    You&apos;ll be able to browse and message right away.
                                     Full features unlock when you complete your profile.
                                 </p>
                             </div>
@@ -327,11 +327,11 @@ export default function JoinPage() {
                                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
                                 </div>
-                                <h2 className="text-xl font-bold text-white mb-2">You're In</h2>
+                                <h2 className="text-xl font-bold text-white mb-2">You&apos;re In</h2>
                                 <p className="text-sm text-white/50 mb-1">Welcome, @{username}</p>
                                 {invite.community && (
                                     <p className="text-xs text-white/30 mb-6">
-                                        You've joined {invite.community.name}
+                                        You&apos;ve joined {invite.community.name}
                                     </p>
                                 )}
 

@@ -285,7 +285,7 @@ export default function CampaignPage() {
                                     <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: `${brandColor}15` }}>
                                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={brandColor} strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
                                     </div>
-                                    <h3 className="text-xl font-semibold text-white mb-2">You're In</h3>
+                                    <h3 className="text-xl font-semibold text-white mb-2">You&apos;re In</h3>
                                     <p className="text-sm text-white/50 mb-6">{signupResult.message}</p>
                                     {signupResult.accessCode && (
                                         <div className="p-4 rounded-xl bg-white/[0.04] border border-white/[0.08] mb-6">
@@ -376,11 +376,11 @@ export default function CampaignPage() {
                                     </button>
 
                                     <p className="text-[10px] text-white/20 text-center mt-4 leading-relaxed">
-                                        By signing up you agree to ZeroG's{' '}
+                                        By signing up you agree to ZeroG&apos;s{' '}
                                         <Link href="/terms" className="underline hover:text-white/40">Terms of Service</Link>{' '}
                                         and{' '}
                                         <Link href="/privacy" className="underline hover:text-white/40">Privacy Policy</Link>.
-                                        We'll never sell your data.
+                                        We&apos;ll never sell your data.
                                     </p>
                                 </motion.form>
                             )}

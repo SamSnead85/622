@@ -84,6 +84,8 @@ export function NavigationSidebar({ activeTab, user, onCreateClick, onViewModeCh
         { id: 'communities', Icon: UsersIcon, label: 'Communities', href: '/communities' },
         { id: 'bulletin', Icon: MegaphoneIcon, label: 'Bulletin', href: '/bulletin' },
         { id: 'messages', Icon: MessageIcon, label: 'Messages', href: '/messages', hasNotification: true },
+        { id: 'growth', Icon: SendIcon, label: 'Growth', href: '/dashboard/growth-partner' },
+        { id: 'security', Icon: HomeIcon, label: 'Security', href: '/security' },
         { id: 'invite', Icon: SendIcon, label: 'Invite', href: '/invite', highlight: true },
     ];
 
