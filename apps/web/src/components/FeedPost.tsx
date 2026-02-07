@@ -248,6 +248,7 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
                 src={src}
                 className={`w-full h-full ${useCrop ? 'object-cover' : 'object-contain max-h-[500px]'} bg-black ${className}`}
                 style={useCrop && cropY != null ? { objectPosition: `center ${cropY}%` } : undefined}
+                preload="metadata"
                 loop
                 playsInline
                 muted={isMuted}
