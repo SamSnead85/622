@@ -70,7 +70,7 @@ function GoLiveContent() {
     const [category, setCategory] = useState('');
     const [tags, setTags] = useState('');
     const [isRecorded, setIsRecorded] = useState(true);
-    const [mode, setMode] = useState<StreamMode>('obs');
+    const [mode, setMode] = useState<StreamMode>('browser');
 
     // Stream state
     const [phase, setPhase] = useState<StreamPhase>('setup');
@@ -274,20 +274,20 @@ function GoLiveContent() {
                         <label className="block text-white/50 text-xs uppercase tracking-wider mb-2 font-semibold">Stream Mode</label>
                         <div className="grid grid-cols-2 gap-2">
                             <button
-                                onClick={() => setMode('obs')}
-                                className={`p-4 rounded-xl border text-left transition-all ${mode === 'obs' ? 'bg-[#00D4FF]/10 border-[#00D4FF]/30' : 'bg-white/[0.03] border-white/[0.06] hover:border-white/[0.12]'}`}
-                            >
-                                <div className="text-2xl mb-2">🖥️</div>
-                                <div className="font-semibold text-sm">OBS / External</div>
-                                <div className="text-[11px] text-white/40 mt-1">Use OBS, Streamlabs, or any RTMP software. Best quality.</div>
-                            </button>
-                            <button
                                 onClick={() => setMode('browser')}
                                 className={`p-4 rounded-xl border text-left transition-all ${mode === 'browser' ? 'bg-[#00D4FF]/10 border-[#00D4FF]/30' : 'bg-white/[0.03] border-white/[0.06] hover:border-white/[0.12]'}`}
                             >
                                 <div className="text-2xl mb-2">📱</div>
-                                <div className="font-semibold text-sm">Browser Camera</div>
-                                <div className="text-[11px] text-white/40 mt-1">Quick start using your webcam. Good for casual streams.</div>
+                                <div className="font-semibold text-sm">Camera</div>
+                                <div className="text-[11px] text-white/40 mt-1">Go live instantly from your camera. Works on phone and desktop.</div>
+                            </button>
+                            <button
+                                onClick={() => setMode('obs')}
+                                className={`p-4 rounded-xl border text-left transition-all ${mode === 'obs' ? 'bg-[#00D4FF]/10 border-[#00D4FF]/30' : 'bg-white/[0.03] border-white/[0.06] hover:border-white/[0.12]'}`}
+                            >
+                                <div className="text-2xl mb-2">🖥️</div>
+                                <div className="font-semibold text-sm">OBS / RTMP</div>
+                                <div className="text-[11px] text-white/40 mt-1">For pro streamers using OBS, Streamlabs, or other broadcast software.</div>
                             </button>
                         </div>
                     </div>
