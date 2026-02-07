@@ -496,6 +496,20 @@ router.get('/:userId/posts', optionalAuth, async (req: AuthRequest, res, next) =
             savedPostIds = saves.map((s) => s.postId);
         }
 
+        // Fetch user stats for profile display
+        const userCounts = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                _count: {
+                    select: {
+                        posts: true,
+                        followers: true,
+                        following: true,
+                    },
+                },
+            },
+        });
+
         res.json({
             posts: results.map((post) => ({
                 ...post,
@@ -505,6 +519,9 @@ router.get('/:userId/posts', optionalAuth, async (req: AuthRequest, res, next) =
                 isLiked: likedPostIds.includes(post.id),
                 isSaved: savedPostIds.includes(post.id),
             })),
+            postsCount: userCounts?._count.posts || 0,
+            followersCount: userCounts?._count.followers || 0,
+            followingCount: userCounts?._count.following || 0,
             nextCursor: hasMore ? results[results.length - 1].id : null,
         });
     } catch (error) {

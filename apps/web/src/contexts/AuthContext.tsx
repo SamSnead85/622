@@ -17,6 +17,9 @@ export interface User {
     isVerified: boolean;
     createdAt: string;
     role?: 'USER' | 'MODERATOR' | 'ADMIN' | 'SUPERADMIN';
+    postsCount?: number;
+    followersCount?: number;
+    followingCount?: number;
 }
 
 interface AuthContextType {

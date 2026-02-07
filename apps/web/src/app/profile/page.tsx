@@ -3,17 +3,19 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
 import { Avatar, useProfile, SECONDARY_LANGUAGES } from '@/components/ProfileEditor';
 import { Navigation } from '@/components/Navigation';
 import { SettingsIcon, CameraIcon, PlusIcon, PlayIcon, HeartIcon } from '@/components/icons';
-import { API_ENDPOINTS, apiFetch } from '@/lib/api';
+import { API_URL, API_ENDPOINTS, apiFetch } from '@/lib/api';
 
 interface Post {
     id: string;
     type: 'IMAGE' | 'VIDEO' | 'TEXT' | 'POLL';
     mediaUrl?: string;
+    mediaType?: string;
+    content?: string;
     caption?: string;
     likesCount: number;
     commentsCount: number;
@@ -22,7 +24,7 @@ interface Post {
 }
 
 function ProfilePageContent() {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const { profile } = useProfile();
     const [activeTab, setActiveTab] = useState<'posts' | 'journeys' | 'saved'>('posts');
     const [mounted, setMounted] = useState(false);
@@ -31,8 +33,21 @@ function ProfilePageContent() {
     const [savedLoading, setSavedLoading] = useState(false);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({ postsCount: 0, followersCount: 0, followingCount: 0 });
+    const [coverUploading, setCoverUploading] = useState(false);
+    const coverInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => { setMounted(true); }, []);
+
+    // Seed stats from auth user object
+    useEffect(() => {
+        if (user) {
+            setStats({
+                postsCount: user.postsCount || 0,
+                followersCount: user.followersCount || 0,
+                followingCount: user.followingCount || 0,
+            });
+        }
+    }, [user]);
 
     // Fetch user's posts from API
     const fetchPosts = useCallback(async () => {
@@ -40,17 +55,15 @@ function ProfilePageContent() {
 
         try {
             setLoading(true);
-            const response = await apiFetch(`/users/${user.id}/posts`);
-
-            if (response.ok) {
-                const data = await response.json();
-                setUserPosts(data.posts || []);
-                setStats({
-                    postsCount: data.postsCount || 0,
-                    followersCount: data.followersCount || 0,
-                    followingCount: data.followingCount || 0,
-                });
-            }
+            const data = await apiFetch(`${API_URL}/api/v1/users/${user.id}/posts`);
+            const posts = data.posts || [];
+            setUserPosts(posts);
+            // Update stats from server response
+            setStats({
+                postsCount: data.postsCount || posts.length,
+                followersCount: data.followersCount || 0,
+                followingCount: data.followingCount || 0,
+            });
         } catch (error) {
             console.error('Failed to fetch posts:', error);
         } finally {
@@ -63,17 +76,46 @@ function ProfilePageContent() {
         if (!user?.id) return;
         try {
             setSavedLoading(true);
-            const response = await apiFetch('/posts/saved');
-            if (response.ok) {
-                const data = await response.json();
-                setSavedPosts(data.posts || []);
-            }
+            const data = await apiFetch(`${API_URL}/api/v1/posts/saved`);
+            setSavedPosts(data.posts || []);
         } catch (error) {
             console.error('Failed to fetch saved posts:', error);
         } finally {
             setSavedLoading(false);
         }
     }, [user?.id]);
+
+    // Upload cover image
+    const handleCoverUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setCoverUploading(true);
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const token = localStorage.getItem('0g_token');
+            const res = await fetch(API_ENDPOINTS.upload.cover, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                updateUser({ coverUrl: data.url });
+            } else {
+                console.error('Cover upload failed');
+            }
+        } catch (error) {
+            console.error('Cover upload error:', error);
+        } finally {
+            setCoverUploading(false);
+            // Reset input so same file can be re-selected
+            if (coverInputRef.current) coverInputRef.current.value = '';
+        }
+    }, [updateUser]);
 
     useEffect(() => {
         if (mounted && user?.id) {
@@ -115,13 +157,35 @@ function ProfilePageContent() {
                 {/* Profile Header */}
                 <div className="relative">
                     {/* Cover Image */}
-                    <div className="h-32 md:h-48 lg:h-56 bg-gradient-to-br from-orange-900/50 via-rose-900/50 to-violet-900/50 relative overflow-hidden">
+                    <div className="h-32 md:h-48 lg:h-56 bg-gradient-to-br from-orange-900/50 via-rose-900/50 to-violet-900/50 relative overflow-hidden group/cover">
                         <Image
-                            src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=400&fit=crop"
+                            src={user?.coverUrl || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=400&fit=crop"}
                             alt="Cover"
                             fill
-                            className="object-cover opacity-50"
+                            className={`object-cover ${user?.coverUrl ? 'opacity-80' : 'opacity-50'}`}
                         />
+                        {/* Cover upload overlay */}
+                        <input
+                            ref={coverInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            className="hidden"
+                            onChange={handleCoverUpload}
+                        />
+                        <button
+                            onClick={() => coverInputRef.current?.click()}
+                            disabled={coverUploading}
+                            className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/cover:bg-black/40 transition-all duration-300 cursor-pointer"
+                        >
+                            <div className="opacity-0 group-hover/cover:opacity-100 transition-opacity duration-300 flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 backdrop-blur-sm text-white/90 text-sm font-medium">
+                                {coverUploading ? (
+                                    <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
+                                ) : (
+                                    <CameraIcon size={18} />
+                                )}
+                                {coverUploading ? 'Uploading...' : 'Change Cover'}
+                            </div>
+                        </button>
                     </div>
 
                     {/* Profile Info */}
@@ -258,13 +322,13 @@ function ProfilePageContent() {
                                                         {post.mediaUrl ? (
                                                             <Image
                                                                 src={post.mediaUrl}
-                                                                alt={post.caption || `Post ${post.id}`}
+                                                                alt={post.content || post.caption || `Post ${post.id}`}
                                                                 fill
                                                                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                                                             />
                                                         ) : (
                                                             <div className="w-full h-full bg-gradient-to-br from-orange-900/50 to-violet-900/50 flex items-center justify-center">
-                                                                <span className="text-white/70 text-sm text-center px-2">{post.caption?.slice(0, 50)}</span>
+                                                                <span className="text-white/70 text-sm text-center px-2">{(post.content || post.caption)?.slice(0, 50)}</span>
                                                             </div>
                                                         )}
                                                         {post.type === 'VIDEO' && (
@@ -342,13 +406,13 @@ function ProfilePageContent() {
                                                         {post.mediaUrl ? (
                                                             <Image
                                                                 src={post.mediaUrl}
-                                                                alt={post.caption || `Saved post`}
+                                                                alt={post.content || post.caption || `Saved post`}
                                                                 fill
                                                                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                                                             />
                                                         ) : (
                                                             <div className="w-full h-full bg-gradient-to-br from-violet-900/50 to-blue-900/50 flex items-center justify-center">
-                                                                <span className="text-white/70 text-sm text-center px-2">{post.caption?.slice(0, 50)}</span>
+                                                                <span className="text-white/70 text-sm text-center px-2">{(post.content || post.caption)?.slice(0, 50)}</span>
                                                             </div>
                                                         )}
                                                         {post.type === 'VIDEO' && (

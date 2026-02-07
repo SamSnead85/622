@@ -223,9 +223,20 @@ export default function PublicProfilePage() {
                 {/* Cover & Header */}
                 <div className="relative">
                     <div className="h-48 lg:h-64 bg-gradient-to-br from-[#0a0a1a] via-[#1a0a2e] to-[#0a1a2e] relative overflow-hidden">
-                        {/* Decorative blur orbs for cover */}
-                        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-[#00D4FF]/10 blur-[80px]" />
-                        <div className="absolute bottom-0 right-1/3 w-48 h-48 rounded-full bg-[#7C3AED]/10 blur-[60px]" />
+                        {profile.coverUrl ? (
+                            <Image
+                                src={profile.coverUrl}
+                                alt={`${profile.displayName}'s cover`}
+                                fill
+                                className="object-cover opacity-80"
+                            />
+                        ) : (
+                            <>
+                                {/* Decorative blur orbs for cover */}
+                                <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-[#00D4FF]/10 blur-[80px]" />
+                                <div className="absolute bottom-0 right-1/3 w-48 h-48 rounded-full bg-[#7C3AED]/10 blur-[60px]" />
+                            </>
+                        )}
                         {/* Overlay gradient for text readability */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     </div>

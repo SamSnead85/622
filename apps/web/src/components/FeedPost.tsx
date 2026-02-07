@@ -324,7 +324,10 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                             >
                                 {post.author.displayName}
                             </span>
-                            <span className="text-white/40 text-xs">@{post.author.username}</span>
+                            <span
+                                className="text-white/40 text-xs cursor-pointer hover:text-[#00D4FF] hover:underline transition-colors"
+                                onClick={() => router.push(`/profile/${post.author.username}`)}
+                            >@{post.author.username}</span>
                             <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#00D4FF]/20 to-[#7C3AED]/20 text-[#00D4FF] text-[10px] font-medium flex-shrink-0 border border-[#00D4FF]/10">
                                 {post.type === 'RALLY' ? '📅 Rally' : '🌍 Public'}
                             </span>
