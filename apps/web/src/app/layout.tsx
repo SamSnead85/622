@@ -49,6 +49,7 @@ import { PageTransition } from '@/components/transitions/PageTransition';
 import { SkipLinks } from '@/components/a11y/SkipLinks';
 import { LiveRegionProvider } from '@/components/a11y/LiveRegion';
 import { I18nProvider } from '@/components/layout/RTLProvider';
+import { ToastProvider } from '@/components/Toast';
 import { Inter } from 'next/font/google';
 
 const inter = Inter({
@@ -70,10 +71,12 @@ export default function RootLayout({
                     <Providers>
                         <I18nProvider>
                             <LiveRegionProvider>
-                                <PageTransition>
-                                    <GlobalMessageListener />
-                                    {children}
-                                </PageTransition>
+                                <ToastProvider>
+                                    <PageTransition>
+                                        <GlobalMessageListener />
+                                        {children}
+                                    </PageTransition>
+                                </ToastProvider>
                             </LiveRegionProvider>
                         </I18nProvider>
                     </Providers>
