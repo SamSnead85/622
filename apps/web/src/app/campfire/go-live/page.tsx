@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiFetch } from '@/lib/api';
+import { API_URL } from '@/lib/api';
 import { useStreamChat, type StreamChatMessage } from '@/hooks/useStreamChat';
 import { SendIcon } from '@/components/icons';
 import { CampfireInvite } from '@/components/CampfireInvite';
@@ -144,7 +144,11 @@ function GoLiveContent() {
 
         const poll = setInterval(async () => {
             try {
-                const res = await apiFetch(`/livestream/${streamId}`);
+                const token = localStorage.getItem('0g_token');
+                const res = await fetch(`${API_URL}/api/v1/livestream/${streamId}`, {
+                    headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+                    credentials: 'include',
+                });
                 if (res.ok) {
                     const data = await res.json();
                     if (data.stream?.status === 'LIVE') {
@@ -164,8 +168,14 @@ function GoLiveContent() {
         if (!title.trim()) { warning('Please add a stream title'); return; }
 
         try {
-            const res = await apiFetch('/livestream/create', {
+            const token = localStorage.getItem('0g_token');
+            const res = await fetch(`${API_URL}/api/v1/livestream/create`, {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+                credentials: 'include',
                 body: JSON.stringify({
                     title: title.trim(),
                     category: category || undefined,
@@ -200,7 +210,12 @@ function GoLiveContent() {
         if (!streamId) return;
 
         try {
-            const res = await apiFetch(`/livestream/${streamId}/end`, { method: 'POST' });
+            const token = localStorage.getItem('0g_token');
+            const res = await fetch(`${API_URL}/api/v1/livestream/${streamId}/end`, {
+                method: 'POST',
+                headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+                credentials: 'include',
+            });
             if (res.ok) {
                 const data = await res.json();
                 setEndSummary(data.summary);
