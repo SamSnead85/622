@@ -394,11 +394,14 @@ interface FeedPostProps {
     toggleRsvp: (id: string) => void;
     deletePost: (id: string) => Promise<{ success: boolean; error?: string }>;
     pinPost?: (id: string) => void;
+    movePost?: (id: string, direction: 'up' | 'down') => void;
+    isFirst?: boolean;
+    isLast?: boolean;
     zenMode?: boolean;
     colorPalette?: ColorPalette;
 }
 
-function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, zenMode = false, colorPalette }: FeedPostProps) {
+function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, movePost, isFirst, isLast, zenMode = false, colorPalette }: FeedPostProps) {
     const { user, isAdmin } = useAuth();
     const router = useRouter();
 
@@ -580,6 +583,34 @@ function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, zenMod
                     </div>
 
                     <div className="flex items-center gap-4">
+                        {/* Reorder arrows — only for post owner */}
+                        {movePost && post.author.id === user?.id && (
+                            <div className="flex items-center gap-0.5 mr-1">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); movePost(post.id, 'up'); }}
+                                    disabled={isFirst}
+                                    className={`p-1.5 rounded-lg transition-all ${isFirst ? 'text-white/10 cursor-default' : 'text-white/30 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 active:scale-90'}`}
+                                    aria-label="Move post up"
+                                    title="Move up in feed"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="18 15 12 9 6 15" />
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); movePost(post.id, 'down'); }}
+                                    disabled={isLast}
+                                    className={`p-1.5 rounded-lg transition-all ${isLast ? 'text-white/10 cursor-default' : 'text-white/30 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 active:scale-90'}`}
+                                    aria-label="Move post down"
+                                    title="Move down in feed"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                </button>
+                            </div>
+                        )}
+
                         <button
                             onClick={() => {
                                 const url = `${window.location.origin}/post/${post.id}`;
@@ -622,6 +653,8 @@ export const FeedPost = memo(FeedPostInner, (prev, next) => {
         p.commentsCount === n.commentsCount &&
         p.content === n.content &&
         p.mediaUrl === n.mediaUrl &&
-        prev.zenMode === next.zenMode
+        prev.zenMode === next.zenMode &&
+        prev.isFirst === next.isFirst &&
+        prev.isLast === next.isLast
     );
 });

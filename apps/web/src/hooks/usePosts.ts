@@ -335,6 +335,47 @@ export function usePosts(options?: UsePostsOptions) {
         }
     }, [fetchFeed]);
 
+    // Move a post up or down in feed order (swap sortOrder with neighbor)
+    const movePost = useCallback(async (postId: string, direction: 'up' | 'down') => {
+        const currentIndex = postsRef.current.findIndex(p => p.id === postId);
+        if (currentIndex === -1) return;
+        const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+        if (targetIndex < 0 || targetIndex >= postsRef.current.length) return;
+
+        const current = postsRef.current[currentIndex];
+        const neighbor = postsRef.current[targetIndex];
+
+        // Optimistically swap in local state
+        setPosts(prev => {
+            const updated = [...prev];
+            updated[currentIndex] = neighbor;
+            updated[targetIndex] = current;
+            return updated;
+        });
+
+        // Persist to backend — assign sortOrders based on position (higher = shown first)
+        const totalPosts = postsRef.current.length;
+        try {
+            await apiFetch(`${API_ENDPOINTS.posts}/reorder`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    posts: [
+                        { id: current.id, sortOrder: totalPosts - targetIndex },
+                        { id: neighbor.id, sortOrder: totalPosts - currentIndex },
+                    ],
+                }),
+            });
+        } catch (err) {
+            // Revert on error
+            setPosts(prev => {
+                const reverted = [...prev];
+                reverted[currentIndex] = current;
+                reverted[targetIndex] = neighbor;
+                return reverted;
+            });
+        }
+    }, []);
+
     useEffect(() => {
         fetchFeed(null, true);
         fetchFriends();
@@ -352,6 +393,7 @@ export function usePosts(options?: UsePostsOptions) {
         pinPost,
         createPost,
         deletePost,
+        movePost,
         refetch: () => fetchFeed(null, true),
     };
 }

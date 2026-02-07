@@ -31,7 +31,7 @@ import { DECOY_POSTS } from '@/lib/stealth/decoyData';
 export default function DashboardPage() {
     const { user, isLoading, isAdmin, isStealth } = useAuth();
     const { feedView, setFeedView, communityOptIn, showJoinModal, setShowJoinModal } = useFeedView();
-    const { posts: realPosts, likePost, deletePost, pinPost, isLoading: postsLoading, refetch, hasMore, loadMore, toggleRsvp } = usePosts({ feedView });
+    const { posts: realPosts, likePost, deletePost, pinPost, movePost, isLoading: postsLoading, refetch, hasMore, loadMore, toggleRsvp } = usePosts({ feedView });
 
     // Travel Shield: Use decoy posts when stealth is active
     const posts = isStealth ? (DECOY_POSTS as unknown as typeof realPosts) : realPosts;
@@ -385,7 +385,7 @@ export default function DashboardPage() {
                                 )}
 
                                 {/* Real Posts - Standardized Card Sizing */}
-                                {posts.map((post) => (
+                                {posts.map((post, index) => (
                                     <div
                                         key={post.id}
                                         className="animate-fade-in"
@@ -396,6 +396,9 @@ export default function DashboardPage() {
                                             toggleRsvp={toggleRsvp}
                                             deletePost={deletePost}
                                             pinPost={pinPost}
+                                            movePost={movePost}
+                                            isFirst={index === 0}
+                                            isLast={index === posts.length - 1}
                                             zenMode={zenMode}
                                         />
                                     </div>
