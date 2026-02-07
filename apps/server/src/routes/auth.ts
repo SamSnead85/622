@@ -15,6 +15,8 @@ const signupSchema = z.object({
     password: z.string().min(8),
     username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/),
     displayName: z.string().min(1).max(50).optional(),
+    groupOnly: z.boolean().optional(),
+    primaryCommunityId: z.string().optional(),
 });
 
 const loginSchema = z.object({
@@ -62,7 +64,7 @@ const generateTokens = async (
 // POST /api/v1/auth/signup
 router.post('/signup', async (req, res, next) => {
     try {
-        const { email, password, username, displayName } = signupSchema.parse(req.body);
+        const { email, password, username, displayName, groupOnly, primaryCommunityId } = signupSchema.parse(req.body);
 
         // Check if email or username exists
         const existingUser = await prisma.user.findFirst({
@@ -84,13 +86,15 @@ router.post('/signup', async (req, res, next) => {
         // Hash password
         const passwordHash = await bcrypt.hash(password, 12);
 
-        // Create user
+        // Create user (with optional group-only restriction)
         const user = await prisma.user.create({
             data: {
                 email: email.toLowerCase(),
                 username: username.toLowerCase(),
                 displayName: displayName || username,
                 passwordHash,
+                isGroupOnly: groupOnly || false,
+                primaryCommunityId: groupOnly ? primaryCommunityId : null,
             },
         });
 
@@ -286,6 +290,8 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
                     coverUrl: true,
                     isVerified: true,
                     isPrivate: true,
+                    isGroupOnly: true,
+                    primaryCommunityId: true,
                     role: true, // Include role for admin detection
                     createdAt: true,
                     _count: {

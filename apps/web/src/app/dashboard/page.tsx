@@ -50,6 +50,11 @@ export default function DashboardPage() {
     useEffect(() => {
         if (!isLoading && !user) {
             router.push('/login');
+            return;
+        }
+        // Group-only users: redirect to their community instead of the main feed
+        if (user?.isGroupOnly && user?.primaryCommunityId) {
+            router.replace(`/communities/${user.primaryCommunityId}`);
         }
     }, [user, isLoading, router]);
 

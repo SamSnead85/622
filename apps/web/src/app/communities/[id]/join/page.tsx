@@ -12,6 +12,7 @@ import { API_URL, apiFetch } from '@/lib/api';
 // COMMUNITY JOIN PAGE
 // Beautiful landing page for invite links shared
 // via WhatsApp, SMS, Email, etc.
+// Now with Group-Only mode for contained membership.
 // ============================================
 
 interface CommunityPreview {
@@ -35,7 +36,7 @@ interface CommunityPreview {
 export default function CommunityJoinPage() {
     const params = useParams();
     const router = useRouter();
-    const slug = params.id as string; // 'id' matches the [id] route param, but works with slugs too
+    const slug = params.id as string;
     const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
     const [community, setCommunity] = useState<CommunityPreview | null>(null);
@@ -44,6 +45,9 @@ export default function CommunityJoinPage() {
     const [joined, setJoined] = useState(false);
     const [error, setError] = useState('');
     const [alreadyMember, setAlreadyMember] = useState(false);
+
+    // Group-Only mode state
+    const [joinMode, setJoinMode] = useState<'full' | 'group-only'>('full');
 
     // Quick signup state (inline form)
     const [showSignup, setShowSignup] = useState(false);
@@ -81,7 +85,6 @@ export default function CommunityJoinPage() {
             if (urlRef) {
                 localStorage.setItem('0g_referral_code', urlRef);
             }
-            // Also store community to auto-join after signup
             if (slug) {
                 localStorage.setItem('0g_pending_community', slug);
             }
@@ -98,7 +101,7 @@ export default function CommunityJoinPage() {
             });
             if (res.ok || res.status === 400) {
                 setJoined(true);
-                setTimeout(() => router.push(`/communities`), 1500);
+                setTimeout(() => router.push(`/communities/${community.slug || community.id}`), 1500);
             } else {
                 setError('Failed to join. Please try again.');
             }
@@ -133,7 +136,12 @@ export default function CommunityJoinPage() {
         const username = displayName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
         try {
-            const result = await signup(email, password, username, displayName);
+            const isGroupOnly = joinMode === 'group-only';
+            const result = await signup(email, password, username, displayName, isGroupOnly && community ? {
+                groupOnly: true,
+                primaryCommunityId: community.id,
+            } : undefined);
+
             if (result.success) {
                 // After signup, auto-join the community
                 setTimeout(async () => {
@@ -153,7 +161,13 @@ export default function CommunityJoinPage() {
                         localStorage.removeItem('0g_referral_code');
                     }
                     localStorage.removeItem('0g_pending_community');
-                    router.push('/onboarding');
+
+                    // Group-only users go straight to their community
+                    if (isGroupOnly && community) {
+                        router.push(`/communities/${community.slug || community.id}`);
+                    } else {
+                        router.push('/onboarding');
+                    }
                 }, 500);
             } else {
                 setSignupError(result.error || 'Signup failed');
@@ -306,8 +320,90 @@ export default function CommunityJoinPage() {
                                 </span>
                             </div>
 
+                            {/* ===== JOIN MODE SELECTOR ===== */}
+                            {!isAuthenticated && !authLoading && !joined && !alreadyMember && (
+                                <div className="mt-5 pt-4 border-t border-white/5">
+                                    <p className="text-white/50 text-xs font-medium mb-2.5 uppercase tracking-wider">How do you want to join?</p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {/* Full Platform */}
+                                        <button
+                                            onClick={() => setJoinMode('full')}
+                                            className={`relative rounded-xl p-3 text-left transition-all duration-200 border ${
+                                                joinMode === 'full'
+                                                    ? 'bg-[#00D4FF]/10 border-[#00D4FF]/40 ring-1 ring-[#00D4FF]/20'
+                                                    : 'bg-white/[0.03] border-white/10 hover:border-white/20'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={joinMode === 'full' ? '#00D4FF' : 'rgba(255,255,255,0.4)'} strokeWidth={2}>
+                                                    <circle cx="12" cy="12" r="10" />
+                                                    <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                                                </svg>
+                                                <span className={`text-xs font-semibold ${joinMode === 'full' ? 'text-[#00D4FF]' : 'text-white/60'}`}>
+                                                    Full Platform
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] text-white/40 leading-relaxed">
+                                                Join the group + explore all of 0G
+                                            </p>
+                                        </button>
+
+                                        {/* Group Only */}
+                                        <button
+                                            onClick={() => setJoinMode('group-only')}
+                                            className={`relative rounded-xl p-3 text-left transition-all duration-200 border ${
+                                                joinMode === 'group-only'
+                                                    ? 'bg-emerald-500/10 border-emerald-500/40 ring-1 ring-emerald-500/20'
+                                                    : 'bg-white/[0.03] border-white/10 hover:border-white/20'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={joinMode === 'group-only' ? '#34d399' : 'rgba(255,255,255,0.4)'} strokeWidth={2}>
+                                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                                </svg>
+                                                <span className={`text-xs font-semibold ${joinMode === 'group-only' ? 'text-emerald-400' : 'text-white/60'}`}>
+                                                    Group Only
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] text-white/40 leading-relaxed">
+                                                Private &amp; contained — only this group
+                                            </p>
+                                        </button>
+                                    </div>
+
+                                    {/* Group-Only info callout */}
+                                    <AnimatePresence>
+                                        {joinMode === 'group-only' && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="mt-2.5 px-3 py-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                                                    <div className="flex items-start gap-2">
+                                                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth={2} className="mt-0.5 flex-shrink-0">
+                                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                                        </svg>
+                                                        <div>
+                                                            <p className="text-emerald-400 text-[11px] font-medium mb-1">Contained Environment</p>
+                                                            <ul className="text-white/40 text-[10px] space-y-0.5 leading-relaxed">
+                                                                <li>• Your profile is invisible to the wider platform</li>
+                                                                <li>• You won&apos;t appear in search or suggestions</li>
+                                                                <li>• You&apos;ll only see content from this group</li>
+                                                                <li>• You can upgrade to full access anytime</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            )}
+
                             {/* Action Area */}
-                            <div className="mt-6">
+                            <div className="mt-5">
                                 <AnimatePresence mode="wait">
                                     {/* Already joined */}
                                     {(joined || alreadyMember) && (
@@ -325,8 +421,8 @@ export default function CommunityJoinPage() {
                                             <p className="text-emerald-400 font-medium">
                                                 {alreadyMember ? 'You\'re already a member!' : 'Welcome aboard!'}
                                             </p>
-                                            <Link href="/communities" className="text-[#00D4FF] text-sm mt-2 inline-block hover:underline">
-                                                Go to Communities →
+                                            <Link href={`/communities/${community.slug || community.id}`} className="text-[#00D4FF] text-sm mt-2 inline-block hover:underline">
+                                                Go to {community.name} →
                                             </Link>
                                         </motion.div>
                                     )}
@@ -353,27 +449,39 @@ export default function CommunityJoinPage() {
                                             className="space-y-3"
                                         >
                                             <p className="text-center text-white/40 text-xs mb-3">
-                                                Join 0G to connect with this community
+                                                {joinMode === 'group-only'
+                                                    ? `Create a private account for ${community.name}`
+                                                    : `Join 0G to connect with this community`
+                                                }
                                             </p>
 
-                                            {/* Google Sign-in */}
-                                            <button className="group w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl bg-white hover:bg-white/95 transition-all text-[#1f1f1f] font-medium shadow-sm relative overflow-hidden">
-                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
-                                                <svg className="w-4 h-4 relative z-10" viewBox="0 0 24 24">
-                                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                                                </svg>
-                                                <span className="relative z-10 text-sm">Continue with Google</span>
-                                            </button>
+                                            {/* Google Sign-in — only for full platform */}
+                                            {joinMode === 'full' && (
+                                                <button className="group w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl bg-white hover:bg-white/95 transition-all text-[#1f1f1f] font-medium shadow-sm relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                                                    <svg className="w-4 h-4 relative z-10" viewBox="0 0 24 24">
+                                                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                                                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                                                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                                                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                                                    </svg>
+                                                    <span className="relative z-10 text-sm">Continue with Google</span>
+                                                </button>
+                                            )}
 
                                             {/* Quick Signup */}
                                             <button
                                                 onClick={() => setShowSignup(true)}
-                                                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold hover:opacity-90 transition-opacity text-sm"
+                                                className={`w-full py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity text-sm ${
+                                                    joinMode === 'group-only'
+                                                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-black'
+                                                        : 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black'
+                                                }`}
                                             >
-                                                Create Account & Join
+                                                {joinMode === 'group-only'
+                                                    ? `Create Private Account & Join`
+                                                    : `Create Account & Join`
+                                                }
                                             </button>
 
                                             {/* Already have account */}
@@ -395,6 +503,18 @@ export default function CommunityJoinPage() {
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                         >
+                                            {/* Group-Only badge */}
+                                            {joinMode === 'group-only' && (
+                                                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                                                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth={2}>
+                                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                                    </svg>
+                                                    <span className="text-emerald-400 text-[11px] font-medium">
+                                                        Group-Only Account — private &amp; contained
+                                                    </span>
+                                                </div>
+                                            )}
+
                                             <form onSubmit={handleSignup} className="space-y-3">
                                                 <AnimatePresence mode="wait">
                                                     {signupStep === 1 ? (
@@ -442,7 +562,7 @@ export default function CommunityJoinPage() {
                                                                 type="text"
                                                                 value={displayName}
                                                                 onChange={(e) => setDisplayName(e.target.value)}
-                                                                placeholder="What should we call you?"
+                                                                placeholder={joinMode === 'group-only' ? 'Your name (visible to group only)' : 'What should we call you?'}
                                                                 maxLength={50}
                                                                 autoFocus
                                                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-white/20"
@@ -463,7 +583,11 @@ export default function CommunityJoinPage() {
                                                 <button
                                                     type="submit"
                                                     disabled={signupLoading}
-                                                    className="w-full py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
+                                                    className={`w-full py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 text-sm ${
+                                                        joinMode === 'group-only'
+                                                            ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-black'
+                                                            : 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black'
+                                                    }`}
                                                 >
                                                     {signupLoading ? 'Creating...' : signupStep === 1 ? 'Continue' : `Join ${community.name}`}
                                                 </button>
@@ -490,8 +614,8 @@ export default function CommunityJoinPage() {
                 )}
 
                 {/* Footer */}
-                <p className="text-white/20 text-xs mt-8 text-center">
-                    0G — The next generation of social. Private. Authentic. Yours.
+                <p className="text-white/20 text-xs mt-8 text-center max-w-sm">
+                    0G — Private by default. {joinMode === 'group-only' ? 'Group-only accounts stay contained. No social media exposure.' : 'The next generation of social.'}
                 </p>
             </div>
         </div>

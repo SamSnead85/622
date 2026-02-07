@@ -25,6 +25,8 @@ model User {
   role                       Role                      @default(USER)
   isVerified                 Boolean                   @default(false)
   isPrivate                  Boolean                   @default(false)
+  isGroupOnly                Boolean                   @default(false)
+  primaryCommunityId         String?
   isBanned                   Boolean                   @default(false)
   lastActiveAt               DateTime                  @default(now())
   createdAt                  DateTime                  @default(now())

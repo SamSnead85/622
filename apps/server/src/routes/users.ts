@@ -12,12 +12,15 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
         const { cursor, limit = '20', search } = req.query;
 
         const users = await prisma.user.findMany({
-            where: search ? {
-                OR: [
-                    { username: { contains: search as string, mode: 'insensitive' } },
-                    { displayName: { contains: search as string, mode: 'insensitive' } },
-                ]
-            } : undefined,
+            where: {
+                isGroupOnly: false, // Hide group-only users from public discovery
+                ...(search ? {
+                    OR: [
+                        { username: { contains: search as string, mode: 'insensitive' } },
+                        { displayName: { contains: search as string, mode: 'insensitive' } },
+                    ]
+                } : {}),
+            },
             take: parseInt(limit as string) + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: { createdAt: 'desc' },
@@ -71,6 +74,7 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
         // If no search query, return all users (for new user discovery)
         if (!q || typeof q !== 'string' || q.trim() === '') {
             const users = await prisma.user.findMany({
+                where: { isGroupOnly: false }, // Hide group-only users
                 take: parseInt(limit as string),
                 orderBy: { createdAt: 'desc' },
                 select: {
@@ -111,6 +115,7 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
 
         const users = await prisma.user.findMany({
             where: {
+                isGroupOnly: false, // Hide group-only users from search
                 OR: [
                     { username: { contains: searchTerm, mode: 'insensitive' } },
                     { displayName: { contains: searchTerm, mode: 'insensitive' } },

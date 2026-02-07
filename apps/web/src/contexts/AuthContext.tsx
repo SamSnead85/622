@@ -17,6 +17,8 @@ export interface User {
     coverUrl?: string;
     bio?: string;
     isVerified: boolean;
+    isGroupOnly?: boolean;
+    primaryCommunityId?: string | null;
     createdAt: string;
     role?: 'USER' | 'MODERATOR' | 'ADMIN' | 'SUPERADMIN';
     postsCount?: number;
@@ -36,7 +38,7 @@ interface AuthContextType {
     verify2FA: (code: string) => Promise<{ success: boolean; error?: string }>;
     verifyBackupCode: (code: string) => Promise<{ success: boolean; error?: string }>;
     cancel2FA: () => void;
-    signup: (email: string, password: string, username: string, displayName: string) => Promise<{ success: boolean; error?: string }>;
+    signup: (email: string, password: string, username: string, displayName: string, options?: { groupOnly?: boolean; primaryCommunityId?: string }) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     updateUser: (updates: Partial<User>) => Promise<void>;
 }
@@ -258,12 +260,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: string,
         password: string,
         username: string,
-        displayName: string
+        displayName: string,
+        options?: { groupOnly?: boolean; primaryCommunityId?: string }
     ): Promise<{ success: boolean; error?: string }> => {
         try {
             const response = await apiFetch(API_ENDPOINTS.signup, {
                 method: 'POST',
-                body: JSON.stringify({ email, password, username, displayName }),
+                body: JSON.stringify({
+                    email,
+                    password,
+                    username,
+                    displayName,
+                    ...(options?.groupOnly && {
+                        groupOnly: true,
+                        primaryCommunityId: options.primaryCommunityId,
+                    }),
+                }),
             });
 
             const data = await response.json();
