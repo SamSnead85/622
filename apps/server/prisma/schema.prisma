@@ -373,6 +373,11 @@ model Community {
   isPublic    Boolean           @default(true)
   memberCount Int               @default(0)
   postCount   Int               @default(0)
+  // Branding fields for custom group identity
+  brandColor  String?           // Hex color e.g. "#FF6B35"
+  tagline     String?           // Short invite tagline e.g. "The Smith Family Circle"
+  logoUrl     String?           // Custom group logo/icon image
+  category    String?           // family, friends, business, faith, hobby, local
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   creator        User              @relation("CommunityCreator", fields: [creatorId], references: [id])

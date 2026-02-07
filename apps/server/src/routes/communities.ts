@@ -178,6 +178,10 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             isPrivate: z.boolean().optional(),
             isPublic: z.boolean().optional(),
             approvalRequired: z.boolean().optional(),
+            // Branding
+            brandColor: z.string().max(20).optional(),
+            tagline: z.string().max(120).optional(),
+            logoUrl: z.string().url().optional(),
         });
 
         const data = createSchema.parse(req.body);

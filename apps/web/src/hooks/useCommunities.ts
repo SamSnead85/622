@@ -25,6 +25,10 @@ export interface CreateCommunityData {
     privacy: 'public' | 'private';
     approvalRequired: boolean;
     coverImage: string | null;
+    // Branding
+    brandColor?: string;
+    tagline?: string;
+    logoUrl?: string;
 }
 
 // ============================================
@@ -68,6 +72,9 @@ export function useCommunities() {
                     isPrivate: data.privacy === 'private',
                     approvalRequired: data.approvalRequired,
                     coverUrl: data.coverImage,
+                    brandColor: data.brandColor,
+                    tagline: data.tagline,
+                    logoUrl: data.logoUrl,
                 }),
             });
 
