@@ -9,6 +9,7 @@ import { Avatar, useProfile, SECONDARY_LANGUAGES } from '@/components/ProfileEdi
 import { Navigation } from '@/components/Navigation';
 import { SettingsIcon, CameraIcon, PlusIcon, PlayIcon, HeartIcon } from '@/components/icons';
 import { API_URL, API_ENDPOINTS, apiFetch } from '@/lib/api';
+import { InlineComposer } from '@/components/InlineComposer';
 import { DECOY_USER, DECOY_POSTS } from '@/lib/stealth/decoyData';
 
 interface Post {
@@ -330,6 +331,15 @@ function ProfilePageContent() {
                         <div className="py-6">
                             {activeTab === 'posts' && (
                                 <>
+                                    {/* Compose on your profile — visible to your followers */}
+                                    {user && !isStealth && (
+                                        <div className="mb-6 bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 hover:border-white/[0.12] focus-within:border-[#00D4FF]/30 transition-all">
+                                            <InlineComposer
+                                                user={user}
+                                                onPostSuccess={() => fetchPosts()}
+                                            />
+                                        </div>
+                                    )}
                                     {userPosts.length > 0 ? (
                                         <div className="grid grid-cols-3 gap-1 md:gap-2">
                                             {userPosts.map((post, i) => (

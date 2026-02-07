@@ -8,7 +8,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePosts } from '@/hooks/usePosts';
 import { API_URL } from '@/lib/api';
 import { FeedPost, PostSkeleton } from '@/components/FeedPost';
-import { InlineComposer } from '@/components/InlineComposer';
 import {
     MessageIcon,
     PlusIcon,
@@ -93,8 +92,6 @@ export default function DashboardPage() {
                             <div className="skeleton skeleton-text-sm w-32" />
                         </div>
                     </div>
-                    {/* Composer skeleton */}
-                    <div className="skeleton rounded-2xl h-24" />
                     {/* Post skeletons */}
                     {[1, 2, 3].map(i => (
                         <div key={i} className="space-y-3 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04]">
@@ -220,16 +217,6 @@ export default function DashboardPage() {
                     {/* ===== STORIES: Directly under header, no extra padding ===== */}
                     <div className="pt-1 lg:pt-0">
                         <EnhancedStoriesBar />
-                    </div>
-
-                    {/* ===== INLINE COMPOSER: Desktop only — mobile uses bottom nav Create button ===== */}
-                    <div className="hidden lg:block my-3">
-                        <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl hover:border-white/[0.12] focus-within:border-[#00D4FF]/30 transition-all duration-300 p-4">
-                            <InlineComposer
-                                user={user}
-                                onPostSuccess={() => { refetch(); }}
-                            />
-                        </div>
                     </div>
 
                     {/* ===== EMPTY STATE: Welcome cards when zero posts ===== */}
