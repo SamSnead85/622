@@ -107,25 +107,26 @@ export function YouTubeEmbed({ src }: { src: string }) {
 }
 
 // ============================================
-// AUTOPLAY VIDEO (with AudioFocus integration)
+// AUTOPLAY VIDEO — Single-play + always-visible controls
+// Only the topmost visible video plays. All others are paused.
+// Mute & pause buttons are always visible at top-right (no hover required).
 // ============================================
 interface AutoPlayVideoProps {
     src: string;
-    postId?: string;       // Unique ID for audio focus tracking
+    postId?: string;
     className?: string;
-    aspectRatio?: string;  // e.g. "16:9", "4:5", "1:1"
-    cropY?: number;        // 0-100 vertical position
+    aspectRatio?: string;
+    cropY?: number;
 }
 
 export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY }: AutoPlayVideoProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isMuted, setIsMuted] = useState(true); // Start muted by default
-    const [showControls, setShowControls] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
+    const [userPaused, setUserPaused] = useState(false); // User manually paused
     const audioFocus = useAudioFocus();
-    const videoId = postId || src; // Fallback to src as unique ID
+    const videoId = postId || src;
 
-    // Convert ratio string to CSS value
     const cssAspectRatio = aspectRatio ? {
         '16:9': '16/9', '4:3': '4/3', '1:1': '1/1', '4:5': '4/5',
     }[aspectRatio] : undefined;
@@ -139,23 +140,32 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-                        // Register with audio focus — it decides if we get audio
+                        // Register with audio focus — only the focus owner actually plays
                         const getsAudio = audioFocus.registerVisible(videoId, video);
-                        video.muted = !getsAudio;
-                        setIsMuted(!getsAudio);
 
-                        video.play()
-                            .then(() => setIsPlaying(true))
-                            .catch(() => {
-                                // Browser may block unmuted autoplay — retry muted
-                                video.muted = true;
-                                setIsMuted(true);
-                                video.play().then(() => setIsPlaying(true)).catch(() => {});
-                            });
+                        if (getsAudio && !userPaused) {
+                            // This is the focused video — play with audio
+                            video.muted = false;
+                            setIsMuted(false);
+                            video.play()
+                                .then(() => setIsPlaying(true))
+                                .catch(() => {
+                                    video.muted = true;
+                                    setIsMuted(true);
+                                    video.play().then(() => setIsPlaying(true)).catch(() => {});
+                                });
+                        } else {
+                            // NOT the focused video — stay paused and muted
+                            video.muted = true;
+                            setIsMuted(true);
+                            video.pause();
+                            setIsPlaying(false);
+                        }
                     } else {
-                        // Scrolled out of view — pause and unregister
+                        // Scrolled out of view — always pause and unregister
                         video.pause();
                         setIsPlaying(false);
+                        setUserPaused(false); // Reset manual pause when scrolled away
                         audioFocus.unregisterVisible(videoId);
                     }
                 });
@@ -168,43 +178,86 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
             observer.disconnect();
             audioFocus.unregisterVisible(videoId);
         };
-    }, [videoId, audioFocus]);
+    }, [videoId, audioFocus, userPaused]);
 
-    // Sync muted state with audio focus changes (check periodically is not ideal,
-    // so we check on mouse enter / interaction)
-    const syncMuteState = useCallback(() => {
-        if (videoRef.current) {
-            const focused = audioFocus.hasFocus(videoId);
-            if (videoRef.current.muted !== !focused) {
-                videoRef.current.muted = !focused;
-                setIsMuted(!focused);
+    // When audio focus changes, sync this video's play/pause state
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video || userPaused) return;
+
+        const interval = setInterval(() => {
+            const hasFocusNow = audioFocus.hasFocus(videoId);
+            if (hasFocusNow && video.paused && !userPaused) {
+                // We gained focus — start playing
+                video.muted = false;
+                setIsMuted(false);
+                video.play().then(() => setIsPlaying(true)).catch(() => {
+                    video.muted = true;
+                    setIsMuted(true);
+                    video.play().then(() => setIsPlaying(true)).catch(() => {});
+                });
+            } else if (!hasFocusNow && !video.paused) {
+                // We lost focus — pause
+                video.pause();
+                video.muted = true;
+                setIsMuted(true);
+                setIsPlaying(false);
             }
-        }
-    }, [audioFocus, videoId]);
+        }, 300);
 
-    const toggleMute = (e: React.MouseEvent) => {
+        return () => clearInterval(interval);
+    }, [audioFocus, videoId, userPaused]);
+
+    const togglePlayPause = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!videoRef.current) return;
+        e.preventDefault();
+        const video = videoRef.current;
+        if (!video) return;
+
+        if (isPlaying) {
+            video.pause();
+            setIsPlaying(false);
+            setUserPaused(true);
+        } else {
+            setUserPaused(false);
+            // Claim focus so this becomes the active video
+            audioFocus.claimFocus(videoId);
+            video.muted = false;
+            setIsMuted(false);
+            video.play().then(() => setIsPlaying(true)).catch(() => {
+                video.muted = true;
+                setIsMuted(true);
+                video.play().then(() => setIsPlaying(true)).catch(() => {});
+            });
+        }
+    }, [isPlaying, audioFocus, videoId]);
+
+    const toggleMute = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const video = videoRef.current;
+        if (!video) return;
 
         if (isMuted) {
-            // User wants to unmute — claim audio focus (mutes other videos)
             audioFocus.claimFocus(videoId);
-            videoRef.current.muted = false;
+            video.muted = false;
             setIsMuted(false);
+            // If paused, also start playing
+            if (!isPlaying) {
+                setUserPaused(false);
+                video.play().then(() => setIsPlaying(true)).catch(() => {});
+            }
         } else {
-            // User wants to mute — release focus (no auto-transfer)
             audioFocus.releaseFocus(videoId);
-            videoRef.current.muted = true;
+            video.muted = true;
             setIsMuted(true);
         }
-    };
+    }, [isMuted, isPlaying, audioFocus, videoId]);
 
     return (
         <div
-            className="relative group"
+            className="relative"
             style={cssAspectRatio ? { aspectRatio: cssAspectRatio } : undefined}
-            onMouseEnter={() => { setShowControls(true); syncMuteState(); }}
-            onMouseLeave={() => setShowControls(false)}
         >
             <video
                 ref={videoRef}
@@ -215,18 +268,60 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
                 playsInline
                 muted={isMuted}
             />
-            {/* Audio indicator — always visible when playing */}
-            {isPlaying && (
+
+            {/* ── Always-visible control buttons ── top-right corner ── */}
+            <div className="absolute top-3 right-3 flex items-center gap-1.5 z-20">
+                {/* Play / Pause */}
+                <button
+                    onClick={togglePlayPause}
+                    className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 transition-colors active:scale-90"
+                    title={isPlaying ? 'Pause' : 'Play'}
+                >
+                    {isPlaying ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+                            <rect x="6" y="4" width="4" height="16" rx="1" />
+                            <rect x="14" y="4" width="4" height="16" rx="1" />
+                        </svg>
+                    ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                    )}
+                </button>
+
+                {/* Mute / Unmute */}
                 <button
                     onClick={toggleMute}
-                    className={`absolute bottom-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-sm z-20 transition-all ${
-                        showControls ? 'opacity-100' : 'opacity-60'
-                    } ${isMuted ? 'bg-white/10' : 'bg-black/60'}`}
+                    className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 transition-colors active:scale-90"
+                    title={isMuted ? 'Unmute' : 'Mute'}
                 >
-                    <span className="text-lg text-white hover:text-[#00D4FF] transition-colors">
-                        {isMuted ? '🔇' : '🔊'}
-                    </span>
+                    {isMuted ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                            <line x1="23" y1="9" x2="17" y2="15" />
+                            <line x1="17" y1="9" x2="23" y2="15" />
+                        </svg>
+                    ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                            <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" />
+                        </svg>
+                    )}
                 </button>
+            </div>
+
+            {/* Paused overlay — visual indicator when manually paused */}
+            {!isPlaying && (
+                <div
+                    className="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer"
+                    onClick={togglePlayPause}
+                >
+                    <div className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                    </div>
+                </div>
             )}
         </div>
     );

@@ -23,6 +23,8 @@ interface Post {
     commentsCount: number;
     viewCount: number;
     createdAt: string;
+    sortOrder?: number;
+    isPinned?: boolean;
 }
 
 function ProfilePageContent() {
@@ -36,6 +38,8 @@ function ProfilePageContent() {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({ postsCount: 0, followersCount: 0, followingCount: 0 });
     const [coverUploading, setCoverUploading] = useState(false);
+    const [reorderMode, setReorderMode] = useState(false);
+    const [reorderSaving, setReorderSaving] = useState(false);
     const coverInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => { setMounted(true); }, []);
@@ -86,6 +90,44 @@ function ProfilePageContent() {
             setSavedLoading(false);
         }
     }, [user?.id]);
+
+    // ── Post reorder helpers ──
+    const movePost = useCallback((index: number, direction: 'up' | 'down') => {
+        setUserPosts(prev => {
+            const arr = [...prev];
+            const targetIdx = direction === 'up' ? index - 1 : index + 1;
+            if (targetIdx < 0 || targetIdx >= arr.length) return prev;
+            [arr[index], arr[targetIdx]] = [arr[targetIdx], arr[index]];
+            return arr;
+        });
+    }, []);
+
+    const saveReorder = useCallback(async () => {
+        if (!user?.id || reorderSaving) return;
+        try {
+            setReorderSaving(true);
+            // Send the new order — highest sortOrder = appears first
+            const posts = userPosts.map((p, i) => ({
+                id: p.id,
+                sortOrder: userPosts.length - i, // first in array gets highest sortOrder
+            }));
+            await apiFetch(`${API_URL}/api/v1/posts/reorder`, {
+                method: 'PUT',
+                body: JSON.stringify({ posts }),
+            });
+            setReorderMode(false);
+        } catch (error) {
+            console.error('Failed to save post order:', error);
+        } finally {
+            setReorderSaving(false);
+        }
+    }, [user?.id, userPosts, reorderSaving]);
+
+    const cancelReorder = useCallback(() => {
+        setReorderMode(false);
+        // Re-fetch to reset any local reorder
+        fetchPosts();
+    }, [fetchPosts]);
 
     // Upload cover image
     const handleCoverUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -340,44 +382,170 @@ function ProfilePageContent() {
                                             />
                                         </div>
                                     )}
-                                    {userPosts.length > 0 ? (
-                                        <div className="grid grid-cols-3 gap-1 md:gap-2">
-                                            {userPosts.map((post, i) => (
-                                                <Link key={post.id} href={`/post/${post.id}`}>
-                                                    <motion.div
-                                                        className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
-                                                        initial={{ opacity: 0, scale: 0.9 }}
-                                                        animate={{ opacity: 1, scale: 1 }}
-                                                        transition={{ delay: i * 0.03 }}
-                                                        whileHover={{ scale: 1.02 }}
+
+                                    {/* Reorder controls bar */}
+                                    {userPosts.length > 1 && user && !isStealth && (
+                                        <div className="flex items-center justify-between mb-4 px-1">
+                                            {reorderMode ? (
+                                                <>
+                                                    <span className="text-sm text-white/60">
+                                                        Drag posts up/down to set display order
+                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={cancelReorder}
+                                                            className="px-4 py-1.5 text-sm rounded-full bg-white/10 text-white/70 hover:bg-white/15 transition-colors"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        <button
+                                                            onClick={saveReorder}
+                                                            disabled={reorderSaving}
+                                                            className="px-4 py-1.5 text-sm rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                                                        >
+                                                            {reorderSaving ? 'Saving...' : 'Save Order'}
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="text-sm text-white/40">
+                                                        {userPosts.length} posts
+                                                    </span>
+                                                    <button
+                                                        onClick={() => setReorderMode(true)}
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white/80 transition-all"
                                                     >
-                                                        {post.mediaUrl ? (
-                                                            <Image
-                                                                src={post.mediaUrl}
-                                                                alt={post.content || post.caption || `Post ${post.id}`}
-                                                                fill
-                                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-full h-full bg-gradient-to-br from-orange-900/50 to-violet-900/50 flex items-center justify-center">
-                                                                <span className="text-white/70 text-sm text-center px-2">{(post.content || post.caption)?.slice(0, 50)}</span>
-                                                            </div>
-                                                        )}
-                                                        {post.type === 'VIDEO' && (
-                                                            <div className="absolute top-2 right-2 text-white">
-                                                                <PlayIcon size={20} />
-                                                            </div>
-                                                        )}
-                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                                                            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white font-semibold flex items-center gap-2">
-                                                                <HeartIcon size={20} className="fill-white" />
-                                                                {post.likesCount.toLocaleString()}
-                                                            </span>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <line x1="4" y1="9" x2="20" y2="9" />
+                                                            <line x1="4" y1="15" x2="20" y2="15" />
+                                                            <line x1="10" y1="3" x2="8" y2="6" />
+                                                            <line x1="10" y1="3" x2="12" y2="6" />
+                                                            <line x1="14" y1="21" x2="12" y2="18" />
+                                                            <line x1="14" y1="21" x2="16" y2="18" />
+                                                        </svg>
+                                                        Reorder Posts
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {userPosts.length > 0 ? (
+                                        reorderMode ? (
+                                            /* ── Reorder list view ── */
+                                            <div className="space-y-2">
+                                                {userPosts.map((post, i) => (
+                                                    <motion.div
+                                                        key={post.id}
+                                                        layout
+                                                        className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.15] transition-colors"
+                                                    >
+                                                        {/* Position number */}
+                                                        <span className="w-7 h-7 flex-shrink-0 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-white/60">
+                                                            {i + 1}
+                                                        </span>
+
+                                                        {/* Thumbnail */}
+                                                        <div className="w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-black/30">
+                                                            {post.mediaUrl ? (
+                                                                <Image
+                                                                    src={post.mediaUrl}
+                                                                    alt=""
+                                                                    width={56}
+                                                                    height={56}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full bg-gradient-to-br from-orange-900/50 to-violet-900/50 flex items-center justify-center">
+                                                                    <span className="text-white/40 text-[10px]">Text</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Post info */}
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm text-white/80 truncate">
+                                                                {post.content || post.caption || `${post.type} post`}
+                                                            </p>
+                                                            <p className="text-xs text-white/40 mt-0.5">
+                                                                {post.likesCount} likes · {post.commentsCount} comments
+                                                                {post.isPinned && <span className="ml-2 text-[#00D4FF]">📌 Pinned</span>}
+                                                            </p>
+                                                        </div>
+
+                                                        {/* Up/Down arrows */}
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <button
+                                                                onClick={() => movePost(i, 'up')}
+                                                                disabled={i === 0}
+                                                                className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center hover:bg-white/15 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                                                                title="Move up"
+                                                            >
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <polyline points="18 15 12 9 6 15" />
+                                                                </svg>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => movePost(i, 'down')}
+                                                                disabled={i === userPosts.length - 1}
+                                                                className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center hover:bg-white/15 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                                                                title="Move down"
+                                                            >
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <polyline points="6 9 12 15 18 9" />
+                                                                </svg>
+                                                            </button>
                                                         </div>
                                                     </motion.div>
-                                                </Link>
-                                            ))}
-                                        </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            /* ── Normal grid view ── */
+                                            <div className="grid grid-cols-3 gap-1 md:gap-2">
+                                                {userPosts.map((post, i) => (
+                                                    <Link key={post.id} href={`/post/${post.id}`}>
+                                                        <motion.div
+                                                            className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
+                                                            initial={{ opacity: 0, scale: 0.9 }}
+                                                            animate={{ opacity: 1, scale: 1 }}
+                                                            transition={{ delay: i * 0.03 }}
+                                                            whileHover={{ scale: 1.02 }}
+                                                        >
+                                                            {post.mediaUrl ? (
+                                                                <Image
+                                                                    src={post.mediaUrl}
+                                                                    alt={post.content || post.caption || `Post ${post.id}`}
+                                                                    fill
+                                                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full bg-gradient-to-br from-orange-900/50 to-violet-900/50 flex items-center justify-center">
+                                                                    <span className="text-white/70 text-sm text-center px-2">{(post.content || post.caption)?.slice(0, 50)}</span>
+                                                                </div>
+                                                            )}
+                                                            {post.type === 'VIDEO' && (
+                                                                <div className="absolute top-2 right-2 text-white">
+                                                                    <PlayIcon size={20} />
+                                                                </div>
+                                                            )}
+                                                            {/* Position badge in reorder-aware mode */}
+                                                            {post.isPinned && (
+                                                                <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[10px] text-[#00D4FF] font-medium">
+                                                                    📌
+                                                                </div>
+                                                            )}
+                                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                                                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white font-semibold flex items-center gap-2">
+                                                                    <HeartIcon size={20} className="fill-white" />
+                                                                    {post.likesCount.toLocaleString()}
+                                                                </span>
+                                                            </div>
+                                                        </motion.div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        )
                                     ) : (
                                         <div className="text-center py-16">
                                             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-orange-400/20 to-rose-400/20 flex items-center justify-center">
