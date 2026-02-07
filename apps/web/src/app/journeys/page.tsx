@@ -426,7 +426,7 @@ export default function JourneysPage() {
                                 isActive={index === currentIndex}
                                 isMuted={isMuted}
                                 onToggleMute={() => setIsMuted(!isMuted)}
-                                onLike={() => { }}
+                                onLike={() => likeJourney(journey.id)}
                             />
                         </div>
                     ))}

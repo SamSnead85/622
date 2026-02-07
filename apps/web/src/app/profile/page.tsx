@@ -27,6 +27,8 @@ function ProfilePageContent() {
     const [activeTab, setActiveTab] = useState<'posts' | 'journeys' | 'saved'>('posts');
     const [mounted, setMounted] = useState(false);
     const [userPosts, setUserPosts] = useState<Post[]>([]);
+    const [savedPosts, setSavedPosts] = useState<Post[]>([]);
+    const [savedLoading, setSavedLoading] = useState(false);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({ postsCount: 0, followersCount: 0, followingCount: 0 });
 
@@ -56,11 +58,35 @@ function ProfilePageContent() {
         }
     }, [user?.id]);
 
+    // Fetch saved posts
+    const fetchSavedPosts = useCallback(async () => {
+        if (!user?.id) return;
+        try {
+            setSavedLoading(true);
+            const response = await apiFetch('/posts/saved');
+            if (response.ok) {
+                const data = await response.json();
+                setSavedPosts(data.posts || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch saved posts:', error);
+        } finally {
+            setSavedLoading(false);
+        }
+    }, [user?.id]);
+
     useEffect(() => {
         if (mounted && user?.id) {
             fetchPosts();
         }
     }, [mounted, user?.id, fetchPosts]);
+
+    // Fetch saved posts when switching to saved tab
+    useEffect(() => {
+        if (mounted && user?.id && activeTab === 'saved' && savedPosts.length === 0) {
+            fetchSavedPosts();
+        }
+    }, [mounted, user?.id, activeTab, fetchSavedPosts, savedPosts.length]);
 
     if (!mounted) {
         return <div className="min-h-screen bg-[#050508]" />;
@@ -216,61 +242,146 @@ function ProfilePageContent() {
 
                         {/* Content Grid */}
                         <div className="py-6">
-                            {userPosts.length > 0 ? (
-                                <div className="grid grid-cols-3 gap-1 md:gap-2">
-                                    {userPosts.map((post, i) => (
-                                        <motion.div
-                                            key={post.id}
-                                            className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
-                                            initial={{ opacity: 0, scale: 0.9 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            transition={{ delay: i * 0.03 }}
-                                            whileHover={{ scale: 1.02 }}
-                                        >
-                                            {post.mediaUrl ? (
-                                                <Image
-                                                    src={post.mediaUrl}
-                                                    alt={post.caption || `Post ${post.id}`}
-                                                    fill
-                                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full bg-gradient-to-br from-orange-900/50 to-violet-900/50 flex items-center justify-center">
-                                                    <span className="text-white/70 text-sm text-center px-2">{post.caption?.slice(0, 50)}</span>
-                                                </div>
-                                            )}
-                                            {/* Video indicator */}
-                                            {post.type === 'VIDEO' && (
-                                                <div className="absolute top-2 right-2 text-white">
-                                                    <PlayIcon size={20} />
-                                                </div>
-                                            )}
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                                                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white font-semibold flex items-center gap-2">
-                                                    <HeartIcon size={20} className="fill-white" />
-                                                    {post.likesCount.toLocaleString()}
-                                                </span>
+                            {activeTab === 'posts' && (
+                                <>
+                                    {userPosts.length > 0 ? (
+                                        <div className="grid grid-cols-3 gap-1 md:gap-2">
+                                            {userPosts.map((post, i) => (
+                                                <Link key={post.id} href={`/post/${post.id}`}>
+                                                    <motion.div
+                                                        className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
+                                                        initial={{ opacity: 0, scale: 0.9 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        transition={{ delay: i * 0.03 }}
+                                                        whileHover={{ scale: 1.02 }}
+                                                    >
+                                                        {post.mediaUrl ? (
+                                                            <Image
+                                                                src={post.mediaUrl}
+                                                                alt={post.caption || `Post ${post.id}`}
+                                                                fill
+                                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full bg-gradient-to-br from-orange-900/50 to-violet-900/50 flex items-center justify-center">
+                                                                <span className="text-white/70 text-sm text-center px-2">{post.caption?.slice(0, 50)}</span>
+                                                            </div>
+                                                        )}
+                                                        {post.type === 'VIDEO' && (
+                                                            <div className="absolute top-2 right-2 text-white">
+                                                                <PlayIcon size={20} />
+                                                            </div>
+                                                        )}
+                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                                            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white font-semibold flex items-center gap-2">
+                                                                <HeartIcon size={20} className="fill-white" />
+                                                                {post.likesCount.toLocaleString()}
+                                                            </span>
+                                                        </div>
+                                                    </motion.div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-16">
+                                            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-orange-400/20 to-rose-400/20 flex items-center justify-center">
+                                                <CameraIcon size={32} className="text-orange-400" />
                                             </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            ) : (
+                                            <h3 className="text-xl font-semibold text-white mb-2">No Posts Yet</h3>
+                                            <p className="text-white/50 mb-6 max-w-md mx-auto">
+                                                Share your first moment with your community
+                                            </p>
+                                            <Link
+                                                href="/create"
+                                                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-semibold hover:opacity-90 transition-opacity"
+                                            >
+                                                <PlusIcon size={18} />
+                                                Create Your First Post
+                                            </Link>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            {activeTab === 'journeys' && (
                                 <div className="text-center py-16">
-                                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-orange-400/20 to-rose-400/20 flex items-center justify-center">
-                                        <CameraIcon size={32} className="text-orange-400" />
-                                    </div>
-                                    <h3 className="text-xl font-semibold text-white mb-2">No Posts Yet</h3>
+                                    <div className="text-5xl mb-4">🎬</div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">No Journeys Yet</h3>
                                     <p className="text-white/50 mb-6 max-w-md mx-auto">
-                                        Share your first moment with your community
+                                        Share short videos with your community
                                     </p>
                                     <Link
-                                        href="/create"
-                                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-semibold hover:opacity-90 transition-opacity"
+                                        href="/create?type=moment"
+                                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 text-white font-semibold hover:opacity-90 transition-opacity"
                                     >
                                         <PlusIcon size={18} />
-                                        Create Your First Post
+                                        Create a Journey
                                     </Link>
                                 </div>
+                            )}
+
+                            {activeTab === 'saved' && (
+                                <>
+                                    {savedLoading ? (
+                                        <div className="grid grid-cols-3 gap-1 md:gap-2">
+                                            {[1,2,3,4,5,6].map(i => (
+                                                <div key={i} className="aspect-square bg-white/5 rounded-lg animate-pulse" />
+                                            ))}
+                                        </div>
+                                    ) : savedPosts.length > 0 ? (
+                                        <div className="grid grid-cols-3 gap-1 md:gap-2">
+                                            {savedPosts.map((post, i) => (
+                                                <Link key={post.id} href={`/post/${post.id}`}>
+                                                    <motion.div
+                                                        className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group"
+                                                        initial={{ opacity: 0, scale: 0.9 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        transition={{ delay: i * 0.03 }}
+                                                        whileHover={{ scale: 1.02 }}
+                                                    >
+                                                        {post.mediaUrl ? (
+                                                            <Image
+                                                                src={post.mediaUrl}
+                                                                alt={post.caption || `Saved post`}
+                                                                fill
+                                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full bg-gradient-to-br from-violet-900/50 to-blue-900/50 flex items-center justify-center">
+                                                                <span className="text-white/70 text-sm text-center px-2">{post.caption?.slice(0, 50)}</span>
+                                                            </div>
+                                                        )}
+                                                        {post.type === 'VIDEO' && (
+                                                            <div className="absolute top-2 right-2 text-white">
+                                                                <PlayIcon size={20} />
+                                                            </div>
+                                                        )}
+                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                                            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white font-semibold flex items-center gap-2">
+                                                                <HeartIcon size={20} className="fill-white" />
+                                                                {post.likesCount.toLocaleString()}
+                                                            </span>
+                                                        </div>
+                                                    </motion.div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-16">
+                                            <div className="text-5xl mb-4">🔖</div>
+                                            <h3 className="text-xl font-semibold text-white mb-2">No Saved Posts</h3>
+                                            <p className="text-white/50 mb-6 max-w-md mx-auto">
+                                                Bookmark posts you love and they&apos;ll appear here
+                                            </p>
+                                            <Link
+                                                href="/explore"
+                                                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/15 transition-colors"
+                                            >
+                                                Explore Posts
+                                            </Link>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>

@@ -798,6 +798,55 @@ router.delete('/:postId/like', authenticate, async (req: AuthRequest, res, next)
     }
 });
 
+// GET /api/v1/posts/saved - List saved posts for current user
+router.get('/saved', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { cursor, limit = '20' } = req.query;
+
+        const saves = await prisma.save.findMany({
+            where: { userId: req.userId! },
+            take: parseInt(limit as string) + 1,
+            ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
+            orderBy: { createdAt: 'desc' },
+            include: {
+                post: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                username: true,
+                                displayName: true,
+                                avatarUrl: true,
+                                isVerified: true,
+                            },
+                        },
+                        _count: {
+                            select: { likes: true, comments: true, shares: true },
+                        },
+                    },
+                },
+            },
+        });
+
+        const hasMore = saves.length > parseInt(limit as string);
+        const results = hasMore ? saves.slice(0, -1) : saves;
+
+        res.json({
+            posts: results.map((s) => ({
+                ...s.post,
+                likesCount: s.post._count.likes,
+                commentsCount: s.post._count.comments,
+                sharesCount: s.post._count.shares,
+                isSaved: true,
+                savedAt: s.createdAt,
+            })),
+            nextCursor: hasMore ? results[results.length - 1].id : null,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // POST /api/v1/posts/:postId/save
 router.post('/:postId/save', authenticate, async (req: AuthRequest, res, next) => {
     try {

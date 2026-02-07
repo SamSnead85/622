@@ -101,24 +101,51 @@ router.post('/signup', async (req, res, next) => {
             ip: req.ip,
         });
 
-        // Notify all admins/superadmins about new signup (non-blocking)
-        prisma.user.findMany({
-            where: { role: { in: ['ADMIN', 'SUPERADMIN'] } },
-            select: { id: true },
-        }).then(async (admins) => {
-            if (admins.length > 0) {
-                await prisma.notification.createMany({
-                    data: admins.map((admin) => ({
-                        userId: admin.id,
-                        type: 'SYSTEM' as const,
-                        actorId: user.id,
-                        message: `New member joined: ${user.displayName || user.username} (@${user.username})`,
-                    })),
+        // === Post-signup automation (non-blocking) ===
+        (async () => {
+            try {
+                // 1. Notify all admins/superadmins about new signup
+                const admins = await prisma.user.findMany({
+                    where: { role: { in: ['ADMIN', 'SUPERADMIN'] } },
+                    select: { id: true, username: true },
                 });
+                if (admins.length > 0) {
+                    await prisma.notification.createMany({
+                        data: admins.map((admin) => ({
+                            userId: admin.id,
+                            type: 'SYSTEM' as const,
+                            actorId: user.id,
+                            message: `New member joined: ${user.displayName || user.username} (@${user.username})`,
+                        })),
+                    });
+
+                    // 2. Auto-follow the new user from admin accounts (so they appear in admin feeds)
+                    //    AND make the new user follow admin accounts (so they see content immediately)
+                    for (const admin of admins) {
+                        // Admin follows the new user
+                        await prisma.follow.create({
+                            data: { followerId: admin.id, followingId: user.id },
+                        }).catch(() => {}); // Ignore if already following
+
+                        // New user follows admin (so their feed isn't empty)
+                        await prisma.follow.create({
+                            data: { followerId: user.id, followingId: admin.id },
+                        }).catch(() => {});
+                    }
+                }
+
+                // 3. Send a welcome notification to the new user
+                await prisma.notification.create({
+                    data: {
+                        userId: user.id,
+                        type: 'SYSTEM' as const,
+                        message: `Welcome to 0G, ${user.displayName || user.username}! 🎉 You're part of a new kind of social platform — one built on privacy, transparency, and community ownership. Start by creating your first post or exploring what others are sharing.`,
+                    },
+                });
+            } catch (err) {
+                console.error('[Auth] Post-signup automation error:', err);
             }
-        }).catch((err) => {
-            console.error('[Auth] Failed to notify admins of new signup:', err);
-        });
+        })();
 
         res.status(201).json({
             user: {

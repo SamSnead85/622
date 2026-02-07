@@ -49,6 +49,7 @@ export default function StoriesViewerPage() {
     const [progress, setProgress] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
     const [reply, setReply] = useState('');
+    const [isLiked, setIsLiked] = useState(false);
 
     const STORY_DURATION = 5000; // 5 seconds per story
 
@@ -112,7 +113,59 @@ export default function StoriesViewerPage() {
                 },
             }).catch(console.error);
         }
+        // Reset like state when story changes
+        setIsLiked(false);
     }, [currentStory, isAuthenticated, API_URL]);
+
+    // Handle like on current story (creates a like via posts API since moments are posts)
+    const handleLikeStory = async () => {
+        if (!currentStory || !isAuthenticated) return;
+        const token = localStorage.getItem('0g_token');
+        setIsLiked(true);
+        try {
+            await fetch(`${API_URL}/api/v1/posts/${currentStory.id}/like`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+        } catch (err) {
+            console.error('Failed to like story:', err);
+            setIsLiked(false);
+        }
+    };
+
+    // Handle reply to story (sends a DM to the story author)
+    const handleSendReply = async () => {
+        if (!reply.trim() || !currentStory || !isAuthenticated) return;
+        const token = localStorage.getItem('0g_token');
+        try {
+            // Create or get conversation with the story author
+            const convRes = await fetch(`${API_URL}/api/v1/messages/conversations`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ participantIds: [currentStory.user.id] }),
+            });
+            if (convRes.ok) {
+                const convData = await convRes.json();
+                const conversationId = convData.conversation?.id || convData.id;
+                if (conversationId) {
+                    await fetch(`${API_URL}/api/v1/messages/conversations/${conversationId}/messages`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ content: `Replied to your story: ${reply}` }),
+                    });
+                }
+            }
+            setReply('');
+        } catch (err) {
+            console.error('Failed to send reply:', err);
+        }
+    };
 
 
 
@@ -331,10 +384,17 @@ export default function StoriesViewerPage() {
                                 onFocus={() => setIsPaused(true)}
                                 onBlur={() => setIsPaused(false)}
                             />
-                            <button className="p-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-colors">
-                                <HeartIcon size={20} className="text-white" />
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleLikeStory(); }}
+                                className={`p-3 rounded-full backdrop-blur-sm border transition-colors ${isLiked ? 'bg-rose-500/30 border-rose-500/50' : 'bg-white/10 border-white/20 hover:bg-white/20'}`}
+                            >
+                                <HeartIcon size={20} className={isLiked ? 'text-rose-500 fill-current' : 'text-white'} />
                             </button>
-                            <button className="p-3 rounded-full bg-[#00D4FF] hover:opacity-90 transition-opacity">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleSendReply(); }}
+                                disabled={!reply.trim()}
+                                className="p-3 rounded-full bg-[#00D4FF] hover:opacity-90 transition-opacity disabled:opacity-40"
+                            >
                                 <SendIcon size={20} className="text-black" />
                             </button>
                         </div>

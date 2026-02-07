@@ -243,6 +243,43 @@ export default function DashboardPage() {
                     </div>
 
 
+                    {/* First-time user: Introduce yourself prompt */}
+                    {posts.length === 0 && !postsLoading && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mb-4 p-5 rounded-2xl bg-gradient-to-br from-[#00D4FF]/5 via-[#8B5CF6]/5 to-transparent border border-[#00D4FF]/20"
+                        >
+                            <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center shrink-0">
+                                    <WaveIcon size={24} className="text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-bold text-white mb-1">Welcome to 0G! 👋</h3>
+                                    <p className="text-white/50 text-sm mb-4 leading-relaxed">
+                                        You&apos;re one of the first people here. Introduce yourself to the community -- share who you are, what you&apos;re passionate about, or just say hello. Your post will be one of the first things new members see.
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        <Link
+                                            href="/create"
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold text-sm hover:opacity-90 transition-opacity active:scale-95"
+                                        >
+                                            <PlusIcon size={16} />
+                                            Create Your First Post
+                                        </Link>
+                                        <Link
+                                            href="/explore"
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/70 font-medium text-sm hover:bg-white/10 transition-colors active:scale-95"
+                                        >
+                                            <SearchIcon size={16} />
+                                            Explore First
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
                     {/* Feed Mode Toggle */}
                     <div className="mb-4 flex items-center justify-between">
                         <FeedModeToggle mode={feedMode} onChange={setFeedMode} />

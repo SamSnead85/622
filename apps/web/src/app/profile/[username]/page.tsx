@@ -2,21 +2,29 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { API_URL } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePullToRefresh } from '@/hooks/useInfiniteScroll';
 import { Navigation } from '@/components/Navigation';
 import { RightSidebar } from '@/components/RightSidebar';
-import { HeartIcon, PlayIcon } from '@/components/icons'; // Ensure PlayIcon is imported if referenced
+import { HeartIcon, PlayIcon } from '@/components/icons';
 
 export default function PublicProfilePage() {
     const params = useParams();
+    const router = useRouter();
+    const { user: currentUser, isAuthenticated } = useAuth();
     const { username } = params as { username: string };
     const [profile, setProfile] = useState<any>(null);
-    const [posts, setPosts] = useState<any[]>([]); // Using 'any' for now to match API response speed
+    const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showMoreMenu, setShowMoreMenu] = useState(false);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [isReporting, setIsReporting] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportReason, setReportReason] = useState('');
+    const [reportSubmitted, setReportSubmitted] = useState(false);
     const moreMenuRef = useRef<HTMLDivElement>(null);
 
     // Close more menu on outside click
@@ -38,7 +46,6 @@ export default function PublicProfilePage() {
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
         try {
-            // GET /api/v1/users/:username returns user object directly (not wrapped in .user)
             const userRes = await fetch(`${API_URL}/api/v1/users/${encodeURIComponent(username)}`, {
                 headers,
                 credentials: 'include',
@@ -46,6 +53,7 @@ export default function PublicProfilePage() {
             if (!userRes.ok) throw new Error('User not found');
             const userData = await userRes.json();
             setProfile(userData);
+            if (userData?.isFollowing) setIsFollowing(true);
 
             if (userData?.id) {
                 const postsRes = await fetch(`${API_URL}/api/v1/users/${userData.id}/posts`, {
@@ -63,6 +71,89 @@ export default function PublicProfilePage() {
             setLoading(false);
         }
     }, [username]);
+
+    // Follow / Unfollow
+    const handleFollow = async () => {
+        if (!isAuthenticated || !profile?.id) {
+            router.push('/login');
+            return;
+        }
+        const token = localStorage.getItem('0g_token');
+        const wasFollowing = isFollowing;
+        setIsFollowing(!wasFollowing);
+        try {
+            await fetch(`${API_URL}/api/v1/users/${profile.id}/follow`, {
+                method: wasFollowing ? 'DELETE' : 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+        } catch {
+            setIsFollowing(wasFollowing);
+        }
+    };
+
+    // Report user
+    const handleReport = async () => {
+        if (!isAuthenticated || !profile?.id || !reportReason.trim()) return;
+        setIsReporting(true);
+        const token = localStorage.getItem('0g_token');
+        try {
+            const res = await fetch(`${API_URL}/api/v1/reports`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    targetId: profile.id,
+                    targetType: 'USER',
+                    reason: reportReason.trim(),
+                }),
+            });
+            if (res.ok) {
+                setReportSubmitted(true);
+                setTimeout(() => {
+                    setShowReportModal(false);
+                    setReportSubmitted(false);
+                    setReportReason('');
+                }, 2000);
+            }
+        } catch (err) {
+            console.error('Failed to submit report:', err);
+        } finally {
+            setIsReporting(false);
+        }
+    };
+
+    // Block user (uses follow endpoint DELETE + navigates away)
+    const handleBlock = async () => {
+        if (!isAuthenticated || !profile?.id) return;
+        const token = localStorage.getItem('0g_token');
+        try {
+            // Unfollow if following
+            if (isFollowing) {
+                await fetch(`${API_URL}/api/v1/users/${profile.id}/follow`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+            }
+            // Submit a block report for admin visibility
+            await fetch(`${API_URL}/api/v1/reports`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    targetId: profile.id,
+                    targetType: 'USER',
+                    reason: 'User blocked by viewer',
+                }),
+            });
+            router.push('/dashboard');
+        } catch (err) {
+            console.error('Failed to block user:', err);
+        }
+    };
 
     const { pullDistance, isRefreshing, containerRef: pullRef } = usePullToRefresh({
         onRefresh: loadProfileData,
@@ -179,12 +270,26 @@ export default function PublicProfilePage() {
 
                             {/* Actions */}
                             <div className="mb-4 self-center md:self-end flex items-center gap-2">
-                                <button className="bg-gradient-to-r from-[#00D4FF] to-[#7C3AED] text-white font-semibold px-6 py-2.5 rounded-xl hover:shadow-[0_4px_20px_rgba(0,212,255,0.3)] transition-all duration-300 hover:scale-[1.02]">
-                                    Follow
-                                </button>
-                                <button className="bg-white/[0.06] border border-white/[0.1] text-white font-medium px-6 py-2.5 rounded-xl hover:bg-white/[0.1] hover:border-[#00D4FF]/20 transition-all duration-300">
-                                    Message
-                                </button>
+                                {currentUser?.id !== profile?.id && (
+                                    <>
+                                        <button
+                                            onClick={handleFollow}
+                                            className={`font-semibold px-6 py-2.5 rounded-xl transition-all duration-300 hover:scale-[1.02] ${
+                                                isFollowing
+                                                    ? 'bg-white/[0.06] border border-white/[0.1] text-white hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'
+                                                    : 'bg-gradient-to-r from-[#00D4FF] to-[#7C3AED] text-white hover:shadow-[0_4px_20px_rgba(0,212,255,0.3)]'
+                                            }`}
+                                        >
+                                            {isFollowing ? 'Following' : 'Follow'}
+                                        </button>
+                                        <button
+                                            onClick={() => router.push(`/messages?user=${profile?.username}`)}
+                                            className="bg-white/[0.06] border border-white/[0.1] text-white font-medium px-6 py-2.5 rounded-xl hover:bg-white/[0.1] hover:border-[#00D4FF]/20 transition-all duration-300"
+                                        >
+                                            Message
+                                        </button>
+                                    </>
+                                )}
                                 <div className="relative" ref={moreMenuRef}>
                                     <button
                                         onClick={() => setShowMoreMenu(!showMoreMenu)}
@@ -197,13 +302,13 @@ export default function PublicProfilePage() {
                                     {showMoreMenu && (
                                         <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a2e] rounded-xl border border-white/10 shadow-xl z-50 overflow-hidden">
                                             <button
-                                                onClick={() => { /* Call POST /api/v1/reports with type: 'USER' */ setShowMoreMenu(false); }}
+                                                onClick={() => { setShowMoreMenu(false); setShowReportModal(true); }}
                                                 className="w-full px-4 py-3 text-left text-sm text-white/70 hover:bg-white/5 transition-colors"
                                             >
                                                 Report User
                                             </button>
                                             <button
-                                                onClick={() => { /* Call POST /api/v1/users/:id/block */ setShowMoreMenu(false); }}
+                                                onClick={() => { setShowMoreMenu(false); if (confirm('Are you sure you want to block this user? You will be redirected to your dashboard.')) handleBlock(); }}
                                                 className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-white/5 transition-colors"
                                             >
                                                 Block User
@@ -265,6 +370,53 @@ export default function PublicProfilePage() {
                     </div>
                 </div>
             </main>
+
+            {/* Report Modal */}
+            {showReportModal && (
+                <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-[#1a1a2e] rounded-2xl border border-white/10 p-6 w-full max-w-md"
+                    >
+                        {reportSubmitted ? (
+                            <div className="text-center py-8">
+                                <div className="text-4xl mb-3">✅</div>
+                                <h3 className="text-xl font-bold text-white mb-2">Report Submitted</h3>
+                                <p className="text-white/50">Thank you. Our team will review this report.</p>
+                            </div>
+                        ) : (
+                            <>
+                                <h3 className="text-xl font-bold text-white mb-1">Report @{profile?.username}</h3>
+                                <p className="text-white/50 text-sm mb-4">Help us understand what&apos;s wrong. Your report is confidential.</p>
+                                <textarea
+                                    value={reportReason}
+                                    onChange={(e) => setReportReason(e.target.value)}
+                                    placeholder="Describe the issue..."
+                                    rows={4}
+                                    maxLength={1000}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-[#00D4FF]/40 focus:outline-none resize-none mb-4"
+                                />
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { setShowReportModal(false); setReportReason(''); }}
+                                        className="flex-1 py-3 rounded-xl bg-white/5 text-white/70 font-medium hover:bg-white/10 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleReport}
+                                        disabled={!reportReason.trim() || isReporting}
+                                        className="flex-1 py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors disabled:opacity-40"
+                                    >
+                                        {isReporting ? 'Submitting...' : 'Submit Report'}
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 }

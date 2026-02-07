@@ -392,11 +392,34 @@ export default function MomentsPage() {
         }
     };
 
-    // Handle bookmark
-    const handleBookmark = (postId: string) => {
+    // Handle bookmark (persist via save/unsave API)
+    const handleBookmark = async (postId: string) => {
+        if (!isAuthenticated) {
+            router.push('/login');
+            return;
+        }
+
+        const post = posts.find(p => p.id === postId);
+        const wasBookmarked = post?.isBookmarked;
+
+        // Optimistic update
         setPosts(prev => prev.map(p =>
             p.id === postId ? { ...p, isBookmarked: !p.isBookmarked } : p
         ));
+
+        try {
+            const token = localStorage.getItem('0g_token');
+            await fetch(`${API_URL}/api/v1/posts/${postId}/save`, {
+                method: wasBookmarked ? 'DELETE' : 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+        } catch (err) {
+            console.error('Error bookmarking post:', err);
+            // Revert on failure
+            setPosts(prev => prev.map(p =>
+                p.id === postId ? { ...p, isBookmarked: wasBookmarked } : p
+            ));
+        }
     };
 
     // Handle share
