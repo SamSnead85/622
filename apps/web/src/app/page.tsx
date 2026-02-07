@@ -694,6 +694,215 @@ function TestimonialsSection() {
 }
 
 // ============================================
+// PRESS & MEDIA SECTION
+// Social proof and credibility
+// ============================================
+function PressSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+    const pressItems = [
+        {
+            outlet: 'VibeCIO',
+            title: 'ZeroG: The Digital Sovereignty Revolution',
+            quote: 'A bold new platform challenging the surveillance economy with community-driven governance and true data ownership.',
+            url: 'https://vibecio.com/article/zerog-digital-sovereignty-revolution',
+            gradient: 'from-[#00D4FF] to-[#8B5CF6]',
+        },
+    ];
+
+    return (
+        <section ref={ref} className="relative py-32 border-t border-white/5">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                <motion.div
+                    className="text-center mb-16"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.8 }}
+                >
+                    <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-4 font-light">In the Press</p>
+                    <h2 className="text-3xl md:text-4xl font-light text-white">
+                        The world is taking notice
+                    </h2>
+                </motion.div>
+
+                <div className="max-w-3xl mx-auto space-y-6">
+                    {pressItems.map((item, i) => (
+                        <motion.a
+                            key={item.outlet}
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block group"
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={isInView ? { opacity: 1, y: 0 } : {}}
+                            transition={{ duration: 0.6, delay: i * 0.15 }}
+                        >
+                            <div className="relative p-8 md:p-10 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-sm hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 overflow-hidden">
+                                {/* Gradient accent line */}
+                                <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r ${item.gradient} opacity-50`} />
+
+                                <div className="flex items-start justify-between gap-4 mb-4">
+                                    <div>
+                                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${item.gradient} text-black`}>
+                                            {item.outlet}
+                                        </span>
+                                    </div>
+                                    <svg className="w-5 h-5 text-white/20 group-hover:text-white/50 transition-colors flex-shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </div>
+
+                                <h3 className="text-xl md:text-2xl font-light text-white mb-3 group-hover:text-[#00D4FF] transition-colors">
+                                    {item.title}
+                                </h3>
+
+                                <p className="text-white/40 font-light leading-relaxed">
+                                    &ldquo;{item.quote}&rdquo;
+                                </p>
+
+                                <p className="mt-4 text-[#00D4FF] text-sm font-medium group-hover:underline">
+                                    Read the full article →
+                                </p>
+                            </div>
+                        </motion.a>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
+// MANIFESTO / MISSION SECTION
+// Bold brand statement
+// ============================================
+function ManifestoSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+    const principles = [
+        {
+            number: '01',
+            title: 'You Own Your Identity',
+            description: 'Your profile, your posts, your data — it all belongs to you. Export it anytime. Delete it permanently. No hostage-taking.',
+        },
+        {
+            number: '02',
+            title: 'Communities Set the Rules',
+            description: 'No Silicon Valley algorithm decides what you see. Your community curates its own feed, moderates its own space, governs its own future.',
+        },
+        {
+            number: '03',
+            title: 'Privacy Is Not Optional',
+            description: 'End-to-end encrypted messaging. Zero data selling. No behavioral profiling. Travel Shield mode for when your device may be inspected.',
+        },
+        {
+            number: '04',
+            title: 'No Ads. No Manipulation.',
+            description: 'We will never sell advertising. Our revenue comes from optional premium features, not from auctioning your attention to the highest bidder.',
+        },
+        {
+            number: '05',
+            title: 'Built for the Global Majority',
+            description: 'From Lagos to Lahore, from Detroit to Dhaka — designed for communities the mainstream platforms forgot.',
+        },
+    ];
+
+    return (
+        <section ref={ref} className="relative py-32 md:py-40">
+            {/* Subtle gradient accent */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[1px] bg-gradient-to-r from-transparent via-[#00D4FF]/20 to-transparent" />
+            </div>
+
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                <motion.div
+                    className="max-w-3xl mb-20"
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 1 }}
+                >
+                    <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-6 font-light">Our Manifesto</p>
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.15] mb-8">
+                        Social media was a{' '}
+                        <span className="bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] bg-clip-text text-transparent">
+                            revolution
+                        </span>{' '}
+                        that got{' '}
+                        <span className="text-white/40">
+                            hijacked.
+                        </span>
+                    </h2>
+                    <p className="text-lg md:text-xl text-white/40 font-light leading-relaxed">
+                        It was supposed to connect us. Instead, it surveils us. It was supposed to empower communities.
+                        Instead, it extracts from them. 0G exists to finish what social media started —
+                        a platform where the people who use it are the people who own it.
+                    </p>
+                </motion.div>
+
+                <div className="space-y-0 border-t border-white/5">
+                    {principles.map((p, i) => (
+                        <motion.div
+                            key={p.number}
+                            className="grid md:grid-cols-12 gap-4 md:gap-8 py-8 md:py-10 border-b border-white/5 group"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={isInView ? { opacity: 1, y: 0 } : {}}
+                            transition={{ duration: 0.5, delay: i * 0.1 }}
+                        >
+                            <div className="md:col-span-1">
+                                <span className="text-[#00D4FF]/40 text-sm font-mono">{p.number}</span>
+                            </div>
+                            <div className="md:col-span-3">
+                                <h3 className="text-white font-medium text-lg group-hover:text-[#00D4FF] transition-colors">
+                                    {p.title}
+                                </h3>
+                            </div>
+                            <div className="md:col-span-8">
+                                <p className="text-white/40 font-light leading-relaxed">
+                                    {p.description}
+                                </p>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+
+                {/* Digital Sovereignty callout */}
+                <motion.div
+                    className="mt-16 p-8 md:p-12 rounded-3xl bg-gradient-to-br from-[#00D4FF]/5 to-[#8B5CF6]/5 border border-[#00D4FF]/10 relative overflow-hidden"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.8, delay: 0.6 }}
+                >
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#00D4FF]/5 rounded-full blur-[100px]" />
+                    <div className="relative">
+                        <p className="text-[#00D4FF] text-xs tracking-[0.3em] uppercase font-medium mb-4">Digital Sovereignty</p>
+                        <h3 className="text-2xl md:text-3xl font-light text-white mb-4 leading-snug max-w-2xl">
+                            In the age of AI and mass surveillance, owning your digital identity isn&apos;t a luxury — it&apos;s a right.
+                        </h3>
+                        <p className="text-white/40 font-light max-w-2xl mb-6">
+                            0G is built on the principle that your digital life should be as sovereign as your physical one.
+                            Your conversations, your communities, your creative work — protected by architecture, not just policy.
+                        </p>
+                        <a
+                            href="https://vibecio.com/article/zerog-digital-sovereignty-revolution"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-[#00D4FF] text-sm font-medium hover:underline"
+                        >
+                            Read about the Digital Sovereignty Revolution
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </a>
+                    </div>
+                </motion.div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
 // CTA SECTION
 // Final conversion section
 // ============================================
@@ -761,16 +970,34 @@ function Footer() {
         { label: 'Contact', href: 'mailto:support@0g.social' },
     ];
 
+    const pressLinks = [
+        { label: 'VibeCIO Feature', href: 'https://vibecio.com/article/zerog-digital-sovereignty-revolution', external: true },
+        { label: 'Press Kit', href: 'mailto:press@0g.social', external: true },
+        { label: 'Brand Guidelines', href: '/about', external: false },
+    ];
+
     return (
         <footer className="border-t border-white/5 py-16 bg-black/50">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
-                <div className="grid md:grid-cols-4 gap-12 mb-12">
+                <div className="grid md:grid-cols-5 gap-12 mb-12">
                     <div className="md:col-span-2">
                         <Wordmark />
                         <p className="mt-6 text-white/30 text-sm font-light max-w-sm leading-relaxed">
-                            Social media without the weight. A platform built on transparency,
-                            privacy, and genuine human connection.
+                            Social media without the weight. A platform built for digital sovereignty,
+                            genuine privacy, and communities that govern themselves.
                         </p>
+                        {/* Social links placeholder */}
+                        <div className="flex items-center gap-4 mt-6">
+                            <a href="https://twitter.com/ZeroG_Social" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/20 transition-all text-sm">
+                                𝕏
+                            </a>
+                            <a href="https://instagram.com/0gsocial" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/20 transition-all">
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                            </a>
+                            <a href="https://tiktok.com/@0gsocial" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/20 transition-all">
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 0010.86 4.46V13a8.27 8.27 0 005.58 2.16V11.7a4.83 4.83 0 01-3.77-1.69V6.69h3.77z"/></svg>
+                            </a>
+                        </div>
                     </div>
 
                     <div>
@@ -794,6 +1021,26 @@ function Footer() {
                                     {item.href.startsWith('mailto:') ? (
                                         <a href={item.href} className="text-white/40 hover:text-white transition-colors text-sm font-light">
                                             {item.label}
+                                        </a>
+                                    ) : (
+                                        <Link href={item.href} className="text-white/40 hover:text-white transition-colors text-sm font-light">
+                                            {item.label}
+                                        </Link>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 className="text-white/50 text-xs tracking-widest uppercase mb-4">Press</h4>
+                        <ul className="space-y-3">
+                            {pressLinks.map((item) => (
+                                <li key={item.label}>
+                                    {item.external ? (
+                                        <a href={item.href} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors text-sm font-light flex items-center gap-1">
+                                            {item.label}
+                                            <svg className="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                                         </a>
                                     ) : (
                                         <Link href={item.href} className="text-white/40 hover:text-white transition-colors text-sm font-light">
@@ -845,8 +1092,10 @@ export default function HomePage() {
             <HeroSection />
             <VisionSection />
             <StoryTellersSection />
+            <ManifestoSection />
             <ImpactSection />
             <FeaturesSection />
+            <PressSection />
             <CTASection />
             <Footer />
         </main>
