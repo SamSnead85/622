@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { API_URL } from '@/lib/api';
 import {
     MegaphoneIcon,
     HeartIcon,
@@ -24,7 +25,7 @@ import {
 // TYPES
 // ============================================
 
-export type BulletinType = 'ANNOUNCEMENT' | 'NEED' | 'EVENT' | 'SERVICE' | 'DISCUSSION';
+export type BulletinType = 'ANNOUNCEMENT' | 'NEED' | 'EVENT' | 'SERVICE' | 'JOB' | 'DISCUSSION';
 export type BulletinCategory = 'COMMUNITY' | 'CHARITY' | 'EDUCATION' | 'BUSINESS' | 'SOCIAL' | 'EMERGENCY' | 'OTHER';
 export type BulletinPriority = 'NORMAL' | 'IMPORTANT' | 'URGENT';
 
@@ -63,10 +64,18 @@ export interface BulletinPost {
 // CATEGORY CONFIG
 // ============================================
 
+const JobIcon = () => (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+        <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+    </svg>
+);
+
 const BULLETIN_TYPES: { value: BulletinType; label: string; icon: React.ReactNode; color: string }[] = [
     { value: 'ANNOUNCEMENT', label: 'Announcements', icon: <MegaphoneIcon size={18} />, color: 'from-blue-500 to-cyan-500' },
-    { value: 'NEED', label: 'Needs', icon: <HeartIcon size={18} />, color: 'from-rose-500 to-pink-500' },
     { value: 'EVENT', label: 'Events', icon: <CalendarIcon size={18} />, color: 'from-purple-500 to-indigo-500' },
+    { value: 'JOB', label: 'Jobs & Gigs', icon: <JobIcon />, color: 'from-sky-500 to-blue-600' },
+    { value: 'NEED', label: 'Looking For', icon: <HeartIcon size={18} />, color: 'from-rose-500 to-pink-500' },
     { value: 'SERVICE', label: 'Services', icon: <ZapIcon size={18} />, color: 'from-amber-500 to-orange-500' },
     { value: 'DISCUSSION', label: 'Discussion', icon: <MessageIcon size={18} />, color: 'from-emerald-500 to-teal-500' },
 ];
@@ -193,6 +202,21 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
                     </div>
                 )}
 
+                {/* External Link */}
+                {post.externalLink && (
+                    <a
+                        href={post.externalLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-colors text-sm"
+                    >
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        Learn more →
+                    </a>
+                )}
+
                 {/* Tags */}
                 {post.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-4">
@@ -308,100 +332,191 @@ export function BulletinBoard({ communityId, showComposer = true, onCreatePost }
     const [posts, setPosts] = useState<BulletinPost[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Mock data for demonstration
+    // Seed data used as fallback when API returns empty
+    const SEED_POSTS: BulletinPost[] = [
+        {
+            id: 'seed-heal',
+            type: 'EVENT',
+            title: 'HEAL Palestine — Medical Aid Fundraiser',
+            content: 'Join us in supporting HEAL Palestine\'s mission to provide essential medical care and healthcare access to Palestinian communities. Learn about ongoing medical relief efforts, hear from doctors on the ground, and find out how you can help — whether through donations, volunteering, or spreading awareness. Every contribution matters.',
+            externalLink: 'https://www.healpalestine.org/',
+            upvotes: 89,
+            downvotes: 0,
+            viewCount: 412,
+            category: 'CHARITY',
+            tags: ['palestine', 'medical-aid', 'fundraiser', 'humanitarian'],
+            isPinned: true,
+            isVerified: true,
+            location: 'Online & In-Person',
+            eventDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            author: { id: 'heal', displayName: 'HEAL Palestine', avatarUrl: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=200&h=200&fit=crop', isVerified: true },
+            commentsCount: 24,
+            createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+            id: 'seed-1',
+            type: 'ANNOUNCEMENT',
+            title: 'Community Iftar this Friday — All Welcome!',
+            content: 'Join us for a beautiful community iftar at the community center. Bring a dish to share if you can, but all are welcome regardless. We will have a short program and plenty of food for everyone.',
+            upvotes: 47,
+            downvotes: 0,
+            viewCount: 234,
+            category: 'COMMUNITY',
+            tags: ['ramadan', 'community', 'iftar'],
+            isPinned: true,
+            isVerified: true,
+            location: 'Community Center',
+            eventDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+            author: { id: '1', displayName: 'Community Admin', isVerified: true },
+            commentsCount: 12,
+            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+            id: 'seed-job-1',
+            type: 'JOB',
+            title: 'Looking for a part-time graphic designer',
+            content: 'Small Muslim-owned business looking for a freelance graphic designer to help with social media content, branding materials, and product packaging. Flexible hours, remote-friendly. Portfolio required.',
+            upvotes: 22,
+            downvotes: 0,
+            viewCount: 178,
+            category: 'BUSINESS',
+            tags: ['design', 'freelance', 'remote', 'hiring'],
+            isPinned: false,
+            isVerified: false,
+            author: { id: 'job1', displayName: 'Barakah Goods', isVerified: false },
+            commentsCount: 7,
+            createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+            id: 'seed-2',
+            type: 'NEED',
+            title: 'Family needs help with groceries this week',
+            content: 'A local family is going through a difficult time and could use some help with groceries. If you can contribute or help deliver, please reach out. Everything is appreciated.',
+            upvotes: 31,
+            downvotes: 0,
+            viewCount: 156,
+            category: 'CHARITY',
+            tags: ['help', 'groceries', 'urgent'],
+            isPinned: false,
+            isVerified: true,
+            author: { id: '2', displayName: 'Sarah Ahmed', isVerified: true },
+            commentsCount: 8,
+            createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+            expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+            id: 'seed-3',
+            type: 'EVENT',
+            title: 'Youth Basketball Tournament',
+            content: 'Annual youth basketball tournament for ages 12-18. Teams of 5, register by Wednesday. Prizes for top 3 teams!',
+            upvotes: 23,
+            downvotes: 0,
+            viewCount: 89,
+            category: 'SOCIAL',
+            tags: ['sports', 'youth', 'basketball'],
+            isPinned: false,
+            isVerified: false,
+            location: 'Recreation Center',
+            eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            author: { id: '3', displayName: 'Youth Committee', isVerified: false },
+            commentsCount: 5,
+            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+            id: 'seed-job-2',
+            type: 'JOB',
+            title: 'Community center seeking weekend volunteers',
+            content: 'Our community center is looking for volunteers to help run weekend programs for kids ages 5-12. Activities include arts & crafts, sports, and mentoring. 4-hour shifts, flexible schedule.',
+            upvotes: 14,
+            downvotes: 0,
+            viewCount: 92,
+            category: 'COMMUNITY',
+            tags: ['volunteer', 'kids', 'weekend'],
+            isPinned: false,
+            isVerified: true,
+            author: { id: 'cc', displayName: 'Community Center', isVerified: true },
+            commentsCount: 4,
+            createdAt: new Date(Date.now() - 1.5 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+            id: 'seed-4',
+            type: 'SERVICE',
+            title: 'Free tutoring for high school students',
+            content: 'Offering free tutoring in math and science for high school students. Sessions on weekends. DM to schedule.',
+            upvotes: 18,
+            downvotes: 0,
+            viewCount: 67,
+            category: 'EDUCATION',
+            tags: ['tutoring', 'education', 'free'],
+            isPinned: false,
+            isVerified: false,
+            author: { id: '4', displayName: 'Hassan', isVerified: false },
+            commentsCount: 3,
+            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+            id: 'seed-5',
+            type: 'DISCUSSION',
+            title: 'Ideas for summer community programs?',
+            content: 'What programs would you like to see this summer? Share your ideas and lets make it happen together!',
+            upvotes: 15,
+            downvotes: 0,
+            viewCount: 45,
+            category: 'COMMUNITY',
+            tags: ['ideas', 'summer', 'programs'],
+            isPinned: false,
+            isVerified: false,
+            author: { id: '5', displayName: 'Planning Committee', isVerified: false },
+            commentsCount: 22,
+            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+    ];
+
+    // Fetch from API, fall back to seed data
     useEffect(() => {
         setIsLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            setPosts([
-                {
-                    id: '1',
-                    type: 'ANNOUNCEMENT',
-                    title: 'Community Iftar this Friday - All Welcome!',
-                    content: 'Join us for a beautiful community iftar at the community center. Bring a dish to share if you can, but all are welcome regardless. We will have a short program and plenty of food for everyone.',
-                    upvotes: 47,
-                    downvotes: 0,
-                    viewCount: 234,
-                    category: 'COMMUNITY',
-                    tags: ['ramadan', 'community', 'iftar'],
-                    isPinned: true,
-                    isVerified: true,
-                    location: 'Community Center',
-                    eventDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                    author: { id: '1', displayName: 'Community Admin', isVerified: true },
-                    commentsCount: 12,
-                    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-                },
-                {
-                    id: '2',
-                    type: 'NEED',
-                    title: 'Family needs help with groceries this week',
-                    content: 'A local family is going through a difficult time and could use some help with groceries. If you can contribute or help deliver, please reach out. Everything is appreciated.',
-                    upvotes: 31,
-                    downvotes: 0,
-                    viewCount: 156,
-                    category: 'CHARITY',
-                    tags: ['help', 'groceries', 'urgent'],
-                    isPinned: false,
-                    isVerified: true,
-                    author: { id: '2', displayName: 'Sarah Ahmed', isVerified: true },
-                    commentsCount: 8,
-                    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-                    expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
-                },
-                {
-                    id: '3',
-                    type: 'EVENT',
-                    title: 'Youth Basketball Tournament',
-                    content: 'Annual youth basketball tournament for ages 12-18. Teams of 5, register by Wednesday. Prizes for top 3 teams!',
-                    upvotes: 23,
-                    downvotes: 0,
-                    viewCount: 89,
-                    category: 'SOCIAL',
-                    tags: ['sports', 'youth', 'basketball'],
-                    isPinned: false,
-                    isVerified: false,
-                    location: 'Recreation Center',
-                    eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                    author: { id: '3', displayName: 'Youth Committee', isVerified: false },
-                    commentsCount: 5,
-                    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-                },
-                {
-                    id: '4',
-                    type: 'SERVICE',
-                    title: 'Free tutoring for high school students',
-                    content: 'Offering free tutoring in math and science for high school students. Sessions on weekends. DM to schedule.',
-                    upvotes: 18,
-                    downvotes: 0,
-                    viewCount: 67,
-                    category: 'EDUCATION',
-                    tags: ['tutoring', 'education', 'free'],
-                    isPinned: false,
-                    isVerified: false,
-                    author: { id: '4', displayName: 'Hassan', isVerified: false },
-                    commentsCount: 3,
-                    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                },
-                {
-                    id: '5',
-                    type: 'DISCUSSION',
-                    title: 'Ideas for summer community programs?',
-                    content: 'What programs would you like to see this summer? Share your ideas and lets make it happen together!',
-                    upvotes: 15,
-                    downvotes: 0,
-                    viewCount: 45,
-                    category: 'COMMUNITY',
-                    tags: ['ideas', 'summer', 'programs'],
-                    isPinned: false,
-                    isVerified: false,
-                    author: { id: '5', displayName: 'Planning Committee', isVerified: false },
-                    commentsCount: 22,
-                    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-                },
-            ]);
+        const fetchBulletins = async () => {
+            try {
+                const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
+                const res = await fetch(`${API_URL}/api/v1/community/bulletins`, {
+                    headers: {
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    },
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const apiPosts: BulletinPost[] = (data.bulletins || data || []).map((b: any) => ({
+                        id: b.id,
+                        type: b.type || 'ANNOUNCEMENT',
+                        title: b.title,
+                        content: b.content || b.desc || '',
+                        externalLink: b.externalLink,
+                        mediaUrl: b.mediaUrl,
+                        upvotes: b.upvotes || 0,
+                        downvotes: b.downvotes || 0,
+                        viewCount: b.viewCount || 0,
+                        category: b.category || 'COMMUNITY',
+                        tags: b.tags || [],
+                        isPinned: b.isPinned || false,
+                        isVerified: b.isVerified || false,
+                        location: b.location,
+                        eventDate: b.eventDate,
+                        expiresAt: b.expiresAt,
+                        author: b.author || { id: '0', displayName: b.author_name || 'Unknown', isVerified: false },
+                        commentsCount: b.commentsCount || b._count?.comments || 0,
+                        createdAt: b.createdAt || new Date().toISOString(),
+                    }));
+                    // Use API data if available, otherwise seed data
+                    setPosts(apiPosts.length > 0 ? apiPosts : SEED_POSTS);
+                } else {
+                    setPosts(SEED_POSTS);
+                }
+            } catch {
+                setPosts(SEED_POSTS);
+            }
             setIsLoading(false);
-        }, 500);
+        };
+        fetchBulletins();
     }, [communityId]);
 
     const handleInterested = (id: string) => {
