@@ -4,9 +4,8 @@ import { Suspense, useCallback, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { usePosts } from '@/hooks/usePosts';
 import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
-import { API_URL, apiFetch } from '@/lib/api';
+import { API_URL, API_ENDPOINTS } from '@/lib/api';
 import TopicSelector from '@/components/TopicSelector';
 
 type CreateTab = 'post' | 'moment';
@@ -23,7 +22,6 @@ function CreateContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user } = useAuth();
-    const { createPost } = usePosts();
 
     const initialType = searchParams.get('type') as CreateTab || 'post';
     const [activeTab, setActiveTab] = useState<CreateTab>(initialType);
@@ -97,24 +95,53 @@ function CreateContent() {
                     }),
                 });
                 if (!momentRes.ok) throw new Error('Failed to create moment');
-                router.push('/dashboard');
+                router.replace('/dashboard');
             } else {
-                // Regular post (text, or text+media)
-                const topicIds = selectedTopics.map(t => t.id);
-                const result = await createPost(caption, mediaFile || undefined, topicIds);
-                if (result.success) {
-                    router.push('/dashboard');
-                } else {
-                    setError('Failed to publish. Please try again.');
+                // Regular post: upload media first if present, then create post
+                let mediaUrl: string | undefined;
+                let postType = 'TEXT';
+
+                if (mediaFile) {
+                    const formData = new FormData();
+                    formData.append('file', mediaFile);
+
+                    const uploadRes = await fetch(API_ENDPOINTS.upload.post, {
+                        method: 'POST',
+                        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+                        body: formData,
+                    });
+                    if (!uploadRes.ok) throw new Error('Failed to upload media');
+                    const uploadData = await uploadRes.json();
+                    mediaUrl = uploadData.url;
+                    postType = mediaFile.type.startsWith('video') ? 'VIDEO' : 'IMAGE';
                 }
+
+                const postRes = await fetch(API_ENDPOINTS.posts, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    },
+                    body: JSON.stringify({
+                        type: postType,
+                        caption: caption.trim(),
+                        mediaUrl,
+                        isPublic: true,
+                        topicIds: selectedTopics.map(t => t.id),
+                    }),
+                });
+
+                if (!postRes.ok) throw new Error('Failed to create post');
+
+                // Navigate immediately -- dashboard will fetch its own feed
+                router.replace('/dashboard');
             }
         } catch (err) {
             console.error('Publish error:', err);
             setError('Failed to publish. Please try again.');
-        } finally {
             setIsPublishing(false);
         }
-    }, [caption, mediaFile, activeTab, selectedTopics, createPost, router]);
+    }, [caption, mediaFile, activeTab, selectedTopics, router]);
 
     const canPublish = caption.trim().length > 0 || mediaFile;
 

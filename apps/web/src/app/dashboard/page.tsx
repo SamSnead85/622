@@ -121,7 +121,16 @@ export default function DashboardPage() {
         );
     }
 
-    if (!user) return null;
+    if (!user) {
+        return (
+            <div className="min-h-screen bg-black flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full animate-spin" />
+                    <p className="text-white/30 text-sm">Loading...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <main className="min-h-screen bg-black text-white">
