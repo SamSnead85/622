@@ -224,7 +224,6 @@ export default function DashboardPage() {
                         <div className="space-y-4 py-4">
                             {/* Welcome card */}
                             <div className="bg-gradient-to-br from-[#00D4FF]/10 via-[#8B5CF6]/5 to-transparent rounded-2xl border border-[#00D4FF]/20 p-6 text-center">
-                                <div className="text-4xl mb-3">🚀</div>
                                 <h3 className="text-xl font-bold text-white mb-2">Welcome to 0G</h3>
                                 <p className="text-white/50 text-sm mb-5 max-w-md mx-auto">
                                     Your feed is empty because you&apos;re early! Create your first post, explore communities, or invite friends to get started.
@@ -249,22 +248,22 @@ export default function DashboardPage() {
                             {/* Quick actions */}
                             <div className="grid grid-cols-2 gap-3">
                                 <Link href="/explore" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
-                                    <div className="text-2xl mb-2">🔍</div>
+                                    <div className="mb-2 text-white/30"><svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
                                     <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Explore</h4>
                                     <p className="text-xs text-white/40 mt-0.5">Discover people &amp; content</p>
                                 </Link>
                                 <Link href="/bulletin" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
-                                    <div className="text-2xl mb-2">📋</div>
+                                    <div className="mb-2 text-white/30"><svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
                                     <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Bulletin Board</h4>
                                     <p className="text-xs text-white/40 mt-0.5">Events, jobs &amp; more</p>
                                 </Link>
                                 <Link href="/communities/create" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
-                                    <div className="text-2xl mb-2">👥</div>
+                                    <div className="mb-2 text-white/30"><svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div>
                                     <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Create a Group</h4>
                                     <p className="text-xs text-white/40 mt-0.5">Bring your people here</p>
                                 </Link>
                                 <Link href="/invite" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
-                                    <div className="text-2xl mb-2">💌</div>
+                                    <div className="mb-2 text-white/30"><svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
                                     <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Invite Friends</h4>
                                     <p className="text-xs text-white/40 mt-0.5">Share invite links</p>
                                 </Link>
@@ -300,7 +299,7 @@ export default function DashboardPage() {
                                 {/* Empty State */}
                                 {!postsLoading && posts.length === 0 && (
                                     <div className="text-center py-12 bg-white/[0.02] rounded-2xl border border-white/5">
-                                        <div className="text-4xl mb-4">📸</div>
+                                        <div className="mb-4 text-white/20"><svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg></div>
                                         <h3 className="text-lg font-semibold text-white mb-2">No posts yet</h3>
                                         <p className="text-white/50 mb-4">Share your first moment with the community!</p>
                                         <button

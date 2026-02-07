@@ -128,8 +128,8 @@ export default function AboutPage() {
                     <div className="max-w-5xl mx-auto px-6">
                         <div className="grid md:grid-cols-2 gap-12">
                             <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-8 md:p-10">
-                                <div className="w-12 h-12 rounded-xl bg-[#00D4FF]/10 flex items-center justify-center mb-6">
-                                    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                                <div className="mb-6 text-white/30">
+                                    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                                 </div>
                                 <h3 className="text-2xl font-light text-white mb-4">Our Mission</h3>
                                 <p className="text-white/50 font-light leading-relaxed">
@@ -139,8 +139,8 @@ export default function AboutPage() {
                                 </p>
                             </div>
                             <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-8 md:p-10">
-                                <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center mb-6">
-                                    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                                <div className="mb-6 text-white/30">
+                                    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
                                 </div>
                                 <h3 className="text-2xl font-light text-white mb-4">Our Vision</h3>
                                 <p className="text-white/50 font-light leading-relaxed">
@@ -248,53 +248,55 @@ export default function AboutPage() {
                                 {
                                     title: 'Session-Based Authentication',
                                     desc: 'JWT tokens tied to database-verified sessions with automatic expiration and cleanup. No persistent cookies. No fingerprinting. Every session is independently auditable.',
-                                    icon: '🔐',
+                                    iconPath: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
                                 },
                                 {
                                     title: 'Rate Limiting & Abuse Prevention',
                                     desc: 'Multi-layered rate limiting with per-IP, per-user, and per-endpoint controls. Configurable thresholds with automatic escalation for suspicious patterns. DDoS-resistant by design.',
-                                    icon: '🛡️',
+                                    iconPath: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 01-.67-.01C7.5 20.5 4 18 4 13V6l8-4 8 4v7z',
                                 },
                                 {
                                     title: 'Data Minimization',
                                     desc: 'We collect only what we need to provide the service. No behavioral analytics. No ad profiling. No third-party trackers. Your usage patterns are not commoditized.',
-                                    icon: '📦',
+                                    iconPath: 'M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z',
                                 },
                                 {
                                     title: 'CSRF & Origin Protection',
                                     desc: 'Cross-site request forgery protection on every state-changing endpoint. Strict origin validation in production. API key requests bypass CSRF by design with separate authentication.',
-                                    icon: '🔒',
+                                    iconPath: 'M7 11V7a5 5 0 0110 0v4M3 11h18v11H3z',
                                 },
                                 {
                                     title: 'Scoped API Access',
                                     desc: 'Developer API keys are SHA-256 hashed (never stored in plaintext). OAuth tokens use separate access and refresh flows. Permission scopes enforce least-privilege access at every layer.',
-                                    icon: '🗝️',
+                                    iconPath: 'M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4',
                                 },
                                 {
                                     title: 'Data Portability',
                                     desc: 'Full data export capability at any time. Your posts, messages, connections, and media. We believe if you can\'t leave with your data, you don\'t really own it.',
-                                    icon: '📤',
+                                    iconPath: 'M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13',
                                 },
                                 {
                                     title: 'Webhook Integrity',
                                     desc: 'All webhook deliveries are signed with HMAC secrets unique to each integration. Receiving servers can cryptographically verify that payloads originated from 0G and were not tampered with.',
-                                    icon: '✅',
+                                    iconPath: 'M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3',
                                 },
                                 {
                                     title: 'Zero-Knowledge Identity Layers',
                                     desc: 'Travel Shield creates a cryptographic barrier between your real identity and the decoy. The system has no knowledge of which profile is "real" — only the passphrase holder can disambiguate.',
-                                    icon: '👁️‍🗨️',
+                                    iconPath: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 100 6 3 3 0 000-6z',
                                 },
                             ].map((item, i) => (
                                 <motion.div
                                     key={item.title}
-                                    className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 hover:border-emerald-500/20 transition-all"
+                                    className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-all"
                                     initial={{ opacity: 0, y: 20 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true }}
                                     transition={{ duration: 0.5, delay: i * 0.05 }}
                                 >
-                                    <span className="text-2xl mb-3 block">{item.icon}</span>
+                                    <div className="mb-3 text-white/30">
+                                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d={item.iconPath}/></svg>
+                                    </div>
                                     <h3 className="text-white font-medium mb-2">{item.title}</h3>
                                     <p className="text-white/40 text-sm leading-relaxed">{item.desc}</p>
                                 </motion.div>

@@ -416,8 +416,8 @@ function VisionSection() {
                                 animate={isInView ? { opacity: 1, y: 0 } : {}}
                                 transition={{ duration: 0.6, delay: 0.4 + i * 0.15 }}
                             >
-                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4`}>
-                                    <item.Icon className="text-white" size={24} />
+                                <div className="mb-4 text-white/60">
+                                    <item.Icon className="" size={28} />
                                 </div>
                                 <h3 className="text-white font-medium mb-3">{item.title}</h3>
                                 <p className="text-white/50 font-light leading-relaxed text-sm">
@@ -466,8 +466,8 @@ function StoryTellersSection() {
                         className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors"
                     >
                         <div className="flex items-start gap-4 mb-6">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center">
-                                <VideoIcon className="text-white" size={22} />
+                            <div className="w-10 h-10 rounded-lg border border-white/10 flex items-center justify-center text-white/50 flex-shrink-0">
+                                <VideoIcon className="" size={20} />
                             </div>
                             <div>
                                 <h3 className="text-lg font-medium text-white">Live from the Ground</h3>
@@ -492,8 +492,8 @@ function StoryTellersSection() {
                         className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors"
                     >
                         <div className="flex items-start gap-4 mb-6">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center">
-                                <VoteIcon className="text-white" size={22} />
+                            <div className="w-10 h-10 rounded-lg border border-white/10 flex items-center justify-center text-white/50 flex-shrink-0">
+                                <VoteIcon className="" size={20} />
                             </div>
                             <div>
                                 <h3 className="text-lg font-medium text-white">Community Decides</h3>
@@ -519,14 +519,14 @@ function StoryTellersSection() {
                     className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4"
                 >
                     {[
-                        { Icon: UnlockIcon, label: 'No Lock-In', desc: 'Export all, anytime', color: 'text-emerald-400' },
-                        { Icon: HeartIcon, label: 'Community First', desc: 'No Ads. No Tracking.', color: 'text-amber-400' },
-                        { Icon: ShieldIcon, label: 'Privacy First', desc: 'Your data is yours', color: 'text-violet-400' },
-                        { Icon: CpuIcon, label: 'AI Co-Director', desc: 'Pro tools for all', color: 'text-cyan-400' },
+                        { Icon: UnlockIcon, label: 'No Lock-In', desc: 'Export all, anytime' },
+                        { Icon: HeartIcon, label: 'Community First', desc: 'No Ads. No Tracking.' },
+                        { Icon: ShieldIcon, label: 'Privacy First', desc: 'Your data is yours' },
+                        { Icon: CpuIcon, label: 'AI Co-Director', desc: 'Pro tools for all' },
                     ].map((item) => (
                         <div key={item.label} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-center">
-                            <div className="flex justify-center mb-2">
-                                <item.Icon className={item.color} size={28} />
+                            <div className="flex justify-center mb-2 text-white/40">
+                                <item.Icon size={22} />
                             </div>
                             <p className="text-white text-sm font-medium mt-2">{item.label}</p>
                             <p className="text-white/40 text-xs mt-1">{item.desc}</p>
@@ -548,58 +548,49 @@ function FullCapabilitiesSection() {
 
     const capabilities = [
         {
-            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+            icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
             title: 'Private Groups & Communities',
             desc: 'Create branded spaces for family, organizations, clubs, or movements. Full admin controls, role management, custom branding, and contained environments where members exist only within their circle.',
-            gradient: 'from-violet-500 to-indigo-500',
         },
         {
-            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+            icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
             title: 'Real-Time Group Chat',
             desc: 'Integrated messaging within every community. Typing indicators, read receipts, media sharing, and persistent chat history. Move your family WhatsApp group here in seconds.',
-            gradient: 'from-blue-500 to-cyan-500',
         },
         {
-            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M15.05 5A5 5 0 0119 8.95M15.05 1A9 9 0 0123 8.94M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
+            icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M15.05 5A5 5 0 0119 8.95M15.05 1A9 9 0 0123 8.94M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
             title: 'Voice & Video Calling',
             desc: 'Crystal-clear peer-to-peer calls with WebRTC. Voice calls, video calls, screen sharing, and group calling. No third-party app needed. Your conversations stay on the platform.',
-            gradient: 'from-emerald-500 to-teal-500',
         },
         {
-            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>,
+            icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>,
             title: 'Check-In Status Updates',
             desc: 'Lightweight status signals for group members. Let your family know you arrived safely, share your mood, or signal availability. Quick, contextual, and ephemeral.',
-            gradient: 'from-amber-500 to-orange-500',
         },
         {
-            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h18v18H3zM21 9H3M21 15H3M12 3v18"/></svg>,
+            icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h18v18H3zM21 9H3M21 15H3M12 3v18"/></svg>,
             title: 'Community Polls',
             desc: 'Democratic decision-making built into every group. Create polls, vote anonymously, and see real-time results. Perfect for planning events, making group decisions, or gauging sentiment.',
-            gradient: 'from-pink-500 to-rose-500',
         },
         {
-            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>,
+            icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>,
             title: 'Shared Photo Albums',
             desc: 'Collaborative photo collections within your groups. Organize memories by event, date, or theme. Everyone in the group can contribute. No cloud storage limits on privacy.',
-            gradient: 'from-fuchsia-500 to-purple-500',
         },
         {
-            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>,
+            icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>,
             title: 'WhatsApp Migration Tool',
             desc: 'One-click import of your WhatsApp chat history. Paste your exported chat and we preserve every message, every memory. Switching platforms has never been easier.',
-            gradient: 'from-green-500 to-emerald-500',
         },
         {
-            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><polygon points="23,7 16,12 23,17 23,7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
+            icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><polygon points="23,7 16,12 23,17 23,7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
             title: 'Live Streaming',
             desc: 'Go live to your community with sub-second latency. Multi-platform simulcast support. The audience is your community, not an algorithm-driven recommendation.',
-            gradient: 'from-red-500 to-rose-500',
         },
         {
-            icon: <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>,
+            icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>,
             title: 'Bulletin Board',
             desc: 'A dedicated space for events, jobs, collaborations, and announcements. Not buried in a feed. Organized, searchable, and community-curated for maximum visibility.',
-            gradient: 'from-sky-500 to-blue-500',
         },
     ];
 
@@ -636,7 +627,7 @@ function FullCapabilitiesSection() {
                             animate={isInView ? { opacity: 1, y: 0 } : {}}
                             transition={{ duration: 0.5, delay: i * 0.05 }}
                         >
-                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${cap.gradient} bg-opacity-20 flex items-center justify-center text-white mb-4`} style={{ background: `linear-gradient(135deg, var(--tw-gradient-stops))`, opacity: 0.8 }}>
+                            <div className="w-10 h-10 rounded-lg border border-white/[0.08] flex items-center justify-center text-white/40 mb-4">
                                 {cap.icon}
                             </div>
                             <h3 className="text-white font-medium text-lg mb-2 group-hover:text-[#00D4FF] transition-colors">{cap.title}</h3>
@@ -719,8 +710,8 @@ function TravelShieldSection() {
                                     <span className="text-white/20 text-xs">9:41 AM</span>
                                 </div>
                                 <div className="flex items-center gap-3 mb-5">
-                                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-xl">
-                                        🐱
+                                    <div className="w-14 h-14 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white/50 font-medium text-lg">
+                                        AT
                                     </div>
                                     <div>
                                         <p className="text-white font-medium">Alex Thompson</p>
@@ -898,17 +889,17 @@ function OriginSection() {
                         {
                             title: 'By the community',
                             desc: 'Every design decision is informed by the needs of communities who have been underserved, surveilled, or silenced by existing platforms. We don\'t hypothesize about oppression. We\'ve lived it.',
-                            icon: '🌍',
+                            iconPath: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
                         },
                         {
                             title: 'For the community',
                             desc: 'We will never sell your data. We will never run ads. We will never build features that exploit attention or manufacture outrage. Our only stakeholder is the person using this platform.',
-                            icon: '🤝',
+                            iconPath: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75',
                         },
                         {
                             title: 'Open to the world',
                             desc: 'Built by Palestinians, but built for everyone. From Lagos to Lahore, from Detroit to Dhaka. For every community that deserves a platform that respects them.',
-                            icon: '🕊️',
+                            iconPath: 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z',
                         },
                     ].map((item, i) => (
                         <motion.div
@@ -918,7 +909,9 @@ function OriginSection() {
                             animate={isInView ? { opacity: 1, y: 0 } : {}}
                             transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
                         >
-                            <span className="text-3xl mb-4 block">{item.icon}</span>
+                            <div className="mb-4 text-white/30">
+                                <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d={item.iconPath}/></svg>
+                            </div>
                             <h3 className="text-white font-medium mb-2">{item.title}</h3>
                             <p className="text-white/40 text-sm leading-relaxed">{item.desc}</p>
                         </motion.div>
@@ -1052,7 +1045,7 @@ function ContainedCommunitiesSection() {
                         <div className="relative">
                             <div className="bg-[#0A0A0F] rounded-2xl border border-white/10 p-6 shadow-2xl">
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-black font-bold text-sm">F</div>
+                                    <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-white/50 font-medium text-sm">F</div>
                                     <div>
                                         <p className="text-white font-medium text-sm">Family Circle</p>
                                         <p className="text-white/40 text-xs">12 members</p>
@@ -1103,7 +1096,7 @@ function ContainedCommunitiesSection() {
                             animate={isInView ? { opacity: 1, y: 0 } : {}}
                             transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
                         >
-                            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-4 group-hover:bg-emerald-500/20 transition-colors">
+                            <div className="w-10 h-10 rounded-lg border border-white/[0.08] flex items-center justify-center text-white/40 mb-4">
                                 {benefit.icon}
                             </div>
                             <h3 className="text-lg font-medium text-white mb-2">{benefit.title}</h3>
@@ -1190,7 +1183,7 @@ function TestimonialsSection() {
                                 &ldquo;{testimonial.quote}&rdquo;
                             </p>
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                                <div className="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white/50 font-medium text-sm">
                                     {testimonial.author[0]}
                                 </div>
                                 <div>
