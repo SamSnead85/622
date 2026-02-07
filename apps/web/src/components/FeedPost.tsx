@@ -157,18 +157,28 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
                         // Register for audio focus tracking
                         const getsAudio = audioFocus.registerVisible(videoId, video, handleAudioFocusChange);
 
-                        // Always autoplay when visible (muted unless we have audio focus)
+                        // Always autoplay when visible
                         if (!userPausedRef.current) {
-                            video.muted = !getsAudio;
-                            setIsMuted(!getsAudio);
-                            video.play()
-                                .then(() => setIsPlaying(true))
-                                .catch(() => {
-                                    // Browser blocked autoplay — try muted
-                                    video.muted = true;
-                                    setIsMuted(true);
-                                    video.play().then(() => setIsPlaying(true)).catch(() => {});
-                                });
+                            if (getsAudio) {
+                                // This video should have audio — try unmuted first
+                                video.muted = false;
+                                setIsMuted(false);
+                                video.play()
+                                    .then(() => setIsPlaying(true))
+                                    .catch(() => {
+                                        // Browser blocked unmuted autoplay (no user interaction yet).
+                                        // Play muted now — AudioFocusContext will unmute us once the
+                                        // user scrolls/clicks/taps anything on the page.
+                                        video.muted = true;
+                                        setIsMuted(true);
+                                        video.play().then(() => setIsPlaying(true)).catch(() => {});
+                                    });
+                            } else {
+                                // Not the focused video — play muted
+                                video.muted = true;
+                                setIsMuted(true);
+                                video.play().then(() => setIsPlaying(true)).catch(() => {});
+                            }
                         }
                     } else {
                         // Scrolled out of view — pause and unregister

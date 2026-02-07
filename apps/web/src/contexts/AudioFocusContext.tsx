@@ -1,19 +1,22 @@
 'use client';
 
-import { createContext, useContext, useCallback, useRef } from 'react';
+import { createContext, useContext, useCallback, useRef, useEffect } from 'react';
 
 /**
  * AudioFocusContext — All-play, single-audio pattern for feed videos.
  *
- * New behavior:
- * 1. ALL visible videos autoplay (muted by default) — no click required.
- * 2. Only the TOPMOST visible video gets audio (unmuted).
- * 3. When the user scrolls, the new topmost video gets unmuted;
+ * Behavior:
+ * 1. ALL visible videos autoplay — no click required.
+ * 2. The TOPMOST visible video plays WITH AUDIO (unmuted).
+ * 3. All other visible videos play MUTED.
+ * 4. When the user scrolls, the new topmost video gets audio;
  *    the previous one just gets muted but KEEPS playing.
- * 4. Manual unmute on any video steals audio focus from the current owner.
- * 5. Manual pause only pauses that specific video — others keep playing.
+ * 5. Manual unmute on any video steals audio focus from the current owner.
+ * 6. Manual pause only pauses that specific video — others keep playing.
  *
- * Event-driven: focus changes notify components via callbacks (no polling).
+ * Browser autoplay policy: browsers block unmuted autoplay until the user
+ * interacts with the page. We start muted, then unmute the focused video
+ * as soon as the first interaction (scroll, click, tap) happens.
  */
 
 interface VideoEntry {
@@ -52,6 +55,46 @@ export function useAudioFocus() {
 export function AudioFocusProvider({ children }: { children: React.ReactNode }) {
     const visibleRef = useRef<Map<string, VideoEntry>>(new Map());
     const focusOwnerRef = useRef<string | null>(null);
+    const userInteractedRef = useRef(false);
+
+    // After the first user interaction, unmute whichever video has audio focus.
+    // Browsers require at least one click/tap/scroll before allowing unmuted playback.
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const handleInteraction = () => {
+            if (userInteractedRef.current) return;
+            userInteractedRef.current = true;
+
+            // Unmute the currently focused video now that the browser allows it
+            const ownerId = focusOwnerRef.current;
+            if (ownerId) {
+                const entry = visibleRef.current.get(ownerId);
+                if (entry?.element) {
+                    entry.element.muted = false;
+                    entry.onAudioFocusChange?.(true);
+                }
+            }
+
+            // Clean up — we only need the first interaction
+            window.removeEventListener('click', handleInteraction, true);
+            window.removeEventListener('touchstart', handleInteraction, true);
+            window.removeEventListener('scroll', handleInteraction, true);
+            window.removeEventListener('keydown', handleInteraction, true);
+        };
+
+        window.addEventListener('click', handleInteraction, true);
+        window.addEventListener('touchstart', handleInteraction, true);
+        window.addEventListener('scroll', handleInteraction, true);
+        window.addEventListener('keydown', handleInteraction, true);
+
+        return () => {
+            window.removeEventListener('click', handleInteraction, true);
+            window.removeEventListener('touchstart', handleInteraction, true);
+            window.removeEventListener('scroll', handleInteraction, true);
+            window.removeEventListener('keydown', handleInteraction, true);
+        };
+    }, []);
 
     const getTopmostVisible = useCallback((): VideoEntry | null => {
         let topmost: VideoEntry | null = null;
@@ -102,11 +145,12 @@ export function AudioFocusProvider({ children }: { children: React.ReactNode }) 
         // If nobody has audio focus, give it to this video
         if (!focusOwnerRef.current || !visibleRef.current.has(focusOwnerRef.current)) {
             applyFocus(id);
-            return true; // You get audio focus
+            // Return true (unmuted) only if user has already interacted with the page;
+            // otherwise the browser will reject unmuted autoplay anyway.
+            return userInteractedRef.current;
         }
 
         // Someone else has audio — this video should still PLAY (muted)
-        // The component handles autoplay; we just return false for "no audio"
         return false;
     }, [applyFocus]);
 
