@@ -414,7 +414,7 @@ function DataSovereigntySection() {
 function Navigation() {
     const navItems = [
         { id: 'home', Icon: HomeIcon, label: 'Home', href: '/dashboard', active: false },
-        { id: 'explore', Icon: SearchIcon, label: 'Explore', href: '/explore', active: false },
+        { id: 'explore', Icon: SearchIcon, label: 'Search', href: '/search', active: false },
         { id: 'tribes', Icon: UsersIcon, label: 'Tribes', href: '/communities', active: false },
         { id: 'neural', Icon: BrainIcon, label: 'Neural Lens', href: '/algorithm', active: true },
         { id: 'profile', Icon: UserIcon, label: 'Profile', href: '/profile', active: false },

@@ -642,7 +642,7 @@ function ProfilePageContent() {
                                                 Bookmark posts you love and they&apos;ll appear here
                                             </p>
                                             <Link
-                                                href="/explore"
+                                                href="/search"
                                                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/15 transition-colors"
                                             >
                                                 Explore Posts

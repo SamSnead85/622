@@ -320,7 +320,7 @@ export default function DashboardPage() {
 
                             {/* Quick actions */}
                             <div className="grid grid-cols-2 gap-3">
-                                <Link href="/explore" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
+                                <Link href="/search" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
                                     <div className="mb-2 text-white/30"><svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
                                     <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Explore</h4>
                                     <p className="text-xs text-white/40 mt-0.5">Discover people &amp; content</p>
@@ -432,7 +432,7 @@ export default function DashboardPage() {
                             <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="text-sm font-semibold text-white">People to Follow</h3>
-                                    <Link href="/explore" className="text-xs text-[#00D4FF] hover:underline">See All</Link>
+                                    <Link href="/search" className="text-xs text-[#00D4FF] hover:underline">See All</Link>
                                 </div>
                                 <PeopleToFollow currentUserId={user?.id} />
                             </div>

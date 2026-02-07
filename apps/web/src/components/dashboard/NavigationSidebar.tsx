@@ -31,7 +31,7 @@ export type FeedViewMode = 'standard' | 'immersive' | 'video';
 function detectActiveTab(pathname: string): string {
     if (pathname.startsWith('/dashboard/growth-partner')) return 'growth';
     if (pathname === '/dashboard') return 'feed';
-    if (pathname.startsWith('/explore') || pathname.startsWith('/adventures')) return 'explore';
+    if (pathname.startsWith('/search') || pathname.startsWith('/explore') || pathname.startsWith('/adventures')) return 'explore';
     if (pathname.startsWith('/campfire')) return 'live';
     if (pathname.startsWith('/communities')) return 'communities';
     if (pathname.startsWith('/bulletin')) return 'bulletin';
@@ -41,7 +41,7 @@ function detectActiveTab(pathname: string): string {
     if (pathname.startsWith('/profile') || pathname.startsWith('/settings') || pathname.startsWith('/my-posts')) return 'profile';
     if (pathname.startsWith('/admin')) return '';
     if (pathname.startsWith('/developers')) return '';
-    if (pathname.startsWith('/search')) return 'explore';
+    // /search handled above with /explore
     if (pathname.startsWith('/notifications')) return '';
     if (pathname.startsWith('/moments')) return '';
     return 'feed';
@@ -117,7 +117,7 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
     // Desktop sidebar shows all items
     const navItems = [
         { id: 'feed', Icon: HomeIcon, label: 'Feed', href: '/dashboard' },
-        { id: 'explore', Icon: SearchIcon, label: 'Explore', href: '/explore' },
+        { id: 'explore', Icon: SearchIcon, label: 'Search', href: '/search' },
         { id: 'live', Icon: VideoIcon, label: 'Live', href: '/campfire' },
         { id: 'communities', Icon: UsersIcon, label: 'Communities', href: '/communities' },
         { id: 'bulletin', Icon: MegaphoneIcon, label: 'Bulletin', href: '/bulletin' },
@@ -132,7 +132,7 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
     // Mobile bottom bar: focused on 5 core actions
     const mobileNavItems = [
         { id: 'feed', Icon: HomeIcon, label: 'Home', href: '/dashboard' },
-        { id: 'explore', Icon: SearchIcon, label: 'Search', href: '/explore' },
+        { id: 'explore', Icon: SearchIcon, label: 'Search', href: '/search' },
         { id: 'create', Icon: PlusIcon, label: 'Post', href: '/create', isCreate: true },
         { id: 'messages', Icon: MessageIcon, label: 'Messages', href: '/messages', hasNotification: true },
         { id: 'profile', Icon: UsersIcon, label: 'Profile', href: '/profile' },

@@ -108,7 +108,7 @@ export function StoriesRow({ currentUser }: { currentUser: { id: string; usernam
                     const href = user.isInvite
                         ? '/invite'
                         : user.isExplore
-                            ? '/explore'
+                            ? '/search'
                             : user.hasStory || user.isLive
                                 ? `/stories/${user.id}`
                                 : `/profile/${user.username}`;

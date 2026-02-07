@@ -85,7 +85,7 @@ export function TrendingHashtags({
                         Trending Now
                     </h3>
                     <Link
-                        href="/explore?tab=trending"
+                        href="/search?tab=trending"
                         className="text-xs text-[#00D4FF] hover:underline"
                     >
                         See all
@@ -101,7 +101,7 @@ export function TrendingHashtags({
                     transition={{ delay: index * 0.05 }}
                 >
                     <Link
-                        href={`/explore?tag=${hashtag.tag}`}
+                        href={`/search?tag=${hashtag.tag}`}
                         onClick={() => onHashtagClick?.(hashtag.tag)}
                         className={`flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors group ${compact ? 'p-1.5' : 'p-2'
                             }`}

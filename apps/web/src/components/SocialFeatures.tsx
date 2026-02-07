@@ -74,7 +74,7 @@ export function FollowSuggestions({
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-white">Suggested for you</h3>
-                <Link href="/explore?tab=people" className="text-xs text-[#00D4FF] hover:underline">
+                <Link href="/search?tab=people" className="text-xs text-[#00D4FF] hover:underline">
                     See All
                 </Link>
             </div>

@@ -42,7 +42,7 @@ interface NavItem {
 // Standard navigation items used across the app
 const NAV_ITEMS: NavItem[] = [
     { id: 'home', label: 'Home', href: '/dashboard', Icon: HomeIcon },
-    { id: 'explore', label: 'Explore', href: '/explore', Icon: SearchIcon },
+    { id: 'explore', label: 'Search', href: '/search', Icon: SearchIcon },
     { id: 'communities', label: 'Tribes', href: '/communities', Icon: UsersIcon },
     { id: 'bulletin', label: 'Bulletin', href: '/bulletin', Icon: MegaphoneIcon },
     { id: 'developers', label: 'Developers', href: '/developers', Icon: DevIcon },
@@ -51,7 +51,7 @@ const NAV_ITEMS: NavItem[] = [
 
 const NAV_ITEMS_MESSAGES: NavItem[] = [
     { id: 'home', label: 'Home', href: '/dashboard', Icon: HomeIcon },
-    { id: 'explore', label: 'Explore', href: '/explore', Icon: SearchIcon },
+    { id: 'explore', label: 'Search', href: '/search', Icon: SearchIcon },
     { id: 'communities', label: 'Tribes', href: '/communities', Icon: UsersIcon },
     { id: 'messages', label: 'Messages', href: '/messages', Icon: MessageIcon },
     { id: 'profile', label: 'Profile', href: '/profile', Icon: UserIcon },
@@ -59,7 +59,7 @@ const NAV_ITEMS_MESSAGES: NavItem[] = [
 
 const NAV_ITEMS_CREATE: NavItem[] = [
     { id: 'home', label: 'Home', href: '/dashboard', Icon: HomeIcon },
-    { id: 'explore', label: 'Explore', href: '/explore', Icon: SearchIcon },
+    { id: 'explore', label: 'Search', href: '/search', Icon: SearchIcon },
     { id: 'create', label: 'Create', href: '/create', Icon: PlusIcon },
     { id: 'invite', label: 'Invite', href: '/invite', Icon: SendIcon },
     { id: 'profile', label: 'Profile', href: '/profile', Icon: UserIcon },

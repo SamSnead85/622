@@ -555,7 +555,7 @@ function InvitePageContent() {
                         <HomeIcon size={22} />
                         <span className="text-[10px]">Home</span>
                     </Link>
-                    <Link href="/explore" className="flex flex-col items-center gap-1 p-2 text-white/50 hover:text-white transition-colors">
+                    <Link href="/search" className="flex flex-col items-center gap-1 p-2 text-white/50 hover:text-white transition-colors">
                         <SearchIcon size={22} />
                         <span className="text-[10px]">Explore</span>
                     </Link>

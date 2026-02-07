@@ -745,7 +745,7 @@ export default function MomentsPage() {
                         <HomeIcon size={24} />
                         <span className="text-[10px] font-medium">Home</span>
                     </Link>
-                    <Link href="/explore" className="flex flex-col items-center gap-1 text-white/40 hover:text-white/70 transition-colors">
+                    <Link href="/search" className="flex flex-col items-center gap-1 text-white/40 hover:text-white/70 transition-colors">
                         <SearchIcon size={24} />
                         <span className="text-[10px] font-medium">Explore</span>
                     </Link>

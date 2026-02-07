@@ -91,7 +91,7 @@ export function RightSidebar() {
             <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-4">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="font-bold text-white">People to Follow</h3>
-                    <Link href="/explore" className="text-xs text-rose-500 hover:text-rose-400">See All</Link>
+                    <Link href="/search" className="text-xs text-rose-500 hover:text-rose-400">See All</Link>
                 </div>
 
                 {loading ? (
