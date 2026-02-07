@@ -33,7 +33,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
     useEffect(() => {
         if (!isOpen) return;
         apiFetch('/api/v1/push/preferences')
-            .then(data => { if (data && !data.error) setPrefs(data); })
+            .then(data => { if (data && !data.error) setPrefs(data.data as NotificationPrefs); })
             .catch(() => {});
 
         if ('Notification' in window) {
