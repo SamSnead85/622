@@ -111,6 +111,9 @@ export default function CommunityAdminSettings() {
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
     const [actionMemberId, setActionMemberId] = useState<string | null>(null);
     const [inviteCopied, setInviteCopied] = useState(false);
+    const [waImportText, setWaImportText] = useState('');
+    const [waImporting, setWaImporting] = useState(false);
+    const [waImportResult, setWaImportResult] = useState<string | null>(null);
 
     // ============================================
     // FETCH DATA
@@ -869,6 +872,73 @@ export default function CommunityAdminSettings() {
                                                 Email
                                             </a>
                                         </div>
+                                    </div>
+
+                                    {/* WhatsApp Chat Import */}
+                                    <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6">
+                                        <h3 className="font-medium mb-1 flex items-center gap-2">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 0 0 .612.61l4.458-1.495A11.952 11.952 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.319 0-4.46-.764-6.189-2.055l-.432-.327-2.645.887.887-2.645-.327-.432A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                                            Import WhatsApp Chat
+                                        </h3>
+                                        <p className="text-sm text-white/40 mb-4">
+                                            Export your WhatsApp group chat (Settings &gt; Export Chat &gt; Without Media) and paste the text below to import the conversation history.
+                                        </p>
+                                        <textarea
+                                            value={waImportText}
+                                            onChange={(e) => setWaImportText(e.target.value)}
+                                            rows={5}
+                                            placeholder="Paste exported WhatsApp chat text here..."
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-white/30 resize-none mb-3 font-mono"
+                                        />
+                                        {waImportResult && (
+                                            <p className={`text-sm mb-3 ${waImportResult.includes('Failed') ? 'text-red-400' : 'text-emerald-400'}`}>{waImportResult}</p>
+                                        )}
+                                        <button
+                                            onClick={async () => {
+                                                if (!waImportText.trim()) return;
+                                                setWaImporting(true);
+                                                setWaImportResult(null);
+                                                try {
+                                                    // Parse WhatsApp format: "MM/DD/YY, HH:MM - Sender: Message"
+                                                    const lines = waImportText.split('\n').filter(l => l.trim());
+                                                    const parsed: { sender: string; content: string; timestamp?: string }[] = [];
+                                                    const waRegex = /^(\d{1,2}\/\d{1,2}\/\d{2,4}),?\s*(\d{1,2}:\d{2}(?:\s*[AP]M)?)\s*-\s*([^:]+):\s*(.+)$/i;
+                                                    for (const line of lines) {
+                                                        const match = line.match(waRegex);
+                                                        if (match) {
+                                                            parsed.push({
+                                                                sender: match[3].trim(),
+                                                                content: match[4].trim(),
+                                                                timestamp: new Date(`${match[1]} ${match[2]}`).toISOString(),
+                                                            });
+                                                        }
+                                                    }
+                                                    if (parsed.length === 0) {
+                                                        setWaImportResult('No valid messages found. Make sure you paste the exported WhatsApp chat text.');
+                                                    } else {
+                                                        const data = await apiFetch(`${API_URL}/api/v1/communities/${communityId}/import/whatsapp`, {
+                                                            method: 'POST',
+                                                            body: JSON.stringify({ messages: parsed }),
+                                                        });
+                                                        setWaImportResult(`Successfully imported ${data.imported} messages!`);
+                                                        setWaImportText('');
+                                                    }
+                                                } catch (err: any) {
+                                                    setWaImportResult(err?.message || 'Failed to import. Please try again.');
+                                                } finally {
+                                                    setWaImporting(false);
+                                                }
+                                            }}
+                                            disabled={waImporting || !waImportText.trim()}
+                                            className="px-5 py-2.5 bg-[#25D366] text-white rounded-xl font-medium text-sm hover:bg-[#20bd5a] transition-colors disabled:opacity-40 flex items-center gap-2"
+                                        >
+                                            {waImporting ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                    Importing...
+                                                </>
+                                            ) : 'Import Messages'}
+                                        </button>
                                     </div>
 
                                     {/* Branded Invite Preview */}
