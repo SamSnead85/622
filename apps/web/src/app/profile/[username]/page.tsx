@@ -414,7 +414,9 @@ export default function PublicProfilePage() {
                     >
                         {reportSubmitted ? (
                             <div className="text-center py-8">
-                                <div className="text-4xl mb-3">✅</div>
+                                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-400">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                </div>
                                 <h3 className="text-xl font-bold text-white mb-2">Report Submitted</h3>
                                 <p className="text-white/50">Thank you. Our team will review this report.</p>
                             </div>

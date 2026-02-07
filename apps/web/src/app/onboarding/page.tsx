@@ -314,16 +314,16 @@ function PrivacyCard({
 }
 
 // ============================================
-// FLOATING PARTICLES BACKGROUND
+// FLOATING PARTICLES BACKGROUND (reduced for mobile perf)
 // ============================================
 function FloatingParticles() {
     const particles = useMemo(() =>
-        Array.from({ length: 20 }, (_, i) => ({
+        Array.from({ length: 12 }, (_, i) => ({
             id: i,
             x: Math.random() * 100,
             y: Math.random() * 100,
-            size: Math.random() * 3 + 1,
-            duration: Math.random() * 20 + 15,
+            size: Math.random() * 2.5 + 0.5,
+            duration: Math.random() * 25 + 20,
             delay: Math.random() * -20,
             color: ['#00D4FF', '#8B5CF6', '#EC4899'][Math.floor(Math.random() * 3)],
         })),
@@ -334,19 +334,18 @@ function FloatingParticles() {
             {particles.map((p) => (
                 <motion.div
                     key={p.id}
-                    className="absolute rounded-full"
+                    className="absolute rounded-full will-change-transform"
                     style={{
                         width: p.size,
                         height: p.size,
                         left: `${p.x}%`,
                         top: `${p.y}%`,
                         background: p.color,
-                        opacity: 0.2,
+                        opacity: 0.15,
                     }}
                     animate={{
-                        y: [0, -60, 0],
-                        x: [0, Math.random() * 30 - 15, 0],
-                        opacity: [0.1, 0.3, 0.1],
+                        y: [0, -40, 0],
+                        opacity: [0.08, 0.2, 0.08],
                     }}
                     transition={{
                         duration: p.duration,
@@ -356,6 +355,100 @@ function FloatingParticles() {
                     }}
                 />
             ))}
+        </div>
+    );
+}
+
+// ============================================
+// TOPIC ICON MAPPER — Clean SVG icons by topic name
+// ============================================
+function TopicIcon({ name, size = 26 }: { name: string; size?: number }) {
+    const slug = name.toLowerCase();
+    const s = size;
+    const props = { width: s, height: s, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+
+    if (slug.includes('art') || slug.includes('design') || slug.includes('creative'))
+        return <svg {...props}><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>;
+
+    if (slug.includes('photo') || slug.includes('camera'))
+        return <svg {...props}><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>;
+
+    if (slug.includes('music') || slug.includes('audio'))
+        return <svg {...props}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>;
+
+    if (slug.includes('business') || slug.includes('finance') || slug.includes('entrepreneur'))
+        return <svg {...props}><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>;
+
+    if (slug.includes('islam') || slug.includes('muslim'))
+        return <svg {...props}><path d="M12 3a9 9 0 109 9c0-4.97-4.03-9-9-9z"/><path d="M12 3c2.21 0 4 4.03 4 9s-1.79 9-4 9"/><path d="M15 8l-1.5 2L15 12l-1.5 2L15 16"/></svg>;
+
+    if (slug.includes('christian'))
+        return <svg {...props}><line x1="12" y1="2" x2="12" y2="22"/><line x1="6" y1="8" x2="18" y2="8"/></svg>;
+
+    if (slug.includes('spiritual') || slug.includes('mindful') || slug.includes('meditat'))
+        return <svg {...props}><circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3"/></svg>;
+
+    if (slug.includes('culture') || slug.includes('heritage') || slug.includes('world'))
+        return <svg {...props}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>;
+
+    if (slug.includes('arabic') || slug.includes('mosque') || slug.includes('middle east'))
+        return <svg {...props}><path d="M12 2c-3 3-5 6-5 9a5 5 0 0010 0c0-3-2-6-5-9z"/><line x1="12" y1="15" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>;
+
+    if (slug.includes('tech') || slug.includes('coding') || slug.includes('programming') || slug.includes('software'))
+        return <svg {...props}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>;
+
+    if (slug.includes('gaming') || slug.includes('game'))
+        return <svg {...props}><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><path d="M17.32 5H6.68a4 4 0 00-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 003 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 019.828 16h4.344a2 2 0 011.414.586L17 18c.5.5 1 1 2 1a3 3 0 003-3c0-1.544-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0017.32 5z"/></svg>;
+
+    if (slug.includes('food') || slug.includes('cook') || slug.includes('cuisine'))
+        return <svg {...props}><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>;
+
+    if (slug.includes('travel') || slug.includes('adventure'))
+        return <svg {...props}><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 10-16 0c0 3 2.7 6.9 8 11.7z"/></svg>;
+
+    if (slug.includes('fitness') || slug.includes('health') || slug.includes('workout') || slug.includes('gym'))
+        return <svg {...props}><path d="M18 20V10M6 20V10M2 15h4M18 15h4M10 5v2.5M14 5v2.5"/><rect x="6" y="7" width="12" height="6" rx="1"/></svg>;
+
+    if (slug.includes('education') || slug.includes('learn') || slug.includes('study') || slug.includes('book'))
+        return <svg {...props}><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>;
+
+    if (slug.includes('science') || slug.includes('research'))
+        return <svg {...props}><path d="M9 3h6M10 9V3M14 9V3"/><path d="M6.4 18h11.2A2 2 0 0019 15.5L15 9H9L5 15.5A2 2 0 006.4 18z"/><path d="M6.4 18a2 2 0 00-1.4 2v1h14v-1a2 2 0 00-1.4-2"/></svg>;
+
+    if (slug.includes('sport'))
+        return <svg {...props}><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20 14.5 14.5 0 000-20"/><path d="M2 12h20"/></svg>;
+
+    if (slug.includes('fashion') || slug.includes('style'))
+        return <svg {...props}><path d="M20.38 3.46L16 2 12 5.5 8 2l-4.38 1.46a2 2 0 00-1.32 2.21l.92 5.52A2 2 0 005.2 13h13.6a2 2 0 001.98-1.81l.92-5.52a2 2 0 00-1.32-2.21z"/><path d="M3.8 13L6 22h12l2.2-9"/></svg>;
+
+    if (slug.includes('nature') || slug.includes('environment') || slug.includes('outdoor'))
+        return <svg {...props}><path d="M17 8c.7-1 1-2.2 1-3.5A5.5 5.5 0 0012.5 0 5.5 5.5 0 007 4.5c0 1.3.3 2.5 1 3.5"/><path d="M12 22V10"/><path d="M7 15h10"/><path d="M9 18h6"/></svg>;
+
+    if (slug.includes('film') || slug.includes('movie') || slug.includes('cinema'))
+        return <svg {...props}><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></svg>;
+
+    if (slug.includes('politic') || slug.includes('civic') || slug.includes('justice'))
+        return <svg {...props}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>;
+
+    if (slug.includes('family') || slug.includes('parent'))
+        return <svg {...props}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+
+    if (slug.includes('volunteer') || slug.includes('charity') || slug.includes('humanit'))
+        return <svg {...props}><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>;
+
+    if (slug.includes('palestine') || slug.includes('activism') || slug.includes('resist'))
+        return <svg {...props}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>;
+
+    if (slug.includes('podcast') || slug.includes('radio'))
+        return <svg {...props}><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>;
+
+    if (slug.includes('writ') || slug.includes('journal') || slug.includes('blog'))
+        return <svg {...props}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
+
+    // Fallback: first letter in a clean circle
+    return (
+        <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
+            <span className="text-sm font-semibold text-white/70">{name.charAt(0)}</span>
         </div>
     );
 }
@@ -742,16 +835,26 @@ export default function OnboardingPage() {
                                             transition={{ delay: 0.1 }}
                                         >
                                             <motion.div
-                                                className="text-5xl mb-4"
-                                                animate={{ rotate: [0, -5, 5, 0] }}
+                                                className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 border border-white/[0.06] flex items-center justify-center backdrop-blur-sm"
+                                                animate={{ scale: [1, 1.05, 1] }}
                                                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                                             >
-                                                ✨
+                                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#interestGrad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <circle cx="12" cy="12" r="10" />
+                                                    <path d="M2 12h20" />
+                                                    <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                                                    <defs>
+                                                        <linearGradient id="interestGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                            <stop offset="0%" stopColor="#00D4FF" />
+                                                            <stop offset="100%" stopColor="#8B5CF6" />
+                                                        </linearGradient>
+                                                    </defs>
+                                                </svg>
                                             </motion.div>
-                                            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                                            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
                                                 Your Interests
                                             </h1>
-                                            <p className="text-white/50 text-lg max-w-md mx-auto">
+                                            <p className="text-white/45 text-base md:text-lg max-w-md mx-auto leading-relaxed">
                                                 Choose what excites you. We&apos;ll curate your world around it.
                                             </p>
 
@@ -827,11 +930,15 @@ export default function OnboardingPage() {
                                                             >
                                                                 {/* Icon */}
                                                                 <motion.div
-                                                                    className="text-4xl mb-3"
-                                                                    animate={isSelected ? { scale: [1, 1.2, 1], rotate: [0, -8, 8, 0] } : {}}
-                                                                    transition={{ duration: 0.4 }}
+                                                                    className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 transition-colors duration-500 ${
+                                                                        isSelected
+                                                                            ? 'bg-[#00D4FF]/15 text-[#00D4FF]'
+                                                                            : 'bg-white/[0.04] text-white/50 group-hover:text-white/70'
+                                                                    }`}
+                                                                    animate={isSelected ? { scale: [1, 1.1, 1] } : {}}
+                                                                    transition={{ duration: 0.3 }}
                                                                 >
-                                                                    {topic.icon}
+                                                                    <TopicIcon name={topic.name} size={22} />
                                                                 </motion.div>
 
                                                                 {/* Name */}
@@ -970,13 +1077,24 @@ export default function OnboardingPage() {
                                             transition={{ delay: 0.1 }}
                                         >
                                             <motion.div
-                                                className="text-5xl mb-4"
-                                                animate={{ y: [0, -8, 0] }}
+                                                className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-[#8B5CF6]/20 to-[#EC4899]/20 border border-white/[0.06] flex items-center justify-center backdrop-blur-sm"
+                                                animate={{ scale: [1, 1.05, 1] }}
                                                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                                             >
-                                                🤝
+                                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#peopleGrad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                                                    <circle cx="9" cy="7" r="4" />
+                                                    <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                                                    <path d="M16 3.13a4 4 0 010 7.75" />
+                                                    <defs>
+                                                        <linearGradient id="peopleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                            <stop offset="0%" stopColor="#8B5CF6" />
+                                                            <stop offset="100%" stopColor="#EC4899" />
+                                                        </linearGradient>
+                                                    </defs>
+                                                </svg>
                                             </motion.div>
-                                            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                                            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
                                                 People to Follow
                                             </h1>
                                             <p className="text-white/50 text-lg max-w-md mx-auto">
@@ -1254,9 +1372,9 @@ export default function OnboardingPage() {
                                             animate={{ opacity: 1 }}
                                             transition={{ delay: 2 }}
                                         >
-                                            {e2eEnabled && '🔑 Your encryption keys are stored on this device only. '}
-                                            {twoFAEnabled && '🛡️ 2FA is active on your account. '}
-                                            You can manage these anytime in Settings → Privacy & Security
+                                            {e2eEnabled && 'Your encryption keys are stored on this device only. '}
+                                            {twoFAEnabled && '2FA is active on your account. '}
+                                            You can manage these anytime in Settings &rarr; Privacy & Security
                                         </motion.p>
                                     </div>
                                 </div>

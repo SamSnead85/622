@@ -167,8 +167,8 @@ export default function CommunityJoinPage() {
     const brandColor = community?.brandColor || '#00D4FF';
     const isContained = community?.category ? ['family', 'friends'].includes(community.category) : false;
     const categoryLabel: Record<string, string> = {
-        family: '🧬 Family Group', friends: '⭕ Friends Circle', business: '🤝 Organization',
-        faith: '🕌 Community', hobby: '⚔️ Club', local: '🏘️ Local Group',
+        family: 'Family Group', friends: 'Friends Circle', business: 'Organization',
+        faith: 'Community', hobby: 'Club', local: 'Local Group',
     };
 
     // ---- LOADING ----

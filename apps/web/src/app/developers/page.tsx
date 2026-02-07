@@ -100,12 +100,12 @@ const WEBHOOK_EVENTS = [
 ];
 
 const SCOPES = [
-    { scope: 'read', desc: 'Read public data (communities, posts, users)', icon: '👁️' },
-    { scope: 'write', desc: 'Create posts, communities, and content', icon: '✏️' },
-    { scope: 'communities', desc: 'Manage community settings and members', icon: '👥' },
-    { scope: 'messages', desc: 'Read and send messages in groups', icon: '💬' },
-    { scope: 'calls', desc: 'Initiate and manage calls', icon: '📞' },
-    { scope: 'all', desc: 'Full access to all API endpoints', icon: '🔑' },
+    { scope: 'read', desc: 'Read public data (communities, posts, users)', icon: 'R' },
+    { scope: 'write', desc: 'Create posts, communities, and content', icon: 'W' },
+    { scope: 'communities', desc: 'Manage community settings and members', icon: 'C' },
+    { scope: 'messages', desc: 'Read and send messages in groups', icon: 'M' },
+    { scope: 'calls', desc: 'Initiate and manage calls', icon: 'P' },
+    { scope: 'all', desc: 'Full access to all API endpoints', icon: 'A' },
 ];
 
 // ============================================
@@ -340,7 +340,9 @@ export default function DeveloperPortal() {
                                 <div className="grid md:grid-cols-2 gap-3">
                                     {SCOPES.map(s => (
                                         <div key={s.scope} className="flex items-center gap-4 bg-white/[0.02] border border-white/5 rounded-xl p-4">
-                                            <span className="text-2xl">{s.icon}</span>
+                                            <div className="w-9 h-9 rounded-lg bg-[#00D4FF]/10 border border-[#00D4FF]/20 flex items-center justify-center shrink-0">
+                                                <span className="text-xs font-bold text-[#00D4FF] font-mono">{s.icon}</span>
+                                            </div>
                                             <div>
                                                 <code className="text-sm font-mono text-[#00D4FF]">{s.scope}</code>
                                                 <p className="text-xs text-white/40 mt-0.5">{s.desc}</p>

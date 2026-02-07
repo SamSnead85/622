@@ -81,8 +81,8 @@ const BULLETIN_TYPES: { value: BulletinType; label: string; icon: React.ReactNod
 ];
 
 const PRIORITY_CONFIG = {
-    URGENT: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/50', label: '🚨 Urgent' },
-    IMPORTANT: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/50', label: '⚡ Important' },
+    URGENT: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/50', label: 'Urgent' },
+    IMPORTANT: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/50', label: 'Important' },
     NORMAL: { bg: 'bg-white/5', text: 'text-white/60', border: 'border-white/10', label: '' },
 };
 
@@ -128,20 +128,23 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`relative bg-white/5 backdrop-blur-sm rounded-2xl border ${post.isPinned ? 'border-amber-500/50' : 'border-white/10'
-                } overflow-hidden hover:bg-white/[0.07] transition-all duration-300 group`}
+            className={`relative bg-white/[0.04] backdrop-blur-sm rounded-2xl border ${post.isPinned ? 'border-amber-500/40' : 'border-white/[0.06]'
+                } overflow-hidden hover:bg-white/[0.06] transition-all duration-300 group touch-manipulation`}
         >
             {/* Pinned Badge */}
             {post.isPinned && (
-                <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full bg-amber-500/20 border border-amber-500/50">
-                    <span className="text-xs font-medium text-amber-400">📌 Pinned</span>
+                <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 px-2 py-1 rounded-full bg-amber-500/15 border border-amber-500/40">
+                    <span className="text-[11px] font-medium text-amber-400 flex items-center gap-1">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+                        Pinned
+                    </span>
                 </div>
             )}
 
             {/* Type Badge */}
-            <div className="px-5 pt-5 pb-3">
-                <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${typeConfig?.color} flex items-center justify-center`}>
+            <div className="px-4 pt-4 pb-2.5 sm:px-5 sm:pt-5 sm:pb-3">
+                <div className="flex items-center gap-2.5 sm:gap-3 mb-2.5 sm:mb-3">
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br ${typeConfig?.color} flex items-center justify-center shrink-0`}>
                         <span className="text-white">{typeConfig?.icon}</span>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -149,7 +152,10 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
                             {typeConfig?.label}
                         </span>
                         {post.isVerified && (
-                            <span className="ml-2 text-xs text-cyan-400">✓ Verified</span>
+                            <span className="ml-2 text-xs text-cyan-400 flex items-center gap-1">
+                                <CheckCircleIcon size={12} />
+                                Verified
+                            </span>
                         )}
                     </div>
                     {isExpiringSoon && (
@@ -161,12 +167,12 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
                 </div>
 
                 {/* Title */}
-                <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2 group-hover:text-cyan-300 transition-colors">
+                <h3 className="text-base sm:text-lg font-semibold text-white mb-1.5 sm:mb-2 line-clamp-2 group-hover:text-cyan-300 transition-colors">
                     {post.title}
                 </h3>
 
                 {/* Content Preview */}
-                <p className="text-sm text-white/60 line-clamp-3 mb-4">
+                <p className="text-sm text-white/55 line-clamp-2 sm:line-clamp-3 mb-3 sm:mb-4 leading-relaxed">
                     {post.content}
                 </p>
 
@@ -233,33 +239,33 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-white/5 flex items-center justify-between">
+            <div className="px-4 py-3 sm:px-5 sm:py-4 border-t border-white/[0.04] flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                 {/* Author */}
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white text-xs sm:text-sm font-medium shrink-0">
                         {post.author.avatarUrl ? (
-                            <img src={post.author.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
+                            <img src={post.author.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" loading="lazy" />
                         ) : (
                             post.author.displayName[0]
                         )}
                     </div>
-                    <div>
-                        <p className="text-sm font-medium text-white/80 flex items-center gap-1">
+                    <div className="min-w-0">
+                        <p className="text-sm font-medium text-white/80 flex items-center gap-1 truncate">
                             {post.author.displayName}
-                            {post.author.isVerified && <CheckCircleIcon size={14} className="text-cyan-400" />}
+                            {post.author.isVerified && <CheckCircleIcon size={13} className="text-cyan-400 shrink-0" />}
                         </p>
-                        <p className="text-xs text-white/40">{formatRelativeTime(post.createdAt)}</p>
+                        <p className="text-[11px] text-white/35">{formatRelativeTime(post.createdAt)}</p>
                     </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     {/* RSVP Buttons for Events */}
                     {isEvent && (
                         <>
                             <button
                                 onClick={() => onInterested?.(post.id)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${post.isInterested
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all touch-manipulation active:scale-95 ${post.isInterested
                                         ? 'bg-purple-500 text-white'
                                         : 'bg-white/5 text-white/60 hover:bg-white/10'
                                     }`}
@@ -268,7 +274,7 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
                             </button>
                             <button
                                 onClick={() => onGoing?.(post.id)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${post.isGoing
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all touch-manipulation active:scale-95 ${post.isGoing
                                         ? 'bg-cyan-500 text-white'
                                         : 'bg-white/5 text-white/60 hover:bg-white/10'
                                     }`}
@@ -282,33 +288,34 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
                     {isNeed && (
                         <button
                             onClick={() => onInterested?.(post.id)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${post.isInterested
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all touch-manipulation active:scale-95 flex items-center gap-1 ${post.isInterested
                                     ? 'bg-rose-500 text-white'
                                     : 'bg-white/5 text-white/60 hover:bg-white/10'
                                 }`}
                         >
-                            ❤️ Can Help
+                            <HeartIcon size={12} />
+                            Can Help
                         </button>
                     )}
 
                     {/* Upvote */}
                     <button
                         onClick={() => onUpvote?.(post.id)}
-                        className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 transition-all"
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 transition-all touch-manipulation active:scale-95 min-w-[44px] min-h-[32px] justify-center"
                     >
-                        <ArrowUpIcon size={14} />
+                        <ArrowUpIcon size={13} />
                         <span className="text-xs">{post.upvotes}</span>
                     </button>
 
                     {/* Comments */}
-                    <button className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 transition-all">
-                        <MessageIcon size={14} />
+                    <button className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 transition-all touch-manipulation active:scale-95 min-w-[44px] min-h-[32px] justify-center">
+                        <MessageIcon size={13} />
                         <span className="text-xs">{post.commentsCount}</span>
                     </button>
 
                     {/* Share */}
-                    <button className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 transition-all">
-                        <ShareIcon size={14} />
+                    <button className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 transition-all touch-manipulation active:scale-95 min-w-[32px] min-h-[32px] flex items-center justify-center">
+                        <ShareIcon size={13} />
                     </button>
                 </div>
             </div>
@@ -552,66 +559,69 @@ export function BulletinBoard({ communityId, showComposer = true, onCreatePost }
         });
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center">
-                            <MegaphoneIcon size={20} className="text-white" />
+                    <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center shrink-0">
+                            <MegaphoneIcon size={18} className="text-white" />
                         </div>
                         Community Bulletin
                     </h2>
-                    <p className="text-white/50 mt-1">Announcements, events, needs, and services</p>
+                    <p className="text-white/50 mt-1 text-sm sm:text-base">Announcements, events, needs, and services</p>
                 </div>
 
                 {/* Create Button */}
                 {showComposer && (
                     <button
                         onClick={onCreatePost}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-medium hover:opacity-90 transition-opacity"
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-sm font-medium hover:opacity-90 transition-opacity active:scale-95 touch-manipulation"
                     >
-                        <PlusIcon size={18} />
+                        <PlusIcon size={16} />
                         Post to Bulletin
                     </button>
                 )}
             </div>
 
-            {/* Category Tabs */}
-            <div className="flex flex-wrap gap-2">
-                <button
-                    onClick={() => setActiveType('ALL')}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeType === 'ALL'
-                            ? 'bg-white/10 text-white border border-white/20'
-                            : 'bg-white/5 text-white/60 hover:bg-white/10'
-                        }`}
-                >
-                    All
-                </button>
-                {BULLETIN_TYPES.map(type => (
+            {/* Category Tabs — horizontally scrollable on mobile */}
+            <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
+                <div className="flex gap-2 min-w-max pb-1">
                     <button
-                        key={type.value}
-                        onClick={() => setActiveType(type.value)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeType === type.value
-                                ? `bg-gradient-to-r ${type.color} text-white`
+                        onClick={() => setActiveType('ALL')}
+                        className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap touch-manipulation active:scale-95 ${activeType === 'ALL'
+                                ? 'bg-white/10 text-white border border-white/20'
                                 : 'bg-white/5 text-white/60 hover:bg-white/10'
                             }`}
                     >
-                        {type.icon}
-                        {type.label}
+                        All
                     </button>
-                ))}
+                    {BULLETIN_TYPES.map(type => (
+                        <button
+                            key={type.value}
+                            onClick={() => setActiveType(type.value)}
+                            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap touch-manipulation active:scale-95 ${activeType === type.value
+                                    ? `bg-gradient-to-r ${type.color} text-white`
+                                    : 'bg-white/5 text-white/60 hover:bg-white/10'
+                                }`}
+                        >
+                            {type.icon}
+                            <span className="hidden sm:inline">{type.label}</span>
+                            <span className="sm:hidden">{type.label.split(' ')[0]}</span>
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Search Bar */}
             <div className="relative">
-                <SearchIcon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+                <SearchIcon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
                 <input
                     type="text"
                     placeholder="Search bulletin posts..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/40 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                    className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-cyan-500/50 transition-colors"
                 />
             </div>
 

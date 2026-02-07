@@ -8,8 +8,7 @@
    Weightless. Authentic. Yours.
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+/* Font loading handled by next/font/google in layout.tsx for optimal performance */
 @import '../styles/design-tokens.css';
 
 :root {
@@ -791,6 +790,34 @@ video {
     -webkit-user-select: none;
     user-select: none;
   }
+
+  /* Reduce expensive effects on mobile for performance */
+  .backdrop-blur-xl,
+  .backdrop-blur-lg {
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+
+  /* Content containment for list cards */
+  .contain-layout {
+    contain: layout style;
+  }
+}
+
+/* GPU-accelerated transforms for smooth animations */
+.will-change-transform {
+  will-change: transform;
+}
+
+/* Image loading optimization */
+img[loading="lazy"] {
+  content-visibility: auto;
+}
+
+/* Content visibility for off-screen content */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 300px;
 }
 
 /* Smooth momentum scrolling for all scroll containers */

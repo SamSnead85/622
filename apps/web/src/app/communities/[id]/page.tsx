@@ -558,7 +558,9 @@ export default function CommunityDetailPage() {
                                     </>
                                 ) : (
                                     <div className="bg-white/5 rounded-2xl border border-white/10 p-8 text-center">
-                                        <div className="text-3xl mb-3">📝</div>
+                                        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-white/5 flex items-center justify-center text-white/30">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                        </div>
                                         <h3 className="font-semibold mb-1">No posts yet</h3>
                                         <p className="text-sm text-white/50 mb-4">Be the first to share something!</p>
                                         <button onClick={() => router.push(`/create?communityId=${communityId}`)} className="px-5 py-2.5 rounded-xl text-black font-semibold text-sm" style={{ backgroundColor: brandColor }}>

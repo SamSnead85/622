@@ -59,15 +59,15 @@ interface Category {
 // ============================================
 
 const CATEGORY_ICONS: Record<string, string> = {
-    gaming: '🎮',
-    music: '🎵',
-    creative: '🎨',
-    irl: '📹',
-    sports: '⚽',
-    tech: '💻',
-    education: '📚',
-    entertainment: '🎬',
-    other: '✨',
+    gaming: 'G',
+    music: 'M',
+    creative: 'C',
+    irl: 'I',
+    sports: 'S',
+    tech: 'T',
+    education: 'E',
+    entertainment: 'E',
+    other: 'O',
 };
 
 // ============================================
@@ -111,7 +111,7 @@ function StreamCard({ stream, index }: { stream: LiveStream; index: number }) {
                     {stream.category && (
                         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg">
                             <span className="text-[10px] text-white/80 capitalize">
-                                {CATEGORY_ICONS[stream.category] || '✨'} {stream.category}
+                                {CATEGORY_ICONS[stream.category] || stream.category[0]?.toUpperCase() || ''} {stream.category}
                             </span>
                         </div>
                     )}
@@ -357,7 +357,7 @@ export default function CampfireDiscoverPage() {
                                         : 'text-white/40 hover:text-white/60 border border-transparent hover:border-white/[0.06]'
                                 }`}
                             >
-                                <span>{CATEGORY_ICONS[cat.id] || '✨'}</span>
+                                <span>{CATEGORY_ICONS[cat.id] || cat.id[0]?.toUpperCase() || ''}</span>
                                 {cat.label}
                                 {cat.activeStreams > 0 && (
                                     <span className="bg-rose-500/20 text-rose-400 px-1 py-0.5 rounded text-[9px] ml-0.5">{cat.activeStreams}</span>

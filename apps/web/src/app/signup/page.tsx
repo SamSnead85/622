@@ -276,7 +276,8 @@ export default function SignupPage() {
                                         onClick={() => setStep(1)}
                                         className="flex items-center gap-2 text-sm text-white/50 hover:text-white/70 mb-8 transition-colors"
                                     >
-                                        ← Back
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                                        Back
                                     </button>
 
                                     <h1 className="text-3xl font-bold text-white mb-2">What should we call you?</h1>
@@ -351,42 +352,53 @@ export default function SignupPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
                     >
-                        {/* Floating elements */}
+                        {/* Floating elements — clean geometric shapes */}
                         <div className="absolute -top-20 -left-10 flex gap-3">
-                            {['🌄', '🎨', '📷'].map((emoji, i) => (
+                            {[
+                                <svg key="0" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
+                                <svg key="1" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,
+                                <svg key="2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+                            ].map((icon, i) => (
                                 <motion.div
                                     key={i}
-                                    className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur"
-                                    animate={{ y: [0, -10, 0], rotate: [0, 5, 0] }}
+                                    className="w-12 h-12 rounded-xl bg-white/5 border border-white/[0.06] flex items-center justify-center backdrop-blur text-white/30"
+                                    animate={{ y: [0, -10, 0] }}
                                     transition={{ duration: 4 + i, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}
                                 >
-                                    <span className="text-xl">{emoji}</span>
+                                    {icon}
                                 </motion.div>
                             ))}
                         </div>
 
                         <motion.div
-                            className="w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-500/20 to-rose-500/20 border border-white/10 mx-auto mb-8 flex items-center justify-center backdrop-blur-xl"
-                            animate={{ rotate: [0, -5, 0, 5, 0] }}
-                            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                            className="w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-500/20 to-rose-500/20 border border-white/[0.08] mx-auto mb-8 flex items-center justify-center backdrop-blur-xl"
+                            animate={{ scale: [1, 1.05, 1] }}
+                            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
                         >
-                            <span className="text-5xl">🚀</span>
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="url(#signupGrad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
+                                <defs><linearGradient id="signupGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#8B5CF6"/><stop offset="100%" stopColor="#EC4899"/></linearGradient></defs>
+                            </svg>
                         </motion.div>
                         <h2 className="text-3xl font-bold text-white mb-4">Break Free</h2>
                         <p className="text-lg text-white/50 max-w-md">
                             No algorithms weighing you down. No corporate control. Just you and your community.
                         </p>
 
-                        {/* Floating elements right */}
+                        {/* Floating elements right — clean geometric shapes */}
                         <div className="absolute -bottom-16 -right-10 flex gap-3">
-                            {['✨', '🎬', '💫'].map((emoji, i) => (
+                            {[
+                                <svg key="0" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
+                                <svg key="1" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>,
+                                <svg key="2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
+                            ].map((icon, i) => (
                                 <motion.div
                                     key={i}
-                                    className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur"
-                                    animate={{ y: [0, 10, 0], rotate: [0, -5, 0] }}
+                                    className="w-12 h-12 rounded-xl bg-white/5 border border-white/[0.06] flex items-center justify-center backdrop-blur text-white/30"
+                                    animate={{ y: [0, 10, 0] }}
                                     transition={{ duration: 5 + i, repeat: Infinity, ease: 'easeInOut', delay: i * 0.2 }}
                                 >
-                                    <span className="text-xl">{emoji}</span>
+                                    {icon}
                                 </motion.div>
                             ))}
                         </div>

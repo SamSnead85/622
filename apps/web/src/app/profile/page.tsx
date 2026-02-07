@@ -401,7 +401,9 @@ function ProfilePageContent() {
 
                             {activeTab === 'journeys' && (
                                 <div className="text-center py-16">
-                                    <div className="text-5xl mb-4">🎬</div>
+                                    <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center text-white/25">
+                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                                    </div>
                                     <h3 className="text-xl font-semibold text-white mb-2">No Journeys Yet</h3>
                                     <p className="text-white/50 mb-6 max-w-md mx-auto">
                                         Share short videos with your community
@@ -464,7 +466,9 @@ function ProfilePageContent() {
                                         </div>
                                     ) : (
                                         <div className="text-center py-16">
-                                            <div className="text-5xl mb-4">🔖</div>
+                                            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center text-white/25">
+                                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+                                            </div>
                                             <h3 className="text-xl font-semibold text-white mb-2">No Saved Posts</h3>
                                             <p className="text-white/50 mb-6 max-w-md mx-auto">
                                                 Bookmark posts you love and they&apos;ll appear here

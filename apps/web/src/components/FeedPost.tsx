@@ -329,7 +329,7 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                                 onClick={() => router.push(`/profile/${post.author.username}`)}
                             >@{post.author.username}</span>
                             <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#00D4FF]/20 to-[#7C3AED]/20 text-[#00D4FF] text-[10px] font-medium flex-shrink-0 border border-[#00D4FF]/10">
-                                {post.type === 'RALLY' ? '📅 Rally' : '🌍 Public'}
+                                {post.type === 'RALLY' ? 'Rally' : 'Public'}
                             </span>
                             <span className="text-white/30 text-xs flex-shrink-0">• {new Date(post.createdAt).toLocaleDateString()}</span>
                         </div>
@@ -390,9 +390,10 @@ export function FeedPost({ post, likePost, toggleRsvp, deletePost, zenMode = fal
                         <div className="absolute top-0 -left-1/4 w-1/2 h-1/2 rounded-full bg-[#00D4FF]/10 blur-[60px]" />
                         <div className="absolute bottom-0 -right-1/4 w-1/2 h-1/2 rounded-full bg-[#8B5CF6]/10 blur-[60px]" />
                     </div>
-                    <div className="text-center">
-                        <span className="text-4xl">{post.content?.length && post.content.length > 100 ? '📝' : '💭'}</span>
-                        {post.type === 'RALLY' && <span className="text-4xl ml-2">📣</span>}
+                    <div className="text-center text-white/20">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
+                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                        </svg>
                     </div>
                 </div>
             )}

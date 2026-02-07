@@ -142,7 +142,7 @@ export function InviteFriends({ isOpen, onClose, communityId, communityName, com
             const groupName = communityName || 'our group';
 
             const messages: Record<string, string> = {
-                whatsapp: `Hey! 👋 I created *${groupName}* on 0G — a private social platform with end-to-end privacy.\n\nJoin us here: ${communityUrl}\n\n✅ No ads, no tracking\n🔒 Private & encrypted\n⚡ Takes 30 seconds to join`,
+                whatsapp: `Hey! I created *${groupName}* on 0G — a private social platform with end-to-end privacy.\n\nJoin us here: ${communityUrl}\n\n• No ads, no tracking\n• Private & encrypted\n• Takes 30 seconds to join`,
                 sms: `Hey! I made a group called "${groupName}" on 0G. Join us: ${communityUrl}`,
                 telegram: `Hey! 👋 I created "${groupName}" on 0G — a private social platform.\n\nJoin here: ${communityUrl}`,
                 twitter: `Join ${groupName} on @ZeroG_Social — the privacy-first social platform 🔒\n\n${communityUrl}`,
@@ -173,7 +173,7 @@ export function InviteFriends({ isOpen, onClose, communityId, communityName, com
             const personalUrl = inviteLink || `${window.location.origin}/r/${inviteCode || ''}`;
 
             const messages: Record<string, string> = {
-                whatsapp: `Hey! 👋 I'm on *0G* — a private social platform with no ads and real privacy.\n\nJoin me: ${personalUrl}\n\n🔒 End-to-end encrypted\n⚡ No tracking or data selling\n✨ Built for real communities`,
+                whatsapp: `Hey! I'm on *0G* — a private social platform with no ads and real privacy.\n\nJoin me: ${personalUrl}\n\n• End-to-end encrypted\n• No tracking or data selling\n• Built for real communities`,
                 sms: `Hey! Join me on 0G — a private social platform. ${personalUrl}`,
                 telegram: `Join me on 0G — the privacy-first social network!\n\n${personalUrl}`,
                 twitter: `I'm on @ZeroG_Social — social media built for privacy 🔒\n\nJoin: ${personalUrl}`,

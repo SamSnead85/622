@@ -33,13 +33,26 @@ interface TribeData {
 // CATEGORY OPTIONS (ARCHETYPES)
 // ============================================
 const ARCHETYPES = [
-    { id: 'family', label: 'Family', icon: '🧬', desc: 'A private space for your family.' },
-    { id: 'friends', label: 'Friends', icon: '⭕', desc: 'Inner circle for your closest people.' },
-    { id: 'business', label: 'Organization', icon: '🤝', desc: 'Professional network or team.' },
-    { id: 'faith', label: 'Faith', icon: '🕌', desc: 'Spiritual and community gathering.' },
-    { id: 'hobby', label: 'Club / Interest', icon: '⚔️', desc: 'Connect over shared passions.' },
-    { id: 'local', label: 'Neighborhood', icon: '🏘️', desc: 'Local community organizing.' },
+    { id: 'family', label: 'Family', icon: 'family', desc: 'A private space for your family.' },
+    { id: 'friends', label: 'Friends', icon: 'friends', desc: 'Inner circle for your closest people.' },
+    { id: 'business', label: 'Organization', icon: 'business', desc: 'Professional network or team.' },
+    { id: 'faith', label: 'Faith', icon: 'faith', desc: 'Spiritual and community gathering.' },
+    { id: 'hobby', label: 'Club / Interest', icon: 'hobby', desc: 'Connect over shared passions.' },
+    { id: 'local', label: 'Neighborhood', icon: 'local', desc: 'Local community organizing.' },
 ];
+
+function ArchetypeIcon({ type, size = 22 }: { type: string; size?: number }) {
+    const props = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+    switch (type) {
+        case 'family': return <svg {...props}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+        case 'friends': return <svg {...props}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>;
+        case 'business': return <svg {...props}><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>;
+        case 'faith': return <svg {...props}><path d="M12 2c-3 3-5 6-5 9a5 5 0 0010 0c0-3-2-6-5-9z"/><line x1="12" y1="15" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>;
+        case 'hobby': return <svg {...props}><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>;
+        case 'local': return <svg {...props}><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 10-16 0c0 3 2.7 6.9 8 11.7z"/></svg>;
+        default: return <svg {...props}><circle cx="12" cy="12" r="10"/></svg>;
+    }
+}
 
 // ============================================
 // BRAND COLOR PRESETS
@@ -244,7 +257,11 @@ export default function CreateTribePage() {
                                                 : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20'
                                         }`}
                                     >
-                                        <span className="text-3xl mb-3 block">{arch.icon}</span>
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-colors duration-300 ${
+                                            tribeData.category === arch.id ? 'bg-[#00D4FF]/15 text-[#00D4FF]' : 'bg-white/5 text-white/40 group-hover:text-white/60'
+                                        }`}>
+                                            <ArchetypeIcon type={arch.icon} size={20} />
+                                        </div>
                                         <h3 className={`font-bold text-sm mb-0.5 ${tribeData.category === arch.id ? 'text-[#00D4FF]' : 'text-white'}`}>{arch.label}</h3>
                                         <p className="text-xs text-white/40">{arch.desc}</p>
                                         {tribeData.category === arch.id && (
@@ -623,8 +640,8 @@ export default function CreateTribePage() {
                                     <button
                                         onClick={() => {
                                             const msg = isContainedType
-                                                ? `Hey! 👋 I set up *${tribeData.name}* — a private, secure group just for us.\n\n${tribeData.tagline || 'Join our private circle.'}\n\n✅ Private & contained — no social media exposure\n🔒 Your data stays yours\n⚡ 30 second signup\n\nJoin here: ${inviteUrl}`
-                                                : `Hey! 👋 Join *${tribeData.name}* on 0G.\n\n${tribeData.tagline || ''}\n\nJoin here: ${inviteUrl}`;
+                                                ? `Hey! I set up *${tribeData.name}* — a private, secure group just for us.\n\n${tribeData.tagline || 'Join our private circle.'}\n\n- Private & contained — no social media exposure\n- Your data stays yours\n- 30 second signup\n\nJoin here: ${inviteUrl}`
+                                                : `Hey! Join *${tribeData.name}* on 0G.\n\n${tribeData.tagline || ''}\n\nJoin here: ${inviteUrl}`;
                                             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
                                         }}
                                         className="py-2.5 rounded-xl bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 hover:bg-[#25D366]/20 font-medium transition-colors text-sm"

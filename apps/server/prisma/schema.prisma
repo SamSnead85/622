@@ -28,6 +28,8 @@ model User {
   isGroupOnly                Boolean                   @default(false)
   primaryCommunityId         String?
   isBanned                   Boolean                   @default(false)
+  strikeCount                Int                       @default(0)
+  suspendedUntil             DateTime?
   lastActiveAt               DateTime                  @default(now())
   createdAt                  DateTime                  @default(now())
   updatedAt                  DateTime                  @updatedAt
@@ -77,9 +79,27 @@ model User {
   proposals                  Proposal[]
   notificationPrefs          NotificationPreferences?
   pushSubscriptions          PushSubscription[]
+  receivedStrikes            UserStrike[]              @relation("StrikeTarget")
+  issuedStrikes              UserStrike[]              @relation("StrikeIssuer")
 
   @@index([username])
   @@index([email])
+}
+
+model UserStrike {
+  id         String    @id @default(uuid())
+  userId     String
+  issuedById String
+  reason     String
+  postId     String?
+  expiresAt  DateTime?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  user       User      @relation("StrikeTarget", fields: [userId], references: [id], onDelete: Cascade)
+  issuedBy   User      @relation("StrikeIssuer", fields: [issuedById], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isActive])
 }
 
 model Session {
@@ -386,6 +406,10 @@ model Community {
   isAnnouncementOnly Boolean    @default(false)       // Only admins/mods can post
   welcomeMessage    String?                            // Auto-sent to new members
   pinnedMessageId   String?                            // Pinned post ID
+  // Community governance
+  customTerms         String?                          // Custom community terms
+  moderationLevel     String    @default("standard")   // "relaxed" | "standard" | "strict"
+  algorithmPreference String    @default("balanced")   // "chronological" | "balanced" | "engagement"
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   creator        User              @relation("CommunityCreator", fields: [creatorId], references: [id])

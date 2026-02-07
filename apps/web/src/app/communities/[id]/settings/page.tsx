@@ -536,8 +536,8 @@ export default function CommunityAdminSettings() {
                                         <label className="block text-sm font-medium text-white/70 mb-3">Privacy</label>
                                         <div className="grid grid-cols-2 gap-4">
                                             {[
-                                                { value: true, icon: '🌍', label: 'Public', desc: 'Anyone can find and join' },
-                                                { value: false, icon: '🔒', label: 'Private', desc: 'Invite only, hidden from search' },
+                                                { value: true, icon: 'public', label: 'Public', desc: 'Anyone can find and join' },
+                                                { value: false, icon: 'private', label: 'Private', desc: 'Invite only, hidden from search' },
                                             ].map(opt => (
                                                 <button
                                                     key={String(opt.value)}
@@ -548,7 +548,13 @@ export default function CommunityAdminSettings() {
                                                             : 'border-white/10 hover:border-white/20'
                                                     }`}
                                                 >
-                                                    <div className="text-xl mb-2">{opt.icon}</div>
+                                                    <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center mb-2 text-white/60">
+                                                        {opt.icon === 'public' ? (
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                                                        ) : (
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                                        )}
+                                                    </div>
                                                     <div className="font-medium text-sm">{opt.label}</div>
                                                     <div className="text-xs text-white/50">{opt.desc}</div>
                                                 </button>
@@ -1046,7 +1052,7 @@ export default function CommunityAdminSettings() {
                                                 <div className="mt-3 flex items-center gap-4 text-xs text-white/40">
                                                     <span>{settings.memberCount} members</span>
                                                     <span>{settings.postCount} posts</span>
-                                                    <span>{!settings.isPublic ? '🔒 Private' : '🌍 Public'}</span>
+                                                    <span>{!settings.isPublic ? 'Private' : 'Public'}</span>
                                                 </div>
                                             </div>
                                         </div>

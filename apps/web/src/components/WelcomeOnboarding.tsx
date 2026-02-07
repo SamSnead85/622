@@ -14,18 +14,18 @@ interface OnboardingProps {
 }
 
 const INTERESTS = [
-    { id: 'photography', label: 'Photography', icon: '📷' },
-    { id: 'travel', label: 'Travel', icon: '✈️' },
-    { id: 'food', label: 'Food & Cooking', icon: '🍳' },
-    { id: 'fitness', label: 'Fitness', icon: '💪' },
-    { id: 'music', label: 'Music', icon: '🎵' },
-    { id: 'art', label: 'Art & Design', icon: '🎨' },
-    { id: 'tech', label: 'Technology', icon: '💻' },
-    { id: 'fashion', label: 'Fashion', icon: '👗' },
-    { id: 'gaming', label: 'Gaming', icon: '🎮' },
-    { id: 'reading', label: 'Reading', icon: '📚' },
-    { id: 'nature', label: 'Nature', icon: '🌿' },
-    { id: 'movies', label: 'Movies & TV', icon: '🎬' },
+    { id: 'photography', label: 'Photography', icon: 'Ph' },
+    { id: 'travel', label: 'Travel', icon: 'Tr' },
+    { id: 'food', label: 'Food & Cooking', icon: 'Fd' },
+    { id: 'fitness', label: 'Fitness', icon: 'Ft' },
+    { id: 'music', label: 'Music', icon: 'Mu' },
+    { id: 'art', label: 'Art & Design', icon: 'Ar' },
+    { id: 'tech', label: 'Technology', icon: 'Te' },
+    { id: 'fashion', label: 'Fashion', icon: 'Fa' },
+    { id: 'gaming', label: 'Gaming', icon: 'Gm' },
+    { id: 'reading', label: 'Reading', icon: 'Rd' },
+    { id: 'nature', label: 'Nature', icon: 'Na' },
+    { id: 'movies', label: 'Movies & TV', icon: 'Mv' },
 ];
 
 const PRESET_AVATARS = [
@@ -135,11 +135,15 @@ export function WelcomeOnboarding({ onComplete }: OnboardingProps) {
                                     <p className="text-white/80">Invite your family & close friends</p>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-2xl">🏕️</span>
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/50 shrink-0">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                                    </div>
                                     <p className="text-white/80">Create private tribes & circles</p>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-2xl">🔒</span>
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/50 shrink-0">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                    </div>
                                     <p className="text-white/80">You own your data, always</p>
                                 </div>
                             </div>
