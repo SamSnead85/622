@@ -118,11 +118,46 @@ router.post('/post', authenticate, upload.single('file'), async (req: MulterRequ
 
         const result = await uploadFile(file.buffer, 'posts', file.mimetype, file.originalname);
 
+        // -------------------------------------------------------------------
+        // Video thumbnail generation (server-side)
+        //
+        // Currently returns null — the client generates a thumbnail locally.
+        // To enable server-side thumbnail generation with ffmpeg:
+        //
+        //   1. Install ffmpeg on the server (e.g. `apt install ffmpeg`)
+        //   2. Use fluent-ffmpeg or child_process to extract a frame:
+        //
+        //      import ffmpeg from 'fluent-ffmpeg';
+        //      import { Readable } from 'stream';
+        //
+        //      async function generateThumbnail(buffer: Buffer): Promise<Buffer> {
+        //        return new Promise((resolve, reject) => {
+        //          const chunks: Buffer[] = [];
+        //          ffmpeg(Readable.from(buffer))
+        //            .frames(1)
+        //            .outputOptions('-vf', 'scale=480:-1')
+        //            .format('mjpeg')
+        //            .on('error', reject)
+        //            .pipe()
+        //            .on('data', (chunk: Buffer) => chunks.push(chunk))
+        //            .on('end', () => resolve(Buffer.concat(chunks)));
+        //        });
+        //      }
+        //
+        //   3. Upload the resulting JPEG buffer via uploadFile() and return
+        //      its URL as thumbnailUrl in the response below.
+        //
+        //   4. For Cloudinary: use eager transformations on upload to auto-
+        //      generate a poster frame. The thumbnail URL is returned in the
+        //      eager array of the upload response.
+        // -------------------------------------------------------------------
         res.json({
             url: result.url,
             key: result.key,
             type: isVideo ? 'VIDEO' : 'IMAGE',
             size: result.size,
+            // For video uploads, include thumbnailUrl (null until server-side generation is configured)
+            ...(isVideo ? { thumbnailUrl: null } : {}),
         });
     } catch (error) {
         next(error);

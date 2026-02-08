@@ -1,239 +1,153 @@
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
     StyleSheet,
-    ScrollView,
+    FlatList,
     TouchableOpacity,
-    Animated,
     TextInput,
     KeyboardAvoidingView,
     Platform,
     Image,
+    ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { colors, typography, spacing, Avatar } from '@zerog/ui';
+import { colors, typography, spacing } from '@zerog/ui';
+import { apiFetch, API } from '../../lib/api';
+import { useAuthStore } from '../../stores';
 
-// Mock conversation data
-const MOCK_MESSAGES = [
-    {
-        id: 'm1',
-        senderId: 'other',
-        text: 'Hey! I loved your latest post 😍',
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        isRead: true,
-    },
-    {
-        id: 'm2',
-        senderId: 'me',
-        text: 'Thank you so much! That means a lot 🙏',
-        timestamp: new Date(Date.now() - 3500000).toISOString(),
-        isRead: true,
-    },
-    {
-        id: 'm3',
-        senderId: 'other',
-        text: 'Would love to collaborate sometime. Are you open to that?',
-        timestamp: new Date(Date.now() - 3400000).toISOString(),
-        isRead: true,
-    },
-    {
-        id: 'm4',
-        senderId: 'me',
-        text: 'Absolutely! Let me know what you have in mind',
-        timestamp: new Date(Date.now() - 3300000).toISOString(),
-        isRead: true,
-    },
-    {
-        id: 'm5',
-        senderId: 'other',
-        text: "I'm thinking of a travel series together. Hit some amazing spots and create content!",
-        timestamp: new Date(Date.now() - 3200000).toISOString(),
-        isRead: true,
-    },
-];
+interface Message {
+    id: string;
+    content: string;
+    senderId: string;
+    createdAt: string;
+    isRead?: boolean;
+}
 
-const OTHER_USER = {
-    id: 'other',
-    username: 'adventure_sarah',
-    displayName: 'Sarah Chen',
-    avatarUrl: 'https://i.pravatar.cc/150?img=1',
-    isOnline: true,
-};
+interface ChatParticipant {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string;
+    isOnline?: boolean;
+}
 
-// Message bubble component
-const MessageBubble = memo(({ message, isOwn }: { message: typeof MOCK_MESSAGES[0]; isOwn: boolean }) => {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-    const slideAnim = useRef(new Animated.Value(isOwn ? 20 : -20)).current;
+export default function ChatScreen() {
+    const router = useRouter();
+    const { id: conversationId } = useLocalSearchParams<{ id: string }>();
+    const insets = useSafeAreaInsets();
+    const user = useAuthStore((s) => s.user);
+    const flatListRef = useRef<FlatList>(null);
 
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [participant, setParticipant] = useState<ChatParticipant | null>(null);
+    const [inputText, setInputText] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSending, setIsSending] = useState(false);
+
+    // Load conversation messages
     useEffect(() => {
-        Animated.parallel([
-            Animated.timing(fadeAnim, {
-                toValue: 1,
-                duration: 300,
-                useNativeDriver: true,
-            }),
-            Animated.spring(slideAnim, {
-                toValue: 0,
-                tension: 100,
-                friction: 10,
-                useNativeDriver: true,
-            }),
-        ]).start();
-    }, []);
+        if (!conversationId) return;
+
+        const loadMessages = async () => {
+            try {
+                const data = await apiFetch<any>(API.messages(conversationId));
+                const msgs = data.messages || data.data || [];
+                setMessages(Array.isArray(msgs) ? msgs : []);
+
+                if (data.participant) {
+                    setParticipant(data.participant);
+                } else if (data.participants) {
+                    const other = data.participants.find((p: any) => p.id !== user?.id);
+                    if (other) setParticipant(other);
+                }
+            } catch (err) {
+                // Silently handle
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadMessages();
+    }, [conversationId, user?.id]);
+
+    const handleSend = useCallback(async () => {
+        if (!inputText.trim() || isSending) return;
+
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        const text = inputText.trim();
+        setInputText('');
+
+        // Optimistic message
+        const optimisticMsg: Message = {
+            id: `temp-${Date.now()}`,
+            content: text,
+            senderId: user?.id || 'me',
+            createdAt: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, optimisticMsg]);
+
+        setIsSending(true);
+        try {
+            const data = await apiFetch<any>(API.messages(conversationId!), {
+                method: 'POST',
+                body: JSON.stringify({ content: text }),
+            });
+
+            // Replace optimistic with real message
+            const realMsg = data.message || data.data || data;
+            setMessages((prev) =>
+                prev.map((m) => (m.id === optimisticMsg.id ? { ...realMsg, id: realMsg.id || optimisticMsg.id } : m))
+            );
+        } catch {
+            // Mark failed — keep the optimistic message visible
+        } finally {
+            setIsSending(false);
+        }
+
+        // Scroll to bottom
+        setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+    }, [inputText, isSending, user?.id, conversationId]);
 
     const formatTime = (timestamp: string) => {
         const date = new Date(timestamp);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
-    return (
-        <Animated.View
-            style={[
-                styles.messageBubbleContainer,
-                isOwn ? styles.ownMessage : styles.otherMessage,
-                {
-                    opacity: fadeAnim,
-                    transform: [{ translateX: slideAnim }],
-                },
-            ]}
-        >
-            {isOwn ? (
-                <LinearGradient
-                    colors={[colors.gold[500], colors.gold[600]]}
-                    style={styles.messageBubble}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                >
-                    <Text style={[styles.messageText, styles.ownMessageText]}>{message.text}</Text>
-                    <Text style={[styles.messageTime, styles.ownMessageTime]}>
-                        {formatTime(message.timestamp)}
-                    </Text>
-                </LinearGradient>
-            ) : (
-                <View style={[styles.messageBubble, styles.otherBubble]}>
-                    <Text style={styles.messageText}>{message.text}</Text>
-                    <Text style={styles.messageTime}>{formatTime(message.timestamp)}</Text>
-                </View>
-            )}
-        </Animated.View>
-    );
-});
+    const renderMessage = useCallback(({ item }: { item: Message }) => {
+        const isOwn = item.senderId === user?.id;
 
-// Typing indicator component
-const TypingIndicator = memo(() => {
-    const dot1 = useRef(new Animated.Value(0)).current;
-    const dot2 = useRef(new Animated.Value(0)).current;
-    const dot3 = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        const animate = (dot: Animated.Value, delay: number) => {
-            Animated.loop(
-                Animated.sequence([
-                    Animated.timing(dot, {
-                        toValue: 1,
-                        duration: 300,
-                        delay,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(dot, {
-                        toValue: 0,
-                        duration: 300,
-                        useNativeDriver: true,
-                    }),
-                ])
-            ).start();
-        };
-
-        animate(dot1, 0);
-        animate(dot2, 150);
-        animate(dot3, 300);
-    }, []);
-
-    return (
-        <View style={styles.typingContainer}>
-            <View style={styles.typingBubble}>
-                {[dot1, dot2, dot3].map((dot, i) => (
-                    <Animated.View
-                        key={i}
-                        style={[
-                            styles.typingDot,
-                            {
-                                opacity: dot.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [0.3, 1],
-                                }),
-                                transform: [
-                                    {
-                                        scale: dot.interpolate({
-                                            inputRange: [0, 1],
-                                            outputRange: [0.8, 1.2],
-                                        }),
-                                    },
-                                ],
-                            },
-                        ]}
-                    />
-                ))}
+        return (
+            <View style={[styles.msgRow, isOwn ? styles.ownRow : styles.otherRow]}>
+                {isOwn ? (
+                    <LinearGradient
+                        colors={[colors.gold[500], colors.gold[600]]}
+                        style={[styles.msgBubble, styles.ownBubble]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                    >
+                        <Text style={[styles.msgText, styles.ownText]}>{item.content}</Text>
+                        <Text style={[styles.msgTime, styles.ownTime]}>{formatTime(item.createdAt)}</Text>
+                    </LinearGradient>
+                ) : (
+                    <View style={[styles.msgBubble, styles.otherBubble]}>
+                        <Text style={styles.msgText}>{item.content}</Text>
+                        <Text style={styles.msgTime}>{formatTime(item.createdAt)}</Text>
+                    </View>
+                )}
             </View>
-        </View>
-    );
-});
-
-export default function ChatScreen() {
-    const router = useRouter();
-    const insets = useSafeAreaInsets();
-    const [messages, setMessages] = useState(MOCK_MESSAGES);
-    const [inputText, setInputText] = useState('');
-    const [isTyping, setIsTyping] = useState(false);
-    const scrollViewRef = useRef<ScrollView>(null);
-
-    const handleSend = () => {
-        if (!inputText.trim()) return;
-
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-        const newMessage = {
-            id: `m${Date.now()}`,
-            senderId: 'me',
-            text: inputText.trim(),
-            timestamp: new Date().toISOString(),
-            isRead: false,
-        };
-
-        setMessages((prev) => [...prev, newMessage]);
-        setInputText('');
-
-        // Simulate typing response
-        setTimeout(() => setIsTyping(true), 500);
-        setTimeout(() => {
-            setIsTyping(false);
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: `m${Date.now() + 1}`,
-                    senderId: 'other',
-                    text: 'Sounds great! 🎉',
-                    timestamp: new Date().toISOString(),
-                    isRead: true,
-                },
-            ]);
-        }, 2000);
-
-        // Scroll to bottom
-        setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-    };
+        );
+    }, [user?.id]);
 
     return (
         <KeyboardAvoidingView
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={0}
         >
             <LinearGradient
                 colors={[colors.obsidian[900], colors.obsidian[800]]}
@@ -244,65 +158,60 @@ export default function ChatScreen() {
             <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
                 <TouchableOpacity
                     style={styles.backButton}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        router.back();
-                    }}
+                    onPress={() => router.back()}
                 >
                     <Text style={styles.backIcon}>←</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.userInfo} activeOpacity={0.8}>
-                    <View style={styles.avatarWrapper}>
-                        <Avatar source={OTHER_USER.avatarUrl} name={OTHER_USER.displayName} size="md" />
-                        {OTHER_USER.isOnline && <View style={styles.onlineIndicator} />}
+                {participant && (
+                    <View style={styles.userInfo}>
+                        {participant.avatarUrl ? (
+                            <Image source={{ uri: participant.avatarUrl }} style={styles.headerAvatar} />
+                        ) : (
+                            <View style={[styles.headerAvatar, styles.headerAvatarPlaceholder]}>
+                                <Text style={styles.headerAvatarInitial}>
+                                    {(participant.displayName || '?')[0].toUpperCase()}
+                                </Text>
+                            </View>
+                        )}
+                        <View style={styles.userDetails}>
+                            <Text style={styles.displayName}>{participant.displayName}</Text>
+                            <Text style={styles.onlineStatus}>
+                                {participant.isOnline ? 'Online' : 'Offline'}
+                            </Text>
+                        </View>
                     </View>
-                    <View style={styles.userDetails}>
-                        <Text style={styles.displayName}>{OTHER_USER.displayName}</Text>
-                        <Text style={styles.onlineStatus}>
-                            {OTHER_USER.isOnline ? 'Online' : 'Offline'}
-                        </Text>
-                    </View>
-                </TouchableOpacity>
-
-                <View style={styles.headerActions}>
-                    <TouchableOpacity style={styles.headerButton}>
-                        <Text style={styles.headerIcon}>📞</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerButton}>
-                        <Text style={styles.headerIcon}>📹</Text>
-                    </TouchableOpacity>
-                </View>
+                )}
             </View>
 
             {/* Messages */}
-            <ScrollView
-                ref={scrollViewRef}
-                style={styles.messagesContainer}
-                contentContainerStyle={[
-                    styles.messagesContent,
-                    { paddingBottom: spacing.xl },
-                ]}
-                showsVerticalScrollIndicator={false}
-                onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: false })}
-            >
-                {messages.map((message) => (
-                    <MessageBubble
-                        key={message.id}
-                        message={message}
-                        isOwn={message.senderId === 'me'}
-                    />
-                ))}
-                {isTyping && <TypingIndicator />}
-            </ScrollView>
+            {isLoading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.gold[500]} />
+                </View>
+            ) : (
+                <FlatList
+                    ref={flatListRef}
+                    data={messages}
+                    renderItem={renderMessage}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={[
+                        styles.messagesList,
+                        { paddingBottom: spacing.md },
+                    ]}
+                    showsVerticalScrollIndicator={false}
+                    onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+                    ListEmptyComponent={
+                        <View style={styles.emptyChat}>
+                            <Text style={styles.emptyChatText}>No messages yet. Say hello!</Text>
+                        </View>
+                    }
+                />
+            )}
 
             {/* Input */}
             <View style={[styles.inputContainer, { paddingBottom: insets.bottom + spacing.md }]}>
                 <View style={styles.inputWrapper}>
-                    <TouchableOpacity style={styles.attachButton}>
-                        <Text style={styles.attachIcon}>+</Text>
-                    </TouchableOpacity>
-
                     <TextInput
                         style={styles.textInput}
                         placeholder="Message..."
@@ -310,12 +219,11 @@ export default function ChatScreen() {
                         value={inputText}
                         onChangeText={setInputText}
                         multiline
-                        maxLength={1000}
+                        maxLength={2000}
+                        returnKeyType="send"
+                        blurOnSubmit={false}
+                        onSubmitEditing={handleSend}
                     />
-
-                    <TouchableOpacity style={styles.emojiButton}>
-                        <Text style={styles.emojiIcon}>😊</Text>
-                    </TouchableOpacity>
 
                     {inputText.trim() ? (
                         <TouchableOpacity onPress={handleSend} activeOpacity={0.8}>
@@ -327,9 +235,7 @@ export default function ChatScreen() {
                             </LinearGradient>
                         </TouchableOpacity>
                     ) : (
-                        <TouchableOpacity style={styles.micButton}>
-                            <Text style={styles.micIcon}>🎙️</Text>
-                        </TouchableOpacity>
+                        <View style={styles.sendButtonPlaceholder} />
                     )}
                 </View>
             </View>
@@ -338,206 +244,67 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.obsidian[900],
-    },
+    container: { flex: 1, backgroundColor: colors.obsidian[900] },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+        flexDirection: 'row', alignItems: 'center',
+        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
+        borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.06)',
     },
     backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 40, height: 40, borderRadius: 20,
         backgroundColor: 'rgba(255, 255, 255, 0.06)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: spacing.md,
+        alignItems: 'center', justifyContent: 'center', marginRight: spacing.md,
     },
-    backIcon: {
-        fontSize: 20,
-        color: colors.text.primary,
+    backIcon: { fontSize: 20, color: colors.text.primary },
+    userInfo: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+    headerAvatar: { width: 40, height: 40, borderRadius: 20 },
+    headerAvatarPlaceholder: {
+        backgroundColor: colors.obsidian[500], alignItems: 'center', justifyContent: 'center',
     },
-    userInfo: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    avatarWrapper: {
-        position: 'relative',
-    },
-    onlineIndicator: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        backgroundColor: colors.emerald[500],
-        borderWidth: 2,
-        borderColor: colors.obsidian[900],
-    },
-    userDetails: {
-        marginLeft: spacing.md,
-    },
-    displayName: {
-        fontSize: typography.fontSize.base,
-        fontWeight: '600',
-        color: colors.text.primary,
-        fontFamily: typography.fontFamily.sans,
-    },
-    onlineStatus: {
-        fontSize: typography.fontSize.sm,
-        color: colors.emerald[500],
-        fontFamily: typography.fontFamily.sans,
-    },
-    headerActions: {
-        flexDirection: 'row',
-        gap: spacing.sm,
-    },
-    headerButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.06)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerIcon: {
-        fontSize: 18,
-    },
-    messagesContainer: {
-        flex: 1,
-    },
-    messagesContent: {
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.lg,
-    },
-    messageBubbleContainer: {
-        marginBottom: spacing.md,
-        maxWidth: '80%',
-    },
-    ownMessage: {
-        alignSelf: 'flex-end',
-    },
-    otherMessage: {
-        alignSelf: 'flex-start',
-    },
-    messageBubble: {
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.md,
-        borderRadius: 20,
-    },
-    otherBubble: {
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-        borderBottomLeftRadius: 4,
-    },
-    messageText: {
-        fontSize: typography.fontSize.base,
-        color: colors.text.primary,
-        fontFamily: typography.fontFamily.sans,
-        lineHeight: 22,
-    },
-    ownMessageText: {
-        color: colors.obsidian[900],
-    },
-    messageTime: {
-        fontSize: typography.fontSize.xs,
-        color: colors.text.muted,
-        fontFamily: typography.fontFamily.sans,
-        marginTop: spacing.xs,
-        alignSelf: 'flex-end',
-    },
-    ownMessageTime: {
-        color: 'rgba(10, 10, 11, 0.6)',
-    },
-    typingContainer: {
-        alignSelf: 'flex-start',
-    },
-    typingBubble: {
-        flexDirection: 'row',
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.md,
-        borderRadius: 20,
-        gap: 4,
-    },
-    typingDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: colors.text.muted,
-    },
+    headerAvatarInitial: { fontSize: 16, fontWeight: '700', color: colors.text.primary },
+    userDetails: { marginLeft: spacing.md },
+    displayName: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
+    onlineStatus: { fontSize: typography.fontSize.sm, color: colors.text.muted },
+
+    // Loading
+    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
+    // Messages
+    messagesList: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+    msgRow: { marginBottom: spacing.sm, maxWidth: '80%' },
+    ownRow: { alignSelf: 'flex-end' },
+    otherRow: { alignSelf: 'flex-start' },
+    msgBubble: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderRadius: 20 },
+    ownBubble: { borderBottomRightRadius: 4 },
+    otherBubble: { backgroundColor: 'rgba(255, 255, 255, 0.08)', borderBottomLeftRadius: 4 },
+    msgText: { fontSize: typography.fontSize.base, color: colors.text.primary, lineHeight: 22 },
+    ownText: { color: colors.obsidian[900] },
+    msgTime: { fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: spacing.xs, alignSelf: 'flex-end' },
+    ownTime: { color: 'rgba(10, 10, 11, 0.6)' },
+
+    // Empty
+    emptyChat: { alignItems: 'center', paddingTop: 80 },
+    emptyChatText: { fontSize: typography.fontSize.base, color: colors.text.muted },
+
+    // Input
     inputContainer: {
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.md,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.06)',
+        paddingHorizontal: spacing.lg, paddingTop: spacing.md,
+        borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.06)',
     },
     inputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        backgroundColor: 'rgba(255, 255, 255, 0.04)',
-        borderRadius: 24,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.06)',
-    },
-    attachButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    attachIcon: {
-        fontSize: 22,
-        color: colors.text.primary,
+        flexDirection: 'row', alignItems: 'flex-end',
+        backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: 24,
+        paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
+        borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)',
     },
     textInput: {
-        flex: 1,
-        fontSize: typography.fontSize.base,
-        color: colors.text.primary,
-        fontFamily: typography.fontFamily.sans,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        maxHeight: 100,
-    },
-    emojiButton: {
-        width: 36,
-        height: 36,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    emojiIcon: {
-        fontSize: 22,
+        flex: 1, fontSize: typography.fontSize.base, color: colors.text.primary,
+        paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, maxHeight: 100,
     },
     sendButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: 36, height: 36, borderRadius: 18,
+        alignItems: 'center', justifyContent: 'center',
     },
-    sendIcon: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: colors.obsidian[900],
-    },
-    micButton: {
-        width: 36,
-        height: 36,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    micIcon: {
-        fontSize: 20,
-    },
+    sendIcon: { fontSize: 18, fontWeight: '700', color: colors.obsidian[900] },
+    sendButtonPlaceholder: { width: 36, height: 36 },
 });

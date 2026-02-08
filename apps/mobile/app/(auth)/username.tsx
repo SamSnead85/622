@@ -189,7 +189,7 @@ export default function UsernameScreen() {
         const timer = setTimeout(async () => {
             // Simulate API check
             await new Promise((resolve) => setTimeout(resolve, 600));
-            const available = !['admin', 'zerog', 'official', 'support'].includes(username.toLowerCase());
+            const available = !['admin', 'zerog', 'caravan', 'official', 'support'].includes(username.toLowerCase());
             setIsAvailable(available);
             setChecking(false);
 
@@ -323,7 +323,7 @@ export default function UsernameScreen() {
 
                         <Text style={styles.title}>Choose your identity</Text>
                         <Text style={styles.subtitle}>
-                            This is how others will find and recognize you on 0G
+                            This is how others will find and recognize you on Caravan
                         </Text>
                     </Animated.View>
 
@@ -477,7 +477,7 @@ export default function UsernameScreen() {
                                     </View>
                                 ) : (
                                     <>
-                                        <Text style={styles.premiumButtonText}>Continue to 0G</Text>
+                                        <Text style={styles.premiumButtonText}>Continue to Caravan</Text>
                                         <Text style={styles.premiumButtonArrow}>→</Text>
                                     </>
                                 )}

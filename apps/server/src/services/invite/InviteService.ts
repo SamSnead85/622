@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
 
-// Email configuration (would use SendGrid/Resend in production)
+// Email configuration (uses Resend SDK when RESEND_API_KEY is set)
 interface EmailConfig {
     to: string;
     subject: string;
@@ -114,7 +114,7 @@ export class InviteService {
             },
         });
 
-        // Send email (mock implementation - use SendGrid/Resend in production)
+        // Send email via Resend (or log warning if not configured)
         try {
             await this.sendEmail({
                 to: recipientEmail,
@@ -358,22 +358,34 @@ export class InviteService {
     }
 
     /**
-     * Mock email sender (replace with SendGrid/Resend in production)
+     * Send an email via Resend when configured, otherwise log a warning.
+     * Resend is dynamically imported so the service works without the SDK
+     * when RESEND_API_KEY is not set.
      */
     private async sendEmail(config: EmailConfig): Promise<void> {
-        console.log(`[InviteService] Sending email to ${config.to}`);
-        console.log(`[InviteService] Subject: ${config.subject}`);
+        if (!process.env.RESEND_API_KEY) {
+            console.warn(
+                '[InviteService] ⚠️ RESEND_API_KEY is not configured — invite email will NOT be delivered.',
+            );
+            console.log(`[InviteService] Would have sent to: ${config.to}`);
+            console.log(`[InviteService] Subject: ${config.subject}`);
+            return;
+        }
 
-        // In production, integrate with email service:
-        // await resend.emails.send({
-        //   from: '0G <invites@0gravity.ai>',
-        //   to: config.to,
-        //   subject: config.subject,
-        //   html: config.html,
-        // });
+        const { Resend } = await import('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
 
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 100));
+        const fromEmail = process.env.EMAIL_FROM || 'noreply@0gravity.ai';
+        const fromName = process.env.EMAIL_FROM_NAME || '0G Platform';
+
+        await resend.emails.send({
+            from: `${fromName} <${fromEmail}>`,
+            to: config.to,
+            subject: config.subject,
+            html: config.html,
+        });
+
+        console.log(`[InviteService] Email sent to ${config.to}`);
     }
 }
 

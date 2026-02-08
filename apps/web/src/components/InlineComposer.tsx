@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { CameraIcon, VideoIcon, XIcon, GlobeIcon, LockIcon, UsersIcon } from '@/components/icons';
 import { api, API_ENDPOINTS, API_URL, apiUpload } from '@/lib/api';
+import { captureVideoThumbnail, isVideoTooLarge, formatFileSize } from '@/lib/videoUtils';
 
 interface User {
     id: string;
@@ -28,6 +29,8 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
     const [mediaPreview, setMediaPreview] = useState<string | null>(null);
     const [privacy, setPrivacy] = useState<'public' | 'friends' | 'family' | 'private'>('public');
     const [filterWarning, setFilterWarning] = useState<string | null>(null);
+    const [videoSizeWarning, setVideoSizeWarning] = useState<string | null>(null);
+    const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [cropY, setCropY] = useState(50); // 0=top, 50=center, 100=bottom
     const [isRepositioning, setIsRepositioning] = useState(false);
@@ -62,6 +65,8 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
     const acceptFile = (file: File) => {
         if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) return;
         setMediaFile(file);
+        setVideoSizeWarning(null);
+        setVideoThumbnail(null);
         const url = URL.createObjectURL(file);
         setMediaPreview(url);
 
@@ -74,6 +79,18 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
                 URL.revokeObjectURL(vid.src);
             };
             vid.src = url;
+
+            // Check video size and warn if too large
+            if (isVideoTooLarge(file)) {
+                setVideoSizeWarning(
+                    `This video is ${formatFileSize(file.size)}. Videos over 50 MB may take a long time to upload. Consider compressing it before uploading.`
+                );
+            }
+
+            // Capture first-frame thumbnail in the background
+            captureVideoThumbnail(file)
+                .then((thumbnailDataUrl) => setVideoThumbnail(thumbnailDataUrl))
+                .catch((err) => console.warn('Could not capture video thumbnail:', err));
         } else {
             const img = new window.Image();
             img.onload = () => {
@@ -178,6 +195,8 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
     const clearMedia = () => {
         setMediaFile(null);
         setMediaPreview(null);
+        setVideoSizeWarning(null);
+        setVideoThumbnail(null);
         setCropY(50);
         setNativeRatio(null);
         setChosenRatio('original');
@@ -230,12 +249,18 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
 
             let mediaUrl = '';
             let mediaType = 'TEXT';
+            let thumbnailUrl: string | null = null;
 
             // 1. Upload Media
             if (mediaFile) {
                 const uploadRes = await apiUpload(API_ENDPOINTS.upload.post, mediaFile);
                 mediaUrl = uploadRes.url;
                 mediaType = mediaFile.type.startsWith('video') ? 'VIDEO' : 'IMAGE';
+
+                // Use the captured client-side thumbnail for video posts
+                if (mediaType === 'VIDEO' && videoThumbnail) {
+                    thumbnailUrl = uploadRes.thumbnailUrl || videoThumbnail;
+                }
             }
 
             // 2. Create Post
@@ -247,6 +272,7 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
                 ...(communityId ? { communityId } : {}),
                 ...(mediaFile && cropY !== 50 ? { mediaCropY: cropY } : {}),
                 ...(mediaFile && chosenRatio !== 'original' ? { mediaAspectRatio: chosenRatio } : {}),
+                ...(thumbnailUrl ? { thumbnailUrl } : {}),
             });
 
             // 3. Reset & Notify
@@ -395,6 +421,25 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
                                         <XIcon size={16} />
                                     </button>
                                 </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Video size warning */}
+                    <AnimatePresence>
+                        {videoSizeWarning && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="mt-2 mb-2 px-3 py-2 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs flex items-start gap-2"
+                            >
+                                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
+                                <span>{videoSizeWarning}</span>
                             </motion.div>
                         )}
                     </AnimatePresence>

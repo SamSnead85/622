@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 import { useAuthStore } from '../stores';
+import { registerForPushNotifications } from '../lib/notifications';
 
 // Prevent splash screen from auto-hiding until we check auth
 SplashScreen.preventAutoHideAsync();
@@ -12,12 +13,22 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
     const initialize = useAuthStore((s) => s.initialize);
     const isInitialized = useAuthStore((s) => s.isInitialized);
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
     useEffect(() => {
         initialize().finally(() => {
             SplashScreen.hideAsync();
         });
     }, []);
+
+    // Register for push notifications after auth is initialized and user is authenticated
+    useEffect(() => {
+        if (isInitialized && isAuthenticated) {
+            registerForPushNotifications().catch((err) => {
+                console.warn('Failed to register for push notifications:', err);
+            });
+        }
+    }, [isInitialized, isAuthenticated]);
 
     if (!isInitialized) {
         return null;
