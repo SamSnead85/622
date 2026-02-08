@@ -7,16 +7,32 @@ import {
     TouchableOpacity,
     Image,
     RefreshControl,
-    ActivityIndicator,
     Dimensions,
     Pressable,
+    Share,
+    Platform,
+    ActionSheetIOS,
+    Alert,
+    ViewToken,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    withTiming,
+    withDelay,
+    FadeInDown,
+    runOnJS,
+} from 'react-native-reanimated';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useFeedStore, useAuthStore, Post } from '../../stores';
+import { SkeletonFeed } from '../../components/SkeletonPost';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -41,144 +57,418 @@ function formatCount(num: number) {
 }
 
 // ============================================
-// Feed Post Card
+// Feed Type Tabs
 // ============================================
-const FeedPostCard = memo(({ post, onLike, onPress, isOwner, onMoveUp, onMoveDown, isFirst, isLast }: {
-    post: Post;
-    onLike: (id: string) => void;
-    onPress: (id: string) => void;
-    isOwner: boolean;
-    onMoveUp?: () => void;
-    onMoveDown?: () => void;
-    isFirst: boolean;
-    isLast: boolean;
-}) => {
-    const router = useRouter();
+function FeedTabs({
+    activeTab,
+    onTabChange,
+}: {
+    activeTab: 'foryou' | 'following';
+    onTabChange: (tab: 'foryou' | 'following') => void;
+}) {
+    return (
+        <View style={styles.feedTabs}>
+            <TouchableOpacity
+                style={[styles.feedTab, activeTab === 'foryou' && styles.feedTabActive]}
+                onPress={() => onTabChange('foryou')}
+            >
+                <Text
+                    style={[
+                        styles.feedTabText,
+                        activeTab === 'foryou' && styles.feedTabTextActive,
+                    ]}
+                >
+                    For You
+                </Text>
+                {activeTab === 'foryou' && <View style={styles.feedTabIndicator} />}
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={[styles.feedTab, activeTab === 'following' && styles.feedTabActive]}
+                onPress={() => onTabChange('following')}
+            >
+                <Text
+                    style={[
+                        styles.feedTabText,
+                        activeTab === 'following' && styles.feedTabTextActive,
+                    ]}
+                >
+                    Following
+                </Text>
+                {activeTab === 'following' && <View style={styles.feedTabIndicator} />}
+            </TouchableOpacity>
+        </View>
+    );
+}
+
+// ============================================
+// Like Heart Overlay Animation
+// ============================================
+function LikeHeartOverlay({ show }: { show: boolean }) {
+    const scale = useSharedValue(0);
+    const opacity = useSharedValue(0);
+
+    useEffect(() => {
+        if (show) {
+            scale.value = 0;
+            opacity.value = 1;
+            scale.value = withSpring(1.2, { damping: 6, stiffness: 200 });
+            opacity.value = withDelay(600, withTiming(0, { duration: 400 }));
+        }
+    }, [show]);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+        opacity: opacity.value,
+    }));
 
     return (
-        <Pressable style={styles.postCard} onPress={() => onPress(post.id)}>
-            {/* Post header */}
-            <View style={styles.postHeader}>
-                <TouchableOpacity
-                    style={styles.authorRow}
-                    onPress={() => router.push(`/profile/${post.author.username}`)}
-                >
-                    {post.author.avatarUrl ? (
-                        <Image
-                            source={{ uri: post.author.avatarUrl }}
-                            style={styles.avatar}
-                        />
-                    ) : (
-                        <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                            <Text style={styles.avatarInitial}>
-                                {(post.author.displayName || post.author.username || '?')[0].toUpperCase()}
-                            </Text>
-                        </View>
-                    )}
-                    <View style={styles.authorInfo}>
-                        <Text style={styles.authorName} numberOfLines={1}>
-                            {post.author.displayName || post.author.username}
-                        </Text>
-                        <Text style={styles.postTime}>{timeAgo(post.createdAt)}</Text>
-                    </View>
+        <Animated.View style={[styles.heartOverlay, animatedStyle]} pointerEvents="none">
+            <Ionicons name="heart" size={80} color={colors.gold[500]} />
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Read More Text
+// ============================================
+function ReadMoreText({ text }: { text: string }) {
+    const [expanded, setExpanded] = useState(false);
+    const [needsExpansion, setNeedsExpansion] = useState(false);
+
+    return (
+        <View>
+            <Text
+                style={styles.postContent}
+                numberOfLines={expanded ? undefined : 3}
+                onTextLayout={(e) => {
+                    if (!expanded && e.nativeEvent.lines.length > 3) {
+                        setNeedsExpansion(true);
+                    }
+                }}
+            >
+                {text}
+            </Text>
+            {needsExpansion && !expanded && (
+                <TouchableOpacity onPress={() => setExpanded(true)}>
+                    <Text style={styles.readMore}>Read more</Text>
                 </TouchableOpacity>
+            )}
+        </View>
+    );
+}
 
-                {/* Reorder arrows for own posts */}
-                {isOwner && (
-                    <View style={styles.reorderButtons}>
-                        <TouchableOpacity
-                            onPress={onMoveUp}
-                            disabled={isFirst}
-                            style={[styles.reorderBtn, isFirst && styles.reorderBtnDisabled]}
-                        >
-                            <Text style={[styles.reorderIcon, isFirst && styles.reorderIconDisabled]}>▲</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={onMoveDown}
-                            disabled={isLast}
-                            style={[styles.reorderBtn, isLast && styles.reorderBtnDisabled]}
-                        >
-                            <Text style={[styles.reorderIcon, isLast && styles.reorderIconDisabled]}>▼</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-            </View>
+// ============================================
+// Feed Video Player (auto-play with mute toggle)
+// ============================================
+function FeedVideoPlayer({ uri, isActive }: { uri: string; isActive: boolean }) {
+    const [isMuted, setIsMuted] = useState(true);
+    const [showFirstFrame, setShowFirstFrame] = useState(false);
 
-            {/* Post content */}
-            {post.content ? (
-                <Text style={styles.postContent} numberOfLines={6}>
-                    {post.content}
-                </Text>
-            ) : null}
+    const player = useVideoPlayer(uri, (player) => {
+        player.loop = true;
+        player.muted = true;
+    });
 
-            {/* Media */}
-            {post.mediaUrl && (
-                <View style={styles.mediaContainer}>
-                    {post.mediaType === 'VIDEO' ? (
-                        <View style={styles.videoPlaceholder}>
-                            <Image
-                                source={{ uri: post.mediaUrl }}
-                                style={styles.mediaImage}
-                                resizeMode="cover"
-                            />
-                            <View style={styles.playOverlay}>
-                                <Text style={styles.playIcon}>▶</Text>
-                            </View>
-                        </View>
-                    ) : (
-                        <Image
-                            source={{ uri: post.mediaUrl }}
-                            style={[
-                                styles.mediaImage,
-                                post.mediaAspectRatio ? {
-                                    aspectRatio: parseFloat(post.mediaAspectRatio) || 1,
-                                } : { aspectRatio: 1.5 },
-                            ]}
-                            resizeMode="cover"
-                        />
-                    )}
+    useEffect(() => {
+        if (isActive) {
+            player.play();
+        } else {
+            player.pause();
+            player.muted = true;
+            setIsMuted(true);
+        }
+    }, [isActive, player]);
+
+    const toggleMute = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        const newMuted = !player.muted;
+        player.muted = newMuted;
+        setIsMuted(newMuted);
+    };
+
+    return (
+        <Pressable onPress={toggleMute} style={styles.videoPlayerContainer}>
+            <VideoView
+                player={player}
+                style={styles.videoPlayer}
+                nativeControls={false}
+                contentFit="cover"
+                onFirstFrameRender={() => setShowFirstFrame(true)}
+            />
+            {/* Buffering overlay - show until first frame renders */}
+            {!showFirstFrame && (
+                <View style={styles.videoBuffering}>
+                    <Image source={{ uri }} style={styles.videoThumbnail} blurRadius={10} />
                 </View>
             )}
-
-            {/* Actions bar */}
-            <View style={styles.actionsBar}>
-                <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        onLike(post.id);
-                    }}
-                >
-                    <Text style={[styles.actionIcon, post.isLiked && styles.actionIconActive]}>
-                        {post.isLiked ? '❤️' : '🤍'}
-                    </Text>
-                    <Text style={styles.actionCount}>{formatCount(post.likesCount)}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.actionBtn} onPress={() => onPress(post.id)}>
-                    <Text style={styles.actionIcon}>💬</Text>
-                    <Text style={styles.actionCount}>{formatCount(post.commentsCount)}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.actionBtn}>
-                    <Text style={styles.actionIcon}>↗️</Text>
-                    <Text style={styles.actionCount}>{formatCount(post.sharesCount)}</Text>
-                </TouchableOpacity>
-
-                <View style={{ flex: 1 }} />
-
-                <TouchableOpacity style={styles.actionBtn}>
-                    <Text style={styles.actionIcon}>🔖</Text>
-                </TouchableOpacity>
+            {/* Mute indicator */}
+            <View style={styles.muteIndicator}>
+                <Ionicons
+                    name={isMuted ? 'volume-mute' : 'volume-high'}
+                    size={14}
+                    color={colors.text.primary}
+                />
             </View>
         </Pressable>
     );
-}, (prev, next) =>
-    prev.post.id === next.post.id &&
-    prev.post.isLiked === next.post.isLiked &&
-    prev.post.likesCount === next.post.likesCount &&
-    prev.isFirst === next.isFirst &&
-    prev.isLast === next.isLast
+}
+
+// ============================================
+// Feed Post Card
+// ============================================
+const FeedPostCard = memo(
+    ({
+        post,
+        onLike,
+        onSave,
+        onPress,
+        isVideoActive,
+    }: {
+        post: Post;
+        onLike: (id: string) => void;
+        onSave: (id: string) => void;
+        onPress: (id: string) => void;
+        isVideoActive: boolean;
+    }) => {
+        const router = useRouter();
+        const lastTapRef = useRef(0);
+        const [showHeart, setShowHeart] = useState(false);
+
+        const handleTap = () => {
+            const now = Date.now();
+            if (now - lastTapRef.current < 300) {
+                // Double tap - like
+                if (!post.isLiked) {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onLike(post.id);
+                }
+                setShowHeart(true);
+                setTimeout(() => setShowHeart(false), 1100);
+                lastTapRef.current = 0; // Reset to prevent triple-tap
+            } else {
+                lastTapRef.current = now;
+                // Wait to see if it's a double tap before navigating
+                setTimeout(() => {
+                    if (lastTapRef.current === now) {
+                        onPress(post.id);
+                    }
+                }, 300);
+            }
+        };
+
+        const handleLongPress = () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            const options = ['Copy Link', 'Share', 'Report', 'Cancel'];
+            const cancelIndex = 3;
+            const destructiveIndex = 2;
+
+            if (Platform.OS === 'ios') {
+                ActionSheetIOS.showActionSheetWithOptions(
+                    { options, cancelButtonIndex: cancelIndex, destructiveButtonIndex: destructiveIndex },
+                    (buttonIndex) => {
+                        if (buttonIndex === 1) {
+                            Share.share({
+                                message: `Check out this post on 0G`,
+                                url: `https://0gravity.ai/post/${post.id}`,
+                            });
+                        }
+                    }
+                );
+            } else {
+                Alert.alert('Post Options', '', [
+                    { text: 'Copy Link' },
+                    {
+                        text: 'Share',
+                        onPress: () =>
+                            Share.share({
+                                message: `Check out this post on 0G: https://0gravity.ai/post/${post.id}`,
+                            }),
+                    },
+                    { text: 'Report', style: 'destructive' },
+                    { text: 'Cancel', style: 'cancel' },
+                ]);
+            }
+        };
+
+        return (
+            <Animated.View entering={FadeInDown.duration(300).delay(50)}>
+                <Pressable
+                    style={styles.postCard}
+                    onPress={handleTap}
+                    onLongPress={handleLongPress}
+                    delayLongPress={500}
+                >
+                    {/* Double-tap heart overlay */}
+                    <LikeHeartOverlay show={showHeart} />
+
+                    {/* Post header */}
+                    <View style={styles.postHeader}>
+                        <TouchableOpacity
+                            style={styles.authorRow}
+                            onPress={() =>
+                                post.author?.username &&
+                                router.push(`/profile/${post.author.username}`)
+                            }
+                        >
+                            {post.author?.avatarUrl ? (
+                                <Image
+                                    source={{ uri: post.author.avatarUrl }}
+                                    style={styles.avatar}
+                                />
+                            ) : (
+                                <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                                    <Text style={styles.avatarInitial}>
+                                        {(
+                                            post.author?.displayName ||
+                                            post.author?.username ||
+                                            '?'
+                                        )[0].toUpperCase()}
+                                    </Text>
+                                </View>
+                            )}
+                            <View style={styles.authorInfo}>
+                                <View style={styles.authorNameRow}>
+                                    <Text style={styles.authorName} numberOfLines={1}>
+                                        {post.author?.displayName ||
+                                            post.author?.username ||
+                                            'Anonymous'}
+                                    </Text>
+                                    {post.author?.isVerified && (
+                                        <Ionicons
+                                            name="checkmark-circle"
+                                            size={14}
+                                            color={colors.gold[500]}
+                                            style={{ marginLeft: 4 }}
+                                        />
+                                    )}
+                                </View>
+                                <Text style={styles.postTime}>
+                                    {timeAgo(post.createdAt)}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Post content with Read More */}
+                    {post.content ? <ReadMoreText text={post.content} /> : null}
+
+                    {/* Media */}
+                    {post.mediaUrl && (
+                        <View style={styles.mediaContainer}>
+                            {post.mediaType === 'VIDEO' ? (
+                                <FeedVideoPlayer
+                                    uri={post.mediaUrl}
+                                    isActive={isVideoActive}
+                                />
+                            ) : (
+                                <Image
+                                    source={{ uri: post.mediaUrl }}
+                                    style={[
+                                        styles.mediaImage,
+                                        post.mediaAspectRatio
+                                            ? {
+                                                  aspectRatio:
+                                                      parseFloat(post.mediaAspectRatio) || 1,
+                                              }
+                                            : { aspectRatio: 1.5 },
+                                    ]}
+                                    resizeMode="cover"
+                                />
+                            )}
+                        </View>
+                    )}
+
+                    {/* Actions bar */}
+                    <View style={styles.actionsBar}>
+                        <TouchableOpacity
+                            style={styles.actionBtn}
+                            onPress={() => {
+                                Haptics.impactAsync(
+                                    Haptics.ImpactFeedbackStyle.Light
+                                );
+                                onLike(post.id);
+                            }}
+                        >
+                            <Ionicons
+                                name={post.isLiked ? 'heart' : 'heart-outline'}
+                                size={22}
+                                color={
+                                    post.isLiked
+                                        ? colors.coral[500]
+                                        : colors.text.secondary
+                                }
+                            />
+                            <Text style={styles.actionCount}>
+                                {formatCount(post.likesCount)}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.actionBtn}
+                            onPress={() => onPress(post.id)}
+                        >
+                            <Ionicons
+                                name="chatbubble-outline"
+                                size={20}
+                                color={colors.text.secondary}
+                            />
+                            <Text style={styles.actionCount}>
+                                {formatCount(post.commentsCount)}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.actionBtn}
+                            onPress={() =>
+                                Share.share({
+                                    message: `Check out this post on 0G: https://0gravity.ai/post/${post.id}`,
+                                })
+                            }
+                        >
+                            <Ionicons
+                                name="arrow-redo-outline"
+                                size={20}
+                                color={colors.text.secondary}
+                            />
+                            <Text style={styles.actionCount}>
+                                {formatCount(post.sharesCount)}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <View style={{ flex: 1 }} />
+
+                        <TouchableOpacity
+                            style={styles.actionBtn}
+                            onPress={() => {
+                                Haptics.impactAsync(
+                                    Haptics.ImpactFeedbackStyle.Light
+                                );
+                                onSave(post.id);
+                            }}
+                        >
+                            <Ionicons
+                                name={
+                                    post.isSaved ? 'bookmark' : 'bookmark-outline'
+                                }
+                                size={20}
+                                color={
+                                    post.isSaved
+                                        ? colors.gold[500]
+                                        : colors.text.secondary
+                                }
+                            />
+                        </TouchableOpacity>
+                    </View>
+                </Pressable>
+            </Animated.View>
+        );
+    },
+    (prev, next) =>
+        prev.post.id === next.post.id &&
+        prev.post.isLiked === next.post.isLiked &&
+        prev.post.likesCount === next.post.likesCount &&
+        prev.post.isSaved === next.post.isSaved &&
+        prev.isVideoActive === next.isVideoActive
 );
 
 // ============================================
@@ -188,6 +478,7 @@ export default function FeedScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
+    const flatListRef = useRef<FlatList>(null);
 
     const posts = useFeedStore((s) => s.posts);
     const isLoading = useFeedStore((s) => s.isLoading);
@@ -196,24 +487,71 @@ export default function FeedScreen() {
     const fetchFeed = useFeedStore((s) => s.fetchFeed);
     const likePost = useFeedStore((s) => s.likePost);
     const unlikePost = useFeedStore((s) => s.unlikePost);
-    const movePost = useFeedStore((s) => s.movePost);
+    const savePost = useFeedStore((s) => s.savePost);
+    const unsavePost = useFeedStore((s) => s.unsavePost);
+
+    const [feedType, setFeedType] = useState<'foryou' | 'following'>('foryou');
+    const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+
+    // Track which video post is currently most visible
+    const onViewableItemsChanged = useRef(
+        ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+            const videoPost = viewableItems.find(
+                (item) => item.isViewable && item.item?.mediaType === 'VIDEO'
+            );
+            setActiveVideoId(videoPost?.item?.id || null);
+        }
+    ).current;
+
+    const viewabilityConfig = useRef({
+        viewAreaCoveragePercentThreshold: 50,
+    }).current;
 
     useEffect(() => {
         fetchFeed(true);
     }, []);
 
-    const handleLike = useCallback((postId: string) => {
-        const post = posts.find((p) => p.id === postId);
-        if (post?.isLiked) {
-            unlikePost(postId);
-        } else {
-            likePost(postId);
-        }
-    }, [posts, likePost, unlikePost]);
+    const handleTabChange = useCallback(
+        (tab: 'foryou' | 'following') => {
+            setFeedType(tab);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            // Scroll to top
+            flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+            fetchFeed(true);
+        },
+        [fetchFeed]
+    );
 
-    const handlePostPress = useCallback((postId: string) => {
-        router.push(`/post/${postId}`);
-    }, [router]);
+    const handleLike = useCallback(
+        (postId: string) => {
+            const post = posts.find((p) => p.id === postId);
+            if (post?.isLiked) {
+                unlikePost(postId);
+            } else {
+                likePost(postId);
+            }
+        },
+        [posts, likePost, unlikePost]
+    );
+
+    const handlePostPress = useCallback(
+        (postId: string) => {
+            router.push(`/post/${postId}`);
+        },
+        [router]
+    );
+
+    const handleSave = useCallback(
+        (postId: string) => {
+            const post = posts.find((p) => p.id === postId);
+            if (post?.isSaved) {
+                unsavePost(postId);
+            } else {
+                savePost(postId);
+            }
+        },
+        [posts, savePost, unsavePost]
+    );
 
     const handleLoadMore = useCallback(() => {
         if (!isLoading && hasMore) {
@@ -221,30 +559,41 @@ export default function FeedScreen() {
         }
     }, [isLoading, hasMore, fetchFeed]);
 
-    const renderPost = useCallback(({ item, index }: { item: Post; index: number }) => {
-        const isOwner = item.author.id === user?.id;
-        return (
-            <FeedPostCard
-                post={item}
-                onLike={handleLike}
-                onPress={handlePostPress}
-                isOwner={isOwner}
-                isFirst={index === 0}
-                isLast={index === posts.length - 1}
-                onMoveUp={() => movePost(item.id, 'up')}
-                onMoveDown={() => movePost(item.id, 'down')}
-            />
-        );
-    }, [handleLike, handlePostPress, user?.id, posts.length, movePost]);
+    // Greeting based on time of day
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 18) return 'Good afternoon';
+        return 'Good evening';
+    };
+
+    const renderPost = useCallback(
+        ({ item }: { item: Post }) => {
+            return (
+                <FeedPostCard
+                    post={item}
+                    onLike={handleLike}
+                    onSave={handleSave}
+                    onPress={handlePostPress}
+                    isVideoActive={item.mediaType === 'VIDEO' && activeVideoId === item.id}
+                />
+            );
+        },
+        [handleLike, handleSave, handlePostPress, activeVideoId]
+    );
 
     const renderEmpty = () => {
-        if (isLoading) return null;
+        if (isLoading) return <SkeletonFeed />;
         return (
             <View style={styles.emptyContainer}>
-                <Text style={styles.emptyIcon}>📝</Text>
+                <Ionicons
+                    name="document-text-outline"
+                    size={48}
+                    color={colors.text.muted}
+                />
                 <Text style={styles.emptyTitle}>Your feed is empty</Text>
                 <Text style={styles.emptyText}>
-                    Create your first post or invite friends to get started
+                    Create your first post or follow people to get started
                 </Text>
                 <TouchableOpacity
                     style={styles.emptyButton}
@@ -260,7 +609,7 @@ export default function FeedScreen() {
         if (!isLoading || posts.length === 0) return null;
         return (
             <View style={styles.footer}>
-                <ActivityIndicator size="small" color={colors.gold[500]} />
+                <SkeletonFeed />
             </View>
         );
     };
@@ -274,19 +623,42 @@ export default function FeedScreen() {
 
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-                <Text style={styles.headerTitle}>0G</Text>
+                <View>
+                    <Text style={styles.headerGreeting}>
+                        {getGreeting()},{' '}
+                        {user?.displayName?.split(' ')[0] || 'there'}
+                    </Text>
+                </View>
                 <View style={styles.headerActions}>
-                    <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/notifications')}>
-                        <Text style={styles.headerBtnIcon}>🔔</Text>
+                    <TouchableOpacity
+                        style={styles.headerBtn}
+                        onPress={() => router.push('/notifications')}
+                    >
+                        <Ionicons
+                            name="notifications-outline"
+                            size={22}
+                            color={colors.text.primary}
+                        />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/messages')}>
-                        <Text style={styles.headerBtnIcon}>✉️</Text>
+                    <TouchableOpacity
+                        style={styles.headerBtn}
+                        onPress={() => router.push('/messages')}
+                    >
+                        <Ionicons
+                            name="mail-outline"
+                            size={22}
+                            color={colors.text.primary}
+                        />
                     </TouchableOpacity>
                 </View>
             </View>
 
+            {/* Feed Type Tabs */}
+            <FeedTabs activeTab={feedType} onTabChange={handleTabChange} />
+
             {/* Feed */}
             <FlatList
+                ref={flatListRef}
                 data={posts}
                 renderItem={renderPost}
                 keyExtractor={(item) => item.id}
@@ -305,6 +677,8 @@ export default function FeedScreen() {
                 }
                 onEndReached={handleLoadMore}
                 onEndReachedThreshold={0.5}
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
                 ListEmptyComponent={renderEmpty}
                 ListFooterComponent={renderFooter}
             />
@@ -314,40 +688,83 @@ export default function FeedScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
+
+    // Header
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: spacing.xl,
-        paddingBottom: spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+        paddingBottom: spacing.sm,
     },
-    headerTitle: {
-        fontSize: 28,
+    headerGreeting: {
+        fontSize: 22,
         fontWeight: '700',
         color: colors.text.primary,
         letterSpacing: -0.5,
+        fontFamily: 'Inter-Bold',
     },
     headerActions: { flexDirection: 'row', gap: spacing.sm },
     headerBtn: {
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        backgroundColor: colors.surface.glassHover,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    headerBtnIcon: { fontSize: 18 },
+
+    // Feed Tabs
+    feedTabs: {
+        flexDirection: 'row',
+        paddingHorizontal: spacing.xl,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.subtle,
+    },
+    feedTab: {
+        paddingVertical: spacing.md,
+        marginRight: spacing.xl,
+        alignItems: 'center',
+    },
+    feedTabActive: {},
+    feedTabText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.muted,
+        fontFamily: 'Inter-SemiBold',
+    },
+    feedTabTextActive: {
+        color: colors.text.primary,
+    },
+    feedTabIndicator: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 2,
+        backgroundColor: colors.gold[500],
+        borderRadius: 1,
+    },
 
     // Post card
     postCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        backgroundColor: colors.surface.glass,
         borderRadius: 16,
         marginBottom: spacing.md,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.06)',
+        borderColor: colors.border.subtle,
         overflow: 'hidden',
+        position: 'relative',
+    },
+    heartOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
     },
     postHeader: {
         flexDirection: 'row',
@@ -369,10 +786,12 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
     },
     authorInfo: { marginLeft: spacing.sm, flex: 1 },
+    authorNameRow: { flexDirection: 'row', alignItems: 'center' },
     authorName: {
         fontSize: typography.fontSize.base,
         fontWeight: '600',
         color: colors.text.primary,
+        fontFamily: 'Inter-SemiBold',
     },
     postTime: {
         fontSize: typography.fontSize.xs,
@@ -380,25 +799,18 @@ const styles = StyleSheet.create({
         marginTop: 1,
     },
 
-    // Reorder
-    reorderButtons: { flexDirection: 'row', gap: 2 },
-    reorderBtn: {
-        width: 28,
-        height: 28,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    },
-    reorderBtnDisabled: { opacity: 0.2 },
-    reorderIcon: { fontSize: 10, color: colors.text.secondary },
-    reorderIconDisabled: { color: colors.text.muted },
-
     // Post content
     postContent: {
         fontSize: typography.fontSize.base,
         color: colors.text.primary,
         lineHeight: 22,
+        paddingHorizontal: spacing.md,
+        paddingBottom: spacing.sm,
+    },
+    readMore: {
+        fontSize: typography.fontSize.sm,
+        color: colors.gold[500],
+        fontWeight: '600',
         paddingHorizontal: spacing.md,
         paddingBottom: spacing.sm,
     },
@@ -412,18 +824,35 @@ const styles = StyleSheet.create({
         aspectRatio: 1.5,
         backgroundColor: colors.obsidian[700],
     },
-    videoPlaceholder: {
+    videoPlayerContainer: {
         position: 'relative',
+        width: '100%',
+        aspectRatio: 16 / 9,
+        backgroundColor: colors.obsidian[800],
     },
-    playOverlay: {
+    videoPlayer: {
+        width: '100%',
+        height: '100%',
+    },
+    videoBuffering: {
         ...StyleSheet.absoluteFillObject,
+        overflow: 'hidden',
+    },
+    videoThumbnail: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover' as any,
+    },
+    muteIndicator: {
+        position: 'absolute',
+        bottom: spacing.sm,
+        right: spacing.sm,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    },
-    playIcon: {
-        fontSize: 40,
-        color: 'rgba(255, 255, 255, 0.9)',
     },
 
     // Actions
@@ -438,8 +867,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: spacing.lg,
     },
-    actionIcon: { fontSize: 18 },
-    actionIconActive: {},
     actionCount: {
         fontSize: typography.fontSize.sm,
         color: colors.text.secondary,
@@ -453,11 +880,11 @@ const styles = StyleSheet.create({
         paddingTop: 80,
         paddingHorizontal: spacing.xl,
     },
-    emptyIcon: { fontSize: 48, marginBottom: spacing.lg },
     emptyTitle: {
         fontSize: typography.fontSize.xl,
         fontWeight: '700',
         color: colors.text.primary,
+        marginTop: spacing.lg,
         marginBottom: spacing.sm,
     },
     emptyText: {
@@ -480,5 +907,5 @@ const styles = StyleSheet.create({
     },
 
     // Footer
-    footer: { paddingVertical: spacing.xl },
+    footer: { paddingVertical: spacing.sm },
 });

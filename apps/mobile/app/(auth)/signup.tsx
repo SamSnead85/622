@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -12,8 +12,25 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Button, Input, colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore } from '../../stores';
+
+// Password strength calculation
+function getPasswordStrength(password: string): { level: number; label: string; color: string } {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+    if (score <= 1) return { level: 1, label: 'Weak', color: colors.coral[500] };
+    if (score <= 2) return { level: 2, label: 'Fair', color: colors.amber[500] };
+    if (score <= 3) return { level: 3, label: 'Good', color: colors.gold[500] };
+    return { level: 4, label: 'Strong', color: colors.emerald[500] };
+}
 
 export default function SignupScreen() {
     const router = useRouter();
@@ -26,6 +43,8 @@ export default function SignupScreen() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
     const validateForm = () => {
         const newErrors: Record<string, string> = {};
@@ -59,7 +78,7 @@ export default function SignupScreen() {
 
         try {
             await signup(email.trim(), password, displayName.trim());
-            router.replace('/(tabs)');
+            router.replace('/(auth)/username');
         } catch (error: any) {
             const message = error?.data?.error || error?.message || 'Signup failed';
             setErrors({ email: message });
@@ -83,108 +102,131 @@ export default function SignupScreen() {
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 >
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => router.back()}
-                    >
-                        <Text style={styles.backText}>← Back</Text>
+                    {/* Back button */}
+                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                        <Ionicons name="chevron-back" size={24} color={colors.text.secondary} />
                     </TouchableOpacity>
 
-                    <View style={styles.header}>
-                        <Text style={styles.title}>Create account</Text>
-                        <Text style={styles.subtitle}>
-                            Join your private community — your world, your rules
-                        </Text>
-                    </View>
+                    <Animated.View entering={FadeInDown.duration(400)}>
+                        <View style={styles.header}>
+                            <Text style={styles.title}>Create account</Text>
+                            <Text style={styles.subtitle}>
+                                Join your private community — your world, your rules
+                            </Text>
+                        </View>
+                    </Animated.View>
 
-                    <View style={styles.form}>
-                        <Input
-                            label="Display Name"
-                            placeholder="Your name"
-                            autoCapitalize="words"
-                            value={displayName}
-                            onChangeText={(text) => {
-                                setDisplayName(text);
-                                setErrors({});
-                            }}
-                            error={errors.displayName}
-                        />
+                    <Animated.View entering={FadeInDown.duration(400).delay(100)}>
+                        <View style={styles.form}>
+                            <Input
+                                label="Display Name"
+                                placeholder="Your name"
+                                autoCapitalize="words"
+                                value={displayName}
+                                onChangeText={(text) => {
+                                    setDisplayName(text);
+                                    if (errors.displayName) setErrors((e) => ({ ...e, displayName: '' }));
+                                }}
+                                error={errors.displayName}
+                            />
 
-                        <Input
-                            label="Email"
-                            placeholder="Enter your email"
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoComplete="email"
-                            value={email}
-                            onChangeText={(text) => {
-                                setEmail(text);
-                                setErrors({});
-                            }}
-                            error={errors.email}
-                        />
+                            <Input
+                                label="Email"
+                                placeholder="Enter your email"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                autoComplete="email"
+                                value={email}
+                                onChangeText={(text) => {
+                                    setEmail(text);
+                                    if (errors.email) setErrors((e) => ({ ...e, email: '' }));
+                                }}
+                                error={errors.email}
+                            />
 
-                        <Input
-                            label="Password"
-                            placeholder="Create a password"
-                            secureTextEntry
-                            value={password}
-                            onChangeText={(text) => {
-                                setPassword(text);
-                                setErrors({});
-                            }}
-                            error={errors.password}
-                            hint="At least 8 characters"
-                        />
+                            <Input
+                                label="Password"
+                                placeholder="Create a password"
+                                secureTextEntry
+                                value={password}
+                                onChangeText={(text) => {
+                                    setPassword(text);
+                                    if (errors.password) setErrors((e) => ({ ...e, password: '' }));
+                                }}
+                                error={errors.password}
+                                hint="At least 8 characters"
+                            />
 
-                        <Input
-                            label="Confirm Password"
-                            placeholder="Confirm your password"
-                            secureTextEntry
-                            value={confirmPassword}
-                            onChangeText={(text) => {
-                                setConfirmPassword(text);
-                                setErrors({});
-                            }}
-                            error={errors.confirmPassword}
-                        />
+                            {/* Password strength indicator */}
+                            {password.length > 0 && (
+                                <View style={styles.strengthContainer}>
+                                    <View style={styles.strengthBar}>
+                                        {[1, 2, 3, 4].map((level) => (
+                                            <View
+                                                key={level}
+                                                style={[
+                                                    styles.strengthSegment,
+                                                    {
+                                                        backgroundColor:
+                                                            level <= passwordStrength.level
+                                                                ? passwordStrength.color
+                                                                : colors.obsidian[600],
+                                                    },
+                                                ]}
+                                            />
+                                        ))}
+                                    </View>
+                                    <Text style={[styles.strengthLabel, { color: passwordStrength.color }]}>
+                                        {passwordStrength.label}
+                                    </Text>
+                                </View>
+                            )}
 
-                        <Button
-                            variant="primary"
-                            size="lg"
-                            fullWidth
-                            loading={isLoading}
-                            onPress={handleSignup}
-                            style={styles.submitButton}
-                        >
-                            Create Account
-                        </Button>
-                    </View>
+                            <Input
+                                label="Confirm Password"
+                                placeholder="Confirm your password"
+                                secureTextEntry
+                                value={confirmPassword}
+                                onChangeText={(text) => {
+                                    setConfirmPassword(text);
+                                    if (errors.confirmPassword) setErrors((e) => ({ ...e, confirmPassword: '' }));
+                                }}
+                                error={errors.confirmPassword}
+                            />
 
-                    <View style={styles.divider}>
-                        <View style={styles.dividerLine} />
-                        <Text style={styles.dividerText}>or sign up with</Text>
-                        <View style={styles.dividerLine} />
-                    </View>
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                fullWidth
+                                loading={isLoading}
+                                onPress={handleSignup}
+                                style={styles.submitButton}
+                            >
+                                Create Account
+                            </Button>
+                        </View>
+                    </Animated.View>
 
-                    <View style={styles.socialButtons}>
-                        <Button
-                            variant="secondary"
-                            size="lg"
-                            style={styles.socialButton}
-                            onPress={() => Alert.alert('Coming Soon', 'Apple Sign-In coming soon')}
-                        >
-                            Apple
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            size="lg"
-                            style={styles.socialButton}
-                            onPress={() => Alert.alert('Coming Soon', 'Google Sign-In coming soon')}
-                        >
-                            Google
-                        </Button>
-                    </View>
+                    <Animated.View entering={FadeInDown.duration(400).delay(200)}>
+                        <View style={styles.divider}>
+                            <View style={styles.dividerLine} />
+                            <Text style={styles.dividerText}>or sign up with</Text>
+                            <View style={styles.dividerLine} />
+                        </View>
+
+                        <View style={styles.socialButtons}>
+                            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+                                <Ionicons name="logo-apple" size={20} color={colors.text.muted} />
+                                <Text style={styles.socialButtonText}>Apple</Text>
+                                <Text style={styles.comingSoonBadge}>Soon</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+                                <Ionicons name="logo-google" size={18} color={colors.text.muted} />
+                                <Text style={styles.socialButtonText}>Google</Text>
+                                <Text style={styles.comingSoonBadge}>Soon</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
 
                     <View style={styles.loginContainer}>
                         <Text style={styles.loginText}>Already have an account? </Text>
@@ -199,7 +241,7 @@ export default function SignupScreen() {
 
                     {/* Privacy notice */}
                     <View style={styles.privacyNotice}>
-                        <Text style={styles.privacyIcon}>🔒</Text>
+                        <Ionicons name="lock-closed" size={16} color={colors.gold[400]} style={{ marginTop: 1 }} />
                         <Text style={styles.privacyText}>
                             Your account starts in private mode. Only people you invite can see your posts.
                             You can optionally join the larger community later.
@@ -215,14 +257,25 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     keyboardView: { flex: 1 },
     scrollContent: { flexGrow: 1, paddingHorizontal: spacing.xl },
-    backButton: { alignSelf: 'flex-start', marginBottom: spacing.xl },
-    backText: { fontSize: typography.fontSize.base, color: colors.text.secondary },
+    backButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: colors.surface.glassHover,
+        alignItems: 'center',
+        justifyContent: 'center',
+        alignSelf: 'flex-start',
+        marginBottom: spacing.xl,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
     header: { marginBottom: spacing['2xl'] },
     title: {
         fontSize: typography.fontSize['3xl'],
         fontWeight: '700',
         color: colors.text.primary,
         letterSpacing: -0.5,
+        fontFamily: 'Inter-Bold',
     },
     subtitle: {
         fontSize: typography.fontSize.base,
@@ -230,6 +283,28 @@ const styles = StyleSheet.create({
         marginTop: spacing.sm,
     },
     form: { marginBottom: spacing.lg },
+    strengthContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: -spacing.sm,
+        marginBottom: spacing.md,
+        paddingHorizontal: 2,
+    },
+    strengthBar: {
+        flexDirection: 'row',
+        flex: 1,
+        gap: 4,
+    },
+    strengthSegment: {
+        flex: 1,
+        height: 3,
+        borderRadius: 2,
+    },
+    strengthLabel: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        marginLeft: spacing.sm,
+    },
     submitButton: { marginTop: spacing.md },
     divider: {
         flexDirection: 'row',
@@ -243,7 +318,34 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
     },
     socialButtons: { flexDirection: 'row', gap: spacing.md },
-    socialButton: { flex: 1 },
+    socialButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        borderRadius: 12,
+        paddingVertical: spacing.md,
+        gap: spacing.sm,
+        opacity: 0.6,
+    },
+    socialButtonText: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.muted,
+        fontWeight: '500',
+    },
+    comingSoonBadge: {
+        fontSize: 9,
+        color: colors.text.muted,
+        backgroundColor: colors.surface.glassActive,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        overflow: 'hidden',
+        fontWeight: '600',
+    },
     loginContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
@@ -271,11 +373,7 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
         borderWidth: 1,
         borderColor: 'rgba(212, 175, 55, 0.15)',
-    },
-    privacyIcon: {
-        fontSize: 16,
-        marginRight: spacing.sm,
-        marginTop: 2,
+        gap: spacing.sm,
     },
     privacyText: {
         flex: 1,

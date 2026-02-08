@@ -1,52 +1,56 @@
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { useEffect, useRef } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing } from '@zerog/ui';
+import { colors, spacing, typography } from '@zerog/ui';
 
 interface TabIconProps {
-    name: string;
-    icon: string;
+    label: string;
+    iconName: keyof typeof Ionicons.glyphMap;
+    iconNameFocused: keyof typeof Ionicons.glyphMap;
     focused: boolean;
 }
 
-function TabIcon({ name, icon, focused }: TabIconProps) {
+function TabIcon({ label, iconName, iconNameFocused, focused }: TabIconProps) {
     const scaleAnim = useRef(new Animated.Value(1)).current;
-    const opacityAnim = useRef(new Animated.Value(focused ? 1 : 0.5)).current;
+    const prevFocused = useRef(focused);
 
     useEffect(() => {
-        Animated.parallel([
-            Animated.spring(scaleAnim, {
-                toValue: focused ? 1.1 : 1,
-                tension: 300,
-                friction: 10,
-                useNativeDriver: true,
-            }),
-            Animated.timing(opacityAnim, {
-                toValue: focused ? 1 : 0.5,
-                duration: 200,
-                useNativeDriver: true,
-            }),
-        ]).start();
+        Animated.spring(scaleAnim, {
+            toValue: focused ? 1.05 : 1,
+            tension: 300,
+            friction: 10,
+            useNativeDriver: true,
+        }).start();
 
-        if (focused) {
+        // Only fire haptics on tab *change*, not initial render
+        if (focused && !prevFocused.current) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
+        prevFocused.current = focused;
     }, [focused]);
 
     return (
         <Animated.View
             style={[
                 styles.tabIconContainer,
-                {
-                    transform: [{ scale: scaleAnim }],
-                    opacity: opacityAnim,
-                },
+                { transform: [{ scale: scaleAnim }] },
             ]}
         >
-            <Text style={[styles.tabIcon, focused && styles.tabIconFocused]}>
-                {icon}
+            <Ionicons
+                name={focused ? iconNameFocused : iconName}
+                size={24}
+                color={focused ? colors.gold[500] : colors.text.muted}
+            />
+            <Text
+                style={[
+                    styles.tabLabel,
+                    { color: focused ? colors.gold[500] : colors.text.muted },
+                ]}
+            >
+                {label}
             </Text>
             {focused && <View style={styles.tabIndicator} />}
         </Animated.View>
@@ -98,7 +102,7 @@ function CreateButton({ focused }: { focused: boolean }) {
             <Animated.View
                 style={[styles.createButton, { transform: [{ scale: pulseAnim }] }]}
             >
-                <Text style={styles.createButtonIcon}>+</Text>
+                <Ionicons name="add" size={32} color={colors.obsidian[900]} />
             </Animated.View>
         </View>
     );
@@ -130,7 +134,12 @@ export default function TabLayout() {
                 name="index"
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon name="Home" icon="🏠" focused={focused} />
+                        <TabIcon
+                            label="Home"
+                            iconName="home-outline"
+                            iconNameFocused="home"
+                            focused={focused}
+                        />
                     ),
                 }}
             />
@@ -138,7 +147,12 @@ export default function TabLayout() {
                 name="search"
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon name="Search" icon="🔍" focused={focused} />
+                        <TabIcon
+                            label="Search"
+                            iconName="search-outline"
+                            iconNameFocused="search"
+                            focused={focused}
+                        />
                     ),
                 }}
             />
@@ -152,7 +166,12 @@ export default function TabLayout() {
                 name="communities"
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon name="Groups" icon="👥" focused={focused} />
+                        <TabIcon
+                            label="Groups"
+                            iconName="people-outline"
+                            iconNameFocused="people"
+                            focused={focused}
+                        />
                     ),
                 }}
             />
@@ -160,7 +179,12 @@ export default function TabLayout() {
                 name="profile"
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon name="Profile" icon="👤" focused={focused} />
+                        <TabIcon
+                            label="Profile"
+                            iconName="person-outline"
+                            iconNameFocused="person"
+                            focused={focused}
+                        />
                     ),
                 }}
             />
@@ -173,7 +197,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         borderTopWidth: 0,
         backgroundColor: 'transparent',
-        height: 80,
+        height: 85,
         elevation: 0,
     },
     tabBarBackground: {
@@ -182,7 +206,7 @@ const styles = StyleSheet.create({
     },
     tabBarGradientOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(10, 10, 11, 0.92)',
+        backgroundColor: 'rgba(10, 10, 11, 0.95)',
     },
     tabBarBorder: {
         position: 'absolute',
@@ -190,21 +214,26 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        backgroundColor: colors.border.subtle,
     },
     tabIconContainer: {
         alignItems: 'center',
         justifyContent: 'center',
         paddingTop: 8,
+        minWidth: 50,
     },
-    tabIcon: { fontSize: 24 },
-    tabIconFocused: {},
+    tabLabel: {
+        fontSize: 10,
+        fontWeight: '500',
+        marginTop: 3,
+        fontFamily: 'Inter-Medium',
+    },
     tabIndicator: {
         width: 4,
         height: 4,
         borderRadius: 2,
         backgroundColor: colors.gold[500],
-        marginTop: 6,
+        marginTop: 4,
     },
     createButtonWrapper: {
         alignItems: 'center',
@@ -230,11 +259,5 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.4,
         shadowRadius: 12,
         elevation: 8,
-    },
-    createButtonIcon: {
-        fontSize: 32,
-        fontWeight: '300',
-        color: colors.obsidian[900],
-        marginTop: -2,
     },
 });

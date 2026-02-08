@@ -12,6 +12,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Button, Input, colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore } from '../../stores';
 
@@ -61,87 +63,97 @@ export default function LoginScreen() {
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 >
+                    {/* Back button */}
                     <TouchableOpacity
                         style={styles.backButton}
                         onPress={() => router.back()}
                     >
-                        <Text style={styles.backText}>← Back</Text>
+                        <Ionicons name="chevron-back" size={24} color={colors.text.secondary} />
                     </TouchableOpacity>
 
-                    <View style={styles.header}>
-                        <Text style={styles.title}>Welcome back</Text>
-                        <Text style={styles.subtitle}>
-                            Sign in to continue to your private community
-                        </Text>
-                    </View>
+                    <Animated.View entering={FadeInDown.duration(400)}>
+                        <View style={styles.header}>
+                            <Text style={styles.title}>Welcome back</Text>
+                            <Text style={styles.subtitle}>
+                                Sign in to continue to your private community
+                            </Text>
+                        </View>
+                    </Animated.View>
 
-                    <View style={styles.form}>
-                        <Input
-                            label="Email"
-                            placeholder="Enter your email"
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoComplete="email"
-                            value={email}
-                            onChangeText={(text) => {
-                                setEmail(text);
-                                setErrors({});
-                            }}
-                            error={errors.email}
-                        />
+                    <Animated.View entering={FadeInDown.duration(400).delay(100)}>
+                        <View style={styles.form}>
+                            <Input
+                                label="Email"
+                                placeholder="Enter your email"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                autoComplete="email"
+                                value={email}
+                                onChangeText={(text) => {
+                                    setEmail(text);
+                                    if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+                                }}
+                                error={errors.email}
+                            />
 
-                        <Input
-                            label="Password"
-                            placeholder="Enter your password"
-                            secureTextEntry
-                            value={password}
-                            onChangeText={(text) => {
-                                setPassword(text);
-                                setErrors({});
-                            }}
-                            error={errors.password}
-                        />
+                            <Input
+                                label="Password"
+                                placeholder="Enter your password"
+                                secureTextEntry
+                                value={password}
+                                onChangeText={(text) => {
+                                    setPassword(text);
+                                    if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
+                                }}
+                                error={errors.password}
+                            />
 
-                        <TouchableOpacity style={styles.forgotButton}>
-                            <Text style={styles.forgotText}>Forgot password?</Text>
-                        </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.forgotButton}
+                                onPress={() => {
+                                    Alert.alert(
+                                        'Reset Password',
+                                        'Password reset is available at 0gravity.ai. Please visit the web app to reset your password.',
+                                        [{ text: 'OK' }]
+                                    );
+                                }}
+                            >
+                                <Text style={styles.forgotText}>Forgot password?</Text>
+                            </TouchableOpacity>
 
-                        <Button
-                            variant="primary"
-                            size="lg"
-                            fullWidth
-                            loading={isLoading}
-                            onPress={handleLogin}
-                            style={styles.submitButton}
-                        >
-                            Sign In
-                        </Button>
-                    </View>
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                fullWidth
+                                loading={isLoading}
+                                onPress={handleLogin}
+                                style={styles.submitButton}
+                            >
+                                Sign In
+                            </Button>
+                        </View>
+                    </Animated.View>
 
-                    <View style={styles.divider}>
-                        <View style={styles.dividerLine} />
-                        <Text style={styles.dividerText}>or continue with</Text>
-                        <View style={styles.dividerLine} />
-                    </View>
+                    <Animated.View entering={FadeInDown.duration(400).delay(200)}>
+                        <View style={styles.divider}>
+                            <View style={styles.dividerLine} />
+                            <Text style={styles.dividerText}>or continue with</Text>
+                            <View style={styles.dividerLine} />
+                        </View>
 
-                    <View style={styles.socialButtons}>
-                        <Button
-                            variant="secondary"
-                            size="lg"
-                            style={styles.socialButton}
-                            onPress={() => Alert.alert('Coming Soon', 'Apple Sign-In coming soon')}
-                        >
-                            Apple
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            size="lg"
-                            style={styles.socialButton}
-                            onPress={() => Alert.alert('Coming Soon', 'Google Sign-In coming soon')}
-                        >
-                            Google
-                        </Button>
-                    </View>
+                        <View style={styles.socialButtons}>
+                            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+                                <Ionicons name="logo-apple" size={20} color={colors.text.muted} />
+                                <Text style={styles.socialButtonText}>Apple</Text>
+                                <Text style={styles.comingSoonBadge}>Soon</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+                                <Ionicons name="logo-google" size={18} color={colors.text.muted} />
+                                <Text style={styles.socialButtonText}>Google</Text>
+                                <Text style={styles.comingSoonBadge}>Soon</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
 
                     <View style={styles.signupContainer}>
                         <Text style={styles.signupText}>Don't have an account? </Text>
@@ -159,14 +171,25 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     keyboardView: { flex: 1 },
     scrollContent: { flexGrow: 1, paddingHorizontal: spacing.xl },
-    backButton: { alignSelf: 'flex-start', marginBottom: spacing.xl },
-    backText: { fontSize: typography.fontSize.base, color: colors.text.secondary },
+    backButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: colors.surface.glassHover,
+        alignItems: 'center',
+        justifyContent: 'center',
+        alignSelf: 'flex-start',
+        marginBottom: spacing.xl,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
     header: { marginBottom: spacing['2xl'] },
     title: {
         fontSize: typography.fontSize['3xl'],
         fontWeight: '700',
         color: colors.text.primary,
         letterSpacing: -0.5,
+        fontFamily: 'Inter-Bold',
     },
     subtitle: {
         fontSize: typography.fontSize.base,
@@ -193,7 +216,34 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
     },
     socialButtons: { flexDirection: 'row', gap: spacing.md },
-    socialButton: { flex: 1 },
+    socialButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        borderRadius: 12,
+        paddingVertical: spacing.md,
+        gap: spacing.sm,
+        opacity: 0.6,
+    },
+    socialButtonText: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.muted,
+        fontWeight: '500',
+    },
+    comingSoonBadge: {
+        fontSize: 9,
+        color: colors.text.muted,
+        backgroundColor: colors.surface.glassActive,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        overflow: 'hidden',
+        fontWeight: '600',
+    },
     signupContainer: {
         flexDirection: 'row',
         justifyContent: 'center',

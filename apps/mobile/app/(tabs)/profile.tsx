@@ -1,22 +1,23 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
 import {
     View,
     Text,
     StyleSheet,
-    ScrollView,
     TouchableOpacity,
     Image,
     Dimensions,
     ActivityIndicator,
     Alert,
-    RefreshControl,
+    FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
-import { useAuthStore, Post } from '../../stores';
+import { useAuthStore, Post, mapApiPost } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -31,56 +32,44 @@ const formatCount = (num: number) => {
 
 const PostGridItem = memo(({ post }: { post: Post }) => {
     const router = useRouter();
-    const mediaUri = post.mediaUrl;
-
     return (
-        <TouchableOpacity
-            style={styles.postItem}
-            activeOpacity={0.9}
-            onPress={() => router.push(`/post/${post.id}`)}
-        >
-            {mediaUri ? (
-                <Image source={{ uri: mediaUri }} style={styles.postImage} />
+        <TouchableOpacity style={styles.postItem} activeOpacity={0.9} onPress={() => router.push(`/post/${post.id}`)}>
+            {post.mediaUrl ? (
+                <Image source={{ uri: post.mediaUrl }} style={styles.postImage} />
             ) : (
                 <View style={[styles.postImage, styles.textPostBg]}>
-                    <Text style={styles.textPostContent} numberOfLines={3}>
-                        {post.content}
-                    </Text>
+                    <Text style={styles.textPostContent} numberOfLines={3}>{post.content}</Text>
                 </View>
             )}
             {post.mediaType === 'VIDEO' && (
                 <View style={styles.videoIndicator}>
-                    <Text style={styles.videoIcon}>▶</Text>
+                    <Ionicons name="play" size={10} color={colors.text.primary} />
                 </View>
             )}
         </TouchableOpacity>
     );
 });
 
+type ProfileTab = 'posts' | 'likes' | 'saved';
+
 export default function ProfileScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
-    const logout = useAuthStore((s) => s.logout);
     const refreshUser = useAuthStore((s) => s.refreshUser);
 
     const [userPosts, setUserPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
 
     const loadUserPosts = async () => {
         try {
-            const data = await apiFetch<any>(
-                `${API.posts}?userId=${user?.id}&limit=50`
-            );
-            const posts = data.posts || data.data || [];
-            setUserPosts(Array.isArray(posts) ? posts : []);
-        } catch (err) {
-            // Silently handle
-        } finally {
-            setIsLoading(false);
-            setIsRefreshing(false);
-        }
+            const data = await apiFetch<any>(`${API.userPosts(user!.id)}?limit=50`);
+            const rawPosts = data.posts || data.data || [];
+            setUserPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
+        } catch { /* silent */ }
+        finally { setIsLoading(false); setIsRefreshing(false); }
     };
 
     useEffect(() => {
@@ -93,20 +82,6 @@ export default function ProfileScreen() {
         await loadUserPosts();
     };
 
-    const handleLogout = () => {
-        Alert.alert('Log Out', 'Are you sure you want to log out?', [
-            { text: 'Cancel', style: 'cancel' },
-            {
-                text: 'Log Out',
-                style: 'destructive',
-                onPress: async () => {
-                    await logout();
-                    router.replace('/');
-                },
-            },
-        ]);
-    };
-
     if (!user) {
         return (
             <View style={[styles.container, styles.centered]}>
@@ -115,130 +90,156 @@ export default function ProfileScreen() {
         );
     }
 
-    return (
-        <View style={styles.container}>
-            <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800]]}
-                style={StyleSheet.absoluteFill}
-            />
-
-            {/* Header buttons */}
-            <View style={[styles.headerButtons, { paddingTop: insets.top + spacing.sm }]}>
-                <View />
-                <View style={styles.headerRight}>
-                    <TouchableOpacity style={styles.headerButton} onPress={() => router.push('/settings')}>
-                        <Text style={styles.headerIcon}>⚙️</Text>
-                    </TouchableOpacity>
-                </View>
+    const renderHeader = () => (
+        <Animated.View entering={FadeInDown.duration(400)}>
+            {/* Cover photo area */}
+            <View style={styles.coverArea}>
+                {user.coverUrl ? (
+                    <Image source={{ uri: user.coverUrl }} style={styles.coverImage} />
+                ) : (
+                    <LinearGradient
+                        colors={[colors.obsidian[700], colors.obsidian[800]]}
+                        style={styles.coverImage}
+                    />
+                )}
+                <LinearGradient
+                    colors={['transparent', colors.obsidian[900]]}
+                    style={styles.coverGradient}
+                />
             </View>
 
-            <ScrollView
-                style={styles.scrollView}
+            <View style={styles.profileContent}>
+                {/* Avatar (overlapping cover) */}
+                <View style={styles.avatarSection}>
+                    <View style={styles.avatarContainer}>
+                        <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.avatarBorder}>
+                            <View style={styles.avatarInner}>
+                                {user.avatarUrl ? (
+                                    <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+                                ) : (
+                                    <View style={[styles.avatarImage, styles.avatarPlaceholder]}>
+                                        <Text style={styles.avatarInitial}>
+                                            {(user.displayName || user.username || '?')[0].toUpperCase()}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        </LinearGradient>
+                    </View>
+                </View>
+
+                {/* User info */}
+                <View style={styles.userInfo}>
+                    <View style={styles.nameRow}>
+                        <Text style={styles.displayName}>{user.displayName}</Text>
+                        {user.isVerified && <Ionicons name="checkmark-circle" size={18} color={colors.gold[500]} style={{ marginLeft: 6 }} />}
+                    </View>
+                    <Text style={styles.username}>@{user.username}</Text>
+                    {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
+                </View>
+
+                {/* Privacy badge */}
+                <View style={styles.privacyBadge}>
+                    <Ionicons name={user.communityOptIn ? 'globe-outline' : 'lock-closed'} size={12} color={colors.gold[400]} />
+                    <Text style={styles.privacyText}>
+                        {user.communityOptIn ? 'Community Member' : 'Private Mode'}
+                    </Text>
+                </View>
+
+                {/* Stats */}
+                <View style={styles.statsContainer}>
+                    <TouchableOpacity style={styles.stat}>
+                        <Text style={styles.statValue}>{formatCount(user.postsCount)}</Text>
+                        <Text style={styles.statLabel}>Posts</Text>
+                    </TouchableOpacity>
+                    <View style={styles.statDivider} />
+                    <TouchableOpacity style={styles.stat}>
+                        <Text style={styles.statValue}>{formatCount(user.followersCount)}</Text>
+                        <Text style={styles.statLabel}>Followers</Text>
+                    </TouchableOpacity>
+                    <View style={styles.statDivider} />
+                    <TouchableOpacity style={styles.stat}>
+                        <Text style={styles.statValue}>{formatCount(user.followingCount)}</Text>
+                        <Text style={styles.statLabel}>Following</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Edit Profile button */}
+                <TouchableOpacity style={styles.editButton} activeOpacity={0.8} onPress={() => router.push('/settings')}>
+                    <Ionicons name="create-outline" size={16} color={colors.text.primary} />
+                    <Text style={styles.editButtonText}>Edit Profile</Text>
+                </TouchableOpacity>
+
+                {/* Content tabs */}
+                <View style={styles.contentTabs}>
+                    {(['posts', 'likes', 'saved'] as ProfileTab[]).map((tab) => (
+                        <TouchableOpacity
+                            key={tab}
+                            style={[styles.contentTab, activeTab === tab && styles.contentTabActive]}
+                            onPress={() => setActiveTab(tab)}
+                        >
+                            <Ionicons
+                                name={tab === 'posts' ? 'grid-outline' : tab === 'likes' ? 'heart-outline' : 'bookmark-outline'}
+                                size={20}
+                                color={activeTab === tab ? colors.gold[500] : colors.text.muted}
+                            />
+                            <Text style={[styles.contentTabText, activeTab === tab && styles.contentTabTextActive]}>
+                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </View>
+        </Animated.View>
+    );
+
+    const postsData = activeTab === 'posts' ? userPosts : [];
+
+    const renderPost = useCallback(({ item }: { item: Post }) => <PostGridItem post={item} />, []);
+
+    const renderEmpty = () => {
+        if (isLoading) {
+            return <View style={styles.centered}><ActivityIndicator size="small" color={colors.gold[500]} /></View>;
+        }
+        return (
+            <View style={styles.emptyPosts}>
+                <Ionicons
+                    name={activeTab === 'posts' ? 'camera-outline' : activeTab === 'likes' ? 'heart-outline' : 'bookmark-outline'}
+                    size={40}
+                    color={colors.text.muted}
+                />
+                <Text style={styles.emptyText}>
+                    {activeTab === 'posts' ? 'No posts yet' : activeTab === 'likes' ? 'No liked posts yet' : 'No saved posts yet'}
+                </Text>
+            </View>
+        );
+    };
+
+    return (
+        <View style={styles.container}>
+            <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
+
+            {/* Header buttons (floating) */}
+            <View style={[styles.headerButtons, { paddingTop: insets.top + spacing.sm }]}>
+                <View />
+                <TouchableOpacity style={styles.headerButton} onPress={() => router.push('/settings')}>
+                    <Ionicons name="settings-outline" size={22} color={colors.text.primary} />
+                </TouchableOpacity>
+            </View>
+
+            <FlatList
+                data={postsData}
+                renderItem={renderPost}
+                keyExtractor={(item) => item.id}
+                numColumns={3}
+                ListHeaderComponent={renderHeader}
+                ListEmptyComponent={renderEmpty}
+                columnWrapperStyle={styles.postsRow}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
                 showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={isRefreshing}
-                        onRefresh={handleRefresh}
-                        tintColor={colors.gold[500]}
-                    />
-                }
-            >
-                {/* Profile content */}
-                <View style={styles.profileContent}>
-                    {/* Avatar */}
-                    <View style={styles.avatarSection}>
-                        <View style={styles.avatarContainer}>
-                            <LinearGradient
-                                colors={[colors.gold[400], colors.gold[600]]}
-                                style={styles.avatarBorder}
-                            >
-                                <View style={styles.avatarInner}>
-                                    {user.avatarUrl ? (
-                                        <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
-                                    ) : (
-                                        <View style={[styles.avatarImage, styles.avatarPlaceholder]}>
-                                            <Text style={styles.avatarInitial}>
-                                                {(user.displayName || user.username || '?')[0].toUpperCase()}
-                                            </Text>
-                                        </View>
-                                    )}
-                                </View>
-                            </LinearGradient>
-                        </View>
-                    </View>
-
-                    {/* User info */}
-                    <View style={styles.userInfo}>
-                        <Text style={styles.displayName}>{user.displayName}</Text>
-                        <Text style={styles.username}>@{user.username}</Text>
-                        {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
-                    </View>
-
-                    {/* Privacy badge */}
-                    <View style={styles.privacyBadge}>
-                        <Text style={styles.privacyIcon}>🔒</Text>
-                        <Text style={styles.privacyText}>
-                            {user.communityOptIn ? 'Community Member' : 'Private Mode'}
-                        </Text>
-                    </View>
-
-                    {/* Stats */}
-                    <View style={styles.statsContainer}>
-                        <View style={styles.stat}>
-                            <Text style={styles.statValue}>{formatCount(user.postsCount)}</Text>
-                            <Text style={styles.statLabel}>Posts</Text>
-                        </View>
-                        <View style={styles.statDivider} />
-                        <View style={styles.stat}>
-                            <Text style={styles.statValue}>{formatCount(user.followersCount)}</Text>
-                            <Text style={styles.statLabel}>Followers</Text>
-                        </View>
-                        <View style={styles.statDivider} />
-                        <View style={styles.stat}>
-                            <Text style={styles.statValue}>{formatCount(user.followingCount)}</Text>
-                            <Text style={styles.statLabel}>Following</Text>
-                        </View>
-                    </View>
-
-                    {/* Action buttons */}
-                    <View style={styles.actionButtons}>
-                        <TouchableOpacity style={styles.editButton} activeOpacity={0.8} onPress={() => router.push('/settings')}>
-                            <Text style={styles.editButtonText}>Edit Profile</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.logoutButton}
-                            activeOpacity={0.8}
-                            onPress={handleLogout}
-                        >
-                            <Text style={styles.logoutText}>Log Out</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Posts grid */}
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Posts</Text>
-                        <Text style={styles.sectionCount}>{userPosts.length}</Text>
-                    </View>
-
-                    {isLoading ? (
-                        <View style={styles.centered}>
-                            <ActivityIndicator size="small" color={colors.gold[500]} />
-                        </View>
-                    ) : userPosts.length === 0 ? (
-                        <View style={styles.emptyPosts}>
-                            <Text style={styles.emptyIcon}>📸</Text>
-                            <Text style={styles.emptyText}>No posts yet</Text>
-                        </View>
-                    ) : (
-                        <View style={styles.postsGrid}>
-                            {userPosts.map((post) => (
-                                <PostGridItem key={post.id} post={post} />
-                            ))}
-                        </View>
-                    )}
-                </View>
-            </ScrollView>
+                onRefresh={handleRefresh}
+                refreshing={isRefreshing}
+            />
         </View>
     );
 }
@@ -246,195 +247,95 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
     centered: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing['2xl'] },
+
+    // Header buttons
     headerButtons: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg,
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100,
+        flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.lg,
     },
-    headerRight: { flexDirection: 'row', gap: spacing.sm },
     headerButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: 40, height: 40, borderRadius: 20,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)', alignItems: 'center', justifyContent: 'center',
     },
-    headerIcon: { fontSize: 18 },
-    scrollView: { flex: 1, marginTop: 60 },
-    profileContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
+
+    // Cover
+    coverArea: { height: 160, position: 'relative' },
+    coverImage: { width: '100%', height: '100%' },
+    coverGradient: { ...StyleSheet.absoluteFillObject },
+
+    profileContent: { paddingHorizontal: spacing.xl, marginTop: -40 },
 
     // Avatar
-    avatarSection: { alignItems: 'center', marginBottom: spacing.lg },
+    avatarSection: { alignItems: 'center', marginBottom: spacing.md },
     avatarContainer: {},
     avatarBorder: { padding: 4, borderRadius: 56 },
-    avatarInner: {
-        borderRadius: 52,
-        borderWidth: 4,
-        borderColor: colors.obsidian[900],
-        overflow: 'hidden',
-    },
+    avatarInner: { borderRadius: 52, borderWidth: 4, borderColor: colors.obsidian[900], overflow: 'hidden' },
     avatarImage: { width: 96, height: 96 },
-    avatarPlaceholder: {
-        backgroundColor: colors.obsidian[500],
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
+    avatarPlaceholder: { backgroundColor: colors.obsidian[500], alignItems: 'center', justifyContent: 'center' },
     avatarInitial: { fontSize: 36, fontWeight: '700', color: colors.text.primary },
 
     // User info
     userInfo: { alignItems: 'center', marginBottom: spacing.md },
-    displayName: {
-        fontSize: 26,
-        fontWeight: '700',
-        color: colors.text.primary,
-        letterSpacing: -0.5,
-    },
-    username: {
-        fontSize: typography.fontSize.base,
-        color: colors.text.muted,
-        marginTop: spacing.xs,
-    },
-    bio: {
-        fontSize: typography.fontSize.base,
-        color: colors.text.secondary,
-        textAlign: 'center',
-        marginTop: spacing.md,
-        lineHeight: 22,
-    },
+    nameRow: { flexDirection: 'row', alignItems: 'center' },
+    displayName: { fontSize: 26, fontWeight: '700', color: colors.text.primary, letterSpacing: -0.5, fontFamily: 'Inter-Bold' },
+    username: { fontSize: typography.fontSize.base, color: colors.text.muted, marginTop: spacing.xs },
+    bio: { fontSize: typography.fontSize.base, color: colors.text.secondary, textAlign: 'center', marginTop: spacing.md, lineHeight: 22 },
 
     // Privacy badge
     privacyBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        alignSelf: 'center',
-        backgroundColor: 'rgba(212, 175, 55, 0.1)',
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.xs,
-        borderRadius: 20,
-        marginBottom: spacing.lg,
+        flexDirection: 'row', alignItems: 'center', alignSelf: 'center',
+        backgroundColor: 'rgba(212, 175, 55, 0.1)', paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs, borderRadius: 20, marginBottom: spacing.lg, gap: spacing.xs,
     },
-    privacyIcon: { fontSize: 12, marginRight: spacing.xs },
-    privacyText: {
-        fontSize: typography.fontSize.xs,
-        color: colors.gold[400],
-        fontWeight: '600',
-    },
+    privacyText: { fontSize: typography.fontSize.xs, color: colors.gold[400], fontWeight: '600' },
 
     // Stats
     statsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
-        borderRadius: 16,
-        paddingVertical: spacing.lg,
-        marginBottom: spacing.lg,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.06)',
+        flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+        backgroundColor: colors.surface.glass, borderRadius: 16,
+        paddingVertical: spacing.lg, marginBottom: spacing.lg,
+        borderWidth: 1, borderColor: colors.border.subtle,
     },
     stat: { flex: 1, alignItems: 'center' },
-    statValue: {
-        fontSize: typography.fontSize.xl,
-        fontWeight: '700',
-        color: colors.text.primary,
-    },
-    statLabel: {
-        fontSize: typography.fontSize.sm,
-        color: colors.text.muted,
-        marginTop: 2,
-    },
-    statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255, 255, 255, 0.08)' },
+    statValue: { fontSize: typography.fontSize.xl, fontWeight: '700', color: colors.text.primary },
+    statLabel: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },
+    statDivider: { width: 1, height: 32, backgroundColor: colors.border.subtle },
 
-    // Action buttons
-    actionButtons: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.xl },
+    // Edit button
     editButton: {
-        flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.06)',
-        paddingVertical: spacing.md,
-        borderRadius: 12,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.08)',
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.surface.glassHover, paddingVertical: spacing.md,
+        borderRadius: 12, marginBottom: spacing.xl,
+        borderWidth: 1, borderColor: colors.border.subtle, gap: spacing.sm,
     },
-    editButtonText: {
-        fontSize: typography.fontSize.base,
-        fontWeight: '600',
-        color: colors.text.primary,
-    },
-    logoutButton: {
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.md,
-        borderRadius: 12,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 82, 82, 0.3)',
-        backgroundColor: 'rgba(255, 82, 82, 0.08)',
-    },
-    logoutText: {
-        fontSize: typography.fontSize.base,
-        fontWeight: '600',
-        color: colors.coral[500],
-    },
+    editButtonText: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
 
-    // Posts section
-    sectionHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    // Content tabs
+    contentTabs: {
+        flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
         marginBottom: spacing.md,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.06)',
-        paddingTop: spacing.lg,
     },
-    sectionTitle: {
-        fontSize: typography.fontSize.lg,
-        fontWeight: '700',
-        color: colors.text.primary,
+    contentTab: {
+        flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        paddingVertical: spacing.md, gap: spacing.xs,
     },
-    sectionCount: {
-        fontSize: typography.fontSize.sm,
-        color: colors.text.muted,
-        marginLeft: spacing.sm,
-    },
+    contentTabActive: { borderBottomWidth: 2, borderBottomColor: colors.gold[500] },
+    contentTabText: { fontSize: typography.fontSize.sm, color: colors.text.muted, fontWeight: '500' },
+    contentTabTextActive: { color: colors.gold[500] },
 
     // Posts grid
-    postsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-    postItem: {
-        width: POST_SIZE,
-        height: POST_SIZE,
-        borderRadius: 8,
-        overflow: 'hidden',
-    },
+    postsRow: { paddingHorizontal: spacing.xl, gap: spacing.xs },
+    postItem: { width: POST_SIZE, height: POST_SIZE, borderRadius: 8, overflow: 'hidden', marginBottom: spacing.xs },
     postImage: { width: '100%', height: '100%' },
-    textPostBg: {
-        backgroundColor: colors.obsidian[600],
-        padding: spacing.sm,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    textPostContent: {
-        fontSize: typography.fontSize.xs,
-        color: colors.text.primary,
-        textAlign: 'center',
-    },
+    textPostBg: { backgroundColor: colors.obsidian[600], padding: spacing.sm, alignItems: 'center', justifyContent: 'center' },
+    textPostContent: { fontSize: typography.fontSize.xs, color: colors.text.primary, textAlign: 'center' },
     videoIndicator: {
-        position: 'absolute',
-        top: spacing.sm,
-        right: spacing.sm,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        paddingHorizontal: spacing.sm,
-        paddingVertical: 2,
-        borderRadius: 6,
+        position: 'absolute', top: spacing.sm, right: spacing.sm,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)', width: 24, height: 24, borderRadius: 12,
+        alignItems: 'center', justifyContent: 'center',
     },
-    videoIcon: { fontSize: 8, color: colors.text.primary },
 
-    // Empty state
-    emptyPosts: { alignItems: 'center', paddingVertical: spacing['2xl'] },
-    emptyIcon: { fontSize: 40, marginBottom: spacing.md },
-    emptyText: { fontSize: typography.fontSize.base, color: colors.text.muted },
+    // Empty
+    emptyPosts: { alignItems: 'center', paddingVertical: spacing['3xl'] },
+    emptyText: { fontSize: typography.fontSize.base, color: colors.text.muted, marginTop: spacing.md },
 });

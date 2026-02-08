@@ -139,13 +139,16 @@ export const API = {
     posts: '/api/v1/posts',
     post: (id: string) => `/api/v1/posts/${id}`,
     like: (id: string) => `/api/v1/posts/${id}/like`,
+    save: (id: string) => `/api/v1/posts/${id}/save`,
     comments: (id: string) => `/api/v1/posts/${id}/comments`,
     reorder: '/api/v1/posts/reorder',
 
     // Users & Profiles
     users: '/api/v1/users',
     userProfile: (username: string) => `/api/v1/users/${username}`,
+    userPosts: (userId: string) => `/api/v1/users/${userId}/posts`,
     updateProfile: '/api/v1/users/profile',
+    checkUsername: '/api/v1/auth/check-username',
     follow: (userId: string) => `/api/v1/users/${userId}/follow`,
     communityOptIn: '/api/v1/users/community-opt-in',
     publicProfile: '/api/v1/users/public-profile',

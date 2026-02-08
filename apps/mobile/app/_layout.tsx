@@ -2,11 +2,19 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Font from 'expo-font';
+import {
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+} from '@expo-google-fonts/inter';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 import { useAuthStore } from '../stores';
+import { colors } from '@zerog/ui';
 
-// Prevent splash screen from auto-hiding until we check auth
+// Prevent splash screen from auto-hiding until we check auth + load fonts
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -14,16 +22,32 @@ export default function RootLayout() {
     const isInitialized = useAuthStore((s) => s.isInitialized);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
+    const [fontsLoaded] = Font.useFonts({
+        Inter: Inter_400Regular,
+        'Inter-Medium': Inter_500Medium,
+        'Inter-SemiBold': Inter_600SemiBold,
+        'Inter-Bold': Inter_700Bold,
+    });
+
     useEffect(() => {
         initialize().finally(() => {
-            SplashScreen.hideAsync();
+            // Hide splash once auth is checked (fonts may still load)
+            if (fontsLoaded) {
+                SplashScreen.hideAsync();
+            }
         });
-    }, []);
+    }, [fontsLoaded]);
+
+    // Also hide splash when fonts finish loading after init
+    useEffect(() => {
+        if (isInitialized && fontsLoaded) {
+            SplashScreen.hideAsync();
+        }
+    }, [isInitialized, fontsLoaded]);
 
     // Register for push notifications after auth is initialized and user is authenticated
     useEffect(() => {
         if (isInitialized && isAuthenticated) {
-            // Dynamic import to avoid crashing if expo-notifications isn't fully available
             import('../lib/notifications')
                 .then(({ registerForPushNotifications }) => {
                     registerForPushNotifications().catch((err) => {
@@ -31,12 +55,12 @@ export default function RootLayout() {
                     });
                 })
                 .catch(() => {
-                    // Silently handle — notifications not available in this environment
+                    // Silently handle — notifications not available
                 });
         }
     }, [isInitialized, isAuthenticated]);
 
-    if (!isInitialized) {
+    if (!isInitialized || !fontsLoaded) {
         return null;
     }
 
@@ -46,7 +70,7 @@ export default function RootLayout() {
             <Stack
                 screenOptions={{
                     headerShown: false,
-                    contentStyle: { backgroundColor: '#0A0A0B' },
+                    contentStyle: { backgroundColor: colors.obsidian[900] },
                     animation: 'slide_from_right',
                 }}
             >
@@ -61,6 +85,6 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0A0A0B',
+        backgroundColor: colors.obsidian[900],
     },
 });

@@ -51,7 +51,7 @@ export interface Post {
     mediaCropY?: number;
     mediaAspectRatio?: string;
     sortOrder?: number;
-    author: PostAuthor;
+    author: PostAuthor | null;
     likesCount: number;
     commentsCount: number;
     sharesCount: number;
@@ -171,9 +171,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     signup: async (email, password, displayName) => {
         set({ isLoading: true, error: null });
         try {
+            // Generate a temporary username from displayName for initial signup
+            const tempUsername = displayName
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '')
+                .substring(0, 20) + Math.floor(Math.random() * 999);
             const data = await apiFetch<any>(API.signup, {
                 method: 'POST',
-                body: JSON.stringify({ email, password, displayName }),
+                body: JSON.stringify({
+                    email,
+                    password,
+                    displayName,
+                    username: tempUsername,
+                    accessCode: 'MOBILE_BETA', // Default access code for mobile signups
+                }),
             });
 
             if (data.token) {
@@ -233,15 +244,42 @@ interface FeedState {
     isLoading: boolean;
     isRefreshing: boolean;
     hasMore: boolean;
-    page: number;
+    nextCursor: string | null;
     error: string | null;
 
     fetchFeed: (refresh?: boolean) => Promise<void>;
     likePost: (postId: string) => Promise<void>;
     unlikePost: (postId: string) => Promise<void>;
+    savePost: (postId: string) => Promise<void>;
+    unsavePost: (postId: string) => Promise<void>;
     movePost: (postId: string, direction: 'up' | 'down') => Promise<void>;
     addPost: (post: Post) => void;
     clear: () => void;
+}
+
+// Map server post shape to mobile Post interface
+export function mapApiPost(raw: any): Post {
+    return {
+        id: raw.id,
+        content: raw.caption || raw.content || '',
+        mediaUrl: raw.mediaUrl,
+        mediaType: raw.type || raw.mediaType,
+        mediaCropY: raw.mediaCropY,
+        mediaAspectRatio: raw.mediaAspectRatio,
+        sortOrder: raw.sortOrder,
+        author: raw.user || raw.author || null,
+        likesCount: raw.likesCount ?? raw._count?.likes ?? 0,
+        commentsCount: raw.commentsCount ?? raw._count?.comments ?? 0,
+        sharesCount: raw.sharesCount ?? raw._count?.shares ?? 0,
+        isLiked: raw.isLiked ?? false,
+        isSaved: raw.isSaved ?? false,
+        isRsvped: raw.isRsvped ?? false,
+        createdAt: raw.createdAt,
+        communityId: raw.communityId,
+        eventDate: raw.eventDate,
+        eventLocation: raw.eventLocation,
+        type: raw.type,
+    };
 }
 
 export const useFeedStore = create<FeedState>((set, get) => ({
@@ -249,7 +287,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     isLoading: false,
     isRefreshing: false,
     hasMore: true,
-    page: 1,
+    nextCursor: null,
     error: null,
 
     fetchFeed: async (refresh = false) => {
@@ -257,33 +295,36 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         if (state.isLoading && !refresh) return;
 
         if (refresh) {
-            set({ isRefreshing: true, page: 1 });
+            set({ isRefreshing: true, nextCursor: null });
         } else {
             set({ isLoading: true });
         }
 
         try {
-            const page = refresh ? 1 : state.page;
+            const cursor = refresh ? '' : state.nextCursor;
+            const cursorParam = cursor ? `&cursor=${cursor}` : '';
             const data = await apiFetch<any>(
-                `${API.feed}?type=foryou&feedView=private&page=${page}&limit=20`
+                `${API.feed}?type=foryou&feedView=private&limit=20${cursorParam}`
             );
 
-            const posts = data.posts || data.data || [];
+            const rawPosts = data.posts || data.data || [];
+            const posts = rawPosts.map(mapApiPost);
+            const newCursor = data.nextCursor || null;
 
             if (refresh) {
                 set({
                     posts,
                     isRefreshing: false,
                     isLoading: false,
-                    hasMore: posts.length >= 20,
-                    page: 2,
+                    hasMore: !!newCursor,
+                    nextCursor: newCursor,
                 });
             } else {
                 set((prev) => ({
                     posts: [...prev.posts, ...posts],
                     isLoading: false,
-                    hasMore: posts.length >= 20,
-                    page: prev.page + 1,
+                    hasMore: !!newCursor,
+                    nextCursor: newCursor,
                 }));
             }
         } catch (error: any) {
@@ -343,6 +384,40 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         }
     },
 
+    savePost: async (postId) => {
+        set((state) => ({
+            posts: state.posts.map((post) =>
+                post.id === postId ? { ...post, isSaved: true } : post
+            ),
+        }));
+        try {
+            await apiFetch(API.save(postId), { method: 'POST' });
+        } catch {
+            set((state) => ({
+                posts: state.posts.map((post) =>
+                    post.id === postId ? { ...post, isSaved: false } : post
+                ),
+            }));
+        }
+    },
+
+    unsavePost: async (postId) => {
+        set((state) => ({
+            posts: state.posts.map((post) =>
+                post.id === postId ? { ...post, isSaved: false } : post
+            ),
+        }));
+        try {
+            await apiFetch(API.save(postId), { method: 'DELETE' });
+        } catch {
+            set((state) => ({
+                posts: state.posts.map((post) =>
+                    post.id === postId ? { ...post, isSaved: true } : post
+                ),
+            }));
+        }
+    },
+
     movePost: async (postId, direction) => {
         const posts = get().posts;
         const currentIndex = posts.findIndex((p) => p.id === postId);
@@ -388,7 +463,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         set((state) => ({ posts: [post, ...state.posts] }));
     },
 
-    clear: () => set({ posts: [], page: 1, hasMore: true }),
+    clear: () => set({ posts: [], nextCursor: null, hasMore: true }),
 }));
 
 // ============================================

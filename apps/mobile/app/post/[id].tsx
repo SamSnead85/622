@@ -11,22 +11,24 @@ import {
     Platform,
     ActivityIndicator,
     Dimensions,
+    Share,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
-import { useAuthStore } from '../../stores';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { useAuthStore, mapApiPost } from '../../stores';
 
 interface PostAuthor {
     id: string;
     username: string;
     displayName: string;
     avatarUrl?: string;
+    isVerified?: boolean;
 }
 
 interface Comment {
@@ -85,14 +87,29 @@ export default function PostDetailScreen() {
                     apiFetch<any>(API.post(postId)),
                     apiFetch<any>(API.comments(postId)),
                 ]);
-                setPost(postData.post || postData.data || postData);
-                const c = commentsData.comments || commentsData.data || [];
-                setComments(Array.isArray(c) ? c : []);
-            } catch {
-                // handle error silently
-            } finally {
-                setIsLoading(false);
-            }
+                const rawPost = postData.post || postData.data || postData;
+                const mapped = mapApiPost(rawPost);
+                setPost({
+                    id: mapped.id, content: mapped.content,
+                    mediaUrl: mapped.mediaUrl, mediaType: mapped.mediaType,
+                    mediaAspectRatio: mapped.mediaAspectRatio,
+                    createdAt: mapped.createdAt,
+                    author: mapped.author || { id: '', username: '', displayName: 'Anonymous' },
+                    likesCount: mapped.likesCount, commentsCount: mapped.commentsCount,
+                    sharesCount: mapped.sharesCount, isLiked: mapped.isLiked, isSaved: mapped.isSaved,
+                });
+                const rawComments = commentsData.comments || commentsData.data || [];
+                setComments(
+                    (Array.isArray(rawComments) ? rawComments : []).map((c: any) => ({
+                        id: c.id, content: c.content || '',
+                        createdAt: c.createdAt,
+                        author: c.user || c.author || { id: '', username: '', displayName: 'Anonymous' },
+                        likesCount: c.likesCount ?? c._count?.likes ?? 0,
+                        isLiked: c.isLiked ?? false,
+                    }))
+                );
+            } catch { /* silent */ }
+            finally { setIsLoading(false); }
         };
         load();
     }, [postId]);
@@ -100,24 +117,17 @@ export default function PostDetailScreen() {
     const handleLike = useCallback(async () => {
         if (!post) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        // Optimistic toggle
-        setPost((p) => p ? {
-            ...p,
-            isLiked: !p.isLiked,
-            likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount + 1,
-        } : p);
+        setPost((p) => p ? { ...p, isLiked: !p.isLiked, likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount + 1 } : p);
         try {
-            await apiFetch(API.like(post.id), {
-                method: post.isLiked ? 'DELETE' : 'POST',
-            });
+            await apiFetch(API.like(post.id), { method: post.isLiked ? 'DELETE' : 'POST' });
         } catch {
-            // Revert
-            setPost((p) => p ? {
-                ...p,
-                isLiked: !p.isLiked,
-                likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount + 1,
-            } : p);
+            setPost((p) => p ? { ...p, isLiked: !p.isLiked, likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount + 1 } : p);
         }
+    }, [post]);
+
+    const handleShare = useCallback(async () => {
+        if (!post) return;
+        await Share.share({ message: `Check out this post on 0G: https://0gravity.ai/post/${post.id}` });
     }, [post]);
 
     const handleComment = useCallback(async () => {
@@ -127,28 +137,24 @@ export default function PostDetailScreen() {
         setCommentText('');
         setIsSending(true);
 
-        // Optimistic comment
         const temp: Comment = {
-            id: `temp-${Date.now()}`,
-            content: text,
+            id: `temp-${Date.now()}`, content: text,
             createdAt: new Date().toISOString(),
-            author: {
-                id: user?.id || '',
-                username: user?.username || '',
-                displayName: user?.displayName || '',
-                avatarUrl: user?.avatarUrl,
-            },
+            author: { id: user?.id || '', username: user?.username || '', displayName: user?.displayName || '', avatarUrl: user?.avatarUrl },
             likesCount: 0,
         };
         setComments((prev) => [...prev, temp]);
 
         try {
-            const data = await apiFetch<any>(API.comments(postId), {
-                method: 'POST',
-                body: JSON.stringify({ content: text }),
-            });
-            const real = data.comment || data.data || data;
-            setComments((prev) => prev.map((c) => c.id === temp.id ? { ...real, id: real.id || temp.id } : c));
+            const data = await apiFetch<any>(API.comments(postId), { method: 'POST', body: JSON.stringify({ content: text }) });
+            const raw = data.comment || data.data || data;
+            const real: Comment = {
+                id: raw.id || temp.id, content: raw.content || '',
+                createdAt: raw.createdAt || temp.createdAt,
+                author: raw.user || raw.author || temp.author,
+                likesCount: raw.likesCount ?? 0, isLiked: raw.isLiked ?? false,
+            };
+            setComments((prev) => prev.map((c) => c.id === temp.id ? real : c));
             setPost((p) => p ? { ...p, commentsCount: p.commentsCount + 1 } : p);
         } catch {
             setComments((prev) => prev.filter((c) => c.id !== temp.id));
@@ -170,6 +176,7 @@ export default function PostDetailScreen() {
         return (
             <View style={[styles.container, styles.centered]}>
                 <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
+                <Ionicons name="alert-circle-outline" size={48} color={colors.text.muted} />
                 <Text style={styles.errorText}>Post not found</Text>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
                     <Text style={styles.backLinkText}>Go back</Text>
@@ -179,47 +186,40 @@ export default function PostDetailScreen() {
     }
 
     const renderHeader = () => (
-        <View>
-            {/* Post content */}
+        <Animated.View entering={FadeInDown.duration(300)}>
             <View style={styles.postSection}>
-                {/* Author */}
-                <TouchableOpacity style={styles.authorRow} onPress={() => router.push(`/profile/${post.author.username}`)}>
-                    {post.author.avatarUrl ? (
+                <TouchableOpacity style={styles.authorRow} onPress={() => post.author?.username && router.push(`/profile/${post.author.username}`)}>
+                    {post.author?.avatarUrl ? (
                         <Image source={{ uri: post.author.avatarUrl }} style={styles.avatar} />
                     ) : (
                         <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                            <Text style={styles.avatarInitial}>
-                                {(post.author.displayName || '?')[0].toUpperCase()}
-                            </Text>
+                            <Text style={styles.avatarInitial}>{(post.author?.displayName || '?')[0].toUpperCase()}</Text>
                         </View>
                     )}
                     <View style={styles.authorInfo}>
-                        <Text style={styles.authorName}>{post.author.displayName}</Text>
+                        <View style={styles.authorNameRow}>
+                            <Text style={styles.authorName}>{post.author?.displayName || 'Anonymous'}</Text>
+                            {post.author?.isVerified && <Ionicons name="checkmark-circle" size={14} color={colors.gold[500]} style={{ marginLeft: 4 }} />}
+                        </View>
                         <Text style={styles.postTime}>{timeAgo(post.createdAt)}</Text>
                     </View>
                 </TouchableOpacity>
 
-                {/* Content */}
-                {post.content ? (
-                    <Text style={styles.postContent}>{post.content}</Text>
-                ) : null}
+                {post.content ? <Text style={styles.postContent}>{post.content}</Text> : null}
 
-                {/* Media */}
                 {post.mediaUrl && (
                     <View style={styles.mediaContainer}>
                         {post.mediaType === 'VIDEO' ? (
                             <View style={styles.videoContainer}>
                                 <Image source={{ uri: post.mediaUrl }} style={styles.mediaImage} resizeMode="cover" />
                                 <View style={styles.playOverlay}>
-                                    <Text style={styles.playIcon}>▶</Text>
+                                    <View style={styles.playButton}>
+                                        <Ionicons name="play" size={32} color="#fff" />
+                                    </View>
                                 </View>
                             </View>
                         ) : (
-                            <Image
-                                source={{ uri: post.mediaUrl }}
-                                style={[styles.mediaImage, post.mediaAspectRatio ? { aspectRatio: parseFloat(post.mediaAspectRatio) || 1.5 } : {}]}
-                                resizeMode="cover"
-                            />
+                            <Image source={{ uri: post.mediaUrl }} style={[styles.mediaImage, post.mediaAspectRatio ? { aspectRatio: parseFloat(post.mediaAspectRatio) || 1.5 } : {}]} resizeMode="cover" />
                         )}
                     </View>
                 )}
@@ -227,66 +227,64 @@ export default function PostDetailScreen() {
                 {/* Actions */}
                 <View style={styles.actionsBar}>
                     <TouchableOpacity style={styles.actionBtn} onPress={handleLike}>
-                        <Text style={styles.actionIcon}>{post.isLiked ? '❤️' : '🤍'}</Text>
+                        <Ionicons name={post.isLiked ? 'heart' : 'heart-outline'} size={22} color={post.isLiked ? colors.coral[500] : colors.text.secondary} />
                         <Text style={styles.actionCount}>{post.likesCount}</Text>
                     </TouchableOpacity>
                     <View style={styles.actionBtn}>
-                        <Text style={styles.actionIcon}>💬</Text>
+                        <Ionicons name="chatbubble-outline" size={20} color={colors.text.secondary} />
                         <Text style={styles.actionCount}>{post.commentsCount}</Text>
                     </View>
-                    <View style={styles.actionBtn}>
-                        <Text style={styles.actionIcon}>↗️</Text>
+                    <TouchableOpacity style={styles.actionBtn} onPress={handleShare}>
+                        <Ionicons name="arrow-redo-outline" size={20} color={colors.text.secondary} />
                         <Text style={styles.actionCount}>{post.sharesCount}</Text>
-                    </View>
+                    </TouchableOpacity>
                 </View>
             </View>
 
-            {/* Comments header */}
             <View style={styles.commentsHeader}>
                 <Text style={styles.commentsTitle}>Comments</Text>
                 <Text style={styles.commentsCount}>{comments.length}</Text>
             </View>
-        </View>
+        </Animated.View>
     );
 
     const renderComment = ({ item }: { item: Comment }) => (
         <View style={styles.commentRow}>
-            {item.author.avatarUrl ? (
+            {item.author?.avatarUrl ? (
                 <Image source={{ uri: item.author.avatarUrl }} style={styles.commentAvatar} />
             ) : (
                 <View style={[styles.commentAvatar, styles.commentAvatarPlaceholder]}>
-                    <Text style={styles.commentAvatarInitial}>
-                        {(item.author.displayName || '?')[0].toUpperCase()}
-                    </Text>
+                    <Text style={styles.commentAvatarInitial}>{(item.author?.displayName || '?')[0].toUpperCase()}</Text>
                 </View>
             )}
             <View style={styles.commentContent}>
                 <View style={styles.commentBubble}>
-                    <Text style={styles.commentAuthor}>{item.author.displayName}</Text>
+                    <Text style={styles.commentAuthor}>{item.author?.displayName || 'Anonymous'}</Text>
                     <Text style={styles.commentText}>{item.content}</Text>
                 </View>
-                <Text style={styles.commentTime}>{timeAgo(item.createdAt)}</Text>
+                <View style={styles.commentMeta}>
+                    <Text style={styles.commentTime}>{timeAgo(item.createdAt)}</Text>
+                    <TouchableOpacity style={styles.commentLikeBtn}>
+                        <Ionicons name={item.isLiked ? 'heart' : 'heart-outline'} size={14} color={item.isLiked ? colors.coral[500] : colors.text.muted} />
+                        {item.likesCount > 0 && <Text style={styles.commentLikeCount}>{item.likesCount}</Text>}
+                    </TouchableOpacity>
+                </View>
             </View>
         </View>
     );
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Text style={styles.backIcon}>←</Text>
+                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Post</Text>
                 <View style={{ width: 40 }} />
             </View>
 
-            {/* Comments list with post as header */}
             <FlatList
                 ref={flatListRef}
                 data={comments}
@@ -302,7 +300,6 @@ export default function PostDetailScreen() {
                 }
             />
 
-            {/* Comment input */}
             <View style={[styles.commentInput, { paddingBottom: insets.bottom + spacing.sm }]}>
                 <TextInput
                     style={styles.commentTextInput}
@@ -315,11 +312,8 @@ export default function PostDetailScreen() {
                 />
                 {commentText.trim() ? (
                     <TouchableOpacity onPress={handleComment}>
-                        <LinearGradient
-                            colors={[colors.gold[400], colors.gold[600]]}
-                            style={styles.sendBtn}
-                        >
-                            <Text style={styles.sendIcon}>↑</Text>
+                        <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.sendBtn}>
+                            <Ionicons name="arrow-up" size={18} color={colors.obsidian[900]} />
                         </LinearGradient>
                     </TouchableOpacity>
                 ) : null}
@@ -331,55 +325,46 @@ export default function PostDetailScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
     centered: { alignItems: 'center', justifyContent: 'center' },
-    errorText: { fontSize: typography.fontSize.lg, color: colors.text.muted, marginBottom: spacing.md },
+    errorText: { fontSize: typography.fontSize.lg, color: colors.text.muted, marginTop: spacing.md, marginBottom: spacing.md },
     backLink: { paddingVertical: spacing.sm },
     backLinkText: { fontSize: typography.fontSize.base, color: colors.gold[500] },
 
-    // Header
     header: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
     },
-    backButton: {
+    backBtn: {
         width: 40, height: 40, borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        backgroundColor: colors.surface.glassHover,
         alignItems: 'center', justifyContent: 'center',
     },
-    backIcon: { fontSize: 20, color: colors.text.primary },
-    headerTitle: { fontSize: 18, fontWeight: '600', color: colors.text.primary },
+    headerTitle: { fontSize: 18, fontWeight: '600', color: colors.text.primary, fontFamily: 'Inter-SemiBold' },
 
-    // Post
     postSection: { padding: spacing.lg },
     authorRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
     avatar: { width: 44, height: 44, borderRadius: 22 },
     avatarPlaceholder: { backgroundColor: colors.obsidian[500], alignItems: 'center', justifyContent: 'center' },
     avatarInitial: { fontSize: 18, fontWeight: '700', color: colors.text.primary },
     authorInfo: { marginLeft: spacing.md },
+    authorNameRow: { flexDirection: 'row', alignItems: 'center' },
     authorName: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
     postTime: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },
     postContent: { fontSize: 16, color: colors.text.primary, lineHeight: 24, marginBottom: spacing.md },
 
-    // Media
     mediaContainer: { borderRadius: 12, overflow: 'hidden', marginBottom: spacing.md },
     mediaImage: { width: '100%', aspectRatio: 1.5, backgroundColor: colors.obsidian[700] },
     videoContainer: { position: 'relative' },
     playOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' },
-    playIcon: { fontSize: 40, color: 'rgba(255,255,255,0.9)' },
+    playButton: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
 
-    // Actions
-    actionsBar: {
-        flexDirection: 'row', paddingTop: spacing.sm,
-        borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.06)',
-    },
+    actionsBar: { flexDirection: 'row', paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border.subtle },
     actionBtn: { flexDirection: 'row', alignItems: 'center', marginRight: spacing.xl },
-    actionIcon: { fontSize: 20 },
     actionCount: { fontSize: typography.fontSize.sm, color: colors.text.secondary, marginLeft: spacing.xs },
 
-    // Comments
     commentsHeader: {
         flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.06)',
+        paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: colors.border.subtle,
     },
     commentsTitle: { fontSize: typography.fontSize.lg, fontWeight: '700', color: colors.text.primary },
     commentsCount: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginLeft: spacing.sm },
@@ -391,27 +376,25 @@ const styles = StyleSheet.create({
     commentAvatarPlaceholder: { backgroundColor: colors.obsidian[500], alignItems: 'center', justifyContent: 'center' },
     commentAvatarInitial: { fontSize: 12, fontWeight: '700', color: colors.text.primary },
     commentContent: { flex: 1, marginLeft: spacing.sm },
-    commentBubble: {
-        backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: 16,
-        paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    },
+    commentBubble: { backgroundColor: colors.surface.glassHover, borderRadius: 16, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
     commentAuthor: { fontSize: typography.fontSize.sm, fontWeight: '600', color: colors.text.primary, marginBottom: 2 },
     commentText: { fontSize: typography.fontSize.sm, color: colors.text.secondary, lineHeight: 20 },
-    commentTime: { fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: 4, marginLeft: spacing.md },
+    commentMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginLeft: spacing.md, gap: spacing.md },
+    commentTime: { fontSize: typography.fontSize.xs, color: colors.text.muted },
+    commentLikeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    commentLikeCount: { fontSize: typography.fontSize.xs, color: colors.text.muted },
 
-    // Comment input
     commentInput: {
         flexDirection: 'row', alignItems: 'flex-end',
         paddingHorizontal: spacing.lg, paddingTop: spacing.sm,
-        borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.06)',
+        borderTopWidth: 1, borderTopColor: colors.border.subtle,
         backgroundColor: colors.obsidian[900],
     },
     commentTextInput: {
         flex: 1, fontSize: typography.fontSize.base, color: colors.text.primary,
-        backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: 20,
+        backgroundColor: colors.surface.glassHover, borderRadius: 20,
         paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
         maxHeight: 100, marginRight: spacing.sm,
     },
     sendBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-    sendIcon: { fontSize: 18, fontWeight: '700', color: colors.obsidian[900] },
 });
