@@ -780,7 +780,13 @@ router.post('/:id/wave', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { id } = req.params;
         const senderId = req.userId!;
-        const { message = 'waved at you! 👋', targetId, targetType } = req.body;
+
+        const waveSchema = z.object({
+            message: z.string().max(200).optional().default('waved at you! 👋'),
+            targetId: z.string().optional(),
+            targetType: z.string().optional(),
+        });
+        const { message, targetId, targetType } = waveSchema.parse(req.body);
 
         if (id === senderId) {
             throw new AppError('Cannot wave at yourself', 400);

@@ -1197,20 +1197,11 @@ router.post('/provisional-signup', async (req, res, next) => {
 // POST /api/v1/auth/complete-signup — Upgrade provisional account to full account
 router.post('/complete-signup', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            throw new AppError('Email and password are required.', 400);
-        }
-        if (password.length < 8) {
-            throw new AppError('Password must be at least 8 characters.', 400);
-        }
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            throw new AppError('Invalid email format.', 400);
-        }
+        const completeSignupSchema = z.object({
+            email: z.string().email('Invalid email format.'),
+            password: z.string().min(8, 'Password must be at least 8 characters.'),
+        });
+        const { email, password } = completeSignupSchema.parse(req.body);
 
         // Check current user is provisional
         const currentUser = await prisma.user.findUnique({ where: { id: req.user!.id } });

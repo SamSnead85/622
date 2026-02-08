@@ -21,6 +21,7 @@ export function JoinCommunityModal() {
     const [step, setStep] = useState<'intro' | 'choose' | 'setup'>('intro');
     const [identityChoice, setIdentityChoice] = useState<'same' | 'separate' | null>(null);
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Public profile fields (for "separate" identity)
     const [publicDisplayName, setPublicDisplayName] = useState('');
@@ -44,7 +45,7 @@ export function JoinCommunityModal() {
         });
         if (!success) {
             setSaving(false);
-            // TODO: show error
+            setError('Failed to join community. Please check your username and try again.');
         }
     }, [joinCommunity, publicDisplayName, publicUsername, publicBio]);
 
@@ -291,9 +292,12 @@ export function JoinCommunityModal() {
                                 </p>
                             </div>
 
+                            {error && (
+                                <p className="text-red-400 text-sm text-center mb-2">{error}</p>
+                            )}
                             <div className="flex gap-3">
                                 <button
-                                    onClick={() => setStep('choose')}
+                                    onClick={() => { setStep('choose'); setError(null); }}
                                     className="py-3 px-6 rounded-xl bg-white/[0.06] text-white/60 font-medium text-sm hover:bg-white/10 transition-colors"
                                 >
                                     Back

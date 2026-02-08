@@ -9,6 +9,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { apiFetch } from './api';
 
 // ============================================
@@ -139,8 +140,27 @@ export function usePushNotifications(): PushNotificationState {
         // Listen for user interactions with notifications (taps)
         responseListener.current = Notifications.addNotificationResponseReceivedListener(
             (response) => {
-                // You can navigate to specific screens based on notification data here
-                console.log('Notification tapped:', response.notification.request.content.data);
+                const data = response.notification.request.content.data;
+                if (!data) return;
+
+                try {
+                    const type = data.type as string;
+                    const postId = data.postId as string | undefined;
+                    const username = data.actorUsername as string | undefined;
+                    const communityId = data.communityId as string | undefined;
+
+                    if (type === 'LIKE' || type === 'COMMENT' || type === 'MENTION') {
+                        if (postId) router.push(`/post/${postId}`);
+                    } else if (type === 'FOLLOW') {
+                        if (username) router.push(`/profile/${username}`);
+                    } else if (type === 'COMMUNITY_INVITE' || type === 'COMMUNITY_POST') {
+                        if (communityId) router.push(`/community/${communityId}`);
+                    } else if (postId) {
+                        router.push(`/post/${postId}`);
+                    }
+                } catch {
+                    // Navigation failed — ignore
+                }
             }
         );
 

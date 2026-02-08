@@ -9,6 +9,7 @@ import {
     Dimensions,
     ActivityIndicator,
     RefreshControl,
+    Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -89,8 +90,9 @@ export default function UserProfileScreen() {
                 const rawPosts = postsData.posts || postsData.data || [];
                 setPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
             }
-        } catch { /* silent */ }
-        finally { setIsLoading(false); setIsRefreshing(false); }
+        } catch (e: any) {
+            if (!isRefreshing) Alert.alert('Error', e.message || 'Failed to load profile');
+        } finally { setIsLoading(false); setIsRefreshing(false); }
     };
 
     useEffect(() => { loadProfile(); }, [username]);

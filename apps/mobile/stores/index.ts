@@ -247,12 +247,14 @@ interface FeedState {
     nextCursor: string | null;
     error: string | null;
 
-    fetchFeed: (refresh?: boolean) => Promise<void>;
+    fetchFeed: (refresh?: boolean, feedType?: 'foryou' | 'following') => Promise<void>;
     likePost: (postId: string) => Promise<void>;
     unlikePost: (postId: string) => Promise<void>;
     savePost: (postId: string) => Promise<void>;
     unsavePost: (postId: string) => Promise<void>;
     movePost: (postId: string, direction: 'up' | 'down') => Promise<void>;
+    deletePost: (postId: string) => Promise<void>;
+    reportPost: (postId: string, reason?: string) => Promise<void>;
     addPost: (post: Post) => void;
     clear: () => void;
 }
@@ -290,7 +292,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     nextCursor: null,
     error: null,
 
-    fetchFeed: async (refresh = false) => {
+    fetchFeed: async (refresh = false, feedType: 'foryou' | 'following' = 'foryou') => {
         const state = get();
         if (state.isLoading && !refresh) return;
 
@@ -304,7 +306,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
             const cursor = refresh ? '' : state.nextCursor;
             const cursorParam = cursor ? `&cursor=${cursor}` : '';
             const data = await apiFetch<any>(
-                `${API.feed}?type=foryou&feedView=private&limit=20${cursorParam}`
+                `${API.feed}?type=${feedType}&feedView=private&limit=20${cursorParam}`
             );
 
             const rawPosts = data.posts || data.data || [];
@@ -459,6 +461,27 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         }
     },
 
+    deletePost: async (postId) => {
+        const prevPosts = get().posts;
+        // Optimistic removal
+        set((state) => ({
+            posts: state.posts.filter((p) => p.id !== postId),
+        }));
+        try {
+            await apiFetch(API.post(postId), { method: 'DELETE' });
+        } catch {
+            // Revert on error
+            set({ posts: prevPosts });
+        }
+    },
+
+    reportPost: async (postId, reason = '') => {
+        await apiFetch(API.report(postId), {
+            method: 'POST',
+            body: JSON.stringify({ reason }),
+        });
+    },
+
     addPost: (post) => {
         set((state) => ({ posts: [post, ...state.posts] }));
     },
@@ -553,11 +576,11 @@ interface NotificationsState {
     isLoading: boolean;
 
     fetchNotifications: () => Promise<void>;
-    markAsRead: (notificationId: string) => void;
-    markAllAsRead: () => void;
+    markAsRead: (notificationId: string) => Promise<void>;
+    markAllAsRead: () => Promise<void>;
 }
 
-export const useNotificationsStore = create<NotificationsState>((set) => ({
+export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     notifications: [],
     unreadCount: 0,
     isLoading: false,
@@ -579,7 +602,9 @@ export const useNotificationsStore = create<NotificationsState>((set) => ({
         }
     },
 
-    markAsRead: (notificationId) =>
+    markAsRead: async (notificationId) => {
+        // Optimistic update
+        const prev = get().notifications;
         set((state) => {
             const updated = state.notifications.map((n) =>
                 n.id === notificationId ? { ...n, isRead: true } : n
@@ -588,11 +613,32 @@ export const useNotificationsStore = create<NotificationsState>((set) => ({
                 notifications: updated,
                 unreadCount: updated.filter((n) => !n.isRead).length,
             };
-        }),
+        });
+        try {
+            await apiFetch(API.notificationRead(notificationId), { method: 'PATCH' });
+        } catch {
+            // Revert on failure
+            set({
+                notifications: prev,
+                unreadCount: prev.filter((n) => !n.isRead).length,
+            });
+        }
+    },
 
-    markAllAsRead: () =>
+    markAllAsRead: async () => {
+        const prev = get().notifications;
         set((state) => ({
             notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
             unreadCount: 0,
-        })),
+        }));
+        try {
+            await apiFetch(API.notificationsReadAll, { method: 'POST' });
+        } catch {
+            // Revert on failure
+            set({
+                notifications: prev,
+                unreadCount: prev.filter((n) => !n.isRead).length,
+            });
+        }
+    },
 }));

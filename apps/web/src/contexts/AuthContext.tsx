@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     // Auto-refresh token if approaching expiry
                     if (shouldRefresh) {
                         try {
-                            const refreshResponse = await apiFetch(`${API_ENDPOINTS.me.replace('/me', '/refresh')}`, {
+                            const refreshResponse = await apiFetch(API_ENDPOINTS.refresh, {
                                 method: 'POST',
                             });
                             if (refreshResponse.ok) {
@@ -237,7 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 method: 'POST',
                 body: JSON.stringify({
                     challengeToken: pending2FA.challengeToken,
-                    backupCode: code
+                    code: code
                 }),
             });
 

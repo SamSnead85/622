@@ -508,7 +508,7 @@ export default function FeedScreen() {
     }).current;
 
     useEffect(() => {
-        fetchFeed(true);
+        fetchFeed(true, feedType);
     }, []);
 
     const handleTabChange = useCallback(
@@ -517,7 +517,7 @@ export default function FeedScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             // Scroll to top
             flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-            fetchFeed(true);
+            fetchFeed(true, tab);
         },
         [fetchFeed]
     );
@@ -671,7 +671,7 @@ export default function FeedScreen() {
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}
-                        onRefresh={() => fetchFeed(true)}
+                        onRefresh={() => fetchFeed(true, feedType)}
                         tintColor={colors.gold[500]}
                     />
                 }

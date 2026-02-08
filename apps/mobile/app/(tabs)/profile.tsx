@@ -59,27 +59,59 @@ export default function ProfileScreen() {
     const refreshUser = useAuthStore((s) => s.refreshUser);
 
     const [userPosts, setUserPosts] = useState<Post[]>([]);
+    const [likedPosts, setLikedPosts] = useState<Post[]>([]);
+    const [savedPosts, setSavedPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
+    const [loadedTabs, setLoadedTabs] = useState<Set<ProfileTab>>(new Set(['posts']));
 
     const loadUserPosts = async () => {
         try {
             const data = await apiFetch<any>(`${API.userPosts(user!.id)}?limit=50`);
             const rawPosts = data.posts || data.data || [];
             setUserPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
-        } catch { /* silent */ }
+        } catch (e: any) {
+            Alert.alert('Error', e.message || 'Failed to load posts');
+        }
         finally { setIsLoading(false); setIsRefreshing(false); }
+    };
+
+    const loadLikedPosts = async () => {
+        if (!user?.id) return;
+        try {
+            const data = await apiFetch<any>(API.likedPosts(user.id));
+            const rawPosts = data.posts || data.data || [];
+            setLikedPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
+        } catch { /* silent — endpoint may not exist yet */ }
+    };
+
+    const loadSavedPosts = async () => {
+        try {
+            const data = await apiFetch<any>(API.savedPosts);
+            const rawPosts = data.posts || data.data || [];
+            setSavedPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
+        } catch { /* silent — endpoint may not exist yet */ }
     };
 
     useEffect(() => {
         if (user?.id) loadUserPosts();
     }, [user?.id]);
 
+    // Load tab data on first visit
+    useEffect(() => {
+        if (loadedTabs.has(activeTab)) return;
+        setLoadedTabs((prev) => new Set(prev).add(activeTab));
+        if (activeTab === 'likes') loadLikedPosts();
+        if (activeTab === 'saved') loadSavedPosts();
+    }, [activeTab]);
+
     const handleRefresh = async () => {
         setIsRefreshing(true);
         await refreshUser();
         await loadUserPosts();
+        if (loadedTabs.has('likes')) loadLikedPosts();
+        if (loadedTabs.has('saved')) loadSavedPosts();
     };
 
     if (!user) {
@@ -193,7 +225,7 @@ export default function ProfileScreen() {
         </Animated.View>
     );
 
-    const postsData = activeTab === 'posts' ? userPosts : [];
+    const postsData = activeTab === 'posts' ? userPosts : activeTab === 'likes' ? likedPosts : savedPosts;
 
     const renderPost = useCallback(({ item }: { item: Post }) => <PostGridItem post={item} />, []);
 

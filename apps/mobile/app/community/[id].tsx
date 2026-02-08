@@ -8,6 +8,7 @@ import {
     Image,
     ActivityIndicator,
     RefreshControl,
+    Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -75,8 +76,9 @@ export default function CommunityDetailScreen() {
                 const rawPosts = postsData.posts || postsData.data || [];
                 setPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
             } catch { /* Posts might not be accessible */ }
-        } catch { /* silent */ }
-        finally { setIsLoading(false); setIsRefreshing(false); }
+        } catch (e: any) {
+            if (!isRefreshing) Alert.alert('Error', e.message || 'Failed to load community');
+        } finally { setIsLoading(false); setIsRefreshing(false); }
     };
 
     useEffect(() => { loadCommunity(); }, [communityId]);

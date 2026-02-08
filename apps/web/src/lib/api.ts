@@ -26,18 +26,28 @@ export const API_ENDPOINTS = {
     signup: `${API_URL}/api/v1/auth/signup`,
     logout: `${API_URL}/api/v1/auth/logout`,
     me: `${API_URL}/api/v1/auth/me`,
+    refresh: `${API_URL}/api/v1/auth/refresh`,
 
     // Users
     users: `${API_URL}/api/v1/users`,
     profile: (username: string) => `${API_URL}/api/v1/users/${username}`,
     updateProfile: `${API_URL}/api/v1/users/profile`,
     follow: (userId: string) => `${API_URL}/api/v1/users/${userId}/follow`,
+    userPosts: (userId: string) => `${API_URL}/api/v1/users/${userId}/posts`,
+    followers: (userId: string) => `${API_URL}/api/v1/users/${userId}/followers`,
+    following: (userId: string) => `${API_URL}/api/v1/users/${userId}/following`,
 
     // Posts
     posts: `${API_URL}/api/v1/posts`,
+    feed: `${API_URL}/api/v1/posts/feed`,
     post: (postId: string) => `${API_URL}/api/v1/posts/${postId}`,
     like: (postId: string) => `${API_URL}/api/v1/posts/${postId}/like`,
+    save: (postId: string) => `${API_URL}/api/v1/posts/${postId}/save`,
+    savedPosts: `${API_URL}/api/v1/posts/saved`,
     comments: (postId: string) => `${API_URL}/api/v1/posts/${postId}/comments`,
+
+    // Search
+    search: `${API_URL}/api/v1/search`,
 
     // Communities
     communities: `${API_URL}/api/v1/communities`,

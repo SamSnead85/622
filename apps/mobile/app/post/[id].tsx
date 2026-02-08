@@ -12,6 +12,8 @@ import {
     ActivityIndicator,
     Dimensions,
     Share,
+    Pressable,
+    Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
 import { useAuthStore, mapApiPost } from '../../stores';
@@ -66,6 +69,37 @@ function timeAgo(dateStr: string) {
     return new Date(dateStr).toLocaleDateString();
 }
 
+// Video player for post detail (auto-plays since it's the only video)
+function PostVideoPlayer({ uri }: { uri: string }) {
+    const [isMuted, setIsMuted] = useState(true);
+
+    const player = useVideoPlayer(uri, (player) => {
+        player.loop = true;
+        player.muted = true;
+        player.play();
+    });
+
+    const toggleMute = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        player.muted = !player.muted;
+        setIsMuted(player.muted);
+    };
+
+    return (
+        <Pressable onPress={toggleMute} style={styles.videoPlayerWrap}>
+            <VideoView
+                player={player}
+                style={styles.videoPlayerView}
+                nativeControls={false}
+                contentFit="cover"
+            />
+            <View style={styles.muteIndicator}>
+                <Ionicons name={isMuted ? 'volume-mute' : 'volume-high'} size={14} color={colors.text.primary} />
+            </View>
+        </Pressable>
+    );
+}
+
 export default function PostDetailScreen() {
     const router = useRouter();
     const { id: postId } = useLocalSearchParams<{ id: string }>();
@@ -108,8 +142,9 @@ export default function PostDetailScreen() {
                         isLiked: c.isLiked ?? false,
                     }))
                 );
-            } catch { /* silent */ }
-            finally { setIsLoading(false); }
+            } catch (e: any) {
+                Alert.alert('Error', e.message || 'Failed to load post');
+            } finally { setIsLoading(false); }
         };
         load();
     }, [postId]);
@@ -129,6 +164,34 @@ export default function PostDetailScreen() {
         if (!post) return;
         await Share.share({ message: `Check out this post on 0G: https://0gravity.ai/post/${post.id}` });
     }, [post]);
+
+    const handleCommentLike = useCallback(async (commentId: string) => {
+        if (!postId) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        // Optimistic update
+        setComments((prev) =>
+            prev.map((c) =>
+                c.id === commentId
+                    ? { ...c, isLiked: !c.isLiked, likesCount: c.isLiked ? c.likesCount - 1 : c.likesCount + 1 }
+                    : c
+            )
+        );
+        try {
+            const comment = comments.find((c) => c.id === commentId);
+            await apiFetch(API.commentLike(postId, commentId), {
+                method: comment?.isLiked ? 'DELETE' : 'POST',
+            });
+        } catch {
+            // Revert
+            setComments((prev) =>
+                prev.map((c) =>
+                    c.id === commentId
+                        ? { ...c, isLiked: !c.isLiked, likesCount: c.isLiked ? c.likesCount - 1 : c.likesCount + 1 }
+                        : c
+                )
+            );
+        }
+    }, [postId, comments]);
 
     const handleComment = useCallback(async () => {
         if (!commentText.trim() || isSending || !postId) return;
@@ -210,14 +273,7 @@ export default function PostDetailScreen() {
                 {post.mediaUrl && (
                     <View style={styles.mediaContainer}>
                         {post.mediaType === 'VIDEO' ? (
-                            <View style={styles.videoContainer}>
-                                <Image source={{ uri: post.mediaUrl }} style={styles.mediaImage} resizeMode="cover" />
-                                <View style={styles.playOverlay}>
-                                    <View style={styles.playButton}>
-                                        <Ionicons name="play" size={32} color="#fff" />
-                                    </View>
-                                </View>
-                            </View>
+                            <PostVideoPlayer uri={post.mediaUrl} />
                         ) : (
                             <Image source={{ uri: post.mediaUrl }} style={[styles.mediaImage, post.mediaAspectRatio ? { aspectRatio: parseFloat(post.mediaAspectRatio) || 1.5 } : {}]} resizeMode="cover" />
                         )}
@@ -264,7 +320,7 @@ export default function PostDetailScreen() {
                 </View>
                 <View style={styles.commentMeta}>
                     <Text style={styles.commentTime}>{timeAgo(item.createdAt)}</Text>
-                    <TouchableOpacity style={styles.commentLikeBtn}>
+                    <TouchableOpacity style={styles.commentLikeBtn} onPress={() => handleCommentLike(item.id)}>
                         <Ionicons name={item.isLiked ? 'heart' : 'heart-outline'} size={14} color={item.isLiked ? colors.coral[500] : colors.text.muted} />
                         {item.likesCount > 0 && <Text style={styles.commentLikeCount}>{item.likesCount}</Text>}
                     </TouchableOpacity>
@@ -354,9 +410,13 @@ const styles = StyleSheet.create({
 
     mediaContainer: { borderRadius: 12, overflow: 'hidden', marginBottom: spacing.md },
     mediaImage: { width: '100%', aspectRatio: 1.5, backgroundColor: colors.obsidian[700] },
-    videoContainer: { position: 'relative' },
-    playOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' },
-    playButton: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
+    videoPlayerWrap: { width: '100%', aspectRatio: 16 / 9, backgroundColor: colors.obsidian[800], position: 'relative' },
+    videoPlayerView: { width: '100%', height: '100%' },
+    muteIndicator: {
+        position: 'absolute', bottom: spacing.sm, right: spacing.sm,
+        width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.6)',
+        alignItems: 'center', justifyContent: 'center',
+    },
 
     actionsBar: { flexDirection: 'row', paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border.subtle },
     actionBtn: { flexDirection: 'row', alignItems: 'center', marginRight: spacing.xl },

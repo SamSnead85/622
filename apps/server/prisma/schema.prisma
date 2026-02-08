@@ -138,6 +138,7 @@ model Session {
 
   @@index([userId])
   @@index([token])
+  @@index([expiresAt]) // Session cleanup queries
 }
 
 model TwoFactorChallenge {
@@ -302,6 +303,7 @@ model Post {
   @@index([isPublic, createdAt(sort: Desc), isPinned]) // Feed query optimization
   @@index([isPublic, isPinned, createdAt(sort: Desc)]) // Feed ranking optimization
   @@index([deletedAt]) // Soft delete filter
+  @@index([userId, deletedAt]) // User's non-deleted posts
 }
 
 model Music {
@@ -338,6 +340,7 @@ model Comment {
   @@index([userId])
   @@index([parentId])
   @@index([postId, parentId, createdAt(sort: Desc)]) // Thread queries optimization
+  @@index([postId, createdAt(sort: Desc)]) // Top-level comment pagination
 }
 
 model Like {
@@ -609,6 +612,7 @@ model Notification {
   @@index([createdAt])
   @@index([userId, isRead, createdAt(sort: Desc)]) // Unread notifications query
   @@index([actorId]) // Actor lookup optimization
+  @@index([userId, type, createdAt(sort: Desc)]) // Filtered notification queries
 }
 
 // ============================================

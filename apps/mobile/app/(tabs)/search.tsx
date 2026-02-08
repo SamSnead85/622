@@ -167,7 +167,20 @@ export default function SearchScreen() {
             <Text style={styles.discoveryTitle}>Discover</Text>
             <View style={styles.categoryGrid}>
                 {DISCOVERY_CATEGORIES.map((cat) => (
-                    <TouchableOpacity key={cat.label} style={styles.categoryCard} activeOpacity={0.8}>
+                    <TouchableOpacity
+                        key={cat.label}
+                        style={styles.categoryCard}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            const filterMap: Record<string, FilterTab> = {
+                                People: 'people', Communities: 'communities',
+                                Trending: 'all', New: 'all',
+                            };
+                            setActiveFilter(filterMap[cat.label] || 'all');
+                            handleSearch(cat.label === 'New' ? 'new' : cat.label === 'Trending' ? 'trending' : cat.label.toLowerCase());
+                        }}
+                    >
                         <View style={[styles.categoryIcon, { backgroundColor: `${cat.color}15` }]}>
                             <Ionicons name={cat.icon} size={24} color={cat.color} />
                         </View>
