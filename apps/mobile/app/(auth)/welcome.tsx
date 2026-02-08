@@ -52,11 +52,11 @@ export default function WelcomeScreen() {
                         colors={[colors.gold[400], colors.gold[600]]}
                         style={styles.logoGradient}
                     >
-                        <Text style={styles.logoLetter}>C</Text>
+                        <Text style={styles.logoLetter}>0G</Text>
                     </LinearGradient>
                 </View>
 
-                <Text style={styles.title}>Welcome to Caravan</Text>
+                <Text style={styles.title}>Welcome to 0G</Text>
                 <Text style={styles.subtitle}>
                     Your private community platform. Connect with family, friends, and tribes — on your terms.
                 </Text>

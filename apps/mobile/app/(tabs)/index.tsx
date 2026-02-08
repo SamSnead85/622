@@ -274,7 +274,7 @@ export default function FeedScreen() {
 
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-                <Text style={styles.headerTitle}>Caravan</Text>
+                <Text style={styles.headerTitle}>0G</Text>
                 <View style={styles.headerActions}>
                     <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/notifications')}>
                         <Text style={styles.headerBtnIcon}>🔔</Text>

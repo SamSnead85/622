@@ -31,11 +31,11 @@ export default function SplashIndex() {
                         colors={[colors.gold[400], colors.gold[600]]}
                         style={styles.logoGradient}
                     >
-                        <Text style={styles.logoLetter}>C</Text>
+                        <Text style={styles.logoLetter}>0G</Text>
                     </LinearGradient>
                 </View>
-                <Text style={styles.brandName}>Caravan</Text>
-                <Text style={styles.tagline}>Your Private Community</Text>
+                <Text style={styles.brandName}>0G</Text>
+                <Text style={styles.tagline}>Zero Gravity Social</Text>
             </View>
         </LinearGradient>
     );

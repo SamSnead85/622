@@ -1,5 +1,5 @@
 // ============================================
-// Caravan Mobile — Zustand Stores
+// 0G Mobile — Zustand Stores
 // All stores connected to real backend API
 // ============================================
 

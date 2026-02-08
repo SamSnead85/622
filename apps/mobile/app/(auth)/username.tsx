@@ -328,7 +328,7 @@ export default function UsernameScreen() {
 
                         <Text style={styles.title}>Choose your identity</Text>
                         <Text style={styles.subtitle}>
-                            This is how others will find and recognize you on Caravan
+                            This is how others will find and recognize you on 0G
                         </Text>
                     </Animated.View>
 
@@ -482,7 +482,7 @@ export default function UsernameScreen() {
                                     </View>
                                 ) : (
                                     <>
-                                        <Text style={styles.premiumButtonText}>Continue to Caravan</Text>
+                                        <Text style={styles.premiumButtonText}>Continue to 0G</Text>
                                         <Text style={styles.premiumButtonArrow}>→</Text>
                                     </>
                                 )}

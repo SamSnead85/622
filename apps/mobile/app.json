@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Caravan",
-    "slug": "caravan",
+    "name": "0G",
+    "slug": "zerog",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "caravan",
+    "scheme": "zerog",
     "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash.png",
@@ -17,12 +17,12 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.caravan.social",
+      "bundleIdentifier": "com.zerog.social",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow Caravan to access your camera to create posts and share with your community",
-        "NSPhotoLibraryUsageDescription": "Allow Caravan to access your photos to share with your private groups",
-        "NSMicrophoneUsageDescription": "Allow Caravan to access your microphone to record videos and voice messages",
+        "NSCameraUsageDescription": "Allow 0G to access your camera to create posts and share with your community",
+        "NSPhotoLibraryUsageDescription": "Allow 0G to access your photos to share with your private groups",
+        "NSMicrophoneUsageDescription": "Allow 0G to access your microphone to record videos and voice messages",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -31,7 +31,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0A0908"
       },
-      "package": "com.caravan.social",
+      "package": "com.zerog.social",
       "versionCode": 1,
       "permissions": [
         "android.permission.CAMERA",
@@ -51,13 +51,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Caravan to access your camera to create posts."
+          "cameraPermission": "Allow 0G to access your camera to create posts."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Caravan to access your photos to share with your community."
+          "photosPermission": "Allow 0G to access your photos to share with your community."
         }
       ],
       [
@@ -74,11 +74,7 @@
     "extra": {
       "router": {
         "origin": false
-      },
-      "eas": {
-        "projectId": "fa614c84-9a07-4183-be66-e1ed9f8c73ba"
       }
-    },
-    "owner": "ssweilem"
+    }
   }
 }
