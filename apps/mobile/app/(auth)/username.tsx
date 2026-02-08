@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Button, Input, colors, typography, spacing } from '@zerog/ui';
+import { apiFetch } from '../../lib/api';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -187,14 +188,18 @@ export default function UsernameScreen() {
 
         setChecking(true);
         const timer = setTimeout(async () => {
-            // Simulate API check
-            await new Promise((resolve) => setTimeout(resolve, 600));
-            const available = !['admin', 'zerog', 'caravan', 'official', 'support'].includes(username.toLowerCase());
-            setIsAvailable(available);
-            setChecking(false);
-
-            if (available) {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            try {
+                const data = await apiFetch<any>(`/api/v1/auth/check-username?username=${encodeURIComponent(username)}`);
+                const available = data.available !== false;
+                setIsAvailable(available);
+                if (available) {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                }
+            } catch {
+                // Fallback: allow the username (server will validate on submit)
+                setIsAvailable(true);
+            } finally {
+                setChecking(false);
             }
         }, 500);
 

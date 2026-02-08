@@ -8,6 +8,7 @@ import {
     Image,
     ActivityIndicator,
     RefreshControl,
+    Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +33,7 @@ const CommunityCard = memo(({ community }: { community: Community }) => {
             activeOpacity={0.95}
             onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push(`/community/${community.id}`);
             }}
         >
             {/* Cover image */}
@@ -133,7 +135,17 @@ export default function CommunitiesScreen() {
                         <Text style={styles.emptyText}>
                             Create a private group or join an existing community to get started
                         </Text>
-                        <TouchableOpacity style={styles.createBtn}>
+                        <TouchableOpacity
+                            style={styles.createBtn}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                Alert.alert(
+                                    'Create Community',
+                                    'Community creation is coming soon! For now, you can create communities from the web app.',
+                                    [{ text: 'OK' }]
+                                );
+                            }}
+                        >
                             <LinearGradient
                                 colors={[colors.gold[400], colors.gold[600]]}
                                 style={styles.createBtnGradient}

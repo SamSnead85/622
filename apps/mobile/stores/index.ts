@@ -460,12 +460,14 @@ export const useCommunitiesStore = create<CommunitiesState>((set) => ({
 
 export interface Notification {
     id: string;
-    type: 'like' | 'comment' | 'follow' | 'mention' | 'community';
-    actorId: string;
-    actorUsername: string;
+    type: string;
+    actorId?: string;
+    actorUsername?: string;
     actorAvatarUrl?: string;
     targetId?: string;
-    message: string;
+    postId?: string;
+    message?: string;
+    content?: string;
     isRead: boolean;
     createdAt: string;
 }

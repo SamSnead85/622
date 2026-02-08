@@ -185,7 +185,13 @@ export default function MessagesScreen() {
                         <Text style={styles.backIcon}>←</Text>
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Messages</Text>
-                    <TouchableOpacity style={styles.composeButton}>
+                    <TouchableOpacity
+                        style={styles.composeButton}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.push('/search');
+                        }}
+                    >
                         <Text style={styles.composeIcon}>✏️</Text>
                     </TouchableOpacity>
                 </View>

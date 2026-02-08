@@ -31,7 +31,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 0.8,
         },
         {
-            url: `${BASE_URL}/explore`,
+            url: `${BASE_URL}/search`,
             lastModified: now,
             changeFrequency: 'daily',
             priority: 0.7,

@@ -18,7 +18,7 @@ interface Shortcut {
 const SHORTCUTS: Shortcut[] = [
     // Navigation
     { keys: ['g', 'h'], label: 'Go Home', description: 'Navigate to dashboard', category: 'navigation' },
-    { keys: ['g', 'e'], label: 'Explore', description: 'Navigate to explore page', category: 'navigation' },
+    { keys: ['g', 'e'], label: 'Search', description: 'Navigate to search page', category: 'navigation' },
     { keys: ['g', 'p'], label: 'Profile', description: 'Navigate to your profile', category: 'navigation' },
     { keys: ['g', 'm'], label: 'Messages', description: 'Navigate to messages', category: 'navigation' },
     { keys: ['g', 'n'], label: 'Notifications', description: 'Navigate to notifications', category: 'navigation' },

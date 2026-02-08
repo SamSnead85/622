@@ -37,6 +37,7 @@ const PostGridItem = memo(({ post }: { post: Post }) => {
         <TouchableOpacity
             style={styles.postItem}
             activeOpacity={0.9}
+            onPress={() => router.push(`/post/${post.id}`)}
         >
             {mediaUri ? (
                 <Image source={{ uri: mediaUri }} style={styles.postImage} />
@@ -125,7 +126,7 @@ export default function ProfileScreen() {
             <View style={[styles.headerButtons, { paddingTop: insets.top + spacing.sm }]}>
                 <View />
                 <View style={styles.headerRight}>
-                    <TouchableOpacity style={styles.headerButton} onPress={handleLogout}>
+                    <TouchableOpacity style={styles.headerButton} onPress={() => router.push('/settings')}>
                         <Text style={styles.headerIcon}>⚙️</Text>
                     </TouchableOpacity>
                 </View>
@@ -202,7 +203,7 @@ export default function ProfileScreen() {
 
                     {/* Action buttons */}
                     <View style={styles.actionButtons}>
-                        <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
+                        <TouchableOpacity style={styles.editButton} activeOpacity={0.8} onPress={() => router.push('/settings')}>
                             <Text style={styles.editButtonText}>Edit Profile</Text>
                         </TouchableOpacity>
                         <TouchableOpacity

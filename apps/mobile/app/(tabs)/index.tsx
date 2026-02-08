@@ -155,7 +155,7 @@ const FeedPostCard = memo(({ post, onLike, onPress, isOwner, onMoveUp, onMoveDow
                     <Text style={styles.actionCount}>{formatCount(post.likesCount)}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionBtn}>
+                <TouchableOpacity style={styles.actionBtn} onPress={() => onPress(post.id)}>
                     <Text style={styles.actionIcon}>💬</Text>
                     <Text style={styles.actionCount}>{formatCount(post.commentsCount)}</Text>
                 </TouchableOpacity>
@@ -212,8 +212,8 @@ export default function FeedScreen() {
     }, [posts, likePost, unlikePost]);
 
     const handlePostPress = useCallback((postId: string) => {
-        // Navigate to post detail when ready
-    }, []);
+        router.push(`/post/${postId}`);
+    }, [router]);
 
     const handleLoadMore = useCallback(() => {
         if (!isLoading && hasMore) {
@@ -276,10 +276,10 @@ export default function FeedScreen() {
             <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
                 <Text style={styles.headerTitle}>Caravan</Text>
                 <View style={styles.headerActions}>
-                    <TouchableOpacity style={styles.headerBtn}>
+                    <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/notifications')}>
                         <Text style={styles.headerBtnIcon}>🔔</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerBtn}>
+                    <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/messages')}>
                         <Text style={styles.headerBtnIcon}>✉️</Text>
                     </TouchableOpacity>
                 </View>

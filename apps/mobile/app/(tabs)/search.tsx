@@ -9,6 +9,7 @@ import {
     Image,
     ActivityIndicator,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -24,6 +25,7 @@ interface SearchResult {
 }
 
 export default function SearchScreen() {
+    const router = useRouter();
     const insets = useSafeAreaInsets();
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
@@ -105,10 +107,21 @@ export default function SearchScreen() {
         }
     };
 
+    const handleResultPress = useCallback((item: SearchResult) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (item.type === 'user') {
+            router.push(`/profile/${item.subtitle?.replace('@', '') || item.id}`);
+        } else if (item.type === 'post') {
+            router.push(`/post/${item.id}`);
+        } else if (item.type === 'community') {
+            router.push(`/community/${item.id}`);
+        }
+    }, [router]);
+
     const renderResult = ({ item }: { item: SearchResult }) => (
         <TouchableOpacity
             style={styles.resultRow}
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+            onPress={() => handleResultPress(item)}
         >
             {item.avatarUrl ? (
                 <Image source={{ uri: item.avatarUrl }} style={styles.resultAvatar} />
