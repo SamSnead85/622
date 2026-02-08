@@ -259,7 +259,7 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
 
                 // Use the captured client-side thumbnail for video posts
                 if (mediaType === 'VIDEO' && videoThumbnail) {
-                    thumbnailUrl = uploadRes.thumbnailUrl || videoThumbnail;
+                    thumbnailUrl = (uploadRes as any).thumbnailUrl || videoThumbnail;
                 }
             }
 
