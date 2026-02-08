@@ -1,8 +1,15 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// ============================================
+// ZeroG Mobile — Zustand Stores
+// All stores connected to real backend API
+// ============================================
 
-// User types
+import { create } from 'zustand';
+import { apiFetch, apiUpload, saveToken, removeToken, getToken, API } from '../lib/api';
+
+// ============================================
+// Types
+// ============================================
+
 export interface User {
     id: string;
     username: string;
@@ -18,274 +25,59 @@ export interface User {
     isVerified: boolean;
     isPrivate: boolean;
     createdAt: string;
+    // Privacy-first fields
+    communityOptIn?: boolean;
+    activeFeedView?: string;
+    usePublicProfile?: boolean;
+    publicDisplayName?: string;
+    publicUsername?: string;
+    publicAvatarUrl?: string;
+    publicBio?: string;
 }
 
-interface AuthState {
-    user: User | null;
-    token: string | null;
-    isAuthenticated: boolean;
-    isLoading: boolean;
-    error: string | null;
-
-    // Actions
-    setUser: (user: User) => void;
-    setToken: (token: string) => void;
-    login: (email: string, password: string) => Promise<void>;
-    signup: (email: string, password: string, username: string) => Promise<void>;
-    logout: () => void;
-    updateProfile: (updates: Partial<User>) => void;
-    clearError: () => void;
+export interface PostAuthor {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string;
+    isVerified?: boolean;
 }
 
-export const useAuthStore = create<AuthState>()(
-    persist(
-        (set, get) => ({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null,
-
-            setUser: (user) => set({ user, isAuthenticated: true }),
-
-            setToken: (token) => set({ token }),
-
-            login: async (email, password) => {
-                set({ isLoading: true, error: null });
-                try {
-                    // Simulate API call
-                    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-                    // Mock successful login
-                    const mockUser: User = {
-                        id: 'user-1',
-                        username: 'creative_mind',
-                        displayName: 'Alex Johnson',
-                        email,
-                        avatarUrl: 'https://i.pravatar.cc/300?img=68',
-                        coverUrl: 'https://picsum.photos/800/400?random=999',
-                        bio: 'Digital creator & storyteller ✨',
-                        followersCount: 24300,
-                        followingCount: 892,
-                        postsCount: 156,
-                        isVerified: true,
-                        isPrivate: false,
-                        createdAt: new Date().toISOString(),
-                    };
-
-                    set({
-                        user: mockUser,
-                        token: 'mock-jwt-token',
-                        isAuthenticated: true,
-                        isLoading: false,
-                    });
-                } catch (error) {
-                    set({
-                        error: 'Login failed. Please try again.',
-                        isLoading: false,
-                    });
-                    throw error;
-                }
-            },
-
-            signup: async (email, password, username) => {
-                set({ isLoading: true, error: null });
-                try {
-                    // Simulate API call
-                    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-                    const newUser: User = {
-                        id: `user-${Date.now()}`,
-                        username,
-                        displayName: username,
-                        email,
-                        followersCount: 0,
-                        followingCount: 0,
-                        postsCount: 0,
-                        isVerified: false,
-                        isPrivate: false,
-                        createdAt: new Date().toISOString(),
-                    };
-
-                    set({
-                        user: newUser,
-                        token: 'mock-jwt-token',
-                        isAuthenticated: true,
-                        isLoading: false,
-                    });
-                } catch (error) {
-                    set({
-                        error: 'Signup failed. Please try again.',
-                        isLoading: false,
-                    });
-                    throw error;
-                }
-            },
-
-            logout: () => {
-                set({
-                    user: null,
-                    token: null,
-                    isAuthenticated: false,
-                    error: null,
-                });
-            },
-
-            updateProfile: (updates) => {
-                const currentUser = get().user;
-                if (currentUser) {
-                    set({ user: { ...currentUser, ...updates } });
-                }
-            },
-
-            clearError: () => set({ error: null }),
-        }),
-        {
-            name: 'zerog-auth',
-            storage: createJSONStorage(() => AsyncStorage),
-            partialize: (state) => ({
-                user: state.user,
-                token: state.token,
-                isAuthenticated: state.isAuthenticated,
-            }),
-        }
-    )
-);
-
-// Feed types
 export interface Post {
     id: string;
-    user: {
-        id: string;
-        username: string;
-        displayName: string;
-        avatarUrl?: string;
-        isVerified: boolean;
-    };
-    type: 'video' | 'image' | 'text';
+    content: string;
     mediaUrl?: string;
-    thumbnailUrl?: string;
-    caption: string;
+    mediaType?: string;
+    mediaCropY?: number;
+    mediaAspectRatio?: string;
+    sortOrder?: number;
+    author: PostAuthor;
     likesCount: number;
     commentsCount: number;
     sharesCount: number;
     isLiked: boolean;
     isSaved: boolean;
+    isRsvped: boolean;
     createdAt: string;
+    communityId?: string;
+    eventDate?: string;
+    eventLocation?: string;
+    type?: string;
 }
 
-interface FeedState {
-    posts: Post[];
-    isLoading: boolean;
-    isRefreshing: boolean;
-    hasMore: boolean;
-    error: string | null;
-
-    // Actions
-    setPosts: (posts: Post[]) => void;
-    addPosts: (posts: Post[]) => void;
-    likePost: (postId: string) => void;
-    unlikePost: (postId: string) => void;
-    savePost: (postId: string) => void;
-    unsavePost: (postId: string) => void;
-    fetchFeed: (refresh?: boolean) => Promise<void>;
+export interface Comment {
+    id: string;
+    content: string;
+    author: PostAuthor;
+    createdAt: string;
+    likesCount: number;
+    isLiked: boolean;
 }
 
-export const useFeedStore = create<FeedState>((set, get) => ({
-    posts: [],
-    isLoading: false,
-    isRefreshing: false,
-    hasMore: true,
-    error: null,
-
-    setPosts: (posts) => set({ posts }),
-
-    addPosts: (newPosts) => set((state) => ({
-        posts: [...state.posts, ...newPosts],
-    })),
-
-    likePost: (postId) => set((state) => ({
-        posts: state.posts.map((post) =>
-            post.id === postId
-                ? { ...post, isLiked: true, likesCount: post.likesCount + 1 }
-                : post
-        ),
-    })),
-
-    unlikePost: (postId) => set((state) => ({
-        posts: state.posts.map((post) =>
-            post.id === postId
-                ? { ...post, isLiked: false, likesCount: post.likesCount - 1 }
-                : post
-        ),
-    })),
-
-    savePost: (postId) => set((state) => ({
-        posts: state.posts.map((post) =>
-            post.id === postId ? { ...post, isSaved: true } : post
-        ),
-    })),
-
-    unsavePost: (postId) => set((state) => ({
-        posts: state.posts.map((post) =>
-            post.id === postId ? { ...post, isSaved: false } : post
-        ),
-    })),
-
-    fetchFeed: async (refresh = false) => {
-        if (refresh) {
-            set({ isRefreshing: true });
-        } else {
-            set({ isLoading: true });
-        }
-
-        try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            const mockPosts: Post[] = Array.from({ length: 10 }, (_, i) => ({
-                id: `post-${Date.now()}-${i}`,
-                user: {
-                    id: `user-${i}`,
-                    username: `user_${i}`,
-                    displayName: `User ${i}`,
-                    avatarUrl: `https://i.pravatar.cc/150?img=${i + 1}`,
-                    isVerified: i % 3 === 0,
-                },
-                type: i % 2 === 0 ? 'video' : 'image',
-                mediaUrl: `https://picsum.photos/400/600?random=${i}`,
-                thumbnailUrl: `https://picsum.photos/400/600?random=${i}`,
-                caption: `This is caption for post ${i} #trending #zerog`,
-                likesCount: Math.floor(Math.random() * 10000),
-                commentsCount: Math.floor(Math.random() * 500),
-                sharesCount: Math.floor(Math.random() * 100),
-                isLiked: false,
-                isSaved: false,
-                createdAt: new Date().toISOString(),
-            }));
-
-            if (refresh) {
-                set({ posts: mockPosts, isRefreshing: false });
-            } else {
-                set((state) => ({
-                    posts: [...state.posts, ...mockPosts],
-                    isLoading: false,
-                }));
-            }
-        } catch (error) {
-            set({
-                error: 'Failed to load feed',
-                isLoading: false,
-                isRefreshing: false,
-            });
-        }
-    },
-}));
-
-// Community types
 export interface Community {
     id: string;
     name: string;
+    slug?: string;
     description: string;
     avatarUrl?: string;
     coverUrl?: string;
@@ -296,66 +88,376 @@ export interface Community {
     createdAt: string;
 }
 
-interface CommunitiesState {
-    communities: Community[];
-    joinedCommunities: Community[];
-    isLoading: boolean;
+// ============================================
+// Auth Store
+// ============================================
 
-    // Actions
-    joinCommunity: (communityId: string) => void;
-    leaveCommunity: (communityId: string) => void;
-    fetchCommunities: () => Promise<void>;
+interface AuthState {
+    user: User | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+    isInitialized: boolean;
+    error: string | null;
+
+    initialize: () => Promise<void>;
+    login: (email: string, password: string) => Promise<void>;
+    signup: (email: string, password: string, displayName: string) => Promise<void>;
+    logout: () => Promise<void>;
+    updateUser: (updates: Partial<User>) => void;
+    refreshUser: () => Promise<void>;
+    clearError: () => void;
 }
 
-export const useCommunitiesStore = create<CommunitiesState>((set, get) => ({
-    communities: [],
-    joinedCommunities: [],
+export const useAuthStore = create<AuthState>((set, get) => ({
+    user: null,
+    isAuthenticated: false,
     isLoading: false,
+    isInitialized: false,
+    error: null,
 
-    joinCommunity: (communityId) => set((state) => {
-        const community = state.communities.find((c) => c.id === communityId);
-        if (community) {
-            return {
-                joinedCommunities: [...state.joinedCommunities, { ...community, role: 'member' as const }],
-            };
+    initialize: async () => {
+        try {
+            const token = await getToken();
+            if (!token) {
+                set({ isInitialized: true, isAuthenticated: false });
+                return;
+            }
+
+            const data = await apiFetch<any>(API.me);
+            if (data.user || data.id) {
+                const user = data.user || data;
+                set({
+                    user,
+                    isAuthenticated: true,
+                    isInitialized: true,
+                });
+            } else {
+                await removeToken();
+                set({ isInitialized: true, isAuthenticated: false });
+            }
+        } catch (error) {
+            await removeToken();
+            set({ isInitialized: true, isAuthenticated: false });
         }
-        return state;
-    }),
+    },
 
-    leaveCommunity: (communityId) => set((state) => ({
-        joinedCommunities: state.joinedCommunities.filter((c) => c.id !== communityId),
-    })),
+    login: async (email, password) => {
+        set({ isLoading: true, error: null });
+        try {
+            const data = await apiFetch<any>(API.login, {
+                method: 'POST',
+                body: JSON.stringify({ email, password }),
+            });
 
-    fetchCommunities: async () => {
-        set({ isLoading: true });
+            if (data.token) {
+                await saveToken(data.token);
+            }
+
+            const user = data.user || data;
+            set({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+            });
+        } catch (error: any) {
+            set({
+                error: error.message || 'Login failed. Please try again.',
+                isLoading: false,
+            });
+            throw error;
+        }
+    },
+
+    signup: async (email, password, displayName) => {
+        set({ isLoading: true, error: null });
+        try {
+            const data = await apiFetch<any>(API.signup, {
+                method: 'POST',
+                body: JSON.stringify({ email, password, displayName }),
+            });
+
+            if (data.token) {
+                await saveToken(data.token);
+            }
+
+            const user = data.user || data;
+            set({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+            });
+        } catch (error: any) {
+            set({
+                error: error.message || 'Signup failed. Please try again.',
+                isLoading: false,
+            });
+            throw error;
+        }
+    },
+
+    logout: async () => {
+        await removeToken();
+        set({
+            user: null,
+            isAuthenticated: false,
+            error: null,
+        });
+    },
+
+    updateUser: (updates) => {
+        const currentUser = get().user;
+        if (currentUser) {
+            set({ user: { ...currentUser, ...updates } });
+        }
+    },
+
+    refreshUser: async () => {
+        try {
+            const data = await apiFetch<any>(API.me);
+            const user = data.user || data;
+            set({ user });
+        } catch (error) {
+            // Silently fail — user might be offline
+        }
+    },
+
+    clearError: () => set({ error: null }),
+}));
+
+// ============================================
+// Feed Store
+// ============================================
+
+interface FeedState {
+    posts: Post[];
+    isLoading: boolean;
+    isRefreshing: boolean;
+    hasMore: boolean;
+    page: number;
+    error: string | null;
+
+    fetchFeed: (refresh?: boolean) => Promise<void>;
+    likePost: (postId: string) => Promise<void>;
+    unlikePost: (postId: string) => Promise<void>;
+    movePost: (postId: string, direction: 'up' | 'down') => Promise<void>;
+    addPost: (post: Post) => void;
+    clear: () => void;
+}
+
+export const useFeedStore = create<FeedState>((set, get) => ({
+    posts: [],
+    isLoading: false,
+    isRefreshing: false,
+    hasMore: true,
+    page: 1,
+    error: null,
+
+    fetchFeed: async (refresh = false) => {
+        const state = get();
+        if (state.isLoading && !refresh) return;
+
+        if (refresh) {
+            set({ isRefreshing: true, page: 1 });
+        } else {
+            set({ isLoading: true });
+        }
 
         try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            const page = refresh ? 1 : state.page;
+            const data = await apiFetch<any>(
+                `${API.feed}?type=foryou&feedView=private&page=${page}&limit=20`
+            );
 
-            const mockCommunities: Community[] = [
-                {
-                    id: 'c1',
-                    name: 'Photography Enthusiasts',
-                    description: 'Share your best shots',
-                    avatarUrl: 'https://picsum.photos/200?random=100',
-                    coverUrl: 'https://picsum.photos/800/400?random=100',
-                    membersCount: 45200,
-                    postsCount: 12400,
-                    isPublic: true,
-                    role: null,
-                    createdAt: new Date().toISOString(),
-                },
-            ];
+            const posts = data.posts || data.data || [];
 
-            set({ communities: mockCommunities, isLoading: false });
-        } catch (error) {
-            set({ isLoading: false });
+            if (refresh) {
+                set({
+                    posts,
+                    isRefreshing: false,
+                    isLoading: false,
+                    hasMore: posts.length >= 20,
+                    page: 2,
+                });
+            } else {
+                set((prev) => ({
+                    posts: [...prev.posts, ...posts],
+                    isLoading: false,
+                    hasMore: posts.length >= 20,
+                    page: prev.page + 1,
+                }));
+            }
+        } catch (error: any) {
+            set({
+                error: error.message || 'Failed to load feed',
+                isLoading: false,
+                isRefreshing: false,
+            });
+        }
+    },
+
+    likePost: async (postId) => {
+        // Optimistic update
+        set((state) => ({
+            posts: state.posts.map((post) =>
+                post.id === postId
+                    ? { ...post, isLiked: true, likesCount: post.likesCount + 1 }
+                    : post
+            ),
+        }));
+
+        try {
+            await apiFetch(API.like(postId), { method: 'POST' });
+        } catch {
+            // Revert on error
+            set((state) => ({
+                posts: state.posts.map((post) =>
+                    post.id === postId
+                        ? { ...post, isLiked: false, likesCount: post.likesCount - 1 }
+                        : post
+                ),
+            }));
+        }
+    },
+
+    unlikePost: async (postId) => {
+        // Optimistic update
+        set((state) => ({
+            posts: state.posts.map((post) =>
+                post.id === postId
+                    ? { ...post, isLiked: false, likesCount: post.likesCount - 1 }
+                    : post
+            ),
+        }));
+
+        try {
+            await apiFetch(API.like(postId), { method: 'DELETE' });
+        } catch {
+            // Revert on error
+            set((state) => ({
+                posts: state.posts.map((post) =>
+                    post.id === postId
+                        ? { ...post, isLiked: true, likesCount: post.likesCount + 1 }
+                        : post
+                ),
+            }));
+        }
+    },
+
+    movePost: async (postId, direction) => {
+        const posts = get().posts;
+        const currentIndex = posts.findIndex((p) => p.id === postId);
+        if (currentIndex === -1) return;
+
+        const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+        if (targetIndex < 0 || targetIndex >= posts.length) return;
+
+        const current = posts[currentIndex];
+        const neighbor = posts[targetIndex];
+
+        // Optimistic swap
+        set((state) => {
+            const updated = [...state.posts];
+            updated[currentIndex] = neighbor;
+            updated[targetIndex] = current;
+            return { posts: updated };
+        });
+
+        try {
+            const totalPosts = posts.length;
+            await apiFetch(API.reorder, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    posts: [
+                        { id: current.id, sortOrder: totalPosts - targetIndex },
+                        { id: neighbor.id, sortOrder: totalPosts - currentIndex },
+                    ],
+                }),
+            });
+        } catch {
+            // Revert
+            set((state) => {
+                const reverted = [...state.posts];
+                reverted[currentIndex] = current;
+                reverted[targetIndex] = neighbor;
+                return { posts: reverted };
+            });
+        }
+    },
+
+    addPost: (post) => {
+        set((state) => ({ posts: [post, ...state.posts] }));
+    },
+
+    clear: () => set({ posts: [], page: 1, hasMore: true }),
+}));
+
+// ============================================
+// Communities Store
+// ============================================
+
+interface CommunitiesState {
+    communities: Community[];
+    isLoading: boolean;
+    error: string | null;
+
+    fetchCommunities: () => Promise<void>;
+    joinCommunity: (communityId: string) => Promise<void>;
+    leaveCommunity: (communityId: string) => Promise<void>;
+}
+
+export const useCommunitiesStore = create<CommunitiesState>((set) => ({
+    communities: [],
+    isLoading: false,
+    error: null,
+
+    fetchCommunities: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            const data = await apiFetch<any>(API.communities);
+            const communities = data.communities || data.data || data || [];
+            set({
+                communities: Array.isArray(communities) ? communities : [],
+                isLoading: false,
+            });
+        } catch (error: any) {
+            set({
+                error: error.message || 'Failed to load communities',
+                isLoading: false,
+            });
+        }
+    },
+
+    joinCommunity: async (communityId) => {
+        try {
+            await apiFetch(API.joinCommunity(communityId), { method: 'POST' });
+            set((state) => ({
+                communities: state.communities.map((c) =>
+                    c.id === communityId ? { ...c, role: 'member' as const } : c
+                ),
+            }));
+        } catch (error: any) {
+            console.error('Failed to join community:', error);
+        }
+    },
+
+    leaveCommunity: async (communityId) => {
+        try {
+            await apiFetch(API.leaveCommunity(communityId), { method: 'POST' });
+            set((state) => ({
+                communities: state.communities.map((c) =>
+                    c.id === communityId ? { ...c, role: null } : c
+                ),
+            }));
+        } catch (error: any) {
+            console.error('Failed to leave community:', error);
         }
     },
 }));
 
-// Notifications store
+// ============================================
+// Notifications Store
+// ============================================
+
 export interface Notification {
     id: string;
     type: 'like' | 'comment' | 'follow' | 'mention' | 'community';
@@ -373,56 +475,47 @@ interface NotificationsState {
     unreadCount: number;
     isLoading: boolean;
 
-    // Actions
+    fetchNotifications: () => Promise<void>;
     markAsRead: (notificationId: string) => void;
     markAllAsRead: () => void;
-    fetchNotifications: () => Promise<void>;
 }
 
-export const useNotificationsStore = create<NotificationsState>((set, get) => ({
+export const useNotificationsStore = create<NotificationsState>((set) => ({
     notifications: [],
     unreadCount: 0,
     isLoading: false,
 
-    markAsRead: (notificationId) => set((state) => {
-        const updated = state.notifications.map((n) =>
-            n.id === notificationId ? { ...n, isRead: true } : n
-        );
-        return {
-            notifications: updated,
-            unreadCount: updated.filter((n) => !n.isRead).length,
-        };
-    }),
-
-    markAllAsRead: () => set((state) => ({
-        notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
-        unreadCount: 0,
-    })),
-
     fetchNotifications: async () => {
         set({ isLoading: true });
-
         try {
-            await new Promise((resolve) => setTimeout(resolve, 800));
-
-            const mockNotifications: Notification[] = Array.from({ length: 15 }, (_, i) => ({
-                id: `notif-${i}`,
-                type: ['like', 'comment', 'follow', 'mention', 'community'][i % 5] as Notification['type'],
-                actorId: `user-${i}`,
-                actorUsername: `user_${i}`,
-                actorAvatarUrl: `https://i.pravatar.cc/150?img=${i + 30}`,
-                message: `User ${i} interacted with your content`,
-                isRead: i > 5,
-                createdAt: new Date(Date.now() - i * 3600000).toISOString(),
-            }));
-
+            const data = await apiFetch<any>(API.notifications);
+            const notifications = data.notifications || data.data || [];
             set({
-                notifications: mockNotifications,
-                unreadCount: mockNotifications.filter((n) => !n.isRead).length,
+                notifications: Array.isArray(notifications) ? notifications : [],
+                unreadCount: Array.isArray(notifications)
+                    ? notifications.filter((n: Notification) => !n.isRead).length
+                    : 0,
                 isLoading: false,
             });
-        } catch (error) {
+        } catch {
             set({ isLoading: false });
         }
     },
+
+    markAsRead: (notificationId) =>
+        set((state) => {
+            const updated = state.notifications.map((n) =>
+                n.id === notificationId ? { ...n, isRead: true } : n
+            );
+            return {
+                notifications: updated,
+                unreadCount: updated.filter((n) => !n.isRead).length,
+            };
+        }),
+
+    markAllAsRead: () =>
+        set((state) => ({
+            notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
+            unreadCount: 0,
+        })),
 }));

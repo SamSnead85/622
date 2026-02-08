@@ -135,8 +135,8 @@ export const Button: React.FC<ButtonProps> = ({
                             styles.text,
                             variantStyle.text,
                             sizeStyle.text,
-                            leftIcon && styles.textWithLeftIcon,
-                            rightIcon && styles.textWithRightIcon,
+                            leftIcon ? styles.textWithLeftIcon : undefined,
+                            rightIcon ? styles.textWithRightIcon : undefined,
                         ]}
                     >
                         {children}

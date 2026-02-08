@@ -1,29 +1,25 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
+import { useAuthStore } from '../stores';
 
-// Prevent splash screen from auto-hiding
+// Prevent splash screen from auto-hiding until we check auth
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-    const [fontsLoaded] = useFonts({
-        'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
-        'Inter-Medium': require('../assets/fonts/Inter-Medium.ttf'),
-        'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.ttf'),
-        'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
-    });
+    const initialize = useAuthStore((s) => s.initialize);
+    const isInitialized = useAuthStore((s) => s.isInitialized);
 
     useEffect(() => {
-        if (fontsLoaded) {
+        initialize().finally(() => {
             SplashScreen.hideAsync();
-        }
-    }, [fontsLoaded]);
+        });
+    }, []);
 
-    if (!fontsLoaded) {
+    if (!isInitialized) {
         return null;
     }
 

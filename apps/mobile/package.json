@@ -45,5 +45,9 @@
         "@babel/core": "^7.24.0",
         "@types/react": "~18.2.0",
         "typescript": "^5.3.3"
+    },
+    "overrides": {
+        "react": "18.2.0",
+        "react-native": "0.74.0"
     }
 }

@@ -1,55 +1,31 @@
 import { useEffect } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, typography } from '@zerog/ui';
+import { useAuthStore } from '../stores';
 
 export default function SplashIndex() {
-    const router = useRouter();
-    const fadeAnim = new Animated.Value(0);
-    const scaleAnim = new Animated.Value(0.8);
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    const isInitialized = useAuthStore((s) => s.isInitialized);
 
-    useEffect(() => {
-        // Animate logo entrance
-        Animated.parallel([
-            Animated.timing(fadeAnim, {
-                toValue: 1,
-                duration: 800,
-                useNativeDriver: true,
-                easing: Easing.out(Easing.cubic),
-            }),
-            Animated.spring(scaleAnim, {
-                toValue: 1,
-                tension: 50,
-                friction: 7,
-                useNativeDriver: true,
-            }),
-        ]).start();
+    // If authenticated, go straight to the feed
+    if (isInitialized && isAuthenticated) {
+        return <Redirect href="/(tabs)" />;
+    }
 
-        // Navigate to onboarding/home after delay
-        const timer = setTimeout(() => {
-            // TODO: Check if user is authenticated
-            router.replace('/(auth)/welcome');
-        }, 2000);
+    // If not authenticated, go to welcome
+    if (isInitialized && !isAuthenticated) {
+        return <Redirect href="/(auth)/welcome" />;
+    }
 
-        return () => clearTimeout(timer);
-    }, []);
-
+    // Still initializing — show splash
     return (
         <LinearGradient
             colors={[colors.obsidian[900], colors.obsidian[800]]}
             style={styles.container}
         >
-            <Animated.View
-                style={[
-                    styles.logoContainer,
-                    {
-                        opacity: fadeAnim,
-                        transform: [{ scale: scaleAnim }],
-                    },
-                ]}
-            >
-                {/* Logo Icon */}
+            <View style={styles.logoContainer}>
                 <View style={styles.logoIcon}>
                     <LinearGradient
                         colors={[colors.gold[400], colors.gold[600]]}
@@ -58,15 +34,8 @@ export default function SplashIndex() {
                         <Text style={styles.logoLetter}>C</Text>
                     </LinearGradient>
                 </View>
-
-                {/* Brand Name */}
-                <Text style={styles.brandName}>0G</Text>
-                <Text style={styles.tagline}>Your Community, Your Story</Text>
-            </Animated.View>
-
-            {/* Bottom Attribution */}
-            <View style={styles.bottomContainer}>
-                <Text style={styles.version}>Version 1.0.0</Text>
+                <Text style={styles.brandName}>Caravan</Text>
+                <Text style={styles.tagline}>Your Private Community</Text>
             </View>
         </LinearGradient>
     );
@@ -95,28 +64,16 @@ const styles = StyleSheet.create({
         fontSize: 48,
         fontWeight: '700',
         color: colors.obsidian[900],
-        fontFamily: typography.fontFamily.sans,
     },
     brandName: {
         fontSize: 42,
         fontWeight: '700',
         color: colors.text.primary,
-        fontFamily: typography.fontFamily.sans,
         letterSpacing: -1,
     },
     tagline: {
         fontSize: 16,
         color: colors.text.secondary,
-        fontFamily: typography.fontFamily.sans,
         marginTop: 8,
-    },
-    bottomContainer: {
-        position: 'absolute',
-        bottom: 60,
-    },
-    version: {
-        fontSize: 12,
-        color: colors.text.muted,
-        fontFamily: typography.fontFamily.sans,
     },
 });

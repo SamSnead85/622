@@ -1,7 +1,6 @@
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { useEffect, useRef } from 'react';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing } from '@zerog/ui';
@@ -49,14 +48,11 @@ function TabIcon({ name, icon, focused }: TabIconProps) {
             <Text style={[styles.tabIcon, focused && styles.tabIconFocused]}>
                 {icon}
             </Text>
-            {focused && (
-                <View style={styles.tabIndicator} />
-            )}
+            {focused && <View style={styles.tabIndicator} />}
         </Animated.View>
     );
 }
 
-// Premium Create Button Component
 function CreateButton({ focused }: { focused: boolean }) {
     const pulseAnim = useRef(new Animated.Value(1)).current;
     const glowAnim = useRef(new Animated.Value(0.3)).current;
@@ -96,18 +92,11 @@ function CreateButton({ focused }: { focused: boolean }) {
 
     return (
         <View style={styles.createButtonWrapper}>
-            {/* Glow effect */}
             <Animated.View
-                style={[
-                    styles.createButtonGlow,
-                    { opacity: glowAnim },
-                ]}
+                style={[styles.createButtonGlow, { opacity: glowAnim }]}
             />
             <Animated.View
-                style={[
-                    styles.createButton,
-                    { transform: [{ scale: pulseAnim }] },
-                ]}
+                style={[styles.createButton, { transform: [{ scale: pulseAnim }] }]}
             >
                 <Text style={styles.createButtonIcon}>+</Text>
             </Animated.View>
@@ -128,7 +117,6 @@ export default function TabLayout() {
                 ],
                 tabBarBackground: () => (
                     <View style={styles.tabBarBackground}>
-                        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
                         <View style={styles.tabBarGradientOverlay} />
                         <View style={styles.tabBarBorder} />
                     </View>
@@ -147,10 +135,10 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="discover"
+                name="search"
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon name="Discover" icon="🔍" focused={focused} />
+                        <TabIcon name="Search" icon="🔍" focused={focused} />
                     ),
                 }}
             />
@@ -164,7 +152,7 @@ export default function TabLayout() {
                 name="communities"
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon name="Communities" icon="👥" focused={focused} />
+                        <TabIcon name="Groups" icon="👥" focused={focused} />
                     ),
                 }}
             />
@@ -194,7 +182,7 @@ const styles = StyleSheet.create({
     },
     tabBarGradientOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(10, 10, 11, 0.85)',
+        backgroundColor: 'rgba(10, 10, 11, 0.92)',
     },
     tabBarBorder: {
         position: 'absolute',
@@ -209,9 +197,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingTop: 8,
     },
-    tabIcon: {
-        fontSize: 24,
-    },
+    tabIcon: { fontSize: 24 },
     tabIconFocused: {},
     tabIndicator: {
         width: 4,

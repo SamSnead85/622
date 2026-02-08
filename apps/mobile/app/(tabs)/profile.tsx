@@ -1,148 +1,118 @@
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Animated,
-    Easing,
-    FlatList,
-    Dimensions,
     Image,
+    Dimensions,
+    ActivityIndicator,
+    Alert,
+    RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { colors, typography, spacing, Avatar } from '@zerog/ui';
+import { colors, typography, spacing } from '@zerog/ui';
+import { useAuthStore, Post } from '../../stores';
+import { apiFetch, API } from '../../lib/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const POST_SIZE = (SCREEN_WIDTH - spacing.xl * 2 - spacing.xs * 2) / 3;
 
-// Mock user data
-const USER = {
-    id: 'me',
-    username: 'creative_mind',
-    displayName: 'Alex Johnson',
-    avatarUrl: 'https://i.pravatar.cc/300?img=68',
-    coverUrl: 'https://picsum.photos/800/400?random=999',
-    bio: 'Digital creator & storyteller ✨\nSharing moments that matter\n📍 San Francisco',
-    followersCount: 24300,
-    followingCount: 892,
-    postsCount: 156,
-    isVerified: true,
-    website: 'creativemind.co',
-};
-
-const USER_POSTS = Array.from({ length: 18 }, (_, i) => ({
-    id: `post-${i}`,
-    thumbnail: `https://picsum.photos/400/400?random=${i + 300}`,
-    type: i % 4 === 0 ? 'video' : 'image',
-    views: Math.floor(Math.random() * 100000) + 10000,
-    likes: Math.floor(Math.random() * 5000) + 500,
-}));
-
 const formatCount = (num: number) => {
+    if (!num) return '0';
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
 };
 
-// Animated stat component
-const AnimatedStat = memo(({ value, label, delay }: { value: number; label: string; delay: number }) => {
-    const animValue = useRef(new Animated.Value(0)).current;
-    const [displayValue, setDisplayValue] = useState(0);
-
-    useEffect(() => {
-        const animation = Animated.timing(animValue, {
-            toValue: value,
-            duration: 1200,
-            delay,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: false,
-        });
-
-        animValue.addListener(({ value: v }) => {
-            setDisplayValue(Math.floor(v));
-        });
-
-        animation.start();
-
-        return () => animValue.removeAllListeners();
-    }, [value]);
+const PostGridItem = memo(({ post }: { post: Post }) => {
+    const router = useRouter();
+    const mediaUri = post.mediaUrl;
 
     return (
-        <TouchableOpacity style={styles.stat} activeOpacity={0.7}>
-            <Text style={styles.statValue}>{formatCount(displayValue)}</Text>
-            <Text style={styles.statLabel}>{label}</Text>
-        </TouchableOpacity>
-    );
-});
-
-// Post grid item
-const PostGridItem = memo(({ post, index }: { post: typeof USER_POSTS[0]; index: number }) => {
-    const scaleAnim = useRef(new Animated.Value(0.8)).current;
-    const opacityAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        Animated.parallel([
-            Animated.spring(scaleAnim, {
-                toValue: 1,
-                tension: 100,
-                friction: 8,
-                delay: index * 30,
-                useNativeDriver: true,
-            }),
-            Animated.timing(opacityAnim, {
-                toValue: 1,
-                duration: 300,
-                delay: index * 30,
-                useNativeDriver: true,
-            }),
-        ]).start();
-    }, []);
-
-    return (
-        <Animated.View
-            style={[
-                styles.postItem,
-                { opacity: opacityAnim, transform: [{ scale: scaleAnim }] },
-            ]}
+        <TouchableOpacity
+            style={styles.postItem}
+            activeOpacity={0.9}
         >
-            <TouchableOpacity activeOpacity={0.9}>
-                <Image source={{ uri: post.thumbnail }} style={styles.postImage} />
-                {post.type === 'video' && (
-                    <View style={styles.videoIndicator}>
-                        <Text style={styles.videoIcon}>▶</Text>
-                        <Text style={styles.viewCount}>{formatCount(post.views)}</Text>
-                    </View>
-                )}
-            </TouchableOpacity>
-        </Animated.View>
+            {mediaUri ? (
+                <Image source={{ uri: mediaUri }} style={styles.postImage} />
+            ) : (
+                <View style={[styles.postImage, styles.textPostBg]}>
+                    <Text style={styles.textPostContent} numberOfLines={3}>
+                        {post.content}
+                    </Text>
+                </View>
+            )}
+            {post.mediaType === 'VIDEO' && (
+                <View style={styles.videoIndicator}>
+                    <Text style={styles.videoIcon}>▶</Text>
+                </View>
+            )}
+        </TouchableOpacity>
     );
 });
 
 export default function ProfileScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const [activeTab, setActiveTab] = useState<'posts' | 'liked' | 'saved'>('posts');
+    const user = useAuthStore((s) => s.user);
+    const logout = useAuthStore((s) => s.logout);
+    const refreshUser = useAuthStore((s) => s.refreshUser);
 
-    const scrollY = useRef(new Animated.Value(0)).current;
-    const headerScale = useRef(new Animated.Value(1)).current;
+    const [userPosts, setUserPosts] = useState<Post[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-    // Parallax effect for cover
-    const coverTranslateY = scrollY.interpolate({
-        inputRange: [-100, 0, 100],
-        outputRange: [50, 0, -30],
-        extrapolate: 'clamp',
-    });
+    const loadUserPosts = async () => {
+        try {
+            const data = await apiFetch<any>(
+                `${API.posts}?userId=${user?.id}&limit=50`
+            );
+            const posts = data.posts || data.data || [];
+            setUserPosts(Array.isArray(posts) ? posts : []);
+        } catch (err) {
+            // Silently handle
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
+        }
+    };
 
-    const coverScale = scrollY.interpolate({
-        inputRange: [-100, 0],
-        outputRange: [1.3, 1],
-        extrapolate: 'clamp',
-    });
+    useEffect(() => {
+        if (user?.id) loadUserPosts();
+    }, [user?.id]);
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        await refreshUser();
+        await loadUserPosts();
+    };
+
+    const handleLogout = () => {
+        Alert.alert('Log Out', 'Are you sure you want to log out?', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Log Out',
+                style: 'destructive',
+                onPress: async () => {
+                    await logout();
+                    router.replace('/');
+                },
+            },
+        ]);
+    };
+
+    if (!user) {
+        return (
+            <View style={[styles.container, styles.centered]}>
+                <ActivityIndicator size="large" color={colors.gold[500]} />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -153,48 +123,26 @@ export default function ProfileScreen() {
 
             {/* Header buttons */}
             <View style={[styles.headerButtons, { paddingTop: insets.top + spacing.sm }]}>
-                <TouchableOpacity style={styles.headerButton}>
-                    <Text style={styles.headerIcon}>☰</Text>
-                </TouchableOpacity>
+                <View />
                 <View style={styles.headerRight}>
-                    <TouchableOpacity style={styles.headerButton}>
-                        <Text style={styles.headerIcon}>🔔</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerButton}>
+                    <TouchableOpacity style={styles.headerButton} onPress={handleLogout}>
                         <Text style={styles.headerIcon}>⚙️</Text>
                     </TouchableOpacity>
                 </View>
             </View>
 
-            <Animated.ScrollView
+            <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
                 showsVerticalScrollIndicator={false}
-                onScroll={Animated.event(
-                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                    { useNativeDriver: true }
-                )}
-                scrollEventThrottle={16}
-            >
-                {/* Cover image with parallax */}
-                <Animated.View
-                    style={[
-                        styles.coverContainer,
-                        {
-                            transform: [
-                                { translateY: coverTranslateY },
-                                { scale: coverScale },
-                            ],
-                        },
-                    ]}
-                >
-                    <Image source={{ uri: USER.coverUrl }} style={styles.coverImage} />
-                    <LinearGradient
-                        colors={['transparent', colors.obsidian[900]]}
-                        style={styles.coverGradient}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={handleRefresh}
+                        tintColor={colors.gold[500]}
                     />
-                </Animated.View>
-
+                }
+            >
                 {/* Profile content */}
                 <View style={styles.profileContent}>
                     {/* Avatar */}
@@ -205,7 +153,15 @@ export default function ProfileScreen() {
                                 style={styles.avatarBorder}
                             >
                                 <View style={styles.avatarInner}>
-                                    <Image source={{ uri: USER.avatarUrl }} style={styles.avatarImage} />
+                                    {user.avatarUrl ? (
+                                        <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+                                    ) : (
+                                        <View style={[styles.avatarImage, styles.avatarPlaceholder]}>
+                                            <Text style={styles.avatarInitial}>
+                                                {(user.displayName || user.username || '?')[0].toUpperCase()}
+                                            </Text>
+                                        </View>
+                                    )}
                                 </View>
                             </LinearGradient>
                         </View>
@@ -213,32 +169,35 @@ export default function ProfileScreen() {
 
                     {/* User info */}
                     <View style={styles.userInfo}>
-                        <View style={styles.nameRow}>
-                            <Text style={styles.displayName}>{USER.displayName}</Text>
-                            {USER.isVerified && (
-                                <View style={styles.verifiedBadge}>
-                                    <Text style={styles.verifiedIcon}>✓</Text>
-                                </View>
-                            )}
-                        </View>
-                        <Text style={styles.username}>@{USER.username}</Text>
-                        <Text style={styles.bio}>{USER.bio}</Text>
+                        <Text style={styles.displayName}>{user.displayName}</Text>
+                        <Text style={styles.username}>@{user.username}</Text>
+                        {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
+                    </View>
 
-                        {USER.website && (
-                            <TouchableOpacity style={styles.websiteLink}>
-                                <Text style={styles.websiteIcon}>🔗</Text>
-                                <Text style={styles.websiteText}>{USER.website}</Text>
-                            </TouchableOpacity>
-                        )}
+                    {/* Privacy badge */}
+                    <View style={styles.privacyBadge}>
+                        <Text style={styles.privacyIcon}>🔒</Text>
+                        <Text style={styles.privacyText}>
+                            {user.communityOptIn ? 'Community Member' : 'Private Mode'}
+                        </Text>
                     </View>
 
                     {/* Stats */}
                     <View style={styles.statsContainer}>
-                        <AnimatedStat value={USER.postsCount} label="Posts" delay={0} />
+                        <View style={styles.stat}>
+                            <Text style={styles.statValue}>{formatCount(user.postsCount)}</Text>
+                            <Text style={styles.statLabel}>Posts</Text>
+                        </View>
                         <View style={styles.statDivider} />
-                        <AnimatedStat value={USER.followersCount} label="Followers" delay={100} />
+                        <View style={styles.stat}>
+                            <Text style={styles.statValue}>{formatCount(user.followersCount)}</Text>
+                            <Text style={styles.statLabel}>Followers</Text>
+                        </View>
                         <View style={styles.statDivider} />
-                        <AnimatedStat value={USER.followingCount} label="Following" delay={200} />
+                        <View style={styles.stat}>
+                            <Text style={styles.statValue}>{formatCount(user.followingCount)}</Text>
+                            <Text style={styles.statLabel}>Following</Text>
+                        </View>
                     </View>
 
                     {/* Action buttons */}
@@ -246,65 +205,46 @@ export default function ProfileScreen() {
                         <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
                             <Text style={styles.editButtonText}>Edit Profile</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.shareButton} activeOpacity={0.8}>
-                            <Text style={styles.shareIcon}>↗</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Content tabs */}
-                    <View style={styles.tabsContainer}>
                         <TouchableOpacity
-                            style={[styles.tab, activeTab === 'posts' && styles.tabActive]}
-                            onPress={() => {
-                                setActiveTab('posts');
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            }}
+                            style={styles.logoutButton}
+                            activeOpacity={0.8}
+                            onPress={handleLogout}
                         >
-                            <Text style={[styles.tabIcon, activeTab === 'posts' && styles.tabIconActive]}>
-                                ⊞
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.tab, activeTab === 'liked' && styles.tabActive]}
-                            onPress={() => {
-                                setActiveTab('liked');
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            }}
-                        >
-                            <Text style={[styles.tabIcon, activeTab === 'liked' && styles.tabIconActive]}>
-                                ♡
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.tab, activeTab === 'saved' && styles.tabActive]}
-                            onPress={() => {
-                                setActiveTab('saved');
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            }}
-                        >
-                            <Text style={[styles.tabIcon, activeTab === 'saved' && styles.tabIconActive]}>
-                                ⚑
-                            </Text>
+                            <Text style={styles.logoutText}>Log Out</Text>
                         </TouchableOpacity>
                     </View>
 
                     {/* Posts grid */}
-                    <View style={styles.postsGrid}>
-                        {USER_POSTS.map((post, index) => (
-                            <PostGridItem key={post.id} post={post} index={index} />
-                        ))}
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Posts</Text>
+                        <Text style={styles.sectionCount}>{userPosts.length}</Text>
                     </View>
+
+                    {isLoading ? (
+                        <View style={styles.centered}>
+                            <ActivityIndicator size="small" color={colors.gold[500]} />
+                        </View>
+                    ) : userPosts.length === 0 ? (
+                        <View style={styles.emptyPosts}>
+                            <Text style={styles.emptyIcon}>📸</Text>
+                            <Text style={styles.emptyText}>No posts yet</Text>
+                        </View>
+                    ) : (
+                        <View style={styles.postsGrid}>
+                            {userPosts.map((post) => (
+                                <PostGridItem key={post.id} post={post} />
+                            ))}
+                        </View>
+                    )}
                 </View>
-            </Animated.ScrollView>
+            </ScrollView>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.obsidian[900],
-    },
+    container: { flex: 1, backgroundColor: colors.obsidian[900] },
+    centered: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing['2xl'] },
     headerButtons: {
         position: 'absolute',
         top: 0,
@@ -315,10 +255,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: spacing.lg,
     },
-    headerRight: {
-        flexDirection: 'row',
-        gap: spacing.sm,
-    },
+    headerRight: { flexDirection: 'row', gap: spacing.sm },
     headerButton: {
         width: 40,
         height: 40,
@@ -327,108 +264,68 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    headerIcon: {
-        fontSize: 18,
-    },
-    scrollView: {
-        flex: 1,
-    },
-    coverContainer: {
-        height: 200,
-        position: 'relative',
-    },
-    coverImage: {
-        ...StyleSheet.absoluteFillObject,
-        resizeMode: 'cover',
-    },
-    coverGradient: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 150,
-    },
-    profileContent: {
-        marginTop: -60,
-        paddingHorizontal: spacing.xl,
-    },
-    avatarSection: {
-        alignItems: 'center',
-        marginBottom: spacing.lg,
-    },
+    headerIcon: { fontSize: 18 },
+    scrollView: { flex: 1, marginTop: 60 },
+    profileContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
+
+    // Avatar
+    avatarSection: { alignItems: 'center', marginBottom: spacing.lg },
     avatarContainer: {},
-    avatarBorder: {
-        padding: 4,
-        borderRadius: 56,
-    },
+    avatarBorder: { padding: 4, borderRadius: 56 },
     avatarInner: {
         borderRadius: 52,
         borderWidth: 4,
         borderColor: colors.obsidian[900],
         overflow: 'hidden',
     },
-    avatarImage: {
-        width: 96,
-        height: 96,
-    },
-    userInfo: {
+    avatarImage: { width: 96, height: 96 },
+    avatarPlaceholder: {
+        backgroundColor: colors.obsidian[500],
         alignItems: 'center',
-        marginBottom: spacing.xl,
+        justifyContent: 'center',
     },
-    nameRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
+    avatarInitial: { fontSize: 36, fontWeight: '700', color: colors.text.primary },
+
+    // User info
+    userInfo: { alignItems: 'center', marginBottom: spacing.md },
     displayName: {
         fontSize: 26,
         fontWeight: '700',
         color: colors.text.primary,
-        fontFamily: typography.fontFamily.sans,
         letterSpacing: -0.5,
-    },
-    verifiedBadge: {
-        marginLeft: spacing.sm,
-        width: 22,
-        height: 22,
-        borderRadius: 11,
-        backgroundColor: colors.azure[500],
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    verifiedIcon: {
-        fontSize: 12,
-        color: colors.text.primary,
-        fontWeight: '700',
     },
     username: {
         fontSize: typography.fontSize.base,
         color: colors.text.muted,
-        fontFamily: typography.fontFamily.sans,
         marginTop: spacing.xs,
     },
     bio: {
         fontSize: typography.fontSize.base,
         color: colors.text.secondary,
-        fontFamily: typography.fontFamily.sans,
         textAlign: 'center',
         marginTop: spacing.md,
         lineHeight: 22,
     },
-    websiteLink: {
+
+    // Privacy badge
+    privacyBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: spacing.md,
+        alignSelf: 'center',
+        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs,
+        borderRadius: 20,
+        marginBottom: spacing.lg,
     },
-    websiteIcon: {
-        fontSize: 14,
-        marginRight: spacing.xs,
+    privacyIcon: { fontSize: 12, marginRight: spacing.xs },
+    privacyText: {
+        fontSize: typography.fontSize.xs,
+        color: colors.gold[400],
+        fontWeight: '600',
     },
-    websiteText: {
-        fontSize: typography.fontSize.base,
-        color: colors.gold[500],
-        fontFamily: typography.fontFamily.sans,
-        fontWeight: '500',
-    },
+
+    // Stats
     statsContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
@@ -440,32 +337,21 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.06)',
     },
-    stat: {
-        flex: 1,
-        alignItems: 'center',
-    },
+    stat: { flex: 1, alignItems: 'center' },
     statValue: {
         fontSize: typography.fontSize.xl,
         fontWeight: '700',
         color: colors.text.primary,
-        fontFamily: typography.fontFamily.sans,
     },
     statLabel: {
         fontSize: typography.fontSize.sm,
         color: colors.text.muted,
-        fontFamily: typography.fontFamily.sans,
         marginTop: 2,
     },
-    statDivider: {
-        width: 1,
-        height: 32,
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    },
-    actionButtons: {
-        flexDirection: 'row',
-        gap: spacing.md,
-        marginBottom: spacing.xl,
-    },
+    statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255, 255, 255, 0.08)' },
+
+    // Action buttons
+    actionButtons: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.xl },
     editButton: {
         flex: 1,
         backgroundColor: 'rgba(255, 255, 255, 0.06)',
@@ -479,79 +365,75 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         fontWeight: '600',
         color: colors.text.primary,
-        fontFamily: typography.fontFamily.sans,
     },
-    shareButton: {
-        width: 48,
-        height: 48,
-        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    logoutButton: {
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
         borderRadius: 12,
         alignItems: 'center',
-        justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.08)',
+        borderColor: 'rgba(255, 82, 82, 0.3)',
+        backgroundColor: 'rgba(255, 82, 82, 0.08)',
     },
-    shareIcon: {
-        fontSize: 20,
-        color: colors.text.primary,
+    logoutText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.coral[500],
     },
-    tabsContainer: {
+
+    // Posts section
+    sectionHeader: {
         flexDirection: 'row',
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.06)',
-        marginBottom: spacing.md,
-    },
-    tab: {
-        flex: 1,
-        paddingVertical: spacing.md,
         alignItems: 'center',
+        marginBottom: spacing.md,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.06)',
+        paddingTop: spacing.lg,
     },
-    tabActive: {
-        borderBottomWidth: 2,
-        borderBottomColor: colors.text.primary,
-    },
-    tabIcon: {
-        fontSize: 22,
-        color: colors.text.muted,
-    },
-    tabIconActive: {
+    sectionTitle: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
         color: colors.text.primary,
     },
-    postsGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: spacing.xs,
+    sectionCount: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        marginLeft: spacing.sm,
     },
+
+    // Posts grid
+    postsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
     postItem: {
         width: POST_SIZE,
         height: POST_SIZE,
-        borderRadius: 4,
+        borderRadius: 8,
         overflow: 'hidden',
     },
-    postImage: {
-        width: '100%',
-        height: '100%',
+    postImage: { width: '100%', height: '100%' },
+    textPostBg: {
+        backgroundColor: colors.obsidian[600],
+        padding: spacing.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    textPostContent: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.primary,
+        textAlign: 'center',
     },
     videoIndicator: {
         position: 'absolute',
         top: spacing.sm,
         right: spacing.sm,
-        flexDirection: 'row',
-        alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.6)',
         paddingHorizontal: spacing.sm,
         paddingVertical: 2,
         borderRadius: 6,
     },
-    videoIcon: {
-        fontSize: 8,
-        color: colors.text.primary,
-        marginRight: 4,
-    },
-    viewCount: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: colors.text.primary,
-        fontFamily: typography.fontFamily.sans,
-    },
+    videoIcon: { fontSize: 8, color: colors.text.primary },
+
+    // Empty state
+    emptyPosts: { alignItems: 'center', paddingVertical: spacing['2xl'] },
+    emptyIcon: { fontSize: 40, marginBottom: spacing.md },
+    emptyText: { fontSize: typography.fontSize.base, color: colors.text.muted },
 });

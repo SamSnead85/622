@@ -56,9 +56,9 @@ export default function WelcomeScreen() {
                     </LinearGradient>
                 </View>
 
-                <Text style={styles.title}>Welcome to 0G</Text>
+                <Text style={styles.title}>Welcome to Caravan</Text>
                 <Text style={styles.subtitle}>
-                    Share moments, build communities, and connect with people who matter.
+                    Your private community platform. Connect with family, friends, and tribes — on your terms.
                 </Text>
             </Animated.View>
 
@@ -73,19 +73,19 @@ export default function WelcomeScreen() {
                 ]}
             >
                 <FeatureItem
-                    icon="📹"
-                    title="Share Your Story"
-                    description="Create videos and photos that capture your moments"
+                    icon="🔒"
+                    title="Private by Default"
+                    description="Nobody sees your posts unless you invite them. Your world, your rules."
                 />
                 <FeatureItem
                     icon="👥"
-                    title="Build Communities"
-                    description="Connect with people who share your interests"
+                    title="Private Groups & Tribes"
+                    description="Family groups, friend circles, teams — completely separated from the public."
                 />
                 <FeatureItem
-                    icon="🔒"
-                    title="Privacy First"
-                    description="Your data is encrypted and protected"
+                    icon="🌍"
+                    title="Community is Optional"
+                    description="Join the larger community when you're ready, or stay private forever."
                 />
             </Animated.View>
 

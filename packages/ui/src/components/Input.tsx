@@ -42,8 +42,8 @@ export const Input: React.FC<InputProps> = ({
             <View
                 style={[
                     styles.inputContainer,
-                    isFocused && styles.inputContainerFocused,
-                    error && styles.inputContainerError,
+                    isFocused ? styles.inputContainerFocused : undefined,
+                    error ? styles.inputContainerError : undefined,
                 ]}
             >
                 {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
@@ -51,8 +51,8 @@ export const Input: React.FC<InputProps> = ({
                 <TextInput
                     style={[
                         styles.input,
-                        leftIcon && styles.inputWithLeftIcon,
-                        (rightIcon || isPassword) && styles.inputWithRightIcon,
+                        leftIcon ? styles.inputWithLeftIcon : undefined,
+                        (rightIcon || isPassword) ? styles.inputWithRightIcon : undefined,
                         style,
                     ]}
                     placeholderTextColor={colors.text.muted}
