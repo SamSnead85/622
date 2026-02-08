@@ -206,7 +206,8 @@ const styles = StyleSheet.create({
     },
     tabBarGradientOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(10, 10, 11, 0.95)',
+        backgroundColor: colors.obsidian[900],
+        opacity: 0.97,
     },
     tabBarBorder: {
         position: 'absolute',

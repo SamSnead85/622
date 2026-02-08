@@ -5,7 +5,6 @@ import {
     StyleSheet,
     FlatList,
     TouchableOpacity,
-    Animated,
     TextInput,
     ActivityIndicator,
     RefreshControl,
@@ -14,8 +13,10 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useAuthStore } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 
 interface Conversation {
@@ -128,6 +129,7 @@ const ConversationItem = memo(({
 export default function MessagesScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const user = useAuthStore((s) => s.user);
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -182,23 +184,23 @@ export default function MessagesScreen() {
                             router.back();
                         }}
                     >
-                        <Text style={styles.backIcon}>←</Text>
+                        <Ionicons name="chevron-back" size={22} color={colors.text.primary} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Messages</Text>
                     <TouchableOpacity
                         style={styles.composeButton}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            router.push('/search');
+                            router.push('/(tabs)/search');
                         }}
                     >
-                        <Text style={styles.composeIcon}>✏️</Text>
+                        <Ionicons name="create-outline" size={20} color={colors.obsidian[900]} />
                     </TouchableOpacity>
                 </View>
 
                 {/* Search */}
                 <View style={styles.searchContainer}>
-                    <Text style={styles.searchIcon}>🔍</Text>
+                    <Ionicons name="search-outline" size={16} color={colors.text.muted} />
                     <TextInput
                         style={styles.searchInput}
                         placeholder="Search messages..."
@@ -215,12 +217,13 @@ export default function MessagesScreen() {
                     <ActivityIndicator size="large" color={colors.gold[500]} />
                 </View>
             ) : (
-                <FlatList
+                    <FlatList
                     data={filteredConversations}
                     renderItem={({ item }) => (
                         <ConversationItem
                             conversation={item}
                             onPress={() => router.push(`/chat/${item.id}`)}
+                            userId={user?.id}
                         />
                     )}
                     keyExtractor={(item) => item.id}
@@ -238,7 +241,7 @@ export default function MessagesScreen() {
                     }
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
-                            <Text style={styles.emptyIcon}>💬</Text>
+                            <Ionicons name="chatbubbles-outline" size={48} color={colors.text.muted} />
                             <Text style={styles.emptyTitle}>No messages yet</Text>
                             <Text style={styles.emptySubtitle}>
                                 Start a conversation with someone in your community
@@ -257,7 +260,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.xl,
         paddingBottom: spacing.lg,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+        borderBottomColor: colors.border.subtle,
     },
     headerTop: {
         flexDirection: 'row',
@@ -267,10 +270,10 @@ const styles = StyleSheet.create({
     },
     backButton: {
         width: 40, height: 40, borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        backgroundColor: colors.surface.glassHover,
         alignItems: 'center', justifyContent: 'center',
     },
-    backIcon: { fontSize: 20, color: colors.text.primary },
+    // backIcon removed — using Ionicons now
     headerTitle: {
         fontSize: 22, fontWeight: '700', color: colors.text.primary, letterSpacing: -0.5,
     },
@@ -279,14 +282,12 @@ const styles = StyleSheet.create({
         backgroundColor: colors.gold[500],
         alignItems: 'center', justifyContent: 'center',
     },
-    composeIcon: { fontSize: 18 },
     searchContainer: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        backgroundColor: colors.surface.glass,
         borderRadius: 12, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-        borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)',
+        borderWidth: 1, borderColor: colors.border.subtle, gap: spacing.sm,
     },
-    searchIcon: { fontSize: 16, marginRight: spacing.sm },
     searchInput: { flex: 1, fontSize: typography.fontSize.base, color: colors.text.primary },
 
     // Loading
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center',
         paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
     },
-    unreadItem: { backgroundColor: 'rgba(212, 175, 55, 0.04)' },
+    unreadItem: { backgroundColor: colors.surface.glass },
     avatarContainer: { position: 'relative' },
     avatar: { width: 52, height: 52, borderRadius: 26 },
     avatarPlaceholder: {
@@ -340,7 +341,7 @@ const styles = StyleSheet.create({
 
     // Empty
     emptyState: { alignItems: 'center', paddingTop: 100, paddingHorizontal: spacing['2xl'] },
-    emptyIcon: { fontSize: 48, marginBottom: spacing.lg },
+    // emptyIcon removed — using Ionicons now
     emptyTitle: { fontSize: typography.fontSize.xl, fontWeight: '700', color: colors.text.primary, marginBottom: spacing.sm },
     emptySubtitle: { fontSize: typography.fontSize.base, color: colors.text.muted, textAlign: 'center' },
 });

@@ -1,11 +1,12 @@
 import { Stack } from 'expo-router';
+import { colors } from '@zerog/ui';
 
 export default function AuthLayout() {
     return (
         <Stack
             screenOptions={{
                 headerShown: false,
-                contentStyle: { backgroundColor: '#0A0A0B' },
+                contentStyle: { backgroundColor: colors.obsidian[900] },
                 animation: 'slide_from_right',
             }}
         >

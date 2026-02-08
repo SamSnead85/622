@@ -10,10 +10,12 @@ import {
     Platform,
     Image,
     ActivityIndicator,
+    Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
@@ -64,8 +66,8 @@ export default function ChatScreen() {
                     const other = data.participants.find((p: any) => p.id !== user?.id);
                     if (other) setParticipant(other);
                 }
-            } catch (err) {
-                // Silently handle
+            } catch (err: any) {
+                Alert.alert('Error', err.message || 'Failed to load messages');
             } finally {
                 setIsLoading(false);
             }
@@ -102,8 +104,8 @@ export default function ChatScreen() {
             setMessages((prev) =>
                 prev.map((m) => (m.id === optimisticMsg.id ? { ...realMsg, id: realMsg.id || optimisticMsg.id } : m))
             );
-        } catch {
-            // Mark failed — keep the optimistic message visible
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to send message');
         } finally {
             setIsSending(false);
         }
@@ -160,7 +162,7 @@ export default function ChatScreen() {
                     style={styles.backButton}
                     onPress={() => router.back()}
                 >
-                    <Text style={styles.backIcon}>←</Text>
+                    <Ionicons name="chevron-back" size={22} color={colors.text.primary} />
                 </TouchableOpacity>
 
                 {participant && (
@@ -203,6 +205,7 @@ export default function ChatScreen() {
                     onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
                     ListEmptyComponent={
                         <View style={styles.emptyChat}>
+                            <Ionicons name="chatbubble-ellipses-outline" size={48} color={colors.text.muted} />
                             <Text style={styles.emptyChatText}>No messages yet. Say hello!</Text>
                         </View>
                     }
@@ -231,7 +234,7 @@ export default function ChatScreen() {
                                 colors={[colors.gold[400], colors.gold[600]]}
                                 style={styles.sendButton}
                             >
-                                <Text style={styles.sendIcon}>↑</Text>
+                                <Ionicons name="arrow-up" size={18} color={colors.obsidian[900]} />
                             </LinearGradient>
                         </TouchableOpacity>
                     ) : (
@@ -248,14 +251,14 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row', alignItems: 'center',
         paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
     },
     backButton: {
         width: 40, height: 40, borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        backgroundColor: colors.surface.glassHover,
         alignItems: 'center', justifyContent: 'center', marginRight: spacing.md,
     },
-    backIcon: { fontSize: 20, color: colors.text.primary },
+    // backIcon removed — using Ionicons
     userInfo: { flex: 1, flexDirection: 'row', alignItems: 'center' },
     headerAvatar: { width: 40, height: 40, borderRadius: 20 },
     headerAvatarPlaceholder: {
@@ -276,11 +279,11 @@ const styles = StyleSheet.create({
     otherRow: { alignSelf: 'flex-start' },
     msgBubble: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderRadius: 20 },
     ownBubble: { borderBottomRightRadius: 4 },
-    otherBubble: { backgroundColor: 'rgba(255, 255, 255, 0.08)', borderBottomLeftRadius: 4 },
+    otherBubble: { backgroundColor: colors.surface.glassHover, borderBottomLeftRadius: 4 },
     msgText: { fontSize: typography.fontSize.base, color: colors.text.primary, lineHeight: 22 },
     ownText: { color: colors.obsidian[900] },
     msgTime: { fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: spacing.xs, alignSelf: 'flex-end' },
-    ownTime: { color: 'rgba(10, 10, 11, 0.6)' },
+    ownTime: { color: colors.obsidian[700] },
 
     // Empty
     emptyChat: { alignItems: 'center', paddingTop: 80 },
@@ -289,13 +292,13 @@ const styles = StyleSheet.create({
     // Input
     inputContainer: {
         paddingHorizontal: spacing.lg, paddingTop: spacing.md,
-        borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.06)',
+        borderTopWidth: 1, borderTopColor: colors.border.subtle,
     },
     inputWrapper: {
         flexDirection: 'row', alignItems: 'flex-end',
-        backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: 24,
+        backgroundColor: colors.surface.glass, borderRadius: 24,
         paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
-        borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)',
+        borderWidth: 1, borderColor: colors.border.subtle,
     },
     textInput: {
         flex: 1, fontSize: typography.fontSize.base, color: colors.text.primary,
@@ -305,6 +308,6 @@ const styles = StyleSheet.create({
         width: 36, height: 36, borderRadius: 18,
         alignItems: 'center', justifyContent: 'center',
     },
-    sendIcon: { fontSize: 18, fontWeight: '700', color: colors.obsidian[900] },
+    // sendIcon removed — using Ionicons
     sendButtonPlaceholder: { width: 36, height: 36 },
 });

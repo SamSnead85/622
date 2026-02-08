@@ -30,15 +30,10 @@ export default function RootLayout() {
     });
 
     useEffect(() => {
-        initialize().finally(() => {
-            // Hide splash once auth is checked (fonts may still load)
-            if (fontsLoaded) {
-                SplashScreen.hideAsync();
-            }
-        });
-    }, [fontsLoaded]);
+        initialize();
+    }, []);
 
-    // Also hide splash when fonts finish loading after init
+    // Hide splash only when both auth check AND fonts are ready
     useEffect(() => {
         if (isInitialized && fontsLoaded) {
             SplashScreen.hideAsync();

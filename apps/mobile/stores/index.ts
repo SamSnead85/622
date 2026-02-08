@@ -125,7 +125,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
             const data = await apiFetch<any>(API.me);
             if (data.user || data.id) {
-                const user = data.user || data;
+                const rawUser = data.user || data;
+                // Normalize user object with safe defaults
+                const user: User = {
+                    id: rawUser.id,
+                    username: rawUser.username || '',
+                    displayName: rawUser.displayName || rawUser.username || 'User',
+                    email: rawUser.email || '',
+                    avatarUrl: rawUser.avatarUrl,
+                    coverUrl: rawUser.coverUrl,
+                    bio: rawUser.bio,
+                    website: rawUser.website,
+                    followersCount: rawUser.followersCount ?? rawUser._count?.followers ?? 0,
+                    followingCount: rawUser.followingCount ?? rawUser._count?.following ?? 0,
+                    postsCount: rawUser.postsCount ?? rawUser._count?.posts ?? 0,
+                    isVerified: rawUser.isVerified ?? false,
+                    isPrivate: rawUser.isPrivate ?? true,
+                    createdAt: rawUser.createdAt || new Date().toISOString(),
+                    communityOptIn: rawUser.communityOptIn ?? false,
+                    activeFeedView: rawUser.activeFeedView,
+                    usePublicProfile: rawUser.usePublicProfile,
+                    publicDisplayName: rawUser.publicDisplayName,
+                    publicUsername: rawUser.publicUsername,
+                    publicAvatarUrl: rawUser.publicAvatarUrl,
+                    publicBio: rawUser.publicBio,
+                };
                 set({
                     user,
                     isAuthenticated: true,
@@ -136,8 +160,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 set({ isInitialized: true, isAuthenticated: false });
             }
         } catch (error) {
-            await removeToken();
-            set({ isInitialized: true, isAuthenticated: false });
+            // Don't clear token on network errors — user might be offline
+            const isNetwork = error instanceof TypeError ||
+                (error instanceof Error && error.message.toLowerCase().includes('network'));
+            if (!isNetwork) {
+                await removeToken();
+            }
+            set({ isInitialized: true, isAuthenticated: isNetwork ? false : false });
         }
     },
 
@@ -225,8 +254,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     refreshUser: async () => {
         try {
             const data = await apiFetch<any>(API.me);
-            const user = data.user || data;
-            set({ user });
+            const rawUser = data.user || data;
+            if (rawUser?.id) {
+                const currentUser = get().user;
+                // Merge with current user to preserve local state
+                set({
+                    user: {
+                        ...currentUser,
+                        ...rawUser,
+                        followersCount: rawUser.followersCount ?? rawUser._count?.followers ?? currentUser?.followersCount ?? 0,
+                        followingCount: rawUser.followingCount ?? rawUser._count?.following ?? currentUser?.followingCount ?? 0,
+                        postsCount: rawUser.postsCount ?? rawUser._count?.posts ?? currentUser?.postsCount ?? 0,
+                    } as User,
+                });
+            }
         } catch (error) {
             // Silently fail — user might be offline
         }

@@ -14,6 +14,7 @@ import {
     ActionSheetIOS,
     Alert,
     ViewToken,
+    ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,7 +28,6 @@ import Animated, {
     withTiming,
     withDelay,
     FadeInDown,
-    runOnJS,
 } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
@@ -160,13 +160,14 @@ function ReadMoreText({ text }: { text: string }) {
 // ============================================
 // Feed Video Player (auto-play with mute toggle)
 // ============================================
-function FeedVideoPlayer({ uri, isActive }: { uri: string; isActive: boolean }) {
-    const [isMuted, setIsMuted] = useState(true);
+function FeedVideoPlayer({ uri, isActive, isFirstVideo }: { uri: string; isActive: boolean; isFirstVideo: boolean }) {
+    // First visible video plays unmuted; subsequent ones muted
+    const [isMuted, setIsMuted] = useState(!isFirstVideo);
     const [showFirstFrame, setShowFirstFrame] = useState(false);
 
     const player = useVideoPlayer(uri, (player) => {
         player.loop = true;
-        player.muted = true;
+        player.muted = !isFirstVideo;
     });
 
     useEffect(() => {
@@ -174,10 +175,19 @@ function FeedVideoPlayer({ uri, isActive }: { uri: string; isActive: boolean }) 
             player.play();
         } else {
             player.pause();
+            // When scrolling away, reset to muted state
             player.muted = true;
             setIsMuted(true);
         }
     }, [isActive, player]);
+
+    // When becoming the first video (scrolled into view as primary), unmute
+    useEffect(() => {
+        if (isActive && isFirstVideo) {
+            player.muted = false;
+            setIsMuted(false);
+        }
+    }, [isActive, isFirstVideo, player]);
 
     const toggleMute = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -198,7 +208,9 @@ function FeedVideoPlayer({ uri, isActive }: { uri: string; isActive: boolean }) 
             {/* Buffering overlay - show until first frame renders */}
             {!showFirstFrame && (
                 <View style={styles.videoBuffering}>
-                    <Image source={{ uri }} style={styles.videoThumbnail} blurRadius={10} />
+                    <View style={styles.videoBufferingInner}>
+                        <ActivityIndicator size="small" color={colors.gold[500]} />
+                    </View>
                 </View>
             )}
             {/* Mute indicator */}
@@ -223,12 +235,14 @@ const FeedPostCard = memo(
         onSave,
         onPress,
         isVideoActive,
+        isFirstVideo,
     }: {
         post: Post;
         onLike: (id: string) => void;
         onSave: (id: string) => void;
         onPress: (id: string) => void;
         isVideoActive: boolean;
+        isFirstVideo: boolean;
     }) => {
         const router = useRouter();
         const lastTapRef = useRef(0);
@@ -359,6 +373,7 @@ const FeedPostCard = memo(
                                 <FeedVideoPlayer
                                     uri={post.mediaUrl}
                                     isActive={isVideoActive}
+                                    isFirstVideo={isFirstVideo}
                                 />
                             ) : (
                                 <Image
@@ -468,7 +483,8 @@ const FeedPostCard = memo(
         prev.post.isLiked === next.post.isLiked &&
         prev.post.likesCount === next.post.likesCount &&
         prev.post.isSaved === next.post.isSaved &&
-        prev.isVideoActive === next.isVideoActive
+        prev.isVideoActive === next.isVideoActive &&
+        prev.isFirstVideo === next.isFirstVideo
 );
 
 // ============================================
@@ -509,17 +525,16 @@ export default function FeedScreen() {
 
     useEffect(() => {
         fetchFeed(true, feedType);
-    }, []);
+    }, [feedType]);
 
     const handleTabChange = useCallback(
         (tab: 'foryou' | 'following') => {
             setFeedType(tab);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            // Scroll to top
+            // Scroll to top — the useEffect on feedType will trigger the fetch
             flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-            fetchFeed(true, tab);
         },
-        [fetchFeed]
+        []
     );
 
     const handleLike = useCallback(
@@ -555,9 +570,9 @@ export default function FeedScreen() {
 
     const handleLoadMore = useCallback(() => {
         if (!isLoading && hasMore) {
-            fetchFeed(false);
+            fetchFeed(false, feedType);
         }
-    }, [isLoading, hasMore, fetchFeed]);
+    }, [isLoading, hasMore, fetchFeed, feedType]);
 
     // Greeting based on time of day
     const getGreeting = () => {
@@ -576,6 +591,7 @@ export default function FeedScreen() {
                     onSave={handleSave}
                     onPress={handlePostPress}
                     isVideoActive={item.mediaType === 'VIDEO' && activeVideoId === item.id}
+                    isFirstVideo={item.mediaType === 'VIDEO' && activeVideoId === item.id}
                 />
             );
         },
@@ -836,12 +852,12 @@ const styles = StyleSheet.create({
     },
     videoBuffering: {
         ...StyleSheet.absoluteFillObject,
-        overflow: 'hidden',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.obsidian[800],
     },
-    videoThumbnail: {
-        width: '100%',
-        height: '100%',
-        resizeMode: 'cover' as any,
+    videoBufferingInner: {
+        padding: spacing.lg,
     },
     muteIndicator: {
         position: 'absolute',
