@@ -4,6 +4,7 @@ import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
 import { logger } from '../utils/logger.js';
+import { cache } from '../services/cache/RedisCache.js';
 
 const router = Router();
 
@@ -195,8 +196,12 @@ router.get('/:username', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { username } = req.params;
 
+        // Check Redis cache first (5 min TTL for public profiles)
+        const cacheKey = `user:profile:${username.toLowerCase()}`;
+        const cachedUser = await cache.get<any>(cacheKey);
+
         // Try to find by real username or public username
-        const user = await prisma.user.findFirst({
+        const user = cachedUser || await prisma.user.findFirst({
             where: {
                 OR: [
                     { username: username.toLowerCase() },
@@ -234,6 +239,11 @@ router.get('/:username', optionalAuth, async (req: AuthRequest, res, next) => {
 
         if (!user) {
             throw new AppError('User not found', 404);
+        }
+
+        // Cache the raw profile data for 5 minutes (non-personalized data only)
+        if (!cachedUser) {
+            await cache.set(cacheKey, user, 300);
         }
 
         const isOwnProfile = req.userId === user.id;

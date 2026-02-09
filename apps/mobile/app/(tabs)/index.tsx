@@ -1073,11 +1073,13 @@ export default function FeedScreen() {
                 ListEmptyComponent={renderEmpty}
                 ListFooterComponent={renderFooter}
                 // Performance optimizations
-                removeClippedSubviews={Platform.OS === 'android'}
-                maxToRenderPerBatch={5}
-                windowSize={7}
-                initialNumToRender={4}
-                updateCellsBatchingPeriod={50}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={4}
+                windowSize={5}
+                initialNumToRender={3}
+                updateCellsBatchingPeriod={100}
+                getItemLayout={undefined} // Variable height — use estimatedItemSize instead
+                maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
             />
         </View>
     );

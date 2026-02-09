@@ -402,11 +402,13 @@ export const useFeedStore = create<FeedState>()(
                 });
             } else {
                 // Deduplicate: only append posts whose IDs aren't already present
+                // Cap at 200 posts in memory to prevent OOM on low-end devices
                 set((prev) => {
                     const existingIds = new Set(prev.posts.map((p) => p.id));
                     const uniqueNew = posts.filter((p: Post) => !existingIds.has(p.id));
+                    const allPosts = [...prev.posts, ...uniqueNew];
                     return {
-                        posts: [...prev.posts, ...uniqueNew],
+                        posts: allPosts.length > 200 ? allPosts.slice(-200) : allPosts,
                         isLoading: false,
                         hasMore: !!newCursor,
                         nextCursor: newCursor,

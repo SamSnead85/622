@@ -3,6 +3,9 @@ import multer from 'multer';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { uploadFile, deleteFile, isValidMediaType, getMaxFileSize } from '../services/storage.js';
 import { prisma } from '../db/client.js';
+import path from 'path';
+import os from 'os';
+import fs from 'fs';
 
 const router = Router();
 
@@ -11,13 +14,36 @@ interface MulterRequest extends AuthRequest {
     file?: Express.Multer.File;
 }
 
-// Configure multer for memory storage
-const upload = multer({
+// Small files (< 10MB): use memory storage for speed (avatars, thumbnails)
+const memoryUpload = multer({
     storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10 MB max
+    },
+});
+
+// Large files (videos, data imports): use disk storage to avoid OOM
+const diskStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const tmpDir = path.join(os.tmpdir(), '0g-uploads');
+        fs.mkdirSync(tmpDir, { recursive: true });
+        cb(null, tmpDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${path.extname(file.originalname)}`;
+        cb(null, uniqueName);
+    },
+});
+
+const diskUpload = multer({
+    storage: diskStorage,
     limits: {
         fileSize: 500 * 1024 * 1024, // 500 MB max (validated per type)
     },
 });
+
+// Legacy upload alias for backward compatibility
+const upload = memoryUpload;
 
 // ============================================
 // UPLOAD AVATAR
@@ -92,7 +118,7 @@ router.post('/cover', authenticate, upload.single('file'), async (req: MulterReq
 // ============================================
 // UPLOAD POST MEDIA
 // ============================================
-router.post('/post', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
+router.post('/post', authenticate, diskUpload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
     try {
         const file = req.file;
         if (!file) {
@@ -116,7 +142,13 @@ router.post('/post', authenticate, upload.single('file'), async (req: MulterRequ
             return;
         }
 
-        const result = await uploadFile(file.buffer, 'posts', file.mimetype, file.originalname);
+        // Disk-stored files need to be read into a buffer, then cleaned up
+        const fileBuffer = file.buffer || fs.readFileSync(file.path);
+        const result = await uploadFile(fileBuffer, 'posts', file.mimetype, file.originalname);
+        // Clean up disk temp file if used
+        if (file.path) {
+            fs.unlink(file.path, () => {}); // Non-blocking cleanup
+        }
 
         // -------------------------------------------------------------------
         // Video thumbnail generation (server-side)

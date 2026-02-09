@@ -107,18 +107,18 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
 
         if (feedView === 'private') {
             // ── PRIVATE FEED: Only groups + followed users ──
-            // 1. Get community IDs the user belongs to
-            const memberships = await prisma.communityMember.findMany({
-                where: { userId: req.userId!, isBanned: false },
-                select: { communityId: true },
-            });
+            // Parallelize: fetch memberships and following concurrently
+            const [memberships, following] = await Promise.all([
+                prisma.communityMember.findMany({
+                    where: { userId: req.userId!, isBanned: false },
+                    select: { communityId: true },
+                }),
+                prisma.follow.findMany({
+                    where: { followerId: req.userId },
+                    select: { followingId: true },
+                }),
+            ]);
             const communityIds = memberships.map((m) => m.communityId);
-
-            // 2. Get user IDs the current user follows
-            const following = await prisma.follow.findMany({
-                where: { followerId: req.userId },
-                select: { followingId: true },
-            });
             const followingIds = following.map((f) => f.followingId);
 
             // Combine: posts from my communities + posts from people I follow + my own posts

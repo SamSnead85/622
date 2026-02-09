@@ -37,6 +37,53 @@ function checkSocketRateLimit(userId: string): boolean {
     return true;
 }
 
+// ============================================
+// Periodic Cleanup — prevent unbounded memory growth
+// ============================================
+
+function startMapCleanup(io: SocketServer) {
+    // Clean stale socket entries every 2 minutes
+    setInterval(() => {
+        let cleaned = 0;
+        for (const [userId, socketIds] of connectedUsers.entries()) {
+            const validSockets = Array.from(socketIds).filter((id) => io.sockets.sockets.has(id));
+            if (validSockets.length === 0) {
+                connectedUsers.delete(userId);
+                cleaned++;
+            } else if (validSockets.length < socketIds.size) {
+                connectedUsers.set(userId, new Set(validSockets));
+            }
+        }
+        if (cleaned > 0) logger.info(`Socket cleanup: removed ${cleaned} stale user entries`);
+    }, 2 * 60 * 1000);
+
+    // Clean expired rate limit entries every 30 seconds
+    setInterval(() => {
+        const now = Date.now();
+        let cleaned = 0;
+        for (const [uid, entry] of socketRateLimits.entries()) {
+            if (now > entry.resetAt) {
+                socketRateLimits.delete(uid);
+                cleaned++;
+            }
+        }
+        // Emergency cleanup if map gets too large
+        if (socketRateLimits.size > 50000) {
+            socketRateLimits.clear();
+            logger.warn('Socket rate limits map cleared (exceeded 50k entries)');
+        }
+    }, 30 * 1000);
+
+    // Clean stale calls every 5 minutes (calls shouldn't last >2 hours)
+    setInterval(() => {
+        // activeCalls doesn't have timestamps, so we impose a max size limit
+        if (activeCalls.size > 10000) {
+            activeCalls.clear();
+            logger.warn('Active calls map cleared (exceeded 10k entries)');
+        }
+    }, 5 * 60 * 1000);
+}
+
 export const setupSocketHandlers = (io: SocketServer) => {
     // Redis Adapter Setup for Horizontal Scaling
     if (process.env.REDIS_URL) {
@@ -49,6 +96,9 @@ export const setupSocketHandlers = (io: SocketServer) => {
     } else {
         logger.warn('⚠️ No REDIS_URL found. Running Socket.IO in memory mode (not suitable for multiple instances)');
     }
+
+    // Start periodic map cleanup to prevent memory leaks
+    startMapCleanup(io);
 
     // Authentication middleware
     // Authentication middleware

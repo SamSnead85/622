@@ -308,6 +308,7 @@ model Post {
   @@index([isPublic, isPinned, createdAt(sort: Desc)]) // Feed ranking optimization
   @@index([deletedAt]) // Soft delete filter
   @@index([userId, deletedAt]) // User's non-deleted posts
+  @@index([communityId, deletedAt, createdAt(sort: Desc)]) // Community feed with soft delete
 }
 
 model Music {
@@ -358,6 +359,7 @@ model Like {
   @@unique([userId, postId])
   @@index([postId])
   @@index([userId]) // User's liked posts optimization
+  @@index([userId, createdAt(sort: Desc)]) // User's like timeline
 }
 
 model Share {
@@ -369,6 +371,8 @@ model Share {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([postId])
+  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)]) // User's share history
 }
 
 model Save {
@@ -599,6 +603,7 @@ model Message {
   @@index([conversationId])
   @@index([senderId])
   @@index([createdAt])
+  @@index([conversationId, createdAt(sort: Desc)]) // Message pagination within conversation
 }
 
 model Notification {
@@ -617,6 +622,7 @@ model Notification {
   @@index([userId, isRead, createdAt(sort: Desc)]) // Unread notifications query
   @@index([actorId]) // Actor lookup optimization
   @@index([userId, type, createdAt(sort: Desc)]) // Filtered notification queries
+  @@index([userId, type, actorId, targetId, createdAt]) // Deduplication queries
 }
 
 // ============================================
