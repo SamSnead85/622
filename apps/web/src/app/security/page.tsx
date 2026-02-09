@@ -366,7 +366,7 @@ export default function SecurityCenterPage() {
                                         <h3 className="text-sm font-semibold text-white mb-1">{f.title}</h3>
                                         <p className="text-xs text-white/40 leading-relaxed">{f.description}</p>
                                         {f.link && (
-                                            <Link href={f.link} className="text-[10px] text-[#00D4FF] mt-2 inline-block hover:underline">
+                                            <Link href={f.link} className="text-[10px] text-[#D4AF37] mt-2 inline-block hover:underline">
                                                 Configure →
                                             </Link>
                                         )}

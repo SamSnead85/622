@@ -61,6 +61,22 @@ export default function SettingsScreen() {
     const logout = useAuthStore((s) => s.logout);
     const refreshUser = useAuthStore((s) => s.refreshUser);
     const [isLeavingCommunity, setIsLeavingCommunity] = useState(false);
+    const [culturalProfile, setCulturalProfile] = useState(user?.culturalProfile || 'standard');
+
+    const handleCulturalProfileChange = async (profile: string) => {
+        setCulturalProfile(profile);
+        try {
+            await apiFetch(`${API.users}/profile`, {
+                method: 'PUT',
+                body: JSON.stringify({ culturalProfile: profile }),
+            });
+            await refreshUser();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {
+            Alert.alert('Error', 'Failed to update cultural profile.');
+            setCulturalProfile(user?.culturalProfile || 'standard');
+        }
+    };
 
     const appVersion = Constants.expoConfig?.version || '1.0.0';
 
@@ -153,6 +169,43 @@ export default function SettingsScreen() {
                         <SettingRow icon="mail-outline" label="Email" description={user?.email || 'Not set'} />
                     </View>
 
+                    {/* Cultural Experience */}
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Cultural Experience</Text>
+                        <View style={styles.settingRow}>
+                            <View style={styles.settingIcon}>
+                                <Ionicons name="globe-outline" size={20} color={colors.text.secondary} />
+                            </View>
+                            <View style={[styles.settingContent, { gap: spacing.sm }]}>
+                                <Text style={styles.settingLabel}>Greeting Profile</Text>
+                                <View style={styles.profileOptions}>
+                                    {[
+                                        { key: 'standard', label: 'Standard', desc: 'Good morning' },
+                                        { key: 'muslim', label: 'Muslim', desc: 'Assalamu Alaikum' },
+                                        { key: 'custom', label: 'Custom', desc: 'Your greeting' },
+                                    ].map(opt => (
+                                        <TouchableOpacity
+                                            key={opt.key}
+                                            style={[styles.profileOption, culturalProfile === opt.key && styles.profileOptionActive]}
+                                            onPress={() => handleCulturalProfileChange(opt.key)}
+                                        >
+                                            <Text style={[styles.profileOptionLabel, culturalProfile === opt.key && styles.profileOptionLabelActive]}>{opt.label}</Text>
+                                            <Text style={styles.profileOptionDesc}>{opt.desc}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        </View>
+                        {culturalProfile === 'muslim' && (
+                            <SettingRow
+                                icon="compass-outline"
+                                label="Deen Tools"
+                                description="Prayer times, Qibla, Quran, and more"
+                                onPress={() => router.push('/tools' as any)}
+                            />
+                        )}
+                    </View>
+
                     {/* Privacy */}
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Privacy</Text>
@@ -241,6 +294,37 @@ const styles = StyleSheet.create({
     settingLabel: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
     settingLabelDanger: { color: colors.coral[500] },
     settingDescription: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },
+    profileOptions: {
+        flexDirection: 'row',
+        gap: spacing.xs,
+    },
+    profileOption: {
+        flex: 1,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.xs,
+        borderRadius: 10,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        alignItems: 'center',
+    },
+    profileOptionActive: {
+        backgroundColor: colors.surface.goldSubtle,
+        borderColor: colors.gold[500],
+    },
+    profileOptionLabel: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.secondary,
+    },
+    profileOptionLabelActive: {
+        color: colors.gold[400],
+    },
+    profileOptionDesc: {
+        fontSize: 10,
+        color: colors.text.muted,
+        marginTop: 2,
+    },
     badge: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: 8 },
     badgeCommunity: { backgroundColor: colors.surface.azureSubtle },
     badgePrivate: { backgroundColor: colors.surface.goldLight },

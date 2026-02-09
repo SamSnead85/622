@@ -31,8 +31,8 @@ export default function AboutPage() {
             {/* Background */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute inset-0 bg-[#030305]" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[#00D4FF]/[0.03] blur-[150px] rounded-full" />
-                <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#8B5CF6]/[0.02] blur-[120px] rounded-full" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[#D4AF37]/[0.03] blur-[150px] rounded-full" />
+                <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#B8942D]/[0.02] blur-[120px] rounded-full" />
             </div>
 
             {/* Nav */}
@@ -62,7 +62,7 @@ export default function AboutPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8 }}
                         >
-                            <p className="text-[#00D4FF]/60 text-xs tracking-[0.4em] uppercase mb-6 font-light">About 0G</p>
+                            <p className="text-[#D4AF37]/60 text-xs tracking-[0.4em] uppercase mb-6 font-light">About 0G</p>
                             <h1 className="text-4xl md:text-6xl lg:text-7xl font-light text-white leading-[1.1] mb-8">
                                 We built the platform
                                 <br />
@@ -157,7 +157,7 @@ export default function AboutPage() {
                 <AnimatedSection id="architecture" className="py-20 md:py-28 border-t border-white/5">
                     <div className="max-w-5xl mx-auto px-6">
                         <div className="mb-16">
-                            <p className="text-[#00D4FF]/60 text-xs tracking-[0.4em] uppercase mb-4 font-light">Architecture</p>
+                            <p className="text-[#D4AF37]/60 text-xs tracking-[0.4em] uppercase mb-4 font-light">Architecture</p>
                             <h2 className="text-3xl md:text-5xl font-light text-white leading-tight mb-6">
                                 Designed for trust.
                                 <br />
@@ -199,7 +199,7 @@ export default function AboutPage() {
                                     title: 'Open Developer Platform',
                                     desc: 'A full RESTful API with OAuth 2.0 authentication, API key management, granular permission scopes, and event-driven webhooks. Third-party developers, AI agents, no-code tools, and automation platforms can programmatically create communities, manage members, post content, and subscribe to platform events — all within scoped, auditable access controls.',
                                     icon: <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>,
-                                    color: 'text-[#00D4FF] bg-[#00D4FF]/10',
+                                    color: 'text-[#D4AF37] bg-[#D4AF37]/10',
                                 },
                                 {
                                     title: 'Transparent Algorithm Design',
@@ -367,7 +367,7 @@ export default function AboutPage() {
                             ].map((item) => (
                                 <div key={item.num} className="grid md:grid-cols-12 gap-4 md:gap-8 py-8 md:py-10 border-b border-white/5">
                                     <div className="md:col-span-1">
-                                        <span className="text-[#00D4FF]/40 text-sm font-mono">{item.num}</span>
+                                        <span className="text-[#D4AF37]/40 text-sm font-mono">{item.num}</span>
                                     </div>
                                     <div className="md:col-span-3">
                                         <h3 className="text-white font-medium">{item.title}</h3>
@@ -430,11 +430,11 @@ export default function AboutPage() {
                 {/* ==================== LOOKING FORWARD ==================== */}
                 <AnimatedSection className="py-20 md:py-28 border-t border-white/5">
                     <div className="max-w-5xl mx-auto px-6 text-center">
-                        <p className="text-[#8B5CF6]/60 text-xs tracking-[0.4em] uppercase mb-6 font-light">The Road Ahead</p>
+                        <p className="text-[#B8942D]/60 text-xs tracking-[0.4em] uppercase mb-6 font-light">The Road Ahead</p>
                         <h2 className="text-3xl md:text-5xl font-light text-white leading-tight mb-8 max-w-3xl mx-auto">
                             We&apos;re building the infrastructure for
                             <br />
-                            <span className="bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] bg-clip-text text-transparent">
+                            <span className="bg-gradient-to-r from-[#D4AF37] to-[#B8942D] bg-clip-text text-transparent">
                                 digital sovereignty.
                             </span>
                         </h2>

@@ -44,8 +44,8 @@ export default function TermsPage() {
                                 'The only rules: Be a human. Be a good human.',
                             ].map((rule, i) => (
                                 <div key={i} className="flex items-start gap-3">
-                                    <div className="w-5 h-5 rounded-full bg-[#00D4FF]/10 border border-[#00D4FF]/20 flex items-center justify-center shrink-0 mt-0.5">
-                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                    <div className="w-5 h-5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center shrink-0 mt-0.5">
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M20 6L9 17l-5-5" />
                                         </svg>
                                     </div>
@@ -109,7 +109,7 @@ export default function TermsPage() {
                             We do not analyze your private conversations.
                         </p>
                         <p className="text-white/55 leading-relaxed">
-                            Read our full <Link href="/privacy" className="text-[#00D4FF]/70 hover:text-[#00D4FF] underline underline-offset-2 transition-colors">Privacy Policy</Link> for 
+                            Read our full <Link href="/privacy" className="text-[#D4AF37]/70 hover:text-[#D4AF37] underline underline-offset-2 transition-colors">Privacy Policy</Link> for 
                             the complete details, but the summary is: your privacy comes first. Always.
                         </p>
                     </section>
@@ -171,7 +171,7 @@ export default function TermsPage() {
                         <h2 className="text-xl font-semibold text-white mb-3">11. Contact</h2>
                         <p className="text-white/55 leading-relaxed">
                             Questions? Concerns? Ideas? Reach us through the platform or visit our{' '}
-                            <Link href="/about" className="text-[#00D4FF]/70 hover:text-[#00D4FF] underline underline-offset-2 transition-colors">About page</Link>.
+                            <Link href="/about" className="text-[#D4AF37]/70 hover:text-[#D4AF37] underline underline-offset-2 transition-colors">About page</Link>.
                             We read everything. We are a small, dedicated team that cares deeply about getting this right.
                         </p>
                     </section>

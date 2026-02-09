@@ -75,7 +75,7 @@ export const colors = {
         goldStrong: 'rgba(212, 175, 55, 0.3)',
         goldFaded: 'rgba(212, 175, 55, 0.04)',
         coralSubtle: 'rgba(255, 82, 82, 0.1)',
-        azureSubtle: 'rgba(0, 212, 255, 0.12)',
+        azureSubtle: 'rgba(59, 130, 246, 0.12)',
     },
 
     border: {

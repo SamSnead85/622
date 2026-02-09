@@ -261,7 +261,7 @@ export function NotificationCenter({
                                 {unreadCount > 0 && (
                                     <button
                                         onClick={onMarkAllRead}
-                                        className="text-sm text-[#00D4FF] hover:underline"
+                                        className="text-sm text-[#D4AF37] hover:underline"
                                     >
                                         Mark all read
                                     </button>
@@ -295,7 +295,7 @@ export function NotificationCenter({
                                         <button
                                             key={notification.id}
                                             onClick={() => onNotificationClick(notification)}
-                                            className={`w-full flex items-start gap-3 p-4 hover:bg-white/5 transition-colors text-left ${!notification.isRead ? 'bg-[#00D4FF]/5' : ''
+                                            className={`w-full flex items-start gap-3 p-4 hover:bg-white/5 transition-colors text-left ${!notification.isRead ? 'bg-[#D4AF37]/5' : ''
                                                 }`}
                                         >
                                             <div className="relative flex-shrink-0">
@@ -303,7 +303,7 @@ export function NotificationCenter({
                                                     <span className="text-lg">{getIcon(notification.type)}</span>
                                                 </div>
                                                 {!notification.isRead && (
-                                                    <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#00D4FF]" />
+                                                    <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#D4AF37]" />
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">

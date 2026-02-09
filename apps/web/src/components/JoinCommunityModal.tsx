@@ -69,8 +69,8 @@ export function JoinCommunityModal() {
                     {step === 'intro' && (
                         <div className="p-6 space-y-5">
                             <div className="text-center">
-                                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 border border-[#00D4FF]/20 flex items-center justify-center">
-                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#B8942D]/20 border border-[#D4AF37]/20 flex items-center justify-center">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                         <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
                                     </svg>
                                 </div>
@@ -125,7 +125,7 @@ export function JoinCommunityModal() {
                                 </button>
                                 <button
                                     onClick={() => setStep('choose')}
-                                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+                                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-semibold text-sm hover:opacity-90 transition-opacity"
                                 >
                                     Continue
                                 </button>
@@ -149,7 +149,7 @@ export function JoinCommunityModal() {
                                     onClick={() => setIdentityChoice('same')}
                                     className={`w-full text-left p-4 rounded-xl border transition-all ${
                                         identityChoice === 'same'
-                                            ? 'border-[#00D4FF]/50 bg-[#00D4FF]/10'
+                                            ? 'border-[#D4AF37]/50 bg-[#D4AF37]/10'
                                             : 'border-white/[0.08] bg-white/[0.03] hover:border-white/[0.15]'
                                     }`}
                                 >
@@ -158,7 +158,7 @@ export function JoinCommunityModal() {
                                             {user?.avatarUrl ? (
                                                 <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
                                             ) : (
-                                                <div className="w-full h-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold">
+                                                <div className="w-full h-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-black font-bold">
                                                     {user?.displayName?.[0] || 'U'}
                                                 </div>
                                             )}
@@ -169,7 +169,7 @@ export function JoinCommunityModal() {
                                         </div>
                                         <div className="ml-auto">
                                             <div className={`w-5 h-5 rounded-full border-2 ${
-                                                identityChoice === 'same' ? 'border-[#00D4FF] bg-[#00D4FF]' : 'border-white/30'
+                                                identityChoice === 'same' ? 'border-[#D4AF37] bg-[#D4AF37]' : 'border-white/30'
                                             } flex items-center justify-center`}>
                                                 {identityChoice === 'same' && (
                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
@@ -185,13 +185,13 @@ export function JoinCommunityModal() {
                                     onClick={() => setIdentityChoice('separate')}
                                     className={`w-full text-left p-4 rounded-xl border transition-all ${
                                         identityChoice === 'separate'
-                                            ? 'border-[#8B5CF6]/50 bg-[#8B5CF6]/10'
+                                            ? 'border-[#B8942D]/50 bg-[#B8942D]/10'
                                             : 'border-white/[0.08] bg-white/[0.03] hover:border-white/[0.15]'
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-500/30 to-purple-500/30 border border-violet-500/30 flex items-center justify-center flex-shrink-0">
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E5C158" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                                 <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
                                             </svg>
                                         </div>
@@ -201,7 +201,7 @@ export function JoinCommunityModal() {
                                         </div>
                                         <div className="ml-auto">
                                             <div className={`w-5 h-5 rounded-full border-2 ${
-                                                identityChoice === 'separate' ? 'border-[#8B5CF6] bg-[#8B5CF6]' : 'border-white/30'
+                                                identityChoice === 'separate' ? 'border-[#B8942D] bg-[#B8942D]' : 'border-white/30'
                                             } flex items-center justify-center`}>
                                                 {identityChoice === 'separate' && (
                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
@@ -229,7 +229,7 @@ export function JoinCommunityModal() {
                                         }
                                     }}
                                     disabled={!identityChoice || saving}
-                                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
+                                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
                                 >
                                     {saving ? 'Joining...' : identityChoice === 'same' ? 'Join Community' : 'Set Up Profile'}
                                 </button>
@@ -255,7 +255,7 @@ export function JoinCommunityModal() {
                                         value={publicDisplayName}
                                         onChange={(e) => setPublicDisplayName(e.target.value)}
                                         placeholder="e.g. Night Owl, Desert Rose"
-                                        className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-white/30 focus:border-[#00D4FF]/50 focus:outline-none transition-colors"
+                                        className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-white/30 focus:border-[#D4AF37]/50 focus:outline-none transition-colors"
                                         maxLength={50}
                                     />
                                 </div>
@@ -268,7 +268,7 @@ export function JoinCommunityModal() {
                                             value={publicUsername}
                                             onChange={(e) => setPublicUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                                             placeholder="public_username"
-                                            className="w-full pl-9 pr-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-white/30 focus:border-[#00D4FF]/50 focus:outline-none transition-colors"
+                                            className="w-full pl-9 pr-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-white/30 focus:border-[#D4AF37]/50 focus:outline-none transition-colors"
                                             maxLength={30}
                                         />
                                     </div>
@@ -280,7 +280,7 @@ export function JoinCommunityModal() {
                                         onChange={(e) => setPublicBio(e.target.value)}
                                         placeholder="A short bio for the community..."
                                         rows={2}
-                                        className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-white/30 focus:border-[#00D4FF]/50 focus:outline-none transition-colors resize-none"
+                                        className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-white/30 focus:border-[#D4AF37]/50 focus:outline-none transition-colors resize-none"
                                         maxLength={300}
                                     />
                                 </div>
@@ -305,7 +305,7 @@ export function JoinCommunityModal() {
                                 <button
                                     onClick={handleJoinWithPublicProfile}
                                     disabled={!publicDisplayName.trim() || !publicUsername.trim() || saving}
-                                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
+                                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
                                 >
                                     {saving ? 'Setting up...' : 'Join Community'}
                                 </button>

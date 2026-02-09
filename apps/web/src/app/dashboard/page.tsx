@@ -120,7 +120,7 @@ export default function DashboardPage() {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
                     <p className="text-white/30 text-sm">Loading...</p>
                 </div>
             </div>
@@ -131,9 +131,9 @@ export default function DashboardPage() {
         <main className="min-h-screen bg-black text-white">
             {/* Background - z-[-1] ensures it renders BEHIND content */}
             <div className="fixed inset-0 pointer-events-none z-[-1]">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#0A1628] via-black to-black" />
-                <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-[#00D4FF]/5 blur-[120px]" />
-                <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#8B5CF6]/5 blur-[100px]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0F] via-black to-black" />
+                <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-[#D4AF37]/5 blur-[120px]" />
+                <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#B8942D]/5 blur-[100px]" />
             </div>
 
             {/* Navigation */}
@@ -147,7 +147,7 @@ export default function DashboardPage() {
                     style={{ height: pullDistance > 0 ? pullDistance : 0 }}
                 >
                     <div className={`flex items-center gap-2 ${isRefreshing ? 'animate-pulse' : ''}`}>
-                        <div className={`w-5 h-5 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full ${isRefreshing ? 'animate-spin' : ''}`}
+                        <div className={`w-5 h-5 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full ${isRefreshing ? 'animate-spin' : ''}`}
                             style={{ transform: `rotate(${pullDistance * 3}deg)` }}
                         />
                         <span className="text-xs text-white/40">
@@ -184,10 +184,10 @@ export default function DashboardPage() {
                                         <img
                                             src={user.avatarUrl}
                                             alt={user.displayName || 'Profile'}
-                                            className="w-10 h-10 rounded-full object-cover ring-2 ring-[#00D4FF]/30"
+                                            className="w-10 h-10 rounded-full object-cover ring-2 ring-[#D4AF37]/30"
                                         />
                                     ) : (
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-black font-bold">
                                             {user.displayName?.[0] || 'U'}
                                         </div>
                                     )}
@@ -243,7 +243,7 @@ export default function DashboardPage() {
                                 {feedView === 'community' && (
                                     <motion.div
                                         layoutId="feedViewToggle"
-                                        className="absolute inset-0 bg-gradient-to-r from-[#00D4FF]/20 to-[#8B5CF6]/20 border border-[#00D4FF]/30 rounded-full"
+                                        className="absolute inset-0 bg-gradient-to-r from-[#D4AF37]/20 to-[#B8942D]/20 border border-[#D4AF37]/30 rounded-full"
                                         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                     />
                                 )}
@@ -253,7 +253,7 @@ export default function DashboardPage() {
                                     </svg>
                                     Community
                                     {!communityOptIn && (
-                                        <span className="text-[10px] bg-[#00D4FF]/20 text-[#00D4FF] px-1.5 py-0.5 rounded-full ml-1">Join</span>
+                                        <span className="text-[10px] bg-[#D4AF37]/20 text-[#D4AF37] px-1.5 py-0.5 rounded-full ml-1">Join</span>
                                     )}
                                 </span>
                             </button>
@@ -263,7 +263,7 @@ export default function DashboardPage() {
                         <div className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full ${
                             feedView === 'private'
                                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/20'
+                                : 'bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20'
                         }`}>
                             {feedView === 'private' ? (
                                 <>
@@ -290,7 +290,7 @@ export default function DashboardPage() {
                     {posts.length === 0 && !postsLoading && (
                         <div className="space-y-4 py-4">
                             {/* Welcome card */}
-                            <div className="bg-gradient-to-br from-[#00D4FF]/10 via-[#8B5CF6]/5 to-transparent rounded-2xl border border-[#00D4FF]/20 p-6 text-center">
+                            <div className="bg-gradient-to-br from-[#D4AF37]/10 via-[#B8942D]/5 to-transparent rounded-2xl border border-[#D4AF37]/20 p-6 text-center">
                                 <h3 className="text-xl font-bold text-white mb-2">Welcome to 0G</h3>
                                 <p className="text-white/50 text-sm mb-5 max-w-md mx-auto">
                                     Your feed is empty because you&apos;re early! Create your first post, explore communities, or invite friends to get started.
@@ -298,7 +298,7 @@ export default function DashboardPage() {
                                 <div className="flex flex-wrap justify-center gap-3">
                                     <Link
                                         href="/create"
-                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold text-sm hover:opacity-90 transition-opacity"
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold text-sm hover:opacity-90 transition-opacity"
                                     >
                                         <PlusIcon size={16} />
                                         Create Post
@@ -316,22 +316,22 @@ export default function DashboardPage() {
                             <div className="grid grid-cols-2 gap-3">
                                 <Link href="/search" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
                                     <div className="mb-2 text-white/30"><svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
-                                    <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Explore</h4>
+                                    <h4 className="text-sm font-semibold text-white group-hover:text-[#D4AF37] transition-colors">Explore</h4>
                                     <p className="text-xs text-white/40 mt-0.5">Discover people &amp; content</p>
                                 </Link>
                                 <Link href="/bulletin" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
                                     <div className="mb-2 text-white/30"><svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
-                                    <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Bulletin Board</h4>
+                                    <h4 className="text-sm font-semibold text-white group-hover:text-[#D4AF37] transition-colors">Bulletin Board</h4>
                                     <p className="text-xs text-white/40 mt-0.5">Events, jobs &amp; more</p>
                                 </Link>
                                 <Link href="/communities/create" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
                                     <div className="mb-2 text-white/30"><svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div>
-                                    <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Create a Group</h4>
+                                    <h4 className="text-sm font-semibold text-white group-hover:text-[#D4AF37] transition-colors">Create a Group</h4>
                                     <p className="text-xs text-white/40 mt-0.5">Bring your people here</p>
                                 </Link>
                                 <Link href="/invite" className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group">
                                     <div className="mb-2 text-white/30"><svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
-                                    <h4 className="text-sm font-semibold text-white group-hover:text-[#00D4FF] transition-colors">Invite Friends</h4>
+                                    <h4 className="text-sm font-semibold text-white group-hover:text-[#D4AF37] transition-colors">Invite Friends</h4>
                                     <p className="text-xs text-white/40 mt-0.5">Share invite links</p>
                                 </Link>
                             </div>
@@ -371,7 +371,7 @@ export default function DashboardPage() {
                                         <p className="text-white/50 mb-4">Share your first moment with the community!</p>
                                         <button
                                             onClick={() => router.push('/create')}
-                                            className="px-6 py-2.5 rounded-xl bg-[#00D4FF] text-black font-semibold text-sm hover:opacity-90 transition-opacity"
+                                            className="px-6 py-2.5 rounded-xl bg-[#D4AF37] text-black font-semibold text-sm hover:opacity-90 transition-opacity"
                                         >
                                             Create Post
                                         </button>
@@ -402,8 +402,8 @@ export default function DashboardPage() {
                                 {hasMore && (
                                     <div ref={loadMoreRef} className="py-8 flex justify-center">
                                         <div onClick={loadMore} className="flex flex-col items-center gap-2 cursor-pointer group">
-                                            <div className="w-8 h-8 rounded-full border-2 border-[#00D4FF]/30 border-t-[#00D4FF] animate-spin" />
-                                            <span className="text-xs text-white/40 group-hover:text-[#00D4FF] transition-colors">Loading more...</span>
+                                            <div className="w-8 h-8 rounded-full border-2 border-[#D4AF37]/30 border-t-[#D4AF37] animate-spin" />
+                                            <span className="text-xs text-white/40 group-hover:text-[#D4AF37] transition-colors">Loading more...</span>
                                         </div>
                                     </div>
                                 )}
@@ -429,7 +429,7 @@ export default function DashboardPage() {
                             <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="text-sm font-semibold text-white">People to Follow</h3>
-                                    <Link href="/search" className="text-xs text-[#00D4FF] hover:underline">See All</Link>
+                                    <Link href="/search" className="text-xs text-[#D4AF37] hover:underline">See All</Link>
                                 </div>
                                 <PeopleToFollow currentUserId={user?.id} />
                             </div>
@@ -440,14 +440,14 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Invite Card */}
-                            <div className="bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 rounded-2xl border border-[#00D4FF]/20 p-4">
+                            <div className="bg-gradient-to-br from-[#D4AF37]/10 to-[#B8942D]/10 rounded-2xl border border-[#D4AF37]/20 p-4">
                                 <h3 className="text-sm font-semibold text-white mb-1">Invite Your People</h3>
                                 <p className="text-xs text-white/50 mb-3">
                                     0G is better with your community.
                                 </p>
                                 <Link
                                     href="/invite"
-                                    className="block w-full py-2 rounded-xl bg-[#00D4FF] text-black text-center font-semibold text-sm hover:opacity-90 transition-opacity"
+                                    className="block w-full py-2 rounded-xl bg-[#D4AF37] text-black text-center font-semibold text-sm hover:opacity-90 transition-opacity"
                                 >
                                     Send Invites
                                 </Link>

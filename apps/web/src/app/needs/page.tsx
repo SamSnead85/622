@@ -28,9 +28,9 @@ interface BulletinPost {
 }
 
 const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-    ANNOUNCEMENT: { label: 'Announcement', color: '#00D4FF', bg: 'rgba(0,212,255,0.08)' },
+    ANNOUNCEMENT: { label: 'Announcement', color: '#D4AF37', bg: 'rgba(0,212,255,0.08)' },
     NEED: { label: 'Community Need', color: '#F472B6', bg: 'rgba(244,114,182,0.08)' },
-    EVENT: { label: 'Event', color: '#A78BFA', bg: 'rgba(167,139,250,0.08)' },
+    EVENT: { label: 'Event', color: '#E5C158', bg: 'rgba(167,139,250,0.08)' },
     JOB: { label: 'Job / Gig', color: '#38BDF8', bg: 'rgba(56,189,248,0.08)' },
     SERVICE: { label: 'Service', color: '#FBBF24', bg: 'rgba(251,191,36,0.08)' },
     CALL_TO_ACTION: { label: 'Call to Action', color: '#F87171', bg: 'rgba(248,113,113,0.08)' },
@@ -95,8 +95,8 @@ export default function PublicNeedsPage() {
                 <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Link href="/" className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-[#00D4FF]/10 border border-[#00D4FF]/20 flex items-center justify-center">
-                                <span className="text-xs font-bold text-[#00D4FF]">0G</span>
+                            <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center">
+                                <span className="text-xs font-bold text-[#D4AF37]">0G</span>
                             </div>
                         </Link>
                         <div className="h-5 w-px bg-white/10" />
@@ -105,7 +105,7 @@ export default function PublicNeedsPage() {
                     <div className="flex items-center gap-3">
                         <Link
                             href="/early-access"
-                            className="px-4 py-2 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/20 text-xs font-medium text-[#00D4FF] hover:bg-[#00D4FF]/15 transition-colors"
+                            className="px-4 py-2 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-xs font-medium text-[#D4AF37] hover:bg-[#D4AF37]/15 transition-colors"
                         >
                             Request Early Access
                         </Link>
@@ -116,8 +116,8 @@ export default function PublicNeedsPage() {
             {/* Hero */}
             <div className="relative overflow-hidden border-b border-white/[0.04]">
                 <div className="absolute inset-0">
-                    <div className="absolute top-0 left-1/3 w-96 h-64 rounded-full blur-[120px] opacity-5 bg-[#00D4FF]" />
-                    <div className="absolute bottom-0 right-1/3 w-64 h-48 rounded-full blur-[100px] opacity-5 bg-[#8B5CF6]" />
+                    <div className="absolute top-0 left-1/3 w-96 h-64 rounded-full blur-[120px] opacity-5 bg-[#D4AF37]" />
+                    <div className="absolute bottom-0 right-1/3 w-64 h-48 rounded-full blur-[100px] opacity-5 bg-[#B8942D]" />
                 </div>
                 <div className="relative max-w-5xl mx-auto px-4 pt-10 sm:pt-16 pb-10">
                     <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-3">Community Needs Board</h2>
@@ -196,7 +196,7 @@ export default function PublicNeedsPage() {
                         </div>
                         <p className="text-white/40 text-sm mb-2">No posts yet</p>
                         <p className="text-white/20 text-xs">Be the first to post a community need.</p>
-                        <Link href="/early-access" className="inline-block mt-4 px-5 py-2 rounded-xl bg-[#00D4FF]/10 text-[#00D4FF] text-xs font-medium hover:bg-[#00D4FF]/15 transition-colors">
+                        <Link href="/early-access" className="inline-block mt-4 px-5 py-2 rounded-xl bg-[#D4AF37]/10 text-[#D4AF37] text-xs font-medium hover:bg-[#D4AF37]/15 transition-colors">
                             Get Early Access to Post
                         </Link>
                     </div>
@@ -277,7 +277,7 @@ export default function PublicNeedsPage() {
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 onClick={e => e.stopPropagation()}
-                                                className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-lg bg-[#00D4FF]/10 text-[#00D4FF] text-[10px] font-medium hover:bg-[#00D4FF]/15 transition-colors"
+                                                className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-lg bg-[#D4AF37]/10 text-[#D4AF37] text-[10px] font-medium hover:bg-[#D4AF37]/15 transition-colors"
                                             >
                                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
                                                 Visit Link
@@ -330,7 +330,7 @@ export default function PublicNeedsPage() {
                     <div className="flex gap-3 justify-center">
                         <Link
                             href="/early-access"
-                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#00D4FF]/80 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#D4AF37]/80 text-sm font-medium text-white hover:opacity-90 transition-opacity"
                         >
                             Request Early Access
                         </Link>

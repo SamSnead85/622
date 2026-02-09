@@ -108,7 +108,7 @@ export function PostActions({ postId, isOwner, isPinned, onDelete, onPin, onRepo
                     e.stopPropagation();
                     setIsOpen(!isOpen);
                 }}
-                className="p-2 rounded-full hover:bg-[#00D4FF]/10 transition-all duration-200 hover:scale-110 group-hover:bg-white/5"
+                className="p-2 rounded-full hover:bg-[#D4AF37]/10 transition-all duration-200 hover:scale-110 group-hover:bg-white/5"
                 aria-label="Post options"
             >
                 <MoreHorizontalIcon className="text-white/60 group-hover:text-white/80" />
@@ -172,7 +172,7 @@ export function PostActions({ postId, isOwner, isPinned, onDelete, onPin, onRepo
                                         onPin(postId);
                                         setIsOpen(false);
                                     }}
-                                    className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-3 border-t border-white/10 ${isPinned ? 'text-[#00D4FF]' : 'text-white hover:bg-white/5'}`}
+                                    className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-3 border-t border-white/10 ${isPinned ? 'text-[#D4AF37]' : 'text-white hover:bg-white/5'}`}
                                 >
                                     <MapPinIcon size={18} />
                                     <span>{isPinned ? 'Unpin from top' : 'Pin to top'}</span>
@@ -265,7 +265,7 @@ export function PostActions({ postId, isOwner, isPinned, onDelete, onPin, onRepo
                                     {/* Text Post */}
                                     {postType === 'TEXT' && !mediaUrl && (
                                         <div className="p-6 text-center">
-                                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 flex items-center justify-center mx-auto mb-3">
+                                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#B8942D]/20 flex items-center justify-center mx-auto mb-3">
                                                 <span className="text-2xl">📝</span>
                                             </div>
                                             <p className="text-sm text-white/70 line-clamp-4">
@@ -434,7 +434,7 @@ export function VideoUrlInput({ value, onChange, onValidUrl }: VideoUrlInputProp
                         ? 'border-green-500/50 focus:border-green-500'
                         : isValid === false
                             ? 'border-red-500/50 focus:border-red-500'
-                            : 'border-white/10 focus:border-[#00D4FF]/50'
+                            : 'border-white/10 focus:border-[#D4AF37]/50'
                         }`}
                 />
                 {isValid !== null && (

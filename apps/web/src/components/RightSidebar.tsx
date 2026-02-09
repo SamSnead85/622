@@ -126,7 +126,7 @@ export function RightSidebar() {
                                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleFollow(u.id); }}
                                         className={`text-xs font-semibold px-4 py-1.5 rounded-full transition-all duration-200 min-h-[32px] active:scale-95 ${u.isFollowing
                                                 ? 'bg-white/10 text-white/70 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 border border-white/10'
-                                                : 'bg-[#00D4FF] text-black hover:bg-[#00D4FF]/80 hover:shadow-[0_0_12px_rgba(0,212,255,0.3)]'
+                                                : 'bg-[#D4AF37] text-black hover:bg-[#D4AF37]/80 hover:shadow-[0_0_12px_rgba(0,212,255,0.3)]'
                                             }`}
                                     >
                                         {u.isFollowing ? 'Following' : 'Follow'}

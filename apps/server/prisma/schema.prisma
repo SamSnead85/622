@@ -104,6 +104,10 @@ model User {
   publicAvatarUrl            String?                   // Avatar shown in community feed (if usePublicProfile)
   publicBio                  String?                   // Bio shown in community feed (if usePublicProfile)
 
+  // ── Cultural Profile System ──
+  culturalProfile            String                    @default("standard") // standard | muslim | custom
+  customGreeting             String?                   // User-defined greeting (for "custom" profile)
+
   @@index([username])
   @@index([email])
   @@index([communityOptIn])

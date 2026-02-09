@@ -52,7 +52,7 @@ interface MiniChartProps {
     color?: string;
 }
 
-export function MiniChart({ data, height = 40, color = '#00D4FF' }: MiniChartProps) {
+export function MiniChart({ data, height = 40, color = '#D4AF37' }: MiniChartProps) {
     const max = Math.max(...data);
     const min = Math.min(...data);
     const range = max - min || 1;
@@ -243,7 +243,7 @@ export function SkipLink() {
     return (
         <a
             href="#main-content"
-            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[#00D4FF] focus:text-black focus:font-semibold"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[#D4AF37] focus:text-black focus:font-semibold"
         >
             Skip to main content
         </a>

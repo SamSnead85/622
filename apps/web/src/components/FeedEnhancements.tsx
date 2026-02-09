@@ -79,7 +79,7 @@ export const EnhancedPostCard = memo(function EnhancedPostCard({
     priority = 'medium'
 }: EnhancedPostCardProps) {
     const priorityStyles = {
-        high: 'border-[#00D4FF]/30 bg-gradient-to-br from-[#00D4FF]/5 to-transparent',
+        high: 'border-[#D4AF37]/30 bg-gradient-to-br from-[#D4AF37]/5 to-transparent',
         medium: 'border-white/5 bg-white/[0.02]',
         low: 'border-white/5 bg-transparent'
     };
@@ -198,7 +198,7 @@ export function AdvancedVideoPlayer({
                 <div className="absolute bottom-16 left-4 right-4">
                     <div className="h-1 bg-white/20 rounded-full overflow-hidden">
                         <div className="absolute h-full bg-white/30" style={{ width: `${buffered}%` }} />
-                        <div className="relative h-full bg-[#00D4FF]" style={{ width: `${progress}%` }} />
+                        <div className="relative h-full bg-[#D4AF37]" style={{ width: `${progress}%` }} />
                     </div>
                 </div>
 
@@ -317,7 +317,7 @@ export const CommentThread = memo(function CommentThread({
                 <div className="absolute left-[-12px] top-0 bottom-0 w-px bg-white/10" />
             )}
             <div className="flex gap-3 py-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex-shrink-0" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                         <span className="font-medium text-white text-sm">{comment.author.displayName}</span>
@@ -339,7 +339,7 @@ export const CommentThread = memo(function CommentThread({
             {comment.replies.length > 0 && (
                 <>
                     {!showReplies ? (
-                        <button onClick={() => setShowReplies(true)} className="text-xs text-[#00D4FF] ml-11 py-1">
+                        <button onClick={() => setShowReplies(true)} className="text-xs text-[#D4AF37] ml-11 py-1">
                             View {comment.replies.length} replies
                         </button>
                     ) : (

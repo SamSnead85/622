@@ -116,7 +116,7 @@ interface ConfettiPiece {
     delay: number;
 }
 
-const CONFETTI_COLORS = ['#8B5CF6', '#F43F5E', '#F59E0B', '#10B981', '#06B6D4', '#D4AF37'];
+const CONFETTI_COLORS = ['#B8942D', '#F43F5E', '#F59E0B', '#10B981', '#06B6D4', '#D4AF37'];
 
 export function ConfettiBurst({ trigger, count = 50 }: { trigger: boolean; count?: number }) {
     const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
@@ -256,7 +256,7 @@ export function GlowCursor() {
                 top: cursorYSpring,
                 x: '-50%',
                 y: '-50%',
-                background: 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 60%)',
+                background: 'radial-gradient(circle, rgba(184, 148, 45, 0.15) 0%, transparent 60%)',
             }}
         />
     );

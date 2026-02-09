@@ -89,7 +89,7 @@ export default function CompleteSignupPage() {
                         <div className="space-y-2.5">
                             <button
                                 onClick={() => router.push('/onboarding')}
-                                className="w-full py-3 rounded-xl bg-[#00D4FF] text-sm font-semibold text-white hover:bg-[#00D4FF]/90 transition-all"
+                                className="w-full py-3 rounded-xl bg-[#D4AF37] text-sm font-semibold text-white hover:bg-[#D4AF37]/90 transition-all"
                             >
                                 Set Up Your Profile
                             </button>
@@ -110,15 +110,15 @@ export default function CompleteSignupPage() {
         <div className="min-h-screen bg-[#0A0A0C] text-white">
             {/* Subtle background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-1/4 left-1/3 w-96 h-96 rounded-full blur-[150px] opacity-5 bg-[#00D4FF]" />
-                <div className="absolute bottom-1/4 right-1/3 w-64 h-64 rounded-full blur-[120px] opacity-5 bg-[#8B5CF6]" />
+                <div className="absolute top-1/4 left-1/3 w-96 h-96 rounded-full blur-[150px] opacity-5 bg-[#D4AF37]" />
+                <div className="absolute bottom-1/4 right-1/3 w-64 h-64 rounded-full blur-[120px] opacity-5 bg-[#B8942D]" />
             </div>
 
             {/* Header */}
             <header className="relative z-10 flex items-center justify-between px-4 py-4 max-w-lg mx-auto">
                 <Link href="/" className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-[#00D4FF]/10 border border-[#00D4FF]/20 flex items-center justify-center">
-                        <span className="text-xs font-bold text-[#00D4FF]">0G</span>
+                    <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center">
+                        <span className="text-xs font-bold text-[#D4AF37]">0G</span>
                     </div>
                 </Link>
             </header>
@@ -190,7 +190,7 @@ export default function CompleteSignupPage() {
                         <button
                             type="submit"
                             disabled={submitting || !email || !password}
-                            className="w-full py-3.5 rounded-xl bg-[#00D4FF] text-sm font-semibold text-white hover:bg-[#00D4FF]/90 transition-all disabled:opacity-40"
+                            className="w-full py-3.5 rounded-xl bg-[#D4AF37] text-sm font-semibold text-white hover:bg-[#D4AF37]/90 transition-all disabled:opacity-40"
                         >
                             {submitting ? 'Setting up...' : 'Complete Signup'}
                         </button>

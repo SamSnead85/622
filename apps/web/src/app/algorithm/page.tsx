@@ -166,7 +166,7 @@ function NeuralDial({ weight, onChange, showAI = true }: {
                             />
                             <defs>
                                 <linearGradient id="dial-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stopColor="#8B5CF6" />
+                                    <stop offset="0%" stopColor="#B8942D" />
                                     <stop offset="100%" stopColor="#06B6D4" />
                                 </linearGradient>
                             </defs>

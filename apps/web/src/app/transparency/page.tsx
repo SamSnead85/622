@@ -217,7 +217,7 @@ export default function TransparencyPage() {
                             </Link>
                             <Link
                                 href="/settings"
-                                className="flex-1 py-3 rounded-2xl bg-[#00D4FF]/20 text-[#00D4FF] text-center text-sm font-medium hover:bg-[#00D4FF]/30 transition-colors"
+                                className="flex-1 py-3 rounded-2xl bg-[#D4AF37]/20 text-[#D4AF37] text-center text-sm font-medium hover:bg-[#D4AF37]/30 transition-colors"
                             >
                                 Improve My Score
                             </Link>

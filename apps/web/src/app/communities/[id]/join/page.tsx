@@ -164,7 +164,7 @@ export default function CommunityJoinPage() {
     };
 
     // ---- Derived values ----
-    const brandColor = community?.brandColor || '#00D4FF';
+    const brandColor = community?.brandColor || '#D4AF37';
     const isContained = community?.category ? ['family', 'friends'].includes(community.category) : false;
     const categoryLabel: Record<string, string> = {
         family: 'Family Group', friends: 'Friends Circle', business: 'Organization',
@@ -186,7 +186,7 @@ export default function CommunityJoinPage() {
             <div className="min-h-screen bg-black flex items-center justify-center px-4">
                 <div className="text-center">
                     <p className="text-white/50 text-lg mb-4">{error}</p>
-                    <Link href="/signup" className="text-[#00D4FF] hover:underline">Join 0G instead →</Link>
+                    <Link href="/signup" className="text-[#D4AF37] hover:underline">Join 0G instead →</Link>
                 </div>
             </div>
         );

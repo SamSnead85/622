@@ -133,7 +133,7 @@ export default function CommunityAdminSettings() {
                 isPublic: c.isPublic ?? true,
                 memberCount: c.membersCount ?? c.memberCount ?? 0,
                 postCount: c.postsCount ?? c.postCount ?? 0,
-                brandColor: c.brandColor || '#00D4FF',
+                brandColor: c.brandColor || '#D4AF37',
                 tagline: c.tagline || '',
                 logoUrl: c.logoUrl,
                 category: c.category || '',
@@ -346,7 +346,7 @@ export default function CommunityAdminSettings() {
             <NavigationSidebar />
             <div className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#0A1628] via-black to-black" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0F] via-black to-black" />
             </div>
 
             {/* Header */}
@@ -456,7 +456,7 @@ export default function CommunityAdminSettings() {
                                             {settings.coverUrl ? (
                                                 <img src={settings.coverUrl} alt="" className="w-full h-full object-cover" />
                                             ) : (
-                                                <div className="w-full h-full bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 flex items-center justify-center">
+                                                <div className="w-full h-full bg-gradient-to-br from-[#D4AF37]/20 to-[#B8942D]/20 flex items-center justify-center">
                                                     <span className="text-white/20 text-sm">No cover image</span>
                                                 </div>
                                             )}
@@ -622,7 +622,7 @@ export default function CommunityAdminSettings() {
                                                 {member.user.avatarUrl ? (
                                                     <img src={member.user.avatarUrl} alt="" className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
                                                 ) : (
-                                                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold flex-shrink-0 text-sm">
+                                                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-black font-bold flex-shrink-0 text-sm">
                                                         {(member.user.displayName || member.user.username)[0]?.toUpperCase()}
                                                     </div>
                                                 )}
@@ -980,7 +980,7 @@ export default function CommunityAdminSettings() {
                                         <h3 className="font-medium mb-1">Brand Color</h3>
                                         <p className="text-sm text-white/40 mb-4">Used on invite pages, badges, and accent elements</p>
                                         <div className="flex flex-wrap gap-3">
-                                            {['#00D4FF', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#6366F1', '#14B8A6', '#F97316', '#84CC16'].map(color => (
+                                            {['#D4AF37', '#B8942D', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#6366F1', '#14B8A6', '#F97316', '#84CC16'].map(color => (
                                                 <button
                                                     key={color}
                                                     onClick={() => setSettings({ ...settings, brandColor: color })}
@@ -993,7 +993,7 @@ export default function CommunityAdminSettings() {
                                             <div className="relative">
                                                 <input
                                                     type="color"
-                                                    value={settings.brandColor || '#00D4FF'}
+                                                    value={settings.brandColor || '#D4AF37'}
                                                     onChange={(e) => setSettings({ ...settings, brandColor: e.target.value })}
                                                     className="w-10 h-10 rounded-xl cursor-pointer border-2 border-dashed border-white/20"
                                                 />

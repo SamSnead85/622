@@ -62,7 +62,7 @@ function ConfettiCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        const colors = ['#00D4FF', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#FFFFFF'];
+        const colors = ['#D4AF37', '#B8942D', '#EC4899', '#10B981', '#F59E0B', '#FFFFFF'];
         const particles: Array<{
             x: number; y: number; vx: number; vy: number;
             size: number; color: string; rotation: number; rotSpeed: number;
@@ -201,11 +201,11 @@ function AnimatedShield({ score }: { score: number }) {
                 <defs>
                     <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#10B981" />
-                        <stop offset="100%" stopColor="#00D4FF" />
+                        <stop offset="100%" stopColor="#D4AF37" />
                     </linearGradient>
                     <linearGradient id="shieldFill" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#10B981" />
-                        <stop offset="100%" stopColor="#00D4FF" />
+                        <stop offset="100%" stopColor="#D4AF37" />
                     </linearGradient>
                 </defs>
             </svg>
@@ -302,7 +302,7 @@ function PrivacyCard({
                 >
                     <motion.div
                         className="h-full rounded-full"
-                        style={{ background: `linear-gradient(90deg, ${accent}, #00D4FF)` }}
+                        style={{ background: `linear-gradient(90deg, ${accent}, #D4AF37)` }}
                         initial={{ width: '0%' }}
                         animate={{ width: enabled ? '100%' : '0%' }}
                         transition={{ duration: 0.8, ease: smoothEase }}
@@ -325,7 +325,7 @@ function FloatingParticles() {
             size: Math.random() * 2.5 + 0.5,
             duration: Math.random() * 25 + 20,
             delay: Math.random() * -20,
-            color: ['#00D4FF', '#8B5CF6', '#EC4899'][Math.floor(Math.random() * 3)],
+            color: ['#D4AF37', '#B8942D', '#EC4899'][Math.floor(Math.random() * 3)],
         })),
     []);
 
@@ -712,7 +712,7 @@ export default function OnboardingPage() {
         return (
             <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center">
                 <motion.div
-                    className="w-10 h-10 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full"
+                    className="w-10 h-10 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full"
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                 />
@@ -769,9 +769,9 @@ export default function OnboardingPage() {
                                         <div
                                             className={`h-2 rounded-full transition-colors duration-500 ${
                                                 i < currentStep
-                                                    ? 'bg-[#00D4FF]'
+                                                    ? 'bg-[#D4AF37]'
                                                     : i === currentStep
-                                                      ? 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6]'
+                                                      ? 'bg-gradient-to-r from-[#D4AF37] to-[#B8942D]'
                                                       : 'bg-white/10'
                                             }`}
                                             style={{
@@ -835,7 +835,7 @@ export default function OnboardingPage() {
                                             transition={{ delay: 0.1 }}
                                         >
                                             <motion.div
-                                                className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 border border-white/[0.06] flex items-center justify-center backdrop-blur-sm"
+                                                className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#B8942D]/20 border border-white/[0.06] flex items-center justify-center backdrop-blur-sm"
                                                 animate={{ scale: [1, 1.05, 1] }}
                                                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                                             >
@@ -845,8 +845,8 @@ export default function OnboardingPage() {
                                                     <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
                                                     <defs>
                                                         <linearGradient id="interestGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                            <stop offset="0%" stopColor="#00D4FF" />
-                                                            <stop offset="100%" stopColor="#8B5CF6" />
+                                                            <stop offset="0%" stopColor="#D4AF37" />
+                                                            <stop offset="100%" stopColor="#B8942D" />
                                                         </linearGradient>
                                                     </defs>
                                                 </svg>
@@ -863,7 +863,7 @@ export default function OnboardingPage() {
                                                 className="inline-flex items-center gap-2 mt-6 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03]"
                                                 animate={selectedTopics.size >= 3 ? { borderColor: 'rgba(0,212,255,0.3)', background: 'rgba(0,212,255,0.05)' } : {}}
                                             >
-                                                <span className={`text-sm font-medium ${selectedTopics.size >= 3 ? 'text-[#00D4FF]' : 'text-white/40'}`}>
+                                                <span className={`text-sm font-medium ${selectedTopics.size >= 3 ? 'text-[#D4AF37]' : 'text-white/40'}`}>
                                                     {selectedTopics.size === 0
                                                         ? 'Select at least 3'
                                                         : `${selectedTopics.size} selected`}
@@ -872,7 +872,7 @@ export default function OnboardingPage() {
                                                     <motion.div
                                                         initial={{ scale: 0 }}
                                                         animate={{ scale: 1 }}
-                                                        className="w-5 h-5 rounded-full bg-[#00D4FF] flex items-center justify-center"
+                                                        className="w-5 h-5 rounded-full bg-[#D4AF37] flex items-center justify-center"
                                                     >
                                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                                             <path d="M20 6L9 17l-5-5" />
@@ -919,11 +919,11 @@ export default function OnboardingPage() {
                                                             <div
                                                                 className={`relative overflow-hidden rounded-2xl p-5 h-full transition-all duration-500 border backdrop-blur-sm ${
                                                                     isSelected
-                                                                        ? 'border-[#00D4FF]/40 bg-[#00D4FF]/[0.06]'
+                                                                        ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]'
                                                                         : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10'
                                                                 }`}
                                                                 style={isSelected ? {
-                                                                    boxShadow: `0 0 40px ${topic.color || '#00D4FF'}20, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                                                                    boxShadow: `0 0 40px ${topic.color || '#D4AF37'}20, inset 0 1px 0 rgba(255,255,255,0.06)`,
                                                                 } : {
                                                                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
                                                                 }}
@@ -932,7 +932,7 @@ export default function OnboardingPage() {
                                                                 <motion.div
                                                                     className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 transition-colors duration-500 ${
                                                                         isSelected
-                                                                            ? 'bg-[#00D4FF]/15 text-[#00D4FF]'
+                                                                            ? 'bg-[#D4AF37]/15 text-[#D4AF37]'
                                                                             : 'bg-white/[0.04] text-white/50 group-hover:text-white/70'
                                                                     }`}
                                                                     animate={isSelected ? { scale: [1, 1.1, 1] } : {}}
@@ -966,7 +966,7 @@ export default function OnboardingPage() {
                                                                             animate={{ scale: 1 }}
                                                                             exit={{ scale: 0 }}
                                                                             transition={spring}
-                                                                            className="absolute top-3 right-3 w-6 h-6 rounded-full bg-[#00D4FF] flex items-center justify-center"
+                                                                            className="absolute top-3 right-3 w-6 h-6 rounded-full bg-[#D4AF37] flex items-center justify-center"
                                                                         >
                                                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                                                                 <path d="M20 6L9 17l-5-5" />
@@ -1077,7 +1077,7 @@ export default function OnboardingPage() {
                                             transition={{ delay: 0.1 }}
                                         >
                                             <motion.div
-                                                className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-[#8B5CF6]/20 to-[#EC4899]/20 border border-white/[0.06] flex items-center justify-center backdrop-blur-sm"
+                                                className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-[#B8942D]/20 to-[#EC4899]/20 border border-white/[0.06] flex items-center justify-center backdrop-blur-sm"
                                                 animate={{ scale: [1, 1.05, 1] }}
                                                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                                             >
@@ -1088,7 +1088,7 @@ export default function OnboardingPage() {
                                                     <path d="M16 3.13a4 4 0 010 7.75" />
                                                     <defs>
                                                         <linearGradient id="peopleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                            <stop offset="0%" stopColor="#8B5CF6" />
+                                                            <stop offset="0%" stopColor="#B8942D" />
                                                             <stop offset="100%" stopColor="#EC4899" />
                                                         </linearGradient>
                                                     </defs>
@@ -1104,7 +1104,7 @@ export default function OnboardingPage() {
                                                 <motion.p
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 1 }}
-                                                    className="text-[#8B5CF6] text-sm font-medium mt-4"
+                                                    className="text-[#B8942D] text-sm font-medium mt-4"
                                                 >
                                                     Following {followedUsers.size} {followedUsers.size === 1 ? 'person' : 'people'}
                                                 </motion.p>
@@ -1147,7 +1147,7 @@ export default function OnboardingPage() {
                                                         >
                                                             <div className={`relative overflow-hidden rounded-2xl p-5 border transition-all duration-500 ${
                                                                 isFollowing
-                                                                    ? 'border-[#8B5CF6]/30 bg-[#8B5CF6]/[0.04]'
+                                                                    ? 'border-[#B8942D]/30 bg-[#B8942D]/[0.04]'
                                                                     : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'
                                                             }`}
                                                             style={{ boxShadow: isFollowing ? '0 0 30px rgba(139,92,246,0.1)' : 'inset 0 1px 0 rgba(255,255,255,0.03)' }}
@@ -1162,7 +1162,7 @@ export default function OnboardingPage() {
                                                                 <div className="relative z-10">
                                                                     {/* Avatar + info */}
                                                                     <div className="flex items-start gap-3 mb-3">
-                                                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#00D4FF] shrink-0 flex items-center justify-center overflow-hidden">
+                                                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#B8942D] to-[#D4AF37] shrink-0 flex items-center justify-center overflow-hidden">
                                                                             {u.avatarUrl ? (
                                                                                 <img
                                                                                     src={u.avatarUrl}
@@ -1204,7 +1204,7 @@ export default function OnboardingPage() {
                                                                             whileTap={{ scale: 0.92 }}
                                                                             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${
                                                                                 isFollowing
-                                                                                    ? 'bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/30'
+                                                                                    ? 'bg-[#B8942D]/20 text-[#B8942D] border border-[#B8942D]/30'
                                                                                     : 'bg-white/10 text-white hover:bg-white/15'
                                                                             }`}
                                                                         >
@@ -1325,12 +1325,12 @@ export default function OnboardingPage() {
                                                     icon={
                                                         e2eGenerating ? (
                                                             <motion.div
-                                                                className="w-6 h-6 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full"
+                                                                className="w-6 h-6 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full"
                                                                 animate={{ rotate: 360 }}
                                                                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                                                             />
                                                         ) : (
-                                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                                                             </svg>
                                                         )
@@ -1343,14 +1343,14 @@ export default function OnboardingPage() {
                                                     enabled={e2eEnabled}
                                                     onToggle={handleE2EToggle}
                                                     points={30}
-                                                    accent="#00D4FF"
+                                                    accent="#D4AF37"
                                                 />
                                             </motion.div>
 
                                             <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}>
                                                 <PrivacyCard
                                                     icon={
-                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B8942D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                                                             <circle cx="12" cy="12" r="3" />
                                                         </svg>
@@ -1360,7 +1360,7 @@ export default function OnboardingPage() {
                                                     enabled={transparencyViewed}
                                                     onToggle={handleTransparencyToggle}
                                                     points={15}
-                                                    accent="#8B5CF6"
+                                                    accent="#B8942D"
                                                 />
                                             </motion.div>
                                         </motion.div>
@@ -1397,7 +1397,7 @@ export default function OnboardingPage() {
                                 <div className="max-w-md mx-auto text-center">
                                     {/* Avatar */}
                                     <motion.div
-                                        className="w-24 h-24 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] mx-auto mb-6 flex items-center justify-center overflow-hidden"
+                                        className="w-24 h-24 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] mx-auto mb-6 flex items-center justify-center overflow-hidden"
                                         initial={{ scale: 0, rotate: -180 }}
                                         animate={{ scale: 1, rotate: 0 }}
                                         transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.3 }}
@@ -1427,7 +1427,7 @@ export default function OnboardingPage() {
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.7 }}
                                     >
-                                        Welcome, <span className="text-[#00D4FF] font-medium">{user?.displayName || user?.username}</span>
+                                        Welcome, <span className="text-[#D4AF37] font-medium">{user?.displayName || user?.username}</span>
                                     </motion.p>
 
                                     {/* Summary stats */}
@@ -1439,13 +1439,13 @@ export default function OnboardingPage() {
                                     >
                                         {selectedTopics.size > 0 && (
                                             <span className="flex items-center gap-1.5">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-[#00D4FF]" />
+                                                <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
                                                 {selectedTopics.size} interests
                                             </span>
                                         )}
                                         {followedUsers.size > 0 && (
                                             <span className="flex items-center gap-1.5">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]" />
+                                                <span className="w-1.5 h-1.5 rounded-full bg-[#B8942D]" />
                                                 Following {followedUsers.size}
                                             </span>
                                         )}
@@ -1464,12 +1464,12 @@ export default function OnboardingPage() {
                                     >
                                         <motion.button
                                             onClick={() => handleFinish('/dashboard')}
-                                            className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold text-lg relative overflow-hidden group"
+                                            className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold text-lg relative overflow-hidden group"
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                         >
                                             <span className="relative z-10">Start Exploring</span>
-                                            <div className="absolute inset-0 bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                            <div className="absolute inset-0 bg-gradient-to-r from-[#B8942D] to-[#D4AF37] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                         </motion.button>
 
                                         <motion.button
@@ -1501,7 +1501,7 @@ export default function OnboardingPage() {
                                 disabled={!canProceed || saving}
                                 className={`w-full py-4 rounded-2xl font-semibold text-lg relative overflow-hidden transition-all duration-500 ${
                                     canProceed
-                                        ? 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black'
+                                        ? 'bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black'
                                         : 'bg-white/5 text-white/25 cursor-not-allowed'
                                 }`}
                                 whileHover={canProceed ? { scale: 1.02 } : {}}

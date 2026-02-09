@@ -440,6 +440,9 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
                     publicUsername: true,
                     publicAvatarUrl: true,
                     publicBio: true,
+                    // Cultural profile
+                    culturalProfile: true,
+                    customGreeting: true,
                     growthPartner: { select: { id: true, status: true, tier: true } },
                     _count: {
                         select: {

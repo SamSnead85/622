@@ -86,7 +86,7 @@ export function SavedCollections({ userId, onCollectionClick }: SavedCollections
                 </h3>
                 <button
                     onClick={() => setShowCreateModal(true)}
-                    className="text-xs px-3 py-1.5 rounded-full bg-[#00D4FF]/10 text-[#00D4FF] hover:bg-[#00D4FF]/20 transition-colors"
+                    className="text-xs px-3 py-1.5 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-colors"
                 >
                     + New
                 </button>
@@ -98,7 +98,7 @@ export function SavedCollections({ userId, onCollectionClick }: SavedCollections
                     <p className="text-white/50 text-sm">No collections yet</p>
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="mt-3 text-[#00D4FF] text-sm hover:underline"
+                        className="mt-3 text-[#D4AF37] text-sm hover:underline"
                     >
                         Create your first collection
                     </button>
@@ -121,7 +121,7 @@ export function SavedCollections({ userId, onCollectionClick }: SavedCollections
                                     className="object-cover"
                                 />
                             ) : (
-                                <div className="absolute inset-0 bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 flex items-center justify-center">
+                                <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/10 to-[#B8942D]/10 flex items-center justify-center">
                                     <span className="text-4xl">{collection.emoji}</span>
                                 </div>
                             )}
@@ -174,7 +174,7 @@ export function SavedCollections({ userId, onCollectionClick }: SavedCollections
                                         value={newCollectionName}
                                         onChange={(e) => setNewCollectionName(e.target.value)}
                                         placeholder="Collection name"
-                                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-[#00D4FF]/50"
+                                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-[#D4AF37]/50"
                                         autoFocus
                                     />
                                 </div>
@@ -184,7 +184,7 @@ export function SavedCollections({ userId, onCollectionClick }: SavedCollections
                                         type="checkbox"
                                         checked={isPrivate}
                                         onChange={(e) => setIsPrivate(e.target.checked)}
-                                        className="w-5 h-5 rounded bg-white/10 border-white/20 text-[#00D4FF]"
+                                        className="w-5 h-5 rounded bg-white/10 border-white/20 text-[#D4AF37]"
                                     />
                                     <span className="text-white/70">Make this collection private</span>
                                 </label>
@@ -200,7 +200,7 @@ export function SavedCollections({ userId, onCollectionClick }: SavedCollections
                                 <button
                                     onClick={createCollection}
                                     disabled={!newCollectionName.trim()}
-                                    className="flex-1 py-3 rounded-xl bg-[#00D4FF] text-black font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                                    className="flex-1 py-3 rounded-xl bg-[#D4AF37] text-black font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                                 >
                                     Create
                                 </button>
@@ -309,7 +309,7 @@ export function ActivityFeed({ activities = [], loading = false, onActivityClick
                 <motion.button
                     key={activity.id}
                     onClick={() => onActivityClick?.(activity)}
-                    className={`w-full flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left ${!activity.isRead ? 'bg-[#00D4FF]/5' : ''
+                    className={`w-full flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left ${!activity.isRead ? 'bg-[#D4AF37]/5' : ''
                         }`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -357,7 +357,7 @@ export function ActivityFeed({ activities = [], loading = false, onActivityClick
                     )}
 
                     {!activity.isRead && (
-                        <div className="w-2 h-2 rounded-full bg-[#00D4FF] flex-shrink-0 mt-2" />
+                        <div className="w-2 h-2 rounded-full bg-[#D4AF37] flex-shrink-0 mt-2" />
                     )}
                 </motion.button>
             ))}

@@ -28,7 +28,7 @@ export function ProgressRing({
     value,
     size = 120,
     strokeWidth = 8,
-    color = '#8B5CF6',
+    color = '#B8942D',
     backgroundColor = 'rgba(255, 255, 255, 0.1)',
     label,
     showValue = true,
@@ -107,7 +107,7 @@ export function BarChart({
     className = '',
 }: BarChartProps) {
     const maxValue = Math.max(...data.map(d => d.value));
-    const defaultColors = ['#8B5CF6', '#F43F5E', '#F59E0B', '#10B981', '#06B6D4', '#D4AF37'];
+    const defaultColors = ['#B8942D', '#F43F5E', '#F59E0B', '#10B981', '#06B6D4', '#D4AF37'];
 
     return (
         <div className={`flex flex-col ${className}`}>
@@ -173,7 +173,7 @@ export function Sparkline({
     data,
     width = 100,
     height = 30,
-    color = '#8B5CF6',
+    color = '#B8942D',
     strokeWidth = 2,
     filled = false,
     className = '',
@@ -339,7 +339,7 @@ export function DonutChart({
     const total = data.reduce((sum, d) => sum + d.value, 0);
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
-    const defaultColors = ['#8B5CF6', '#F43F5E', '#F59E0B', '#10B981', '#06B6D4', '#D4AF37'];
+    const defaultColors = ['#B8942D', '#F43F5E', '#F59E0B', '#10B981', '#06B6D4', '#D4AF37'];
 
     let currentOffset = 0;
 
@@ -397,7 +397,7 @@ interface ActivityHeatmapProps {
 
 export function ActivityHeatmap({
     data,
-    colorScale = ['#1a1a2e', '#2d1f4b', '#4c2a85', '#6b35c4', '#8B5CF6'],
+    colorScale = ['#1a1a2e', '#2d1f4b', '#4c2a85', '#6b35c4', '#B8942D'],
     cellSize = 12,
     className = '',
 }: ActivityHeatmapProps) {

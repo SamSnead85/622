@@ -538,8 +538,8 @@ export function Stepper({
                         >
                             <motion.div
                                 animate={{
-                                    backgroundColor: isCompleted || isCurrent ? '#8B5CF6' : 'rgba(255, 255, 255, 0.1)',
-                                    borderColor: isCompleted || isCurrent ? '#8B5CF6' : 'rgba(255, 255, 255, 0.2)',
+                                    backgroundColor: isCompleted || isCurrent ? '#B8942D' : 'rgba(255, 255, 255, 0.1)',
+                                    borderColor: isCompleted || isCurrent ? '#B8942D' : 'rgba(255, 255, 255, 0.2)',
                                 }}
                                 className="w-10 h-10 rounded-full border-2 flex items-center justify-center"
                             >

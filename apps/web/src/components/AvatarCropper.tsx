@@ -152,7 +152,7 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
             <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={onCancel} />
 
             <motion.div
-                className="relative bg-[#0A1628] rounded-3xl border border-[#00D4FF]/20 p-6 max-w-sm w-full shadow-2xl shadow-[#00D4FF]/10"
+                className="relative bg-[#0A0A0F] rounded-3xl border border-[#D4AF37]/20 p-6 max-w-sm w-full shadow-2xl shadow-[#D4AF37]/10"
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
             >
@@ -163,7 +163,7 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
                     </h3>
                     <button
                         onClick={handleReset}
-                        className="px-3 py-1.5 text-xs rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#00D4FF]/30 transition-colors"
+                        className="px-3 py-1.5 text-xs rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#D4AF37]/30 transition-colors"
                     >
                         Reset
                     </button>
@@ -181,7 +181,7 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
                 >
                     {/* Circular clip container */}
                     <div
-                        className="w-full h-full rounded-full overflow-hidden cursor-move border-4 border-[#00D4FF]/40 shadow-lg shadow-[#00D4FF]/20"
+                        className="w-full h-full rounded-full overflow-hidden cursor-move border-4 border-[#D4AF37]/40 shadow-lg shadow-[#D4AF37]/20"
                         onPointerDown={handlePointerDown}
                         onPointerMove={handlePointerMove}
                         onPointerUp={handlePointerUp}
@@ -199,16 +199,16 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
 
                     {/* Corner indicators - Electric Blue */}
                     <div className="absolute inset-0 pointer-events-none">
-                        <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-[#00D4FF] rounded-tl-full" />
-                        <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-[#00D4FF] rounded-tr-full" />
-                        <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-[#00D4FF] rounded-bl-full" />
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-[#00D4FF] rounded-br-full" />
+                        <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-[#D4AF37] rounded-tl-full" />
+                        <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-[#D4AF37] rounded-tr-full" />
+                        <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-[#D4AF37] rounded-bl-full" />
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-[#D4AF37] rounded-br-full" />
                     </div>
 
                     {/* Loading overlay */}
                     {!imageLoaded && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-full">
-                            <div className="w-8 h-8 border-3 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full animate-spin" />
+                            <div className="w-8 h-8 border-3 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
                         </div>
                     )}
                 </div>
@@ -218,7 +218,7 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => handleZoom(scale - 0.05)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#00D4FF]/30 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#D4AF37]/30 transition-colors"
                         >
                             −
                         </button>
@@ -232,13 +232,13 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
                                 onChange={(e) => handleZoom(parseFloat(e.target.value))}
                                 className="w-full h-2 rounded-full appearance-none cursor-pointer"
                                 style={{
-                                    background: `linear-gradient(to right, #00D4FF 0%, #00D4FF ${((scale - 0.05) / 3.95) * 100}%, rgba(255,255,255,0.1) ${((scale - 0.05) / 3.95) * 100}%, rgba(255,255,255,0.1) 100%)`
+                                    background: `linear-gradient(to right, #D4AF37 0%, #D4AF37 ${((scale - 0.05) / 3.95) * 100}%, rgba(255,255,255,0.1) ${((scale - 0.05) / 3.95) * 100}%, rgba(255,255,255,0.1) 100%)`
                                 }}
                             />
                         </div>
                         <button
                             onClick={() => handleZoom(scale + 0.05)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#00D4FF]/30 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#D4AF37]/30 transition-colors"
                         >
                             +
                         </button>
@@ -258,7 +258,7 @@ export function AvatarCropper({ imageSrc, onSave, onCancel }: AvatarCropperProps
                     <button
                         onClick={handleSave}
                         disabled={isSaving || !imageLoaded}
-                        className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         {isSaving ? (
                             <>

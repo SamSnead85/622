@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
     if (isLoading) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
             </div>
         );
     }
@@ -124,7 +124,7 @@ export default function AnalyticsPage() {
                             title={`${point.date}: +${point.newFollowers}`}
                         >
                             <div
-                                className="w-full bg-[#00D4FF]/60 hover:bg-[#00D4FF] rounded-t transition-colors"
+                                className="w-full bg-[#D4AF37]/60 hover:bg-[#D4AF37] rounded-t transition-colors"
                                 style={{
                                     height: `${Math.max(2, (point.newFollowers / maxGrowth) * 100)}%`,
                                 }}

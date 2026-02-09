@@ -111,7 +111,7 @@ export function VideoEditor({ videoUrl, onSave, onCancel }: VideoEditorProps) {
                 <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="text-[#00D4FF] font-semibold text-sm disabled:opacity-50"
+                    className="text-[#D4AF37] font-semibold text-sm disabled:opacity-50"
                 >
                     {isSaving ? 'Exporting...' : 'Done'}
                 </button>
@@ -176,7 +176,7 @@ export function VideoEditor({ videoUrl, onSave, onCancel }: VideoEditorProps) {
                 <div className="relative h-12 bg-white/5 rounded-lg overflow-hidden">
                     {/* Trim region */}
                     <div
-                        className="absolute top-0 bottom-0 bg-[#00D4FF]/10 border-x-2 border-[#00D4FF]"
+                        className="absolute top-0 bottom-0 bg-[#D4AF37]/10 border-x-2 border-[#D4AF37]"
                         style={{
                             left: `${trimStartPercent}%`,
                             width: `${trimEndPercent - trimStartPercent}%`,

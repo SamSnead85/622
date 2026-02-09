@@ -76,7 +76,7 @@ export function CallInterface({
                     />
                 ) : (
                     <div className="flex flex-col items-center gap-4">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-3xl font-bold">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-3xl font-bold">
                             {participantAvatar ? (
                                 <img src={participantAvatar} alt="" className="w-full h-full rounded-full object-cover" />
                             ) : participantName[0]?.toUpperCase() || '?'}
@@ -169,7 +169,7 @@ export function CallInterface({
                     <button
                         onClick={onToggleScreenShare}
                         className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-                            isScreenSharing ? 'bg-[#00D4FF]' : 'bg-white/15 hover:bg-white/25'
+                            isScreenSharing ? 'bg-[#D4AF37]' : 'bg-white/15 hover:bg-white/25'
                         }`}
                         aria-label={isScreenSharing ? 'Stop screen share' : 'Share screen'}
                     >

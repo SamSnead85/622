@@ -597,7 +597,7 @@ function FullCapabilitiesSection() {
     return (
         <section id="platform" ref={ref} className="relative py-32 md:py-48">
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] rounded-full bg-[#00D4FF]/[0.02] blur-[150px]" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] rounded-full bg-[#D4AF37]/[0.02] blur-[150px]" />
             </div>
             <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
                 <motion.div
@@ -606,7 +606,7 @@ function FullCapabilitiesSection() {
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                     transition={{ duration: 0.8 }}
                 >
-                    <p className="text-[#00D4FF]/60 text-xs tracking-[0.4em] uppercase mb-4 font-light">Complete Platform</p>
+                    <p className="text-[#D4AF37]/60 text-xs tracking-[0.4em] uppercase mb-4 font-light">Complete Platform</p>
                     <h2 className="text-4xl md:text-5xl lg:text-6xl font-light text-white mb-6">
                         Everything you need.
                         <br />
@@ -630,7 +630,7 @@ function FullCapabilitiesSection() {
                             <div className="w-10 h-10 rounded-lg border border-white/[0.08] flex items-center justify-center text-white/40 mb-4">
                                 {cap.icon}
                             </div>
-                            <h3 className="text-white font-medium text-lg mb-2 group-hover:text-[#00D4FF] transition-colors">{cap.title}</h3>
+                            <h3 className="text-white font-medium text-lg mb-2 group-hover:text-[#D4AF37] transition-colors">{cap.title}</h3>
                             <p className="text-white/40 text-sm leading-relaxed">{cap.desc}</p>
                         </motion.div>
                     ))}
@@ -763,7 +763,7 @@ function DeveloperPlatformSection() {
                         transition={{ duration: 0.8 }}
                         className="md:order-1"
                     >
-                        <div className="bg-[#0A1628] rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+                        <div className="bg-[#0A0A0F] rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
                             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
                                 <div className="w-3 h-3 rounded-full bg-red-500/60" />
                                 <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
@@ -784,7 +784,7 @@ const community = await fetch(
       name: 'My Organization',
       description: 'Built with the 0G API',
       isPublic: false,
-      brandColor: '#00D4FF'
+      brandColor: '#D4AF37'
     })
   }
 );`}
@@ -798,7 +798,7 @@ const community = await fetch(
                         transition={{ duration: 0.8, delay: 0.2 }}
                         className="md:order-2"
                     >
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00D4FF]/10 border border-[#00D4FF]/20 text-[#00D4FF] text-xs font-medium mb-6">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#D4AF37] text-xs font-medium mb-6">
                             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
                             Developer Platform
                         </div>
@@ -828,7 +828,7 @@ const community = await fetch(
                             Designed for AI agents, no-code app builders, agentic dev tools, streaming platforms, podcast tools,
                             and any third-party wanting to programmatically create communities and content on 0G.
                         </p>
-                        <Link href="/developers" className="inline-flex items-center gap-2 text-[#00D4FF] text-sm font-medium hover:underline">
+                        <Link href="/developers" className="inline-flex items-center gap-2 text-[#D4AF37] text-sm font-medium hover:underline">
                             Explore Developer Portal
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                         </Link>
@@ -1213,7 +1213,7 @@ function PressSection() {
             title: 'ZeroG: The Digital Sovereignty Revolution',
             quote: 'A bold new platform challenging the surveillance economy with community-driven governance and true data ownership.',
             url: 'https://vibecio.com/article/zerog-digital-sovereignty-revolution',
-            gradient: 'from-[#00D4FF] to-[#8B5CF6]',
+            gradient: 'from-[#D4AF37] to-[#B8942D]',
         },
     ];
 
@@ -1259,7 +1259,7 @@ function PressSection() {
                                     </svg>
                                 </div>
 
-                                <h3 className="text-xl md:text-2xl font-light text-white mb-3 group-hover:text-[#00D4FF] transition-colors">
+                                <h3 className="text-xl md:text-2xl font-light text-white mb-3 group-hover:text-[#D4AF37] transition-colors">
                                     {item.title}
                                 </h3>
 
@@ -1267,7 +1267,7 @@ function PressSection() {
                                     &ldquo;{item.quote}&rdquo;
                                 </p>
 
-                                <p className="mt-4 text-[#00D4FF] text-sm font-medium group-hover:underline">
+                                <p className="mt-4 text-[#D4AF37] text-sm font-medium group-hover:underline">
                                     Read the full article →
                                 </p>
                             </div>
@@ -1319,7 +1319,7 @@ function ManifestoSection() {
         <section ref={ref} className="relative py-32 md:py-40">
             {/* Subtle gradient accent */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[1px] bg-gradient-to-r from-transparent via-[#00D4FF]/20 to-transparent" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[1px] bg-gradient-to-r from-transparent via-[#D4AF37]/20 to-transparent" />
             </div>
 
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -1332,7 +1332,7 @@ function ManifestoSection() {
                     <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-6 font-light">Our Manifesto</p>
                     <h2 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.15] mb-8">
                         Social media was a{' '}
-                        <span className="bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] bg-clip-text text-transparent">
+                        <span className="bg-gradient-to-r from-[#D4AF37] to-[#B8942D] bg-clip-text text-transparent">
                             revolution
                         </span>{' '}
                         that got{' '}
@@ -1357,10 +1357,10 @@ function ManifestoSection() {
                             transition={{ duration: 0.5, delay: i * 0.1 }}
                         >
                             <div className="md:col-span-1">
-                                <span className="text-[#00D4FF]/40 text-sm font-mono">{p.number}</span>
+                                <span className="text-[#D4AF37]/40 text-sm font-mono">{p.number}</span>
                             </div>
                             <div className="md:col-span-3">
-                                <h3 className="text-white font-medium text-lg group-hover:text-[#00D4FF] transition-colors">
+                                <h3 className="text-white font-medium text-lg group-hover:text-[#D4AF37] transition-colors">
                                     {p.title}
                                 </h3>
                             </div>
@@ -1375,14 +1375,14 @@ function ManifestoSection() {
 
                 {/* Digital Sovereignty callout */}
                 <motion.div
-                    className="mt-16 p-8 md:p-12 rounded-3xl bg-gradient-to-br from-[#00D4FF]/5 to-[#8B5CF6]/5 border border-[#00D4FF]/10 relative overflow-hidden"
+                    className="mt-16 p-8 md:p-12 rounded-3xl bg-gradient-to-br from-[#D4AF37]/5 to-[#B8942D]/5 border border-[#D4AF37]/10 relative overflow-hidden"
                     initial={{ opacity: 0, y: 30 }}
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                     transition={{ duration: 0.8, delay: 0.6 }}
                 >
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#00D4FF]/5 rounded-full blur-[100px]" />
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#D4AF37]/5 rounded-full blur-[100px]" />
                     <div className="relative">
-                        <p className="text-[#00D4FF] text-xs tracking-[0.3em] uppercase font-medium mb-4">Digital Sovereignty</p>
+                        <p className="text-[#D4AF37] text-xs tracking-[0.3em] uppercase font-medium mb-4">Digital Sovereignty</p>
                         <h3 className="text-2xl md:text-3xl font-light text-white mb-4 leading-snug max-w-2xl">
                             In the age of AI and mass surveillance, owning your digital identity isn&apos;t a luxury — it&apos;s a right.
                         </h3>
@@ -1394,7 +1394,7 @@ function ManifestoSection() {
                             href="https://vibecio.com/article/zerog-digital-sovereignty-revolution"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-[#00D4FF] text-sm font-medium hover:underline"
+                            className="inline-flex items-center gap-2 text-[#D4AF37] text-sm font-medium hover:underline"
                         >
                             Read about the Digital Sovereignty Revolution
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

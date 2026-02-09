@@ -240,7 +240,7 @@ export default function StoriesViewerPage() {
                 <p className="text-white/60 mb-6">This user hasn&apos;t shared any stories yet.</p>
                 <Link
                     href="/dashboard"
-                    className="px-6 py-3 rounded-xl bg-[#00D4FF] text-black font-semibold"
+                    className="px-6 py-3 rounded-xl bg-[#D4AF37] text-black font-semibold"
                 >
                     Back to Feed
                 </Link>
@@ -316,7 +316,7 @@ export default function StoriesViewerPage() {
                                 />
                             </div>
                         ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold border-2 border-white">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-black font-bold border-2 border-white">
                                 {currentStory.user.displayName?.[0] || 'U'}
                             </div>
                         )}
@@ -393,7 +393,7 @@ export default function StoriesViewerPage() {
                             <button
                                 onClick={(e) => { e.stopPropagation(); handleSendReply(); }}
                                 disabled={!reply.trim()}
-                                className="p-3 rounded-full bg-[#00D4FF] hover:opacity-90 transition-opacity disabled:opacity-40"
+                                className="p-3 rounded-full bg-[#D4AF37] hover:opacity-90 transition-opacity disabled:opacity-40"
                             >
                                 <SendIcon size={20} className="text-black" />
                             </button>

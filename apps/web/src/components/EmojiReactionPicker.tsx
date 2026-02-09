@@ -18,8 +18,8 @@ export const REACTIONS: Reaction[] = [
     { emoji: '❤️', label: 'Love', color: '#FF3B5C' },
     { emoji: '🔥', label: 'Fire', color: '#FF9500' },
     { emoji: '😂', label: 'Haha', color: '#FFD60A' },
-    { emoji: '😮', label: 'Wow', color: '#00D4FF' },
-    { emoji: '😢', label: 'Sad', color: '#8B5CF6' },
+    { emoji: '😮', label: 'Wow', color: '#D4AF37' },
+    { emoji: '😢', label: 'Sad', color: '#B8942D' },
     { emoji: '👏', label: 'Clap', color: '#10B981' },
 ];
 

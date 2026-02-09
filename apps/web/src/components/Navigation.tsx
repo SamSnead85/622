@@ -222,7 +222,7 @@ export function BottomNav({ activeTab, variant = 'default' }: NavigationProps) {
                         key={item.id}
                         href={item.href}
                         className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === item.id
-                            ? 'text-[#00D4FF]'
+                            ? 'text-[#D4AF37]'
                             : 'text-white/50 hover:text-white'
                             }`}
                     >

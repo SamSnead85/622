@@ -123,7 +123,7 @@ function BulletinCard({ item }: { item: BulletinItem }) {
             <div className={`inline-flex px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border mb-3 ${getTypeColor(item.type)}`}>
                 {item.type}
             </div>
-            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-[#00D4FF] transition-colors">{item.title}</h3>
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-[#D4AF37] transition-colors">{item.title}</h3>
             <p className="text-sm text-white/60 mb-4 line-clamp-2">{item.desc}</p>
 
             <div className="flex items-center justify-between text-xs text-white/40">
@@ -144,7 +144,7 @@ function CommunityCard({ community, index }: { community: Community; index: numb
     const coverImage = community.coverUrl || DEFAULT_COVERS[index % DEFAULT_COVERS.length];
     return (
         <motion.div
-            className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden hover:border-[#00D4FF]/20 hover:shadow-[0_8px_32px_rgba(0,212,255,0.06)] transition-all duration-300 group relative h-64 cursor-pointer"
+            className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden hover:border-[#D4AF37]/20 hover:shadow-[0_8px_32px_rgba(0,212,255,0.06)] transition-all duration-300 group relative h-64 cursor-pointer"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: index * 0.05 }}
@@ -162,11 +162,11 @@ function CommunityCard({ community, index }: { community: Community; index: numb
                     {community.isPrivate ? (
                         <span className="p-1 rounded bg-black/60 backdrop-blur text-gray-300">{Icons.lock}</span>
                     ) : (
-                        <span className="p-1 rounded bg-black/60 backdrop-blur text-[#00D4FF]">{Icons.globe}</span>
+                        <span className="p-1 rounded bg-black/60 backdrop-blur text-[#D4AF37]">{Icons.globe}</span>
                     )}
                     <span className="text-xs font-bold uppercase tracking-wider text-white/70">{community.role}</span>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-1 group-hover:text-[#00D4FF] transition-colors">{community.name}</h3>
+                <h3 className="text-xl font-bold text-white mb-1 group-hover:text-[#D4AF37] transition-colors">{community.name}</h3>
                 <p className="text-sm text-white/50 line-clamp-1">{community.description}</p>
                 <div className="flex items-center gap-1 mt-2">
                     {Icons.users}
@@ -176,7 +176,7 @@ function CommunityCard({ community, index }: { community: Community; index: numb
 
             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Link href={`/communities/${community.slug || community.id}`}>
-                    <button className="bg-[#00D4FF] text-black font-semibold text-sm px-5 py-2 rounded-xl hover:shadow-[0_0_16px_rgba(0,212,255,0.3)] transition-all duration-200">
+                    <button className="bg-[#D4AF37] text-black font-semibold text-sm px-5 py-2 rounded-xl hover:shadow-[0_0_16px_rgba(0,212,255,0.3)] transition-all duration-200">
                         Enter
                     </button>
                 </Link>
@@ -225,7 +225,7 @@ export default function CommunityHub() {
     if (!mounted) return <div className="min-h-screen bg-[#050508]" />;
 
     return (
-        <div className="min-h-screen bg-[#050508] text-white selection:bg-[#00D4FF]/30">
+        <div className="min-h-screen bg-[#050508] text-white selection:bg-[#D4AF37]/30">
             <NavigationSidebar />
 
             {/* Ambient Background */}
@@ -250,7 +250,7 @@ export default function CommunityHub() {
                         </div>
 
                         <Link href="/communities/create" className="flex-shrink-0">
-                            <button className="bg-[#00D4FF] text-black font-semibold text-xs lg:text-sm px-3 lg:px-5 py-2 rounded-xl hover:shadow-[0_0_16px_rgba(0,212,255,0.3)] transition-all duration-200 flex items-center gap-1.5 lg:gap-2">
+                            <button className="bg-[#D4AF37] text-black font-semibold text-xs lg:text-sm px-3 lg:px-5 py-2 rounded-xl hover:shadow-[0_0_16px_rgba(0,212,255,0.3)] transition-all duration-200 flex items-center gap-1.5 lg:gap-2">
                                 {Icons.plus}
                                 <span className="hidden sm:inline">Establish Tribe</span>
                                 <span className="sm:hidden">New</span>
@@ -261,7 +261,7 @@ export default function CommunityHub() {
                     {/* 3. The Exchange (Bulletin Board) */}
                     <section>
                         <div className="flex items-center gap-2 mb-3 lg:mb-6">
-                            <span className="text-[#00D4FF]">{Icons.megaphone}</span>
+                            <span className="text-[#D4AF37]">{Icons.megaphone}</span>
                             <h2 className="text-base lg:text-xl font-bold uppercase tracking-widest text-white/80">Bulletin</h2>
                         </div>
                         {bulletins.length === 0 ? (
@@ -281,7 +281,7 @@ export default function CommunityHub() {
                     <section>
                         <div className="flex items-center justify-between mb-3 lg:mb-6">
                             <div className="flex items-center gap-2">
-                                <span className="text-[#8B5CF6]">{Icons.users}</span>
+                                <span className="text-[#B8942D]">{Icons.users}</span>
                                 <h2 className="text-base lg:text-xl font-bold uppercase tracking-widest text-white/80">Your Circles</h2>
                             </div>
                             <span className="text-xs lg:text-sm text-white/40">{communities.length} Active</span>
@@ -308,7 +308,7 @@ export default function CommunityHub() {
                             <div className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden p-12 text-center">
                                 <p className="text-white/50 mb-4">You have not joined any tribes yet.</p>
                                 <Link href="/communities/create">
-                                    <button className="text-[#00D4FF] hover:underline font-medium">Create your first circle</button>
+                                    <button className="text-[#D4AF37] hover:underline font-medium">Create your first circle</button>
                                 </Link>
                             </div>
                         ) : (

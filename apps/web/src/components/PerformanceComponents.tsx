@@ -37,7 +37,7 @@ interface LoadingSpinnerProps {
     color?: string;
 }
 
-export function LoadingSpinner({ size = 'md', color = '#00D4FF' }: LoadingSpinnerProps) {
+export function LoadingSpinner({ size = 'md', color = '#D4AF37' }: LoadingSpinnerProps) {
     const sizes = { sm: 16, md: 24, lg: 40 };
     const dimension = sizes[size];
 

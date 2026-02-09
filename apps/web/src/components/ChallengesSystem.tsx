@@ -113,7 +113,7 @@ export function ChallengeProgress({ challenge, milestones, entries, onLogProgres
                         <circle cx="50" cy="50" r="40" fill="none" stroke="url(#progressGradient)" strokeWidth="12"
                             strokeDasharray={`${progressPercent * 2.51} 251`} strokeLinecap="round" />
                         <defs><linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#8B5CF6" /><stop offset="100%" stopColor="#06B6D4" />
+                            <stop offset="0%" stopColor="#B8942D" /><stop offset="100%" stopColor="#06B6D4" />
                         </linearGradient></defs>
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">

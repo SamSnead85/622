@@ -335,6 +335,8 @@ router.put('/profile', authenticate, async (req: AuthRequest, res, next) => {
             avatarUrl: z.string().url().optional(),
             coverUrl: z.string().url().optional(),
             isPrivate: z.boolean().optional(),
+            culturalProfile: z.enum(['standard', 'muslim', 'custom']).optional(),
+            customGreeting: z.string().max(100).nullable().optional(),
         });
 
         const data = updateSchema.parse(req.body);
@@ -353,6 +355,8 @@ router.put('/profile', authenticate, async (req: AuthRequest, res, next) => {
                 avatarUrl: true,
                 coverUrl: true,
                 isPrivate: true,
+                culturalProfile: true,
+                customGreeting: true,
             },
         });
 

@@ -87,7 +87,7 @@ function StreamCard({ stream, index }: { stream: LiveStream; index: number }) {
                 transition={{ delay: index * 0.05 }}
             >
                 {/* Thumbnail */}
-                <div className="relative aspect-video rounded-xl overflow-hidden bg-[#0A0A0F] border border-white/[0.06] group-hover:border-[#00D4FF]/20 transition-all">
+                <div className="relative aspect-video rounded-xl overflow-hidden bg-[#0A0A0F] border border-white/[0.06] group-hover:border-[#D4AF37]/20 transition-all">
                     <Image
                         src={thumbnailSrc}
                         alt={stream.title}
@@ -140,7 +140,7 @@ function StreamCard({ stream, index }: { stream: LiveStream; index: number }) {
                         <h3 className="font-semibold text-sm text-white truncate leading-tight">{stream.title}</h3>
                         <p className="text-[11px] text-white/40 truncate mt-0.5">
                             @{stream.user.username}
-                            {stream.user.isVerified && <span className="text-[#00D4FF] ml-0.5">✓</span>}
+                            {stream.user.isVerified && <span className="text-[#D4AF37] ml-0.5">✓</span>}
                         </p>
                     </div>
                 </div>
@@ -356,7 +356,7 @@ export default function CampfireDiscoverPage() {
                                 onClick={() => setActiveCategory(activeCategory === cat.id ? 'all' : cat.id)}
                                 className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
                                     activeCategory === cat.id
-                                        ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30'
+                                        ? 'bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30'
                                         : 'text-white/40 hover:text-white/60 border border-transparent hover:border-white/[0.06]'
                                 }`}
                             >
@@ -405,7 +405,7 @@ export default function CampfireDiscoverPage() {
                             </p>
                             <Link
                                 href="/campfire/go-live"
-                                className="inline-flex items-center gap-2 bg-[#00D4FF] hover:bg-[#00D4FF]/90 text-black px-6 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95"
+                                className="inline-flex items-center gap-2 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black px-6 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95"
                             >
                                 Start Streaming
                             </Link>

@@ -80,7 +80,7 @@ export function MediaUpload({
             onDragLeave={handleDragLeave}
             onClick={() => inputRef.current?.click()}
             className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${isDragging
-                    ? 'border-[#00D4FF] bg-[#00D4FF]/10'
+                    ? 'border-[#D4AF37] bg-[#D4AF37]/10'
                     : 'border-white/20 hover:border-white/40'
                 }`}
         >
@@ -223,7 +223,7 @@ export function ContentFilters({ imageUrl, selectedFilter, onFilterSelect }: Con
                         key={filter.id}
                         onClick={() => onFilterSelect(filter.id)}
                         className={`flex-shrink-0 flex flex-col items-center gap-1 p-2 rounded-xl transition-colors ${selectedFilter === filter.id
-                                ? 'bg-[#00D4FF]/20 border border-[#00D4FF]/30'
+                                ? 'bg-[#D4AF37]/20 border border-[#D4AF37]/30'
                                 : 'hover:bg-white/5'
                             }`}
                     >
@@ -301,7 +301,7 @@ export function PollCreator({ options, onOptionsChange, duration, onDurationChan
                             value={option.text}
                             onChange={(e) => updateOption(option.id, e.target.value)}
                             placeholder={`Option ${index + 1}`}
-                            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder:text-white/30 focus:outline-none focus:border-[#00D4FF]/50"
+                            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder:text-white/30 focus:outline-none focus:border-[#D4AF37]/50"
                         />
                         {options.length > 2 && (
                             <button
@@ -318,7 +318,7 @@ export function PollCreator({ options, onOptionsChange, duration, onDurationChan
             {options.length < 4 && (
                 <button
                     onClick={addOption}
-                    className="text-[#00D4FF] text-sm hover:underline"
+                    className="text-[#D4AF37] text-sm hover:underline"
                 >
                     + Add option
                 </button>
@@ -332,7 +332,7 @@ export function PollCreator({ options, onOptionsChange, duration, onDurationChan
                             key={d.hours}
                             onClick={() => onDurationChange(d.hours)}
                             className={`px-2 py-1 text-xs rounded-lg ${duration === d.hours
-                                    ? 'bg-[#00D4FF] text-black'
+                                    ? 'bg-[#D4AF37] text-black'
                                     : 'bg-white/10 text-white/60 hover:bg-white/20'
                                 }`}
                         >
@@ -434,7 +434,7 @@ export function LocationPicker({ selectedLocation, onLocationSelect, isOpen, onC
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search locations..."
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-[#00D4FF]/50"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-[#D4AF37]/50"
                         autoFocus
                     />
                 </div>
@@ -469,7 +469,7 @@ export function LocationPicker({ selectedLocation, onLocationSelect, isOpen, onC
                                 onLocationSelect(location);
                                 onClose();
                             }}
-                            className={`w-full p-4 text-left hover:bg-white/5 flex items-start gap-3 ${selectedLocation?.id === location.id ? 'bg-[#00D4FF]/10' : ''
+                            className={`w-full p-4 text-left hover:bg-white/5 flex items-start gap-3 ${selectedLocation?.id === location.id ? 'bg-[#D4AF37]/10' : ''
                                 }`}
                         >
                             <span className="text-lg">📍</span>

@@ -140,7 +140,7 @@ function SearchPageContent() {
                                     ? 'Search people, posts, communities, hashtags...'
                                     : 'Search your communities and contacts...'
                                 }
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-10 py-3.5 text-white placeholder:text-white/30 focus:outline-none focus:border-[#00D4FF]/50 transition-colors"
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-10 py-3.5 text-white placeholder:text-white/30 focus:outline-none focus:border-[#D4AF37]/50 transition-colors"
                                 autoFocus
                                 aria-label="Search"
                             />
@@ -163,7 +163,7 @@ function SearchPageContent() {
                                     onClick={() => handleTypeChange(t.id)}
                                     className={`px-4 py-2 rounded-xl text-sm whitespace-nowrap transition-all ${
                                         type === t.id
-                                            ? 'bg-[#00D4FF]/15 text-[#00D4FF] font-medium border border-[#00D4FF]/20'
+                                            ? 'bg-[#D4AF37]/15 text-[#D4AF37] font-medium border border-[#D4AF37]/20'
                                             : 'bg-white/5 text-white/40 hover:text-white/60 border border-transparent'
                                     }`}
                                 >
@@ -181,7 +181,7 @@ function SearchPageContent() {
                     {/* Loading */}
                     {isLoading && (
                         <div className="text-center py-12">
-                            <div className="w-8 h-8 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full animate-spin mx-auto" />
+                            <div className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin mx-auto" />
                         </div>
                     )}
 
@@ -196,7 +196,7 @@ function SearchPageContent() {
                                         {results.users.map((u: any) => (
                                             <Link key={u.id} href={`/profile/${u.username}`}
                                                 className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all">
-                                                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                                                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
                                                     {u.avatarUrl ? (
                                                         <img src={u.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
                                                     ) : (u.displayName?.[0] || u.username?.[0] || 'U')}
@@ -204,7 +204,7 @@ function SearchPageContent() {
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-white font-medium text-sm truncate">
                                                         {u.displayName || u.username}
-                                                        {u.isVerified && <span className="text-[#00D4FF] ml-1">✓</span>}
+                                                        {u.isVerified && <span className="text-[#D4AF37] ml-1">✓</span>}
                                                     </p>
                                                     <p className="text-white/40 text-xs">@{u.username}{u._count?.followers ? ` · ${u._count.followers} followers` : ''}</p>
                                                 </div>
@@ -248,7 +248,7 @@ function SearchPageContent() {
                                         {results.communities.map((community: any) => (
                                             <Link key={community.id} href={`/communities/${community.id}`}
                                                 className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all">
-                                                <div className="w-11 h-11 rounded-xl bg-[#8B5CF6]/20 flex items-center justify-center text-lg flex-shrink-0 overflow-hidden">
+                                                <div className="w-11 h-11 rounded-xl bg-[#B8942D]/20 flex items-center justify-center text-lg flex-shrink-0 overflow-hidden">
                                                     {community.iconUrl ? (
                                                         <img src={community.iconUrl} alt="" className="w-full h-full rounded-xl object-cover" />
                                                     ) : '🏛'}
@@ -270,7 +270,7 @@ function SearchPageContent() {
                                     <h2 className="text-white/40 text-xs uppercase tracking-wider mb-3">Hashtags</h2>
                                     <div className="flex flex-wrap gap-2">
                                         {results.hashtags.map((tag: any) => (
-                                            <span key={tag.id} className="px-3 py-1.5 rounded-xl bg-white/5 text-[#00D4FF] text-sm border border-white/[0.06]">
+                                            <span key={tag.id} className="px-3 py-1.5 rounded-xl bg-white/5 text-[#D4AF37] text-sm border border-white/[0.06]">
                                                 #{tag.name} <span className="text-white/30 text-xs">{tag.usageCount}</span>
                                             </span>
                                         ))}
@@ -326,8 +326,8 @@ function SearchPageContent() {
                                 <h3 className="text-white/40 text-xs uppercase tracking-wider mb-3">Quick Actions</h3>
                                 <div className="grid grid-cols-2 gap-3">
                                     <Link href="/communities" className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all group">
-                                        <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/15 flex items-center justify-center mb-3">
-                                            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                                        <div className="w-10 h-10 rounded-xl bg-[#B8942D]/15 flex items-center justify-center mb-3">
+                                            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#B8942D" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
                                                 <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" />
                                             </svg>
                                         </div>
@@ -336,8 +336,8 @@ function SearchPageContent() {
                                     </Link>
 
                                     <Link href="/messages" className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all group">
-                                        <div className="w-10 h-10 rounded-xl bg-[#00D4FF]/15 flex items-center justify-center mb-3">
-                                            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                                        <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/15 flex items-center justify-center mb-3">
+                                            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
                                                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                                             </svg>
                                         </div>
@@ -358,14 +358,14 @@ function SearchPageContent() {
                                     {!communityOptIn ? (
                                         <button
                                             onClick={() => setShowJoinModal(true)}
-                                            className="p-4 rounded-xl bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 border border-[#00D4FF]/20 hover:border-[#00D4FF]/40 transition-all text-left"
+                                            className="p-4 rounded-xl bg-gradient-to-br from-[#D4AF37]/10 to-[#B8942D]/10 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 transition-all text-left"
                                         >
-                                            <div className="w-10 h-10 rounded-xl bg-[#00D4FF]/15 flex items-center justify-center mb-3">
-                                                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                                            <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/15 flex items-center justify-center mb-3">
+                                                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
                                                     <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
                                                 </svg>
                                             </div>
-                                            <p className="text-[#00D4FF] font-medium text-sm">Join Community</p>
+                                            <p className="text-[#D4AF37] font-medium text-sm">Join Community</p>
                                             <p className="text-white/40 text-xs mt-0.5">Discover more people</p>
                                         </button>
                                     ) : (
@@ -395,7 +395,7 @@ function SearchPageContent() {
                                             <p className="text-white/70 text-sm font-medium">You&apos;re in private mode</p>
                                             <p className="text-white/40 text-xs mt-1 leading-relaxed">
                                                 Search finds your communities and contacts. To discover people and content from the broader community,{' '}
-                                                <button onClick={() => setShowJoinModal(true)} className="text-[#00D4FF] hover:underline">
+                                                <button onClick={() => setShowJoinModal(true)} className="text-[#D4AF37] hover:underline">
                                                     join the community feed
                                                 </button>.
                                             </p>

@@ -94,7 +94,7 @@ export function ProfileQRCode({ isOpen, onClose, username, displayName }: Profil
                         </div>
                         {/* 0G Logo in center */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="w-10 h-10 rounded-xl bg-[#00D4FF] flex items-center justify-center text-black font-bold text-lg">
+                            <div className="w-10 h-10 rounded-xl bg-[#D4AF37] flex items-center justify-center text-black font-bold text-lg">
                                 0G
                             </div>
                         </div>
@@ -105,7 +105,7 @@ export function ProfileQRCode({ isOpen, onClose, username, displayName }: Profil
                 <div className="p-6 pt-0 space-y-3">
                     <button
                         onClick={handleShare}
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold hover:opacity-90 transition-opacity"
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold hover:opacity-90 transition-opacity"
                     >
                         Share Profile
                     </button>
@@ -240,7 +240,7 @@ export function PostScheduler({ isOpen, onClose, onSchedule }: PostSchedulerProp
                             value={date}
                             onChange={(e) => setDate(e.target.value)}
                             min={minDate}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00D4FF]/50"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]/50"
                         />
                     </div>
                     <div>
@@ -249,7 +249,7 @@ export function PostScheduler({ isOpen, onClose, onSchedule }: PostSchedulerProp
                             type="time"
                             value={time}
                             onChange={(e) => setTime(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00D4FF]/50"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]/50"
                         />
                     </div>
                 </div>
@@ -264,7 +264,7 @@ export function PostScheduler({ isOpen, onClose, onSchedule }: PostSchedulerProp
                     <button
                         onClick={handleSchedule}
                         disabled={!date || !time}
-                        className="flex-1 py-3 rounded-xl bg-[#00D4FF] text-black font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                        className="flex-1 py-3 rounded-xl bg-[#D4AF37] text-black font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                     >
                         Schedule
                     </button>

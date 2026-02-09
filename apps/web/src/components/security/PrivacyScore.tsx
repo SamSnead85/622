@@ -212,7 +212,7 @@ export function PrivacyScore({ compact = false }: { compact?: boolean }) {
                         {!feature.enabled && feature.actionUrl && (
                             <a
                                 href={feature.actionUrl}
-                                className="text-[#00D4FF] text-xs font-medium hover:underline flex-shrink-0"
+                                className="text-[#D4AF37] text-xs font-medium hover:underline flex-shrink-0"
                             >
                                 {feature.actionLabel}
                             </a>

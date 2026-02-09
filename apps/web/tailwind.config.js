@@ -16,20 +16,20 @@ module.exports = {
                     surface: '#12121A', // Card Surface
                 },
 
-                // === AURORA - Living energy ===
+                // === GOLD - Premium accent system ===
                 aurora: {
-                    violet: '#8B5CF6',
-                    'violet-bright': '#A78BFA',
-                    cyan: '#00D4FF', // 0G Electric Blue
-                    'cyan-bright': '#60E4FF', // Brighter Blue
+                    violet: '#B8942D',
+                    'violet-bright': '#E5C158',
+                    cyan: '#D4AF37', // 0G Gold
+                    'cyan-bright': '#E5C158', // Gold Light
                     rose: '#F43F5E',
                     'rose-bright': '#FB7185',
                 },
 
-                // === EMBER - Premium accent ===
+                // === EMBER - Warm accent ===
                 ember: {
-                    DEFAULT: '#F59E0B',
-                    bright: '#FBBF24',
+                    DEFAULT: '#F4A300',
+                    bright: '#FFBA33',
                 },
 
                 // === GLASS - Layered surfaces ===
@@ -208,8 +208,8 @@ module.exports = {
                 '4xl': '80px',
             },
             boxShadow: {
-                'glow-violet': '0 0 40px rgba(139, 92, 246, 0.4)',
-                'glow-cyan': '0 0 40px rgba(6, 182, 212, 0.4)',
+                'glow-violet': '0 0 40px rgba(184, 148, 45, 0.4)',
+                'glow-cyan': '0 0 40px rgba(212, 175, 55, 0.4)',
                 'glow-rose': '0 0 40px rgba(244, 63, 94, 0.4)',
                 'glow-ember': '0 0 40px rgba(245, 158, 11, 0.4)',
                 'glass': '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
@@ -218,7 +218,7 @@ module.exports = {
             },
             backgroundImage: {
                 'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-                'aurora': 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.1), rgba(244, 63, 94, 0.05))',
+                'aurora': 'linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(184, 148, 45, 0.1), rgba(244, 63, 94, 0.05))',
             },
         },
     },

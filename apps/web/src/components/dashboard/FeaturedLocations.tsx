@@ -61,7 +61,7 @@ export function FeaturedLocationCard({ location, index }: { location: typeof FEA
             transition={{ delay: index * 0.1 }}
             whileHover={{ y: -4, scale: 1.02 }}
         >
-            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-white/10 group-hover:border-[#00D4FF]/40 transition-colors">
+            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-white/10 group-hover:border-[#D4AF37]/40 transition-colors">
                 {/* Image */}
                 <Image
                     src={location.image}
@@ -88,14 +88,14 @@ export function FeaturedLocationCard({ location, index }: { location: typeof FEA
 
                 {/* Content */}
                 <div className="absolute bottom-0 left-0 right-0 p-5">
-                    <div className="text-[#00D4FF] text-xs font-medium mb-1">{location.category}</div>
+                    <div className="text-[#D4AF37] text-xs font-medium mb-1">{location.category}</div>
                     <h3 className="text-xl font-bold text-white mb-1">{location.name}</h3>
                     <p className="text-white/60 text-sm">{location.subtitle}</p>
                 </div>
 
                 {/* Watch button on hover */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="px-6 py-3 rounded-xl bg-[#00D4FF] text-black font-semibold text-sm shadow-lg shadow-[#00D4FF]/30">
+                    <div className="px-6 py-3 rounded-xl bg-[#D4AF37] text-black font-semibold text-sm shadow-lg shadow-[#D4AF37]/30">
                         Watch Now
                     </div>
                 </div>

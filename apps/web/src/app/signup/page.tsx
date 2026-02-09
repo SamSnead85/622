@@ -149,7 +149,7 @@ export default function SignupPage() {
                         {/* Logo */}
                         <Link href="/" className="inline-flex items-center gap-3 mb-12">
                             <div className="text-3xl font-bold">
-                                <span className="text-[#00D4FF]">0</span>
+                                <span className="text-[#D4AF37]">0</span>
                                 <span className="text-white">G</span>
                             </div>
                             <span className="font-semibold text-xl text-white/70">ZeroG</span>
@@ -158,13 +158,13 @@ export default function SignupPage() {
                         {/* Progress indicator */}
                         <div className="flex items-center gap-2 mb-8">
                             <motion.div
-                                className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6]"
+                                className="h-1 flex-1 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D]"
                                 initial={{ scaleX: 0 }}
                                 animate={{ scaleX: step >= 1 ? 1 : 0 }}
                                 style={{ originX: 0 }}
                             />
                             <motion.div
-                                className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF]' : 'bg-white/10'}`}
+                                className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-gradient-to-r from-[#B8942D] to-[#D4AF37]' : 'bg-white/10'}`}
                                 initial={{ scaleX: 0 }}
                                 animate={{ scaleX: step >= 2 ? 1 : 1 }}
                                 style={{ originX: 0 }}
@@ -185,9 +185,9 @@ export default function SignupPage() {
                                         <motion.div
                                             initial={{ opacity: 0, y: -10 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="mb-4 px-4 py-3 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/20"
+                                            className="mb-4 px-4 py-3 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20"
                                         >
-                                            <p className="text-[#00D4FF] text-sm font-medium">
+                                            <p className="text-[#D4AF37] text-sm font-medium">
                                                 {referrerName} invited you to join 0G
                                             </p>
                                             <p className="text-white/40 text-xs mt-0.5">
@@ -215,7 +215,7 @@ export default function SignupPage() {
                                             />
                                             <p className="text-xs text-white/30 mt-1.5">
                                                 Don&apos;t have a code?{' '}
-                                                <Link href="/early-access" className="text-[#00D4FF]/70 hover:text-[#00D4FF] underline underline-offset-2">
+                                                <Link href="/early-access" className="text-[#D4AF37]/70 hover:text-[#D4AF37] underline underline-offset-2">
                                                     Request early access
                                                 </Link>
                                             </p>
@@ -250,7 +250,7 @@ export default function SignupPage() {
                                         <motion.button
                                             type="submit"
                                             disabled={isLoading}
-                                            className="w-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                                            className="w-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                                             whileTap={{ scale: 0.98 }}
                                         >
                                             {isLoading ? 'Creating account...' : 'Continue'}
@@ -260,7 +260,7 @@ export default function SignupPage() {
                                     <div className="mt-6 pt-6 border-t border-white/[0.06] text-center">
                                         <p className="text-xs text-white/30">
                                             Don&apos;t have a code?{' '}
-                                            <Link href="/early-access" className="text-[#00D4FF]/60 hover:text-[#00D4FF] underline underline-offset-2">Request early access</Link>
+                                            <Link href="/early-access" className="text-[#D4AF37]/60 hover:text-[#D4AF37] underline underline-offset-2">Request early access</Link>
                                         </p>
                                     </div>
                                 </motion.div>
@@ -301,7 +301,7 @@ export default function SignupPage() {
                                             />
                                             {name.length >= 2 && (
                                                 <p className="text-xs text-white/40 mt-2">
-                                                    Your @handle will be: <span className="text-[#00D4FF] font-medium">@{generatedUsername}</span>
+                                                    Your @handle will be: <span className="text-[#D4AF37] font-medium">@{generatedUsername}</span>
                                                 </p>
                                             )}
                                         </div>
@@ -309,7 +309,7 @@ export default function SignupPage() {
                                         <motion.button
                                             type="submit"
                                             disabled={isLoading || name.trim().length < 2}
-                                            className="w-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                                            className="w-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                                             whileTap={{ scale: 0.98 }}
                                         >
                                             {isLoading ? (
@@ -328,7 +328,7 @@ export default function SignupPage() {
 
                         <p className="text-sm text-white/40 mt-8 text-center">
                             Already have an account?{' '}
-                            <Link href="/login" className="text-[#00D4FF] hover:text-[#33DDFF] transition-colors">
+                            <Link href="/login" className="text-[#D4AF37] hover:text-[#E5C158] transition-colors">
                                 Sign in
                             </Link>
                         </p>
@@ -377,7 +377,7 @@ export default function SignupPage() {
                         >
                             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="url(#signupGrad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
-                                <defs><linearGradient id="signupGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#8B5CF6"/><stop offset="100%" stopColor="#EC4899"/></linearGradient></defs>
+                                <defs><linearGradient id="signupGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#B8942D"/><stop offset="100%" stopColor="#EC4899"/></linearGradient></defs>
                             </svg>
                         </motion.div>
                         <h2 className="text-3xl font-bold text-white mb-4">Break Free</h2>

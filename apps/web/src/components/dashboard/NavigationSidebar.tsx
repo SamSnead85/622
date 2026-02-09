@@ -155,16 +155,16 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
                             key={item.id}
                             href={item.href}
                             className={`relative flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${activeTab === item.id
-                                ? 'text-[#00D4FF]'
+                                ? 'text-[#D4AF37]'
                                 : (item as any).highlight
-                                    ? 'bg-gradient-to-r from-[#00D4FF]/20 to-[#8B5CF6]/20 text-[#00D4FF] border border-[#00D4FF]/30 hover:from-[#00D4FF]/30 hover:to-[#8B5CF6]/30'
+                                    ? 'bg-gradient-to-r from-[#D4AF37]/20 to-[#B8942D]/20 text-[#D4AF37] border border-[#D4AF37]/30 hover:from-[#D4AF37]/30 hover:to-[#B8942D]/30'
                                     : 'text-white/60 hover:bg-white/[0.04] hover:text-white transition-all duration-200'
                                 }`}
                         >
                             {activeTab === item.id && (
                                 <motion.div
                                     layoutId="activeTab"
-                                    className="absolute inset-0 bg-[#00D4FF]/10 border-l-2 border-[#00D4FF] rounded-xl shadow-[inset_0_0_20px_rgba(0,212,255,0.1)]"
+                                    className="absolute inset-0 bg-[#D4AF37]/10 border-l-2 border-[#D4AF37] rounded-xl shadow-[inset_0_0_20px_rgba(0,212,255,0.1)]"
                                     transition={{
                                         type: 'spring',
                                         stiffness: 350,
@@ -176,12 +176,12 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
                             <span className="relative z-10">
                                 <item.Icon size={22} />
                                 {item.hasNotification && (
-                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#00D4FF] rounded-full" />
+                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#D4AF37] rounded-full" />
                                 )}
                             </span>
                             <span className="font-medium hidden xl:block relative z-10">{item.label}</span>
                             {(item as any).highlight && (
-                                <span className="hidden xl:block ml-auto text-[10px] bg-[#00D4FF]/20 px-2 py-0.5 rounded-full text-[#00D4FF] relative z-10">NEW</span>
+                                <span className="hidden xl:block ml-auto text-[10px] bg-[#D4AF37]/20 px-2 py-0.5 rounded-full text-[#D4AF37] relative z-10">NEW</span>
                             )}
                         </Link>
                     ))}
@@ -202,7 +202,7 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
                                     onClick={() => changeViewMode(mode)}
                                     className={`flex-1 py-1.5 rounded-md text-[10px] font-medium transition-all ${
                                         viewMode === mode
-                                            ? 'bg-[#00D4FF]/20 text-[#00D4FF]'
+                                            ? 'bg-[#D4AF37]/20 text-[#D4AF37]'
                                             : 'text-white/40 hover:text-white/60'
                                     }`}
                                     aria-pressed={viewMode === mode}
@@ -218,7 +218,7 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
                 {/* Create button */}
                 <button
                     onClick={onCreateClick ?? (() => router.push('/create'))}
-                    className="flex items-center justify-center xl:justify-start gap-3 w-full px-4 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#7C3AED] text-white font-semibold hover:shadow-[0_4px_20px_rgba(0,212,255,0.3)] transition-all duration-300 hover:scale-[1.02] mb-4"
+                    className="flex items-center justify-center xl:justify-start gap-3 w-full px-4 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#9A7A24] text-white font-semibold hover:shadow-[0_4px_20px_rgba(0,212,255,0.3)] transition-all duration-300 hover:scale-[1.02] mb-4"
                 >
                     <PlusIcon size={18} />
                     <span className="hidden xl:block">Create Post</span>
@@ -243,10 +243,10 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
                         <img
                             src={user.avatarUrl}
                             alt={user.displayName || 'Profile'}
-                            className="w-10 h-10 rounded-full object-cover ring-2 ring-[#00D4FF]/20"
+                            className="w-10 h-10 rounded-full object-cover ring-2 ring-[#D4AF37]/20"
                         />
                     ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold ring-2 ring-[#00D4FF]/20">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-black font-bold ring-2 ring-[#D4AF37]/20">
                             {user?.displayName?.[0] || 'U'}
                         </div>
                     )}
@@ -282,12 +282,12 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
                             className={`relative flex flex-col items-center gap-0.5 min-w-[56px] min-h-[44px] justify-center active:scale-95 transition-transform ${
                                 item.isCreate
                                     ? ''
-                                    : activeTab === item.id ? 'text-[#00D4FF]' : 'text-white/50'
+                                    : activeTab === item.id ? 'text-[#D4AF37]' : 'text-white/50'
                             }`}
                         >
                             {/* Create button gets a prominent style */}
                             {item.isCreate ? (
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center shadow-lg shadow-[#00D4FF]/20 -mt-3">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D] flex items-center justify-center shadow-lg shadow-[#D4AF37]/20 -mt-3">
                                     <item.Icon size={20} className="text-black" />
                                 </div>
                             ) : (
@@ -295,7 +295,7 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
                                     {activeTab === item.id && (
                                         <motion.div
                                             layoutId="mobileActiveTab"
-                                            className="absolute inset-0 bg-[#00D4FF]/10 rounded-xl"
+                                            className="absolute inset-0 bg-[#D4AF37]/10 rounded-xl"
                                             transition={{
                                                 type: 'spring',
                                                 stiffness: 350,
@@ -307,7 +307,7 @@ export function NavigationSidebar({ activeTab: activeTabOverride, user: userOver
                                     <span className="relative z-10">
                                         <item.Icon size={22} />
                                         {item.hasNotification && (
-                                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#00D4FF] rounded-full" />
+                                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#D4AF37] rounded-full" />
                                         )}
                                     </span>
                                 </>

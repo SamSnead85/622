@@ -29,7 +29,7 @@ const TIERS = [
     { name: 'Newcomer', minJoined: 0, icon: '🌱', color: 'text-white/50', bg: 'from-white/5 to-white/5', border: 'border-white/10' },
     { name: 'Spark', minJoined: 1, icon: '✨', color: 'text-amber-400', bg: 'from-amber-500/10 to-amber-600/5', border: 'border-amber-500/20' },
     { name: 'Catalyst', minJoined: 5, icon: '🔥', color: 'text-orange-400', bg: 'from-orange-500/10 to-red-500/5', border: 'border-orange-500/20' },
-    { name: 'Torchbearer', minJoined: 15, icon: '🏆', color: 'text-[#00D4FF]', bg: 'from-[#00D4FF]/10 to-[#8B5CF6]/5', border: 'border-[#00D4FF]/30' },
+    { name: 'Torchbearer', minJoined: 15, icon: '🏆', color: 'text-[#D4AF37]', bg: 'from-[#D4AF37]/10 to-[#B8942D]/5', border: 'border-[#D4AF37]/30' },
     { name: 'Pioneer', minJoined: 50, icon: '🚀', color: 'text-violet-400', bg: 'from-violet-500/15 to-fuchsia-500/10', border: 'border-violet-500/30' },
 ];
 
@@ -182,7 +182,7 @@ function InvitePageContent() {
     if (!mounted) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full border-4 border-[#00D4FF]/20 border-t-[#00D4FF] animate-spin" />
+                <div className="w-16 h-16 rounded-full border-4 border-[#D4AF37]/20 border-t-[#D4AF37] animate-spin" />
             </div>
         );
     }
@@ -232,9 +232,9 @@ function InvitePageContent() {
         <div className="min-h-screen bg-black text-white">
             {/* Background */}
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#0A1628] via-black to-black" />
-                <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-[#00D4FF]/5 blur-[120px]" />
-                <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#8B5CF6]/5 blur-[100px]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0F] via-black to-black" />
+                <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-[#D4AF37]/5 blur-[120px]" />
+                <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#B8942D]/5 blur-[100px]" />
             </div>
 
             {/* Header */}
@@ -245,7 +245,7 @@ function InvitePageContent() {
                         <span className="text-sm">Back</span>
                     </Link>
                     <div className="font-bold">
-                        <span className="text-[#00D4FF]">0</span>
+                        <span className="text-[#D4AF37]">0</span>
                         <span className="text-white">G</span>
                     </div>
                     <div className="w-16" />
@@ -260,7 +260,7 @@ function InvitePageContent() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center shadow-[0_0_30px_rgba(0,212,255,0.2)]">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center shadow-[0_0_30px_rgba(0,212,255,0.2)]">
                         <SendIcon className="text-white" size={32} />
                     </div>
                     <h1 className="text-3xl font-bold text-white mb-3">
@@ -296,7 +296,7 @@ function InvitePageContent() {
                     {nextTier && (
                         <div className="w-full h-2 bg-black/30 rounded-full overflow-hidden">
                             <motion.div
-                                className="h-full rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6]"
+                                className="h-full rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D]"
                                 initial={{ width: 0 }}
                                 animate={{ width: `${Math.min(progress, 100)}%` }}
                                 transition={{ duration: 1, ease: 'easeOut' }}
@@ -316,7 +316,7 @@ function InvitePageContent() {
                     transition={{ delay: 0.1 }}
                 >
                     <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
-                        <p className="text-2xl font-bold text-[#00D4FF]">{inviteStats.sent}</p>
+                        <p className="text-2xl font-bold text-[#D4AF37]">{inviteStats.sent}</p>
                         <p className="text-xs text-white/50">Links Created</p>
                     </div>
                     <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
@@ -331,7 +331,7 @@ function InvitePageContent() {
 
                 {/* Your Invite Link */}
                 <motion.div
-                    className="bg-gradient-to-br from-[#00D4FF]/10 to-[#8B5CF6]/10 rounded-2xl p-6 border border-[#00D4FF]/20 mb-8"
+                    className="bg-gradient-to-br from-[#D4AF37]/10 to-[#B8942D]/10 rounded-2xl p-6 border border-[#D4AF37]/20 mb-8"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15 }}
@@ -348,7 +348,7 @@ function InvitePageContent() {
                             onClick={handleCopyLink}
                             className={`px-5 py-3 rounded-xl font-semibold text-sm transition-all active:scale-95 ${copied
                                 ? 'bg-green-500 text-white'
-                                : 'bg-[#00D4FF] text-black hover:opacity-90'
+                                : 'bg-[#D4AF37] text-black hover:opacity-90'
                                 }`}
                         >
                             {copied ? '✓ Copied!' : 'Copy'}
@@ -363,7 +363,7 @@ function InvitePageContent() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.18 }}
                 >
-                    <div className="relative h-28 bg-gradient-to-br from-violet-900/50 to-[#00D4FF]/20 overflow-hidden">
+                    <div className="relative h-28 bg-gradient-to-br from-violet-900/50 to-[#D4AF37]/20 overflow-hidden">
                         {user?.coverUrl && (
                             <img src={user.coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" />
                         )}
@@ -383,7 +383,7 @@ function InvitePageContent() {
                         </div>
                         <div className="absolute top-2.5 right-2.5">
                             <div className="w-6 h-6 rounded-md bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                                <span className="text-[7px] font-bold text-[#00D4FF]">0G</span>
+                                <span className="text-[7px] font-bold text-[#D4AF37]">0G</span>
                             </div>
                         </div>
                     </div>
@@ -396,7 +396,7 @@ function InvitePageContent() {
                 {typeof navigator !== 'undefined' && 'share' in navigator && (
                     <motion.button
                         onClick={handleNativeShare}
-                        className="w-full mb-6 py-4 rounded-2xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-bold text-lg flex items-center justify-center gap-3 hover:opacity-90 transition-opacity active:scale-[0.98]"
+                        className="w-full mb-6 py-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-bold text-lg flex items-center justify-center gap-3 hover:opacity-90 transition-opacity active:scale-[0.98]"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
@@ -417,7 +417,7 @@ function InvitePageContent() {
                         <p className="text-sm font-medium text-white/70">Your Invite Message</p>
                         <button
                             onClick={() => setIsEditingMessage(!isEditingMessage)}
-                            className="text-xs text-[#00D4FF] hover:text-[#00D4FF]/80 transition-colors"
+                            className="text-xs text-[#D4AF37] hover:text-[#D4AF37]/80 transition-colors"
                         >
                             {isEditingMessage ? 'Done' : 'Edit'}
                         </button>
@@ -428,7 +428,7 @@ function InvitePageContent() {
                             onChange={(e) => setCustomMessage(e.target.value)}
                             maxLength={280}
                             rows={3}
-                            className="w-full bg-black/50 rounded-xl px-4 py-3 text-white text-sm border border-white/10 focus:outline-none focus:border-[#00D4FF]/30 resize-none transition-colors"
+                            className="w-full bg-black/50 rounded-xl px-4 py-3 text-white text-sm border border-white/10 focus:outline-none focus:border-[#D4AF37]/30 resize-none transition-colors"
                             placeholder="Write your invite message..."
                         />
                     ) : (
@@ -527,7 +527,7 @@ function InvitePageContent() {
                     >
                         <Link
                             href="/dashboard/growth-partner"
-                            className="block w-full p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-[#00D4FF]/10 border border-emerald-500/20 hover:border-emerald-500/40 active:scale-[0.98] transition-all"
+                            className="block w-full p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-[#D4AF37]/10 border border-emerald-500/20 hover:border-emerald-500/40 active:scale-[0.98] transition-all"
                         >
                             <div className="flex items-start gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
@@ -563,7 +563,7 @@ function InvitePageContent() {
                         <PlusIcon size={22} />
                         <span className="text-[10px]">Create</span>
                     </Link>
-                    <Link href="/invite" className="flex flex-col items-center gap-1 p-2 text-[#00D4FF]">
+                    <Link href="/invite" className="flex flex-col items-center gap-1 p-2 text-[#D4AF37]">
                         <SendIcon size={22} />
                         <span className="text-[10px]">Invite</span>
                     </Link>

@@ -86,7 +86,7 @@ function VoiceMessage({ duration, sender }: { duration: number; sender: 'me' | '
             </button>
             <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
                 <motion.div
-                    className={`h-full ${sender === 'me' ? 'bg-white' : 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6]'}`}
+                    className={`h-full ${sender === 'me' ? 'bg-white' : 'bg-gradient-to-r from-[#D4AF37] to-[#B8942D]'}`}
                     style={{ width: `${progress}%` }}
                 />
             </div>
@@ -306,7 +306,7 @@ function NewChatModal({
                                 onClick={() => handleStartConversation(user)}
                                 className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors"
                             >
-                                <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center">
                                     {user.avatarUrl ? (
                                         <Image src={user.avatarUrl} alt={user.displayName} fill className="object-cover" />
                                     ) : (
@@ -317,7 +317,7 @@ function NewChatModal({
                                     <p className="font-semibold text-white">{user.displayName}</p>
                                     <p className="text-sm text-white/50">@{user.username}</p>
                                 </div>
-                                <span className="text-[#00D4FF]">Message →</span>
+                                <span className="text-[#D4AF37]">Message →</span>
                             </button>
                         ))
                     )}
@@ -327,7 +327,7 @@ function NewChatModal({
                 <div className="p-4 mt-4 border-t border-white/10">
                     <Link
                         href="/invite"
-                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white font-semibold hover:opacity-90 transition-opacity"
+                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-semibold hover:opacity-90 transition-opacity"
                         onClick={onClose}
                     >
                         <SendIcon size={18} />
@@ -490,12 +490,12 @@ function MessagesPageContent() {
                             <h1 className="text-xl font-bold text-white">Messages</h1>
                             <button
                                 onClick={() => setShowNewChatModal(true)}
-                                className="w-10 h-10 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center hover:opacity-90 transition-opacity"
+                                className="w-10 h-10 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D] flex items-center justify-center hover:opacity-90 transition-opacity"
                             >
                                 <EditIcon size={20} className="text-white" />
                             </button>
                         </div>
-                        <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-3 focus-within:border-[#00D4FF]/30 focus-within:shadow-[0_0_20px_rgba(0,212,255,0.08)] transition-all duration-300">
+                        <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-3 focus-within:border-[#D4AF37]/30 focus-within:shadow-[0_0_20px_rgba(0,212,255,0.08)] transition-all duration-300">
                             <SearchIcon size={16} className="text-white/40" />
                             <input type="text" placeholder="Search messages..." className="flex-1 bg-transparent text-white placeholder:text-white/30 focus:outline-none text-sm" />
                         </div>
@@ -531,11 +531,11 @@ function MessagesPageContent() {
                                 <motion.button
                                     key={convo.id}
                                     onClick={() => handleSelectConversation(convo)}
-                                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/[0.04] transition-all duration-200 cursor-pointer ${activeConversation === convo.id ? 'bg-[#00D4FF]/[0.06] border-l-2 border-[#00D4FF]' : ''}`}
+                                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/[0.04] transition-all duration-200 cursor-pointer ${activeConversation === convo.id ? 'bg-[#D4AF37]/[0.06] border-l-2 border-[#D4AF37]' : ''}`}
                                     whileTap={{ scale: 0.98 }}
                                 >
                                     <div className="relative">
-                                        <div className="w-12 h-12 rounded-full overflow-hidden relative bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
+                                        <div className="w-12 h-12 rounded-full overflow-hidden relative bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center">
                                             {convo.participants[0]?.avatarUrl ? (
                                                 <Image src={convo.participants[0].avatarUrl} alt={convo.participants[0].displayName} fill className="object-cover" />
                                             ) : (
@@ -559,7 +559,7 @@ function MessagesPageContent() {
                                         </p>
                                     </div>
                                     {convo.unreadCount > 0 && (
-                                        <span className="w-2 h-2 rounded-full bg-[#00D4FF]" />
+                                        <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
                                     )}
                                 </motion.button>
                             ))
@@ -577,7 +577,7 @@ function MessagesPageContent() {
                                     ←
                                 </button>
                                 <div className="relative">
-                                    <div className="w-10 h-10 rounded-full overflow-hidden relative bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
+                                    <div className="w-10 h-10 rounded-full overflow-hidden relative bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center">
                                         {selectedConvo.participants[0]?.avatarUrl ? (
                                             <Image src={selectedConvo.participants[0].avatarUrl} alt="" fill className="object-cover" />
                                         ) : (
@@ -635,7 +635,7 @@ function MessagesPageContent() {
                                         >
                                             <div className="relative group">
                                                 <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl ${isMe
-                                                    ? 'bg-gradient-to-r from-[#00D4FF] to-[#00D4FF]/80 text-black rounded-br-md'
+                                                    ? 'bg-gradient-to-r from-[#D4AF37] to-[#D4AF37]/80 text-black rounded-br-md'
                                                     : 'bg-white/[0.06] text-white rounded-bl-md'
                                                     }`}>
                                                     {msg.mediaType === 'AUDIO' ? (
@@ -698,7 +698,7 @@ function MessagesPageContent() {
                                 <motion.div
                                     initial={{ y: 20, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
-                                    className="relative bg-white/[0.04] border border-white/[0.08] rounded-2xl shadow-2xl overflow-visible focus-within:border-[#00D4FF]/30 focus-within:shadow-[0_0_16px_rgba(0,212,255,0.06)] transition-all duration-300 backdrop-blur-xl"
+                                    className="relative bg-white/[0.04] border border-white/[0.08] rounded-2xl shadow-2xl overflow-visible focus-within:border-[#D4AF37]/30 focus-within:shadow-[0_0_16px_rgba(0,212,255,0.06)] transition-all duration-300 backdrop-blur-xl"
                                 >
                                     {/* Emoji Picker Popover */}
                                     <AnimatePresence>
@@ -732,7 +732,7 @@ function MessagesPageContent() {
                                                 </motion.button>
                                                 <motion.button
                                                     onClick={handleSendVoiceMessage}
-                                                    className="w-10 h-10 rounded-full bg-[#00D4FF] hover:bg-[#00C4EF] flex items-center justify-center shadow-[0_0_20px_rgba(0,212,255,0.3)] transition-colors"
+                                                    className="w-10 h-10 rounded-full bg-[#D4AF37] hover:bg-[#00C4EF] flex items-center justify-center shadow-[0_0_20px_rgba(0,212,255,0.3)] transition-colors"
                                                     whileTap={{ scale: 0.9 }}
                                                 >
                                                     <SendIcon size={18} className="text-black" />
@@ -740,12 +740,12 @@ function MessagesPageContent() {
                                             </div>
                                         ) : (
                                             <>
-                                                <button className="p-3 text-white/40 hover:text-[#00D4FF] transition-colors">
+                                                <button className="p-3 text-white/40 hover:text-[#D4AF37] transition-colors">
                                                     <AttachIcon size={20} />
                                                 </button>
                                                 <button
                                                     onClick={() => setShowInputEmojiPicker(!showInputEmojiPicker)}
-                                                    className={`p-3 transition-colors ${showInputEmojiPicker ? 'text-[#00D4FF]' : 'text-white/40 hover:text-[#00D4FF]'}`}
+                                                    className={`p-3 transition-colors ${showInputEmojiPicker ? 'text-[#D4AF37]' : 'text-white/40 hover:text-[#D4AF37]'}`}
                                                 >
                                                     <SmileIcon size={20} />
                                                 </button>
@@ -772,7 +772,7 @@ function MessagesPageContent() {
                                                 {messageInput.trim() ? (
                                                     <motion.button
                                                         onClick={handleSendMessage}
-                                                        className="bg-gradient-to-r from-[#00D4FF] to-[#7C3AED] text-white rounded-xl px-4 py-2.5 hover:shadow-[0_0_16px_rgba(0,212,255,0.3)] transition-all duration-200 flex items-center justify-center"
+                                                        className="bg-gradient-to-r from-[#D4AF37] to-[#9A7A24] text-white rounded-xl px-4 py-2.5 hover:shadow-[0_0_16px_rgba(0,212,255,0.3)] transition-all duration-200 flex items-center justify-center"
                                                         whileTap={{ scale: 0.95 }}
                                                         initial={{ scale: 0 }}
                                                         animate={{ scale: 1 }}
@@ -797,8 +797,8 @@ function MessagesPageContent() {
                     ) : (
                         <div className="flex-1 flex items-center justify-center">
                             <div className="text-center">
-                                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#8B5CF6]/20 flex items-center justify-center">
-                                    <MessageIcon size={40} className="text-[#00D4FF]" />
+                                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#B8942D]/20 flex items-center justify-center">
+                                    <MessageIcon size={40} className="text-[#D4AF37]" />
                                 </div>
                                 <h2 className="text-xl font-semibold text-white mb-2">Your Messages</h2>
                                 <p className="text-white/50">Select a conversation to start chatting</p>

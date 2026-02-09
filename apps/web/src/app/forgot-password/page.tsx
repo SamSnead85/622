@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
             >
                 <Link href="/" className="inline-flex items-center gap-3 mb-12">
                     <div className="text-3xl font-bold">
-                        <span className="text-[#00D4FF]">0</span>
+                        <span className="text-[#D4AF37]">0</span>
                         <span className="text-white">G</span>
                     </div>
                     <span className="font-semibold text-xl text-white/70">ZeroG</span>

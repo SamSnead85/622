@@ -100,9 +100,9 @@ function ChatMessage({ msg }: { msg: StreamChatMessage }) {
                 </div>
             )}
             <div className="min-w-0">
-                <span className="text-xs font-semibold text-[#00D4FF] mr-1.5">
+                <span className="text-xs font-semibold text-[#D4AF37] mr-1.5">
                     {msg.user.displayName}
-                    {msg.user.isVerified && <span className="ml-0.5 text-[#00D4FF]">✓</span>}
+                    {msg.user.isVerified && <span className="ml-0.5 text-[#D4AF37]">✓</span>}
                 </span>
                 <span className="text-sm text-white/80 break-words">{msg.content}</span>
             </div>
@@ -207,7 +207,7 @@ export default function WatchStreamPage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-[#050508] flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
             </div>
         );
     }
@@ -217,7 +217,7 @@ export default function WatchStreamPage() {
             <div className="min-h-screen bg-[#050508] flex items-center justify-center text-white">
                 <div className="text-center">
                     <p className="text-white/50 mb-4">Stream not found</p>
-                    <Link href="/campfire" className="text-[#00D4FF] hover:underline">Browse streams</Link>
+                    <Link href="/campfire" className="text-[#D4AF37] hover:underline">Browse streams</Link>
                 </div>
             </div>
         );
@@ -234,7 +234,7 @@ export default function WatchStreamPage() {
                             playbackId={stream.muxPlaybackId}
                             streamType="live"
                             autoPlay="muted"
-                            accentColor="#00D4FF"
+                            accentColor="#D4AF37"
                             primaryColor="#ffffff"
                             secondaryColor="#050508"
                             className="w-full h-full [aspect-ratio:unset]"
@@ -249,7 +249,7 @@ export default function WatchStreamPage() {
                             playbackId={stream.muxPlaybackId}
                             streamType="on-demand"
                             autoPlay={false}
-                            accentColor="#00D4FF"
+                            accentColor="#D4AF37"
                             primaryColor="#ffffff"
                             secondaryColor="#050508"
                             className="w-full h-full [aspect-ratio:unset]"
@@ -336,9 +336,9 @@ export default function WatchStreamPage() {
                             <div className="min-w-0">
                                 <h1 className="font-bold text-base text-white truncate">{stream.title}</h1>
                                 <div className="flex items-center gap-2 text-sm text-white/50 mt-0.5">
-                                    <Link href={`/profile/${stream.user.username}`} className="hover:text-[#00D4FF] transition-colors">
+                                    <Link href={`/profile/${stream.user.username}`} className="hover:text-[#D4AF37] transition-colors">
                                         @{stream.user.username}
-                                        {stream.user.isVerified && <span className="text-[#00D4FF] ml-0.5">✓</span>}
+                                        {stream.user.isVerified && <span className="text-[#D4AF37] ml-0.5">✓</span>}
                                     </Link>
                                     <span className="text-white/20">·</span>
                                     <span>{stream.user.followersCount?.toLocaleString() || 0} followers</span>
@@ -364,7 +364,7 @@ export default function WatchStreamPage() {
                                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
                                     isFollowing
                                         ? 'bg-white/[0.06] text-white/70 border border-white/[0.08]'
-                                        : 'bg-[#00D4FF] text-black hover:bg-[#00D4FF]/90'
+                                        : 'bg-[#D4AF37] text-black hover:bg-[#D4AF37]/90'
                                 }`}
                             >
                                 {isFollowing ? 'Following' : 'Follow'}
@@ -458,12 +458,12 @@ export default function WatchStreamPage() {
                             placeholder={user ? 'Send a message...' : 'Log in to chat'}
                             disabled={!user}
                             maxLength={500}
-                            className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#00D4FF]/40 focus:ring-1 focus:ring-[#00D4FF]/20 transition-all disabled:opacity-40"
+                            className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#D4AF37]/40 focus:ring-1 focus:ring-[#D4AF37]/20 transition-all disabled:opacity-40"
                         />
                         <button
                             type="submit"
                             disabled={!newMessage.trim() || !user}
-                            className="bg-[#00D4FF]/20 hover:bg-[#00D4FF]/30 text-[#00D4FF] p-2.5 rounded-xl transition-all disabled:opacity-30 active:scale-95"
+                            className="bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 text-[#D4AF37] p-2.5 rounded-xl transition-all disabled:opacity-30 active:scale-95"
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />

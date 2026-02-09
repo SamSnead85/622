@@ -176,7 +176,7 @@ export default function AdminGrowthPartnersPage() {
             <div className="max-w-6xl mx-auto px-4 py-6">
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <div className="w-8 h-8 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full animate-spin" />
+                        <div className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
                     </div>
                 ) : (
                     <>
@@ -239,7 +239,7 @@ export default function AdminGrowthPartnersPage() {
                                     {flagged.length > 0 && (
                                         <button
                                             onClick={() => setActiveTab('flagged')}
-                                            className="mt-2 text-xs text-[#00D4FF] hover:underline"
+                                            className="mt-2 text-xs text-[#D4AF37] hover:underline"
                                         >
                                             Review flagged referrals
                                         </button>

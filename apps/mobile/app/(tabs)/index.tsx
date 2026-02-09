@@ -832,6 +832,9 @@ export default function FeedScreen() {
     }, [isLoading, hasMore, fetchFeed, feedType]);
 
     const getGreeting = () => {
+        const profile = user?.culturalProfile || 'standard';
+        if (profile === 'muslim') return 'Assalamu Alaikum';
+        if (profile === 'custom' && user?.customGreeting) return user.customGreeting;
         const hour = new Date().getHours();
         if (hour < 12) return 'Good morning';
         if (hour < 18) return 'Good afternoon';
@@ -859,9 +862,6 @@ export default function FeedScreen() {
         <View>
             {/* Active Contacts Strip — who's online */}
             <ActiveContactsStrip onCreatePress={() => router.push('/(tabs)/create')} />
-
-            {/* Feed Type Tabs */}
-            <FeedTabs activeTab={feedType} onTabChange={handleTabChange} />
         </View>
     );
 
@@ -904,34 +904,48 @@ export default function FeedScreen() {
                 style={StyleSheet.absoluteFill}
             />
 
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-                <View>
-                    <Text style={styles.headerGreeting}>
-                        {getGreeting()},{' '}
-                        {user?.displayName?.split(' ')[0] || 'there'}
-                    </Text>
+            {/* Compact Header — Avatar + Greeting + Actions */}
+            <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
+                <View style={styles.headerLeft}>
+                    <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7}>
+                        {user?.avatarUrl ? (
+                            <Image source={{ uri: user.avatarUrl }} style={styles.headerAvatar} cachePolicy="memory-disk" />
+                        ) : (
+                            <View style={[styles.headerAvatar, styles.headerAvatarPlaceholder]}>
+                                <Text style={styles.headerAvatarInitial}>
+                                    {(user?.displayName || 'U')[0].toUpperCase()}
+                                </Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                    <View style={styles.headerGreetingCol}>
+                        <Text style={styles.headerGreeting} numberOfLines={1}>
+                            {getGreeting()},{' '}
+                            {user?.displayName?.split(' ')[0] || 'there'}
+                        </Text>
+                    </View>
                 </View>
                 <View style={styles.headerActions}>
+                    {/* Tools shortcut for muslim profile */}
+                    {user?.culturalProfile === 'muslim' && (
+                        <TouchableOpacity
+                            style={styles.headerBtn}
+                            onPress={() => router.push('/tools' as any)}
+                        >
+                            <Ionicons name="compass-outline" size={22} color={colors.gold[400]} />
+                        </TouchableOpacity>
+                    )}
                     <TouchableOpacity
                         style={styles.headerBtn}
                         onPress={() => router.push('/notifications')}
                     >
-                        <Ionicons
-                            name="notifications-outline"
-                            size={22}
-                            color={colors.text.primary}
-                        />
+                        <Ionicons name="notifications-outline" size={22} color={colors.text.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.headerBtn}
                         onPress={() => router.push('/messages')}
                     >
-                        <Ionicons
-                            name="mail-outline"
-                            size={22}
-                            color={colors.text.primary}
-                        />
+                        <Ionicons name="mail-outline" size={22} color={colors.text.primary} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -1008,26 +1022,52 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Medium',
     },
 
-    // Header
+    // Header — compact
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: spacing.xl,
-        paddingBottom: spacing.sm,
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.xs,
     },
-    headerGreeting: {
-        fontSize: 22,
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        gap: spacing.sm,
+    },
+    headerAvatar: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        borderWidth: 2,
+        borderColor: colors.gold[500],
+    },
+    headerAvatarPlaceholder: {
+        backgroundColor: colors.obsidian[500],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    headerAvatarInitial: {
+        fontSize: 14,
         fontWeight: '700',
         color: colors.text.primary,
-        letterSpacing: -0.5,
+    },
+    headerGreetingCol: {
+        flex: 1,
+    },
+    headerGreeting: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: colors.text.primary,
+        letterSpacing: -0.3,
         fontFamily: 'Inter-Bold',
     },
-    headerActions: { flexDirection: 'row', gap: spacing.sm },
+    headerActions: { flexDirection: 'row', gap: spacing.xs },
     headerBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         backgroundColor: colors.surface.glassHover,
         alignItems: 'center',
         justifyContent: 'center',

@@ -115,7 +115,7 @@ function VerificationCodeInput({
                         ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/30 text-red-400'
                         : code.length === 6
                             ? 'border-green-500/50 text-white'
-                            : 'border-white/20 focus:border-[#00D4FF] focus:ring-[#00D4FF]/30 text-white'
+                            : 'border-white/20 focus:border-[#D4AF37] focus:ring-[#D4AF37]/30 text-white'
                     }
                 `}
             />
@@ -224,7 +224,7 @@ function BackupCodesDisplay({ codes, onDone }: { codes: string[]; onDone: () => 
             {/* Done Button */}
             <button
                 onClick={onDone}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold hover:opacity-90 transition-opacity"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold hover:opacity-90 transition-opacity"
             >
                 Done
             </button>
@@ -336,7 +336,7 @@ export function TwoFactorSetup({ isOpen, onClose, onComplete }: TwoFactorSetupPr
                         {step === 'loading' && (
                             <div className="text-center py-12">
                                 <motion.div
-                                    className="w-12 h-12 mx-auto border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full"
+                                    className="w-12 h-12 mx-auto border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full"
                                     animate={{ rotate: 360 }}
                                     transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                                 />
@@ -351,7 +351,7 @@ export function TwoFactorSetup({ isOpen, onClose, onComplete }: TwoFactorSetupPr
                             >
                                 {/* Step indicator */}
                                 <div className="flex items-center gap-2 mb-6">
-                                    <span className="w-6 h-6 rounded-full bg-[#00D4FF] text-black text-xs font-bold flex items-center justify-center">1</span>
+                                    <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-black text-xs font-bold flex items-center justify-center">1</span>
                                     <span className="text-sm text-white/70">Scan QR Code</span>
                                     <div className="flex-1 h-px bg-white/10" />
                                     <span className="w-6 h-6 rounded-full bg-white/10 text-white/50 text-xs font-bold flex items-center justify-center">2</span>
@@ -360,7 +360,7 @@ export function TwoFactorSetup({ isOpen, onClose, onComplete }: TwoFactorSetupPr
 
                                 {/* Instructions */}
                                 <div className="flex items-start gap-3 mb-6 p-4 rounded-xl bg-white/5">
-                                    <SmartphoneIcon size={24} className="text-[#00D4FF] flex-shrink-0 mt-0.5" />
+                                    <SmartphoneIcon size={24} className="text-[#D4AF37] flex-shrink-0 mt-0.5" />
                                     <div>
                                         <p className="text-sm text-white/80 font-medium">
                                             Open your authenticator app
@@ -430,7 +430,7 @@ export function TwoFactorSetup({ isOpen, onClose, onComplete }: TwoFactorSetupPr
                                 <button
                                     onClick={() => setStep('verify')}
                                     disabled={!setupData}
-                                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Continue
                                 </button>
@@ -447,13 +447,13 @@ export function TwoFactorSetup({ isOpen, onClose, onComplete }: TwoFactorSetupPr
                                     <span className="w-6 h-6 rounded-full bg-green-500 text-black text-xs font-bold flex items-center justify-center">✓</span>
                                     <span className="text-sm text-white/50">Scan QR Code</span>
                                     <div className="flex-1 h-px bg-white/10" />
-                                    <span className="w-6 h-6 rounded-full bg-[#00D4FF] text-black text-xs font-bold flex items-center justify-center">2</span>
+                                    <span className="w-6 h-6 rounded-full bg-[#D4AF37] text-black text-xs font-bold flex items-center justify-center">2</span>
                                     <span className="text-sm text-white/70">Verify</span>
                                 </div>
 
                                 {/* Instructions */}
                                 <div className="text-center mb-6">
-                                    <KeyIcon size={48} className="mx-auto text-[#00D4FF] mb-4" />
+                                    <KeyIcon size={48} className="mx-auto text-[#D4AF37] mb-4" />
                                     <h3 className="text-lg font-semibold text-white mb-2">
                                         Enter Verification Code
                                     </h3>
@@ -485,7 +485,7 @@ export function TwoFactorSetup({ isOpen, onClose, onComplete }: TwoFactorSetupPr
                                 {isVerifying && (
                                     <div className="text-center py-4">
                                         <motion.div
-                                            className="w-8 h-8 mx-auto border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full"
+                                            className="w-8 h-8 mx-auto border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full"
                                             animate={{ rotate: 360 }}
                                             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                                         />

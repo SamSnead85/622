@@ -33,10 +33,10 @@
   --text-muted: rgba(255, 255, 255, 0.35);
   --text-inverse: #000000;
 
-  /* === ACCENT - Refined, Not Loud === */
-  --accent-primary: #00D4FF;
-  --accent-primary-hover: #2563EB;
-  --accent-secondary: #8B5CF6;
+  /* === ACCENT - Premium Gold === */
+  --accent-primary: #D4AF37;
+  --accent-primary-hover: #E5C158;
+  --accent-secondary: #B8942D;
   --accent-success: #10B981;
   --accent-warning: #F59E0B;
   --accent-danger: #EF4444;
@@ -52,32 +52,32 @@
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
   --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.15);
 
-  /* === VOID - The infinite cosmos === */
+  /* === VOID - Obsidian cosmos === */
   --void: #000000;
-  --void-elevated: #0A1628;
-  --void-surface: #0f1729;
+  --void-elevated: #0A0A0F;
+  --void-surface: #12121A;
 
-  /* === 0G PRIMARY - Electric Blue === */
-  --og-primary: #00D4FF;
-  --og-primary-bright: #33DDFF;
-  --og-primary-glow: rgba(0, 212, 255, 0.4);
-  --og-primary-subtle: rgba(0, 212, 255, 0.15);
+  /* === 0G PRIMARY - Premium Gold === */
+  --og-primary: #D4AF37;
+  --og-primary-bright: #E5C158;
+  --og-primary-glow: rgba(212, 175, 55, 0.4);
+  --og-primary-subtle: rgba(212, 175, 55, 0.15);
 
-  /* === AURORA - Living energy === */
-  --aurora-violet: #8B5CF6;
-  --aurora-violet-bright: #A78BFA;
-  --aurora-violet-glow: rgba(139, 92, 246, 0.4);
+  /* === GOLD SYSTEM - Refined energy === */
+  --aurora-violet: #B8942D;
+  --aurora-violet-bright: #E5C158;
+  --aurora-violet-glow: rgba(184, 148, 45, 0.4);
 
-  --aurora-cyan: #00D4FF;
-  --aurora-cyan-bright: #33DDFF;
-  --aurora-cyan-glow: rgba(0, 212, 255, 0.4);
+  --aurora-cyan: #D4AF37;
+  --aurora-cyan-bright: #E5C158;
+  --aurora-cyan-glow: rgba(212, 175, 55, 0.4);
 
   --aurora-rose: #F43F5E;
   --aurora-rose-bright: #FB7185;
   --aurora-rose-glow: rgba(244, 63, 94, 0.4);
 
-  --ember: #00D4FF;
-  --ember-glow: rgba(0, 212, 255, 0.4);
+  --ember: #D4AF37;
+  --ember-glow: rgba(212, 175, 55, 0.4);
 
   /* === GLASS - Layered surfaces === */
   --glass-ultra: rgba(255, 255, 255, 0.02);
@@ -94,7 +94,7 @@
   --silk-amber-glow: rgba(245, 158, 11, 0.4);
   --silk-rose: #F43F5E;
   --silk-rose-glow: rgba(244, 63, 94, 0.35);
-  --silk-violet: #8B5CF6;
+  --silk-violet: #B8942D;
   --silk-emerald: #10B981;
 
   /* === JOURNEY GRADIENTS === */
@@ -198,8 +198,8 @@ body {
 
   .bg-aurora-subtle {
     background:
-      radial-gradient(ellipse 100% 60% at 50% 0%, rgba(139, 92, 246, 0.15), transparent),
-      radial-gradient(ellipse 80% 40% at 100% 50%, rgba(6, 182, 212, 0.1), transparent),
+      radial-gradient(ellipse 100% 60% at 50% 0%, rgba(184, 148, 45, 0.15), transparent),
+      radial-gradient(ellipse 80% 40% at 100% 50%, rgba(212, 175, 55, 0.1), transparent),
       var(--void);
   }
 
@@ -961,8 +961,8 @@ img[loading="lazy"] {
   :root {
     color-scheme: dark;
     --void: #000000;
-    --void-elevated: #0A1628;
-    --void-surface: #0f1729;
+    --void-elevated: #0A0A0F;
+    --void-surface: #12121A;
     --text-primary: #FAFAFA;
     --text-secondary: rgba(255, 255, 255, 0.7);
     --text-tertiary: rgba(255, 255, 255, 0.5);
@@ -1033,7 +1033,7 @@ img[loading="lazy"] {
  * FOCUS VISIBLE STYLES
  * ============================================ */
 :focus-visible {
-    outline: 2px solid var(--accent-primary, #00D4FF);
+    outline: 2px solid var(--accent-primary, #D4AF37);
     outline-offset: 2px;
     border-radius: 4px;
 }
@@ -1043,6 +1043,6 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-    outline: 2px solid var(--accent-primary, #00D4FF);
+    outline: 2px solid var(--accent-primary, #D4AF37);
     outline-offset: 2px;
 }

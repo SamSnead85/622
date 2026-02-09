@@ -58,24 +58,24 @@ export function NewMembersBanner() {
     // Always show banner - with placeholder when loading/empty
     if (isLoading) {
         return (
-            <div className="mb-4 h-10 overflow-hidden rounded-xl bg-gradient-to-r from-green-500/5 via-[#00D4FF]/5 to-purple-500/5 border border-white/5 animate-pulse" />
+            <div className="mb-4 h-10 overflow-hidden rounded-xl bg-gradient-to-r from-green-500/5 via-[#D4AF37]/5 to-purple-500/5 border border-white/5 animate-pulse" />
         );
     }
 
     if (newMembers.length === 0) {
         return (
-            <div className="mb-4 overflow-hidden rounded-xl bg-gradient-to-r from-[#00D4FF]/10 to-[#8B5CF6]/10 border border-[#00D4FF]/20">
+            <div className="mb-4 overflow-hidden rounded-xl bg-gradient-to-r from-[#D4AF37]/10 to-[#B8942D]/10 border border-[#D4AF37]/20">
                 <div className="py-2 px-4 flex items-center gap-3">
                     <span className="text-lg">👥</span>
                     <span className="text-sm text-white/70">Be among the first! Invite friends to grow the community.</span>
-                    <Link href="/invite" className="ml-auto text-xs text-[#00D4FF] font-semibold hover:underline">Invite →</Link>
+                    <Link href="/invite" className="ml-auto text-xs text-[#D4AF37] font-semibold hover:underline">Invite →</Link>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="mb-4 overflow-hidden rounded-xl bg-gradient-to-r from-green-500/10 via-[#00D4FF]/10 to-purple-500/10 border border-green-500/20">
+        <div className="mb-4 overflow-hidden rounded-xl bg-gradient-to-r from-green-500/10 via-[#D4AF37]/10 to-purple-500/10 border border-green-500/20">
             <div className="py-2 px-4 flex items-center gap-3">
                 <div className="flex-shrink-0 flex items-center gap-2 text-green-400">
                     <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
@@ -96,11 +96,11 @@ export function NewMembersBanner() {
                             <Link
                                 key={`${member.id}-${idx}`}
                                 href={`/profile/${member.username}`}
-                                className="flex items-center gap-2 text-sm text-white hover:text-[#00D4FF] transition-colors"
+                                className="flex items-center gap-2 text-sm text-white hover:text-[#D4AF37] transition-colors"
                             >
                                 <span className="text-lg">👋</span>
                                 <span>
-                                    Welcome <span className="font-semibold text-[#00D4FF]">{member.displayName || member.username}</span>!
+                                    Welcome <span className="font-semibold text-[#D4AF37]">{member.displayName || member.username}</span>!
                                 </span>
                             </Link>
                         ))}

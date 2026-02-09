@@ -135,7 +135,7 @@ export function PullToRefreshIndicator({
     return (
         <div className="flex items-center justify-center py-4">
             <motion.div
-                className="w-8 h-8 border-2 border-[#00D4FF]/30 border-t-[#00D4FF] rounded-full"
+                className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full"
                 animate={{
                     rotate: isRefreshing ? 360 : progress * 360,
                     scale: Math.min(progress, 1)
@@ -155,7 +155,7 @@ export function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
     };
 
     return (
-        <div className={`${sizes[size]} border-[#00D4FF]/20 border-t-[#00D4FF] rounded-full animate-spin`} />
+        <div className={`${sizes[size]} border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin`} />
     );
 }
 
@@ -193,14 +193,14 @@ export function EmptyState({
                 action.href ? (
                     <a
                         href={action.href}
-                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity"
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#D4AF37] text-black font-semibold hover:opacity-90 transition-opacity"
                     >
                         {action.label}
                     </a>
                 ) : (
                     <button
                         onClick={action.onClick}
-                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00D4FF] text-black font-semibold hover:opacity-90 transition-opacity"
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#D4AF37] text-black font-semibold hover:opacity-90 transition-opacity"
                     >
                         {action.label}
                     </button>
@@ -227,7 +227,7 @@ export function TouchButton({
     className?: string;
 }) {
     const variants = {
-        primary: 'bg-[#00D4FF] text-black hover:opacity-90',
+        primary: 'bg-[#D4AF37] text-black hover:opacity-90',
         secondary: 'bg-white/10 text-white hover:bg-white/15',
         ghost: 'text-white/60 hover:text-white hover:bg-white/5',
     };
@@ -272,7 +272,7 @@ export function TouchInput({
             placeholder={placeholder}
             value={value}
             onChange={onChange}
-            className={`min-h-[44px] w-full px-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:border-[#00D4FF]/50 focus:outline-none transition-colors ${className}`}
+            className={`min-h-[44px] w-full px-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:border-[#D4AF37]/50 focus:outline-none transition-colors ${className}`}
             {...props}
         />
     );

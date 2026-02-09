@@ -90,7 +90,7 @@ export default function PrivacyPage() {
 
                     <section>
                         <h2 className="text-xl font-semibold text-white mb-3">10. Contact</h2>
-                        <p className="text-white/60 leading-relaxed">For privacy inquiries, please contact us through the Platform or visit our <Link href="/about" className="text-[#00D4FF]/70 hover:text-[#00D4FF] underline underline-offset-2">About page</Link>.</p>
+                        <p className="text-white/60 leading-relaxed">For privacy inquiries, please contact us through the Platform or visit our <Link href="/about" className="text-[#D4AF37]/70 hover:text-[#D4AF37] underline underline-offset-2">About page</Link>.</p>
                     </section>
                 </div>
             </main>

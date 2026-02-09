@@ -435,7 +435,7 @@ function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, movePo
 
     return (
         <div
-            className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] rounded-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-sm overflow-hidden mb-6 transition-all duration-300 hover:border-[#00D4FF]/20 hover:shadow-[0_8px_32px_rgba(0,212,255,0.08)] hover:from-white/[0.06] hover:to-white/[0.02] group"
+            className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] rounded-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-sm overflow-hidden mb-6 transition-all duration-300 hover:border-[#D4AF37]/20 hover:shadow-[0_8px_32px_rgba(0,212,255,0.08)] hover:from-white/[0.06] hover:to-white/[0.02] group"
             style={tintStyle}
         >
             {/* Header */}
@@ -447,12 +447,12 @@ function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, movePo
                             alt={post.author.displayName}
                             width={40}
                             height={40}
-                            className="w-10 h-10 rounded-full object-cover flex-shrink-0 cursor-pointer ring-2 ring-white/10 hover:ring-[#00D4FF]/40 transition-all duration-300"
+                            className="w-10 h-10 rounded-full object-cover flex-shrink-0 cursor-pointer ring-2 ring-white/10 hover:ring-[#D4AF37]/40 transition-all duration-300"
                             onClick={() => router.push(`/profile/${post.author.username}`)}
                         />
                     ) : (
                         <div
-                            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00D4FF] via-[#7C3AED] to-[#F472B6] flex items-center justify-center text-white font-bold text-sm flex-shrink-0 cursor-pointer ring-2 ring-white/10 hover:ring-[#00D4FF]/40 transition-all duration-300"
+                            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37] via-[#9A7A24] to-[#F472B6] flex items-center justify-center text-white font-bold text-sm flex-shrink-0 cursor-pointer ring-2 ring-white/10 hover:ring-[#D4AF37]/40 transition-all duration-300"
                             onClick={() => router.push(`/profile/${post.author.username}`)}
                         >
                             {post.author.displayName?.[0] || 'U'}
@@ -467,15 +467,15 @@ function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, movePo
                                 {post.author.displayName}
                             </span>
                             <span
-                                className="text-white/40 text-xs cursor-pointer hover:text-[#00D4FF] hover:underline transition-colors"
+                                className="text-white/40 text-xs cursor-pointer hover:text-[#D4AF37] hover:underline transition-colors"
                                 onClick={() => router.push(`/profile/${post.author.username}`)}
                             >@{post.author.username}</span>
-                            <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#00D4FF]/20 to-[#7C3AED]/20 text-[#00D4FF] text-[10px] font-medium flex-shrink-0 border border-[#00D4FF]/10">
+                            <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#D4AF37]/20 to-[#9A7A24]/20 text-[#D4AF37] text-[10px] font-medium flex-shrink-0 border border-[#D4AF37]/10">
                                 {post.type === 'RALLY' ? 'Rally' : 'Public'}
                             </span>
                             <span className="text-white/30 text-xs flex-shrink-0">• {new Date(post.createdAt).toLocaleDateString()}</span>
                             {post.isPinned && (
-                                <span className="px-2 py-0.5 rounded-full bg-[#00D4FF]/10 text-[#00D4FF] text-[10px] font-medium flex-shrink-0 border border-[#00D4FF]/20 flex items-center gap-1">
+                                <span className="px-2 py-0.5 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] text-[10px] font-medium flex-shrink-0 border border-[#D4AF37]/20 flex items-center gap-1">
                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
                                     Pinned
                                 </span>
@@ -541,12 +541,12 @@ function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, movePo
 
             {!post.mediaUrl && (
                 <div
-                    className="px-6 py-8 flex items-center justify-center min-h-[140px] bg-gradient-to-br from-[#00D4FF]/[0.06] via-transparent to-[#8B5CF6]/[0.06] cursor-pointer relative overflow-hidden"
+                    className="px-6 py-8 flex items-center justify-center min-h-[140px] bg-gradient-to-br from-[#D4AF37]/[0.06] via-transparent to-[#B8942D]/[0.06] cursor-pointer relative overflow-hidden"
                     onClick={() => router.push(`/post/${post.id}`)}
                 >
                     <div className="absolute inset-0 opacity-30">
-                        <div className="absolute top-0 -left-1/4 w-1/2 h-1/2 rounded-full bg-[#00D4FF]/10 blur-[60px]" />
-                        <div className="absolute bottom-0 -right-1/4 w-1/2 h-1/2 rounded-full bg-[#8B5CF6]/10 blur-[60px]" />
+                        <div className="absolute top-0 -left-1/4 w-1/2 h-1/2 rounded-full bg-[#D4AF37]/10 blur-[60px]" />
+                        <div className="absolute bottom-0 -right-1/4 w-1/2 h-1/2 rounded-full bg-[#B8942D]/10 blur-[60px]" />
                     </div>
                     <div className="text-center text-white/20">
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
@@ -574,7 +574,7 @@ function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, movePo
 
                         <button
                             onClick={() => router.push(`/post/${post.id}`)}
-                            className="flex items-center gap-2 text-white/60 hover:text-[#00D4FF] transition-all group min-h-[44px] px-1 active:scale-90"
+                            className="flex items-center gap-2 text-white/60 hover:text-[#D4AF37] transition-all group min-h-[44px] px-1 active:scale-90"
                         >
                             <MessageIcon size={24} className="transition-transform duration-300 group-hover:scale-110" />
                             <span className={`text-sm font-medium transition-opacity ${zenMode ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
@@ -600,7 +600,7 @@ function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, movePo
                                 <button
                                     onClick={(e) => { e.stopPropagation(); movePost(post.id, 'up'); }}
                                     disabled={isFirst}
-                                    className={`p-1.5 rounded-lg transition-all ${isFirst ? 'text-white/10 cursor-default' : 'text-white/30 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 active:scale-90'}`}
+                                    className={`p-1.5 rounded-lg transition-all ${isFirst ? 'text-white/10 cursor-default' : 'text-white/30 hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 active:scale-90'}`}
                                     aria-label="Move post up"
                                     title="Move up in feed"
                                 >
@@ -611,7 +611,7 @@ function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, movePo
                                 <button
                                     onClick={(e) => { e.stopPropagation(); movePost(post.id, 'down'); }}
                                     disabled={isLast}
-                                    className={`p-1.5 rounded-lg transition-all ${isLast ? 'text-white/10 cursor-default' : 'text-white/30 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 active:scale-90'}`}
+                                    className={`p-1.5 rounded-lg transition-all ${isLast ? 'text-white/10 cursor-default' : 'text-white/30 hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 active:scale-90'}`}
                                     aria-label="Move post down"
                                     title="Move down in feed"
                                 >
@@ -632,7 +632,7 @@ function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, movePo
                                     // Could show toast here
                                 }
                             }}
-                            className="text-white/40 hover:text-[#00D4FF] transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(0,212,255,0.3)] min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-90"
+                            className="text-white/40 hover:text-[#D4AF37] transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(0,212,255,0.3)] min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-90"
                         >
                             <ShareIcon size={24} />
                         </button>

@@ -63,7 +63,7 @@ export function FollowButton({ isFollowing, onToggle, size = 'md', className = '
                         ? 'bg-red-500/20 text-red-400 border border-red-500/40'
                         : isFollowing
                             ? 'bg-white/10 text-white/70 hover:bg-white/15 border border-white/10'
-                            : 'bg-[#00D4FF] text-black hover:opacity-90'
+                            : 'bg-[#D4AF37] text-black hover:opacity-90'
                 } ${className}`}
                 whileTap={{ scale: 0.95 }}
                 layout

@@ -57,7 +57,7 @@ function CampaignsContent() {
         eventDate: '', eventLocation: '', eventCity: '',
         incentiveType: 'raffle', incentiveValue: '', incentiveRules: '',
         raffleDrawDate: '', signupGoal: '100',
-        partnerName: '', brandColor: '#00D4FF',
+        partnerName: '', brandColor: '#D4AF37',
     });
 
     const getToken = () => localStorage.getItem('token') || '';
@@ -97,7 +97,7 @@ function CampaignsContent() {
             if (res.ok) {
                 await fetchCampaigns();
                 setShowCreate(false);
-                setForm({ title: '', description: '', type: 'event', slug: '', eventDate: '', eventLocation: '', eventCity: '', incentiveType: 'raffle', incentiveValue: '', incentiveRules: '', raffleDrawDate: '', signupGoal: '100', partnerName: '', brandColor: '#00D4FF' });
+                setForm({ title: '', description: '', type: 'event', slug: '', eventDate: '', eventLocation: '', eventCity: '', incentiveType: 'raffle', incentiveValue: '', incentiveRules: '', raffleDrawDate: '', signupGoal: '100', partnerName: '', brandColor: '#D4AF37' });
             }
         } catch { /* noop */ }
         finally { setCreating(false); }
@@ -124,7 +124,7 @@ function CampaignsContent() {
                         </div>
                         <button
                             onClick={() => setShowCreate(!showCreate)}
-                            className="px-4 py-2 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/20 text-xs font-medium text-[#00D4FF] hover:bg-[#00D4FF]/15 transition-colors"
+                            className="px-4 py-2 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-xs font-medium text-[#D4AF37] hover:bg-[#D4AF37]/15 transition-colors"
                         >
                             {showCreate ? 'Cancel' : 'New Campaign'}
                         </button>
@@ -199,7 +199,7 @@ function CampaignsContent() {
                                         <input type="number" value={form.signupGoal} onChange={e => setForm(f => ({ ...f, signupGoal: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:outline-none" />
                                     </div>
                                 </div>
-                                <button type="submit" disabled={creating} className="mt-4 px-6 py-2.5 rounded-xl bg-[#00D4FF] text-sm font-medium text-white hover:bg-[#00D4FF]/90 transition-all disabled:opacity-50">
+                                <button type="submit" disabled={creating} className="mt-4 px-6 py-2.5 rounded-xl bg-[#D4AF37] text-sm font-medium text-white hover:bg-[#D4AF37]/90 transition-all disabled:opacity-50">
                                     {creating ? 'Creating...' : 'Create Campaign'}
                                 </button>
                             </motion.form>

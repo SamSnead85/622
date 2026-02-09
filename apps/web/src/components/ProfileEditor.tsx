@@ -528,7 +528,7 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                                                 type="button"
                                                 onClick={() => setProfile(p => ({ ...p, coverUrl: bg.url }))}
                                                 className={`relative aspect-[3/1] rounded-lg overflow-hidden transition-all ${profile.coverUrl === bg.url
-                                                    ? 'ring-2 ring-[#00D4FF] ring-offset-1 ring-offset-[#0a0a0f]'
+                                                    ? 'ring-2 ring-[#D4AF37] ring-offset-1 ring-offset-[#0a0a0f]'
                                                     : 'hover:opacity-80'
                                                     }`}
                                                 title={bg.label}
@@ -547,8 +547,8 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                         {/* AI Coming Soon */}
                         <div className="mt-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
                             <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-lg bg-[#00D4FF]/10 flex items-center justify-center shrink-0">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <div className="w-7 h-7 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center shrink-0">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
                                     </svg>
                                 </div>

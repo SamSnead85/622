@@ -41,6 +41,9 @@ export interface User {
     publicUsername?: string;
     publicAvatarUrl?: string;
     publicBio?: string;
+    // Cultural profile
+    culturalProfile?: string;
+    customGreeting?: string;
 }
 
 export interface PostAuthor {
@@ -160,6 +163,8 @@ export const useAuthStore = create<AuthState>()(
                     publicUsername: rawUser.publicUsername,
                     publicAvatarUrl: rawUser.publicAvatarUrl,
                     publicBio: rawUser.publicBio,
+                    culturalProfile: rawUser.culturalProfile || 'standard',
+                    customGreeting: rawUser.customGreeting,
                 };
                 set({
                     user,

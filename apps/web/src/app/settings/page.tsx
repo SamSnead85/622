@@ -39,7 +39,7 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void 
     return (
         <button
             onClick={onChange}
-            className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6]' : 'bg-white/20'}`}
+            className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-gradient-to-r from-[#D4AF37] to-[#B8942D]' : 'bg-white/20'}`}
         >
             <motion.div
                 className="absolute top-1 w-4 h-4 rounded-full bg-white shadow"
@@ -229,7 +229,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+                                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                             >
                                 {isSubmitting ? 'Changing...' : 'Change Password'}
                             </button>
@@ -710,7 +710,7 @@ function SettingsPageContent() {
                                     <div className="px-4 py-3 border-t border-white/10">
                                         <button
                                             onClick={() => setShowNotificationCenter(true)}
-                                            className="text-sm text-[#00D4FF] hover:text-[#00D4FF]/80 transition-colors font-medium"
+                                            className="text-sm text-[#D4AF37] hover:text-[#D4AF37]/80 transition-colors font-medium"
                                         >
                                             Manage All Notification Preferences →
                                         </button>
@@ -725,7 +725,7 @@ function SettingsPageContent() {
                         {/* Invite Friends - Prominent CTA */}
                         <button
                             onClick={() => setShowInviteModal(true)}
-                            className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-black font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-3 shadow-lg"
+                            className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-3 shadow-lg"
                         >
                             <ZapIcon size={20} />
                             <span>Invite Friends to 0G</span>

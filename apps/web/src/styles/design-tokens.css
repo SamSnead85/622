@@ -30,9 +30,9 @@
     --og-rose-light: #FB7185;
     --og-rose-dark: #E11D48;
 
-    --og-violet: #8B5CF6;
-    --og-violet-light: #A78BFA;
-    --og-violet-dark: #7C3AED;
+    --og-violet: #B8942D;
+    --og-violet-light: #E5C158;
+    --og-violet-dark: #9A7A24;
 
     /* Desert & Earth Tones */
     --og-sand: #C2A06A;
@@ -66,8 +66,8 @@
     --gradient-brand-vertical: linear-gradient(180deg, var(--og-gold) 0%, var(--og-amber) 30%, var(--og-rose) 70%, var(--og-violet) 100%);
     --gradient-brand-radial: radial-gradient(circle, var(--og-gold) 0%, var(--og-amber) 30%, var(--og-rose) 60%, var(--og-violet) 100%);
 
-    --gradient-sunset: linear-gradient(135deg, #D4AF37 0%, #F59E0B 25%, #F43F5E 50%, #8B5CF6 75%, #1a1a40 100%);
-    --gradient-desert: linear-gradient(180deg, #C2A06A 0%, #B87333 50%, #8B5CF6 100%);
+    --gradient-sunset: linear-gradient(135deg, #D4AF37 0%, #F59E0B 25%, #F43F5E 50%, #B8942D 75%, #1a1a40 100%);
+    --gradient-desert: linear-gradient(180deg, #C2A06A 0%, #B87333 50%, #B8942D 100%);
     --gradient-night-sky: linear-gradient(180deg, #030305 0%, #1a1a40 50%, #2a2a5a 100%);
 
     --gradient-amber: linear-gradient(135deg, var(--og-amber-light) 0%, var(--og-amber-dark) 100%);
@@ -77,7 +77,7 @@
 
     --gradient-glow-amber: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
     --gradient-glow-rose: radial-gradient(circle, rgba(244, 63, 94, 0.12) 0%, transparent 70%);
-    --gradient-glow-violet: radial-gradient(circle, rgba(139, 92, 246, 0.10) 0%, transparent 70%);
+    --gradient-glow-violet: radial-gradient(circle, rgba(184, 148, 45, 0.10) 0%, transparent 70%);
     --gradient-glow-gold: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
 
     /* Card & Surface Gradients */
@@ -184,9 +184,9 @@
     /* Glow Shadows - Brand */
     --glow-amber: 0 0 20px rgba(245, 158, 11, 0.3), 0 0 40px rgba(245, 158, 11, 0.1);
     --glow-rose: 0 0 20px rgba(244, 63, 94, 0.3), 0 0 40px rgba(244, 63, 94, 0.1);
-    --glow-violet: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.1);
+    --glow-violet: 0 0 20px rgba(184, 148, 45, 0.3), 0 0 40px rgba(184, 148, 45, 0.1);
     --glow-gold: 0 0 20px rgba(212, 175, 55, 0.4), 0 0 40px rgba(212, 175, 55, 0.2);
-    --glow-brand: 0 0 30px rgba(212, 175, 55, 0.2), 0 0 60px rgba(245, 158, 11, 0.15), 0 0 90px rgba(139, 92, 246, 0.1);
+    --glow-brand: 0 0 30px rgba(212, 175, 55, 0.2), 0 0 60px rgba(245, 158, 11, 0.15), 0 0 90px rgba(184, 148, 45, 0.1);
 
     /* ============================================
      TRANSITIONS & ANIMATIONS
@@ -394,7 +394,7 @@
     }
 
     50% {
-        box-shadow: 0 0 40px rgba(212, 175, 55, 0.4), 0 0 80px rgba(245, 158, 11, 0.3), 0 0 120px rgba(139, 92, 246, 0.2);
+        box-shadow: 0 0 40px rgba(212, 175, 55, 0.4), 0 0 80px rgba(245, 158, 11, 0.3), 0 0 120px rgba(184, 148, 45, 0.2);
         opacity: 0.9;
     }
 }

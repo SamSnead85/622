@@ -9,6 +9,7 @@ import {
     ActivityIndicator,
     RefreshControl,
     Image,
+    ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -126,11 +127,55 @@ const ConversationItem = memo(({
     );
 });
 
+// Quick-access contacts strip
+interface QuickContact {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string;
+}
+
+function QuickContactsStrip({ contacts, onContactPress }: { contacts: QuickContact[]; onContactPress: (c: QuickContact) => void }) {
+    if (contacts.length === 0) return null;
+    return (
+        <View style={styles.quickContactsStrip}>
+            <Text style={styles.quickContactsLabel}>Quick Message</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickContactsScroll}>
+                {contacts.map((c) => (
+                    <TouchableOpacity
+                        key={c.id}
+                        style={styles.quickContact}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            onContactPress(c);
+                        }}
+                        activeOpacity={0.7}
+                    >
+                        {c.avatarUrl ? (
+                            <Image source={{ uri: c.avatarUrl }} style={styles.quickContactAvatar} />
+                        ) : (
+                            <View style={[styles.quickContactAvatar, styles.quickContactAvatarPlaceholder]}>
+                                <Text style={styles.quickContactInitial}>
+                                    {(c.displayName || c.username || '?')[0].toUpperCase()}
+                                </Text>
+                            </View>
+                        )}
+                        <Text style={styles.quickContactName} numberOfLines={1}>
+                            {(c.displayName || c.username).split(' ')[0]?.slice(0, 8)}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
+        </View>
+    );
+}
+
 export default function MessagesScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
     const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [quickContacts, setQuickContacts] = useState<QuickContact[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -148,8 +193,26 @@ export default function MessagesScreen() {
         }
     };
 
+    // Load user's following list for quick contacts
+    const loadQuickContacts = async () => {
+        try {
+            if (!user?.id) return;
+            const data = await apiFetch<any>(`${API.users}/${user.id}/following?limit=20`);
+            const following = data.following || [];
+            setQuickContacts(following.map((f: any) => ({
+                id: f.id,
+                username: f.username,
+                displayName: f.displayName,
+                avatarUrl: f.avatarUrl,
+            })));
+        } catch {
+            // Non-critical — strip just won't show
+        }
+    };
+
     useEffect(() => {
         loadConversations();
+        loadQuickContacts();
     }, []);
 
     const handleRefresh = useCallback(() => {
@@ -210,6 +273,21 @@ export default function MessagesScreen() {
                     />
                 </View>
             </View>
+
+            {/* Quick-access contacts */}
+            <QuickContactsStrip
+                contacts={quickContacts}
+                onContactPress={(c) => {
+                    // Find existing conversation or open new one
+                    const existing = conversations.find(conv => conv.participant.id === c.id);
+                    if (existing) {
+                        router.push(`/chat/${existing.id}`);
+                    } else {
+                        // Navigate to user profile where they can start a conversation
+                        router.push(`/profile/${c.username}` as any);
+                    }
+                }}
+            />
 
             {/* Conversations list */}
             {isLoading ? (
@@ -289,6 +367,51 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: colors.border.subtle, gap: spacing.sm,
     },
     searchInput: { flex: 1, fontSize: typography.fontSize.base, color: colors.text.primary },
+
+    // Quick contacts
+    quickContactsStrip: {
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.subtle,
+        paddingVertical: spacing.sm,
+    },
+    quickContactsLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: colors.text.muted,
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+        paddingHorizontal: spacing.xl,
+        marginBottom: spacing.xs,
+    },
+    quickContactsScroll: {
+        paddingHorizontal: spacing.lg,
+        gap: spacing.md,
+    },
+    quickContact: {
+        alignItems: 'center',
+        width: 60,
+    },
+    quickContactAvatar: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        marginBottom: 4,
+    },
+    quickContactAvatarPlaceholder: {
+        backgroundColor: colors.obsidian[500],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    quickContactInitial: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: colors.text.primary,
+    },
+    quickContactName: {
+        fontSize: 10,
+        color: colors.text.secondary,
+        textAlign: 'center',
+    },
 
     // Loading
     loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },

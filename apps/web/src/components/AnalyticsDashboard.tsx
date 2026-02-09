@@ -430,7 +430,7 @@ export function AnalyticsDashboard({
                 </div>
                 <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
                     <h3 className="text-lg font-semibold text-white mb-4">Engagement Rate</h3>
-                    <LineChart data={engagement} color="#8B5CF6" />
+                    <LineChart data={engagement} color="#B8942D" />
                 </div>
             </div>
 

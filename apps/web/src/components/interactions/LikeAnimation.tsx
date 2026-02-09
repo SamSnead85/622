@@ -55,7 +55,7 @@ export function LikeAnimation({ isLiked, count, onToggle, size = 24 }: LikeAnima
                 <AnimatePresence>
                     {particles.map((i) => {
                         const angle = (i / 6) * Math.PI * 2;
-                        const colors = ['#ef4444', '#f97316', '#eab308', '#ec4899', '#8b5cf6', '#00D4FF'];
+                        const colors = ['#ef4444', '#f97316', '#eab308', '#ec4899', '#B8942D', '#D4AF37'];
                         return (
                             <motion.span
                                 key={`particle-${i}-${Date.now()}`}

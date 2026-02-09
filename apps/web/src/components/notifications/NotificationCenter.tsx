@@ -85,7 +85,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
             <span className="text-white text-sm">{label}</span>
             <button
                 onClick={() => onChange(!checked)}
-                className={`w-10 h-6 rounded-full transition-colors ${checked ? 'bg-[#00D4FF]' : 'bg-white/20'}`}
+                className={`w-10 h-6 rounded-full transition-colors ${checked ? 'bg-[#D4AF37]' : 'bg-white/20'}`}
                 role="switch"
                 aria-checked={checked}
                 aria-label={label}
@@ -120,7 +120,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                             {pushPermission !== 'granted' ? (
                                 <button
                                     onClick={requestPushPermission}
-                                    className="w-full py-2.5 rounded-xl bg-[#00D4FF]/20 text-[#00D4FF] text-sm font-medium"
+                                    className="w-full py-2.5 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] text-sm font-medium"
                                 >
                                     Enable Push Notifications
                                 </button>
@@ -152,7 +152,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                                         key={opt}
                                         onClick={() => setPrefs(p => ({ ...p, emailDigest: opt }))}
                                         className={`px-4 py-2 rounded-lg text-sm capitalize ${
-                                            prefs.emailDigest === opt ? 'bg-[#00D4FF] text-black font-semibold' : 'bg-white/10 text-white/60'
+                                            prefs.emailDigest === opt ? 'bg-[#D4AF37] text-black font-semibold' : 'bg-white/10 text-white/60'
                                         }`}
                                     >
                                         {opt}
@@ -186,7 +186,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
-                            className="w-full py-2.5 rounded-xl bg-[#00D4FF] text-black font-semibold text-sm disabled:opacity-50"
+                            className="w-full py-2.5 rounded-xl bg-[#D4AF37] text-black font-semibold text-sm disabled:opacity-50"
                         >
                             {isSaving ? 'Saving...' : 'Save Preferences'}
                         </button>

@@ -122,7 +122,7 @@ function AdminContent() {
                         onClick={() => setTab('requests')}
                         className={`pb-3 px-1 text-sm font-medium transition-colors relative ${tab === 'requests' ? 'text-white' : 'text-white/40 hover:text-white/60'}`}
                     >
-                        Applications {pendingCount > 0 && <span className="ml-1.5 px-2 py-0.5 rounded-full bg-[#00D4FF]/20 text-[#00D4FF] text-xs">{pendingCount}</span>}
+                        Applications {pendingCount > 0 && <span className="ml-1.5 px-2 py-0.5 rounded-full bg-[#D4AF37]/20 text-[#D4AF37] text-xs">{pendingCount}</span>}
                         {tab === 'requests' && <motion.div layoutId="adminTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-white" />}
                     </button>
                     <button
@@ -177,7 +177,7 @@ function AdminContent() {
                                             </div>
                                             <p className="text-sm text-white/50 mb-1">{req.email}</p>
                                             <p className="text-sm text-white/70 leading-relaxed">{req.reason}</p>
-                                            {req.socialUrl && <a href={req.socialUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#00D4FF]/60 hover:text-[#00D4FF] mt-1 inline-block">{req.socialUrl}</a>}
+                                            {req.socialUrl && <a href={req.socialUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#D4AF37]/60 hover:text-[#D4AF37] mt-1 inline-block">{req.socialUrl}</a>}
                                             {req.accessCode && <p className="text-xs text-emerald-400/70 mt-1 font-mono">Code: {req.accessCode}</p>}
                                             <p className="text-xs text-white/20 mt-2">{new Date(req.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                                         </div>

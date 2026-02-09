@@ -144,7 +144,7 @@ export function AIAssistant() {
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
                         onClick={() => setIsOpen(true)}
-                        className="hidden md:flex fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] shadow-lg shadow-purple-500/25 items-center justify-center hover:scale-105 transition-transform"
+                        className="hidden md:flex fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] shadow-lg shadow-purple-500/25 items-center justify-center hover:scale-105 transition-transform"
                     >
                         <CpuIcon size={24} className="text-white" />
                     </motion.button>
@@ -166,9 +166,9 @@ export function AIAssistant() {
                         className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-3rem)] bg-[#0A0A0F] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-gradient-to-r from-[#00D4FF]/10 to-[#8B5CF6]/10">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-gradient-to-r from-[#D4AF37]/10 to-[#B8942D]/10">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center">
                                     <CpuIcon size={16} className="text-white" />
                                 </div>
                                 <div>
@@ -205,7 +205,7 @@ export function AIAssistant() {
                                         >
                                             <div
                                                 className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm ${msg.role === 'user'
-                                                    ? 'bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white rounded-br-md'
+                                                    ? 'bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white rounded-br-md'
                                                     : 'bg-white/10 text-white/90 rounded-bl-md'
                                                     }`}
                                             >
@@ -263,7 +263,7 @@ export function AIAssistant() {
                                         <button
                                             onClick={() => handleSend()}
                                             disabled={!input.trim() || isLoading}
-                                            className="p-2 rounded-lg bg-gradient-to-r from-[#00D4FF] to-[#8B5CF6] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+                                            className="p-2 rounded-lg bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
                                         >
                                             <SendIcon size={16} />
                                         </button>

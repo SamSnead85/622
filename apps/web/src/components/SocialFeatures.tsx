@@ -74,7 +74,7 @@ export function FollowSuggestions({
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-white">Suggested for you</h3>
-                <Link href="/search?tab=people" className="text-xs text-[#00D4FF] hover:underline">
+                <Link href="/search?tab=people" className="text-xs text-[#D4AF37] hover:underline">
                     See All
                 </Link>
             </div>
@@ -89,7 +89,7 @@ export function FollowSuggestions({
                         className="flex items-center gap-3"
                     >
                         <Link href={`/profile/${user.username}`} className="flex-shrink-0">
-                            <div className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] p-[2px]">
+                            <div className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-[#D4AF37] to-[#B8942D] p-[2px]">
                                 <div className="w-full h-full rounded-full overflow-hidden bg-[#1A1A1F]">
                                     {user.avatarUrl ? (
                                         <Image
@@ -113,7 +113,7 @@ export function FollowSuggestions({
                                 <Link href={`/profile/${user.username}`} className="font-medium text-white text-sm truncate hover:underline">
                                     {user.displayName}
                                 </Link>
-                                {user.isVerified && <span className="text-[#00D4FF]">✓</span>}
+                                {user.isVerified && <span className="text-[#D4AF37]">✓</span>}
                             </div>
                             <p className="text-xs text-white/40 truncate">
                                 {user.mutualFollowers ? `${user.mutualFollowers} mutual followers` : `@${user.username}`}
@@ -126,7 +126,7 @@ export function FollowSuggestions({
                             ) : (
                                 <button
                                     onClick={() => handleFollow(user.id)}
-                                    className="px-4 py-1.5 rounded-full bg-[#00D4FF] text-black text-xs font-semibold hover:opacity-90 transition-opacity"
+                                    className="px-4 py-1.5 rounded-full bg-[#D4AF37] text-black text-xs font-semibold hover:opacity-90 transition-opacity"
                                 >
                                     Follow
                                 </button>
@@ -243,7 +243,7 @@ export function StoryCircles({ stories, onStoryClick, onAddStory, currentUserId 
                         onClick={onAddStory}
                         className="flex flex-col items-center gap-2 flex-shrink-0"
                     >
-                        <div className="w-16 h-16 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center hover:border-[#00D4FF] transition-colors">
+                        <div className="w-16 h-16 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center hover:border-[#D4AF37] transition-colors">
                             <span className="text-2xl">+</span>
                         </div>
                         <span className="text-xs text-white/60">Add Story</span>
@@ -258,7 +258,7 @@ export function StoryCircles({ stories, onStoryClick, onAddStory, currentUserId 
                         className="flex flex-col items-center gap-2 flex-shrink-0"
                     >
                         <div className={`p-[3px] rounded-full ${story.hasUnseenStory
-                            ? 'bg-gradient-to-br from-[#00D4FF] via-[#8B5CF6] to-[#F43F5E]'
+                            ? 'bg-gradient-to-br from-[#D4AF37] via-[#B8942D] to-[#F43F5E]'
                             : 'bg-white/20'
                             }`}>
                             <div className="w-14 h-14 rounded-full overflow-hidden bg-[#1A1A1F] border-2 border-[#1A1A1F]">
@@ -271,7 +271,7 @@ export function StoryCircles({ stories, onStoryClick, onAddStory, currentUserId 
                                         className="object-cover"
                                     />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] text-white font-bold text-lg">
+                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#D4AF37] to-[#B8942D] text-white font-bold text-lg">
                                         {story.user.displayName[0]}
                                     </div>
                                 )}
@@ -393,14 +393,14 @@ export function ThreadViewer({
                             <div className="flex-1">
                                 <div className="flex items-center gap-1">
                                     <span className="font-semibold text-white">{parentComment.author.displayName}</span>
-                                    {parentComment.author.isVerified && <span className="text-[#00D4FF]">✓</span>}
+                                    {parentComment.author.isVerified && <span className="text-[#D4AF37]">✓</span>}
                                     <span className="text-white/40 text-sm">· {formatTime(parentComment.createdAt)}</span>
                                 </div>
                                 <p className="text-white/80 mt-1">{parentComment.content}</p>
                                 <div className="flex items-center gap-4 mt-2 text-sm text-white/50">
                                     <button
                                         onClick={() => onLike(parentComment.id)}
-                                        className={`flex items-center gap-1 hover:text-[#00D4FF] ${parentComment.isLiked ? 'text-red-400' : ''}`}
+                                        className={`flex items-center gap-1 hover:text-[#D4AF37] ${parentComment.isLiked ? 'text-red-400' : ''}`}
                                     >
                                         {parentComment.isLiked ? '❤️' : '🤍'} {parentComment.likeCount}
                                     </button>
@@ -461,13 +461,13 @@ export function ThreadViewer({
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}
                         placeholder="Add a reply..."
-                        className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-white placeholder:text-white/40 focus:outline-none focus:border-[#00D4FF]/50"
+                        className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-white placeholder:text-white/40 focus:outline-none focus:border-[#D4AF37]/50"
                         onKeyDown={(e) => e.key === 'Enter' && handleSubmitReply()}
                     />
                     <button
                         onClick={handleSubmitReply}
                         disabled={!replyContent.trim()}
-                        className="px-4 py-2 rounded-full bg-[#00D4FF] text-black font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                        className="px-4 py-2 rounded-full bg-[#D4AF37] text-black font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                     >
                         Reply
                     </button>

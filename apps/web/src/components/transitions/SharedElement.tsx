@@ -52,7 +52,7 @@ export function SharedAvatar({
         return (
             <motion.div
                 layoutId={reducedMotion ? undefined : `avatar-${id}`}
-                className={`rounded-full bg-gradient-to-br from-[#00D4FF] to-[#8B5CF6] flex items-center justify-center text-black font-bold ${className}`}
+                className={`rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-black font-bold ${className}`}
                 style={{ width: size, height: size, fontSize: size * 0.4 }}
                 transition={{ type: 'spring', stiffness: 350, damping: 30 }}
             >

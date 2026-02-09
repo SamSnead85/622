@@ -105,7 +105,7 @@ export default function ExportPage() {
                 <button
                     onClick={handleExport}
                     disabled={isExporting}
-                    className="w-full py-4 rounded-2xl bg-[#00D4FF] text-black font-bold text-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+                    className="w-full py-4 rounded-2xl bg-[#D4AF37] text-black font-bold text-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                     {isExporting ? (
                         <span className="flex items-center justify-center gap-2">
@@ -129,7 +129,7 @@ export default function ExportPage() {
                     <p className="text-white/50 text-sm mt-1">Your data has been downloaded as a JSON file.</p>
                     <button
                         onClick={() => setExportComplete(false)}
-                        className="mt-4 text-[#00D4FF] text-sm hover:underline"
+                        className="mt-4 text-[#D4AF37] text-sm hover:underline"
                     >
                         Export Again
                     </button>

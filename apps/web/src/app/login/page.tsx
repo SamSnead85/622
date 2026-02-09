@@ -23,7 +23,7 @@ function PremiumMeshBackground() {
             <motion.div
                 className="absolute -top-32 -left-32 w-[800px] h-[800px]"
                 style={{
-                    background: 'radial-gradient(circle at center, rgba(0, 212, 255, 0.15) 0%, rgba(139, 92, 246, 0.08) 30%, transparent 60%)',
+                    background: 'radial-gradient(circle at center, rgba(212, 175, 55, 0.15) 0%, rgba(184, 148, 45, 0.08) 30%, transparent 60%)',
                 }}
                 animate={{
                     scale: [1, 1.1, 1],
@@ -37,7 +37,7 @@ function PremiumMeshBackground() {
             <motion.div
                 className="absolute -bottom-40 -right-40 w-[700px] h-[700px]"
                 style={{
-                    background: 'radial-gradient(circle at center, rgba(244, 63, 94, 0.12) 0%, rgba(139, 92, 246, 0.06) 40%, transparent 65%)',
+                    background: 'radial-gradient(circle at center, rgba(244, 63, 94, 0.12) 0%, rgba(184, 148, 45, 0.06) 40%, transparent 65%)',
                 }}
                 animate={{
                     scale: [1.1, 1, 1.1],
@@ -50,7 +50,7 @@ function PremiumMeshBackground() {
             <motion.div
                 className="absolute top-1/2 -left-20 w-[400px] h-[400px]"
                 style={{
-                    background: 'radial-gradient(circle at center, rgba(6, 182, 212, 0.08) 0%, transparent 50%)',
+                    background: 'radial-gradient(circle at center, rgba(212, 175, 55, 0.08) 0%, transparent 50%)',
                 }}
                 animate={{
                     y: [-50, 50, -50],
@@ -83,7 +83,7 @@ function PremiumMeshBackground() {
             <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#030305] to-transparent" />
 
             {/* Left side accent line */}
-            <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#00D4FF]/20 to-transparent" />
+            <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#D4AF37]/20 to-transparent" />
         </div>
     );
 }
@@ -106,7 +106,7 @@ function HexLogo({ size = 48 }: { size?: number }) {
                     <stop offset="0%" stopColor="#D4AF37" />
                     <stop offset="35%" stopColor="#F59E0B" />
                     <stop offset="65%" stopColor="#F43F5E" />
-                    <stop offset="100%" stopColor="#8B5CF6" />
+                    <stop offset="100%" stopColor="#B8942D" />
                 </linearGradient>
                 <filter id="login-glow" x="-50%" y="-50%" width="200%" height="200%">
                     <feGaussianBlur stdDeviation="2" result="blur" />
@@ -190,7 +190,7 @@ const Icons = {
 function LoginLoading() {
     return (
         <div className="min-h-screen bg-black flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full border-4 border-[#00D4FF]/20 border-t-[#00D4FF] animate-spin" />
+            <div className="w-12 h-12 rounded-full border-4 border-[#D4AF37]/20 border-t-[#D4AF37] animate-spin" />
         </div>
     );
 }
@@ -326,7 +326,7 @@ function LoginContent() {
                     >
                         {/* 0G Logo */}
                         <div className="text-6xl font-bold">
-                            <span className="text-[#00D4FF]">0</span>
+                            <span className="text-[#D4AF37]">0</span>
                             <span className="text-white">G</span>
                         </div>
                         <h2 className="mt-8 text-3xl font-bold text-white">
@@ -365,7 +365,7 @@ function LoginContent() {
                         {/* Mobile logo */}
                         <div className="lg:hidden flex justify-center mb-8">
                             <div className="text-4xl font-bold">
-                                <span className="text-[#00D4FF]">0</span>
+                                <span className="text-[#D4AF37]">0</span>
                                 <span className="text-white">G</span>
                             </div>
                         </div>
@@ -448,7 +448,7 @@ function LoginContent() {
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="Enter your email address"
                                         required
-                                        className="w-full px-4 py-3 rounded-lg bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#00D4FF]/50 focus:ring-1 focus:ring-[#00D4FF]/50 transition-all"
+                                        className="w-full px-4 py-3 rounded-lg bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/50 transition-all"
                                     />
                                 </div>
                             </div>
@@ -461,7 +461,7 @@ function LoginContent() {
                                     </label>
                                     <Link
                                         href="/forgot-password"
-                                        className="text-sm text-[#00D4FF] hover:text-[#33DDFF] transition-colors"
+                                        className="text-sm text-[#D4AF37] hover:text-[#E5C158] transition-colors"
                                     >
                                         Forgot Password?
                                     </Link>
@@ -473,7 +473,7 @@ function LoginContent() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="Enter a unique password"
                                         required
-                                        className="w-full px-4 py-3 pr-12 rounded-lg bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#00D4FF]/50 focus:ring-1 focus:ring-[#00D4FF]/50 transition-all"
+                                        className="w-full px-4 py-3 pr-12 rounded-lg bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/50 transition-all"
                                     />
                                     <button
                                         type="button"
@@ -507,7 +507,7 @@ function LoginContent() {
                             New to 0G?{' '}
                             <Link
                                 href="/signup"
-                                className="text-[#00D4FF] hover:text-[#33DDFF] font-medium transition-colors"
+                                className="text-[#D4AF37] hover:text-[#E5C158] font-medium transition-colors"
                             >
                                 Join ZeroG
                             </Link>
