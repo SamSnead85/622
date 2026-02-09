@@ -129,14 +129,20 @@ function ActiveContactBubble({
     name,
     isOnline,
     isUser,
+    hasStory,
+    isSeen,
     onPress,
+    onLongPress,
     index,
 }: {
     avatarUrl?: string;
     name: string;
     isOnline: boolean;
     isUser?: boolean;
+    hasStory?: boolean;
+    isSeen?: boolean;
     onPress: () => void;
+    onLongPress?: () => void;
     index: number;
 }) {
     const scale = useSharedValue(1);
@@ -156,29 +162,32 @@ function ActiveContactBubble({
                     setTimeout(() => { scale.value = withSpring(1); }, 100);
                     onPress();
                 }}
+                onLongPress={onLongPress}
                 style={styles.contactBubble}
             >
-                <View style={styles.contactAvatarWrap}>
+                <View style={[styles.contactAvatarWrap, hasStory && !isSeen && styles.storyRing, hasStory && isSeen && styles.storyRingSeen]}>
                     {avatarUrl ? (
                         <Image
                             source={{ uri: avatarUrl }}
-                            style={styles.contactAvatar}
+                            style={[styles.contactAvatar, hasStory && styles.contactAvatarWithStory]}
                             transition={150}
                             cachePolicy="memory-disk"
                         />
                     ) : (
-                        <View style={[styles.contactAvatar, styles.contactAvatarPlaceholder]}>
+                        <View style={[styles.contactAvatar, styles.contactAvatarPlaceholder, hasStory && styles.contactAvatarWithStory]}>
                             <Text style={styles.contactAvatarInitial}>
                                 {name[0]?.toUpperCase() || '?'}
                             </Text>
                         </View>
                     )}
-                    <AvatarGlow
-                        type={isOnline ? 'online' : 'active'}
-                        size={CONTACT_AVATAR_SIZE}
-                    />
+                    {!hasStory && (
+                        <AvatarGlow
+                            type={isOnline ? 'online' : 'active'}
+                            size={CONTACT_AVATAR_SIZE}
+                        />
+                    )}
                     {/* Online dot */}
-                    {isOnline && (
+                    {isOnline && !hasStory && (
                         <View style={styles.onlineDot}>
                             <View style={styles.onlineDotInner} />
                         </View>
@@ -202,14 +211,41 @@ function ActiveContactsStrip({ onCreatePress }: { onCreatePress: () => void }) {
     const router = useRouter();
     const user = useAuthStore((s) => s.user);
     const posts = useFeedStore((s) => s.posts);
+    const [storyUsers, setStoryUsers] = useState<Array<{ userId: string; displayName: string; avatarUrl?: string; isSeen?: boolean }>>([]);
+
+    // Fetch moments feed to show story rings
+    useEffect(() => {
+        apiFetch<any>(API.momentsFeed).then((data) => {
+            const list = data?.moments || data || [];
+            if (Array.isArray(list)) {
+                const seen = new Set<string>();
+                const users: typeof storyUsers = [];
+                for (const moment of list) {
+                    const uid = moment.user?.id || moment.userId;
+                    if (uid && !seen.has(uid)) {
+                        seen.add(uid);
+                        users.push({
+                            userId: uid,
+                            displayName: moment.user?.displayName || 'Unknown',
+                            avatarUrl: moment.user?.avatarUrl,
+                            isSeen: moment.isSeen,
+                        });
+                    }
+                }
+                setStoryUsers(users);
+            }
+        }).catch(() => {});
+    }, []);
 
     // Derive unique authors from feed (simulate "active contacts")
     // In production, this would come from a presence API
     const activeContacts = useCallback(() => {
         const seen = new Set<string>();
+        // Skip users who already show up in story rings
+        const storyUserIds = new Set(storyUsers.map((s) => s.userId));
         const contacts: { id: string; username: string; displayName: string; avatarUrl?: string; isOnline: boolean }[] = [];
         for (const post of posts) {
-            if (post.author && !seen.has(post.author.id) && post.author.id !== user?.id) {
+            if (post.author && !seen.has(post.author.id) && post.author.id !== user?.id && !storyUserIds.has(post.author.id)) {
                 seen.add(post.author.id);
                 contacts.push({
                     id: post.author.id,
@@ -222,7 +258,7 @@ function ActiveContactsStrip({ onCreatePress }: { onCreatePress: () => void }) {
             if (contacts.length >= 12) break;
         }
         return contacts;
-    }, [posts, user?.id])();
+    }, [posts, user?.id, storyUsers])();
 
     return (
         <View style={styles.contactsStrip}>
@@ -231,15 +267,36 @@ function ActiveContactsStrip({ onCreatePress }: { onCreatePress: () => void }) {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.contactsScroll}
             >
-                {/* User's own avatar — tap to create */}
+                {/* User's own avatar — tap to create moment or go to create */}
                 <ActiveContactBubble
                     avatarUrl={user?.avatarUrl}
                     name={user?.displayName || 'You'}
                     isOnline={true}
                     isUser={true}
-                    onPress={onCreatePress}
+                    hasStory={storyUsers.some((s) => s.userId === user?.id)}
+                    onPress={() => {
+                        if (storyUsers.some((s) => s.userId === user?.id)) {
+                            router.push(`/moments/${user?.id}` as any);
+                        } else {
+                            router.push('/moments/create' as any);
+                        }
+                    }}
+                    onLongPress={() => router.push('/moments/create' as any)}
                     index={0}
                 />
+                {/* Story ring users */}
+                {storyUsers.filter((s) => s.userId !== user?.id).map((story, i) => (
+                    <ActiveContactBubble
+                        key={story.userId}
+                        avatarUrl={story.avatarUrl}
+                        name={story.displayName}
+                        isOnline={false}
+                        hasStory={true}
+                        isSeen={story.isSeen}
+                        onPress={() => router.push(`/moments/${story.userId}` as any)}
+                        index={i + 1}
+                    />
+                ))}
                 {/* Active contacts from feed */}
                 {activeContacts.map((contact, i) => (
                     <ActiveContactBubble
@@ -248,7 +305,7 @@ function ActiveContactsStrip({ onCreatePress }: { onCreatePress: () => void }) {
                         name={contact.displayName}
                         isOnline={contact.isOnline}
                         onPress={() => router.push(`/profile/${contact.username}` as any)}
-                        index={i + 1}
+                        index={i + storyUsers.length}
                     />
                 ))}
             </ScrollView>
@@ -1162,6 +1219,13 @@ export default function FeedScreen() {
                     </View>
                 </View>
                 <View style={styles.headerActions}>
+                    {/* Algorithm mixer shortcut */}
+                    <TouchableOpacity
+                        style={styles.headerBtn}
+                        onPress={() => router.push('/settings/algorithm' as any)}
+                    >
+                        <Ionicons name="options-outline" size={22} color={colors.gold[400]} />
+                    </TouchableOpacity>
                     {/* Tools shortcut — accessible to all users */}
                     <TouchableOpacity
                         style={styles.headerBtn}
@@ -1349,6 +1413,25 @@ const styles = StyleSheet.create({
     },
     contactAvatarPlaceholder: {
         backgroundColor: colors.obsidian[500],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    contactAvatarWithStory: {
+        width: CONTACT_AVATAR_SIZE - 6,
+        height: CONTACT_AVATAR_SIZE - 6,
+        borderRadius: (CONTACT_AVATAR_SIZE - 6) / 2,
+    },
+    storyRing: {
+        borderWidth: 2.5,
+        borderColor: colors.gold[500],
+        borderRadius: CONTACT_AVATAR_SIZE / 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    storyRingSeen: {
+        borderWidth: 2,
+        borderColor: colors.obsidian[500],
+        borderRadius: CONTACT_AVATAR_SIZE / 2,
         alignItems: 'center',
         justifyContent: 'center',
     },

@@ -197,11 +197,18 @@ export default function ProfileScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Edit Profile button */}
-                <TouchableOpacity style={styles.editButton} activeOpacity={0.8} onPress={() => router.push('/settings')}>
-                    <Ionicons name="create-outline" size={16} color={colors.text.primary} />
-                    <Text style={styles.editButtonText}>Edit Profile</Text>
-                </TouchableOpacity>
+                {/* Action buttons */}
+                <View style={styles.profileActions}>
+                    <TouchableOpacity style={[styles.editButton, { flex: 1 }]} activeOpacity={0.8} onPress={() => router.push('/settings')}>
+                        <Ionicons name="create-outline" size={16} color={colors.text.primary} />
+                        <Text style={styles.editButtonText}>Edit Profile</Text>
+                    </TouchableOpacity>
+                    {(user.postsCount || 0) > 0 && (
+                        <TouchableOpacity style={styles.analyticsButton} activeOpacity={0.8} onPress={() => router.push('/analytics' as any)}>
+                            <Ionicons name="analytics-outline" size={16} color={colors.gold[400]} />
+                        </TouchableOpacity>
+                    )}
+                </View>
 
                 {/* Content tabs */}
                 <View style={styles.contentTabs}>
@@ -338,14 +345,22 @@ const styles = StyleSheet.create({
     statLabel: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },
     statDivider: { width: 1, height: 32, backgroundColor: colors.border.subtle },
 
-    // Edit button
+    // Action buttons
+    profileActions: {
+        flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xl,
+    },
     editButton: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
         backgroundColor: colors.surface.glassHover, paddingVertical: spacing.md,
-        borderRadius: 12, marginBottom: spacing.xl,
+        borderRadius: 12,
         borderWidth: 1, borderColor: colors.border.subtle, gap: spacing.sm,
     },
     editButtonText: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
+    analyticsButton: {
+        width: 48, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.surface.glassHover, borderRadius: 12,
+        borderWidth: 1, borderColor: colors.gold[500] + '30',
+    },
 
     // Content tabs
     contentTabs: {

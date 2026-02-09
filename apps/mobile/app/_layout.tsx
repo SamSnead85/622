@@ -212,7 +212,19 @@ function RootLayout() {
                     <Stack.Screen name="index" />
                     <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
                     <Stack.Screen name="discover" options={{ animation: 'fade', gestureEnabled: false }} />
+                    <Stack.Screen name="interests" />
                     <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+                    <Stack.Screen name="settings/algorithm" />
+                    <Stack.Screen name="settings/notifications" />
+                    <Stack.Screen name="community/[id]/manage" />
+                    <Stack.Screen name="community/[id]/rules" />
+                    <Stack.Screen name="community/[id]/polls" />
+                    <Stack.Screen name="community/[id]/poll-create" />
+                    <Stack.Screen name="moments/create" options={{ animation: 'fade', presentation: 'fullScreenModal' }} />
+                    <Stack.Screen name="moments/[id]" options={{ animation: 'fade', presentation: 'fullScreenModal' }} />
+                    <Stack.Screen name="analytics" />
+                    <Stack.Screen name="community/[id]/governance" />
+                    <Stack.Screen name="community/[id]/proposal/[proposalId]" />
                     <Stack.Screen
                         name="call/[id]"
                         options={{

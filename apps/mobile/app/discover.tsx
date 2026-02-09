@@ -338,6 +338,33 @@ export default function DiscoverScreen() {
                         </Animated.View>
                     )}
 
+                    {/* Pick Your Interests */}
+                    <Animated.View entering={FadeInDown.duration(400).delay(800)}>
+                        <Text style={styles.sectionTitle}>Personalize Your Feed</Text>
+                        <TouchableOpacity
+                            style={styles.interestsCard}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                router.push('/interests?onboarding=true' as any);
+                            }}
+                            activeOpacity={0.8}
+                        >
+                            <View style={styles.interestsIconRow}>
+                                <Ionicons name="color-palette-outline" size={20} color={colors.gold[400]} />
+                                <Ionicons name="football-outline" size={20} color={colors.coral[400]} />
+                                <Ionicons name="hardware-chip-outline" size={20} color={colors.azure[400]} />
+                                <Ionicons name="newspaper-outline" size={20} color={colors.emerald[400]} />
+                            </View>
+                            <Text style={styles.interestsTitle}>Pick your interests</Text>
+                            <Text style={styles.interestsDesc}>
+                                Choose topics you care about and your feed will show relevant content immediately
+                            </Text>
+                            <View style={styles.interestsArrow}>
+                                <Ionicons name="arrow-forward" size={16} color={colors.gold[400]} />
+                            </View>
+                        </TouchableOpacity>
+                    </Animated.View>
+
                     {/* Deen Tools Spotlight */}
                     <Animated.View entering={FadeInDown.duration(400).delay(900)}>
                         <Text style={styles.sectionTitle}>Powerful Tools</Text>
@@ -557,6 +584,28 @@ const styles = StyleSheet.create({
     },
     joinBtnTextActive: {
         color: colors.obsidian[900],
+    },
+
+    // Interests card
+    interestsCard: {
+        marginHorizontal: spacing.xl,
+        backgroundColor: colors.surface.glass,
+        borderRadius: 16, padding: spacing.lg,
+        borderWidth: 1, borderColor: colors.border.subtle,
+    },
+    interestsIconRow: {
+        flexDirection: 'row', gap: spacing.md, marginBottom: spacing.sm,
+    },
+    interestsTitle: {
+        fontSize: typography.fontSize.base, fontWeight: '700',
+        color: colors.text.primary, marginBottom: 4,
+    },
+    interestsDesc: {
+        fontSize: typography.fontSize.sm, color: colors.text.secondary,
+        lineHeight: 18,
+    },
+    interestsArrow: {
+        position: 'absolute', top: spacing.lg, right: spacing.lg,
     },
 
     // Tools spotlight

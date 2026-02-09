@@ -17,8 +17,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
-import { Post, mapApiPost, useCommunitiesStore } from '../../stores';
-import { apiFetch, API } from '../../lib/api';
+import { Post, mapApiPost, useCommunitiesStore } from '../../../stores';
+import { apiFetch, API } from '../../../lib/api';
 
 const formatCount = (num: number) => {
     if (!num) return '0';
@@ -187,6 +187,42 @@ export default function CommunityDetailScreen() {
                             </View>
                         )}
 
+                        {/* Quick action buttons for members */}
+                        {community.role && (
+                            <View style={styles.actionRow}>
+                                <TouchableOpacity
+                                    style={styles.actionBtn}
+                                    onPress={() => router.push(`/community/${communityId}/polls` as any)}
+                                >
+                                    <Ionicons name="bar-chart-outline" size={18} color={colors.gold[400]} />
+                                    <Text style={styles.actionBtnText}>Polls</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.actionBtn}
+                                    onPress={() => router.push(`/community/${communityId}/rules` as any)}
+                                >
+                                    <Ionicons name="book-outline" size={18} color={colors.gold[400]} />
+                                    <Text style={styles.actionBtnText}>Rules</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.actionBtn}
+                                    onPress={() => router.push(`/community/${communityId}/governance` as any)}
+                                >
+                                    <Ionicons name="people-circle-outline" size={18} color={colors.gold[400]} />
+                                    <Text style={styles.actionBtnText}>Governance</Text>
+                                </TouchableOpacity>
+                                {(community.role === 'admin' || community.role === 'moderator') && (
+                                    <TouchableOpacity
+                                        style={styles.actionBtn}
+                                        onPress={() => router.push(`/community/${communityId}/manage` as any)}
+                                    >
+                                        <Ionicons name="settings-outline" size={18} color={colors.gold[400]} />
+                                        <Text style={styles.actionBtnText}>Manage</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
+
                         <View style={styles.sectionHeader}>
                             <Ionicons name="document-text-outline" size={16} color={colors.text.primary} />
                             <Text style={styles.sectionTitle}>Recent Posts</Text>
@@ -274,6 +310,19 @@ const styles = StyleSheet.create({
         marginBottom: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
     },
     roleBadgeText: { fontSize: typography.fontSize.xs, fontWeight: '700', color: colors.gold[500] },
+
+    actionRow: {
+        flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg, flexWrap: 'wrap',
+    },
+    actionBtn: {
+        flex: 1, minWidth: 70, alignItems: 'center', gap: 4,
+        backgroundColor: colors.surface.glass, borderRadius: 12,
+        paddingVertical: spacing.md, paddingHorizontal: spacing.sm,
+        borderWidth: 1, borderColor: colors.border.subtle,
+    },
+    actionBtnText: {
+        fontSize: typography.fontSize.xs, color: colors.text.secondary, fontWeight: '500',
+    },
 
     sectionHeader: {
         flexDirection: 'row', alignItems: 'center', gap: spacing.sm,

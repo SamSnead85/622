@@ -428,11 +428,67 @@ export default function SettingsScreen() {
                         />
                     </View>
 
+                    {/* Feed & Personalization */}
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Feed & Personalization</Text>
+                        <SettingRow
+                            icon="options-outline"
+                            label="Algorithm Mixer"
+                            description="Control how your feed is ranked — full transparency"
+                            onPress={() => router.push('/settings/algorithm' as any)}
+                        />
+                        <SettingRow
+                            icon="pricetags-outline"
+                            label="Your Interests"
+                            description="Pick topics that personalize your feed"
+                            onPress={() => router.push('/interests' as any)}
+                        />
+                    </View>
+
                     {/* Notifications */}
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Notifications</Text>
-                        <SettingRow icon="notifications-outline" label="Push Notifications" description="Manage notification preferences" />
-                        <SettingRow icon="moon-outline" label="Quiet Hours" description="Set times when notifications are silenced" />
+                        <SettingRow
+                            icon="notifications-outline"
+                            label="Push Notifications"
+                            description="All push notifications"
+                            onPress={() => router.push('/settings/notifications' as any)}
+                        />
+                    </View>
+
+                    {/* Privacy & Data */}
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Privacy & Data</Text>
+                        <SettingRow
+                            icon="download-outline"
+                            label="Export Your Data"
+                            description="Download a copy of everything you've posted"
+                            onPress={() => {
+                                Alert.alert(
+                                    'Export Data',
+                                    'We\'ll prepare a download of all your content, posts, comments, and data. You\'ll receive an email when it\'s ready.',
+                                    [
+                                        { text: 'Cancel', style: 'cancel' },
+                                        {
+                                            text: 'Request Export',
+                                            onPress: async () => {
+                                                try {
+                                                    await apiFetch('/api/v1/account/export', { method: 'POST' });
+                                                    Alert.alert('Export Requested', 'You\'ll receive an email when your data export is ready.');
+                                                } catch {
+                                                    Alert.alert('Error', 'Failed to request data export. Please try again.');
+                                                }
+                                            },
+                                        },
+                                    ]
+                                );
+                            }}
+                        />
+                        <SettingRow
+                            icon="shield-checkmark-outline"
+                            label="Your data is encrypted and never sold"
+                            description="We don't monetize your personal data"
+                        />
                     </View>
 
                     {/* About */}

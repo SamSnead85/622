@@ -365,4 +365,49 @@ export const API = {
     // Messages
     conversations: '/api/v1/messages/conversations',
     messages: (conversationId: string) => `/api/v1/messages/conversations/${conversationId}`,
+
+    // Feed Preferences (Algorithm Mixer)
+    feedPreferences: '/api/v1/users/preferences/feed',
+
+    // Topics & Interests
+    topics: '/api/v1/topics',
+    userInterests: '/api/v1/topics/user/interests',
+    updateInterest: (topicId: string) => `/api/v1/topics/user/interests/${topicId}`,
+
+    // Push / Notification Preferences
+    pushPreferences: '/api/v1/push/preferences',
+    pushRegister: '/api/v1/push/register',
+
+    // Community Management
+    communityMembers: (id: string) => `/api/v1/communities/${id}/members`,
+    communityMember: (id: string, userId: string) => `/api/v1/communities/${id}/members/${userId}`,
+    communityPolls: (id: string) => `/api/v1/communities/${id}/polls`,
+    communityPollVote: (id: string, pollId: string) => `/api/v1/communities/${id}/polls/${pollId}/vote`,
+    communityFilters: (id: string) => `/api/v1/communities/${id}/filters`,
+    communityAnalytics: (id: string) => `/api/v1/communities/${id}/analytics`,
+    communityModeration: (id: string) => `/api/v1/communities/${id}/moderation`,
+
+    // Governance
+    proposals: (communityId: string) => `/api/v1/governance/${communityId}/proposals`,
+    proposalVote: (proposalId: string) => `/api/v1/governance/proposals/${proposalId}/vote`,
+    moderationLog: (communityId: string) => `/api/v1/governance/${communityId}/moderation-log`,
+
+    // Moments / Stories
+    moments: '/api/v1/moments',
+    momentsFeed: '/api/v1/moments/feed',
+    momentView: (id: string) => `/api/v1/moments/${id}/view`,
+    momentViewers: (id: string) => `/api/v1/moments/${id}/viewers`,
+    uploadMoment: '/api/v1/upload/moment',
+
+    // Analytics
+    analyticsOverview: '/api/v1/analytics/overview',
+    analyticsPosts: '/api/v1/analytics/posts',
+    analyticsAudience: '/api/v1/analytics/audience',
+    analyticsTopContent: '/api/v1/analytics/top-content',
+
+    // Data Export
+    accountExport: '/api/v1/account/export',
+
+    // Reports
+    submitReport: '/api/v1/reports',
 };
