@@ -1,8 +1,52 @@
 import { Router, Response, NextFunction } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
+import { registerExpoPushToken, removeExpoPushToken } from '../services/notifications/ExpoPushService.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
+
+// ============================================
+// Expo Push Token Registration (Mobile)
+// ============================================
+
+router.post('/register', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const { token, platform } = req.body;
+
+        if (!token || !platform) {
+            res.status(400).json({ error: 'Token and platform are required' });
+            return;
+        }
+
+        if (!token.startsWith('ExponentPushToken[')) {
+            res.status(400).json({ error: 'Invalid Expo push token format' });
+            return;
+        }
+
+        await registerExpoPushToken(req.userId!, token, platform);
+        res.json({ success: true });
+    } catch (error) {
+        logger.error('Push token registration failed:', error);
+        next(error);
+    }
+});
+
+router.delete('/register', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const { token } = req.body;
+        if (token) {
+            await removeExpoPushToken(req.userId!, token);
+        }
+        res.json({ success: true });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// Web Push Subscription
+// ============================================
 
 // Register push subscription
 router.post('/subscribe', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {

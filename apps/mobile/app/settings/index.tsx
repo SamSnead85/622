@@ -24,6 +24,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore } from '../../stores';
 import { apiFetch, apiUpload, API } from '../../lib/api';
+import { SUPPORTED_LANGUAGES, changeLanguage } from '../../lib/i18n';
+import i18next from 'i18next';
 
 interface SettingRowProps {
     icon: keyof typeof Ionicons.glyphMap;
@@ -73,6 +75,9 @@ export default function SettingsScreen() {
     const [editBio, setEditBio] = useState(user?.bio || '');
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+    const [currentLang, setCurrentLang] = useState(i18next.language || 'en');
+    const currentLanguageName = SUPPORTED_LANGUAGES.find((l) => l.code === currentLang)?.nativeName || 'English';
 
     const handleSaveProfile = useCallback(async () => {
         setIsSavingProfile(true);
@@ -110,7 +115,7 @@ export default function SettingsScreen() {
 
         setIsUploadingAvatar(true);
         try {
-            await apiUpload(API.uploadAvatar, result.assets[0].uri);
+            await apiUpload(API.uploadAvatar, result.assets[0].uri, 'image/jpeg', 'avatar.jpg');
             await refreshUser();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {
@@ -381,6 +386,48 @@ export default function SettingsScreen() {
                         )}
                     </View>
 
+                    {/* Language & Data */}
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Language & Data</Text>
+                        <SettingRow
+                            icon="language-outline"
+                            label="Language"
+                            description={currentLanguageName}
+                            onPress={() => setShowLanguagePicker(!showLanguagePicker)}
+                        />
+                        {showLanguagePicker && (
+                            <View style={styles.languagePicker}>
+                                {SUPPORTED_LANGUAGES.map((lang) => (
+                                    <TouchableOpacity
+                                        key={lang.code}
+                                        style={[styles.languageOption, currentLang === lang.code && styles.languageOptionActive]}
+                                        onPress={async () => {
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            await changeLanguage(lang.code as any);
+                                            setCurrentLang(lang.code);
+                                            setShowLanguagePicker(false);
+                                        }}
+                                    >
+                                        <Text style={[styles.languageLabel, currentLang === lang.code && styles.languageLabelActive]}>
+                                            {lang.nativeName}
+                                        </Text>
+                                        <Text style={styles.languageSubLabel}>{lang.name}</Text>
+                                        {lang.rtl && <Text style={styles.rtlBadge}>RTL</Text>}
+                                        {currentLang === lang.code && (
+                                            <Ionicons name="checkmark-circle" size={18} color={colors.gold[400]} />
+                                        )}
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                        <SettingRow
+                            icon="cloud-download-outline"
+                            label="Import Data"
+                            description="Bring data from WhatsApp, Instagram, TikTok"
+                            onPress={() => router.push('/settings/import' as any)}
+                        />
+                    </View>
+
                     {/* Notifications */}
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Notifications</Text>
@@ -566,5 +613,48 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         fontWeight: '700',
         color: colors.obsidian[900],
+    },
+    // Language Picker
+    languagePicker: {
+        backgroundColor: colors.surface.glass,
+        borderRadius: 14,
+        padding: spacing.sm,
+        marginBottom: spacing.xs,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        gap: spacing.xs,
+    },
+    languageOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.md,
+        borderRadius: 10,
+        gap: spacing.sm,
+    },
+    languageOptionActive: {
+        backgroundColor: colors.surface.goldSubtle,
+    },
+    languageLabel: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.primary,
+    },
+    languageLabelActive: {
+        color: colors.gold[400],
+    },
+    languageSubLabel: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        flex: 1,
+    },
+    rtlBadge: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: colors.gold[400],
+        backgroundColor: colors.surface.goldSubtle,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
     },
 });

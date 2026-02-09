@@ -1,6 +1,7 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { prisma } from '../../db/client.js';
 import { logger } from '../../utils/logger.js';
+import { sendPushNotification } from './ExpoPushService.js';
 
 // ============================================
 // NOTIFICATION QUEUE SERVICE
@@ -229,7 +230,7 @@ async function processNotification(payload: NotificationPayload): Promise<void> 
         }
     }
 
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
         data: {
             userId: payload.userId,
             type: payload.type as any,
@@ -238,6 +239,21 @@ async function processNotification(payload: NotificationPayload): Promise<void> 
             message: payload.message,
         },
     });
+
+    // Send native push notification (non-blocking)
+    if (!inQuietHours) {
+        const pushTitle = getPushTitle(payload.type);
+        const pushData: Record<string, any> = {
+            type: payload.type,
+            notificationId: notification.id,
+        };
+        if (payload.targetId) pushData.postId = payload.targetId;
+        if (payload.actorId) pushData.actorId = payload.actorId;
+
+        sendPushNotification(payload.userId, pushTitle, payload.message, pushData).catch((err) => {
+            logger.error('Failed to send push notification:', err);
+        });
+    }
 }
 
 /**
@@ -303,6 +319,23 @@ export async function queueBatchNotifications(notifications: NotificationPayload
 
     // Synchronous fallback
     await processBatchNotifications({ notifications: filtered });
+}
+
+/**
+ * Get push notification title based on type
+ */
+function getPushTitle(type: string): string {
+    switch (type) {
+        case 'MESSAGE': return 'New Message';
+        case 'LIKE': return 'New Like';
+        case 'COMMENT': return 'New Comment';
+        case 'FOLLOW': return 'New Follower';
+        case 'MENTION': return 'You were mentioned';
+        case 'COMMUNITY_INVITE': return 'Community Invitation';
+        case 'COMMUNITY_POST': return 'New Community Post';
+        case 'PROPOSAL': return 'New Proposal';
+        default: return '0G';
+    }
 }
 
 /**

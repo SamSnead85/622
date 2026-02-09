@@ -1,6 +1,7 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, AppState, AppStateStatus } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Font from 'expo-font';
 import * as Sentry from '@sentry/react-native';
@@ -15,6 +16,9 @@ import { StyleSheet } from 'react-native';
 import { useAuthStore } from '../stores';
 import { colors } from '@zerog/ui';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { socketManager, CallIncoming } from '../lib/socket';
+import { initI18n } from '../lib/i18n';
+import { startAutoSync, stopAutoSync, syncQueue } from '../lib/offlineQueue';
 
 // ============================================
 // Sentry Error Tracking
@@ -35,10 +39,17 @@ if (SENTRY_DSN) {
 // Prevent splash screen from auto-hiding until we check auth + load fonts
 SplashScreen.preventAutoHideAsync();
 
+// Initialize i18n eagerly (outside component to avoid re-init)
+let i18nReady = false;
+initI18n().then(() => { i18nReady = true; }).catch(() => { i18nReady = true; });
+
 function RootLayout() {
+    const router = useRouter();
     const initialize = useAuthStore((s) => s.initialize);
     const isInitialized = useAuthStore((s) => s.isInitialized);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    const [i18nLoaded, setI18nLoaded] = useState(i18nReady);
+    const appState = useRef(AppState.currentState);
 
     const [fontsLoaded] = Font.useFonts({
         Inter: Inter_400Regular,
@@ -47,18 +58,88 @@ function RootLayout() {
         'Inter-Bold': Inter_700Bold,
     });
 
+    // ============================================
+    // Initialize Auth
+    // ============================================
+
     useEffect(() => {
         initialize();
     }, []);
 
-    // Hide splash only when both auth check AND fonts are ready
+    // ============================================
+    // Wait for i18n
+    // ============================================
+
     useEffect(() => {
-        if (isInitialized && fontsLoaded) {
+        if (!i18nReady) {
+            const check = setInterval(() => {
+                if (i18nReady) {
+                    setI18nLoaded(true);
+                    clearInterval(check);
+                }
+            }, 50);
+            return () => clearInterval(check);
+        } else {
+            setI18nLoaded(true);
+        }
+    }, []);
+
+    // ============================================
+    // Hide splash only when auth + fonts + i18n are ready
+    // ============================================
+
+    useEffect(() => {
+        if (isInitialized && fontsLoaded && i18nLoaded) {
             SplashScreen.hideAsync();
         }
-    }, [isInitialized, fontsLoaded]);
+    }, [isInitialized, fontsLoaded, i18nLoaded]);
 
-    // Register for push notifications after auth is initialized and user is authenticated
+    // ============================================
+    // Socket.io Connection
+    // ============================================
+
+    useEffect(() => {
+        if (isInitialized && isAuthenticated) {
+            // Connect to Socket.io
+            socketManager.connect().catch((err) => {
+                console.warn('Socket connection failed:', err);
+            });
+
+            // Listen for incoming calls
+            const unsubCall = socketManager.on('call:incoming', (data: CallIncoming) => {
+                Alert.alert(
+                    data.type === 'video' ? 'Incoming Video Call' : 'Incoming Audio Call',
+                    `${data.from.displayName} is calling`,
+                    [
+                        {
+                            text: 'Decline',
+                            style: 'destructive',
+                            onPress: () => socketManager.rejectCall(data.callId),
+                        },
+                        {
+                            text: 'Accept',
+                            onPress: () => {
+                                router.push(
+                                    `/call/${data.from.id}?type=${data.type}&name=${encodeURIComponent(data.from.displayName)}&avatar=${encodeURIComponent(data.from.avatarUrl || '')}&incoming=true&callId=${data.callId}`
+                                );
+                            },
+                        },
+                    ],
+                    { cancelable: false }
+                );
+            });
+
+            return () => {
+                unsubCall();
+                socketManager.disconnect();
+            };
+        }
+    }, [isInitialized, isAuthenticated]);
+
+    // ============================================
+    // Push Notifications Registration
+    // ============================================
+
     useEffect(() => {
         if (isInitialized && isAuthenticated) {
             import('../lib/notifications')
@@ -73,7 +154,47 @@ function RootLayout() {
         }
     }, [isInitialized, isAuthenticated]);
 
-    if (!isInitialized || !fontsLoaded) {
+    // ============================================
+    // Offline Queue Auto-Sync
+    // ============================================
+
+    useEffect(() => {
+        if (isInitialized && isAuthenticated) {
+            startAutoSync();
+            // Sync any pending actions immediately
+            syncQueue().catch(() => {});
+
+            return () => stopAutoSync();
+        }
+    }, [isInitialized, isAuthenticated]);
+
+    // ============================================
+    // App State Change Handler (background/foreground)
+    // ============================================
+
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+            if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+                // Coming back to foreground
+                if (isAuthenticated) {
+                    socketManager.connect().catch(() => {});
+                    socketManager.updatePresence('online');
+                    syncQueue().catch(() => {});
+                }
+            } else if (nextAppState === 'background') {
+                socketManager.updatePresence('away');
+            }
+            appState.current = nextAppState;
+        });
+
+        return () => subscription.remove();
+    }, [isAuthenticated]);
+
+    // ============================================
+    // Render
+    // ============================================
+
+    if (!isInitialized || !fontsLoaded || !i18nLoaded) {
         return null;
     }
 
@@ -91,6 +212,14 @@ function RootLayout() {
                     <Stack.Screen name="index" />
                     <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
                     <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+                    <Stack.Screen
+                        name="call/[id]"
+                        options={{
+                            animation: 'fade',
+                            presentation: 'fullScreenModal',
+                            gestureEnabled: false,
+                        }}
+                    />
                 </Stack>
             </GestureHandlerRootView>
         </ErrorBoundary>

@@ -1,0 +1,292 @@
+// ============================================
+// Socket.io Client Manager
+// Singleton connection with auto-reconnect,
+// auth token injection, and event hub
+// ============================================
+
+import { io, Socket } from 'socket.io-client';
+import { API_URL, getToken } from './api';
+
+// ============================================
+// Types
+// ============================================
+
+export interface SocketMessage {
+    id: string;
+    content: string;
+    senderId: string;
+    conversationId: string;
+    mediaUrl?: string;
+    mediaType?: string;
+    createdAt: string;
+    sender?: {
+        id: string;
+        username: string;
+        displayName: string;
+        avatarUrl?: string;
+    };
+}
+
+export interface TypingEvent {
+    userId: string;
+    username: string;
+    conversationId: string;
+}
+
+export interface PresenceEvent {
+    userId: string;
+    status: 'online' | 'offline' | 'away' | 'busy';
+}
+
+export interface CallIncoming {
+    callId: string;
+    type: 'audio' | 'video';
+    from: {
+        id: string;
+        username: string;
+        displayName: string;
+        avatarUrl?: string;
+    };
+    offer?: any;
+}
+
+// ============================================
+// Event Listener Types
+// ============================================
+
+type EventCallback = (...args: any[]) => void;
+
+interface EventListeners {
+    'message:new': ((msg: SocketMessage) => void)[];
+    'typing:start': ((data: TypingEvent) => void)[];
+    'typing:stop': ((data: TypingEvent) => void)[];
+    'message:read': ((data: { userId: string; conversationId: string; messageId: string }) => void)[];
+    'user:online': ((data: { userId: string }) => void)[];
+    'user:offline': ((data: { userId: string }) => void)[];
+    'presence:update': ((data: PresenceEvent) => void)[];
+    'call:incoming': ((data: CallIncoming) => void)[];
+    'call:answered': ((data: any) => void)[];
+    'call:rejected': ((data: any) => void)[];
+    'call:ended': ((data: any) => void)[];
+    'call:ice-candidate': ((data: any) => void)[];
+    'call:mute': ((data: { muted: boolean }) => void)[];
+    [key: string]: EventCallback[];
+}
+
+// ============================================
+// Singleton Socket Manager
+// ============================================
+
+class SocketManager {
+    private socket: Socket | null = null;
+    private listeners: EventListeners = {} as EventListeners;
+    private joinedConversations = new Set<string>();
+    private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    private _isConnected = false;
+
+    get isConnected(): boolean {
+        return this._isConnected;
+    }
+
+    /**
+     * Connect to the Socket.io server with JWT authentication
+     */
+    async connect(): Promise<void> {
+        if (this.socket?.connected) return;
+
+        const token = await getToken();
+        if (!token) return;
+
+        // Parse base URL (remove /api/v1 path if present)
+        const baseUrl = API_URL.replace(/\/api\/v1\/?$/, '');
+
+        this.socket = io(baseUrl, {
+            auth: { token },
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 30000,
+            timeout: 10000,
+            forceNew: false,
+        });
+
+        this.socket.on('connect', () => {
+            this._isConnected = true;
+            // Re-join previously joined conversations
+            this.joinedConversations.forEach((id) => {
+                this.socket?.emit('conversation:join', id);
+            });
+            this.emit('connected', {});
+        });
+
+        this.socket.on('disconnect', (reason) => {
+            this._isConnected = false;
+            this.emit('disconnected', { reason });
+        });
+
+        this.socket.on('connect_error', (error) => {
+            this._isConnected = false;
+            console.warn('Socket connection error:', error.message);
+        });
+
+        // Forward all server events to local listeners
+        const forwardEvents = [
+            'message:new',
+            'typing:start',
+            'typing:stop',
+            'message:read',
+            'user:online',
+            'user:offline',
+            'presence:update',
+            'call:incoming',
+            'call:answered',
+            'call:rejected',
+            'call:ended',
+            'call:ice-candidate',
+            'call:mute',
+            'call:unavailable',
+        ];
+
+        forwardEvents.forEach((event) => {
+            this.socket!.on(event, (data: any) => {
+                this.emit(event, data);
+            });
+        });
+    }
+
+    /**
+     * Disconnect and clean up
+     */
+    disconnect(): void {
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
+        this.joinedConversations.clear();
+        this.socket?.disconnect();
+        this.socket = null;
+        this._isConnected = false;
+    }
+
+    // ============================================
+    // Conversation Management
+    // ============================================
+
+    joinConversation(conversationId: string): void {
+        this.joinedConversations.add(conversationId);
+        this.socket?.emit('conversation:join', conversationId);
+    }
+
+    leaveConversation(conversationId: string): void {
+        this.joinedConversations.delete(conversationId);
+        this.socket?.emit('conversation:leave', conversationId);
+    }
+
+    // ============================================
+    // Messaging
+    // ============================================
+
+    sendMessage(data: {
+        conversationId: string;
+        content: string;
+        mediaUrl?: string;
+        mediaType?: string;
+    }): void {
+        this.socket?.emit('message:send', data);
+    }
+
+    markMessageRead(conversationId: string, messageId: string): void {
+        this.socket?.emit('message:read', { conversationId, messageId });
+    }
+
+    // ============================================
+    // Typing Indicators
+    // ============================================
+
+    startTyping(conversationId: string): void {
+        this.socket?.emit('typing:start', conversationId);
+    }
+
+    stopTyping(conversationId: string): void {
+        this.socket?.emit('typing:stop', conversationId);
+    }
+
+    // ============================================
+    // Calling
+    // ============================================
+
+    initiateCall(data: { callId: string; userId: string; type: 'audio' | 'video'; offer?: any }): void {
+        this.socket?.emit('call:initiate', data);
+    }
+
+    answerCall(data: { callId: string; answer: any }): void {
+        this.socket?.emit('call:answer', data);
+    }
+
+    rejectCall(callId: string): void {
+        this.socket?.emit('call:reject', { callId });
+    }
+
+    endCall(callId: string): void {
+        this.socket?.emit('call:end', { callId });
+    }
+
+    sendIceCandidate(userId: string, candidate: any): void {
+        this.socket?.emit('call:ice-candidate', { userId, candidate });
+    }
+
+    toggleMute(callId: string, muted: boolean): void {
+        this.socket?.emit('call:mute', { callId, muted });
+    }
+
+    // ============================================
+    // Presence
+    // ============================================
+
+    updatePresence(status: 'online' | 'away' | 'busy'): void {
+        this.socket?.emit('presence:update', { status });
+    }
+
+    // ============================================
+    // Event System
+    // ============================================
+
+    on(event: string, callback: EventCallback): () => void {
+        if (!this.listeners[event]) {
+            this.listeners[event] = [];
+        }
+        this.listeners[event].push(callback);
+
+        // Return unsubscribe function
+        return () => {
+            const idx = this.listeners[event]?.indexOf(callback);
+            if (idx !== undefined && idx > -1) {
+                this.listeners[event].splice(idx, 1);
+            }
+        };
+    }
+
+    off(event: string, callback: EventCallback): void {
+        const idx = this.listeners[event]?.indexOf(callback);
+        if (idx !== undefined && idx > -1) {
+            this.listeners[event].splice(idx, 1);
+        }
+    }
+
+    private emit(event: string, data: any): void {
+        this.listeners[event]?.forEach((cb) => {
+            try {
+                cb(data);
+            } catch (err) {
+                console.error(`Socket event handler error [${event}]:`, err);
+            }
+        });
+    }
+}
+
+// ============================================
+// Singleton Export
+// ============================================
+
+export const socketManager = new SocketManager();
