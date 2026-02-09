@@ -21,8 +21,8 @@ export interface TierConfig {
 
 const DEFAULT_TIERS: TierConfig[] = [
     { tier: 'free', name: 'Free', price: 0, benefits: ['Public content', 'Community participation'], color: 'white', icon: '👋' },
-    { tier: 'supporter', name: 'Supporter', price: 5, benefits: ['Supporter badge', 'Early access', 'Direct messaging'], color: 'cyan', icon: '⭐' },
-    { tier: 'patron', name: 'Patron', price: 15, benefits: ['Patron badge', 'Exclusive content', 'Monthly Q&A'], color: 'purple', icon: '💎' },
+    { tier: 'supporter', name: 'Supporter', price: 5, benefits: ['Supporter badge', 'Priority access', 'Direct messaging'], color: 'gold', icon: '⭐' },
+    { tier: 'patron', name: 'Patron', price: 15, benefits: ['Patron badge', 'Exclusive content', 'Monthly Q&A'], color: 'gold', icon: '💎' },
     { tier: 'champion', name: 'Champion', price: 50, benefits: ['Champion badge', 'Priority support', 'Custom perks'], color: 'amber', icon: '🏆' },
 ];
 
@@ -65,7 +65,7 @@ export function SubscriptionModal({ isOpen, creatorName, tiers = DEFAULT_TIERS, 
                 <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4">
                     {tiers.map(tier => (
                         <button key={tier.tier} onClick={() => setSelectedTier(tier.tier)}
-                            className={`p-5 rounded-2xl border text-left ${selectedTier === tier.tier ? 'bg-cyan-500/10 border-cyan-500/50' : 'bg-white/5 border-white/10'}`}>
+                            className={`p-5 rounded-2xl border text-left ${selectedTier === tier.tier ? 'bg-[#D4AF37]/10 border-[#D4AF37]/50' : 'bg-white/5 border-white/10'}`}>
                             <div className="text-2xl mb-2">{tier.icon}</div>
                             <h3 className="font-semibold text-white">{tier.name}</h3>
                             <p className="text-xl font-bold text-white">{tier.price === 0 ? 'Free' : `$${tier.price}/mo`}</p>
@@ -77,7 +77,7 @@ export function SubscriptionModal({ isOpen, creatorName, tiers = DEFAULT_TIERS, 
                 </div>
                 <div className="px-6 py-4 border-t border-white/10 flex justify-end">
                     <button onClick={handleSubscribe} disabled={selectedTier === currentTier || isProcessing}
-                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-medium disabled:opacity-50">
+                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-medium disabled:opacity-50">
                         {isProcessing ? 'Processing...' : 'Subscribe'}
                     </button>
                 </div>
@@ -160,14 +160,14 @@ export function DonationGoal({ title, targetAmount, currentAmount, contributorCo
             <h3 className="font-semibold text-white mb-4">{title}</h3>
             <div className="relative h-4 rounded-full bg-white/10 overflow-hidden mb-3">
                 <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
-                    className={`absolute h-full rounded-full ${isComplete ? 'bg-green-500' : 'bg-cyan-500'}`} />
+                    className={`absolute h-full rounded-full ${isComplete ? 'bg-green-500' : 'bg-[#D4AF37]'}`} />
             </div>
             <div className="flex justify-between mb-4">
                 <span className="text-xl font-bold text-white">${currentAmount.toLocaleString()} / ${targetAmount.toLocaleString()}</span>
                 <span className="text-white/50">{contributorCount} contributors</span>
             </div>
             <button onClick={onDonate} disabled={isComplete}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold disabled:opacity-50">
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold disabled:opacity-50">
                 {isComplete ? 'Goal Reached!' : 'Contribute'}
             </button>
         </div>

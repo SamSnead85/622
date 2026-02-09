@@ -1,5 +1,5 @@
 // ============================================
-// Caravan Obsidian Design System
+// 0G Obsidian Design System
 // Premium dark glassmorphism theme
 // ============================================
 

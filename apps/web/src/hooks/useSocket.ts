@@ -35,12 +35,10 @@ export function useSocket(options: UseSocketOptions = {}) {
         });
 
         socket.on('connect', () => {
-            console.log('🔌 Socket connected');
             connectedRef.current = true;
         });
 
-        socket.on('disconnect', (reason) => {
-            console.log('🔌 Socket disconnected:', reason);
+        socket.on('disconnect', () => {
             connectedRef.current = false;
         });
 

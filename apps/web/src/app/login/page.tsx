@@ -210,17 +210,12 @@ function LoginContent() {
     const { login, isAuthenticated, pending2FA, verify2FA, verifyBackupCode, cancel2FA } = useAuth();
 
     const handleOAuthSuccess = useCallback((user: { id: string; email: string; displayName: string; avatarUrl?: string }, token: string) => {
-        console.log('[OAuth Success] User logged in:', user.email);
-        console.log('[OAuth Success] Token received, storing in localStorage');
-
         // Store token
         localStorage.setItem('0g_token', token);
 
         // Force reload the auth context by triggering a re-check
         // This ensures isAuthenticated updates immediately
         window.dispatchEvent(new Event('storage'));
-
-        console.log('[OAuth Success] Redirecting to:', searchParams.get('redirect') || '/dashboard');
 
         // Small delay to ensure storage event propagates
         setTimeout(() => {

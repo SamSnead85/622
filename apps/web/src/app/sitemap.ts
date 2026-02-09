@@ -19,7 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 0.9,
         },
         {
-            url: `${BASE_URL}/early-access`,
+            url: `${BASE_URL}/signup`,
             lastModified: now,
             changeFrequency: 'weekly',
             priority: 0.9,
@@ -44,12 +44,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
         },
         {
             url: `${BASE_URL}/login`,
-            lastModified: now,
-            changeFrequency: 'yearly',
-            priority: 0.3,
-        },
-        {
-            url: `${BASE_URL}/signup`,
             lastModified: now,
             changeFrequency: 'yearly',
             priority: 0.3,

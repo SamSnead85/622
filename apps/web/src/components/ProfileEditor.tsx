@@ -326,7 +326,6 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                 }
 
                 // Call the API to persist changes
-                console.log('📤 Sending profile update:', updateData);
                 const response = await fetch(`${API_URL}/api/v1/users/profile`, {
                     method: 'PUT',
                     headers: {
@@ -340,8 +339,7 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                     const errorText = await response.text();
                     console.error('❌ Failed to save profile:', response.status, errorText);
                 } else {
-                    const result = await response.json();
-                    console.log('✅ Profile saved successfully:', result);
+                    await response.json();
                 }
             }
 

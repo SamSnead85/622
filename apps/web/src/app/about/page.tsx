@@ -46,8 +46,8 @@ export default function AboutPage() {
                     </Link>
                     <div className="flex items-center gap-4">
                         <Link href="/developers" className="text-white/40 hover:text-white text-sm transition-colors">Developers</Link>
-                        <Link href="/early-access" className="px-5 py-2 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-all">
-                            Request Early Access
+                        <Link href="/signup" className="px-5 py-2 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-all">
+                            Get Started Free
                         </Link>
                     </div>
                 </div>
@@ -450,7 +450,7 @@ export default function AboutPage() {
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link
-                                href="/early-access"
+                                href="/signup"
                                 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all hover:scale-[1.02]"
                             >
                                 Join the Movement

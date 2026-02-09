@@ -72,8 +72,8 @@ const JobIcon = () => (
 );
 
 const BULLETIN_TYPES: { value: BulletinType; label: string; icon: React.ReactNode; color: string }[] = [
-    { value: 'ANNOUNCEMENT', label: 'Announcements', icon: <MegaphoneIcon size={18} />, color: 'from-blue-500 to-cyan-500' },
-    { value: 'EVENT', label: 'Events', icon: <CalendarIcon size={18} />, color: 'from-purple-500 to-indigo-500' },
+    { value: 'ANNOUNCEMENT', label: 'Announcements', icon: <MegaphoneIcon size={18} />, color: 'from-[#D4AF37] to-[#B8942D]' },
+    { value: 'EVENT', label: 'Events', icon: <CalendarIcon size={18} />, color: 'from-amber-500 to-[#D4AF37]' },
     { value: 'JOB', label: 'Jobs & Gigs', icon: <JobIcon />, color: 'from-sky-500 to-blue-600' },
     { value: 'NEED', label: 'Looking For', icon: <HeartIcon size={18} />, color: 'from-rose-500 to-pink-500' },
     { value: 'SERVICE', label: 'Services', icon: <ZapIcon size={18} />, color: 'from-amber-500 to-orange-500' },
@@ -152,7 +152,7 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
                             {typeConfig?.label}
                         </span>
                         {post.isVerified && (
-                            <span className="ml-2 text-xs text-cyan-400 flex items-center gap-1">
+                            <span className="ml-2 text-xs text-[#D4AF37] flex items-center gap-1">
                                 <CheckCircleIcon size={12} />
                                 Verified
                             </span>
@@ -167,7 +167,7 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
                 </div>
 
                 {/* Title */}
-                <h3 className="text-base sm:text-lg font-semibold text-white mb-1.5 sm:mb-2 line-clamp-2 group-hover:text-cyan-300 transition-colors">
+                <h3 className="text-base sm:text-lg font-semibold text-white mb-1.5 sm:mb-2 line-clamp-2 group-hover:text-[#D4AF37] transition-colors">
                     {post.title}
                 </h3>
 
@@ -178,13 +178,13 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
 
                 {/* Event Details */}
                 {isEvent && post.eventDate && (
-                    <div className="flex items-center gap-4 mb-4 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                        <div className="flex items-center gap-2 text-purple-300">
+                    <div className="flex items-center gap-4 mb-4 p-3 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20">
+                        <div className="flex items-center gap-2 text-[#D4AF37]">
                             <CalendarIcon size={16} />
                             <span className="text-sm font-medium">{formatDate(post.eventDate)}</span>
                         </div>
                         {post.location && (
-                            <div className="flex items-center gap-2 text-purple-300/70">
+                            <div className="flex items-center gap-2 text-[#D4AF37]/70">
                                 <MapPinIcon size={16} />
                                 <span className="text-sm">{post.location}</span>
                             </div>
@@ -214,7 +214,7 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
                         href={post.externalLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-colors text-sm"
+                        className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-colors text-sm"
                     >
                         <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                             <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
@@ -242,7 +242,7 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
             <div className="px-4 py-3 sm:px-5 sm:py-4 border-t border-white/[0.04] flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                 {/* Author */}
                 <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white text-xs sm:text-sm font-medium shrink-0">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-white text-xs sm:text-sm font-medium shrink-0">
                         {post.author.avatarUrl ? (
                             <img src={post.author.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" loading="lazy" />
                         ) : (
@@ -252,7 +252,7 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
                     <div className="min-w-0">
                         <p className="text-sm font-medium text-white/80 flex items-center gap-1 truncate">
                             {post.author.displayName}
-                            {post.author.isVerified && <CheckCircleIcon size={13} className="text-cyan-400 shrink-0" />}
+                            {post.author.isVerified && <CheckCircleIcon size={13} className="text-[#D4AF37] shrink-0" />}
                         </p>
                         <p className="text-[11px] text-white/35">{formatRelativeTime(post.createdAt)}</p>
                     </div>
@@ -266,7 +266,7 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
                             <button
                                 onClick={() => onInterested?.(post.id)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all touch-manipulation active:scale-95 ${post.isInterested
-                                        ? 'bg-purple-500 text-white'
+                                        ? 'bg-[#D4AF37] text-black'
                                         : 'bg-white/5 text-white/60 hover:bg-white/10'
                                     }`}
                             >
@@ -275,7 +275,7 @@ function BulletinCard({ post, onInterested, onGoing, onUpvote }: BulletinCardPro
                             <button
                                 onClick={() => onGoing?.(post.id)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all touch-manipulation active:scale-95 ${post.isGoing
-                                        ? 'bg-cyan-500 text-white'
+                                        ? 'bg-[#D4AF37] text-black'
                                         : 'bg-white/5 text-white/60 hover:bg-white/10'
                                     }`}
                             >
@@ -428,6 +428,57 @@ export function BulletinBoard({ communityId, showComposer = true, onCreatePost }
             author: { id: 'job1', displayName: 'Barakah Goods', isVerified: false },
             commentsCount: 7,
             createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+            id: 'seed-0gf-1',
+            type: 'JOB',
+            title: 'Zero G Foundry — Now Hiring Multiple Roles',
+            content: 'Zero G Foundry is hiring! We\'re building the future of ethical technology and community-first platforms. We have openings for Full-Stack Engineers, Mobile Developers (React Native/Expo), Backend Engineers (Node.js/PostgreSQL), UI/UX Designers, Community Managers, and Growth Marketing roles. Remote-first, competitive pay, mission-driven work. Visit our careers page to apply.',
+            externalLink: 'https://zerogfoundry.com/careers',
+            upvotes: 156,
+            downvotes: 0,
+            viewCount: 892,
+            category: 'BUSINESS',
+            tags: ['zerogfoundry', 'hiring', 'tech', 'remote', 'engineering', 'design', 'marketing'],
+            isPinned: true,
+            isVerified: true,
+            author: { id: '0gf', displayName: 'Zero G Foundry', isVerified: true },
+            commentsCount: 34,
+            createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+            id: 'seed-0gf-2',
+            type: 'JOB',
+            title: 'Zero G Foundry — Senior React Native Engineer',
+            content: 'Build the mobile experience for millions. We need a senior React Native engineer with Expo experience to lead mobile app development. You\'ll work on performance optimization, animation systems, real-time features, and offline-first architecture. Must have 4+ years React Native experience and passion for privacy-first technology.',
+            externalLink: 'https://zerogfoundry.com/careers',
+            upvotes: 78,
+            downvotes: 0,
+            viewCount: 445,
+            category: 'BUSINESS',
+            tags: ['zerogfoundry', 'react-native', 'mobile', 'engineering', 'senior'],
+            isPinned: false,
+            isVerified: true,
+            author: { id: '0gf', displayName: 'Zero G Foundry', isVerified: true },
+            commentsCount: 12,
+            createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+            id: 'seed-0gf-3',
+            type: 'JOB',
+            title: 'Zero G Foundry — Community Growth Lead',
+            content: 'Help grow the 0G community from the ground up. We\'re looking for someone who understands grassroots community building, social media marketing, and content strategy. You\'ll lead our outreach to diaspora communities, faith organizations, and privacy-conscious users worldwide. Must be passionate about digital sovereignty and ethical technology.',
+            externalLink: 'https://zerogfoundry.com/careers',
+            upvotes: 54,
+            downvotes: 0,
+            viewCount: 312,
+            category: 'BUSINESS',
+            tags: ['zerogfoundry', 'community', 'marketing', 'growth'],
+            isPinned: false,
+            isVerified: true,
+            author: { id: '0gf', displayName: 'Zero G Foundry', isVerified: true },
+            commentsCount: 8,
+            createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
         },
         {
             id: 'seed-2',
@@ -599,7 +650,7 @@ export function BulletinBoard({ communityId, showComposer = true, onCreatePost }
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between">
                 <div>
                     <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center shrink-0">
                             <MegaphoneIcon size={18} className="text-white" />
                         </div>
                         Community Bulletin
@@ -611,7 +662,7 @@ export function BulletinBoard({ communityId, showComposer = true, onCreatePost }
                 {showComposer && (
                     <button
                         onClick={onCreatePost}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-sm font-medium hover:opacity-90 transition-opacity active:scale-95 touch-manipulation"
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black text-sm font-medium hover:opacity-90 transition-opacity active:scale-95 touch-manipulation"
                     >
                         <PlusIcon size={16} />
                         Post to Bulletin
@@ -656,7 +707,7 @@ export function BulletinBoard({ communityId, showComposer = true, onCreatePost }
                     placeholder="Search bulletin posts..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                    className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-[#D4AF37]/50 transition-colors"
                 />
             </div>
 

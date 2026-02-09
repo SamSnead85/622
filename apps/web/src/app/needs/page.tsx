@@ -104,10 +104,10 @@ export default function PublicNeedsPage() {
                     </div>
                     <div className="flex items-center gap-3">
                         <Link
-                            href="/early-access"
+                            href="/signup"
                             className="px-4 py-2 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-xs font-medium text-[#D4AF37] hover:bg-[#D4AF37]/15 transition-colors"
                         >
-                            Request Early Access
+                            Get Started Free
                         </Link>
                     </div>
                 </div>
@@ -196,8 +196,8 @@ export default function PublicNeedsPage() {
                         </div>
                         <p className="text-white/40 text-sm mb-2">No posts yet</p>
                         <p className="text-white/20 text-xs">Be the first to post a community need.</p>
-                        <Link href="/early-access" className="inline-block mt-4 px-5 py-2 rounded-xl bg-[#D4AF37]/10 text-[#D4AF37] text-xs font-medium hover:bg-[#D4AF37]/15 transition-colors">
-                            Get Early Access to Post
+                        <Link href="/signup" className="inline-block mt-4 px-5 py-2 rounded-xl bg-[#D4AF37]/10 text-[#D4AF37] text-xs font-medium hover:bg-[#D4AF37]/15 transition-colors">
+                            Get Started Free
                         </Link>
                     </div>
                 ) : (
@@ -329,10 +329,10 @@ export default function PublicNeedsPage() {
                     </p>
                     <div className="flex gap-3 justify-center">
                         <Link
-                            href="/early-access"
+                            href="/signup"
                             className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#D4AF37]/80 text-sm font-medium text-white hover:opacity-90 transition-opacity"
                         >
-                            Request Early Access
+                            Get Started Free
                         </Link>
                         <Link
                             href="/about"

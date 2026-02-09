@@ -115,6 +115,28 @@ export default function SettingsScreen() {
         );
     };
 
+    const handleJoinCommunity = () => {
+        Alert.alert(
+            'Join the Community',
+            'You\'ll become visible on the community feed and others can discover your public profile. Your private groups remain private. You can switch back to private mode anytime.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Join Community',
+                    onPress: async () => {
+                        try {
+                            await apiFetch(API.communityOptIn, { method: 'POST', body: JSON.stringify({ optIn: true }) });
+                            await refreshUser();
+                            Alert.alert('Welcome!', 'You\'re now part of the larger community. You can switch back to private mode anytime from Settings.');
+                        } catch {
+                            Alert.alert('Error', 'Failed to join community. Please try again.');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
     const handleLeaveCommunity = () => {
         Alert.alert(
             'Leave Community',
@@ -219,8 +241,21 @@ export default function SettingsScreen() {
                                 </View>
                             }
                         />
-                        {user?.communityOptIn && (
-                            <SettingRow icon="log-out-outline" label="Leave Community" description="Return to private-only mode" onPress={handleLeaveCommunity} danger />
+                        {user?.communityOptIn ? (
+                            <SettingRow
+                                icon="eye-off-outline"
+                                label="Switch to Private Mode"
+                                description="Leave the community feed and become invisible to others. Your private groups stay safe. You can rejoin anytime from here."
+                                onPress={handleLeaveCommunity}
+                                danger
+                            />
+                        ) : (
+                            <SettingRow
+                                icon="people-outline"
+                                label="Join the Larger Community"
+                                description="See the community feed and become discoverable. You can switch back to private anytime from this settings page."
+                                onPress={handleJoinCommunity}
+                            />
                         )}
                     </View>
 

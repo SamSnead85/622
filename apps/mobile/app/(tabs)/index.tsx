@@ -432,16 +432,20 @@ const FeedPostCard = memo(
         onLike,
         onSave,
         onPress,
+        onReorder,
         isVideoActive,
         isFirstVideo,
+        isOwnPost,
         shouldReduceData,
     }: {
         post: Post;
         onLike: (id: string) => void;
         onSave: (id: string) => void;
         onPress: (id: string) => void;
+        onReorder?: (id: string, direction: 'up' | 'down') => void;
         isVideoActive: boolean;
         isFirstVideo: boolean;
+        isOwnPost?: boolean;
         shouldReduceData?: boolean;
     }) => {
         const router = useRouter();
@@ -656,6 +660,32 @@ const FeedPostCard = memo(
 
                         <View style={{ flex: 1 }} />
 
+                        {/* Reorder arrows — only visible on own posts */}
+                        {isOwnPost && onReorder && (
+                            <View style={styles.reorderControls}>
+                                <TouchableOpacity
+                                    style={styles.reorderBtn}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        onReorder(post.id, 'up');
+                                    }}
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                >
+                                    <Ionicons name="chevron-up" size={16} color={colors.text.muted} />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.reorderBtn}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        onReorder(post.id, 'down');
+                                    }}
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                >
+                                    <Ionicons name="chevron-down" size={16} color={colors.text.muted} />
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
                         <TouchableOpacity
                             style={styles.actionBtn}
                             onPress={() => {
@@ -710,6 +740,7 @@ const FeedPostCard = memo(
         prev.post.authorNote === next.post.authorNote &&
         prev.isVideoActive === next.isVideoActive &&
         prev.isFirstVideo === next.isFirstVideo &&
+        prev.isOwnPost === next.isOwnPost &&
         prev.shouldReduceData === next.shouldReduceData
 );
 
@@ -732,6 +763,7 @@ export default function FeedScreen() {
     const unlikePost = useFeedStore((s) => s.unlikePost);
     const savePost = useFeedStore((s) => s.savePost);
     const unsavePost = useFeedStore((s) => s.unsavePost);
+    const reorderPost = useFeedStore((s) => s.reorderPost);
 
     const [feedType, setFeedType] = useState<'foryou' | 'following'>('foryou');
     const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
@@ -831,6 +863,13 @@ export default function FeedScreen() {
         }
     }, [isLoading, hasMore, fetchFeed, feedType]);
 
+    const handleReorder = useCallback(
+        (postId: string, direction: 'up' | 'down') => {
+            reorderPost(postId, direction);
+        },
+        [reorderPost]
+    );
+
     const getGreeting = () => {
         const profile = user?.culturalProfile || 'standard';
         if (profile === 'muslim') return 'Assalamu Alaikum';
@@ -849,13 +888,15 @@ export default function FeedScreen() {
                     onLike={handleLike}
                     onSave={handleSave}
                     onPress={handlePostPress}
+                    onReorder={handleReorder}
                     isVideoActive={item.mediaType === 'VIDEO' && activeVideoId === item.id}
                     isFirstVideo={item.mediaType === 'VIDEO' && activeVideoId === item.id}
+                    isOwnPost={item.author?.id === user?.id}
                     shouldReduceData={shouldReduceData}
                 />
             );
         },
-        [handleLike, handleSave, handlePostPress, activeVideoId, shouldReduceData]
+        [handleLike, handleSave, handlePostPress, handleReorder, activeVideoId, shouldReduceData, user?.id]
     );
 
     const renderHeader = () => (
@@ -1305,6 +1346,17 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.sm,
         color: colors.text.secondary,
         marginLeft: spacing.xs,
+    },
+    reorderControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: spacing.sm,
+        backgroundColor: colors.surface.elevated,
+        borderRadius: 12,
+        paddingHorizontal: 2,
+    },
+    reorderBtn: {
+        padding: 4,
     },
 
     // Author's Note

@@ -114,9 +114,9 @@ export default function CirclesPage() {
                     <CircleOrganizer
                         circle={selectedCircle}
                         currentUserId="1"
-                        onTaskCreate={(task) => console.log('Create task:', task)}
-                        onTaskUpdate={(id, updates) => console.log('Update task:', id, updates)}
-                        onMemberRoleChange={(id, role) => console.log('Change role:', id, role)}
+                        onTaskCreate={() => {}}
+                        onTaskUpdate={() => {}}
+                        onMemberRoleChange={() => {}}
                     />
                 </div>
             </div>

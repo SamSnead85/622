@@ -2,7 +2,7 @@ import type { Metadata, ResolvingMetadata } from 'next';
 import type { ReactNode } from 'react';
 
 // Use env vars directly — this runs server-side only
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://caravanserver-production-d7da.up.railway.app';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://0g-server.up.railway.app';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://0gravity.ai';
 
 type Props = {

@@ -88,13 +88,12 @@ export function AutoPlayVideo({ src, className = '' }: { src: string; className?
                             })
                             .catch(() => {
                                 // Browser blocked autoplay with sound, fallback to muted
-                                console.log('Autoplay with sound blocked, playing muted');
                                 video.muted = true;
                                 setIsMuted(true);
                                 video.play()
                                     .then(() => setIsPlaying(true))
                                     .catch(() => {
-                                        console.log('Autoplay completely blocked');
+                                        // Autoplay completely blocked
                                     });
                             });
                     } else {

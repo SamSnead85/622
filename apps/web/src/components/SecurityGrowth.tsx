@@ -610,8 +610,7 @@ export function useBetaProgram() {
         setBetaFeatures(prev => prev.map(f => f.id === featureId ? { ...f, enabled: !f.enabled } : f));
     }, []);
 
-    const submitFeedback = useCallback((featureId: string, feedback: string, rating: number) => {
-        console.log('Feedback submitted:', { featureId, feedback, rating });
+    const submitFeedback = useCallback((_featureId: string, _feedback: string, _rating: number) => {
         return true;
     }, []);
 

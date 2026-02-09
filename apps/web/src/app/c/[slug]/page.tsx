@@ -216,7 +216,7 @@ export default function CampaignPage() {
                                 </div>
                                 <h3 className="text-lg font-semibold text-white mb-1">
                                     {campaign.incentiveType === 'raffle' ? 'Enter the Drawing' :
-                                        campaign.incentiveType === 'gift_card' ? 'Signup Reward' : 'Get Early Access'}
+                                        campaign.incentiveType === 'gift_card' ? 'Signup Reward' : 'Get Started Free'}
                                 </h3>
                                 {campaign.incentiveValue && (
                                     <p className="text-sm font-medium mb-2" style={{ color: brandColor }}>{campaign.incentiveValue}</p>
@@ -321,7 +321,7 @@ export default function CampaignPage() {
                                     <p className="text-sm text-white/40 mb-6">
                                         {campaign.incentiveValue
                                             ? `Sign up for a chance to win ${campaign.incentiveValue}`
-                                            : 'Join the community and get early access to ZeroG'}
+                                            : 'Join the community and get started with ZeroG'}
                                     </p>
 
                                     <div className="space-y-4">
@@ -371,7 +371,7 @@ export default function CampaignPage() {
                                     >
                                         {submitting ? 'Signing Up...' :
                                             campaign.incentiveType === 'raffle' ? 'Enter Drawing' :
-                                                campaign.type === 'event' ? 'RSVP Now' : 'Get Early Access'}
+                                                campaign.type === 'event' ? 'RSVP Now' : 'Get Started Free'}
                                     </button>
 
                                     <p className="text-[10px] text-white/20 text-center mt-4 leading-relaxed">

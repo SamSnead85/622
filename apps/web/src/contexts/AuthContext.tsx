@@ -96,7 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (response.ok) {
                     const data = await response.json();
                     setUser(data.user);
-                    console.log('[Auth] User authenticated:', data.user.email);
 
                     // Auto-refresh token if approaching expiry
                     if (shouldRefresh) {
@@ -108,15 +107,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                                 const refreshData = await refreshResponse.json();
                                 localStorage.setItem('0g_token', refreshData.token);
                                 localStorage.setItem('0g_token_expiry', refreshData.expiresAt);
-                                console.log('[Auth] Token refreshed successfully');
                             }
                         } catch (refreshError) {
-                            console.warn('[Auth] Token refresh failed, continuing with current token:', refreshError);
+                            // Token refresh failed, continuing with current token
                         }
                     }
                 } else {
                     // Token invalid, clear it
-                    console.warn('[Auth] Token invalid, clearing');
                     localStorage.removeItem('0g_token');
                     localStorage.removeItem('0g_token_expiry');
                 }
@@ -136,9 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Listen for storage events to handle OAuth login from login page
         const handleStorageChange = (e: StorageEvent) => {
-            console.log('[Auth] Storage event detected:', e.key);
             if (e.key === '0g_token' && e.newValue && !e.oldValue) {
-                console.log('[Auth] New token detected, re-authenticating...');
                 // Token was just added (OAuth login), re-check auth
                 checkAuth();
             }
@@ -146,7 +141,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Custom event for same-tab storage changes (since StorageEvent doesn't fire in same tab)
         const handleCustomStorage = () => {
-            console.log('[Auth] Custom storage event detected, re-authenticating...');
             checkAuth();
         };
 
@@ -333,7 +327,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (response.ok) {
                     const data = await response.json();
                     setUser(data.user);
-                    console.log('[Auth] User profile refreshed from backend:', data.user.displayName);
                 }
             } catch (error) {
                 console.error('[Auth] Failed to refresh user profile:', error);

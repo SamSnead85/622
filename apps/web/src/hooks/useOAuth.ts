@@ -55,11 +55,9 @@ export function useGoogleAuth(
     const buttonContainerRef = useRef<string | null>(null);
 
     const handleCredentialResponse = useCallback(async (response: GoogleAuthResponse) => {
-        console.log('[Google OAuth] Credential response received');
         setIsLoading(true);
         try {
             // Send the Google ID token to our backend
-            console.log('[Google OAuth] Sending token to backend:', API_ENDPOINTS.login.replace('/login', '/google'));
             const res = await fetch(API_ENDPOINTS.login.replace('/login', '/google'), {
                 method: 'POST',
                 headers: {
@@ -71,10 +69,8 @@ export function useGoogleAuth(
             });
 
             const data = await res.json();
-            console.log('[Google OAuth] Backend response:', { status: res.status, ok: res.ok });
 
             if (res.ok) {
-                console.log('[Google OAuth] Login successful, user:', data.user?.email);
                 // Store token in localStorage
                 localStorage.setItem('0g_token', data.token);
                 onSuccess(data.user, data.token);
@@ -92,7 +88,6 @@ export function useGoogleAuth(
 
     useEffect(() => {
         if (!GOOGLE_CLIENT_ID) {
-            console.warn('Google Client ID not configured');
             return;
         }
 
@@ -177,13 +172,12 @@ export function useGoogleAuth(
         window.google.accounts.id.prompt((notification) => {
             if (notification.isNotDisplayed()) {
                 const reason = notification.getNotDisplayedReason();
-                console.log('Google One Tap not displayed:', reason);
                 // Common reasons: browser_not_supported, invalid_client, opt_out_or_no_session
                 if (reason === 'opt_out_or_no_session' || reason === 'suppressed_by_user') {
                     onError('Please click the Google button to sign in, or allow popups for this site.');
                 }
             } else if (notification.isSkippedMoment()) {
-                console.log('Google One Tap skipped:', notification.getSkippedReason());
+                // Google One Tap skipped
             }
         });
     }, [isLibraryLoaded, onError]);

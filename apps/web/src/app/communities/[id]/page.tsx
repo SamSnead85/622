@@ -196,7 +196,8 @@ export default function CommunityDetailPage() {
                 method: 'POST',
                 body: JSON.stringify({ content: chatInput.trim() }),
             });
-            setChatMessages(prev => [...prev, res.data as ChatMessage]);
+            const msg: ChatMessage = res.data as ChatMessage;
+            setChatMessages(prev => [...prev, msg]);
             setChatInput('');
             setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
         } catch (err) {

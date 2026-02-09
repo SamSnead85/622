@@ -198,7 +198,7 @@ export default function SignupPage() {
 
                                     <h1 className="text-3xl font-bold text-white mb-2">Join ZeroG</h1>
                                     <p className="text-white/50 mb-8">
-                                        Early access. Enter your invite code to create an account.
+                                        Enter your invite code to create an account.
                                     </p>
 
                                     <form onSubmit={handleStep1} className="space-y-4">
@@ -215,8 +215,8 @@ export default function SignupPage() {
                                             />
                                             <p className="text-xs text-white/30 mt-1.5">
                                                 Don&apos;t have a code?{' '}
-                                                <Link href="/early-access" className="text-[#D4AF37]/70 hover:text-[#D4AF37] underline underline-offset-2">
-                                                    Request early access
+                                                <Link href="/signup" className="text-[#D4AF37]/70 hover:text-[#D4AF37] underline underline-offset-2">
+                                                    Sign up for free
                                                 </Link>
                                             </p>
                                         </div>
@@ -260,7 +260,7 @@ export default function SignupPage() {
                                     <div className="mt-6 pt-6 border-t border-white/[0.06] text-center">
                                         <p className="text-xs text-white/30">
                                             Don&apos;t have a code?{' '}
-                                            <Link href="/early-access" className="text-[#D4AF37]/60 hover:text-[#D4AF37] underline underline-offset-2">Request early access</Link>
+                                            <Link href="/signup" className="text-[#D4AF37]/60 hover:text-[#D4AF37] underline underline-offset-2">Sign up for free</Link>
                                         </p>
                                     </div>
                                 </motion.div>

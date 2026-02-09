@@ -20,17 +20,17 @@ export default function robots(): MetadataRoute.Robots {
             },
             {
                 userAgent: 'GPTBot',
-                allow: ['/', '/about', '/early-access', '/developers'],
+                allow: ['/', '/about', '/signup', '/developers'],
                 disallow: ['/api/', '/dashboard/', '/messages/'],
             },
             {
                 userAgent: 'ChatGPT-User',
-                allow: ['/', '/about', '/early-access', '/developers'],
+                allow: ['/', '/about', '/signup', '/developers'],
                 disallow: ['/api/', '/dashboard/', '/messages/'],
             },
             {
                 userAgent: 'Claude-Web',
-                allow: ['/', '/about', '/early-access', '/developers'],
+                allow: ['/', '/about', '/signup', '/developers'],
                 disallow: ['/api/', '/dashboard/', '/messages/'],
             },
             {
