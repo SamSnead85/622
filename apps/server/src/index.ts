@@ -46,6 +46,7 @@ import { setupSocketHandlers } from './socket/index.js';
 import { initNotificationQueue, shutdownNotificationQueue } from './services/notifications/NotificationQueue.js';
 import { initScheduleWorker, shutdownScheduleWorker } from './services/schedule/ScheduleWorker.js';
 import { initGrowthQualificationWorker, shutdownGrowthQualificationWorker } from './services/schedule/GrowthQualificationWorker.js';
+import './services/games/index.js';
 
 // Load environment variables
 dotenv.config();

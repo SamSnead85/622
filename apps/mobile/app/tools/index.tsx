@@ -63,6 +63,14 @@ export default function ToolsHub() {
 
     const tools = [
         {
+            icon: 'game-controller-outline' as const,
+            title: '0G Arena',
+            description: 'Party games & trivia',
+            color: '#D4AF37',
+            route: '/games',
+            badge: 'NEW',
+        },
+        {
             icon: 'time-outline' as const,
             title: 'Prayer Times',
             description: 'Daily salah schedule with countdown',

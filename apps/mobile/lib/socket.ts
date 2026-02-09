@@ -81,6 +81,45 @@ export interface NotificationNewEvent {
     data?: Record<string, any>;
 }
 
+export interface GamePlayerEvent {
+    player: {
+        id: string;
+        name: string;
+        avatarUrl?: string;
+        score: number;
+        isHost: boolean;
+    };
+    playerCount: number;
+}
+
+export interface GameStateEvent {
+    code: string;
+    type: string;
+    status: string;
+    players: any[];
+    round: number;
+    totalRounds: number;
+    gameData: Record<string, any>;
+}
+
+export interface GameRoundEvent {
+    round: number;
+    totalRounds: number;
+    gameData: Record<string, any>;
+}
+
+export interface GameRoundEndEvent {
+    round: number;
+    scores: Record<string, number>;
+    summary: any;
+    players: any[];
+}
+
+export interface GameEndedEvent {
+    finalScores: Array<{ id: string; name: string; score: number; avatarUrl?: string }>;
+    winner: { id: string; name: string; score: number };
+}
+
 // ============================================
 // Event Listener Types
 // ============================================
@@ -105,6 +144,14 @@ interface EventListeners {
     'poll:vote': ((data: PollVoteEvent) => void)[];
     'proposal:vote': ((data: ProposalVoteEvent) => void)[];
     'notification:new': ((data: NotificationNewEvent) => void)[];
+    'game:state': ((data: GameStateEvent) => void)[];
+    'game:update': ((data: any) => void)[];
+    'game:player-joined': ((data: GamePlayerEvent) => void)[];
+    'game:player-left': ((data: { playerId: string; playerCount: number }) => void)[];
+    'game:round-start': ((data: GameRoundEvent) => void)[];
+    'game:round-end': ((data: GameRoundEndEvent) => void)[];
+    'game:ended': ((data: GameEndedEvent) => void)[];
+    'game:error': ((data: { message: string }) => void)[];
     [key: string]: EventCallback[];
 }
 
@@ -186,6 +233,15 @@ class SocketManager {
             'poll:vote',
             'proposal:vote',
             'notification:new',
+            // Game events
+            'game:state',
+            'game:update',
+            'game:player-joined',
+            'game:player-left',
+            'game:round-start',
+            'game:round-end',
+            'game:ended',
+            'game:error',
         ];
 
         forwardEvents.forEach((event) => {
@@ -290,6 +346,42 @@ class SocketManager {
 
     leaveCommunity(communityId: string): void {
         this.socket?.emit('community:leave', communityId);
+    }
+
+    // ============================================
+    // Games
+    // ============================================
+
+    createGame(gameType: string, settings?: Record<string, any>): Promise<{ success: boolean; code?: string; state?: any; error?: string }> {
+        return new Promise((resolve) => {
+            this.socket?.emit('game:create', { gameType, settings }, (result: any) => {
+                resolve(result);
+            });
+        });
+    }
+
+    joinGame(code: string, playerName?: string): Promise<{ success: boolean; state?: any; error?: string }> {
+        return new Promise((resolve) => {
+            this.socket?.emit('game:join', { code, playerName }, (result: any) => {
+                resolve(result);
+            });
+        });
+    }
+
+    startGame(code: string): Promise<{ success: boolean; error?: string }> {
+        return new Promise((resolve) => {
+            this.socket?.emit('game:start', { code }, (result: any) => {
+                resolve(result);
+            });
+        });
+    }
+
+    sendGameAction(code: string, action: string, payload: any): void {
+        this.socket?.emit('game:action', { code, action, payload });
+    }
+
+    leaveGame(code: string): void {
+        this.socket?.emit('game:leave', { code });
     }
 
     // ============================================

@@ -4,6 +4,7 @@ import { prisma } from '../db/client.js';
 import { logger } from '../utils/logger.js';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { Redis } from 'ioredis';
+import { setupGameSocketHandlers } from './gameHandlers.js';
 
 interface AuthenticatedSocket extends Socket {
     userId?: string;
@@ -146,6 +147,9 @@ export const setupSocketHandlers = (io: SocketServer) => {
 
         // Join user's personal room
         socket.join(`user:${userId}`);
+
+        // Setup game handlers
+        setupGameSocketHandlers(io, socket, userId, socket.username || 'Player');
 
         // Notify others that user is online
         socket.broadcast.emit('user:online', { userId });

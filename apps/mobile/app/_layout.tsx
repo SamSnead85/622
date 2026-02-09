@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, AppState, AppStateStatus } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Font from 'expo-font';
+import * as Linking from 'expo-linking';
 import * as Sentry from '@sentry/react-native';
 import {
     Inter_400Regular,
@@ -191,6 +192,31 @@ function RootLayout() {
     }, [isAuthenticated]);
 
     // ============================================
+    // Deep Link Handling (Game Invites)
+    // ============================================
+
+    useEffect(() => {
+        const handleDeepLink = (event: { url: string }) => {
+            const url = event.url;
+            // Handle zerog://game/CODE or https://0gravity.ai/game/CODE
+            const gameMatch = url.match(/\/game\/([A-Z0-9]{6})/i);
+            if (gameMatch) {
+                const gameCode = gameMatch[1].toUpperCase();
+                router.push(`/games/lobby/${gameCode}` as any);
+            }
+        };
+
+        // Check if app was opened with a deep link
+        Linking.getInitialURL().then((url) => {
+            if (url) handleDeepLink({ url });
+        });
+
+        // Listen for new deep links while app is open
+        const subscription = Linking.addEventListener('url', handleDeepLink);
+        return () => subscription.remove();
+    }, []);
+
+    // ============================================
     // Render
     // ============================================
 
@@ -225,6 +251,7 @@ function RootLayout() {
                     <Stack.Screen name="analytics" />
                     <Stack.Screen name="community/[id]/governance" />
                     <Stack.Screen name="community/[id]/proposal/[proposalId]" />
+                    <Stack.Screen name="games" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen
                         name="call/[id]"
                         options={{

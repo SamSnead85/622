@@ -7,6 +7,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch, apiUpload, saveToken, removeToken, getToken, API } from '../lib/api';
+import { socketManager } from '../lib/socket';
 
 // ============================================
 // Zustand Persistence Storage Adapter
@@ -987,4 +988,200 @@ export const useGovernanceStore = create<GovernanceState>()((set, get) => ({
             return { proposalsByCommunity: updated };
         });
     },
+}));
+
+// ============================================
+// Game Store
+// ============================================
+
+interface GamePlayerData {
+    id: string;
+    userId?: string;
+    name: string;
+    avatarUrl?: string;
+    score: number;
+    isHost: boolean;
+    isConnected: boolean;
+}
+
+interface GameStoreState {
+    gameCode: string | null;
+    gameType: string | null;
+    status: 'idle' | 'lobby' | 'playing' | 'round_end' | 'finished';
+    players: GamePlayerData[];
+    round: number;
+    totalRounds: number;
+    gameData: Record<string, any>;
+    isHost: boolean;
+    myPlayerId: string | null;
+    error: string | null;
+
+    // Actions
+    createGame: (type: string, settings?: Record<string, any>) => Promise<string | null>;
+    joinGame: (code: string, playerName?: string) => Promise<boolean>;
+    startGame: () => Promise<boolean>;
+    sendAction: (action: string, payload: any) => void;
+    leaveGame: () => void;
+    updateFromState: (state: any) => void;
+    updateFromDelta: (delta: any) => void;
+    setRoundEnd: (data: any) => void;
+    setGameEnded: (data: any) => void;
+    addPlayer: (data: any) => void;
+    removePlayer: (playerId: string) => void;
+    reset: () => void;
+    setError: (error: string | null) => void;
+}
+
+export const useGameStore = create<GameStoreState>()((set, get) => ({
+    gameCode: null,
+    gameType: null,
+    status: 'idle',
+    players: [],
+    round: 0,
+    totalRounds: 0,
+    gameData: {},
+    isHost: false,
+    myPlayerId: null,
+    error: null,
+
+    createGame: async (type, settings) => {
+        try {
+            const result = await socketManager.createGame(type, settings);
+            if (result.success && result.code) {
+                set({
+                    gameCode: result.code,
+                    gameType: type,
+                    status: 'lobby',
+                    isHost: true,
+                    players: result.state?.players || [],
+                    gameData: result.state?.gameData || {},
+                    myPlayerId: result.state?.players?.[0]?.id || null,
+                    error: null,
+                });
+                return result.code;
+            }
+            set({ error: result.error || 'Failed to create game' });
+            return null;
+        } catch {
+            set({ error: 'Failed to create game' });
+            return null;
+        }
+    },
+
+    joinGame: async (code, playerName) => {
+        try {
+            const result = await socketManager.joinGame(code, playerName);
+            if (result.success && result.state) {
+                set({
+                    gameCode: code.toUpperCase(),
+                    gameType: result.state.type,
+                    status: result.state.status || 'lobby',
+                    players: result.state.players || [],
+                    round: result.state.round || 0,
+                    totalRounds: result.state.totalRounds || 0,
+                    gameData: result.state.gameData || {},
+                    isHost: false,
+                    error: null,
+                });
+                return true;
+            }
+            set({ error: result.error || 'Failed to join game' });
+            return false;
+        } catch {
+            set({ error: 'Failed to join game' });
+            return false;
+        }
+    },
+
+    startGame: async () => {
+        const { gameCode } = get();
+        if (!gameCode) return false;
+        try {
+            const result = await socketManager.startGame(gameCode);
+            if (result.success) {
+                set({ status: 'playing' });
+                return true;
+            }
+            set({ error: result.error || 'Failed to start game' });
+            return false;
+        } catch {
+            return false;
+        }
+    },
+
+    sendAction: (action, payload) => {
+        const { gameCode } = get();
+        if (gameCode) {
+            socketManager.sendGameAction(gameCode, action, payload);
+        }
+    },
+
+    leaveGame: () => {
+        const { gameCode } = get();
+        if (gameCode) {
+            socketManager.leaveGame(gameCode);
+        }
+        get().reset();
+    },
+
+    updateFromState: (state) => {
+        set({
+            status: state.status || get().status,
+            players: state.players || get().players,
+            round: state.round ?? get().round,
+            totalRounds: state.totalRounds ?? get().totalRounds,
+            gameData: state.gameData || get().gameData,
+        });
+    },
+
+    updateFromDelta: (delta) => {
+        set({
+            players: delta.players || get().players,
+            round: delta.round ?? get().round,
+            gameData: { ...get().gameData, ...delta.gameData },
+        });
+    },
+
+    setRoundEnd: (data) => {
+        set({
+            status: 'round_end',
+            players: data.players || get().players,
+        });
+    },
+
+    setGameEnded: (data) => {
+        set({
+            status: 'finished',
+            players: data.finalScores?.map((s: any) => ({
+                ...get().players.find(p => p.id === s.id),
+                score: s.score,
+                name: s.name,
+            })) || get().players,
+        });
+    },
+
+    addPlayer: (data) => {
+        set({ players: [...get().players.filter(p => p.id !== data.player.id), data.player] });
+    },
+
+    removePlayer: (playerId) => {
+        set({ players: get().players.map(p => p.id === playerId ? { ...p, isConnected: false } : p) });
+    },
+
+    reset: () => {
+        set({
+            gameCode: null,
+            gameType: null,
+            status: 'idle',
+            players: [],
+            round: 0,
+            totalRounds: 0,
+            gameData: {},
+            isHost: false,
+            myPlayerId: null,
+            error: null,
+        });
+    },
+
+    setError: (error) => set({ error }),
 }));

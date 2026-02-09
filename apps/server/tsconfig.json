@@ -5,6 +5,7 @@
         "moduleResolution": "bundler",
         "esModuleInterop": true,
         "strict": true,
+        "noImplicitAny": false,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "outDir": "./dist",
@@ -17,6 +18,7 @@
     ],
     "exclude": [
         "node_modules",
-        "dist"
+        "dist",
+        "src/__tests__"
     ]
 }

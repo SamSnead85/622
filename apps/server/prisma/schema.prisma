@@ -2000,3 +2000,58 @@ model Earning {
   @@index([status])
   @@index([earnedAt])
 }
+
+// ============================================
+// MULTIPLAYER GAMES
+// ============================================
+
+model GameSession {
+  id          String       @id @default(uuid())
+  code        String       @unique
+  type        String
+  hostId      String
+  status      String       @default("lobby")
+  settings    Json         @default("{}")
+  finalScores Json?
+  players     GamePlayer[]
+  createdAt   DateTime     @default(now())
+  finishedAt  DateTime?
+
+  @@index([code])
+  @@index([status])
+}
+
+model GamePlayer {
+  id          String       @id @default(uuid())
+  sessionId   String
+  session     GameSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId      String?
+  guestName   String?
+  score       Int          @default(0)
+  isHost      Boolean      @default(false)
+  joinedAt    DateTime     @default(now())
+
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model DailyChallenge {
+  id          String       @id @default(uuid())
+  date        DateTime     @unique
+  questions   Json
+  createdAt   DateTime     @default(now())
+  scores      DailyScore[]
+}
+
+model DailyScore {
+  id          String         @id @default(uuid())
+  userId      String
+  challengeId String
+  challenge   DailyChallenge @relation(fields: [challengeId], references: [id])
+  score       Int
+  streak      Int            @default(0)
+  completedAt DateTime       @default(now())
+
+  @@unique([userId, challengeId])
+  @@index([userId])
+}
