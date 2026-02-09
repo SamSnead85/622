@@ -11,6 +11,8 @@ import {
     KeyboardAvoidingView,
     Platform,
     Alert,
+    Keyboard,
+    TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -97,6 +99,7 @@ export default function PollCreateScreen() {
             </View>
 
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <ScrollView
                     style={styles.scroll}
                     contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 120 }}
@@ -189,6 +192,7 @@ export default function PollCreateScreen() {
                         </View>
                     </Animated.View>
                 </ScrollView>
+                </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
 
             {/* Create button */}

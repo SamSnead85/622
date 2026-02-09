@@ -11,6 +11,9 @@ import {
     Modal,
     KeyboardAvoidingView,
     Platform,
+    RefreshControl,
+    Keyboard,
+    TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -148,6 +151,7 @@ export default function GovernanceScreen() {
     const insets = useSafeAreaInsets();
     const [proposals, setProposals] = useState<Proposal[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [showCreate, setShowCreate] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newDesc, setNewDesc] = useState('');
@@ -168,6 +172,7 @@ export default function GovernanceScreen() {
             // silent
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
@@ -270,6 +275,7 @@ export default function GovernanceScreen() {
                     keyExtractor={(item) => item.id}
                     renderItem={renderProposal}
                     contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 40 }}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadProposals(); }} tintColor={colors.gold[500]} />}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Ionicons name="people-circle-outline" size={48} color={colors.text.muted} />
@@ -310,6 +316,7 @@ export default function GovernanceScreen() {
             {/* Create modal */}
             <Modal visible={showCreate} animationType="slide" transparent>
                 <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View style={[styles.modalContent, { paddingBottom: insets.bottom + spacing.lg }]}>
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>New Proposal</Text>
@@ -376,6 +383,7 @@ export default function GovernanceScreen() {
                             </LinearGradient>
                         </TouchableOpacity>
                     </View>
+                    </TouchableWithoutFeedback>
                 </KeyboardAvoidingView>
             </Modal>
         </View>

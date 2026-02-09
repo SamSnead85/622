@@ -20,7 +20,10 @@ export type QueuedActionType =
     | 'follow_user'
     | 'unfollow_user'
     | 'save_post'
-    | 'unsave_post';
+    | 'unsave_post'
+    | 'poll_vote'
+    | 'proposal_vote'
+    | 'create_moment';
 
 export interface QueuedAction {
     id: string;
@@ -180,6 +183,49 @@ async function processAction(action: QueuedAction): Promise<boolean> {
             case 'unfollow_user':
                 await apiFetch(API.follow(action.payload.userId), { method: 'DELETE' });
                 return true;
+
+            case 'poll_vote': {
+                const { communityId, pollId, optionId } = action.payload;
+                await apiFetch(API.communityPollVote(communityId, pollId), {
+                    method: 'POST',
+                    body: JSON.stringify({ optionId }),
+                });
+                return true;
+            }
+
+            case 'proposal_vote': {
+                const { proposalId: propId, vote: propVote } = action.payload;
+                await apiFetch(API.proposalVote(propId), {
+                    method: 'POST',
+                    body: JSON.stringify({ vote: propVote }),
+                });
+                return true;
+            }
+
+            case 'create_moment': {
+                const { mediaUri: momentUri, mimeType: momentMime, fileName: momentFile, caption: momentCaption, mediaType: momentType } = action.payload;
+                let momentMediaUrl: string | undefined;
+
+                if (momentUri) {
+                    const uploadResult = await apiUpload(
+                        API.uploadMoment,
+                        momentUri,
+                        momentMime || 'image/jpeg',
+                        momentFile || 'moment.jpg'
+                    );
+                    momentMediaUrl = uploadResult.url;
+                }
+
+                await apiFetch(API.moments, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        mediaUrl: momentMediaUrl,
+                        mediaType: momentType || 'IMAGE',
+                        caption: momentCaption,
+                    }),
+                });
+                return true;
+            }
 
             default:
                 console.warn('Unknown offline action type:', action.type);

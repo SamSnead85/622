@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     FlatList,
     ActivityIndicator,
+    RefreshControl,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -116,6 +117,7 @@ export default function CommunityPollsScreen() {
     const insets = useSafeAreaInsets();
     const [polls, setPolls] = useState<Poll[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         loadPolls();
@@ -131,7 +133,13 @@ export default function CommunityPollsScreen() {
             // silent
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
+    };
+
+    const handleRefresh = () => {
+        setRefreshing(true);
+        loadPolls();
     };
 
     const handleVote = async (pollId: string, optionId: string) => {
@@ -199,6 +207,7 @@ export default function CommunityPollsScreen() {
                     keyExtractor={(item) => item.id}
                     renderItem={renderPoll}
                     contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 40 }}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.gold[500]} />}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Ionicons name="bar-chart-outline" size={48} color={colors.text.muted} />

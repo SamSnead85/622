@@ -762,3 +762,197 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
         }
     },
 }));
+
+// ============================================
+// Moments Store — caches story feed
+// ============================================
+
+export interface MomentUser {
+    userId: string;
+    displayName: string;
+    avatarUrl?: string;
+    isSeen?: boolean;
+}
+
+export interface Moment {
+    id: string;
+    mediaUrl: string;
+    mediaType: 'IMAGE' | 'VIDEO';
+    caption?: string;
+    viewCount: number;
+    createdAt: string;
+    user: { id: string; displayName: string; avatarUrl?: string };
+}
+
+interface MomentsState {
+    storyUsers: MomentUser[];
+    momentsByUser: Record<string, Moment[]>;
+    isLoading: boolean;
+    lastFetched: number;
+    fetchStoryFeed: () => Promise<void>;
+    fetchUserMoments: (userId: string) => Promise<Moment[]>;
+    addMomentUser: (user: MomentUser) => void;
+    markSeen: (userId: string) => void;
+}
+
+export const useMomentsStore = create<MomentsState>()((set, get) => ({
+    storyUsers: [],
+    momentsByUser: {},
+    isLoading: false,
+    lastFetched: 0,
+
+    fetchStoryFeed: async () => {
+        // Skip if fetched within the last 30 seconds
+        if (Date.now() - get().lastFetched < 30_000 && get().storyUsers.length > 0) return;
+
+        set({ isLoading: true });
+        try {
+            const data = await apiFetch<any>(API.momentsFeed);
+            const list = data?.moments || data || [];
+            if (Array.isArray(list)) {
+                const seen = new Set<string>();
+                const users: MomentUser[] = [];
+                for (const moment of list) {
+                    const uid = moment.user?.id || moment.userId;
+                    if (uid && !seen.has(uid)) {
+                        seen.add(uid);
+                        users.push({
+                            userId: uid,
+                            displayName: moment.user?.displayName || 'Unknown',
+                            avatarUrl: moment.user?.avatarUrl,
+                            isSeen: moment.isSeen,
+                        });
+                    }
+                }
+                set({ storyUsers: users, lastFetched: Date.now() });
+            }
+        } catch {
+            // silent
+        } finally {
+            set({ isLoading: false });
+        }
+    },
+
+    fetchUserMoments: async (userId: string) => {
+        try {
+            const data = await apiFetch<any>(`${API.momentsFeed}?userId=${userId}`);
+            const list = data?.moments || data || [];
+            const moments = Array.isArray(list) ? list : [];
+            set((state) => ({
+                momentsByUser: { ...state.momentsByUser, [userId]: moments },
+            }));
+            return moments;
+        } catch {
+            return [];
+        }
+    },
+
+    addMomentUser: (user: MomentUser) => {
+        set((state) => {
+            if (state.storyUsers.some((u) => u.userId === user.userId)) return state;
+            return { storyUsers: [user, ...state.storyUsers] };
+        });
+    },
+
+    markSeen: (userId: string) => {
+        set((state) => ({
+            storyUsers: state.storyUsers.map((u) =>
+                u.userId === userId ? { ...u, isSeen: true } : u
+            ),
+        }));
+    },
+}));
+
+// ============================================
+// Governance Store — caches proposals and votes
+// ============================================
+
+export interface Proposal {
+    id: string;
+    title: string;
+    description: string;
+    type: string;
+    status: 'ACTIVE' | 'PASSED' | 'REJECTED' | 'EXPIRED';
+    votesFor: number;
+    votesAgainst: number;
+    quorum: number;
+    totalMembers: number;
+    userVote?: 'FOR' | 'AGAINST' | null;
+    expiresAt: string;
+    createdAt: string;
+    creator?: { displayName: string; username: string };
+}
+
+interface GovernanceState {
+    proposalsByCommunity: Record<string, Proposal[]>;
+    isLoading: boolean;
+    fetchProposals: (communityId: string) => Promise<void>;
+    voteOnProposal: (communityId: string, proposalId: string, vote: 'FOR' | 'AGAINST') => Promise<void>;
+    updateProposalVotes: (proposalId: string, votesFor: number, votesAgainst: number) => void;
+}
+
+export const useGovernanceStore = create<GovernanceState>()((set, get) => ({
+    proposalsByCommunity: {},
+    isLoading: false,
+
+    fetchProposals: async (communityId: string) => {
+        set({ isLoading: true });
+        try {
+            const data = await apiFetch<any>(API.proposals(communityId));
+            const list = data.proposals || data || [];
+            set((state) => ({
+                proposalsByCommunity: {
+                    ...state.proposalsByCommunity,
+                    [communityId]: Array.isArray(list) ? list : [],
+                },
+                isLoading: false,
+            }));
+        } catch {
+            set({ isLoading: false });
+        }
+    },
+
+    voteOnProposal: async (communityId: string, proposalId: string, vote: 'FOR' | 'AGAINST') => {
+        // Optimistic update
+        set((state) => {
+            const proposals = state.proposalsByCommunity[communityId] || [];
+            return {
+                proposalsByCommunity: {
+                    ...state.proposalsByCommunity,
+                    [communityId]: proposals.map((p) =>
+                        p.id === proposalId
+                            ? {
+                                ...p,
+                                userVote: vote,
+                                votesFor: vote === 'FOR' ? p.votesFor + 1 : p.votesFor,
+                                votesAgainst: vote === 'AGAINST' ? p.votesAgainst + 1 : p.votesAgainst,
+                            }
+                            : p
+                    ),
+                },
+            };
+        });
+
+        try {
+            await apiFetch(API.proposalVote(proposalId), {
+                method: 'POST',
+                body: JSON.stringify({ vote }),
+            });
+        } catch {
+            // Revert — refetch
+            get().fetchProposals(communityId);
+        }
+    },
+
+    updateProposalVotes: (proposalId: string, votesFor: number, votesAgainst: number) => {
+        set((state) => {
+            const updated: Record<string, Proposal[]> = {};
+            for (const [cid, proposals] of Object.entries(state.proposalsByCommunity)) {
+                updated[cid] = proposals.map((p) =>
+                    p.id === proposalId ? { ...p, votesFor, votesAgainst } : p
+                );
+            }
+            return { proposalsByCommunity: updated };
+        });
+    },
+}));

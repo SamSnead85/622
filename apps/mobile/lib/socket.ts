@@ -50,6 +50,37 @@ export interface CallIncoming {
     offer?: any;
 }
 
+export interface MomentNewEvent {
+    momentId: string;
+    userId: string;
+    displayName: string;
+    avatarUrl?: string;
+}
+
+export interface PollVoteEvent {
+    communityId: string;
+    pollId: string;
+    optionId: string;
+    totalVotes: number;
+    options: Array<{ id: string; votes: number }>;
+}
+
+export interface ProposalVoteEvent {
+    communityId: string;
+    proposalId: string;
+    votesFor: number;
+    votesAgainst: number;
+    userVote?: 'FOR' | 'AGAINST';
+}
+
+export interface NotificationNewEvent {
+    id: string;
+    type: string;
+    title: string;
+    body: string;
+    data?: Record<string, any>;
+}
+
 // ============================================
 // Event Listener Types
 // ============================================
@@ -70,6 +101,10 @@ interface EventListeners {
     'call:ended': ((data: any) => void)[];
     'call:ice-candidate': ((data: any) => void)[];
     'call:mute': ((data: { muted: boolean }) => void)[];
+    'moment:new': ((data: MomentNewEvent) => void)[];
+    'poll:vote': ((data: PollVoteEvent) => void)[];
+    'proposal:vote': ((data: ProposalVoteEvent) => void)[];
+    'notification:new': ((data: NotificationNewEvent) => void)[];
     [key: string]: EventCallback[];
 }
 
@@ -146,6 +181,11 @@ class SocketManager {
             'call:ice-candidate',
             'call:mute',
             'call:unavailable',
+            // New feature events
+            'moment:new',
+            'poll:vote',
+            'proposal:vote',
+            'notification:new',
         ];
 
         forwardEvents.forEach((event) => {
@@ -238,6 +278,18 @@ class SocketManager {
 
     toggleMute(callId: string, muted: boolean): void {
         this.socket?.emit('call:mute', { callId, muted });
+    }
+
+    // ============================================
+    // Community Rooms (for polls, governance events)
+    // ============================================
+
+    joinCommunity(communityId: string): void {
+        this.socket?.emit('community:join', communityId);
+    }
+
+    leaveCommunity(communityId: string): void {
+        this.socket?.emit('community:leave', communityId);
     }
 
     // ============================================

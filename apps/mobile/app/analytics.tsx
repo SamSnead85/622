@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Dimensions,
+    RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -115,6 +116,7 @@ export default function AnalyticsScreen() {
     const [topPosts, setTopPosts] = useState<TopPost[]>([]);
     const [audienceData, setAudienceData] = useState<AudienceDay[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -143,6 +145,7 @@ export default function AnalyticsScreen() {
             // silent
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
@@ -167,6 +170,7 @@ export default function AnalyticsScreen() {
                     style={styles.scroll}
                     contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
                     showsVerticalScrollIndicator={false}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={colors.gold[500]} />}
                 >
                     {/* Overview Stats */}
                     <View style={styles.statsGrid}>

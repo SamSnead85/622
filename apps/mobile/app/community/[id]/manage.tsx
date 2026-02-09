@@ -9,6 +9,7 @@ import {
     TextInput,
     Alert,
     Image,
+    RefreshControl,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,6 +51,7 @@ export default function CommunityManageScreen() {
     const insets = useSafeAreaInsets();
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterRole, setFilterRole] = useState<string | null>(null);
 
@@ -67,6 +69,7 @@ export default function CommunityManageScreen() {
             // silent
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
@@ -212,6 +215,7 @@ export default function CommunityManageScreen() {
                     keyExtractor={(item) => item.id || item.userId}
                     renderItem={renderMember}
                     contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 40 }}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadMembers(); }} tintColor={colors.gold[500]} />}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Ionicons name="people-outline" size={48} color={colors.text.muted} />
