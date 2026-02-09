@@ -24,8 +24,6 @@ const nextConfig = {
             // Production domains
             { protocol: 'https', hostname: '0gravity.ai' },
             { protocol: 'https', hostname: '*.0gravity.ai' },
-            { protocol: 'https', hostname: 'zerog.social' },
-            { protocol: 'https', hostname: '*.zerog.social' },
             // Local development
             ...(process.env.NODE_ENV !== 'production' ? [
                 { protocol: 'http', hostname: 'localhost' },
