@@ -917,8 +917,115 @@ export default function FeedScreen() {
         [handleLike, handleSave, handlePostPress, handleReorder, activeVideoId, shouldReduceData, user?.id]
     );
 
+    // ============================================
+    // Ramadan Banner — shows 30 days before & during Ramadan
+    // ============================================
+    const getRamadanBanner = () => {
+        const now = new Date();
+        // Ramadan 2026 starts approximately March 17, 2026
+        const ramadanStart = new Date(2026, 2, 17); // Month is 0-indexed
+        const ramadanEnd = new Date(2026, 3, 15); // Approx end
+        const daysUntil = Math.ceil((ramadanStart.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (daysUntil > 30 || now > ramadanEnd) return null;
+
+        const isDuring = now >= ramadanStart && now <= ramadanEnd;
+        return { isDuring, daysUntil: Math.max(0, daysUntil) };
+    };
+
+    const ramadan = getRamadanBanner();
+
+    // ============================================
+    // Profile Completion Check
+    // ============================================
+    const getProfileCompletion = () => {
+        if (!user) return { percent: 0, missing: [] as string[] };
+        const checks = [
+            { done: !!user.displayName, label: 'Display name' },
+            { done: !!user.username, label: 'Username' },
+            { done: !!user.avatarUrl, label: 'Profile photo' },
+            { done: !!user.bio, label: 'Bio' },
+        ];
+        const done = checks.filter((c) => c.done).length;
+        const missing = checks.filter((c) => !c.done).map((c) => c.label);
+        return { percent: Math.round((done / checks.length) * 100), missing };
+    };
+
+    const profileCompletion = getProfileCompletion();
+    const showProfileNudge = profileCompletion.percent < 100;
+
     const renderHeader = () => (
         <View>
+            {/* Ramadan Banner */}
+            {ramadan && (
+                <Animated.View entering={FadeInDown.duration(400)}>
+                    <TouchableOpacity
+                        style={styles.ramadanBanner}
+                        onPress={() => router.push('/tools' as any)}
+                        activeOpacity={0.8}
+                    >
+                        <LinearGradient
+                            colors={[colors.surface.goldSubtle, colors.surface.goldMedium, colors.surface.goldSubtle]}
+                            style={StyleSheet.absoluteFill}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                        />
+                        <View style={styles.ramadanContent}>
+                            <Text style={styles.ramadanEmoji}>☪️</Text>
+                            <View style={styles.ramadanTextCol}>
+                                <Text style={styles.ramadanTitle}>
+                                    {ramadan.isDuring ? 'Ramadan Mubarak' : `Ramadan in ${ramadan.daysUntil} days`}
+                                </Text>
+                                <Text style={styles.ramadanSubtitle}>
+                                    {ramadan.isDuring
+                                        ? 'Prayer times, Quran & more — tap to access your Deen tools'
+                                        : 'Get ready — prayer times, Quran reader & fasting tools available'}
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={16} color={colors.gold[400]} />
+                        </View>
+                    </TouchableOpacity>
+                </Animated.View>
+            )}
+
+            {/* Profile Completion Nudge */}
+            {showProfileNudge && (
+                <Animated.View entering={FadeInDown.duration(400).delay(100)}>
+                    <TouchableOpacity
+                        style={styles.profileNudge}
+                        onPress={() => router.push('/(tabs)/profile')}
+                        activeOpacity={0.8}
+                    >
+                        <View style={styles.profileNudgeRing}>
+                            <View style={styles.profileNudgeRingBg} />
+                            <View
+                                style={[
+                                    styles.profileNudgeRingFill,
+                                    {
+                                        borderColor: profileCompletion.percent >= 75
+                                            ? colors.emerald[500]
+                                            : profileCompletion.percent >= 50
+                                                ? colors.gold[500]
+                                                : colors.amber[400],
+                                    },
+                                ]}
+                            />
+                            <Text style={styles.profileNudgePercent}>{profileCompletion.percent}%</Text>
+                        </View>
+                        <View style={styles.profileNudgeInfo}>
+                            <Text style={styles.profileNudgeTitle}>Complete your profile</Text>
+                            <Text style={styles.profileNudgeSubtitle}>
+                                Add your {profileCompletion.missing.slice(0, 2).join(' & ').toLowerCase()}
+                            </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+                    </TouchableOpacity>
+                </Animated.View>
+            )}
+
+            {/* Feed type tabs */}
+            <FeedTabs activeTab={feedType} onTabChange={handleTabChange} />
+
             {/* Active Contacts Strip — who's online */}
             <ActiveContactsStrip onCreatePress={() => router.push('/(tabs)/create')} />
         </View>
@@ -937,20 +1044,68 @@ export default function FeedScreen() {
         }
         return (
             <View style={styles.emptyContainer}>
-                <Ionicons
-                    name="document-text-outline"
-                    size={48}
-                    color={colors.text.muted}
-                />
-                <Text style={styles.emptyTitle}>Your feed is empty</Text>
+                {/* Warm welcome */}
+                <View style={styles.emptyIconWrap}>
+                    <LinearGradient
+                        colors={[colors.surface.goldSubtle, colors.surface.goldMedium]}
+                        style={StyleSheet.absoluteFill}
+                    />
+                    <Ionicons name="sparkles" size={32} color={colors.gold[500]} />
+                </View>
+                <Text style={styles.emptyTitle}>Your feed is waiting</Text>
                 <Text style={styles.emptyText}>
-                    Create your first post or follow people to get started
+                    Follow people and join communities to see posts here. The more you connect, the richer your feed becomes.
                 </Text>
+
+                {/* Action cards */}
+                <View style={styles.emptyActions}>
+                    <TouchableOpacity
+                        style={styles.emptyActionCard}
+                        onPress={() => router.push('/(tabs)/search' as any)}
+                    >
+                        <View style={[styles.emptyActionIcon, { backgroundColor: colors.azure[500] + '18' }]}>
+                            <Ionicons name="people" size={20} color={colors.azure[500]} />
+                        </View>
+                        <Text style={styles.emptyActionTitle}>Find People</Text>
+                        <Text style={styles.emptyActionDesc}>Discover interesting accounts</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.emptyActionCard}
+                        onPress={() => router.push('/(tabs)/communities' as any)}
+                    >
+                        <View style={[styles.emptyActionIcon, { backgroundColor: colors.emerald[500] + '18' }]}>
+                            <Ionicons name="globe-outline" size={20} color={colors.emerald[500]} />
+                        </View>
+                        <Text style={styles.emptyActionTitle}>Join Groups</Text>
+                        <Text style={styles.emptyActionDesc}>Connect with communities</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.emptyActionCard}
+                        onPress={() => router.push('/(tabs)/create')}
+                    >
+                        <View style={[styles.emptyActionIcon, { backgroundColor: colors.gold[500] + '18' }]}>
+                            <Ionicons name="add-circle" size={20} color={colors.gold[500]} />
+                        </View>
+                        <Text style={styles.emptyActionTitle}>Create Post</Text>
+                        <Text style={styles.emptyActionDesc}>Share your first thought</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Tools spotlight in empty state */}
                 <TouchableOpacity
-                    style={styles.emptyButton}
-                    onPress={() => router.push('/(tabs)/create')}
+                    style={styles.emptyToolsCard}
+                    onPress={() => router.push('/tools' as any)}
+                    activeOpacity={0.8}
                 >
-                    <Text style={styles.emptyButtonText}>Create Post</Text>
+                    <View style={styles.emptyToolsHeader}>
+                        <Ionicons name="compass" size={18} color={colors.gold[400]} />
+                        <Text style={styles.emptyToolsTitle}>Explore Tools</Text>
+                    </View>
+                    <Text style={styles.emptyToolsDesc}>
+                        Prayer times, Qibla compass, Quran reader, and more — all built in
+                    </Text>
                 </TouchableOpacity>
             </View>
         );
@@ -1007,15 +1162,13 @@ export default function FeedScreen() {
                     </View>
                 </View>
                 <View style={styles.headerActions}>
-                    {/* Tools shortcut for muslim profile */}
-                    {user?.culturalProfile === 'muslim' && (
-                        <TouchableOpacity
-                            style={styles.headerBtn}
-                            onPress={() => router.push('/tools' as any)}
-                        >
-                            <Ionicons name="compass-outline" size={22} color={colors.gold[400]} />
-                        </TouchableOpacity>
-                    )}
+                    {/* Tools shortcut — accessible to all users */}
+                    <TouchableOpacity
+                        style={styles.headerBtn}
+                        onPress={() => router.push('/tools' as any)}
+                    >
+                        <Ionicons name="compass-outline" size={22} color={colors.gold[400]} />
+                    </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.headerBtn}
                         onPress={() => router.push('/notifications')}
@@ -1458,12 +1611,72 @@ const styles = StyleSheet.create({
         lineHeight: 18,
     },
 
-    // Empty state
+    // Ramadan Banner
+    ramadanBanner: {
+        borderRadius: 14, overflow: 'hidden',
+        marginBottom: spacing.md,
+        borderWidth: 1, borderColor: colors.gold[500] + '30',
+    },
+    ramadanContent: {
+        flexDirection: 'row', alignItems: 'center',
+        padding: spacing.md,
+    },
+    ramadanEmoji: { fontSize: 24, marginRight: spacing.sm },
+    ramadanTextCol: { flex: 1 },
+    ramadanTitle: {
+        fontSize: typography.fontSize.base, fontWeight: '700',
+        color: colors.gold[400], fontFamily: 'Inter-Bold',
+    },
+    ramadanSubtitle: {
+        fontSize: typography.fontSize.xs, color: colors.text.secondary,
+        marginTop: 2, lineHeight: 16,
+    },
+
+    // Profile Completion Nudge
+    profileNudge: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: colors.surface.glass, borderRadius: 14,
+        padding: spacing.md, marginBottom: spacing.md,
+        borderWidth: 1, borderColor: colors.border.subtle,
+    },
+    profileNudgeRing: {
+        width: 44, height: 44, borderRadius: 22,
+        alignItems: 'center', justifyContent: 'center',
+        marginRight: spacing.md,
+    },
+    profileNudgeRingBg: {
+        position: 'absolute', width: 44, height: 44, borderRadius: 22,
+        borderWidth: 3, borderColor: colors.obsidian[600],
+    },
+    profileNudgeRingFill: {
+        position: 'absolute', width: 44, height: 44, borderRadius: 22,
+        borderWidth: 3, borderColor: colors.gold[500],
+        borderRightColor: 'transparent', borderBottomColor: 'transparent',
+        transform: [{ rotate: '-45deg' }],
+    },
+    profileNudgePercent: {
+        fontSize: 11, fontWeight: '700', color: colors.text.primary,
+    },
+    profileNudgeInfo: { flex: 1 },
+    profileNudgeTitle: {
+        fontSize: typography.fontSize.base, fontWeight: '600',
+        color: colors.text.primary,
+    },
+    profileNudgeSubtitle: {
+        fontSize: typography.fontSize.xs, color: colors.text.muted,
+        marginTop: 2,
+    },
+
+    // Empty state — rich
     emptyContainer: {
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingTop: 80,
-        paddingHorizontal: spacing.xl,
+        paddingTop: 40,
+        paddingHorizontal: spacing.md,
+    },
+    emptyIconWrap: {
+        width: 64, height: 64, borderRadius: 32,
+        alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden',
     },
     emptyTitle: {
         fontSize: typography.fontSize.xl,
@@ -1478,17 +1691,47 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 22,
         marginBottom: spacing.xl,
+        maxWidth: 300,
     },
-    emptyButton: {
-        backgroundColor: colors.gold[500],
-        paddingHorizontal: spacing.xl,
-        paddingVertical: spacing.md,
-        borderRadius: 12,
+    emptyActions: {
+        flexDirection: 'row', gap: spacing.sm,
+        marginBottom: spacing.xl, width: '100%',
     },
-    emptyButtonText: {
-        fontSize: typography.fontSize.base,
-        fontWeight: '600',
-        color: colors.obsidian[900],
+    emptyActionCard: {
+        flex: 1, backgroundColor: colors.surface.glass,
+        borderRadius: 14, padding: spacing.md,
+        borderWidth: 1, borderColor: colors.border.subtle,
+        alignItems: 'center',
+    },
+    emptyActionIcon: {
+        width: 40, height: 40, borderRadius: 12,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: spacing.sm,
+    },
+    emptyActionTitle: {
+        fontSize: typography.fontSize.sm, fontWeight: '600',
+        color: colors.text.primary, textAlign: 'center',
+    },
+    emptyActionDesc: {
+        fontSize: 10, color: colors.text.muted,
+        textAlign: 'center', marginTop: 2,
+    },
+    emptyToolsCard: {
+        width: '100%', backgroundColor: colors.surface.glass,
+        borderRadius: 14, padding: spacing.lg,
+        borderWidth: 1, borderColor: colors.gold[500] + '30',
+    },
+    emptyToolsHeader: {
+        flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+        marginBottom: spacing.xs,
+    },
+    emptyToolsTitle: {
+        fontSize: typography.fontSize.base, fontWeight: '600',
+        color: colors.gold[400],
+    },
+    emptyToolsDesc: {
+        fontSize: typography.fontSize.sm, color: colors.text.secondary,
+        lineHeight: 20,
     },
 
     // Footer

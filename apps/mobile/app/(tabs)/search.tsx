@@ -33,6 +33,8 @@ const DISCOVERY_CATEGORIES = [
     { icon: 'people' as const, label: 'People', color: colors.azure[500] },
     { icon: 'globe-outline' as const, label: 'Communities', color: colors.emerald[500] },
     { icon: 'sparkles' as const, label: 'New', color: colors.gold[500] },
+    { icon: 'compass' as const, label: 'Tools', color: '#D4AF37', route: '/tools' },
+    { icon: 'shield-checkmark' as const, label: 'Privacy', color: colors.emerald[400], route: '/settings' },
 ];
 
 export default function SearchScreen() {
@@ -173,6 +175,10 @@ export default function SearchScreen() {
                         activeOpacity={0.8}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            if ((cat as any).route) {
+                                router.push((cat as any).route as any);
+                                return;
+                            }
                             const filterMap: Record<string, FilterTab> = {
                                 People: 'people', Communities: 'communities',
                                 Trending: 'all', New: 'all',

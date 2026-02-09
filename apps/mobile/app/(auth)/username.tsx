@@ -135,7 +135,7 @@ export default function UsernameScreen() {
         try {
             await apiFetch(API.updateProfile, { method: 'PUT', body: JSON.stringify({ username }) });
             await refreshUser();
-            router.replace('/(tabs)');
+            router.replace('/discover');
         } catch (err: any) {
             setError(err?.data?.error || err?.message || 'Something went wrong.');
         } finally { setLoading(false); }
@@ -273,7 +273,7 @@ export default function UsernameScreen() {
                         </TouchableOpacity>
                     </Animated.View>
 
-                    <TouchableOpacity style={styles.skipButton} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.replace('/(tabs)'); }}>
+                    <TouchableOpacity style={styles.skipButton} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.replace('/discover'); }}>
                         <Text style={styles.skipText}>I'll do this later</Text>
                     </TouchableOpacity>
                 </ScrollView>
