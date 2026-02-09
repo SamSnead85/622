@@ -1,5 +1,6 @@
 import { PrismaClient, InviteStatus, InviteMethod } from '@prisma/client';
 import { randomBytes } from 'crypto';
+import { logger } from '../../utils/logger.js';
 
 const prisma = new PrismaClient();
 
@@ -364,11 +365,11 @@ export class InviteService {
      */
     private async sendEmail(config: EmailConfig): Promise<void> {
         if (!process.env.RESEND_API_KEY) {
-            console.warn(
+            logger.warn(
                 '[InviteService] ⚠️ RESEND_API_KEY is not configured — invite email will NOT be delivered.',
             );
-            console.log(`[InviteService] Would have sent to: ${config.to}`);
-            console.log(`[InviteService] Subject: ${config.subject}`);
+            logger.info(`[InviteService] Would have sent to: ${config.to}`);
+            logger.info(`[InviteService] Subject: ${config.subject}`);
             return;
         }
 
@@ -385,7 +386,7 @@ export class InviteService {
             html: config.html,
         });
 
-        console.log(`[InviteService] Email sent to ${config.to}`);
+        logger.info(`[InviteService] Email sent to ${config.to}`);
     }
 }
 

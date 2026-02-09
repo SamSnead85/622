@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { logger } from '../utils/logger.js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -11,8 +12,8 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'https://0gravity.ai';
  */
 export const sendVerificationEmail = async (to: string, token: string) => {
     if (!process.env.RESEND_API_KEY) {
-        console.warn('⚠️ RESEND_API_KEY not set. Skipping email send.');
-        console.log(`Verification link: ${FRONTEND_URL}/verify?token=${token}`);
+        logger.warn('⚠️ RESEND_API_KEY not set. Skipping email send.');
+        logger.info(`Verification link: ${FRONTEND_URL}/verify?token=${token}`);
         return;
     }
 
@@ -38,7 +39,7 @@ export const sendVerificationEmail = async (to: string, token: string) => {
             `,
         });
     } catch (error) {
-        console.error('Failed to send verification email:', error);
+        logger.error('Failed to send verification email:', error);
         throw error;
     }
 };
@@ -48,8 +49,8 @@ export const sendVerificationEmail = async (to: string, token: string) => {
  */
 export const sendPasswordResetEmail = async (to: string, token: string) => {
     if (!process.env.RESEND_API_KEY) {
-        console.warn('⚠️ RESEND_API_KEY not set. Skipping email send.');
-        console.log(`Password reset link: ${FRONTEND_URL}/reset-password?token=${token}`);
+        logger.warn('⚠️ RESEND_API_KEY not set. Skipping email send.');
+        logger.info(`Password reset link: ${FRONTEND_URL}/reset-password?token=${token}`);
         return;
     }
 
@@ -75,7 +76,7 @@ export const sendPasswordResetEmail = async (to: string, token: string) => {
             `,
         });
     } catch (error) {
-        console.error('Failed to send password reset email:', error);
+        logger.error('Failed to send password reset email:', error);
         throw error;
     }
 };
@@ -85,7 +86,7 @@ export const sendPasswordResetEmail = async (to: string, token: string) => {
  */
 export const sendWelcomeEmail = async (to: string, displayName: string) => {
     if (!process.env.RESEND_API_KEY) {
-        console.warn('⚠️ RESEND_API_KEY not set. Skipping email send.');
+        logger.warn('⚠️ RESEND_API_KEY not set. Skipping email send.');
         return;
     }
 
@@ -119,7 +120,7 @@ export const sendWelcomeEmail = async (to: string, displayName: string) => {
             `,
         });
     } catch (error) {
-        console.error('Failed to send welcome email:', error);
+        logger.error('Failed to send welcome email:', error);
         // Don't throw - welcome email is not critical
     }
 };

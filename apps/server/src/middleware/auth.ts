@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db/client.js';
+import { logger } from '../utils/logger.js';
 
 export interface AuthRequest extends Request {
     userId?: string;
@@ -50,7 +51,7 @@ export const authenticate = async (
                 include: { user: true },
             });
         } catch (dbError) {
-            console.error('Database error in auth:', dbError);
+            logger.error('Database error in auth:', dbError);
             res.status(503).json({ error: 'Database unavailable' });
             return;
         }

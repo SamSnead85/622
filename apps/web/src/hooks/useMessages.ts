@@ -303,7 +303,7 @@ export function useMessages() {
             unsubTypingStop?.();
             unsubRead?.();
         };
-    }, [on, activeConversation]);
+    }, [on, activeConversation, tryDecrypt]);
 
     // Initial fetch
     useEffect(() => {

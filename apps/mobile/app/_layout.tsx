@@ -14,6 +14,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 import { useAuthStore } from '../stores';
 import { colors } from '@zerog/ui';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 // ============================================
 // Sentry Error Tracking
@@ -77,20 +78,22 @@ function RootLayout() {
     }
 
     return (
-        <GestureHandlerRootView style={styles.container}>
-            <StatusBar style="light" />
-            <Stack
-                screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: colors.obsidian[900] },
-                    animation: 'slide_from_right',
-                }}
-            >
-                <Stack.Screen name="index" />
-                <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
-                <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-            </Stack>
-        </GestureHandlerRootView>
+        <ErrorBoundary screenName="Root">
+            <GestureHandlerRootView style={styles.container}>
+                <StatusBar style="light" />
+                <Stack
+                    screenOptions={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: colors.obsidian[900] },
+                        animation: 'slide_from_right',
+                    }}
+                >
+                    <Stack.Screen name="index" />
+                    <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
+                    <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+                </Stack>
+            </GestureHandlerRootView>
+        </ErrorBoundary>
     );
 }
 

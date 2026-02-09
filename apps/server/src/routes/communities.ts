@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -161,7 +162,7 @@ router.get('/:idOrSlug', optionalAuth, async (req: AuthRequest, res, next) => {
             role: membership?.role || null,
         });
     } catch (error) {
-        console.error('[Communities] Error fetching community:', error);
+        logger.error('[Communities] Error fetching community:', error);
         next(error);
     }
 });

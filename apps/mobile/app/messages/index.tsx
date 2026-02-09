@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
+import { RetryView } from '../../components/RetryView';
 
 interface Conversation {
     id: string;
@@ -177,6 +178,7 @@ export default function MessagesScreen() {
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [quickContacts, setQuickContacts] = useState<QuickContact[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -186,7 +188,7 @@ export default function MessagesScreen() {
             const convos = data.conversations || data.data || [];
             setConversations(Array.isArray(convos) ? convos : []);
         } catch (err) {
-            // Silently handle — user might be offline
+            setLoadError(true);
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
@@ -294,6 +296,11 @@ export default function MessagesScreen() {
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.gold[500]} />
                 </View>
+            ) : loadError && conversations.length === 0 ? (
+                <RetryView
+                    message="Couldn't load messages. Check your connection."
+                    onRetry={() => { setLoadError(false); setIsLoading(true); loadConversations(); }}
+                />
             ) : (
                     <FlatList
                     data={filteredConversations}

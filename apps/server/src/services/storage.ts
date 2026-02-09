@@ -6,6 +6,7 @@ import { v4 as uuid } from 'uuid';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { logger } from '../utils/logger.js';
 
 // ============================================
 // STORAGE SERVICE
@@ -41,7 +42,7 @@ function getSupabaseClient(): SupabaseClient | null {
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-        console.error('[Storage] Supabase URL or SERVICE_KEY not configured');
+        logger.error('[Storage] Supabase URL or SERVICE_KEY not configured');
         return null;
     }
 
@@ -83,11 +84,11 @@ function createS3Client(): S3Client | null {
 const s3Client = createS3Client();
 
 // Log storage configuration at startup
-console.log('[Storage] Provider:', STORAGE_PROVIDER);
-console.log('[Storage] Bucket:', BUCKET);
+logger.info('[Storage] Provider:', STORAGE_PROVIDER);
+logger.info('[Storage] Bucket:', BUCKET);
 if (STORAGE_PROVIDER === 'supabase') {
-    console.log('[Storage] Supabase URL:', process.env.SUPABASE_URL ? 'configured' : 'MISSING');
-    console.log('[Storage] Service Key:', process.env.SUPABASE_SERVICE_KEY ? 'configured' : 'MISSING');
+    logger.info('[Storage] Supabase URL:', process.env.SUPABASE_URL ? 'configured' : 'MISSING');
+    logger.info('[Storage] Service Key:', process.env.SUPABASE_SERVICE_KEY ? 'configured' : 'MISSING');
 }
 
 // ============================================
@@ -116,10 +117,10 @@ export async function stripImageMetadata(buffer: Buffer, mimeType: string): Prom
             .withMetadata({})   // strip ALL metadata (EXIF, GPS, ICC, XMP, IPTC)
             .toBuffer();
 
-        console.log(`[Storage] Metadata stripped: ${buffer.length} → ${stripped.length} bytes`);
+        logger.info(`[Storage] Metadata stripped: ${buffer.length} → ${stripped.length} bytes`);
         return stripped;
     } catch (err) {
-        console.error('[Storage] Metadata stripping failed, using original buffer:', err);
+        logger.error('[Storage] Metadata stripping failed, using original buffer:', err);
         return buffer; // fail-safe: return original if stripping fails
     }
 }
@@ -145,13 +146,13 @@ export async function uploadFile(
             const { uploadImage, uploadVideo } = await import('./cloudinary.js');
             const isVideo = mimeType.startsWith('video/');
 
-            console.log('[Storage] Uploading to Cloudinary:', { folder, mimeType, size: sanitizedBuffer.length });
+            logger.info('[Storage] Uploading to Cloudinary:', { folder, mimeType, size: sanitizedBuffer.length });
 
             const result: any = isVideo
                 ? await uploadVideo(sanitizedBuffer, { folder, publicId: uuid() })
                 : await uploadImage(sanitizedBuffer, { folder, publicId: uuid() });
 
-            console.log('[Storage] Cloudinary upload successful');
+            logger.info('[Storage] Cloudinary upload successful');
 
             return {
                 key: result.public_id,
@@ -159,7 +160,7 @@ export async function uploadFile(
                 size: sanitizedBuffer.length,
             };
         } catch (cloudinaryError) {
-            console.error('[Storage] Cloudinary upload failed, falling back to default storage:', cloudinaryError);
+            logger.error('[Storage] Cloudinary upload failed, falling back to default storage:', cloudinaryError);
             // Fall through to default storage
         }
     }
@@ -187,7 +188,7 @@ export async function uploadFile(
             throw new Error('Supabase client not initialized. Check SUPABASE_URL and SUPABASE_SERVICE_KEY.');
         }
 
-        console.log('[Storage] Uploading to Supabase:', { bucket: BUCKET, key, mimeType, size: sanitizedBuffer.length });
+        logger.info('[Storage] Uploading to Supabase:', { bucket: BUCKET, key, mimeType, size: sanitizedBuffer.length });
 
         const { data, error } = await supabase.storage
             .from(BUCKET)
@@ -198,11 +199,11 @@ export async function uploadFile(
             });
 
         if (error) {
-            console.error('[Storage] Supabase upload failed:', error);
+            logger.error('[Storage] Supabase upload failed:', error);
             throw new Error(`Storage upload failed: ${error.message}`);
         }
 
-        console.log('[Storage] Supabase upload successful:', key);
+        logger.info('[Storage] Supabase upload successful:', key);
 
         return {
             key,
@@ -216,7 +217,7 @@ export async function uploadFile(
         throw new Error('S3 client not initialized');
     }
 
-    console.log('[Storage] Uploading to S3:', { bucket: BUCKET, key, mimeType, size: sanitizedBuffer.length });
+    logger.info('[Storage] Uploading to S3:', { bucket: BUCKET, key, mimeType, size: sanitizedBuffer.length });
     try {
         await s3Client.send(new PutObjectCommand({
             Bucket: BUCKET,
@@ -225,9 +226,9 @@ export async function uploadFile(
             ContentType: mimeType,
             CacheControl: 'public, max-age=31536000',
         }));
-        console.log('[Storage] S3 upload successful:', key);
+        logger.info('[Storage] S3 upload successful:', key);
     } catch (s3Error: unknown) {
-        console.error('[Storage] S3 upload failed:', s3Error);
+        logger.error('[Storage] S3 upload failed:', s3Error);
         throw new Error(`Storage upload failed: ${s3Error instanceof Error ? s3Error.message : 'Unknown S3 error'}`);
     }
 

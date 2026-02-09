@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "scheme": "zerog",
     "userInterfaceStyle": "dark",
+    "description": "Privacy-first community platform. No ads. No algorithms. No surveillance. Private groups, encrypted messaging, live streaming, cultural tools, and community boards — all in one place.",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -19,11 +20,23 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.zerog.social",
       "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
         "NSCameraUsageDescription": "Allow 0G to access your camera to create posts and share with your community",
         "NSPhotoLibraryUsageDescription": "Allow 0G to access your photos to share with your private groups",
         "NSMicrophoneUsageDescription": "Allow 0G to access your microphone to record videos and voice messages",
+        "NSLocationWhenInUseUsageDescription": "Allow 0G to access your location for prayer times and Qibla direction",
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
       }
     },
     "android": {
@@ -37,7 +50,9 @@
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ]
     },
     "web": {
@@ -48,6 +63,12 @@
     "plugins": [
       "expo-router",
       "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow 0G to access your location for prayer times and Qibla direction."
+        }
+      ],
       [
         "expo-camera",
         {

@@ -6,6 +6,7 @@ import { v4 as uuid } from 'uuid';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -228,7 +229,7 @@ router.post('/signup', async (req, res, next) => {
                         }
                     }
                 } catch (err) {
-                    console.error('[Auth] Growth referral tracking error:', err);
+                    logger.error('[Auth] Growth referral tracking error:', err);
                 }
             })();
         }
@@ -275,7 +276,7 @@ router.post('/signup', async (req, res, next) => {
                     },
                 });
             } catch (err) {
-                console.error('[Auth] Post-signup automation error:', err);
+                logger.error('[Auth] Post-signup automation error:', err);
             }
         })();
 
@@ -454,7 +455,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
                 },
             });
         } catch (dbError) {
-            console.error('Database error:', dbError);
+            logger.error('Database error:', dbError);
             throw new AppError('Database unavailable', 503);
         }
 
@@ -572,7 +573,7 @@ router.post('/google', async (req, res, next) => {
             googleId = payload.sub;
         } catch (verifyError) {
             if (verifyError instanceof AppError) throw verifyError;
-            console.error('Google token verification failed:', verifyError);
+            logger.error('Google token verification failed:', verifyError);
             throw new AppError('Invalid or expired Google token', 401);
         }
 
@@ -1169,7 +1170,7 @@ router.post('/provisional-signup', async (req, res, next) => {
                         }
                     }
                 } catch (err) {
-                    console.error('[Auth] Provisional growth referral tracking error:', err);
+                    logger.error('[Auth] Provisional growth referral tracking error:', err);
                 }
             })();
         }
@@ -1266,7 +1267,7 @@ router.post('/complete-signup', authenticate, async (req: AuthRequest, res, next
                     },
                 });
             } catch (err) {
-                console.error('[Auth] Complete-signup automation error:', err);
+                logger.error('[Auth] Complete-signup automation error:', err);
             }
         })();
 

@@ -3,6 +3,8 @@
  * Track and log performance metrics for optimization
  */
 
+import { logger } from './logger.js';
+
 // ============================================
 // PERFORMANCE TIMER
 // ============================================
@@ -43,7 +45,7 @@ export function createTimer(name: string) {
 
             // Log slow operations in development
             if (process.env.NODE_ENV === 'development' && duration > 100) {
-                console.warn(`[Performance] Slow operation: ${name} took ${duration.toFixed(2)}ms`, metadata);
+                logger.warn(`[Performance] Slow operation: ${name} took ${duration.toFixed(2)}ms`, metadata);
             }
 
             return duration;
@@ -152,7 +154,7 @@ export function trackError(
 
     // Log in development
     if (process.env.NODE_ENV === 'development') {
-        console.error('[Error Tracked]', error.message, context);
+        logger.error('[Error Tracked]', error.message, context);
     }
 }
 

@@ -9,6 +9,9 @@ import {
     Alert,
     TextInput,
     Platform,
+    Modal,
+    KeyboardAvoidingView,
+    Switch,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -19,6 +22,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useCommunitiesStore, Community } from '../../stores';
+import { RetryView } from '../../components/RetryView';
 
 const formatCount = (num: number) => {
     if (!num) return '0';
@@ -76,11 +80,101 @@ const CommunityCard = memo(({ community }: { community: Community }) => {
     );
 });
 
+function CreateCommunityModal({ visible, onClose, onCreate }: { visible: boolean; onClose: () => void; onCreate: () => void }) {
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [isPrivate, setIsPrivate] = useState(true);
+    const [isCreating, setIsCreating] = useState(false);
+    const insets = useSafeAreaInsets();
+    const { createCommunity } = useCommunitiesStore();
+
+    const handleCreate = async () => {
+        if (!name.trim() || name.trim().length < 3) {
+            Alert.alert('Name Required', 'Community name must be at least 3 characters.');
+            return;
+        }
+        setIsCreating(true);
+        try {
+            await createCommunity(name.trim(), description.trim(), isPrivate);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setName('');
+            setDescription('');
+            setIsPrivate(true);
+            onClose();
+            onCreate();
+        } catch {
+            Alert.alert('Error', 'Failed to create community. Please try again.');
+        } finally {
+            setIsCreating(false);
+        }
+    };
+
+    return (
+        <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+            <KeyboardAvoidingView style={[styles.modalContainer, { paddingTop: insets.top }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+                <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
+                {/* Modal Header */}
+                <View style={styles.modalHeader}>
+                    <TouchableOpacity onPress={onClose}>
+                        <Text style={styles.modalCancel}>Cancel</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.modalTitle}>New Community</Text>
+                    <TouchableOpacity onPress={handleCreate} disabled={isCreating || !name.trim()}>
+                        {isCreating ? (
+                            <ActivityIndicator size="small" color={colors.gold[500]} />
+                        ) : (
+                            <Text style={[styles.modalDone, (!name.trim()) && { opacity: 0.4 }]}>Create</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.modalBody}>
+                    <Text style={styles.inputLabel}>Name</Text>
+                    <TextInput
+                        style={styles.modalInput}
+                        value={name}
+                        onChangeText={setName}
+                        placeholder="Community name"
+                        placeholderTextColor={colors.text.muted}
+                        maxLength={50}
+                        autoFocus
+                    />
+
+                    <Text style={styles.inputLabel}>Description</Text>
+                    <TextInput
+                        style={[styles.modalInput, { minHeight: 80, textAlignVertical: 'top' }]}
+                        value={description}
+                        onChangeText={setDescription}
+                        placeholder="What is this community about?"
+                        placeholderTextColor={colors.text.muted}
+                        maxLength={500}
+                        multiline
+                    />
+
+                    <View style={styles.switchRow}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.switchLabel}>Private Community</Text>
+                            <Text style={styles.switchDescription}>Only invited members can join and see content</Text>
+                        </View>
+                        <Switch
+                            value={isPrivate}
+                            onValueChange={setIsPrivate}
+                            trackColor={{ false: colors.surface.glassHover, true: colors.gold[500] }}
+                            thumbColor="#fff"
+                        />
+                    </View>
+                </View>
+            </KeyboardAvoidingView>
+        </Modal>
+    );
+}
+
 export default function CommunitiesScreen() {
     const insets = useSafeAreaInsets();
-    const { communities, isLoading, fetchCommunities } = useCommunitiesStore();
+    const { communities, isLoading, error: commError, fetchCommunities } = useCommunitiesStore();
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     useEffect(() => {
         fetchCommunities();
@@ -109,6 +203,14 @@ export default function CommunitiesScreen() {
                 </View>
             );
         }
+        if (commError && communities.length === 0) {
+            return (
+                <RetryView
+                    message="Couldn't load communities. Tap to try again."
+                    onRetry={fetchCommunities}
+                />
+            );
+        }
         return (
             <View style={styles.emptyContainer}>
                 <View style={styles.emptyIconContainer}>
@@ -122,7 +224,7 @@ export default function CommunitiesScreen() {
                     style={styles.createBtn}
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        Alert.alert('Create Community', 'Community creation is coming soon! For now, you can create communities from the web app.', [{ text: 'OK' }]);
+                        setShowCreateModal(true);
                     }}
                 >
                     <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.createBtnGradient}>
@@ -140,8 +242,21 @@ export default function CommunitiesScreen() {
 
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <Text style={styles.headerTitle}>Communities</Text>
-                <Text style={styles.headerSubtitle}>Your private groups and tribes</Text>
+                <View style={styles.headerRow}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.headerTitle}>Communities</Text>
+                        <Text style={styles.headerSubtitle}>Your private groups and tribes</Text>
+                    </View>
+                    <TouchableOpacity
+                        style={styles.headerCreateBtn}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            setShowCreateModal(true);
+                        }}
+                    >
+                        <Ionicons name="add" size={22} color={colors.gold[500]} />
+                    </TouchableOpacity>
+                </View>
 
                 {/* Search bar */}
                 {communities.length > 0 && (
@@ -168,6 +283,12 @@ export default function CommunitiesScreen() {
                 onRefresh={handleRefresh}
                 refreshing={isRefreshing}
                 ListEmptyComponent={renderEmpty}
+            />
+
+            <CreateCommunityModal
+                visible={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                onCreate={() => fetchCommunities()}
             />
         </View>
     );
@@ -229,4 +350,40 @@ const styles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
     },
     roleBadgeText: { fontSize: typography.fontSize.xs, fontWeight: '700', color: colors.gold[500] },
+    // Header row
+    headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+    headerCreateBtn: {
+        width: 40, height: 40, borderRadius: 20,
+        backgroundColor: colors.surface.goldSubtle,
+        alignItems: 'center', justifyContent: 'center',
+        borderWidth: 1, borderColor: colors.gold[500] + '30',
+    },
+    // Modal
+    modalContainer: { flex: 1, backgroundColor: colors.obsidian[900] },
+    modalHeader: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
+        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
+    },
+    modalCancel: { fontSize: typography.fontSize.base, color: colors.text.secondary },
+    modalTitle: { fontSize: typography.fontSize.lg, fontWeight: '700', color: colors.text.primary },
+    modalDone: { fontSize: typography.fontSize.base, fontWeight: '700', color: colors.gold[500] },
+    modalBody: { padding: spacing.xl },
+    inputLabel: {
+        fontSize: typography.fontSize.xs, fontWeight: '600', color: colors.text.muted,
+        textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: spacing.xs, marginTop: spacing.lg,
+    },
+    modalInput: {
+        backgroundColor: colors.surface.glass, borderRadius: 12,
+        paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2,
+        fontSize: typography.fontSize.base, color: colors.text.primary,
+        borderWidth: 1, borderColor: colors.border.subtle,
+    },
+    switchRow: {
+        flexDirection: 'row', alignItems: 'center', marginTop: spacing.xl,
+        backgroundColor: colors.surface.glass, borderRadius: 12,
+        padding: spacing.md, borderWidth: 1, borderColor: colors.border.subtle,
+    },
+    switchLabel: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
+    switchDescription: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },
 });

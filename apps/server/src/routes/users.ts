@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -88,7 +89,7 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
             nextCursor: hasMore ? results[results.length - 1].id : null,
         });
     } catch (error) {
-        console.error('[Users List] Error:', error);
+        logger.error('[Users List] Error:', error);
         next(error);
     }
 });
@@ -184,7 +185,7 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
             })),
         });
     } catch (error) {
-        console.error('[User Search] Error:', error);
+        logger.error('[User Search] Error:', error);
         next(error);
     }
 });
@@ -837,7 +838,7 @@ router.post('/:id/wave', authenticate, async (req: AuthRequest, res, next) => {
             }
         } catch (socketErr) {
             // Non-critical: notification is already in DB
-            console.error('Socket emit failed:', socketErr);
+            logger.error('Socket emit failed:', socketErr);
         }
 
         res.json({ success: true, message: 'Wave sent!' });

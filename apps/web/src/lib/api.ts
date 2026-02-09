@@ -1,21 +1,17 @@
 // API Configuration
 // This file handles the API URL based on environment
 
+const PRODUCTION_API = 'https://0g-server.up.railway.app';
+
 const getApiUrl = () => {
     const envUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (envUrl) return envUrl;
 
-    if (!envUrl && typeof window !== 'undefined') {
-        if (process.env.NODE_ENV === 'production') {
-            console.error(
-                '[ZeroG API] CRITICAL: NEXT_PUBLIC_API_URL is not configured. ' +
-                'Set this in your Netlify environment variables to point to your Railway backend. ' +
-                'Example: https://your-app-name.up.railway.app'
-            );
-        }
-    }
+    // In production, always use the production API — never fall back to localhost
+    if (process.env.NODE_ENV === 'production') return PRODUCTION_API;
 
-    // Development fallback only - production MUST set NEXT_PUBLIC_API_URL
-    return envUrl || 'http://localhost:5180';
+    // Development fallback
+    return 'http://localhost:5180';
 };
 
 export const API_URL = getApiUrl();

@@ -9,6 +9,7 @@ import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
 import { Request } from 'express';
 import { logSecurityEvent, SecurityEvents } from './security.js';
+import { logger } from '../utils/logger.js';
 
 const prisma = new PrismaClient();
 
@@ -332,9 +333,9 @@ export async function sendSecurityAlert(
             await (emailService as { sendSecurityAlertEmail: (email: string, event: string, details: Record<string, unknown>) => Promise<void> })
                 .sendSecurityAlertEmail(user.email, event, details);
         } else {
-            console.log(`Security alert for ${user.email}: ${event}`, details);
+            logger.info(`Security alert for ${user.email}: ${event}`, details);
         }
     } catch (error) {
-        console.error('Failed to send security alert email:', error);
+        logger.error('Failed to send security alert email:', error);
     }
 }

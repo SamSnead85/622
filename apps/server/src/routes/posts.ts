@@ -5,6 +5,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
 import { cache } from '../services/cache/RedisCache.js';
 import { queueNotification } from '../services/notifications/NotificationQueue.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -142,7 +143,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                     select: { followingId: true },
                 });
             } catch (dbError) {
-                console.error('Database error fetching following:', dbError);
+                logger.error('Database error fetching following:', dbError);
                 throw new AppError('Failed to load feed', 503);
             }
 
@@ -209,7 +210,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
 
             // Posts fetched successfully
         } catch (dbError) {
-            console.error('Database error fetching posts:', dbError);
+            logger.error('Database error fetching posts:', dbError);
             throw new AppError('Failed to load posts', 503);
         }
 
@@ -646,7 +647,7 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
         if (followers.length > 0) {
             Promise.all(
                 followers.map(f => cache.invalidate(`feed:${f.followerId}:foryou:initial:*`))
-            ).catch(err => console.error('Feed cache invalidation error:', err));
+            ).catch(err => logger.error('Feed cache invalidation error:', err));
         }
 
         res.status(201).json(post);

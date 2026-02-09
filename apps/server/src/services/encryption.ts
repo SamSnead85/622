@@ -6,6 +6,7 @@
  */
 
 import crypto from 'crypto';
+import { logger } from '../utils/logger.js';
 
 // ============================================
 // CONFIGURATION
@@ -29,7 +30,7 @@ function getEncryptionKey(): Buffer {
             );
         }
         // In development: use a deterministic dev-only key so data survives restarts
-        console.warn('⚠️  ENCRYPTION_KEY not set — using deterministic dev key. NOT SAFE FOR PRODUCTION.');
+        logger.warn('⚠️  ENCRYPTION_KEY not set — using deterministic dev key. NOT SAFE FOR PRODUCTION.');
         return crypto.scryptSync('zerog-dev-key-not-for-production', 'og-dev-salt', 32);
     }
 
@@ -91,7 +92,7 @@ export function decryptField(encryptedText: string): string {
 
         return decrypted;
     } catch (error) {
-        console.error('Decryption failed:', error);
+        logger.error('Decryption failed:', error);
         throw new Error('Failed to decrypt field');
     }
 }

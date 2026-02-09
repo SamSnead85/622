@@ -314,7 +314,7 @@ interface FeedState {
     nextCursor: string | null;
     error: string | null;
 
-    fetchFeed: (refresh?: boolean, feedType?: 'foryou' | 'following') => Promise<void>;
+    fetchFeed: (refresh?: boolean, feedType?: 'foryou' | 'following', feedView?: 'private' | 'community') => Promise<void>;
     likePost: (postId: string) => Promise<void>;
     unlikePost: (postId: string) => Promise<void>;
     savePost: (postId: string) => Promise<void>;
@@ -362,7 +362,7 @@ export const useFeedStore = create<FeedState>()(
     nextCursor: null,
     error: null,
 
-    fetchFeed: async (refresh = false, feedType: 'foryou' | 'following' = 'foryou') => {
+    fetchFeed: async (refresh = false, feedType: 'foryou' | 'following' = 'foryou', feedView: 'private' | 'community' = 'private') => {
         const state = get();
         // Prevent concurrent fetches — block if already loading OR refreshing
         if (state.isLoading || state.isRefreshing) {
@@ -385,7 +385,7 @@ export const useFeedStore = create<FeedState>()(
             const cursor = refresh ? '' : state.nextCursor;
             const cursorParam = cursor ? `&cursor=${cursor}` : '';
             const data = await apiFetch<any>(
-                `${API.feed}?type=${feedType}&feedView=private&limit=20${cursorParam}`
+                `${API.feed}?type=${feedType}&feedView=${feedView}&limit=20${cursorParam}`
             );
 
             const rawPosts = data.posts || data.data || [];
@@ -595,6 +595,7 @@ interface CommunitiesState {
     fetchCommunities: () => Promise<void>;
     joinCommunity: (communityId: string) => Promise<void>;
     leaveCommunity: (communityId: string) => Promise<void>;
+    createCommunity: (name: string, description: string, isPrivate: boolean) => Promise<Community>;
 }
 
 export const useCommunitiesStore = create<CommunitiesState>()(
@@ -645,6 +646,18 @@ export const useCommunitiesStore = create<CommunitiesState>()(
         } catch (error: any) {
             console.error('Failed to leave community:', error);
         }
+    },
+
+    createCommunity: async (name, description, isPrivate) => {
+        const data = await apiFetch<any>(API.communities, {
+            method: 'POST',
+            body: JSON.stringify({ name, description, isPublic: !isPrivate }),
+        });
+        const community = data.community || data;
+        set((state) => ({
+            communities: [community, ...state.communities],
+        }));
+        return community;
     },
 }),
         {

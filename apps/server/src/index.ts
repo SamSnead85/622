@@ -184,12 +184,43 @@ app.use((req, res, next) => {
 // Compress responses
 app.use(compression());
 
-// Health check
-app.get('/health', (_, res) => {
-    res.json({
-        status: 'healthy',
+// Enhanced health check with dependency probes
+app.get('/health', async (_, res) => {
+    const checks: Record<string, { status: string; latencyMs?: number; error?: string }> = {};
+    const start = Date.now();
+
+    // Database probe
+    try {
+        const dbStart = Date.now();
+        const { prisma } = await import('./db/client.js');
+        await prisma.$queryRaw`SELECT 1`;
+        checks.database = { status: 'ok', latencyMs: Date.now() - dbStart };
+    } catch (err: any) {
+        checks.database = { status: 'error', error: err.message?.slice(0, 120) };
+    }
+
+    // Redis probe (optional — only if configured)
+    if (process.env.REDIS_URL) {
+        try {
+            const redisStart = Date.now();
+            const { cache } = await import('./services/cache/RedisCache.js');
+            const isHealthy = await cache.healthCheck();
+            checks.redis = { status: isHealthy ? 'ok' : 'unavailable', latencyMs: Date.now() - redisStart };
+        } catch (err: any) {
+            checks.redis = { status: 'unavailable', error: err.message?.slice(0, 120) };
+        }
+    }
+
+    const overall = Object.values(checks).every((c) => c.status === 'ok') ? 'healthy' : 'degraded';
+    const statusCode = checks.database?.status === 'ok' ? 200 : 503;
+
+    res.status(statusCode).json({
+        status: overall,
         timestamp: new Date().toISOString(),
         version: '1.0.0',
+        uptime: Math.floor(process.uptime()),
+        responseMs: Date.now() - start,
+        checks,
     });
 });
 

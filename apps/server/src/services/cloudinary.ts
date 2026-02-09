@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { logger } from '../utils/logger.js';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -97,14 +98,14 @@ export const uploadVideo = async (
  */
 export const deleteAsset = async (publicId: string, resourceType: 'image' | 'video' = 'image') => {
     if (!process.env.CLOUDINARY_CLOUD_NAME) {
-        console.warn('Cloudinary not configured. Skipping asset deletion.');
+        logger.warn('Cloudinary not configured. Skipping asset deletion.');
         return;
     }
 
     try {
         await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
     } catch (error) {
-        console.error('Failed to delete Cloudinary asset:', error);
+        logger.error('Failed to delete Cloudinary asset:', error);
         // Don't throw - deletion failures shouldn't break the app
     }
 };

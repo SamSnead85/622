@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,7 +7,13 @@ import {
     TouchableOpacity,
     Alert,
     Linking,
+    TextInput,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,7 +23,7 @@ import Constants from 'expo-constants';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore } from '../../stores';
-import { apiFetch, API } from '../../lib/api';
+import { apiFetch, apiUpload, API } from '../../lib/api';
 
 interface SettingRowProps {
     icon: keyof typeof Ionicons.glyphMap;
@@ -62,6 +68,57 @@ export default function SettingsScreen() {
     const refreshUser = useAuthStore((s) => s.refreshUser);
     const [isLeavingCommunity, setIsLeavingCommunity] = useState(false);
     const [culturalProfile, setCulturalProfile] = useState(user?.culturalProfile || 'standard');
+    const [showProfileEditor, setShowProfileEditor] = useState(false);
+    const [editDisplayName, setEditDisplayName] = useState(user?.displayName || '');
+    const [editBio, setEditBio] = useState(user?.bio || '');
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+    const handleSaveProfile = useCallback(async () => {
+        setIsSavingProfile(true);
+        try {
+            await apiFetch(`${API.users}/profile`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    displayName: editDisplayName.trim(),
+                    bio: editBio.trim(),
+                }),
+            });
+            await refreshUser();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setShowProfileEditor(false);
+        } catch {
+            Alert.alert('Error', 'Failed to save profile. Please try again.');
+        } finally {
+            setIsSavingProfile(false);
+        }
+    }, [editDisplayName, editBio, refreshUser]);
+
+    const handlePickAvatar = useCallback(async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Required', 'We need access to your photos to update your avatar.');
+            return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+        });
+        if (result.canceled || !result.assets?.[0]) return;
+
+        setIsUploadingAvatar(true);
+        try {
+            await apiUpload(API.uploadAvatar, result.assets[0].uri);
+            await refreshUser();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {
+            Alert.alert('Error', 'Failed to upload avatar. Please try again.');
+        } finally {
+            setIsUploadingAvatar(false);
+        }
+    }, [refreshUser]);
 
     const handleCulturalProfileChange = async (profile: string) => {
         setCulturalProfile(profile);
@@ -185,8 +242,73 @@ export default function SettingsScreen() {
                             icon="person-outline"
                             label="Edit Profile"
                             description="Update your name, bio, and avatar"
-                            onPress={() => Alert.alert('Edit Profile', 'Profile editing is available on the web app. Mobile editing coming soon!', [{ text: 'OK' }])}
+                            onPress={() => {
+                                setEditDisplayName(user?.displayName || '');
+                                setEditBio(user?.bio || '');
+                                setShowProfileEditor(!showProfileEditor);
+                            }}
                         />
+
+                        {/* Inline Profile Editor */}
+                        {showProfileEditor && (
+                            <View style={styles.profileEditor}>
+                                {/* Avatar */}
+                                <TouchableOpacity style={styles.avatarEditor} onPress={handlePickAvatar} disabled={isUploadingAvatar}>
+                                    {user?.avatarUrl ? (
+                                        <Image source={{ uri: user.avatarUrl }} style={styles.editAvatar} transition={150} />
+                                    ) : (
+                                        <View style={[styles.editAvatar, styles.editAvatarPlaceholder]}>
+                                            <Ionicons name="person" size={32} color={colors.text.muted} />
+                                        </View>
+                                    )}
+                                    <View style={styles.avatarEditBadge}>
+                                        {isUploadingAvatar ? (
+                                            <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                        ) : (
+                                            <Ionicons name="camera" size={14} color={colors.obsidian[900]} />
+                                        )}
+                                    </View>
+                                </TouchableOpacity>
+
+                                {/* Display Name */}
+                                <Text style={styles.editorLabel}>Display Name</Text>
+                                <TextInput
+                                    style={styles.editorInput}
+                                    value={editDisplayName}
+                                    onChangeText={setEditDisplayName}
+                                    placeholder="Your display name"
+                                    placeholderTextColor={colors.text.muted}
+                                    maxLength={50}
+                                    returnKeyType="next"
+                                />
+
+                                {/* Bio */}
+                                <Text style={styles.editorLabel}>Bio</Text>
+                                <TextInput
+                                    style={[styles.editorInput, styles.editorTextarea]}
+                                    value={editBio}
+                                    onChangeText={setEditBio}
+                                    placeholder="Tell people about yourself"
+                                    placeholderTextColor={colors.text.muted}
+                                    maxLength={200}
+                                    multiline
+                                    numberOfLines={3}
+                                />
+                                <Text style={styles.charCount}>{editBio.length}/200</Text>
+
+                                {/* Save button */}
+                                <TouchableOpacity style={styles.saveProfileBtn} onPress={handleSaveProfile} disabled={isSavingProfile}>
+                                    <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.saveProfileGradient}>
+                                        {isSavingProfile ? (
+                                            <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                        ) : (
+                                            <Text style={styles.saveProfileText}>Save Profile</Text>
+                                        )}
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
                         <SettingRow icon="lock-closed-outline" label="Password & Security" description="Change password, enable 2FA" />
                         <SettingRow icon="mail-outline" label="Email" description={user?.email || 'Not set'} />
                     </View>
@@ -364,4 +486,85 @@ const styles = StyleSheet.create({
     badgeCommunity: { backgroundColor: colors.surface.azureSubtle },
     badgePrivate: { backgroundColor: colors.surface.goldLight },
     badgeText: { fontSize: typography.fontSize.xs, fontWeight: '600', color: colors.gold[400] },
+    // Profile Editor
+    profileEditor: {
+        backgroundColor: colors.surface.glass,
+        borderRadius: 14,
+        padding: spacing.lg,
+        marginBottom: spacing.xs,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    avatarEditor: {
+        alignSelf: 'center',
+        marginBottom: spacing.lg,
+        position: 'relative',
+    },
+    editAvatar: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+    },
+    editAvatarPlaceholder: {
+        backgroundColor: colors.surface.glassHover,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    avatarEditBadge: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: colors.gold[500],
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: colors.obsidian[900],
+    },
+    editorLabel: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.text.muted,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: spacing.xs,
+        marginTop: spacing.sm,
+    },
+    editorInput: {
+        backgroundColor: colors.surface.glassHover,
+        borderRadius: 10,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        fontSize: typography.fontSize.base,
+        color: colors.text.primary,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    editorTextarea: {
+        minHeight: 70,
+        textAlignVertical: 'top',
+    },
+    charCount: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        textAlign: 'right',
+        marginTop: 4,
+    },
+    saveProfileBtn: {
+        marginTop: spacing.md,
+    },
+    saveProfileGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: spacing.sm + 2,
+        borderRadius: 12,
+    },
+    saveProfileText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        color: colors.obsidian[900],
+    },
 });

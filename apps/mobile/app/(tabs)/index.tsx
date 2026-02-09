@@ -38,6 +38,8 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { useFeedStore, useAuthStore, Post } from '../../stores';
 import { SkeletonFeed } from '../../components/SkeletonPost';
 import { useNetworkQuality } from '../../hooks/useNetworkQuality';
+import { RetryView } from '../../components/RetryView';
+import { apiFetch, API } from '../../lib/api';
 
 
 // ============================================
@@ -758,14 +760,18 @@ export default function FeedScreen() {
     const isLoading = useFeedStore((s) => s.isLoading);
     const isRefreshing = useFeedStore((s) => s.isRefreshing);
     const hasMore = useFeedStore((s) => s.hasMore);
+    const feedError = useFeedStore((s) => s.error);
     const fetchFeed = useFeedStore((s) => s.fetchFeed);
     const likePost = useFeedStore((s) => s.likePost);
     const unlikePost = useFeedStore((s) => s.unlikePost);
     const savePost = useFeedStore((s) => s.savePost);
     const unsavePost = useFeedStore((s) => s.unsavePost);
-    const reorderPost = useFeedStore((s) => s.reorderPost);
+    const reorderPost = useFeedStore((s) => s.movePost);
 
     const [feedType, setFeedType] = useState<'foryou' | 'following'>('foryou');
+    const [feedView, setFeedView] = useState<'private' | 'community'>(
+        user?.communityOptIn && user?.activeFeedView === 'community' ? 'community' : 'private'
+    );
     const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
 
     // Scroll tracking
@@ -814,8 +820,8 @@ export default function FeedScreen() {
     }, [posts]);
 
     useEffect(() => {
-        fetchFeed(true, feedType);
-    }, [feedType]);
+        fetchFeed(true, feedType, feedView);
+    }, [feedType, feedView]);
 
     const handleTabChange = useCallback(
         (tab: 'foryou' | 'following') => {
@@ -825,6 +831,18 @@ export default function FeedScreen() {
         },
         []
     );
+
+    const handleFeedViewToggle = useCallback(() => {
+        const next = feedView === 'private' ? 'community' : 'private';
+        setFeedView(next);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+        // Persist feed view preference to backend
+        apiFetch(API.feedView, {
+            method: 'PUT',
+            body: JSON.stringify({ feedView: next }),
+        }).catch(() => {});
+    }, [feedView]);
 
     const handleLike = useCallback(
         (postId: string) => {
@@ -859,9 +877,9 @@ export default function FeedScreen() {
 
     const handleLoadMore = useCallback(() => {
         if (!isLoading && hasMore) {
-            fetchFeed(false, feedType);
+            fetchFeed(false, feedType, feedView);
         }
-    }, [isLoading, hasMore, fetchFeed, feedType]);
+    }, [isLoading, hasMore, fetchFeed, feedType, feedView]);
 
     const handleReorder = useCallback(
         (postId: string, direction: 'up' | 'down') => {
@@ -908,6 +926,15 @@ export default function FeedScreen() {
 
     const renderEmpty = () => {
         if (isLoading) return <SkeletonFeed />;
+        if (feedError && posts.length === 0) {
+            return (
+                <RetryView
+                    message="Couldn't load your feed. Check your connection and try again."
+                    onRetry={() => fetchFeed(true, feedType, feedView)}
+                    icon="cloud-offline-outline"
+                />
+            );
+        }
         return (
             <View style={styles.emptyContainer}>
                 <Ionicons
@@ -964,6 +991,19 @@ export default function FeedScreen() {
                             {getGreeting()},{' '}
                             {user?.displayName?.split(' ')[0] || 'there'}
                         </Text>
+                        {/* Feed view toggle — only if community opt-in */}
+                        {user?.communityOptIn && (
+                            <TouchableOpacity onPress={handleFeedViewToggle} style={styles.feedViewToggle}>
+                                <Ionicons
+                                    name={feedView === 'private' ? 'lock-closed' : 'globe'}
+                                    size={12}
+                                    color={feedView === 'private' ? colors.gold[400] : colors.azure[400]}
+                                />
+                                <Text style={[styles.feedViewLabel, feedView === 'community' && { color: colors.azure[400] }]}>
+                                    {feedView === 'private' ? 'Private Feed' : 'Community Feed'}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </View>
                 <View style={styles.headerActions}>
@@ -1022,7 +1062,7 @@ export default function FeedScreen() {
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}
-                        onRefresh={() => fetchFeed(true, feedType)}
+                        onRefresh={() => fetchFeed(true, feedType, feedView)}
                         tintColor={colors.gold[500]}
                     />
                 }
@@ -1103,6 +1143,18 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
         letterSpacing: -0.3,
         fontFamily: 'Inter-Bold',
+    },
+    feedViewToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 2,
+    },
+    feedViewLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: colors.gold[400],
+        fontFamily: 'Inter-SemiBold',
     },
     headerActions: { flexDirection: 'row', gap: spacing.xs },
     headerBtn: {

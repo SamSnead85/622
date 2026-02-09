@@ -22,10 +22,11 @@ function getDedupeKey(url: string, method: string): string | null {
 }
 
 // API URL configuration
-// Set EXPO_PUBLIC_API_URL in your environment for production
-// For local dev on simulator: http://localhost:5180
-// For local dev on device: use your machine's IP (e.g., http://192.168.1.100:5180)
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5180';
+// Set EXPO_PUBLIC_API_URL in .env for local dev (e.g., http://192.168.1.100:5180)
+// Production builds MUST have this set at build time.
+const PRODUCTION_API = 'https://0g-server.up.railway.app';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL
+    || (__DEV__ ? 'http://localhost:5180' : PRODUCTION_API);
 
 // ============================================
 // Token Management (SecureStore)

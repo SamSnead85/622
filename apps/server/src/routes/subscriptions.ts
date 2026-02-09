@@ -3,6 +3,7 @@ import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -60,7 +61,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
                     currency: p.currency,
                 }));
             } catch (err) {
-                console.error('[subscriptions] Failed to fetch Stripe prices:', err);
+                logger.error('[subscriptions] Failed to fetch Stripe prices:', err);
             }
         }
 

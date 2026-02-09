@@ -8,6 +8,7 @@
 import { PrismaClient, ThreatLevel, SecurityPolicyType, Prisma } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
 import { getGeoFromIP, isPlatformGeoBlocked } from './geoblock.js';
+import { logger } from '../utils/logger.js';
 
 const prisma = new PrismaClient();
 
@@ -42,7 +43,7 @@ export async function logSecurityEvent(entry: AuditLogEntry) {
             },
         });
     } catch (error) {
-        console.error('Failed to log security event:', error);
+        logger.error('Failed to log security event:', error);
     }
 }
 
