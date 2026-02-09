@@ -1,19 +1,25 @@
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useEffect, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, typography } from '@zerog/ui';
+import { colors, spacing } from '@zerog/ui';
+
+// ============================================
+// Tab Icon — uniform for all tabs including Create
+// Clean, minimal, premium treatment
+// ============================================
 
 interface TabIconProps {
     label: string;
     iconName: keyof typeof Ionicons.glyphMap;
     iconNameFocused: keyof typeof Ionicons.glyphMap;
     focused: boolean;
+    isCreate?: boolean;
 }
 
-function TabIcon({ label, iconName, iconNameFocused, focused }: TabIconProps) {
+function TabIcon({ label, iconName, iconNameFocused, focused, isCreate }: TabIconProps) {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const prevFocused = useRef(focused);
 
@@ -25,7 +31,6 @@ function TabIcon({ label, iconName, iconNameFocused, focused }: TabIconProps) {
             useNativeDriver: true,
         }).start();
 
-        // Only fire haptics on tab *change*, not initial render
         if (focused && !prevFocused.current) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
@@ -39,74 +44,42 @@ function TabIcon({ label, iconName, iconNameFocused, focused }: TabIconProps) {
                 { transform: [{ scale: scaleAnim }] },
             ]}
         >
-            <Ionicons
-                name={focused ? iconNameFocused : iconName}
-                size={24}
-                color={focused ? colors.gold[500] : colors.text.muted}
-            />
+            {/* Create tab gets a subtle pill background */}
+            {isCreate ? (
+                <View style={[styles.createPill, focused && styles.createPillFocused]}>
+                    <Ionicons
+                        name={focused ? iconNameFocused : iconName}
+                        size={20}
+                        color={focused ? colors.obsidian[900] : colors.text.primary}
+                    />
+                </View>
+            ) : (
+                <Ionicons
+                    name={focused ? iconNameFocused : iconName}
+                    size={23}
+                    color={focused ? colors.text.primary : colors.text.muted}
+                />
+            )}
             <Text
                 style={[
                     styles.tabLabel,
-                    { color: focused ? colors.gold[500] : colors.text.muted },
+                    {
+                        color: isCreate
+                            ? (focused ? colors.gold[500] : colors.text.secondary)
+                            : (focused ? colors.text.primary : colors.text.muted),
+                    },
                 ]}
             >
                 {label}
             </Text>
-            {focused && <View style={styles.tabIndicator} />}
+            {focused && !isCreate && <View style={styles.tabIndicator} />}
         </Animated.View>
     );
 }
 
-function CreateButton({ focused }: { focused: boolean }) {
-    const pulseAnim = useRef(new Animated.Value(1)).current;
-    const glowAnim = useRef(new Animated.Value(0.3)).current;
-
-    useEffect(() => {
-        Animated.loop(
-            Animated.parallel([
-                Animated.sequence([
-                    Animated.timing(pulseAnim, {
-                        toValue: 1.05,
-                        duration: 1200,
-                        easing: Easing.inOut(Easing.ease),
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(pulseAnim, {
-                        toValue: 1,
-                        duration: 1200,
-                        easing: Easing.inOut(Easing.ease),
-                        useNativeDriver: true,
-                    }),
-                ]),
-                Animated.sequence([
-                    Animated.timing(glowAnim, {
-                        toValue: 0.6,
-                        duration: 1200,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(glowAnim, {
-                        toValue: 0.3,
-                        duration: 1200,
-                        useNativeDriver: true,
-                    }),
-                ]),
-            ])
-        ).start();
-    }, []);
-
-    return (
-        <View style={styles.createButtonWrapper}>
-            <Animated.View
-                style={[styles.createButtonGlow, { opacity: glowAnim }]}
-            />
-            <Animated.View
-                style={[styles.createButton, { transform: [{ scale: pulseAnim }] }]}
-            >
-                <Ionicons name="add" size={32} color={colors.obsidian[900]} />
-            </Animated.View>
-        </View>
-    );
-}
+// ============================================
+// Tab Layout
+// ============================================
 
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
@@ -121,12 +94,12 @@ export default function TabLayout() {
                 ],
                 tabBarBackground: () => (
                     <View style={styles.tabBarBackground}>
-                        <View style={styles.tabBarGradientOverlay} />
+                        <View style={styles.tabBarSurface} />
                         <View style={styles.tabBarBorder} />
                     </View>
                 ),
                 tabBarShowLabel: false,
-                tabBarActiveTintColor: colors.gold[500],
+                tabBarActiveTintColor: colors.text.primary,
                 tabBarInactiveTintColor: colors.text.muted,
             }}
         >
@@ -148,9 +121,9 @@ export default function TabLayout() {
                 options={{
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label="Search"
-                            iconName="search-outline"
-                            iconNameFocused="search"
+                            label="Explore"
+                            iconName="compass-outline"
+                            iconNameFocused="compass"
                             focused={focused}
                         />
                     ),
@@ -159,7 +132,15 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="create"
                 options={{
-                    tabBarIcon: ({ focused }) => <CreateButton focused={focused} />,
+                    tabBarIcon: ({ focused }) => (
+                        <TabIcon
+                            label="Create"
+                            iconName="add-outline"
+                            iconNameFocused="add"
+                            focused={focused}
+                            isCreate
+                        />
+                    ),
                 }}
             />
             <Tabs.Screen
@@ -180,7 +161,7 @@ export default function TabLayout() {
                 options={{
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label="Profile"
+                            label="You"
                             iconName="person-outline"
                             iconNameFocused="person"
                             focused={focused}
@@ -192,73 +173,71 @@ export default function TabLayout() {
     );
 }
 
+// ============================================
+// Styles
+// ============================================
+
 const styles = StyleSheet.create({
     tabBar: {
         position: 'absolute',
         borderTopWidth: 0,
         backgroundColor: 'transparent',
-        height: 85,
+        height: 80,
         elevation: 0,
     },
     tabBarBackground: {
         ...StyleSheet.absoluteFillObject,
         overflow: 'hidden',
     },
-    tabBarGradientOverlay: {
+    tabBarSurface: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: colors.obsidian[900],
-        opacity: 0.97,
+        opacity: 0.98,
     },
     tabBarBorder: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        height: 1,
+        height: StyleSheet.hairlineWidth,
         backgroundColor: colors.border.subtle,
     },
+
+    // Tab icon — uniform across all tabs
     tabIconContainer: {
         alignItems: 'center',
         justifyContent: 'center',
         paddingTop: 8,
-        minWidth: 50,
+        minWidth: 56,
     },
     tabLabel: {
         fontSize: 10,
         fontWeight: '500',
-        marginTop: 3,
+        marginTop: 4,
         fontFamily: 'Inter-Medium',
+        letterSpacing: 0.1,
     },
     tabIndicator: {
         width: 4,
         height: 4,
         borderRadius: 2,
-        backgroundColor: colors.gold[500],
-        marginTop: 4,
+        backgroundColor: colors.text.primary,
+        marginTop: 3,
     },
-    createButtonWrapper: {
+
+    // Create tab — subtle pill shape instead of floating circle
+    createPill: {
+        width: 40,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: colors.surface.glassActive,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: -20,
+        borderWidth: 1,
+        borderColor: colors.border.default,
     },
-    createButtonGlow: {
-        position: 'absolute',
-        width: 70,
-        height: 70,
-        borderRadius: 35,
+    createPillFocused: {
         backgroundColor: colors.gold[500],
-    },
-    createButton: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: colors.gold[500],
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: colors.gold[500],
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        elevation: 8,
+        borderColor: colors.gold[500],
     },
 });

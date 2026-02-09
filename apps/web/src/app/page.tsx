@@ -242,7 +242,7 @@ function HeroSection() {
                         <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                             <span className="text-white/60 text-xs tracking-widest uppercase font-light">
-                                Now Accepting Early Members
+                                The Global Community Operating System
                             </span>
                         </span>
                     </motion.div>
@@ -254,10 +254,10 @@ function HeroSection() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1, delay: 0.7 }}
                     >
-                        Social media
+                        Not social media.
                         <br />
                         <span className="bg-gradient-to-r from-white via-white/80 to-white/60 bg-clip-text text-transparent">
-                            without the weight
+                            A community OS.
                         </span>
                     </motion.h1>
 
@@ -268,8 +268,8 @@ function HeroSection() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 1 }}
                     >
-                        A platform where truth-tellers share their stories, communities decide what matters,
-                        and you own everything you create. No lock-in. No exploitation.
+                        Build across borders. Organize movements. Connect with purpose. Broadcast truth.
+                        0G is the operating system for global communities who refuse to scroll their lives away.
                     </motion.p>
 
                     {/* CTAs */}
@@ -334,10 +334,10 @@ function StatsSection() {
     const isInView = useInView(ref, { once: true, margin: '-100px' });
 
     const stats = [
-        { value: 'Growing', label: 'Early Members' },
-        { value: 'Global', label: 'Community' },
-        { value: 'Open', label: 'Source Platform' },
+        { value: '4', label: 'Core Intents' },
+        { value: 'Global', label: 'Cross-Border' },
         { value: '0', label: 'Ads, Forever' },
+        { value: '100%', label: 'Signal, No Noise' },
     ];
 
     return (
@@ -382,11 +382,11 @@ function VisionSection() {
                     <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-8 font-light">Our Belief</p>
 
                     <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-white leading-tight">
-                        The truth should reach{' '}
-                        <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">every corner</span> of the world.
+                        You set your{' '}
+                        <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">intent</span>.
                         <br className="hidden md:block" />
-                        And the{' '}
-                        <span className="bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent">community</span> should decide what matters.
+                        We show only{' '}
+                        <span className="bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent">what matters</span>.
                     </h2>
 
                     <div className="mt-20 pt-16 border-t border-white/5 grid md:grid-cols-3 gap-12 md:gap-16 text-left">
@@ -394,20 +394,20 @@ function VisionSection() {
                             {
                                 Icon: GlobeIcon,
                                 color: 'from-violet-400 to-cyan-400',
-                                title: 'Global Truth-Tellers',
-                                description: 'From journalists in conflict zones to activists documenting change—voices that matter reach the world without gatekeepers.',
+                                title: 'Organize & Build',
+                                description: 'Coordinate campaigns across 20 cities. Hire developers from Pakistan. Fund creators from Palestine. Build your business across borders.',
                             },
                             {
                                 Icon: VoteIcon,
                                 color: 'from-emerald-400 to-teal-400',
-                                title: 'Community-Driven Feed',
-                                description: 'Vote on what you want to see. Rank what matters. The algorithm serves you, not advertisers. Transparent. Always.',
+                                title: 'Connect & Broadcast',
+                                description: 'Purpose-driven messaging. Live streaming with sub-1s latency. Regional broadcast hubs. No noise — only signal from people you choose.',
                             },
                             {
                                 Icon: HeartIcon,
                                 color: 'from-rose-400 to-pink-400',
-                                title: 'Collective Sponsorship',
-                                description: 'Rally your community to sponsor a storyteller. Fund a live stream from anywhere in the world. Together.',
+                                title: 'Goals, Not Scrolling',
+                                description: 'Set your intent. Accomplish it. Leave satisfied. Our success metric is goals achieved, not time wasted. The opposite of social media.',
                             },
                         ].map((item, i) => (
                             <motion.div
@@ -1427,16 +1427,16 @@ function CTASection() {
                     <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-8 font-light">Join Us</p>
 
                     <h2 className="text-4xl md:text-6xl lg:text-7xl font-light text-white leading-tight mb-8">
-                        Ready to experience
+                        Build something.
                         <br />
                         <span className="bg-gradient-to-r from-white via-white/80 to-white/60 bg-clip-text text-transparent">
-                            social, reimagined?
+                            Don&apos;t just scroll.
                         </span>
                     </h2>
 
                     <p className="text-lg text-white/40 font-light max-w-2xl mx-auto mb-12">
-                        Join thousands who are building a better social future.
-                        No ads. No algorithms. Just genuine connection.
+                        If you&apos;re here to scroll, you&apos;re in the wrong place. If you&apos;re here to organize,
+                        build, connect, or broadcast truth — welcome home. Success = goals accomplished, not time wasted.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -1489,8 +1489,8 @@ function Footer() {
                     <div className="md:col-span-2">
                         <Wordmark />
                         <p className="mt-6 text-white/30 text-sm font-light max-w-sm leading-relaxed">
-                            Social media without the weight. A platform built for digital sovereignty,
-                            genuine privacy, and communities that govern themselves.
+                            The Global Community Operating System. Build, organize, connect, and broadcast
+                            with purpose. No ads. No tracking. No noise. Just signal.
                         </p>
                         {/* Social links placeholder */}
                         <div className="flex items-center gap-4 mt-6">

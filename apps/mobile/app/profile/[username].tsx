@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     textPostContent: { fontSize: typography.fontSize.xs, color: colors.text.primary, textAlign: 'center' },
     videoIndicator: {
         position: 'absolute', top: spacing.sm, right: spacing.sm,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)', width: 24, height: 24, borderRadius: 12,
+        backgroundColor: colors.surface.overlayMedium, width: 24, height: 24, borderRadius: 12,
         alignItems: 'center', justifyContent: 'center',
     },
     emptyPosts: { alignItems: 'center', paddingVertical: spacing['2xl'] },

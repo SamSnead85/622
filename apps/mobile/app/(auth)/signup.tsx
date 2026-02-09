@@ -367,12 +367,12 @@ const styles = StyleSheet.create({
     privacyNotice: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        backgroundColor: 'rgba(212, 175, 55, 0.08)',
+        backgroundColor: colors.surface.goldSubtle,
         borderRadius: 12,
         padding: spacing.md,
         marginTop: spacing.lg,
         borderWidth: 1,
-        borderColor: 'rgba(212, 175, 55, 0.15)',
+        borderColor: colors.surface.goldMedium,
         gap: spacing.sm,
     },
     privacyText: {

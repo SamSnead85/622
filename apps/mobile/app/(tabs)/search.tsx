@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
         borderRadius: 20, backgroundColor: colors.surface.glass,
         borderWidth: 1, borderColor: colors.border.subtle,
     },
-    filterTabActive: { backgroundColor: 'rgba(212, 175, 55, 0.15)', borderColor: colors.gold[500] },
+    filterTabActive: { backgroundColor: colors.surface.goldMedium, borderColor: colors.gold[500] },
     filterTabText: { fontSize: typography.fontSize.sm, color: colors.text.muted, fontWeight: '500' },
     filterTabTextActive: { color: colors.gold[500] },
     loadingContainer: { flex: 1, alignItems: 'center', paddingTop: 40 },

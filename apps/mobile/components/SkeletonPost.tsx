@@ -1,6 +1,9 @@
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 import { useEffect, useRef } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing } from '@zerog/ui';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function ShimmerBlock({
     width,
@@ -13,38 +16,50 @@ function ShimmerBlock({
     borderRadius?: number;
     style?: any;
 }) {
-    const shimmerAnim = useRef(new Animated.Value(0.3)).current;
+    const shimmerAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         Animated.loop(
-            Animated.sequence([
-                Animated.timing(shimmerAnim, {
-                    toValue: 0.7,
-                    duration: 800,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(shimmerAnim, {
-                    toValue: 0.3,
-                    duration: 800,
-                    useNativeDriver: true,
-                }),
-            ])
+            Animated.timing(shimmerAnim, {
+                toValue: 1,
+                duration: 1200,
+                useNativeDriver: true,
+            })
         ).start();
     }, []);
 
+    const translateX = shimmerAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-SCREEN_WIDTH, SCREEN_WIDTH],
+    });
+
     return (
-        <Animated.View
+        <View
             style={[
                 {
                     width: width as any,
                     height,
                     borderRadius,
-                    backgroundColor: colors.obsidian[600],
-                    opacity: shimmerAnim,
+                    backgroundColor: colors.obsidian[700],
+                    overflow: 'hidden',
                 },
                 style,
             ]}
-        />
+        >
+            <Animated.View
+                style={{
+                    ...StyleSheet.absoluteFillObject,
+                    transform: [{ translateX }],
+                }}
+            >
+                <LinearGradient
+                    colors={['transparent', 'rgba(255,255,255,0.04)', 'transparent']}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={{ width: SCREEN_WIDTH, height: '100%' }}
+                />
+            </Animated.View>
+        </View>
     );
 }
 
@@ -113,6 +128,22 @@ export function SkeletonFeed() {
     );
 }
 
+export function SkeletonGrid() {
+    return (
+        <View style={styles.gridContainer}>
+            {Array.from({ length: 9 }).map((_, i) => (
+                <ShimmerBlock
+                    key={i}
+                    width="31%"
+                    height={110}
+                    borderRadius={8}
+                    style={{ marginBottom: spacing.xs }}
+                />
+            ))}
+        </View>
+    );
+}
+
 const styles = StyleSheet.create({
     feed: {
         paddingHorizontal: spacing.md,
@@ -137,5 +168,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: spacing.xl,
         marginTop: spacing.md,
+    },
+    gridContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.xs,
+        paddingHorizontal: spacing.xl,
     },
 });

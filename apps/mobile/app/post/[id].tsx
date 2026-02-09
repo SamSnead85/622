@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     videoPlayerView: { width: '100%', height: '100%' },
     muteIndicator: {
         position: 'absolute', bottom: spacing.sm, right: spacing.sm,
-        width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.6)',
+        width: 28, height: 28, borderRadius: 14, backgroundColor: colors.surface.overlayMedium,
         alignItems: 'center', justifyContent: 'center',
     },
 

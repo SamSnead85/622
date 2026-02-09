@@ -5,13 +5,13 @@ import {
     StyleSheet,
     TouchableOpacity,
     TextInput,
-    Image,
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
     Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -261,9 +261,9 @@ const styles = StyleSheet.create({
     cancelText: { fontSize: typography.fontSize.base, color: colors.text.secondary },
     headerTitle: { fontSize: typography.fontSize.lg, fontWeight: '600', color: colors.text.primary, fontFamily: 'Inter-SemiBold' },
     publishBtn: { backgroundColor: colors.gold[500], paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: 20, minWidth: 60, alignItems: 'center' },
-    publishBtnDisabled: { backgroundColor: 'rgba(212, 175, 55, 0.3)' },
+    publishBtnDisabled: { backgroundColor: colors.surface.goldStrong },
     publishText: { fontSize: typography.fontSize.base, fontWeight: '700', color: colors.obsidian[900] },
-    publishTextDisabled: { color: 'rgba(10, 10, 11, 0.5)' },
+    publishTextDisabled: { opacity: 0.5, color: colors.obsidian[900] },
     progressBar: { height: 3, backgroundColor: colors.border.subtle },
     progressFill: { height: '100%', backgroundColor: colors.gold[500] },
     scrollView: { flex: 1 },

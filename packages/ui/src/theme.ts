@@ -66,6 +66,16 @@ export const colors = {
         glassHover: 'rgba(255, 255, 255, 0.06)',
         glassActive: 'rgba(255, 255, 255, 0.08)',
         overlay: 'rgba(0, 0, 0, 0.7)',
+        overlayLight: 'rgba(0, 0, 0, 0.4)',
+        overlayMedium: 'rgba(0, 0, 0, 0.6)',
+        overlayHeavy: 'rgba(0, 0, 0, 0.8)',
+        goldSubtle: 'rgba(212, 175, 55, 0.08)',
+        goldLight: 'rgba(212, 175, 55, 0.12)',
+        goldMedium: 'rgba(212, 175, 55, 0.15)',
+        goldStrong: 'rgba(212, 175, 55, 0.3)',
+        goldFaded: 'rgba(212, 175, 55, 0.04)',
+        coralSubtle: 'rgba(255, 82, 82, 0.1)',
+        azureSubtle: 'rgba(0, 212, 255, 0.12)',
     },
 
     border: {

@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     leaveButtonText: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.secondary },
 
     roleBadge: {
-        alignSelf: 'center', backgroundColor: 'rgba(212, 175, 55, 0.15)',
+        alignSelf: 'center', backgroundColor: colors.surface.goldMedium,
         paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: 8,
         marginBottom: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
     },

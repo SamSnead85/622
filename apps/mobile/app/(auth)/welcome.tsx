@@ -11,39 +11,62 @@ import Animated, {
     interpolate,
     withSpring,
     FadeInUp,
+    FadeIn,
 } from 'react-native-reanimated';
 import { Button, colors, typography, spacing } from '@zerog/ui';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface Slide {
     icon: keyof typeof Ionicons.glyphMap;
+    secondaryIcon?: keyof typeof Ionicons.glyphMap;
     iconColor: string;
+    accentColor: string;
+    tag: string;
     title: string;
     subtitle: string;
 }
 
 const SLIDES: Slide[] = [
     {
-        icon: 'shield-checkmark',
+        icon: 'layers-outline',
+        secondaryIcon: 'globe-outline',
         iconColor: colors.gold[500],
-        title: 'Your World,\nYour Rules',
+        accentColor: colors.gold[500],
+        tag: 'NOT SOCIAL MEDIA',
+        title: 'A Community\nOperating System',
         subtitle:
-            'Posts are private by default. Your data is encrypted and protected. Nobody sees your content unless you invite them.',
+            'Build, organize, connect, and broadcast with purpose. 0G is infrastructure for human coordination — not a feed to scroll.',
+    },
+    {
+        icon: 'shield-checkmark',
+        secondaryIcon: 'lock-closed-outline',
+        iconColor: colors.emerald[500],
+        accentColor: colors.emerald[500],
+        tag: 'PRIVACY FIRST',
+        title: 'Signal,\nNot Noise',
+        subtitle:
+            'Your data is encrypted. No ads. No tracking. No algorithms deciding what you see. You set your intent — we show only what matters.',
+    },
+    {
+        icon: 'earth-outline',
+        secondaryIcon: 'rocket-outline',
+        iconColor: colors.azure[500],
+        accentColor: colors.azure[500],
+        tag: 'CROSS-BORDER',
+        title: 'Build Across\nBorders',
+        subtitle:
+            'Hire globally. Organize campaigns. Broadcast truth. Connect diaspora communities. One platform for the entire world.',
     },
     {
         icon: 'people',
-        iconColor: colors.emerald[500],
-        title: 'Connect With\nYour People',
+        secondaryIcon: 'heart-outline',
+        iconColor: colors.coral[500],
+        accentColor: colors.coral[500],
+        tag: 'YOUR COMMUNITY',
+        title: 'Welcome\nHome',
         subtitle:
-            'Create private groups for family, friends, and teams. Your content stays within your chosen circles — completely separated from the public.',
-    },
-    {
-        icon: 'globe-outline',
-        iconColor: colors.azure[500],
-        title: 'Join When\nYou\'re Ready',
-        subtitle:
-            'Community is always optional. You control your visibility. Stay private forever, or join thousands already connecting on 0G.',
+            'Private groups for family. Public spaces for movements. You choose your level of visibility. Your world, your rules.',
     },
 ];
 
@@ -88,14 +111,26 @@ function SlideItem({
     return (
         <View style={[styles.slide, { width: SCREEN_WIDTH }]}>
             <Animated.View style={[styles.iconContainer, animatedIconStyle]}>
-                <View style={[styles.iconCircle, { backgroundColor: `${slide.iconColor}15` }]}>
-                    <View style={[styles.iconInner, { backgroundColor: `${slide.iconColor}25` }]}>
-                        <Ionicons name={slide.icon} size={64} color={slide.iconColor} />
+                {/* Outer glow ring */}
+                <View style={[styles.iconGlowOuter, { borderColor: `${slide.accentColor}15` }]}>
+                    <View style={[styles.iconCircle, { backgroundColor: `${slide.iconColor}12` }]}>
+                        <View style={[styles.iconInner, { backgroundColor: `${slide.iconColor}20` }]}>
+                            <Ionicons name={slide.icon} size={56} color={slide.iconColor} />
+                        </View>
                     </View>
                 </View>
+                {/* Floating secondary icon */}
+                {slide.secondaryIcon && (
+                    <View style={[styles.floatingIcon, { backgroundColor: `${slide.accentColor}25` }]}>
+                        <Ionicons name={slide.secondaryIcon} size={20} color={slide.accentColor} />
+                    </View>
+                )}
             </Animated.View>
 
             <Animated.View style={[styles.textContainer, animatedTextStyle]}>
+                <View style={[styles.tagBadge, { backgroundColor: `${slide.accentColor}15` }]}>
+                    <Text style={[styles.tagText, { color: slide.accentColor }]}>{slide.tag}</Text>
+                </View>
                 <Text style={styles.slideTitle}>{slide.title}</Text>
                 <Text style={styles.slideSubtitle}>{slide.subtitle}</Text>
             </Animated.View>
@@ -119,7 +154,7 @@ function PaginationDots({
                         i * SCREEN_WIDTH,
                         (i + 1) * SCREEN_WIDTH,
                     ];
-                    const width = interpolate(scrollX.value, inputRange, [8, 24, 8], 'clamp');
+                    const width = interpolate(scrollX.value, inputRange, [8, 28, 8], 'clamp');
                     const opacity = interpolate(scrollX.value, inputRange, [0.3, 1, 0.3], 'clamp');
                     return { width, opacity };
                 });
@@ -213,7 +248,7 @@ export default function WelcomeScreen() {
                         }
                     }}
                 >
-                    {isLastSlide ? 'Get Started' : 'Next'}
+                    {isLastSlide ? 'Join the Movement' : 'Next'}
                 </Button>
 
                 <Button
@@ -228,9 +263,14 @@ export default function WelcomeScreen() {
             </Animated.View>
 
             {/* Footer */}
-            <Text style={styles.terms}>
-                By continuing, you agree to our Terms of Service and Privacy Policy
-            </Text>
+            <Animated.View entering={FadeIn.delay(1000).duration(400)}>
+                <Text style={styles.manifesto}>
+                    Success = goals accomplished, not time wasted.
+                </Text>
+                <Text style={styles.terms}>
+                    By continuing, you agree to our Terms of Service and Privacy Policy
+                </Text>
+            </Animated.View>
         </LinearGradient>
     );
 }
@@ -263,19 +303,38 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.xl,
     },
     iconContainer: {
-        marginBottom: spacing['3xl'],
+        marginBottom: spacing['2xl'],
+        position: 'relative',
+    },
+    iconGlowOuter: {
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     iconCircle: {
-        width: 160,
-        height: 160,
-        borderRadius: 80,
+        width: 156,
+        height: 156,
+        borderRadius: 78,
         alignItems: 'center',
         justifyContent: 'center',
     },
     iconInner: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
+        width: 110,
+        height: 110,
+        borderRadius: 55,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    floatingIcon: {
+        position: 'absolute',
+        top: 8,
+        right: -4,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -283,13 +342,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: spacing.md,
     },
+    tagBadge: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs,
+        borderRadius: 20,
+        marginBottom: spacing.md,
+    },
+    tagText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '700',
+        letterSpacing: 1.5,
+        fontFamily: 'Inter-Bold',
+    },
     slideTitle: {
-        fontSize: 34,
+        fontSize: 36,
         fontWeight: '700',
         color: colors.text.primary,
         textAlign: 'center',
-        letterSpacing: -1,
-        lineHeight: 42,
+        letterSpacing: -1.2,
+        lineHeight: 44,
         fontFamily: 'Inter-Bold',
     },
     slideSubtitle: {
@@ -319,6 +390,15 @@ const styles = StyleSheet.create({
     },
     loginButton: {
         marginTop: spacing.md,
+    },
+    manifesto: {
+        fontSize: typography.fontSize.xs,
+        color: colors.gold[500],
+        textAlign: 'center',
+        fontFamily: 'Inter-SemiBold',
+        letterSpacing: 0.5,
+        paddingHorizontal: spacing.xl,
+        marginBottom: spacing.sm,
     },
     terms: {
         fontSize: typography.fontSize.xs,

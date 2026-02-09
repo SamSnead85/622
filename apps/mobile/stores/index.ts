@@ -4,7 +4,15 @@
 // ============================================
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch, apiUpload, saveToken, removeToken, getToken, API } from '../lib/api';
+
+// ============================================
+// Zustand Persistence Storage Adapter
+// ============================================
+
+const zustandStorage = createJSONStorage(() => AsyncStorage);
 
 // ============================================
 // Types
@@ -52,6 +60,7 @@ export interface Post {
     mediaAspectRatio?: string;
     sortOrder?: number;
     author: PostAuthor | null;
+    authorNote?: string;
     likesCount: number;
     commentsCount: number;
     sharesCount: number;
@@ -108,7 +117,9 @@ interface AuthState {
     clearError: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>()(
+    persist(
+        (set, get) => ({
     user: null,
     isAuthenticated: false,
     isLoading: false,
@@ -274,7 +285,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     clearError: () => set({ error: null }),
-}));
+}),
+        {
+            name: 'auth-storage',
+            storage: zustandStorage,
+            partialize: (state) => ({
+                user: state.user,
+                isAuthenticated: state.isAuthenticated,
+            }),
+        }
+    )
+);
 
 // ============================================
 // Feed Store
@@ -311,6 +332,7 @@ export function mapApiPost(raw: any): Post {
         mediaAspectRatio: raw.mediaAspectRatio,
         sortOrder: raw.sortOrder,
         author: raw.user || raw.author || null,
+        authorNote: raw.authorNote || raw.pinnedComment || undefined,
         likesCount: raw.likesCount ?? raw._count?.likes ?? 0,
         commentsCount: raw.commentsCount ?? raw._count?.comments ?? 0,
         sharesCount: raw.sharesCount ?? raw._count?.shares ?? 0,
@@ -325,7 +347,9 @@ export function mapApiPost(raw: any): Post {
     };
 }
 
-export const useFeedStore = create<FeedState>((set, get) => ({
+export const useFeedStore = create<FeedState>()(
+    persist(
+        (set, get) => ({
     posts: [],
     isLoading: false,
     isRefreshing: false,
@@ -335,10 +359,19 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     fetchFeed: async (refresh = false, feedType: 'foryou' | 'following' = 'foryou') => {
         const state = get();
-        if (state.isLoading && !refresh) return;
+        // Prevent concurrent fetches — block if already loading OR refreshing
+        if (state.isLoading || state.isRefreshing) {
+            if (!refresh) return; // Allow refresh to override, but not load-more
+        }
 
         if (refresh) {
-            set({ isRefreshing: true, nextCursor: null });
+            // SWR: keep existing posts visible while refreshing (no blank screen)
+            // Only show isLoading spinner if we have NO cached posts
+            set({
+                isRefreshing: true,
+                isLoading: state.posts.length === 0,
+                nextCursor: null,
+            });
         } else {
             set({ isLoading: true });
         }
@@ -363,14 +396,20 @@ export const useFeedStore = create<FeedState>((set, get) => ({
                     nextCursor: newCursor,
                 });
             } else {
-                set((prev) => ({
-                    posts: [...prev.posts, ...posts],
-                    isLoading: false,
-                    hasMore: !!newCursor,
-                    nextCursor: newCursor,
-                }));
+                // Deduplicate: only append posts whose IDs aren't already present
+                set((prev) => {
+                    const existingIds = new Set(prev.posts.map((p) => p.id));
+                    const uniqueNew = posts.filter((p: Post) => !existingIds.has(p.id));
+                    return {
+                        posts: [...prev.posts, ...uniqueNew],
+                        isLoading: false,
+                        hasMore: !!newCursor,
+                        nextCursor: newCursor,
+                    };
+                });
             }
         } catch (error: any) {
+            // SWR: on error, keep existing cached posts visible
             set({
                 error: error.message || 'Failed to load feed',
                 isLoading: false,
@@ -528,7 +567,16 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     },
 
     clear: () => set({ posts: [], nextCursor: null, hasMore: true }),
-}));
+}),
+        {
+            name: 'feed-storage',
+            storage: zustandStorage,
+            partialize: (state) => ({
+                posts: state.posts.slice(0, 20), // Only cache first 20 posts
+            }),
+        }
+    )
+);
 
 // ============================================
 // Communities Store
@@ -544,7 +592,9 @@ interface CommunitiesState {
     leaveCommunity: (communityId: string) => Promise<void>;
 }
 
-export const useCommunitiesStore = create<CommunitiesState>((set) => ({
+export const useCommunitiesStore = create<CommunitiesState>()(
+    persist(
+        (set) => ({
     communities: [],
     isLoading: false,
     error: null,
@@ -591,7 +641,16 @@ export const useCommunitiesStore = create<CommunitiesState>((set) => ({
             console.error('Failed to leave community:', error);
         }
     },
-}));
+}),
+        {
+            name: 'communities-storage',
+            storage: zustandStorage,
+            partialize: (state) => ({
+                communities: state.communities,
+            }),
+        }
+    )
+);
 
 // ============================================
 // Notifications Store

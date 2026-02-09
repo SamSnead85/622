@@ -5,9 +5,7 @@ import {
     StyleSheet,
     FlatList,
     TouchableOpacity,
-    Image,
     RefreshControl,
-    Dimensions,
     Pressable,
     Share,
     Platform,
@@ -15,7 +13,9 @@ import {
     Alert,
     ViewToken,
     ActivityIndicator,
+    ScrollView,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,17 +24,21 @@ import * as Haptics from 'expo-haptics';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
+    useAnimatedScrollHandler,
+    interpolate,
     withSpring,
     withTiming,
     withDelay,
+    withRepeat,
     FadeInDown,
+    FadeIn,
 } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useFeedStore, useAuthStore, Post } from '../../stores';
 import { SkeletonFeed } from '../../components/SkeletonPost';
+import { useNetworkQuality } from '../../hooks/useNetworkQuality';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================
 // Time formatting
@@ -54,6 +58,200 @@ function formatCount(num: number) {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
+}
+
+// ============================================
+// Avatar Glow Ring — premium animated ring
+// Different styles: 'online' (emerald pulse), 'active' (gold), 'verified' (gold shimmer), 'none'
+// ============================================
+const AVATAR_RING_SIZE = 3;
+
+function AvatarGlow({ type, size }: { type: 'online' | 'active' | 'verified' | 'none'; size: number }) {
+    const pulse = useSharedValue(1);
+
+    useEffect(() => {
+        if (type === 'online') {
+            pulse.value = withRepeat(
+                withTiming(1.15, { duration: 1800 }),
+                -1,
+                true
+            );
+        } else {
+            pulse.value = 1;
+        }
+    }, [type]);
+
+    const ringStyle = useAnimatedStyle(() => {
+        if (type === 'none') return { opacity: 0 };
+        return {
+            opacity: type === 'online' ? interpolate(pulse.value, [1, 1.15], [0.6, 1]) : 0.8,
+            transform: [{ scale: type === 'online' ? pulse.value : 1 }],
+        };
+    });
+
+    const ringColor = type === 'online' ? colors.emerald[500]
+        : type === 'active' ? colors.gold[500]
+        : type === 'verified' ? colors.gold[400]
+        : 'transparent';
+
+    const outerSize = size + AVATAR_RING_SIZE * 2 + 2;
+
+    return (
+        <Animated.View
+            style={[
+                {
+                    position: 'absolute',
+                    width: outerSize,
+                    height: outerSize,
+                    borderRadius: outerSize / 2,
+                    borderWidth: AVATAR_RING_SIZE,
+                    borderColor: ringColor,
+                    top: -AVATAR_RING_SIZE - 1,
+                    left: -AVATAR_RING_SIZE - 1,
+                },
+                ringStyle,
+            ]}
+            pointerEvents="none"
+        />
+    );
+}
+
+// ============================================
+// Active Contacts Strip — replaces Intent Hub
+// Horizontal scroll of online/active people
+// ============================================
+const CONTACT_AVATAR_SIZE = 52;
+
+function ActiveContactBubble({
+    avatarUrl,
+    name,
+    isOnline,
+    isUser,
+    onPress,
+    index,
+}: {
+    avatarUrl?: string;
+    name: string;
+    isOnline: boolean;
+    isUser?: boolean;
+    onPress: () => void;
+    index: number;
+}) {
+    const scale = useSharedValue(1);
+    const animStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    return (
+        <Animated.View
+            entering={FadeIn.duration(300).delay(index * 60)}
+            style={animStyle}
+        >
+            <Pressable
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    scale.value = withSpring(0.9, { damping: 15 });
+                    setTimeout(() => { scale.value = withSpring(1); }, 100);
+                    onPress();
+                }}
+                style={styles.contactBubble}
+            >
+                <View style={styles.contactAvatarWrap}>
+                    {avatarUrl ? (
+                        <Image
+                            source={{ uri: avatarUrl }}
+                            style={styles.contactAvatar}
+                            transition={150}
+                            cachePolicy="memory-disk"
+                        />
+                    ) : (
+                        <View style={[styles.contactAvatar, styles.contactAvatarPlaceholder]}>
+                            <Text style={styles.contactAvatarInitial}>
+                                {name[0]?.toUpperCase() || '?'}
+                            </Text>
+                        </View>
+                    )}
+                    <AvatarGlow
+                        type={isOnline ? 'online' : 'active'}
+                        size={CONTACT_AVATAR_SIZE}
+                    />
+                    {/* Online dot */}
+                    {isOnline && (
+                        <View style={styles.onlineDot}>
+                            <View style={styles.onlineDotInner} />
+                        </View>
+                    )}
+                    {/* Create "+" badge for user's own avatar */}
+                    {isUser && (
+                        <View style={styles.createBadge}>
+                            <Ionicons name="add" size={12} color={colors.obsidian[900]} />
+                        </View>
+                    )}
+                </View>
+                <Text style={styles.contactName} numberOfLines={1}>
+                    {isUser ? 'You' : name.split(' ')[0]?.slice(0, 8) || name.slice(0, 8)}
+                </Text>
+            </Pressable>
+        </Animated.View>
+    );
+}
+
+function ActiveContactsStrip({ onCreatePress }: { onCreatePress: () => void }) {
+    const router = useRouter();
+    const user = useAuthStore((s) => s.user);
+    const posts = useFeedStore((s) => s.posts);
+
+    // Derive unique authors from feed (simulate "active contacts")
+    // In production, this would come from a presence API
+    const activeContacts = useCallback(() => {
+        const seen = new Set<string>();
+        const contacts: { id: string; username: string; displayName: string; avatarUrl?: string; isOnline: boolean }[] = [];
+        for (const post of posts) {
+            if (post.author && !seen.has(post.author.id) && post.author.id !== user?.id) {
+                seen.add(post.author.id);
+                contacts.push({
+                    id: post.author.id,
+                    username: post.author.username,
+                    displayName: post.author.displayName,
+                    avatarUrl: post.author.avatarUrl,
+                    isOnline: contacts.length < 3, // First 3 shown as "online" (simulated)
+                });
+            }
+            if (contacts.length >= 12) break;
+        }
+        return contacts;
+    }, [posts, user?.id])();
+
+    return (
+        <View style={styles.contactsStrip}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.contactsScroll}
+            >
+                {/* User's own avatar — tap to create */}
+                <ActiveContactBubble
+                    avatarUrl={user?.avatarUrl}
+                    name={user?.displayName || 'You'}
+                    isOnline={true}
+                    isUser={true}
+                    onPress={onCreatePress}
+                    index={0}
+                />
+                {/* Active contacts from feed */}
+                {activeContacts.map((contact, i) => (
+                    <ActiveContactBubble
+                        key={contact.id}
+                        avatarUrl={contact.avatarUrl}
+                        name={contact.displayName}
+                        isOnline={contact.isOnline}
+                        onPress={() => router.push(`/profile/${contact.username}` as any)}
+                        index={i + 1}
+                    />
+                ))}
+            </ScrollView>
+        </View>
+    );
 }
 
 // ============================================
@@ -160,8 +358,7 @@ function ReadMoreText({ text }: { text: string }) {
 // ============================================
 // Feed Video Player (auto-play with mute toggle)
 // ============================================
-function FeedVideoPlayer({ uri, isActive, isFirstVideo }: { uri: string; isActive: boolean; isFirstVideo: boolean }) {
-    // First visible video plays unmuted; subsequent ones muted
+function FeedVideoPlayer({ uri, isActive, isFirstVideo, shouldReduceData }: { uri: string; isActive: boolean; isFirstVideo: boolean; shouldReduceData?: boolean }) {
     const [isMuted, setIsMuted] = useState(!isFirstVideo);
     const [showFirstFrame, setShowFirstFrame] = useState(false);
 
@@ -171,23 +368,26 @@ function FeedVideoPlayer({ uri, isActive, isFirstVideo }: { uri: string; isActiv
     });
 
     useEffect(() => {
+        if (shouldReduceData) {
+            // On slow connections, don't autoplay — save bandwidth
+            player.pause();
+            return;
+        }
         if (isActive) {
             player.play();
         } else {
             player.pause();
-            // When scrolling away, reset to muted state
             player.muted = true;
             setIsMuted(true);
         }
-    }, [isActive, player]);
+    }, [isActive, player, shouldReduceData]);
 
-    // When becoming the first video (scrolled into view as primary), unmute
     useEffect(() => {
-        if (isActive && isFirstVideo) {
+        if (isActive && isFirstVideo && !shouldReduceData) {
             player.muted = false;
             setIsMuted(false);
         }
-    }, [isActive, isFirstVideo, player]);
+    }, [isActive, isFirstVideo, player, shouldReduceData]);
 
     const toggleMute = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -205,7 +405,6 @@ function FeedVideoPlayer({ uri, isActive, isFirstVideo }: { uri: string; isActiv
                 contentFit="cover"
                 onFirstFrameRender={() => setShowFirstFrame(true)}
             />
-            {/* Buffering overlay - show until first frame renders */}
             {!showFirstFrame && (
                 <View style={styles.videoBuffering}>
                     <View style={styles.videoBufferingInner}>
@@ -213,7 +412,6 @@ function FeedVideoPlayer({ uri, isActive, isFirstVideo }: { uri: string; isActiv
                     </View>
                 </View>
             )}
-            {/* Mute indicator */}
             <View style={styles.muteIndicator}>
                 <Ionicons
                     name={isMuted ? 'volume-mute' : 'volume-high'}
@@ -236,6 +434,7 @@ const FeedPostCard = memo(
         onPress,
         isVideoActive,
         isFirstVideo,
+        shouldReduceData,
     }: {
         post: Post;
         onLike: (id: string) => void;
@@ -243,6 +442,7 @@ const FeedPostCard = memo(
         onPress: (id: string) => void;
         isVideoActive: boolean;
         isFirstVideo: boolean;
+        shouldReduceData?: boolean;
     }) => {
         const router = useRouter();
         const lastTapRef = useRef(0);
@@ -251,17 +451,15 @@ const FeedPostCard = memo(
         const handleTap = () => {
             const now = Date.now();
             if (now - lastTapRef.current < 300) {
-                // Double tap - like
                 if (!post.isLiked) {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     onLike(post.id);
                 }
                 setShowHeart(true);
                 setTimeout(() => setShowHeart(false), 1100);
-                lastTapRef.current = 0; // Reset to prevent triple-tap
+                lastTapRef.current = 0;
             } else {
                 lastTapRef.current = now;
-                // Wait to see if it's a double tap before navigating
                 setTimeout(() => {
                     if (lastTapRef.current === now) {
                         onPress(post.id);
@@ -312,10 +510,9 @@ const FeedPostCard = memo(
                     onLongPress={handleLongPress}
                     delayLongPress={500}
                 >
-                    {/* Double-tap heart overlay */}
                     <LikeHeartOverlay show={showHeart} />
 
-                    {/* Post header */}
+                    {/* Post header with avatar glow */}
                     <View style={styles.postHeader}>
                         <TouchableOpacity
                             style={styles.authorRow}
@@ -324,22 +521,31 @@ const FeedPostCard = memo(
                                 router.push(`/profile/${post.author.username}`)
                             }
                         >
-                            {post.author?.avatarUrl ? (
-                                <Image
-                                    source={{ uri: post.author.avatarUrl }}
-                                    style={styles.avatar}
+                            <View style={styles.avatarWrap}>
+                                {post.author?.avatarUrl ? (
+                                    <Image
+                                        source={{ uri: post.author.avatarUrl }}
+                                        style={styles.avatar}
+                                        transition={150}
+                                        cachePolicy="memory-disk"
+                                        recyclingKey={post.author.id}
+                                    />
+                                ) : (
+                                    <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                                        <Text style={styles.avatarInitial}>
+                                            {(
+                                                post.author?.displayName ||
+                                                post.author?.username ||
+                                                '?'
+                                            )[0].toUpperCase()}
+                                        </Text>
+                                    </View>
+                                )}
+                                <AvatarGlow
+                                    type={post.author?.isVerified ? 'verified' : 'none'}
+                                    size={40}
                                 />
-                            ) : (
-                                <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                                    <Text style={styles.avatarInitial}>
-                                        {(
-                                            post.author?.displayName ||
-                                            post.author?.username ||
-                                            '?'
-                                        )[0].toUpperCase()}
-                                    </Text>
-                                </View>
-                            )}
+                            </View>
                             <View style={styles.authorInfo}>
                                 <View style={styles.authorNameRow}>
                                     <Text style={styles.authorName} numberOfLines={1}>
@@ -363,7 +569,7 @@ const FeedPostCard = memo(
                         </TouchableOpacity>
                     </View>
 
-                    {/* Post content with Read More */}
+                    {/* Post content */}
                     {post.content ? <ReadMoreText text={post.content} /> : null}
 
                     {/* Media */}
@@ -374,6 +580,7 @@ const FeedPostCard = memo(
                                     uri={post.mediaUrl}
                                     isActive={isVideoActive}
                                     isFirstVideo={isFirstVideo}
+                                    shouldReduceData={shouldReduceData}
                                 />
                             ) : (
                                 <Image
@@ -387,7 +594,10 @@ const FeedPostCard = memo(
                                               }
                                             : { aspectRatio: 1.5 },
                                     ]}
-                                    resizeMode="cover"
+                                    contentFit="cover"
+                                    transition={200}
+                                    cachePolicy="memory-disk"
+                                    recyclingKey={post.id}
                                 />
                             )}
                         </View>
@@ -398,20 +608,14 @@ const FeedPostCard = memo(
                         <TouchableOpacity
                             style={styles.actionBtn}
                             onPress={() => {
-                                Haptics.impactAsync(
-                                    Haptics.ImpactFeedbackStyle.Light
-                                );
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                 onLike(post.id);
                             }}
                         >
                             <Ionicons
                                 name={post.isLiked ? 'heart' : 'heart-outline'}
                                 size={22}
-                                color={
-                                    post.isLiked
-                                        ? colors.coral[500]
-                                        : colors.text.secondary
-                                }
+                                color={post.isLiked ? colors.coral[500] : colors.text.secondary}
                             />
                             <Text style={styles.actionCount}>
                                 {formatCount(post.likesCount)}
@@ -455,25 +659,45 @@ const FeedPostCard = memo(
                         <TouchableOpacity
                             style={styles.actionBtn}
                             onPress={() => {
-                                Haptics.impactAsync(
-                                    Haptics.ImpactFeedbackStyle.Light
-                                );
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                 onSave(post.id);
                             }}
                         >
                             <Ionicons
-                                name={
-                                    post.isSaved ? 'bookmark' : 'bookmark-outline'
-                                }
+                                name={post.isSaved ? 'bookmark' : 'bookmark-outline'}
                                 size={20}
-                                color={
-                                    post.isSaved
-                                        ? colors.gold[500]
-                                        : colors.text.secondary
-                                }
+                                color={post.isSaved ? colors.gold[500] : colors.text.secondary}
                             />
                         </TouchableOpacity>
                     </View>
+
+                    {/* Author's Note — pinned highlight from the post author */}
+                    {post.authorNote && (
+                        <View style={styles.authorNoteContainer}>
+                            <View style={styles.authorNoteAccent} />
+                            <View style={styles.authorNoteContent}>
+                                <View style={styles.authorNoteHeader}>
+                                    {post.author?.avatarUrl ? (
+                                        <Image
+                                            source={{ uri: post.author.avatarUrl }}
+                                            style={styles.authorNoteAvatar}
+                                            cachePolicy="memory-disk"
+                                        />
+                                    ) : (
+                                        <View style={[styles.authorNoteAvatar, styles.contactAvatarPlaceholder]}>
+                                            <Text style={{ fontSize: 8, color: colors.text.primary, fontWeight: '700' }}>
+                                                {(post.author?.displayName || '?')[0].toUpperCase()}
+                                            </Text>
+                                        </View>
+                                    )}
+                                    <Text style={styles.authorNoteLabel}>Author&apos;s Note</Text>
+                                </View>
+                                <Text style={styles.authorNoteText} numberOfLines={2}>
+                                    {post.authorNote}
+                                </Text>
+                            </View>
+                        </View>
+                    )}
                 </Pressable>
             </Animated.View>
         );
@@ -483,8 +707,10 @@ const FeedPostCard = memo(
         prev.post.isLiked === next.post.isLiked &&
         prev.post.likesCount === next.post.likesCount &&
         prev.post.isSaved === next.post.isSaved &&
+        prev.post.authorNote === next.post.authorNote &&
         prev.isVideoActive === next.isVideoActive &&
-        prev.isFirstVideo === next.isFirstVideo
+        prev.isFirstVideo === next.isFirstVideo &&
+        prev.shouldReduceData === next.shouldReduceData
 );
 
 // ============================================
@@ -495,6 +721,7 @@ export default function FeedScreen() {
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
     const flatListRef = useRef<FlatList>(null);
+    const { shouldReduceData, isOffline } = useNetworkQuality();
 
     const posts = useFeedStore((s) => s.posts);
     const isLoading = useFeedStore((s) => s.isLoading);
@@ -508,6 +735,15 @@ export default function FeedScreen() {
 
     const [feedType, setFeedType] = useState<'foryou' | 'following'>('foryou');
     const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+
+    // Scroll tracking
+    const scrollY = useSharedValue(0);
+
+    const scrollHandler = useAnimatedScrollHandler({
+        onScroll: (event) => {
+            scrollY.value = event.contentOffset.y;
+        },
+    });
 
     // Track which video post is currently most visible
     const onViewableItemsChanged = useRef(
@@ -523,6 +759,28 @@ export default function FeedScreen() {
         viewAreaCoveragePercentThreshold: 50,
     }).current;
 
+    // Set the first video as active when posts load
+    useEffect(() => {
+        if (posts.length > 0 && !activeVideoId) {
+            const firstVideoPost = posts.find((p) => p.mediaType === 'VIDEO');
+            if (firstVideoPost) {
+                setActiveVideoId(firstVideoPost.id);
+            }
+        }
+    }, [posts]);
+
+    // Prefetch upcoming images for instant rendering as user scrolls
+    useEffect(() => {
+        if (posts.length === 0) return;
+        const imageUrls = posts
+            .filter((p) => p.mediaUrl && p.mediaType !== 'VIDEO')
+            .map((p) => p.mediaUrl!)
+            .slice(0, 10); // Prefetch first 10 images
+        if (imageUrls.length > 0) {
+            Image.prefetch(imageUrls);
+        }
+    }, [posts]);
+
     useEffect(() => {
         fetchFeed(true, feedType);
     }, [feedType]);
@@ -531,7 +789,6 @@ export default function FeedScreen() {
         (tab: 'foryou' | 'following') => {
             setFeedType(tab);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            // Scroll to top — the useEffect on feedType will trigger the fetch
             flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
         },
         []
@@ -574,7 +831,6 @@ export default function FeedScreen() {
         }
     }, [isLoading, hasMore, fetchFeed, feedType]);
 
-    // Greeting based on time of day
     const getGreeting = () => {
         const hour = new Date().getHours();
         if (hour < 12) return 'Good morning';
@@ -592,10 +848,21 @@ export default function FeedScreen() {
                     onPress={handlePostPress}
                     isVideoActive={item.mediaType === 'VIDEO' && activeVideoId === item.id}
                     isFirstVideo={item.mediaType === 'VIDEO' && activeVideoId === item.id}
+                    shouldReduceData={shouldReduceData}
                 />
             );
         },
-        [handleLike, handleSave, handlePostPress, activeVideoId]
+        [handleLike, handleSave, handlePostPress, activeVideoId, shouldReduceData]
+    );
+
+    const renderHeader = () => (
+        <View>
+            {/* Active Contacts Strip — who's online */}
+            <ActiveContactsStrip onCreatePress={() => router.push('/(tabs)/create')} />
+
+            {/* Feed Type Tabs */}
+            <FeedTabs activeTab={feedType} onTabChange={handleTabChange} />
+        </View>
     );
 
     const renderEmpty = () => {
@@ -669,21 +936,34 @@ export default function FeedScreen() {
                 </View>
             </View>
 
-            {/* Feed Type Tabs */}
-            <FeedTabs activeTab={feedType} onTabChange={handleTabChange} />
+            {/* Slow connection indicator */}
+            {(isOffline || shouldReduceData) && (
+                <View style={styles.connectionBanner}>
+                    <Ionicons
+                        name={isOffline ? 'cloud-offline-outline' : 'cellular-outline'}
+                        size={14}
+                        color={isOffline ? colors.coral[400] : colors.amber[400]}
+                    />
+                    <Text style={[styles.connectionBannerText, isOffline && { color: colors.coral[400] }]}>
+                        {isOffline ? 'No connection — showing cached content' : 'Slow connection — videos paused'}
+                    </Text>
+                </View>
+            )}
 
-            {/* Feed */}
-            <FlatList
+            {/* Feed with Intent Hub as Header */}
+            <Animated.FlatList
                 ref={flatListRef}
                 data={posts}
                 renderItem={renderPost}
                 keyExtractor={(item) => item.id}
+                ListHeaderComponent={renderHeader}
                 contentContainerStyle={{
                     paddingHorizontal: spacing.md,
-                    paddingTop: spacing.sm,
                     paddingBottom: insets.bottom + 100,
                 }}
                 showsVerticalScrollIndicator={false}
+                onScroll={scrollHandler}
+                scrollEventThrottle={16}
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}
@@ -697,6 +977,12 @@ export default function FeedScreen() {
                 viewabilityConfig={viewabilityConfig}
                 ListEmptyComponent={renderEmpty}
                 ListFooterComponent={renderFooter}
+                // Performance optimizations
+                removeClippedSubviews={Platform.OS === 'android'}
+                maxToRenderPerBatch={5}
+                windowSize={7}
+                initialNumToRender={4}
+                updateCellsBatchingPeriod={50}
             />
         </View>
     );
@@ -704,6 +990,23 @@ export default function FeedScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
+
+    // Connection banner
+    connectionBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 6,
+        backgroundColor: colors.obsidian[800],
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.subtle,
+    },
+    connectionBannerText: {
+        fontSize: 12,
+        color: colors.amber[400],
+        fontFamily: 'Inter-Medium',
+    },
 
     // Header
     header: {
@@ -730,12 +1033,86 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
 
+    // Active Contacts Strip
+    contactsStrip: {
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.subtle,
+    },
+    contactsScroll: {
+        paddingHorizontal: spacing.xs,
+        gap: spacing.sm,
+    },
+    contactBubble: {
+        alignItems: 'center',
+        width: 68,
+    },
+    contactAvatarWrap: {
+        position: 'relative',
+        width: CONTACT_AVATAR_SIZE,
+        height: CONTACT_AVATAR_SIZE,
+        marginBottom: 4,
+    },
+    contactAvatar: {
+        width: CONTACT_AVATAR_SIZE,
+        height: CONTACT_AVATAR_SIZE,
+        borderRadius: CONTACT_AVATAR_SIZE / 2,
+    },
+    contactAvatarPlaceholder: {
+        backgroundColor: colors.obsidian[500],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    contactAvatarInitial: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: colors.text.primary,
+    },
+    contactName: {
+        fontSize: 11,
+        color: colors.text.secondary,
+        fontFamily: 'Inter-Medium',
+        textAlign: 'center',
+    },
+    onlineDot: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        backgroundColor: colors.obsidian[900],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    onlineDotInner: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: colors.emerald[500],
+    },
+    createBadge: {
+        position: 'absolute',
+        bottom: -2,
+        right: -2,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: colors.gold[500],
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: colors.obsidian[900],
+    },
+
     // Feed Tabs
     feedTabs: {
         flexDirection: 'row',
-        paddingHorizontal: spacing.xl,
+        paddingHorizontal: spacing.sm,
         borderBottomWidth: 1,
         borderBottomColor: colors.border.subtle,
+        marginBottom: spacing.sm,
     },
     feedTab: {
         paddingVertical: spacing.md,
@@ -790,6 +1167,7 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.sm,
     },
     authorRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+    avatarWrap: { position: 'relative', width: 40, height: 40 },
     avatar: { width: 40, height: 40, borderRadius: 20 },
     avatarPlaceholder: {
         backgroundColor: colors.obsidian[500],
@@ -866,7 +1244,7 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backgroundColor: colors.surface.overlayMedium,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -887,6 +1265,51 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.sm,
         color: colors.text.secondary,
         marginLeft: spacing.xs,
+    },
+
+    // Author's Note
+    authorNoteContainer: {
+        flexDirection: 'row',
+        marginHorizontal: spacing.md,
+        marginBottom: spacing.md,
+        borderRadius: 10,
+        backgroundColor: colors.surface.glass,
+        overflow: 'hidden',
+    },
+    authorNoteAccent: {
+        width: 3,
+        backgroundColor: colors.gold[500],
+        borderTopLeftRadius: 10,
+        borderBottomLeftRadius: 10,
+    },
+    authorNoteContent: {
+        flex: 1,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs + 2,
+    },
+    authorNoteHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 3,
+    },
+    authorNoteAvatar: {
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+    },
+    authorNoteLabel: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: colors.gold[500],
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+        fontFamily: 'Inter-Bold',
+    },
+    authorNoteText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        lineHeight: 18,
     },
 
     // Empty state

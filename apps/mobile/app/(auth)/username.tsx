@@ -66,7 +66,7 @@ const FloatingOrb = ({ delay, size, startX, startY }: { delay: number; size: num
             ]}
         >
             <LinearGradient
-                colors={['rgba(212, 175, 55, 0.4)', 'rgba(212, 175, 55, 0.1)', 'transparent']}
+                colors={[colors.surface.goldStrong, colors.surface.goldSubtle, 'transparent']}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}
@@ -316,8 +316,8 @@ const styles = StyleSheet.create({
     subtitle: { fontSize: typography.fontSize.base, color: colors.text.secondary, textAlign: 'center', marginTop: spacing.sm, lineHeight: 22, maxWidth: 280 },
     cardContainer: { marginBottom: spacing['2xl'] },
     glassCard: { backgroundColor: colors.surface.glass, borderRadius: 24, borderWidth: 1, borderColor: colors.border.subtle, overflow: 'hidden', position: 'relative' },
-    cardGlow: { position: 'absolute', top: -100, left: '50%', marginLeft: -100, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(212, 175, 55, 0.08)' },
-    shimmer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255, 255, 255, 0.02)', transform: [{ skewX: '-20deg' }], width: 100 },
+    cardGlow: { position: 'absolute', top: -100, left: '50%', marginLeft: -100, width: 200, height: 200, borderRadius: 100, backgroundColor: colors.surface.goldSubtle },
+    shimmer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.surface.glass, transform: [{ skewX: '-20deg' }], width: 100 },
     cardContent: { padding: spacing.xl },
     previewContainer: { flexDirection: 'row', alignItems: 'center', paddingBottom: spacing.xl, borderBottomWidth: 1, borderBottomColor: colors.border.subtle, marginBottom: spacing.xl },
     avatarPlaceholder: { width: 64, height: 64, borderRadius: 32, overflow: 'hidden' },
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     previewMeta: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 4 },
     inputSection: {},
     inputLabel: { fontSize: typography.fontSize.sm, fontWeight: '500', color: colors.text.secondary, marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 1 },
-    inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: 16, borderWidth: 1, borderColor: colors.border.subtle, paddingHorizontal: spacing.lg },
+    inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface.glass, borderRadius: 16, borderWidth: 1, borderColor: colors.border.subtle, paddingHorizontal: spacing.lg },
     inputPrefix: { fontSize: 18, color: colors.gold[500], fontWeight: '600', marginRight: spacing.xs },
     inputContainer: { flex: 1 },
     inputOverride: { marginBottom: 0 },

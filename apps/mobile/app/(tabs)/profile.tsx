@@ -4,12 +4,13 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    Image,
     Dimensions,
     ActivityIndicator,
     Alert,
     FlatList,
+    Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -35,7 +36,7 @@ const PostGridItem = memo(({ post }: { post: Post }) => {
     return (
         <TouchableOpacity style={styles.postItem} activeOpacity={0.9} onPress={() => router.push(`/post/${post.id}`)}>
             {post.mediaUrl ? (
-                <Image source={{ uri: post.mediaUrl }} style={styles.postImage} />
+                <Image source={{ uri: post.mediaUrl }} style={styles.postImage} transition={150} cachePolicy="memory-disk" recyclingKey={post.id} />
             ) : (
                 <View style={[styles.postImage, styles.textPostBg]}>
                     <Text style={styles.textPostContent} numberOfLines={3}>{post.content}</Text>
@@ -127,7 +128,7 @@ export default function ProfileScreen() {
             {/* Cover photo area */}
             <View style={styles.coverArea}>
                 {user.coverUrl ? (
-                    <Image source={{ uri: user.coverUrl }} style={styles.coverImage} />
+                    <Image source={{ uri: user.coverUrl }} style={styles.coverImage} transition={300} cachePolicy="memory-disk" contentFit="cover" />
                 ) : (
                     <LinearGradient
                         colors={[colors.obsidian[700], colors.obsidian[800]]}
@@ -147,7 +148,7 @@ export default function ProfileScreen() {
                         <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.avatarBorder}>
                             <View style={styles.avatarInner}>
                                 {user.avatarUrl ? (
-                                    <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+                                    <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} transition={200} cachePolicy="memory-disk" />
                                 ) : (
                                     <View style={[styles.avatarImage, styles.avatarPlaceholder]}>
                                         <Text style={styles.avatarInitial}>
@@ -271,6 +272,10 @@ export default function ProfileScreen() {
                 showsVerticalScrollIndicator={false}
                 onRefresh={handleRefresh}
                 refreshing={isRefreshing}
+                removeClippedSubviews={Platform.OS === 'android'}
+                maxToRenderPerBatch={12}
+                windowSize={9}
+                initialNumToRender={9}
             />
         </View>
     );
@@ -287,7 +292,7 @@ const styles = StyleSheet.create({
     },
     headerButton: {
         width: 40, height: 40, borderRadius: 20,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.surface.overlayLight, alignItems: 'center', justifyContent: 'center',
     },
 
     // Cover
@@ -316,7 +321,7 @@ const styles = StyleSheet.create({
     // Privacy badge
     privacyBadge: {
         flexDirection: 'row', alignItems: 'center', alignSelf: 'center',
-        backgroundColor: 'rgba(212, 175, 55, 0.1)', paddingHorizontal: spacing.md,
+        backgroundColor: colors.surface.goldSubtle, paddingHorizontal: spacing.md,
         paddingVertical: spacing.xs, borderRadius: 20, marginBottom: spacing.lg, gap: spacing.xs,
     },
     privacyText: { fontSize: typography.fontSize.xs, color: colors.gold[400], fontWeight: '600' },
@@ -363,7 +368,7 @@ const styles = StyleSheet.create({
     textPostContent: { fontSize: typography.fontSize.xs, color: colors.text.primary, textAlign: 'center' },
     videoIndicator: {
         position: 'absolute', top: spacing.sm, right: spacing.sm,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)', width: 24, height: 24, borderRadius: 12,
+        backgroundColor: colors.surface.overlayMedium, width: 24, height: 24, borderRadius: 12,
         alignItems: 'center', justifyContent: 'center',
     },
 

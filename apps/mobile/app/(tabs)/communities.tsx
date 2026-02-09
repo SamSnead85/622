@@ -4,12 +4,13 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    Image,
     ActivityIndicator,
     FlatList,
     Alert,
     TextInput,
+    Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -40,13 +41,13 @@ const CommunityCard = memo(({ community }: { community: Community }) => {
             >
                 {community.coverUrl && (
                     <View style={styles.cardCover}>
-                        <Image source={{ uri: community.coverUrl }} style={styles.coverImage} />
-                        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.coverGradient} />
+                        <Image source={{ uri: community.coverUrl }} style={styles.coverImage} transition={200} cachePolicy="memory-disk" contentFit="cover" />
+                        <LinearGradient colors={['transparent', colors.surface.overlayHeavy]} style={styles.coverGradient} />
                     </View>
                 )}
                 <View style={styles.cardContent}>
                     {community.avatarUrl && (
-                        <Image source={{ uri: community.avatarUrl }} style={styles.cardAvatar} />
+                        <Image source={{ uri: community.avatarUrl }} style={styles.cardAvatar} transition={150} cachePolicy="memory-disk" />
                     )}
                     <Text style={styles.cardName} numberOfLines={1}>{community.name}</Text>
                     <Text style={styles.cardDescription} numberOfLines={2}>{community.description}</Text>
@@ -223,7 +224,7 @@ const styles = StyleSheet.create({
     statLabel: { fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: 2 },
     statDivider: { width: 1, height: 24, backgroundColor: colors.border.subtle },
     roleBadge: {
-        marginTop: spacing.md, backgroundColor: 'rgba(212, 175, 55, 0.15)',
+        marginTop: spacing.md, backgroundColor: colors.surface.goldMedium,
         paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: 8,
         flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
     },

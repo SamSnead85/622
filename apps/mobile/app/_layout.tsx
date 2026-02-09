@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Font from 'expo-font';
+import * as Sentry from '@sentry/react-native';
 import {
     Inter_400Regular,
     Inter_500Medium,
@@ -14,10 +15,26 @@ import { StyleSheet } from 'react-native';
 import { useAuthStore } from '../stores';
 import { colors } from '@zerog/ui';
 
+// ============================================
+// Sentry Error Tracking
+// Set EXPO_PUBLIC_SENTRY_DSN in .env when ready for production
+// ============================================
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN || '';
+
+if (SENTRY_DSN) {
+    Sentry.init({
+        dsn: SENTRY_DSN,
+        tracesSampleRate: 0.2, // 20% of transactions for performance monitoring
+        enableAutoSessionTracking: true,
+        enableNativeFramesTracking: true,
+        debug: __DEV__,
+    });
+}
+
 // Prevent splash screen from auto-hiding until we check auth + load fonts
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayout() {
     const initialize = useAuthStore((s) => s.initialize);
     const isInitialized = useAuthStore((s) => s.isInitialized);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -76,6 +93,9 @@ export default function RootLayout() {
         </GestureHandlerRootView>
     );
 }
+
+// Wrap with Sentry error boundary for crash reporting
+export default SENTRY_DSN ? Sentry.wrap(RootLayout) : RootLayout;
 
 const styles = StyleSheet.create({
     container: {

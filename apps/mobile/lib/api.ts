@@ -9,6 +9,18 @@ import * as SecureStore from 'expo-secure-store';
 const TOKEN_KEY = '0g_token';
 const REQUEST_TIMEOUT_MS = 15_000;
 
+// ============================================
+// Request Deduplication
+// Prevents identical GET requests from firing concurrently
+// ============================================
+const inflightRequests = new Map<string, Promise<any>>();
+
+function getDedupeKey(url: string, method: string): string | null {
+    // Only dedupe GET requests
+    if (method && method.toUpperCase() !== 'GET') return null;
+    return url;
+}
+
 // API URL configuration
 // Set EXPO_PUBLIC_API_URL in your environment for production
 // For local dev on simulator: http://localhost:5180
@@ -128,6 +140,32 @@ async function attemptTokenRefresh(): Promise<string | null> {
 }
 
 // ============================================
+// Exponential Backoff Retry for Network Errors
+// ============================================
+
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [1000, 2000, 4000]; // 1s, 2s, 4s
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableError(error: unknown): boolean {
+    // Only retry on network errors, not on API errors (4xx/5xx)
+    if (error instanceof TypeError) return true;
+    if (error instanceof Error) {
+        const msg = error.message.toLowerCase();
+        return (
+            msg.includes('network request failed') ||
+            msg.includes('no internet') ||
+            msg.includes('request timed out') ||
+            msg.includes('no internet connection')
+        );
+    }
+    return false;
+}
+
+// ============================================
 // API Fetch Helper
 // ============================================
 
@@ -148,47 +186,86 @@ export const apiFetch = async <T = any>(
     }
 
     const url = endpoint.startsWith('http') ? endpoint : `${API_URL}${endpoint}`;
+    const method = options.method || 'GET';
 
-    const res = await fetchWithTimeout(url, {
-        ...options,
-        headers,
-    });
+    // Deduplicate concurrent identical GET requests
+    const dedupeKey = getDedupeKey(url, method);
+    if (dedupeKey && inflightRequests.has(dedupeKey) && !_isRetry) {
+        return inflightRequests.get(dedupeKey) as Promise<T>;
+    }
 
-    const contentType = res.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-        const data = await res.json();
+    const requestPromise = (async () => {
+    let lastError: unknown;
 
-        if (!res.ok) {
-            // 401 — attempt token refresh once, then retry
-            if (res.status === 401 && !_isRetry) {
-                const newToken = await attemptTokenRefresh();
-                if (newToken) {
-                    return apiFetch<T>(endpoint, options, true);
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const res = await fetchWithTimeout(url, {
+                ...options,
+                headers,
+            });
+
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const data = await res.json();
+
+                if (!res.ok) {
+                    // 401 — attempt token refresh once, then retry
+                    if (res.status === 401 && !_isRetry) {
+                        const newToken = await attemptTokenRefresh();
+                        if (newToken) {
+                            return apiFetch<T>(endpoint, options, true);
+                        }
+                        // Refresh failed — clear token (caller/store should redirect to login)
+                        await removeToken();
+                    }
+
+                    const err: any = new Error(data?.error || `API error: ${res.status}`);
+                    err.status = res.status;
+                    err.data = data;
+                    throw err;
                 }
-                // Refresh failed — clear token (caller/store should redirect to login)
-                await removeToken();
+                return data as T;
             }
 
-            const err: any = new Error(data?.error || `API error: ${res.status}`);
-            err.status = res.status;
-            err.data = data;
-            throw err;
-        }
-        return data as T;
-    }
-
-    if (!res.ok) {
-        if (res.status === 401 && !_isRetry) {
-            const newToken = await attemptTokenRefresh();
-            if (newToken) {
-                return apiFetch<T>(endpoint, options, true);
+            if (!res.ok) {
+                if (res.status === 401 && !_isRetry) {
+                    const newToken = await attemptTokenRefresh();
+                    if (newToken) {
+                        return apiFetch<T>(endpoint, options, true);
+                    }
+                    await removeToken();
+                }
+                throw new Error(`API error: ${res.status}`);
             }
-            await removeToken();
+
+            return res as unknown as T;
+        } catch (error) {
+            lastError = error;
+
+            // Only retry on network errors, not on API errors
+            if (isRetryableError(error) && attempt < MAX_RETRIES) {
+                await sleep(RETRY_DELAYS[attempt]!);
+                continue;
+            }
+
+            // Not retryable or max retries reached — throw
+            throw error;
         }
-        throw new Error(`API error: ${res.status}`);
     }
 
-    return res as unknown as T;
+    // Should not reach here, but TypeScript needs it
+    throw lastError;
+    })();
+
+    // Store inflight promise for deduplication
+    if (dedupeKey) {
+        inflightRequests.set(dedupeKey, requestPromise);
+        requestPromise.finally(() => {
+            inflightRequests.delete(dedupeKey);
+        });
+    }
+
+    return requestPromise;
 };
 
 // ============================================
