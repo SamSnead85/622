@@ -29,44 +29,44 @@ interface Slide {
 
 const SLIDES: Slide[] = [
     {
-        icon: 'layers-outline',
-        secondaryIcon: 'globe-outline',
+        icon: 'lock-closed',
+        secondaryIcon: 'shield-checkmark-outline',
         iconColor: colors.gold[500],
         accentColor: colors.gold[500],
-        tag: 'NOT SOCIAL MEDIA',
-        title: 'A Community\nOperating System',
+        tag: 'THEY SELL YOUR DATA. WE DON\'T.',
+        title: 'Your Privacy\nIs Not for Sale',
         subtitle:
-            'Build, organize, connect, and broadcast with purpose. 0G is infrastructure for human coordination — not a feed to scroll.',
-    },
-    {
-        icon: 'shield-checkmark',
-        secondaryIcon: 'lock-closed-outline',
-        iconColor: colors.emerald[500],
-        accentColor: colors.emerald[500],
-        tag: 'PRIVACY FIRST',
-        title: 'Signal,\nNot Noise',
-        subtitle:
-            'Your data is encrypted. No ads. No tracking. No algorithms deciding what you see. You set your intent — we show only what matters.',
-    },
-    {
-        icon: 'earth-outline',
-        secondaryIcon: 'rocket-outline',
-        iconColor: colors.azure[500],
-        accentColor: colors.azure[500],
-        tag: 'CROSS-BORDER',
-        title: 'Build Across\nBorders',
-        subtitle:
-            'Hire globally. Organize campaigns. Broadcast truth. Connect diaspora communities. One platform for the entire world.',
+            'No ads. No tracking. No one reading your messages. Your conversations are yours — encrypted, private, and never sold to advertisers.',
     },
     {
         icon: 'people',
-        secondaryIcon: 'heart-outline',
+        secondaryIcon: 'eye-off-outline',
+        iconColor: colors.emerald[500],
+        accentColor: colors.emerald[500],
+        tag: 'INVISIBLE UNTIL YOU CHOOSE',
+        title: 'Your Circle,\nYour Rules',
+        subtitle:
+            'Stay in your family group and never be seen by anyone else. Or join the larger community when you\'re ready. You control who sees you.',
+    },
+    {
+        icon: 'compass',
+        secondaryIcon: 'videocam-outline',
+        iconColor: colors.azure[500],
+        accentColor: colors.azure[500],
+        tag: 'MORE THAN MESSAGING',
+        title: 'Everything\nYou Need',
+        subtitle:
+            'Group chat, video calls, live streaming, cultural tools, community boards — all in one place. No juggling five different apps.',
+    },
+    {
+        icon: 'heart',
+        secondaryIcon: 'home-outline',
         iconColor: colors.coral[500],
         accentColor: colors.coral[500],
-        tag: 'YOUR COMMUNITY',
+        tag: 'BUILT FOR YOU',
         title: 'Welcome\nHome',
         subtitle:
-            'Private groups for family. Public spaces for movements. You choose your level of visibility. Your world, your rules.',
+            'Built by people who know what it\'s like to be surveilled, silenced, and sold out. This is the platform we needed. Now it\'s yours.',
     },
 ];
 
@@ -265,7 +265,7 @@ export default function WelcomeScreen() {
             {/* Footer */}
             <Animated.View entering={FadeIn.delay(1000).duration(400)}>
                 <Text style={styles.manifesto}>
-                    Success = goals accomplished, not time wasted.
+                    No ads. No algorithms. No surveillance. Just you and your people.
                 </Text>
                 <Text style={styles.terms}>
                     By continuing, you agree to our Terms of Service and Privacy Policy

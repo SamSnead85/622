@@ -26,7 +26,7 @@ function AmbientBackground() {
             <motion.div
                 className="absolute -top-1/4 -left-1/4 w-[800px] h-[800px] rounded-full"
                 style={{
-                    background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+                    background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%)',
                 }}
                 animate={{
                     x: [0, 100, 0],
@@ -37,7 +37,7 @@ function AmbientBackground() {
             <motion.div
                 className="absolute -bottom-1/4 -right-1/4 w-[900px] h-[900px] rounded-full"
                 style={{
-                    background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)',
+                    background: 'radial-gradient(circle, rgba(184,148,45,0.10) 0%, transparent 70%)',
                 }}
                 animate={{
                     x: [0, -80, 0],
@@ -48,7 +48,7 @@ function AmbientBackground() {
             <motion.div
                 className="absolute top-1/3 right-1/4 w-[600px] h-[600px] rounded-full"
                 style={{
-                    background: 'radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%)',
+                    background: 'radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 70%)',
                 }}
                 animate={{
                     x: [0, 60, 0],
@@ -139,10 +139,10 @@ function Navigation() {
                         Sign In
                     </Link>
                     <Link
-                        href="/early-access"
+                        href="/signup"
                         className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-all hover:scale-[1.02]"
                     >
-                        Request Early Access
+                        Get Started Free
                     </Link>
                 </div>
             </div>
@@ -242,7 +242,7 @@ function HeroSection() {
                         <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                             <span className="text-white/60 text-xs tracking-widest uppercase font-light">
-                                The Global Community Operating System
+                                Privacy-first communication for families &amp; communities
                             </span>
                         </span>
                     </motion.div>
@@ -254,10 +254,10 @@ function HeroSection() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1, delay: 0.7 }}
                     >
-                        Not social media.
+                        They sell your data.
                         <br />
-                        <span className="bg-gradient-to-r from-white via-white/80 to-white/60 bg-clip-text text-transparent">
-                            A community OS.
+                        <span className="bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#D4AF37] bg-clip-text text-transparent">
+                            We protect it.
                         </span>
                     </motion.h1>
 
@@ -268,8 +268,9 @@ function HeroSection() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 1 }}
                     >
-                        Build across borders. Organize movements. Connect with purpose. Broadcast truth.
-                        0G is the operating system for global communities who refuse to scroll their lives away.
+                        Private groups for your family. Encrypted messaging that no one can read.
+                        Video calls, live streaming, and community tools — all without ads, tracking, or algorithms.
+                        The platform you deserve.
                     </motion.p>
 
                     {/* CTAs */}
@@ -280,10 +281,10 @@ function HeroSection() {
                         transition={{ duration: 0.8, delay: 1.2 }}
                     >
                         <Link
-                            href="/early-access"
+                            href="/signup"
                             className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-white/10"
                         >
-                            Request Early Access
+                            Get Started Free
                             <svg
                                 className="w-4 h-4 transition-transform group-hover:translate-x-1"
                                 fill="none"
@@ -334,10 +335,10 @@ function StatsSection() {
     const isInView = useInView(ref, { once: true, margin: '-100px' });
 
     const stats = [
-        { value: '4', label: 'Core Intents' },
-        { value: 'Global', label: 'Cross-Border' },
-        { value: '0', label: 'Ads, Forever' },
-        { value: '100%', label: 'Signal, No Noise' },
+        { value: '0', label: 'Ads, Ever' },
+        { value: '0', label: 'Data Sold' },
+        { value: '100%', label: 'Encrypted' },
+        { value: 'You', label: 'Own Your Data' },
     ];
 
     return (
@@ -363,6 +364,109 @@ function StatsSection() {
 }
 
 // ============================================
+// WHY SWITCH SECTION
+// Competitive comparison — emotional, concrete
+// ============================================
+function WhySwitchSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+    const comparisons = [
+        {
+            platform: 'WhatsApp',
+            problem: 'Owned by Meta. Your metadata is harvested. Group chats aren\'t truly private. No community features beyond basic messaging.',
+            solution: 'Encrypted messaging + private groups + video calls + community tools. Same simplicity, none of the surveillance.',
+            color: 'emerald',
+        },
+        {
+            platform: 'Instagram',
+            problem: 'Designed to make you scroll forever. Algorithmic manipulation. Ads every 3 posts. Sells your attention to the highest bidder.',
+            solution: 'Share photos, videos, and moments with your community. No ads, no manipulation, no algorithm deciding what you see.',
+            color: 'amber',
+        },
+        {
+            platform: 'Telegram',
+            problem: 'Great for broadcasting, but limited privacy controls. No contained groups. Everyone is visible to everyone.',
+            solution: 'Full broadcasting power + group-only mode where members are completely invisible to the wider platform.',
+            color: 'rose',
+        },
+    ];
+
+    return (
+        <section ref={ref} className="relative py-24 md:py-32 border-y border-white/5">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                <motion.div
+                    className="text-center mb-16"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.8 }}
+                >
+                    <p className="text-[#D4AF37]/60 text-xs tracking-[0.4em] uppercase mb-4 font-light">Why People Are Switching</p>
+                    <h2 className="text-3xl md:text-5xl font-light text-white max-w-3xl mx-auto">
+                        You already know something is{' '}
+                        <span className="text-white/40">wrong</span>.
+                    </h2>
+                    <p className="mt-4 text-white/40 font-light max-w-xl mx-auto">
+                        Every app you use is built to extract value from you. 0G is built to give it back.
+                    </p>
+                </motion.div>
+
+                <div className="grid md:grid-cols-3 gap-6">
+                    {comparisons.map((item, i) => (
+                        <motion.div
+                            key={item.platform}
+                            className="rounded-2xl overflow-hidden border border-white/[0.06]"
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={isInView ? { opacity: 1, y: 0 } : {}}
+                            transition={{ duration: 0.6, delay: i * 0.12 }}
+                        >
+                            {/* The problem */}
+                            <div className="p-6 bg-red-500/[0.03] border-b border-white/5">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="text-red-400/60 text-xs font-medium uppercase tracking-wider">{item.platform}</span>
+                                </div>
+                                <p className="text-white/40 text-sm leading-relaxed">{item.problem}</p>
+                            </div>
+                            {/* The solution */}
+                            <div className="p-6 bg-emerald-500/[0.02]">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <svg className="w-4 h-4 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span className="text-[#D4AF37] text-xs font-medium uppercase tracking-wider">0G Instead</span>
+                                </div>
+                                <p className="text-white/60 text-sm leading-relaxed">{item.solution}</p>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+
+                {/* Summary strip */}
+                <motion.div
+                    className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.6, delay: 0.5 }}
+                >
+                    {[
+                        { label: 'Your data', them: 'Sold to advertisers', us: 'Never leaves your control' },
+                        { label: 'Your feed', them: 'Algorithm-controlled', us: 'You choose what you see' },
+                        { label: 'Your identity', them: 'Public by default', us: 'Private by default' },
+                        { label: 'Your time', them: 'Engineered to waste it', us: 'Engineered to respect it' },
+                    ].map((item) => (
+                        <div key={item.label} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center">
+                            <p className="text-white font-medium text-sm mb-2">{item.label}</p>
+                            <p className="text-red-400/50 text-[11px] line-through mb-1">{item.them}</p>
+                            <p className="text-[#D4AF37] text-xs font-medium">{item.us}</p>
+                        </div>
+                    ))}
+                </motion.div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
 // VISION SECTION
 // Editorial typography
 // ============================================
@@ -382,32 +486,32 @@ function VisionSection() {
                     <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-8 font-light">Our Belief</p>
 
                     <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-white leading-tight">
-                        You set your{' '}
-                        <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">intent</span>.
+                        Everything WhatsApp,{' '}
+                        <span className="bg-gradient-to-r from-[#D4AF37] to-[#E5C158] bg-clip-text text-transparent">Instagram</span>,
                         <br className="hidden md:block" />
-                        We show only{' '}
-                        <span className="bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent">what matters</span>.
+                        and TikTok{' '}
+                        <span className="bg-gradient-to-r from-white/60 to-white/30 bg-clip-text text-transparent">should have been</span>.
                     </h2>
 
                     <div className="mt-20 pt-16 border-t border-white/5 grid md:grid-cols-3 gap-12 md:gap-16 text-left">
                         {[
                             {
-                                Icon: GlobeIcon,
-                                color: 'from-violet-400 to-cyan-400',
-                                title: 'Organize & Build',
-                                description: 'Coordinate campaigns across 20 cities. Hire developers from Pakistan. Fund creators from Palestine. Build your business across borders.',
+                                Icon: ShieldIcon,
+                                color: 'from-[#D4AF37] to-[#B8942D]',
+                                title: 'Private by Default',
+                                description: 'Your family group is invisible to everyone else. No public profile required. No strangers can find you. Stay private, or join the community when you\'re ready.',
                             },
                             {
-                                Icon: VoteIcon,
+                                Icon: GlobeIcon,
                                 color: 'from-emerald-400 to-teal-400',
-                                title: 'Connect & Broadcast',
-                                description: 'Purpose-driven messaging. Live streaming with sub-1s latency. Regional broadcast hubs. No noise — only signal from people you choose.',
+                                title: 'All-in-One Platform',
+                                description: 'Group chat, video calls, live streaming, community boards, cultural tools, and encrypted messaging. Stop juggling five apps for what one should do.',
                             },
                             {
                                 Icon: HeartIcon,
                                 color: 'from-rose-400 to-pink-400',
-                                title: 'Goals, Not Scrolling',
-                                description: 'Set your intent. Accomplish it. Leave satisfied. Our success metric is goals achieved, not time wasted. The opposite of social media.',
+                                title: 'Respects Your Time',
+                                description: 'No infinite scroll designed to trap you. No algorithm pushing outrage for engagement. Just meaningful content from people you actually know and care about.',
                             },
                         ].map((item, i) => (
                             <motion.div
@@ -504,8 +608,8 @@ function StoryTellersSection() {
                             Vote on what stories matter. Collectively sponsor journalists and creators to go
                             share truth with the world. The community is the curator.
                         </p>
-                        <div className="mt-6 flex items-center gap-2 text-violet-400 text-sm">
-                            <span className="w-2 h-2 rounded-full bg-violet-400" />
+                        <div className="mt-6 flex items-center gap-2 text-[#D4AF37] text-sm">
+                            <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
                             Collective action
                         </div>
                     </motion.div>
@@ -1342,8 +1446,9 @@ function ManifestoSection() {
                     </h2>
                     <p className="text-lg md:text-xl text-white/40 font-light leading-relaxed">
                         It was supposed to connect us. Instead, it surveils us. It was supposed to empower communities.
-                        Instead, it extracts from them. 0G exists to finish what social media started —
-                        a platform where the people who use it are the people who own it.
+                        Instead, it extracts from them. 0G exists because your family&apos;s conversations shouldn&apos;t be
+                        a product, your attention shouldn&apos;t be auctioned, and your community shouldn&apos;t need permission
+                        to exist privately.
                     </p>
                 </motion.div>
 
@@ -1427,30 +1532,30 @@ function CTASection() {
                     <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-8 font-light">Join Us</p>
 
                     <h2 className="text-4xl md:text-6xl lg:text-7xl font-light text-white leading-tight mb-8">
-                        Build something.
+                        Your family deserves
                         <br />
-                        <span className="bg-gradient-to-r from-white via-white/80 to-white/60 bg-clip-text text-transparent">
-                            Don&apos;t just scroll.
+                        <span className="bg-gradient-to-r from-[#D4AF37] via-[#E5C158] to-[#D4AF37] bg-clip-text text-transparent">
+                            better than this.
                         </span>
                     </h2>
 
                     <p className="text-lg text-white/40 font-light max-w-2xl mx-auto mb-12">
-                        If you&apos;re here to scroll, you&apos;re in the wrong place. If you&apos;re here to organize,
-                        build, connect, or broadcast truth — welcome home. Success = goals accomplished, not time wasted.
+                        WhatsApp reads your metadata. Instagram manipulates your attention. TikTok bans the voices that matter most.
+                        Your community deserves a platform that works for them, not against them.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <Link
-                            href="/early-access"
+                            href="/signup"
                             className="inline-flex items-center gap-3 px-10 py-5 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-white/10"
                         >
-                            Request Early Access
+                            Get Started Free
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                             </svg>
                         </Link>
                         <span className="text-white/30 text-sm">
-                            Limited spots available
+                            Free forever. No credit card needed.
                         </span>
                     </div>
                 </motion.div>
@@ -1489,8 +1594,9 @@ function Footer() {
                     <div className="md:col-span-2">
                         <Wordmark />
                         <p className="mt-6 text-white/30 text-sm font-light max-w-sm leading-relaxed">
-                            The Global Community Operating System. Build, organize, connect, and broadcast
-                            with purpose. No ads. No tracking. No noise. Just signal.
+                            Privacy-first communication for families and communities.
+                            Encrypted messaging, video calls, live streaming, and community tools.
+                            No ads. No tracking. Your data is yours.
                         </p>
                         {/* Social links placeholder */}
                         <div className="flex items-center gap-4 mt-6">
@@ -1596,6 +1702,7 @@ export default function HomePage() {
             <AmbientBackground />
             <Navigation />
             <HeroSection />
+            <WhySwitchSection />
             <VisionSection />
             <StoryTellersSection />
             <FullCapabilitiesSection />
