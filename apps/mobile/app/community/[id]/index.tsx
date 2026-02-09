@@ -6,7 +6,6 @@ import {
     ScrollView,
     TouchableOpacity,
     Image,
-    ActivityIndicator,
     RefreshControl,
     Alert,
 } from 'react-native';
@@ -19,6 +18,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { Post, mapApiPost, useCommunitiesStore } from '../../../stores';
 import { apiFetch, API } from '../../../lib/api';
+import { ScreenHeader, LoadingView } from '../../../components';
 
 const formatCount = (num: number) => {
     if (!num) return '0';
@@ -101,9 +101,9 @@ export default function CommunityDetailScreen() {
 
     if (isLoading) {
         return (
-            <View style={[styles.container, styles.centered]}>
+            <View style={styles.container}>
                 <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
-                <ActivityIndicator size="large" color={colors.gold[500]} />
+                <LoadingView />
             </View>
         );
     }
@@ -125,13 +125,7 @@ export default function CommunityDetailScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle} numberOfLines={1}>{community.name}</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title={community.name} />
 
             <ScrollView
                 contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
@@ -268,14 +262,6 @@ const styles = StyleSheet.create({
     errorText: { fontSize: typography.fontSize.lg, color: colors.text.muted, marginTop: spacing.md, marginBottom: spacing.md },
     backLink: { paddingVertical: spacing.sm },
     backLinkText: { fontSize: typography.fontSize.base, color: colors.gold[500] },
-
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle, zIndex: 10,
-    },
-    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface.glassHover, alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { fontSize: 18, fontWeight: '600', color: colors.text.primary, flex: 1, textAlign: 'center', fontFamily: 'Inter-SemiBold' },
 
     coverContainer: { height: 180, position: 'relative' },
     coverImage: { width: '100%', height: '100%' },

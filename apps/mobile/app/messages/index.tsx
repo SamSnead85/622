@@ -6,9 +6,7 @@ import {
     FlatList,
     TouchableOpacity,
     TextInput,
-    ActivityIndicator,
     RefreshControl,
-    Image,
     ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -20,6 +18,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { RetryView } from '../../components/RetryView';
+import { ScreenHeader, LoadingView, Avatar, EmptyState } from '../../components';
 
 interface Conversation {
     id: string;
@@ -72,18 +71,12 @@ const ConversationItem = memo(({
                 onPress();
             }}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={`Conversation with ${p.displayName || p.username}${conversation.lastMessage ? `, last message: ${conversation.lastMessage.content}` : ', no messages yet'}${conversation.unreadCount > 0 ? `, ${conversation.unreadCount} unread` : ''}`}
         >
             {/* Avatar */}
             <View style={styles.avatarContainer}>
-                {p.avatarUrl ? (
-                    <Image source={{ uri: p.avatarUrl }} style={styles.avatar} />
-                ) : (
-                    <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                        <Text style={styles.avatarInitial}>
-                            {(p.displayName || p.username || '?')[0].toUpperCase()}
-                        </Text>
-                    </View>
-                )}
+                <Avatar uri={p.avatarUrl} name={p.displayName || p.username} customSize={52} />
                 {p.isOnline && <View style={styles.onlineIndicator} />}
             </View>
 
@@ -151,16 +144,11 @@ function QuickContactsStrip({ contacts, onContactPress }: { contacts: QuickConta
                             onContactPress(c);
                         }}
                         activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Message ${c.displayName || c.username}`}
+                        accessibilityHint="Opens conversation"
                     >
-                        {c.avatarUrl ? (
-                            <Image source={{ uri: c.avatarUrl }} style={styles.quickContactAvatar} />
-                        ) : (
-                            <View style={[styles.quickContactAvatar, styles.quickContactAvatarPlaceholder]}>
-                                <Text style={styles.quickContactInitial}>
-                                    {(c.displayName || c.username || '?')[0].toUpperCase()}
-                                </Text>
-                            </View>
-                        )}
+                        <Avatar uri={c.avatarUrl} name={c.displayName || c.username} customSize={44} style={{ marginBottom: 4 }} />
                         <Text style={styles.quickContactName} numberOfLines={1}>
                             {(c.displayName || c.username).split(' ')[0]?.slice(0, 8)}
                         </Text>
@@ -240,30 +228,31 @@ export default function MessagesScreen() {
             />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            router.back();
-                        }}
-                    >
-                        <Ionicons name="chevron-back" size={22} color={colors.text.primary} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Messages</Text>
+            <ScreenHeader
+                title="Messages"
+                onBack={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.back();
+                }}
+                rightElement={
                     <TouchableOpacity
                         style={styles.composeButton}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             router.push('/(tabs)/search');
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Compose new message"
+                        accessibilityHint="Opens search to find someone to message"
                     >
                         <Ionicons name="create-outline" size={20} color={colors.obsidian[900]} />
                     </TouchableOpacity>
-                </View>
+                }
+                noBorder
+            />
 
-                {/* Search */}
+            {/* Search */}
+            <View style={styles.searchBarWrapper}>
                 <View style={styles.searchContainer}>
                     <Ionicons name="search-outline" size={16} color={colors.text.muted} />
                     <TextInput
@@ -272,6 +261,7 @@ export default function MessagesScreen() {
                         placeholderTextColor={colors.text.muted}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
+                        accessibilityLabel="Search messages"
                     />
                 </View>
             </View>
@@ -293,9 +283,7 @@ export default function MessagesScreen() {
 
             {/* Conversations list */}
             {isLoading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                </View>
+                <LoadingView />
             ) : loadError && conversations.length === 0 ? (
                 <RetryView
                     message="Couldn't load messages. Check your connection."
@@ -325,13 +313,11 @@ export default function MessagesScreen() {
                         />
                     }
                     ListEmptyComponent={
-                        <View style={styles.emptyState}>
-                            <Ionicons name="chatbubbles-outline" size={48} color={colors.text.muted} />
-                            <Text style={styles.emptyTitle}>No messages yet</Text>
-                            <Text style={styles.emptySubtitle}>
-                                Start a conversation with someone in your community
-                            </Text>
-                        </View>
+                        <EmptyState
+                            icon="chatbubbles-outline"
+                            title="No messages yet"
+                            message="Start a conversation with someone in your community"
+                        />
                     }
                 />
             )}
@@ -341,31 +327,16 @@ export default function MessagesScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        paddingHorizontal: spacing.xl,
-        paddingBottom: spacing.lg,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border.subtle,
-    },
-    headerTop: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: spacing.lg,
-    },
-    backButton: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    // backIcon removed — using Ionicons now
-    headerTitle: {
-        fontSize: 22, fontWeight: '700', color: colors.text.primary, letterSpacing: -0.5,
-    },
     composeButton: {
         width: 40, height: 40, borderRadius: 20,
         backgroundColor: colors.gold[500],
         alignItems: 'center', justifyContent: 'center',
+    },
+    searchBarWrapper: {
+        paddingHorizontal: spacing.xl,
+        paddingBottom: spacing.lg,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.subtle,
     },
     searchContainer: {
         flexDirection: 'row', alignItems: 'center',
@@ -398,30 +369,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: 60,
     },
-    quickContactAvatar: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        marginBottom: 4,
-    },
-    quickContactAvatarPlaceholder: {
-        backgroundColor: colors.obsidian[500],
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    quickContactInitial: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: colors.text.primary,
-    },
     quickContactName: {
         fontSize: 10,
         color: colors.text.secondary,
         textAlign: 'center',
     },
-
-    // Loading
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
     // List
     listContent: { paddingTop: spacing.md },
@@ -431,26 +383,20 @@ const styles = StyleSheet.create({
     },
     unreadItem: { backgroundColor: colors.surface.glass },
     avatarContainer: { position: 'relative' },
-    avatar: { width: 52, height: 52, borderRadius: 26 },
-    avatarPlaceholder: {
-        backgroundColor: colors.obsidian[500],
-        alignItems: 'center', justifyContent: 'center',
-    },
-    avatarInitial: { fontSize: 20, fontWeight: '700', color: colors.text.primary },
     onlineIndicator: {
         position: 'absolute', bottom: 0, right: 0,
         width: 14, height: 14, borderRadius: 7,
         backgroundColor: colors.emerald[500],
         borderWidth: 2, borderColor: colors.obsidian[900],
     },
-    conversationContent: { flex: 1, marginLeft: spacing.md },
+    conversationContent: { flex: 1, marginStart: spacing.md },
     conversationHeader: {
         flexDirection: 'row', alignItems: 'center',
         justifyContent: 'space-between', marginBottom: 4,
     },
     displayName: {
         fontSize: typography.fontSize.base, fontWeight: '600',
-        color: colors.text.primary, flex: 1, marginRight: spacing.sm,
+        color: colors.text.primary, flex: 1, marginEnd: spacing.sm,
     },
     timestamp: { fontSize: typography.fontSize.sm, color: colors.text.muted },
     timestampUnread: { color: colors.gold[500] },
@@ -459,7 +405,7 @@ const styles = StyleSheet.create({
     },
     lastMessage: {
         flex: 1, fontSize: typography.fontSize.sm,
-        color: colors.text.muted, marginRight: spacing.md,
+        color: colors.text.muted, marginEnd: spacing.md,
     },
     lastMessageUnread: { color: colors.text.secondary, fontWeight: '500' },
     unreadBadge: {
@@ -469,9 +415,4 @@ const styles = StyleSheet.create({
     },
     unreadCount: { fontSize: 11, fontWeight: '700', color: colors.obsidian[900] },
 
-    // Empty
-    emptyState: { alignItems: 'center', paddingTop: 100, paddingHorizontal: spacing['2xl'] },
-    // emptyIcon removed — using Ionicons now
-    emptyTitle: { fontSize: typography.fontSize.xl, fontWeight: '700', color: colors.text.primary, marginBottom: spacing.sm },
-    emptySubtitle: { fontSize: typography.fontSize.base, color: colors.text.muted, textAlign: 'center' },
 });

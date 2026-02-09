@@ -13,8 +13,10 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Button, Input, colors, typography, spacing } from '@zerog/ui';
+import { BackButton } from '../../components';
 import { useAuthStore } from '../../stores';
 
 export default function LoginScreen() {
@@ -23,9 +25,31 @@ export default function LoginScreen() {
     const login = useAuthStore((s) => s.login);
     const isLoading = useAuthStore((s) => s.isLoading);
 
+    const appleLogin = useAuthStore((s) => s.appleLogin);
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+    const handleAppleLogin = async () => {
+        try {
+            const credential = await AppleAuthentication.signInAsync({
+                requestedScopes: [
+                    AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                    AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                ],
+            });
+
+            if (credential.identityToken) {
+                await appleLogin(credential.identityToken, credential.fullName);
+                router.replace('/(tabs)');
+            }
+        } catch (error: any) {
+            if (error.code !== 'ERR_REQUEST_CANCELED') {
+                Alert.alert('Apple Sign In', 'Sign in with Apple failed. Please try again.');
+            }
+        }
+    };
 
     const handleLogin = async () => {
         const newErrors: { email?: string; password?: string } = {};
@@ -64,16 +88,11 @@ export default function LoginScreen() {
                     keyboardShouldPersistTaps="handled"
                 >
                     {/* Back button */}
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => router.back()}
-                    >
-                        <Ionicons name="chevron-back" size={24} color={colors.text.secondary} />
-                    </TouchableOpacity>
+                    <BackButton style={{ alignSelf: 'flex-start', marginBottom: spacing.xl }} />
 
                     <Animated.View entering={FadeInDown.duration(400)}>
                         <View style={styles.header}>
-                            <Text style={styles.title}>Welcome back</Text>
+                            <Text style={styles.title} accessibilityRole="header">Welcome back</Text>
                             <Text style={styles.subtitle}>
                                 Sign in to continue to your private community
                             </Text>
@@ -88,6 +107,7 @@ export default function LoginScreen() {
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                                 autoComplete="email"
+                                accessibilityLabel="Email address"
                                 value={email}
                                 onChangeText={(text) => {
                                     setEmail(text);
@@ -100,6 +120,7 @@ export default function LoginScreen() {
                                 label="Password"
                                 placeholder="Enter your password"
                                 secureTextEntry
+                                accessibilityLabel="Password"
                                 value={password}
                                 onChangeText={(text) => {
                                     setPassword(text);
@@ -117,6 +138,8 @@ export default function LoginScreen() {
                                         [{ text: 'OK' }]
                                     );
                                 }}
+                                accessibilityRole="button"
+                                accessibilityLabel="Forgot password"
                             >
                                 <Text style={styles.forgotText}>Forgot password?</Text>
                             </TouchableOpacity>
@@ -128,6 +151,8 @@ export default function LoginScreen() {
                                 loading={isLoading}
                                 onPress={handleLogin}
                                 style={styles.submitButton}
+                                accessibilityRole="button"
+                                accessibilityLabel="Log in"
                             >
                                 Sign In
                             </Button>
@@ -142,12 +167,21 @@ export default function LoginScreen() {
                         </View>
 
                         <View style={styles.socialButtons}>
-                            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-                                <Ionicons name="logo-apple" size={20} color={colors.text.muted} />
-                                <Text style={styles.socialButtonText}>Apple</Text>
-                                <Text style={styles.comingSoonBadge}>Soon</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+                            {Platform.OS === 'ios' && (
+                                <TouchableOpacity
+                                    style={[styles.socialButton, styles.appleButton]}
+                                    onPress={handleAppleLogin}
+                                    activeOpacity={0.7}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Sign in with Apple"
+                                >
+                                    <Ionicons name="logo-apple" size={20} color={colors.text.primary} />
+                                    <Text style={[styles.socialButtonText, { color: colors.text.primary }]}>
+                                        Sign in with Apple
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Sign in with Google, coming soon" accessibilityState={{ disabled: true }}>
                                 <Ionicons name="logo-google" size={18} color={colors.text.muted} />
                                 <Text style={styles.socialButtonText}>Google</Text>
                                 <Text style={styles.comingSoonBadge}>Soon</Text>
@@ -157,7 +191,7 @@ export default function LoginScreen() {
 
                     <View style={styles.signupContainer}>
                         <Text style={styles.signupText}>Don't have an account? </Text>
-                        <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
+                        <TouchableOpacity onPress={() => router.push('/(auth)/signup')} accessibilityRole="link" accessibilityLabel="Create an account">
                             <Text style={styles.signupLink}>Sign up</Text>
                         </TouchableOpacity>
                     </View>
@@ -228,6 +262,11 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.md,
         gap: spacing.sm,
         opacity: 0.6,
+    },
+    appleButton: {
+        opacity: 1,
+        backgroundColor: colors.obsidian[600],
+        borderColor: colors.border.default,
     },
     socialButtonText: {
         fontSize: typography.fontSize.base,

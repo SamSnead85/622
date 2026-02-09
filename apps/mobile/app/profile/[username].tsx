@@ -7,7 +7,6 @@ import {
     TouchableOpacity,
     Image,
     Dimensions,
-    ActivityIndicator,
     RefreshControl,
     Alert,
 } from 'react-native';
@@ -20,6 +19,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore, Post, mapApiPost } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
+import { ScreenHeader, LoadingView, Avatar } from '../../components';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const POST_SIZE = (SCREEN_WIDTH - spacing.xl * 2 - spacing.xs * 2) / 3;
@@ -114,7 +114,7 @@ export default function UserProfileScreen() {
         return (
             <View style={[styles.container, styles.centered]}>
                 <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
-                <ActivityIndicator size="large" color={colors.gold[500]} />
+                <LoadingView />
             </View>
         );
     }
@@ -141,13 +141,7 @@ export default function UserProfileScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>@{profile.username}</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title={`@${profile.username}`} />
 
             <ScrollView
                 contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
@@ -159,19 +153,13 @@ export default function UserProfileScreen() {
                 <Animated.View entering={FadeInDown.duration(400)}>
                     <View style={styles.profileContent}>
                         <View style={styles.avatarSection}>
-                            {profile.avatarUrl ? (
-                                <Image source={{ uri: profile.avatarUrl }} style={styles.avatarImage} />
-                            ) : (
-                                <View style={[styles.avatarImage, styles.avatarPlaceholder]}>
-                                    <Text style={styles.avatarInitial}>{(profile.displayName || '?')[0].toUpperCase()}</Text>
-                                </View>
-                            )}
+                            <Avatar uri={profile.avatarUrl} name={profile.displayName} size="2xl" />
                         </View>
 
                         <View style={styles.userInfo}>
                             <View style={styles.nameRow}>
                                 <Text style={styles.displayName}>{profile.displayName}</Text>
-                                {profile.isVerified && <Ionicons name="checkmark-circle" size={18} color={colors.gold[500]} style={{ marginLeft: 6 }} />}
+                                {profile.isVerified && <Ionicons name="checkmark-circle" size={18} color={colors.gold[500]} style={{ marginStart: 6 }} />}
                             </View>
                             <Text style={styles.username}>@{profile.username}</Text>
                             {profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
@@ -229,19 +217,8 @@ const styles = StyleSheet.create({
     backLink: { paddingVertical: spacing.sm },
     backLinkText: { fontSize: typography.fontSize.base, color: colors.gold[500] },
 
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface.glassHover, alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { fontSize: 18, fontWeight: '600', color: colors.text.primary, fontFamily: 'Inter-SemiBold' },
-
     profileContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
     avatarSection: { alignItems: 'center', marginBottom: spacing.lg },
-    avatarImage: { width: 96, height: 96, borderRadius: 48 },
-    avatarPlaceholder: { backgroundColor: colors.obsidian[500], alignItems: 'center', justifyContent: 'center' },
-    avatarInitial: { fontSize: 36, fontWeight: '700', color: colors.text.primary },
 
     userInfo: { alignItems: 'center', marginBottom: spacing.md },
     nameRow: { flexDirection: 'row', alignItems: 'center' },

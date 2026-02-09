@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore } from '../../stores';
+import { ScreenHeader } from '../../components';
 
 interface ToolCardProps {
     icon: keyof typeof Ionicons.glyphMap;
@@ -28,6 +29,8 @@ function ToolCard({ icon, title, description, color, badge, onPress, delay }: To
                     onPress();
                 }}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`${title}, ${description}`}
             >
                 {badge && (
                     <View style={styles.toolBadge}>
@@ -101,14 +104,7 @@ export default function ToolsHub() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Tools</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Tools" />
 
             <ScrollView
                 style={styles.scrollView}
@@ -183,19 +179,6 @@ export default function ToolsHub() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold',
-    },
     scrollView: { flex: 1 },
     bismillah: {
         alignItems: 'center',
@@ -222,7 +205,7 @@ const styles = StyleSheet.create({
         padding: spacing.lg, marginBottom: spacing.lg,
         borderWidth: 1, borderColor: colors.gold[500] + '30',
     },
-    ramadanEmoji: { fontSize: 28, marginRight: spacing.md },
+    ramadanEmoji: { fontSize: 28, marginEnd: spacing.md },
     ramadanInfo: { flex: 1 },
     ramadanTitle: {
         fontSize: typography.fontSize.lg, fontWeight: '700',

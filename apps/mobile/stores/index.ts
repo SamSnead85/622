@@ -114,6 +114,7 @@ interface AuthState {
     initialize: () => Promise<void>;
     login: (email: string, password: string) => Promise<void>;
     signup: (email: string, password: string, displayName: string) => Promise<void>;
+    appleLogin: (identityToken: string, fullName?: { givenName?: string; familyName?: string } | null) => Promise<void>;
     logout: () => Promise<void>;
     updateUser: (updates: Partial<User>) => void;
     refreshUser: () => Promise<void>;
@@ -245,6 +246,37 @@ export const useAuthStore = create<AuthState>()(
         } catch (error: any) {
             set({
                 error: error.message || 'Signup failed. Please try again.',
+                isLoading: false,
+            });
+            throw error;
+        }
+    },
+
+    appleLogin: async (identityToken, fullName) => {
+        set({ isLoading: true, error: null });
+        try {
+            const displayName = fullName
+                ? [fullName.givenName, fullName.familyName].filter(Boolean).join(' ')
+                : undefined;
+
+            const data = await apiFetch<any>(API.appleAuth, {
+                method: 'POST',
+                body: JSON.stringify({ identityToken, displayName }),
+            });
+
+            if (data.token) {
+                await saveToken(data.token);
+            }
+
+            const user = data.user || data;
+            set({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+            });
+        } catch (error: any) {
+            set({
+                error: error.message || 'Apple sign-in failed. Please try again.',
                 isLoading: false,
             });
             throw error;

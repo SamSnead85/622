@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ScreenHeader, LoadingView } from '../../components';
 
 const BOYCOTT_DATA_URL = 'https://raw.githubusercontent.com/TechForPalestine/boycott-israeli-consumer-goods-dataset/main/dataset/brands.json';
 const BOYCOTT_CACHE_KEY = 'boycott_brands_cache';
@@ -90,21 +91,11 @@ export default function BoycottScannerScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Boycott Check</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Boycott Check" />
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}>
                 {isLoading ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={colors.gold[500]} />
-                        <Text style={styles.loadingText}>Loading boycott database...</Text>
-                    </View>
+                    <LoadingView message="Loading boycott database..." />
                 ) : (
                     <>
                         {/* Search input */}
@@ -203,19 +194,6 @@ export default function BoycottScannerScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: { fontSize: 20, fontWeight: '700', color: colors.text.primary },
-    loadingContainer: { alignItems: 'center', paddingTop: 80 },
-    loadingText: { color: colors.text.muted, marginTop: spacing.md },
 
     inputCard: {
         backgroundColor: colors.surface.glass, borderRadius: 16,

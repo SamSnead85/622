@@ -23,6 +23,9 @@
       "config": {
         "usesNonExemptEncryption": false
       },
+      "entitlements": {
+        "com.apple.developer.applesignin": ["Default"]
+      },
       "infoPlist": {
         "NSCameraUsageDescription": "Allow 0G to access your camera to create posts and share with your community",
         "NSPhotoLibraryUsageDescription": "Allow 0G to access your photos to share with your private groups",
@@ -88,8 +91,17 @@
           "color": "#0A0908"
         }
       ],
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-apple-authentication"
     ],
+    "updates": {
+      "url": "https://u.expo.dev/your-project-id",
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "experiments": {
       "typedRoutes": true
     },

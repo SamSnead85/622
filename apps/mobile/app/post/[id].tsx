@@ -9,7 +9,6 @@ import {
     TextInput,
     KeyboardAvoidingView,
     Platform,
-    ActivityIndicator,
     Dimensions,
     Share,
     Pressable,
@@ -25,6 +24,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
 import { useAuthStore, mapApiPost } from '../../stores';
+import { ScreenHeader, LoadingView, Avatar } from '../../components';
 
 interface PostAuthor {
     id: string;
@@ -86,7 +86,7 @@ function PostVideoPlayer({ uri }: { uri: string }) {
     };
 
     return (
-        <Pressable onPress={toggleMute} style={styles.videoPlayerWrap}>
+        <Pressable onPress={toggleMute} style={styles.videoPlayerWrap} accessibilityRole="button" accessibilityLabel={isMuted ? 'Video muted, tap to unmute' : 'Video playing, tap to mute'}>
             <VideoView
                 player={player}
                 style={styles.videoPlayerView}
@@ -230,7 +230,7 @@ export default function PostDetailScreen() {
         return (
             <View style={[styles.container, styles.centered]}>
                 <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
-                <ActivityIndicator size="large" color={colors.gold[500]} />
+                <LoadingView />
             </View>
         );
     }
@@ -241,7 +241,7 @@ export default function PostDetailScreen() {
                 <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
                 <Ionicons name="alert-circle-outline" size={48} color={colors.text.muted} />
                 <Text style={styles.errorText}>Post not found</Text>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backLink} accessibilityRole="link" accessibilityLabel="Go back">
                     <Text style={styles.backLinkText}>Go back</Text>
                 </TouchableOpacity>
             </View>
@@ -251,18 +251,12 @@ export default function PostDetailScreen() {
     const renderHeader = () => (
         <Animated.View entering={FadeInDown.duration(300)}>
             <View style={styles.postSection}>
-                <TouchableOpacity style={styles.authorRow} onPress={() => post.author?.username && router.push(`/profile/${post.author.username}`)}>
-                    {post.author?.avatarUrl ? (
-                        <Image source={{ uri: post.author.avatarUrl }} style={styles.avatar} />
-                    ) : (
-                        <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                            <Text style={styles.avatarInitial}>{(post.author?.displayName || '?')[0].toUpperCase()}</Text>
-                        </View>
-                    )}
+                <TouchableOpacity style={styles.authorRow} onPress={() => post.author?.username && router.push(`/profile/${post.author.username}`)} accessibilityRole="button" accessibilityLabel={`View ${post.author?.displayName || 'Anonymous'}'s profile`} accessibilityHint="Double tap to view profile">
+                    <Avatar uri={post.author?.avatarUrl} name={post.author?.displayName} customSize={44} />
                     <View style={styles.authorInfo}>
                         <View style={styles.authorNameRow}>
                             <Text style={styles.authorName}>{post.author?.displayName || 'Anonymous'}</Text>
-                            {post.author?.isVerified && <Ionicons name="checkmark-circle" size={14} color={colors.gold[500]} style={{ marginLeft: 4 }} />}
+                            {post.author?.isVerified && <Ionicons name="checkmark-circle" size={14} color={colors.gold[500]} style={{ marginStart: 4 }} />}
                         </View>
                         <Text style={styles.postTime}>{timeAgo(post.createdAt)}</Text>
                     </View>
@@ -282,15 +276,15 @@ export default function PostDetailScreen() {
 
                 {/* Actions */}
                 <View style={styles.actionsBar}>
-                    <TouchableOpacity style={styles.actionBtn} onPress={handleLike}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={handleLike} accessibilityRole="button" accessibilityLabel={post.isLiked ? `Unlike post, ${post.likesCount} likes` : `Like post, ${post.likesCount} likes`} accessibilityHint="Double tap to like this post" accessibilityState={{ selected: post.isLiked }}>
                         <Ionicons name={post.isLiked ? 'heart' : 'heart-outline'} size={22} color={post.isLiked ? colors.coral[500] : colors.text.secondary} />
                         <Text style={styles.actionCount}>{post.likesCount}</Text>
                     </TouchableOpacity>
-                    <View style={styles.actionBtn}>
+                    <View style={styles.actionBtn} accessibilityRole="text" accessibilityLabel={`${post.commentsCount} comments`}>
                         <Ionicons name="chatbubble-outline" size={20} color={colors.text.secondary} />
                         <Text style={styles.actionCount}>{post.commentsCount}</Text>
                     </View>
-                    <TouchableOpacity style={styles.actionBtn} onPress={handleShare}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share post" accessibilityHint="Double tap to share this post">
                         <Ionicons name="arrow-redo-outline" size={20} color={colors.text.secondary} />
                         <Text style={styles.actionCount}>{post.sharesCount}</Text>
                     </TouchableOpacity>
@@ -298,21 +292,15 @@ export default function PostDetailScreen() {
             </View>
 
             <View style={styles.commentsHeader}>
-                <Text style={styles.commentsTitle}>Comments</Text>
+                <Text style={styles.commentsTitle} accessibilityRole="header">Comments</Text>
                 <Text style={styles.commentsCount}>{comments.length}</Text>
             </View>
         </Animated.View>
     );
 
     const renderComment = ({ item }: { item: Comment }) => (
-        <View style={styles.commentRow}>
-            {item.author?.avatarUrl ? (
-                <Image source={{ uri: item.author.avatarUrl }} style={styles.commentAvatar} />
-            ) : (
-                <View style={[styles.commentAvatar, styles.commentAvatarPlaceholder]}>
-                    <Text style={styles.commentAvatarInitial}>{(item.author?.displayName || '?')[0].toUpperCase()}</Text>
-                </View>
-            )}
+        <View style={styles.commentRow} accessibilityLabel={`Comment by ${item.author?.displayName || 'Anonymous'}: ${item.content}`}>
+            <Avatar uri={item.author?.avatarUrl} name={item.author?.displayName} customSize={32} style={{ marginTop: 4 }} />
             <View style={styles.commentContent}>
                 <View style={styles.commentBubble}>
                     <Text style={styles.commentAuthor}>{item.author?.displayName || 'Anonymous'}</Text>
@@ -320,7 +308,7 @@ export default function PostDetailScreen() {
                 </View>
                 <View style={styles.commentMeta}>
                     <Text style={styles.commentTime}>{timeAgo(item.createdAt)}</Text>
-                    <TouchableOpacity style={styles.commentLikeBtn} onPress={() => handleCommentLike(item.id)}>
+                    <TouchableOpacity style={styles.commentLikeBtn} onPress={() => handleCommentLike(item.id)} accessibilityRole="button" accessibilityLabel={item.isLiked ? `Unlike comment by ${item.author?.displayName || 'Anonymous'}` : `Like comment by ${item.author?.displayName || 'Anonymous'}`} accessibilityState={{ selected: item.isLiked }}>
                         <Ionicons name={item.isLiked ? 'heart' : 'heart-outline'} size={14} color={item.isLiked ? colors.coral[500] : colors.text.muted} />
                         {item.likesCount > 0 && <Text style={styles.commentLikeCount}>{item.likesCount}</Text>}
                     </TouchableOpacity>
@@ -333,13 +321,7 @@ export default function PostDetailScreen() {
         <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Post</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Post" />
 
             <FlatList
                 ref={flatListRef}
@@ -365,9 +347,10 @@ export default function PostDetailScreen() {
                     onChangeText={setCommentText}
                     multiline
                     maxLength={1000}
+                    accessibilityLabel="Write a comment"
                 />
                 {commentText.trim() ? (
-                    <TouchableOpacity onPress={handleComment}>
+                    <TouchableOpacity onPress={handleComment} accessibilityRole="button" accessibilityLabel="Send comment">
                         <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.sendBtn}>
                             <Ionicons name="arrow-up" size={18} color={colors.obsidian[900]} />
                         </LinearGradient>
@@ -385,24 +368,9 @@ const styles = StyleSheet.create({
     backLink: { paddingVertical: spacing.sm },
     backLinkText: { fontSize: typography.fontSize.base, color: colors.gold[500] },
 
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: { fontSize: 18, fontWeight: '600', color: colors.text.primary, fontFamily: 'Inter-SemiBold' },
-
     postSection: { padding: spacing.lg },
     authorRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
-    avatar: { width: 44, height: 44, borderRadius: 22 },
-    avatarPlaceholder: { backgroundColor: colors.obsidian[500], alignItems: 'center', justifyContent: 'center' },
-    avatarInitial: { fontSize: 18, fontWeight: '700', color: colors.text.primary },
-    authorInfo: { marginLeft: spacing.md },
+    authorInfo: { marginStart: spacing.md },
     authorNameRow: { flexDirection: 'row', alignItems: 'center' },
     authorName: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
     postTime: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },
@@ -419,27 +387,24 @@ const styles = StyleSheet.create({
     },
 
     actionsBar: { flexDirection: 'row', paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border.subtle },
-    actionBtn: { flexDirection: 'row', alignItems: 'center', marginRight: spacing.xl },
-    actionCount: { fontSize: typography.fontSize.sm, color: colors.text.secondary, marginLeft: spacing.xs },
+    actionBtn: { flexDirection: 'row', alignItems: 'center', marginEnd: spacing.xl },
+    actionCount: { fontSize: typography.fontSize.sm, color: colors.text.secondary, marginStart: spacing.xs },
 
     commentsHeader: {
         flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg,
         paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: colors.border.subtle,
     },
     commentsTitle: { fontSize: typography.fontSize.lg, fontWeight: '700', color: colors.text.primary },
-    commentsCount: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginLeft: spacing.sm },
+    commentsCount: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginStart: spacing.sm },
     noComments: { alignItems: 'center', paddingVertical: spacing.xl },
     noCommentsText: { fontSize: typography.fontSize.base, color: colors.text.muted },
 
     commentRow: { flexDirection: 'row', paddingHorizontal: spacing.lg, marginBottom: spacing.md },
-    commentAvatar: { width: 32, height: 32, borderRadius: 16, marginTop: 4 },
-    commentAvatarPlaceholder: { backgroundColor: colors.obsidian[500], alignItems: 'center', justifyContent: 'center' },
-    commentAvatarInitial: { fontSize: 12, fontWeight: '700', color: colors.text.primary },
-    commentContent: { flex: 1, marginLeft: spacing.sm },
+    commentContent: { flex: 1, marginStart: spacing.sm },
     commentBubble: { backgroundColor: colors.surface.glassHover, borderRadius: 16, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
     commentAuthor: { fontSize: typography.fontSize.sm, fontWeight: '600', color: colors.text.primary, marginBottom: 2 },
     commentText: { fontSize: typography.fontSize.sm, color: colors.text.secondary, lineHeight: 20 },
-    commentMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginLeft: spacing.md, gap: spacing.md },
+    commentMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginStart: spacing.md, gap: spacing.md },
     commentTime: { fontSize: typography.fontSize.xs, color: colors.text.muted },
     commentLikeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     commentLikeCount: { fontSize: typography.fontSize.xs, color: colors.text.muted },
@@ -454,7 +419,7 @@ const styles = StyleSheet.create({
         flex: 1, fontSize: typography.fontSize.base, color: colors.text.primary,
         backgroundColor: colors.surface.glassHover, borderRadius: 20,
         paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-        maxHeight: 100, marginRight: spacing.sm,
+        maxHeight: 100, marginEnd: spacing.sm,
     },
     sendBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 });

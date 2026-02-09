@@ -1,0 +1,61 @@
+// ============================================
+// BackButton — Reusable glass-circle back button
+// Standard 40x40 circle used across all screens
+// ============================================
+
+import React from 'react';
+import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing } from '@zerog/ui';
+
+interface BackButtonProps {
+    /** Override default router.back() behavior */
+    onPress?: () => void;
+    /** Custom icon (default: chevron-back) */
+    icon?: keyof typeof Ionicons.glyphMap;
+    /** Icon size (default: 24) */
+    size?: number;
+    /** Additional styles */
+    style?: ViewStyle;
+    /** Icon color override */
+    color?: string;
+    /** Accessibility label */
+    label?: string;
+}
+
+export function BackButton({
+    onPress,
+    icon = 'chevron-back',
+    size = 24,
+    style,
+    color = colors.text.primary,
+    label = 'Go back',
+}: BackButtonProps) {
+    const router = useRouter();
+
+    return (
+        <TouchableOpacity
+            style={[styles.button, style]}
+            onPress={onPress || (() => router.back())}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+        >
+            <Ionicons name={icon} size={size} color={color} />
+        </TouchableOpacity>
+    );
+}
+
+const styles = StyleSheet.create({
+    button: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: colors.surface.glassHover,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+});
+
+export default BackButton;

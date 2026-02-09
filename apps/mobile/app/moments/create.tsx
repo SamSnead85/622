@@ -13,7 +13,6 @@ import {
     Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -21,12 +20,12 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, apiUpload, API } from '../../lib/api';
+import { ScreenHeader, BackButton } from '../../components';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function MomentCreateScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
     const [mediaUri, setMediaUri] = useState<string | null>(null);
     const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
     const [caption, setCaption] = useState('');
@@ -99,13 +98,10 @@ export default function MomentCreateScreen() {
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-                <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
-                    <Ionicons name="close" size={26} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>New Moment</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader
+                title="New Moment"
+                leftElement={<BackButton icon="close" size={26} onPress={() => router.back()} />}
+            />
 
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
                 {!mediaUri ? (
@@ -203,19 +199,6 @@ export default function MomentCreateScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.sm,
-        zIndex: 10,
-    },
-    closeBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 18, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold',
-    },
 
     // Picker
     pickerArea: {

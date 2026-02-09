@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { ScreenHeader } from '../../components';
 
 // Known haram/doubtful ingredients (simplified list)
 const HARAM_INGREDIENTS = [
@@ -101,14 +102,7 @@ export default function HalalScannerScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Halal Check</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Halal Check" />
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}>
                 {/* Barcode input */}
@@ -195,17 +189,6 @@ export default function HalalScannerScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: { fontSize: 20, fontWeight: '700', color: colors.text.primary },
 
     inputCard: {
         backgroundColor: colors.surface.glass, borderRadius: 16,

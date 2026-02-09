@@ -52,6 +52,8 @@ export default {
         welcomeSubtitle: 'Your private community. Your rules.',
         loginError: 'Login failed. Please try again.',
         signupError: 'Signup failed. Please try again.',
+        resetPassword: 'Reset Password',
+        resetPasswordMessage: 'Enter your email to receive a reset link',
     },
 
     // ============================================
@@ -67,6 +69,9 @@ export default {
         notifications: 'Notifications',
         settings: 'Settings',
         tools: 'Tools',
+        explore: 'Explore',
+        groups: 'Groups',
+        you: 'You',
     },
 
     // ============================================
@@ -116,6 +121,7 @@ export default {
         writeCaption: 'What\'s on your mind?',
         posting: 'Posting...',
         posted: 'Posted!',
+        copyLink: 'Copy Link',
     },
 
     // ============================================
@@ -158,6 +164,15 @@ export default {
         createFirst: 'Create your first community',
         name: 'Community Name',
         description: 'Description',
+        newCommunity: 'New Community',
+        searchMembers: 'Search members...',
+        askQuestion: 'Ask the community something...',
+        proposeTitle: 'What do you propose?',
+        proposeDetail: 'Explain your proposal in detail...',
+        rules: 'Rules',
+        governance: 'Governance',
+        polls: 'Polls',
+        manage: 'Manage Members',
     },
 
     // ============================================
@@ -196,6 +211,38 @@ export default {
         deleteAccount: 'Delete Account',
         privacyMode: 'Privacy Mode',
         communityOptIn: 'Community Opt-In',
+        permissionRequired: 'Permission Required',
+        photoAccessMessage: 'We need access to your photos to update your profile picture',
+        logoutConfirm: 'Are you sure you want to log out?',
+        exportRequested: 'Export Requested',
+        exportEmailMessage: 'You\'ll receive an email with your data shortly',
+        algorithm: 'Your Algorithm',
+    },
+
+    // ============================================
+    // Notifications
+    // ============================================
+    notifications: {
+        title: 'Notifications',
+        social: 'Social',
+        socialDesc: 'Likes, comments, follows, and mentions',
+        communitiesDesc: 'New posts, membership, and announcements',
+        messagesNotif: 'Messages',
+        messagesDesc: 'Direct and group messages',
+        system: 'System',
+        systemDesc: 'Security alerts, updates, and account activity',
+        markAllRead: 'Mark all as read',
+    },
+
+    // ============================================
+    // Discover
+    // ============================================
+    discover: {
+        title: 'Discover',
+        trending: 'Trending',
+        people: 'People',
+        newContent: 'New',
+        privacyFirst: 'Privacy',
     },
 
     // ============================================
@@ -271,5 +318,20 @@ export default {
         failed: 'Import failed. Please try again.',
         stats: '{{posts}} posts, {{connections}} connections imported',
         selectFile: 'Select Export File',
+    },
+
+    // ============================================
+    // Ramadan
+    // ============================================
+    ramadan: {
+        banner: 'Ramadan Mubarak',
+        eidBanner: 'Eid Mubarak!',
+        startsIn: 'Ramadan in {{days}} days',
+        startsTomorrow: 'Ramadan starts tomorrow!',
+        toolsPrompt: 'Prayer times, Quran & more — tap to access your Deen tools',
+        getReady: 'Get ready — prayer times, Quran reader & fasting tools available',
+        faithRecommend: 'Recommended for Ramadan',
+        addFaith: 'Add "Faith & Spirituality" to get Ramadan content in your feed',
+        eidMessage: 'Eid al-Fitr — may your prayers and fasting be accepted',
     },
 } as const;

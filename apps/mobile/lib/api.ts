@@ -314,6 +314,8 @@ export const API = {
     // Auth
     login: '/api/v1/auth/login',
     signup: '/api/v1/auth/signup',
+    googleAuth: '/api/v1/auth/google',
+    appleAuth: '/api/v1/auth/apple',
     me: '/api/v1/auth/me',
     refresh: '/api/v1/auth/refresh',
 

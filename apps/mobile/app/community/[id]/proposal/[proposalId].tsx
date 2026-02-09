@@ -5,7 +5,6 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    ActivityIndicator,
     Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -16,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../../../lib/api';
+import { ScreenHeader, LoadingView } from '../../../../components';
 
 interface ProposalDetail {
     id: string;
@@ -129,9 +129,9 @@ export default function ProposalDetailScreen() {
 
     if (loading) {
         return (
-            <View style={[styles.container, styles.centered]}>
+            <View style={styles.container}>
                 <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
-                <ActivityIndicator size="large" color={colors.gold[500]} />
+                <LoadingView />
             </View>
         );
     }
@@ -159,13 +159,7 @@ export default function ProposalDetailScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Proposal</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Proposal" />
 
             <ScrollView
                 style={styles.scroll}
@@ -261,7 +255,7 @@ export default function ProposalDetailScreen() {
                         {modLog.map((entry) => (
                             <View key={entry.id} style={styles.logEntry}>
                                 <Ionicons name="document-text-outline" size={14} color={colors.text.muted} />
-                                <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                                <View style={{ flex: 1, marginStart: spacing.sm }}>
                                     <Text style={styles.logAction}>{entry.action}</Text>
                                     {entry.reason && <Text style={styles.logReason}>{entry.reason}</Text>}
                                     <Text style={styles.logMeta}>
@@ -282,19 +276,6 @@ const styles = StyleSheet.create({
     centered: { alignItems: 'center', justifyContent: 'center' },
     errorText: { fontSize: typography.fontSize.lg, color: colors.text.muted, marginTop: spacing.md },
     backLinkText: { fontSize: typography.fontSize.base, color: colors.gold[500], marginTop: spacing.sm },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold',
-    },
     scroll: { flex: 1 },
 
     // Meta

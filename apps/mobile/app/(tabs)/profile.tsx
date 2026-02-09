@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { Avatar, LoadingView } from '../../components';
 import { useAuthStore, Post, mapApiPost } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 
@@ -34,9 +35,9 @@ const formatCount = (num: number) => {
 const PostGridItem = memo(({ post }: { post: Post }) => {
     const router = useRouter();
     return (
-        <TouchableOpacity style={styles.postItem} activeOpacity={0.9} onPress={() => router.push(`/post/${post.id}`)}>
+        <TouchableOpacity style={styles.postItem} activeOpacity={0.9} onPress={() => router.push(`/post/${post.id}`)} accessibilityRole="button" accessibilityLabel={post.content ? `Post: ${post.content.substring(0, 80)}` : 'View post'}>
             {post.mediaUrl ? (
-                <Image source={{ uri: post.mediaUrl }} style={styles.postImage} transition={150} cachePolicy="memory-disk" recyclingKey={post.id} />
+                <Image source={{ uri: post.mediaUrl }} style={styles.postImage} transition={150} cachePolicy="memory-disk" recyclingKey={post.id} accessibilityLabel="Post image" />
             ) : (
                 <View style={[styles.postImage, styles.textPostBg]}>
                     <Text style={styles.textPostContent} numberOfLines={3}>{post.content}</Text>
@@ -116,11 +117,7 @@ export default function ProfileScreen() {
     };
 
     if (!user) {
-        return (
-            <View style={[styles.container, styles.centered]}>
-                <ActivityIndicator size="large" color={colors.gold[500]} />
-            </View>
-        );
+        return <LoadingView />;
     }
 
     const renderHeader = () => (
@@ -147,15 +144,7 @@ export default function ProfileScreen() {
                     <View style={styles.avatarContainer}>
                         <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.avatarBorder}>
                             <View style={styles.avatarInner}>
-                                {user.avatarUrl ? (
-                                    <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} transition={200} cachePolicy="memory-disk" />
-                                ) : (
-                                    <View style={[styles.avatarImage, styles.avatarPlaceholder]}>
-                                        <Text style={styles.avatarInitial}>
-                                            {(user.displayName || user.username || '?')[0].toUpperCase()}
-                                        </Text>
-                                    </View>
-                                )}
+                                <Avatar uri={user.avatarUrl} name={user.displayName || user.username || '?'} size="2xl" />
                             </View>
                         </LinearGradient>
                     </View>
@@ -164,8 +153,8 @@ export default function ProfileScreen() {
                 {/* User info */}
                 <View style={styles.userInfo}>
                     <View style={styles.nameRow}>
-                        <Text style={styles.displayName}>{user.displayName}</Text>
-                        {user.isVerified && <Ionicons name="checkmark-circle" size={18} color={colors.gold[500]} style={{ marginLeft: 6 }} />}
+                        <Text style={styles.displayName} accessibilityRole="header">{user.displayName}</Text>
+                        {user.isVerified && <Ionicons name="checkmark-circle" size={18} color={colors.gold[500]} style={{ marginStart: 6 }} />}
                     </View>
                     <Text style={styles.username}>@{user.username}</Text>
                     {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
@@ -181,17 +170,17 @@ export default function ProfileScreen() {
 
                 {/* Stats */}
                 <View style={styles.statsContainer}>
-                    <TouchableOpacity style={styles.stat}>
+                    <TouchableOpacity style={styles.stat} accessibilityRole="button" accessibilityLabel={`${formatCount(user.postsCount)} posts`}>
                         <Text style={styles.statValue}>{formatCount(user.postsCount)}</Text>
                         <Text style={styles.statLabel}>Posts</Text>
                     </TouchableOpacity>
                     <View style={styles.statDivider} />
-                    <TouchableOpacity style={styles.stat}>
+                    <TouchableOpacity style={styles.stat} accessibilityRole="button" accessibilityLabel={`${formatCount(user.followersCount)} followers`}>
                         <Text style={styles.statValue}>{formatCount(user.followersCount)}</Text>
                         <Text style={styles.statLabel}>Followers</Text>
                     </TouchableOpacity>
                     <View style={styles.statDivider} />
-                    <TouchableOpacity style={styles.stat}>
+                    <TouchableOpacity style={styles.stat} accessibilityRole="button" accessibilityLabel={`${formatCount(user.followingCount)} following`}>
                         <Text style={styles.statValue}>{formatCount(user.followingCount)}</Text>
                         <Text style={styles.statLabel}>Following</Text>
                     </TouchableOpacity>
@@ -199,12 +188,12 @@ export default function ProfileScreen() {
 
                 {/* Action buttons */}
                 <View style={styles.profileActions}>
-                    <TouchableOpacity style={[styles.editButton, { flex: 1 }]} activeOpacity={0.8} onPress={() => router.push('/settings')}>
+                    <TouchableOpacity style={[styles.editButton, { flex: 1 }]} activeOpacity={0.8} onPress={() => router.push('/settings')} accessibilityRole="button" accessibilityLabel="Edit profile">
                         <Ionicons name="create-outline" size={16} color={colors.text.primary} />
                         <Text style={styles.editButtonText}>Edit Profile</Text>
                     </TouchableOpacity>
                     {(user.postsCount || 0) > 0 && (
-                        <TouchableOpacity style={styles.analyticsButton} activeOpacity={0.8} onPress={() => router.push('/analytics' as any)}>
+                        <TouchableOpacity style={styles.analyticsButton} activeOpacity={0.8} onPress={() => router.push('/analytics' as any)} accessibilityRole="button" accessibilityLabel="View analytics">
                             <Ionicons name="analytics-outline" size={16} color={colors.gold[400]} />
                         </TouchableOpacity>
                     )}
@@ -217,6 +206,9 @@ export default function ProfileScreen() {
                             key={tab}
                             style={[styles.contentTab, activeTab === tab && styles.contentTabActive]}
                             onPress={() => setActiveTab(tab)}
+                            accessibilityRole="tab"
+                            accessibilityLabel={tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            accessibilityState={{ selected: activeTab === tab }}
                         >
                             <Ionicons
                                 name={tab === 'posts' ? 'grid-outline' : tab === 'likes' ? 'heart-outline' : 'bookmark-outline'}
@@ -262,7 +254,7 @@ export default function ProfileScreen() {
             {/* Header buttons (floating) */}
             <View style={[styles.headerButtons, { paddingTop: insets.top + spacing.sm }]}>
                 <View />
-                <TouchableOpacity style={styles.headerButton} onPress={() => router.push('/settings')}>
+                <TouchableOpacity style={styles.headerButton} onPress={() => router.push('/settings')} accessibilityRole="button" accessibilityLabel="Settings">
                     <Ionicons name="settings-outline" size={22} color={colors.text.primary} />
                 </TouchableOpacity>
             </View>

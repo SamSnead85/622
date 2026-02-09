@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ScreenHeader, LoadingView } from '../../../components';
 
 interface Verse {
     number: number;
@@ -117,23 +118,10 @@ export default function SurahReader() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], '#0D0D12']} style={StyleSheet.absoluteFill} />
 
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <View style={styles.headerCenter}>
-                    <Text style={styles.headerTitle} numberOfLines={1}>{surahName || `Surah ${surahNumber}`}</Text>
-                    <Text style={styles.headerSubtitle}>{verses.length} verses</Text>
-                </View>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title={surahName || `Surah ${surahNumber}`} />
 
             {isLoading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                    <Text style={styles.loadingText}>Loading surah...</Text>
-                </View>
+                <LoadingView message="Loading surah..." />
             ) : (
                 <FlatList
                     data={verses}
@@ -163,21 +151,6 @@ export default function SurahReader() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerCenter: { alignItems: 'center', flex: 1 },
-    headerTitle: { fontSize: 18, fontWeight: '700', color: colors.text.primary },
-    headerSubtitle: { fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: 2 },
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    loadingText: { color: colors.text.muted, marginTop: spacing.md },
 
     bismillahHeader: {
         alignItems: 'center', paddingVertical: spacing.xl,

@@ -13,8 +13,10 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Button, Input, colors, typography, spacing } from '@zerog/ui';
+import { BackButton } from '../../components';
 import { useAuthStore } from '../../stores';
 
 // Password strength calculation
@@ -36,7 +38,28 @@ export default function SignupScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const signup = useAuthStore((s) => s.signup);
+    const appleLogin = useAuthStore((s) => s.appleLogin);
     const isLoading = useAuthStore((s) => s.isLoading);
+
+    const handleAppleSignup = async () => {
+        try {
+            const credential = await AppleAuthentication.signInAsync({
+                requestedScopes: [
+                    AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                    AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                ],
+            });
+
+            if (credential.identityToken) {
+                await appleLogin(credential.identityToken, credential.fullName);
+                router.replace('/(auth)/username');
+            }
+        } catch (error: any) {
+            if (error.code !== 'ERR_REQUEST_CANCELED') {
+                Alert.alert('Apple Sign Up', 'Sign up with Apple failed. Please try again.');
+            }
+        }
+    };
 
     const [displayName, setDisplayName] = useState('');
     const [email, setEmail] = useState('');
@@ -103,13 +126,11 @@ export default function SignupScreen() {
                     keyboardShouldPersistTaps="handled"
                 >
                     {/* Back button */}
-                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                        <Ionicons name="chevron-back" size={24} color={colors.text.secondary} />
-                    </TouchableOpacity>
+                    <BackButton style={{ alignSelf: 'flex-start', marginBottom: spacing.xl }} />
 
                     <Animated.View entering={FadeInDown.duration(400)}>
                         <View style={styles.header}>
-                            <Text style={styles.title}>Create account</Text>
+                            <Text style={styles.title} accessibilityRole="header">Create account</Text>
                             <Text style={styles.subtitle}>
                                 Join your private community — your world, your rules
                             </Text>
@@ -122,6 +143,7 @@ export default function SignupScreen() {
                                 label="Display Name"
                                 placeholder="Your name"
                                 autoCapitalize="words"
+                                accessibilityLabel="Display name"
                                 value={displayName}
                                 onChangeText={(text) => {
                                     setDisplayName(text);
@@ -136,6 +158,7 @@ export default function SignupScreen() {
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                                 autoComplete="email"
+                                accessibilityLabel="Email address"
                                 value={email}
                                 onChangeText={(text) => {
                                     setEmail(text);
@@ -148,6 +171,7 @@ export default function SignupScreen() {
                                 label="Password"
                                 placeholder="Create a password"
                                 secureTextEntry
+                                accessibilityLabel="Password"
                                 value={password}
                                 onChangeText={(text) => {
                                     setPassword(text);
@@ -186,6 +210,7 @@ export default function SignupScreen() {
                                 label="Confirm Password"
                                 placeholder="Confirm your password"
                                 secureTextEntry
+                                accessibilityLabel="Confirm password"
                                 value={confirmPassword}
                                 onChangeText={(text) => {
                                     setConfirmPassword(text);
@@ -201,6 +226,8 @@ export default function SignupScreen() {
                                 loading={isLoading}
                                 onPress={handleSignup}
                                 style={styles.submitButton}
+                                accessibilityRole="button"
+                                accessibilityLabel="Create account"
                             >
                                 Create Account
                             </Button>
@@ -215,12 +242,21 @@ export default function SignupScreen() {
                         </View>
 
                         <View style={styles.socialButtons}>
-                            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-                                <Ionicons name="logo-apple" size={20} color={colors.text.muted} />
-                                <Text style={styles.socialButtonText}>Apple</Text>
-                                <Text style={styles.comingSoonBadge}>Soon</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+                            {Platform.OS === 'ios' && (
+                                <TouchableOpacity
+                                    style={[styles.socialButton, styles.appleButton]}
+                                    onPress={handleAppleSignup}
+                                    activeOpacity={0.7}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Sign up with Apple"
+                                >
+                                    <Ionicons name="logo-apple" size={20} color={colors.text.primary} />
+                                    <Text style={[styles.socialButtonText, { color: colors.text.primary }]}>
+                                        Sign up with Apple
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Sign up with Google, coming soon" accessibilityState={{ disabled: true }}>
                                 <Ionicons name="logo-google" size={18} color={colors.text.muted} />
                                 <Text style={styles.socialButtonText}>Google</Text>
                                 <Text style={styles.comingSoonBadge}>Soon</Text>
@@ -230,7 +266,7 @@ export default function SignupScreen() {
 
                     <View style={styles.loginContainer}>
                         <Text style={styles.loginText}>Already have an account? </Text>
-                        <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+                        <TouchableOpacity onPress={() => router.push('/(auth)/login')} accessibilityRole="link" accessibilityLabel="Log in to existing account">
                             <Text style={styles.loginLink}>Log in</Text>
                         </TouchableOpacity>
                     </View>
@@ -303,7 +339,7 @@ const styles = StyleSheet.create({
     strengthLabel: {
         fontSize: typography.fontSize.xs,
         fontWeight: '600',
-        marginLeft: spacing.sm,
+        marginStart: spacing.sm,
     },
     submitButton: { marginTop: spacing.md },
     divider: {
@@ -330,6 +366,11 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.md,
         gap: spacing.sm,
         opacity: 0.6,
+    },
+    appleButton: {
+        opacity: 1,
+        backgroundColor: colors.obsidian[600],
+        borderColor: colors.border.default,
     },
     socialButtonText: {
         fontSize: typography.fontSize.base,

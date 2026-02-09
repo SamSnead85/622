@@ -14,8 +14,6 @@ import {
     TextInput,
     KeyboardAvoidingView,
     Platform,
-    Image,
-    ActivityIndicator,
     Animated,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -27,6 +25,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
 import { socketManager, SocketMessage, TypingEvent } from '../../lib/socket';
+import { Avatar, LoadingView } from '../../components';
 
 // ============================================
 // Types
@@ -380,8 +379,8 @@ export default function ChatScreen() {
 
         return (
             <View style={[styles.msgRow, isOwn ? styles.ownRow : styles.otherRow]}>
-                {!isOwn && participant?.avatarUrl && (
-                    <Image source={{ uri: participant.avatarUrl }} style={styles.msgAvatar} />
+                {!isOwn && (
+                    <Avatar uri={participant?.avatarUrl} name={participant?.displayName} size="xs" style={{ marginEnd: spacing.xs }} />
                 )}
 
                 {isOwn ? (
@@ -411,7 +410,7 @@ export default function ChatScreen() {
                 )}
             </View>
         );
-    }, [user?.id, participant?.avatarUrl, formatTime]);
+    }, [user?.id, participant?.avatarUrl, participant?.displayName, formatTime]);
 
     // ============================================
     // Date Separators
@@ -469,7 +468,7 @@ export default function ChatScreen() {
 
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                <TouchableOpacity style={styles.backButton} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
                     <Ionicons name="chevron-back" size={22} color={colors.text.primary} />
                 </TouchableOpacity>
 
@@ -478,22 +477,14 @@ export default function ChatScreen() {
                         style={styles.userInfo}
                         onPress={() => router.push(`/profile/${participant.username}`)}
                         activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${participant.displayName}, ${isOnline ? 'online' : 'offline'}`}
+                        accessibilityHint="Opens profile"
                     >
-                        {participant.avatarUrl ? (
-                            <View style={styles.avatarWrapper}>
-                                <Image source={{ uri: participant.avatarUrl }} style={styles.headerAvatar} />
-                                {isOnline && <View style={styles.onlineDot} />}
-                            </View>
-                        ) : (
-                            <View style={styles.avatarWrapper}>
-                                <View style={[styles.headerAvatar, styles.headerAvatarPlaceholder]}>
-                                    <Text style={styles.headerAvatarInitial}>
-                                        {(participant.displayName || '?')[0].toUpperCase()}
-                                    </Text>
-                                </View>
-                                {isOnline && <View style={styles.onlineDot} />}
-                            </View>
-                        )}
+                        <View style={styles.avatarWrapper}>
+                            <Avatar uri={participant.avatarUrl} name={participant.displayName} size="md" />
+                            {isOnline && <View style={styles.onlineDot} />}
+                        </View>
                         <View style={styles.userDetails}>
                             <Text style={styles.displayName} numberOfLines={1}>
                                 {participant.displayName}
@@ -514,6 +505,8 @@ export default function ChatScreen() {
                                 router.push(`/call/${participant.id}?type=audio&name=${encodeURIComponent(participant.displayName)}&avatar=${encodeURIComponent(participant.avatarUrl || '')}`);
                             }
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Start audio call"
                     >
                         <Ionicons name="call-outline" size={20} color={colors.text.primary} />
                     </TouchableOpacity>
@@ -524,6 +517,8 @@ export default function ChatScreen() {
                                 router.push(`/call/${participant.id}?type=video&name=${encodeURIComponent(participant.displayName)}&avatar=${encodeURIComponent(participant.avatarUrl || '')}`);
                             }
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Start video call"
                     >
                         <Ionicons name="videocam-outline" size={20} color={colors.text.primary} />
                     </TouchableOpacity>
@@ -532,9 +527,7 @@ export default function ChatScreen() {
 
             {/* Messages */}
             {isLoading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                </View>
+                <LoadingView />
             ) : (
                 <FlatList
                     ref={flatListRef}
@@ -564,7 +557,7 @@ export default function ChatScreen() {
             {/* Input */}
             <View style={[styles.inputContainer, { paddingBottom: insets.bottom + spacing.sm }]}>
                 <View style={styles.inputWrapper}>
-                    <TouchableOpacity style={styles.attachBtn} activeOpacity={0.7}>
+                    <TouchableOpacity style={styles.attachBtn} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Add attachment">
                         <Ionicons name="add-circle-outline" size={24} color={colors.text.muted} />
                     </TouchableOpacity>
 
@@ -579,10 +572,11 @@ export default function ChatScreen() {
                         returnKeyType="send"
                         blurOnSubmit={false}
                         onSubmitEditing={handleSend}
+                        accessibilityLabel="Type a message"
                     />
 
                     {inputText.trim() ? (
-                        <TouchableOpacity onPress={handleSend} activeOpacity={0.8}>
+                        <TouchableOpacity onPress={handleSend} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Send message">
                             <LinearGradient
                                 colors={[colors.gold[400], colors.gold[600]]}
                                 style={styles.sendButton}
@@ -591,7 +585,7 @@ export default function ChatScreen() {
                             </LinearGradient>
                         </TouchableOpacity>
                     ) : (
-                        <TouchableOpacity style={styles.micBtn} activeOpacity={0.7}>
+                        <TouchableOpacity style={styles.micBtn} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Record voice message">
                             <Ionicons name="mic-outline" size={22} color={colors.text.muted} />
                         </TouchableOpacity>
                     )}
@@ -625,15 +619,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    userInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', marginLeft: spacing.sm },
+    userInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', marginStart: spacing.sm },
     avatarWrapper: { position: 'relative' },
-    headerAvatar: { width: 40, height: 40, borderRadius: 20 },
-    headerAvatarPlaceholder: {
-        backgroundColor: colors.obsidian[600],
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerAvatarInitial: { fontSize: 16, fontWeight: '700', color: colors.text.primary },
     onlineDot: {
         position: 'absolute',
         bottom: 0,
@@ -645,7 +632,7 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: colors.obsidian[900],
     },
-    userDetails: { marginLeft: spacing.sm, flex: 1 },
+    userDetails: { marginStart: spacing.sm, flex: 1 },
     displayName: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
     onlineStatus: { fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: 1 },
     onlineActive: { color: '#34D399' },
@@ -659,21 +646,17 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
 
-    // Loading
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-
     // Messages
     messagesList: { paddingHorizontal: spacing.md, paddingTop: spacing.lg },
     msgRow: { marginBottom: spacing.sm, maxWidth: '78%', flexDirection: 'row', alignItems: 'flex-end' },
     ownRow: { alignSelf: 'flex-end' },
     otherRow: { alignSelf: 'flex-start' },
-    msgAvatar: { width: 28, height: 28, borderRadius: 14, marginRight: spacing.xs },
     msgBubble: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
     ownBubble: { borderBottomRightRadius: 6, minWidth: 60 },
     otherBubble: { backgroundColor: colors.surface.glassHover, borderBottomLeftRadius: 6, minWidth: 60 },
     msgText: { fontSize: typography.fontSize.base, color: colors.text.primary, lineHeight: 22 },
     ownText: { color: colors.obsidian[900] },
-    msgMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4, marginTop: 2, paddingRight: 4 },
+    msgMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4, marginTop: 2, paddingEnd: 4 },
     msgTime: { fontSize: 11, color: colors.text.muted, marginTop: 2, paddingHorizontal: 4 },
     ownTime: { color: colors.text.muted },
 

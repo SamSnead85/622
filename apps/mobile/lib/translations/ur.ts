@@ -46,6 +46,8 @@ export default {
         welcomeSubtitle: 'آپ کی ذاتی کمیونٹی۔ آپ کے اصول۔',
         loginError: 'لاگ ان ناکام۔ دوبارہ کوشش کریں۔',
         signupError: 'سائن اپ ناکام۔ دوبارہ کوشش کریں۔',
+        resetPassword: 'پاسورڈ ری سیٹ کریں',
+        resetPasswordMessage: 'ری سیٹ لنک حاصل کرنے کے لیے اپنا ای میل درج کریں',
     },
 
     nav: {
@@ -58,6 +60,9 @@ export default {
         notifications: 'اطلاعات',
         settings: 'ترتیبات',
         tools: 'ٹولز',
+        explore: 'دریافت کریں',
+        groups: 'گروپس',
+        you: 'آپ',
     },
 
     feed: {
@@ -101,6 +106,7 @@ export default {
         writeCaption: 'آپ کے ذہن میں کیا ہے؟',
         posting: 'پوسٹ ہو رہا ہے...',
         posted: 'پوسٹ ہو گیا!',
+        copyLink: 'لنک کاپی کریں',
     },
 
     messages: {
@@ -137,6 +143,15 @@ export default {
         createFirst: 'اپنی پہلی کمیونٹی بنائیں',
         name: 'کمیونٹی کا نام',
         description: 'تفصیل',
+        newCommunity: 'نئی کمیونٹی',
+        searchMembers: 'اراکین تلاش کریں...',
+        askQuestion: 'کمیونٹی سے کچھ پوچھیں...',
+        proposeTitle: 'آپ کی تجویز کیا ہے؟',
+        proposeDetail: 'اپنی تجویز کی تفصیل بیان کریں...',
+        rules: 'قواعد',
+        governance: 'حکمرانی',
+        polls: 'پولز',
+        manage: 'اراکین کا انتظام',
     },
 
     profile: {
@@ -169,6 +184,32 @@ export default {
         deleteAccount: 'اکاؤنٹ حذف کریں',
         privacyMode: 'رازداری موڈ',
         communityOptIn: 'کمیونٹی میں شمولیت',
+        permissionRequired: 'اجازت درکار ہے',
+        photoAccessMessage: 'آپ کی پروفائل تصویر اپ ڈیٹ کرنے کے لیے ہمیں آپ کی تصاویر تک رسائی درکار ہے',
+        logoutConfirm: 'کیا آپ واقعی لاگ آؤٹ کرنا چاہتے ہیں؟',
+        exportRequested: 'ایکسپورٹ کی درخواست',
+        exportEmailMessage: 'آپ کو جلد ہی اپنے ڈیٹا کے ساتھ ایک ای میل موصول ہوگی',
+        algorithm: 'آپ کا الگورتھم',
+    },
+
+    notifications: {
+        title: 'اطلاعات',
+        social: 'سماجی',
+        socialDesc: 'لائکس، تبصرے، فالو اور ذکر',
+        communitiesDesc: 'نئی پوسٹس، رکنیت اور اعلانات',
+        messagesNotif: 'پیغامات',
+        messagesDesc: 'براہ راست اور گروپ پیغامات',
+        system: 'سسٹم',
+        systemDesc: 'سیکیورٹی الرٹس، اپ ڈیٹس اور اکاؤنٹ سرگرمی',
+        markAllRead: 'سب کو پڑھا ہوا نشان زد کریں',
+    },
+
+    discover: {
+        title: 'دریافت کریں',
+        trending: 'ٹرینڈنگ',
+        people: 'لوگ',
+        newContent: 'نیا',
+        privacyFirst: 'رازداری',
     },
 
     call: {
@@ -232,5 +273,17 @@ export default {
         failed: 'درآمد ناکام۔ دوبارہ کوشش کریں۔',
         stats: '{{posts}} پوسٹس، {{connections}} رابطے درآمد ہوئے',
         selectFile: 'ایکسپورٹ فائل منتخب کریں',
+    },
+
+    ramadan: {
+        banner: 'رمضان مبارک',
+        eidBanner: 'عید مبارک!',
+        startsIn: 'رمضان {{days}} دنوں میں',
+        startsTomorrow: 'رمضان کل شروع ہو رہا ہے!',
+        toolsPrompt: 'نماز کے اوقات، قرآن اور مزید — اپنے دینی ٹولز تک رسائی کے لیے ٹیپ کریں',
+        getReady: 'تیار ہو جائیں — نماز کے اوقات، قرآن ریڈر اور روزے کے ٹولز دستیاب ہیں',
+        faithRecommend: 'رمضان کے لیے تجویز کردہ',
+        addFaith: '"ایمان اور روحانیت" شامل کریں تاکہ آپ کی فیڈ میں رمضان کا مواد آئے',
+        eidMessage: 'عید الفطر — آپ کی نمازیں اور روزے قبول ہوں',
     },
 } as const;

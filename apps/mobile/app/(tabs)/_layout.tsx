@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing } from '@zerog/ui';
+import { useTranslation } from 'react-i18next';
 
 // ============================================
 // Tab Icon — uniform for all tabs including Create
@@ -43,6 +44,9 @@ function TabIcon({ label, iconName, iconNameFocused, focused, isCreate }: TabIco
                 styles.tabIconContainer,
                 { transform: [{ scale: scaleAnim }] },
             ]}
+            accessibilityRole="tab"
+            accessibilityLabel={label}
+            accessibilityState={{ selected: focused }}
         >
             {/* Create tab gets a subtle pill background */}
             {isCreate ? (
@@ -83,6 +87,7 @@ function TabIcon({ label, iconName, iconNameFocused, focused, isCreate }: TabIco
 
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
 
     return (
         <Tabs
@@ -106,9 +111,10 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
+                    tabBarAccessibilityLabel: t('nav.home'),
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label="Home"
+                            label={t('nav.home')}
                             iconName="home-outline"
                             iconNameFocused="home"
                             focused={focused}
@@ -119,9 +125,10 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="search"
                 options={{
+                    tabBarAccessibilityLabel: t('nav.explore'),
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label="Explore"
+                            label={t('nav.explore')}
                             iconName="compass-outline"
                             iconNameFocused="compass"
                             focused={focused}
@@ -132,9 +139,10 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="create"
                 options={{
+                    tabBarAccessibilityLabel: t('nav.create'),
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label="Create"
+                            label={t('nav.create')}
                             iconName="add-outline"
                             iconNameFocused="add"
                             focused={focused}
@@ -146,9 +154,10 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="communities"
                 options={{
+                    tabBarAccessibilityLabel: t('nav.groups'),
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label="Groups"
+                            label={t('nav.groups')}
                             iconName="people-outline"
                             iconNameFocused="people"
                             focused={focused}
@@ -159,9 +168,10 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="profile"
                 options={{
+                    tabBarAccessibilityLabel: t('nav.you'),
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label="You"
+                            label={t('nav.you')}
                             iconName="person-outline"
                             iconNameFocused="person"
                             focused={focused}

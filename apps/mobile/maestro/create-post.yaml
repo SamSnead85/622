@@ -1,0 +1,21 @@
+appId: com.zerog.social
+---
+# ============================================
+# Create Post Flow — Maestro E2E Test
+# Tests creating a new text post (user must be logged in)
+# ============================================
+
+# Assumes user is already logged in and on the home feed
+- assertVisible: "For You"
+
+# Navigate to create screen via tab
+- tapOn: "Create"
+
+# Verify create screen loaded
+- assertVisible: "What's on your mind?"
+
+# Type post content
+- inputText: "Testing post creation from Maestro!"
+
+# Navigate back to home feed
+- tapOn: "Home"

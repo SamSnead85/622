@@ -46,6 +46,8 @@ export default {
         welcomeSubtitle: 'Votre communauté privée. Vos règles.',
         loginError: 'Échec de connexion. Veuillez réessayer.',
         signupError: 'Échec d\'inscription. Veuillez réessayer.',
+        resetPassword: 'Réinitialiser le mot de passe',
+        resetPasswordMessage: 'Entrez votre e-mail pour recevoir un lien de réinitialisation',
     },
 
     nav: {
@@ -58,6 +60,9 @@ export default {
         notifications: 'Notifications',
         settings: 'Paramètres',
         tools: 'Outils',
+        explore: 'Explorer',
+        groups: 'Groupes',
+        you: 'Vous',
     },
 
     feed: {
@@ -101,6 +106,7 @@ export default {
         writeCaption: 'À quoi pensez-vous ?',
         posting: 'Publication en cours...',
         posted: 'Publié !',
+        copyLink: 'Copier le lien',
     },
 
     messages: {
@@ -137,6 +143,15 @@ export default {
         createFirst: 'Créez votre première communauté',
         name: 'Nom de la communauté',
         description: 'Description',
+        newCommunity: 'Nouvelle communauté',
+        searchMembers: 'Rechercher des membres...',
+        askQuestion: 'Posez une question à la communauté...',
+        proposeTitle: 'Que proposez-vous ?',
+        proposeDetail: 'Expliquez votre proposition en détail...',
+        rules: 'Règles',
+        governance: 'Gouvernance',
+        polls: 'Sondages',
+        manage: 'Gérer les membres',
     },
 
     profile: {
@@ -169,6 +184,32 @@ export default {
         deleteAccount: 'Supprimer le compte',
         privacyMode: 'Mode confidentialité',
         communityOptIn: 'Adhésion communautaire',
+        permissionRequired: 'Autorisation requise',
+        photoAccessMessage: 'Nous avons besoin d\'accéder à vos photos pour mettre à jour votre photo de profil',
+        logoutConfirm: 'Êtes-vous sûr de vouloir vous déconnecter ?',
+        exportRequested: 'Exportation demandée',
+        exportEmailMessage: 'Vous recevrez bientôt un e-mail avec vos données',
+        algorithm: 'Votre algorithme',
+    },
+
+    notifications: {
+        title: 'Notifications',
+        social: 'Social',
+        socialDesc: 'J\'aime, commentaires, abonnements et mentions',
+        communitiesDesc: 'Nouveaux posts, adhésion et annonces',
+        messagesNotif: 'Messages',
+        messagesDesc: 'Messages directs et de groupe',
+        system: 'Système',
+        systemDesc: 'Alertes de sécurité, mises à jour et activité du compte',
+        markAllRead: 'Tout marquer comme lu',
+    },
+
+    discover: {
+        title: 'Découvrir',
+        trending: 'Tendances',
+        people: 'Personnes',
+        newContent: 'Nouveau',
+        privacyFirst: 'Confidentialité',
     },
 
     call: {
@@ -232,5 +273,17 @@ export default {
         failed: 'Import échoué. Veuillez réessayer.',
         stats: '{{posts}} publications, {{connections}} contacts importés',
         selectFile: 'Sélectionner le fichier d\'export',
+    },
+
+    ramadan: {
+        banner: 'Ramadan Moubarak',
+        eidBanner: 'Aïd Moubarak !',
+        startsIn: 'Ramadan dans {{days}} jours',
+        startsTomorrow: 'Le Ramadan commence demain !',
+        toolsPrompt: 'Heures de prière, Coran et plus — appuyez pour accéder à vos outils religieux',
+        getReady: 'Préparez-vous — heures de prière, lecteur de Coran et outils de jeûne disponibles',
+        faithRecommend: 'Recommandé pour le Ramadan',
+        addFaith: 'Ajoutez "Foi et Spiritualité" pour obtenir du contenu Ramadan dans votre fil',
+        eidMessage: 'Aïd al-Fitr — que vos prières et votre jeûne soient acceptés',
     },
 } as const;

@@ -5,7 +5,6 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    ActivityIndicator,
     Dimensions,
     RefreshControl,
 } from 'react-native';
@@ -16,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../lib/api';
+import { ScreenHeader, LoadingView } from '../components';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -153,18 +153,10 @@ export default function AnalyticsScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Your Analytics</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Your Analytics" />
 
             {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                </View>
+                <LoadingView />
             ) : (
                 <ScrollView
                     style={styles.scroll}
@@ -276,20 +268,6 @@ export default function AnalyticsScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold',
-    },
     scroll: { flex: 1 },
 
     // Stats grid
@@ -348,12 +326,12 @@ const styles = StyleSheet.create({
         width: 28, height: 28, borderRadius: 8,
         backgroundColor: colors.surface.goldSubtle,
         alignItems: 'center', justifyContent: 'center',
-        marginRight: spacing.md,
+        marginEnd: spacing.md,
     },
     topPostRankText: {
         fontSize: typography.fontSize.sm, fontWeight: '700', color: colors.gold[500],
     },
-    topPostInfo: { flex: 1, marginRight: spacing.sm },
+    topPostInfo: { flex: 1, marginEnd: spacing.sm },
     topPostContent: {
         fontSize: typography.fontSize.sm, color: colors.text.primary,
         fontWeight: '500', lineHeight: 18,

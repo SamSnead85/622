@@ -21,7 +21,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTranslation } from 'react-i18next';
 import { apiFetch, API } from '../../../lib/api';
+import { ScreenHeader } from '../../../components';
 
 const DURATIONS = [
     { label: '1 hour', hours: 1 },
@@ -36,6 +38,7 @@ export default function PollCreateScreen() {
     const router = useRouter();
     const { id: communityId } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
 
     const [question, setQuestion] = useState('');
     const [options, setOptions] = useState(['', '']);
@@ -90,13 +93,7 @@ export default function PollCreateScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Create Poll</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Create Poll" />
 
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -110,7 +107,7 @@ export default function PollCreateScreen() {
                         <Text style={styles.label}>Question</Text>
                         <TextInput
                             style={styles.questionInput}
-                            placeholder="Ask the community something..."
+                            placeholder={t('communities.askQuestion')}
                             placeholderTextColor={colors.text.muted}
                             value={question}
                             onChangeText={setQuestion}
@@ -223,19 +220,6 @@ export default function PollCreateScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold',
-    },
     scroll: { flex: 1 },
     label: {
         fontSize: typography.fontSize.xs, fontWeight: '700',

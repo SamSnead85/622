@@ -7,7 +7,6 @@ import {
     FlatList,
     TouchableOpacity,
     Image,
-    ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTranslation } from 'react-i18next';
+import { LoadingView } from '../../components';
 import { apiFetch, API } from '../../lib/api';
 
 interface SearchResult {
@@ -28,18 +29,20 @@ interface SearchResult {
 
 type FilterTab = 'all' | 'people' | 'posts' | 'communities';
 
-const DISCOVERY_CATEGORIES = [
-    { icon: 'trending-up' as const, label: 'Trending', color: colors.coral[500] },
-    { icon: 'people' as const, label: 'People', color: colors.azure[500] },
-    { icon: 'globe-outline' as const, label: 'Communities', color: colors.emerald[500] },
-    { icon: 'sparkles' as const, label: 'New', color: colors.gold[500] },
-    { icon: 'compass' as const, label: 'Tools', color: '#D4AF37', route: '/tools' },
-    { icon: 'shield-checkmark' as const, label: 'Privacy', color: colors.emerald[400], route: '/settings' },
+const getDiscoveryCategories = (t: (key: string) => string) => [
+    { id: 'trending', icon: 'trending-up' as const, label: t('discover.trending'), color: colors.coral[500] },
+    { id: 'people', icon: 'people' as const, label: t('discover.people'), color: colors.azure[500] },
+    { id: 'communities', icon: 'globe-outline' as const, label: t('nav.communities'), color: colors.emerald[500] },
+    { id: 'new', icon: 'sparkles' as const, label: t('discover.newContent'), color: colors.gold[500] },
+    { id: 'tools', icon: 'compass' as const, label: t('nav.tools'), color: '#D4AF37', route: '/tools' },
+    { id: 'privacy', icon: 'shield-checkmark' as const, label: t('discover.privacyFirst'), color: colors.emerald[400], route: '/settings' },
 ];
 
 export default function SearchScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
+    const DISCOVERY_CATEGORIES = getDiscoveryCategories(t);
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -170,7 +173,7 @@ export default function SearchScreen() {
             <View style={styles.categoryGrid}>
                 {DISCOVERY_CATEGORIES.map((cat) => (
                     <TouchableOpacity
-                        key={cat.label}
+                        key={cat.id}
                         style={styles.categoryCard}
                         activeOpacity={0.8}
                         onPress={() => {
@@ -180,11 +183,11 @@ export default function SearchScreen() {
                                 return;
                             }
                             const filterMap: Record<string, FilterTab> = {
-                                People: 'people', Communities: 'communities',
-                                Trending: 'all', New: 'all',
+                                people: 'people', communities: 'communities',
+                                trending: 'all', new: 'all',
                             };
-                            setActiveFilter(filterMap[cat.label] || 'all');
-                            handleSearch(cat.label === 'New' ? 'new' : cat.label === 'Trending' ? 'trending' : cat.label.toLowerCase());
+                            setActiveFilter(filterMap[cat.id] || 'all');
+                            handleSearch(cat.id === 'new' ? 'new' : cat.id === 'trending' ? 'trending' : cat.id);
                         }}
                     >
                         <View style={[styles.categoryIcon, { backgroundColor: `${cat.color}15` }]}>
@@ -249,9 +252,7 @@ export default function SearchScreen() {
 
             {/* Results */}
             {isSearching ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color={colors.gold[500]} />
-                </View>
+                <LoadingView size="small" />
             ) : hasSearched && filteredResults.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Ionicons name="search-outline" size={48} color={colors.text.muted} />
@@ -327,7 +328,7 @@ const styles = StyleSheet.create({
     },
     resultAvatar: { width: 44, height: 44, borderRadius: 22 },
     resultAvatarPlaceholder: { backgroundColor: colors.surface.glassHover, alignItems: 'center', justifyContent: 'center' },
-    resultInfo: { flex: 1, marginLeft: spacing.md },
+    resultInfo: { flex: 1, marginStart: spacing.md },
     resultTitle: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
     resultSubtitle: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },
     resultTypeBadge: { backgroundColor: colors.surface.glassHover, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: 6 },

@@ -1,0 +1,29 @@
+appId: com.zerog.social
+---
+# ============================================
+# Login Flow — Maestro E2E Test
+# Tests the complete login journey
+# ============================================
+
+# Launch the app fresh
+- launchApp
+
+# Verify welcome screen is visible
+- assertVisible: "Welcome"
+
+# Navigate to login screen
+- tapOn: "Log In"
+
+# Verify login screen loaded
+- assertVisible: "Welcome back"
+
+# Fill in email
+- tapOn: "Email"
+- inputText: "test@example.com"
+
+# Fill in password
+- tapOn: "Password"
+- inputText: "testpassword123"
+
+# Submit the login form
+- tapOn: "Sign In"

@@ -15,7 +15,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTranslation } from 'react-i18next';
 import { apiFetch, API } from '../../lib/api';
+import { ScreenHeader, LoadingView } from '../../components';
 
 interface NotificationPrefs {
     pushEnabled: boolean;
@@ -40,11 +42,11 @@ const DEFAULTS: NotificationPrefs = {
     channels: { social: true, communities: true, messages: true, system: true },
 };
 
-const CHANNELS = [
-    { key: 'social' as const, icon: 'heart-outline' as const, label: 'Social', description: 'Likes, comments, follows, and mentions' },
-    { key: 'communities' as const, icon: 'people-outline' as const, label: 'Communities', description: 'New posts, membership, and announcements' },
-    { key: 'messages' as const, icon: 'chatbubble-outline' as const, label: 'Messages', description: 'Direct and group messages' },
-    { key: 'system' as const, icon: 'settings-outline' as const, label: 'System', description: 'Security alerts, updates, and account activity' },
+const getChannels = (t: (key: string) => string) => [
+    { key: 'social' as const, icon: 'heart-outline' as const, label: t('notifications.social'), description: t('notifications.socialDesc') },
+    { key: 'communities' as const, icon: 'people-outline' as const, label: t('nav.communities'), description: t('notifications.communitiesDesc') },
+    { key: 'messages' as const, icon: 'chatbubble-outline' as const, label: t('notifications.messagesNotif'), description: t('notifications.messagesDesc') },
+    { key: 'system' as const, icon: 'settings-outline' as const, label: t('notifications.system'), description: t('notifications.systemDesc') },
 ];
 
 const QUIET_PRESETS = [
@@ -62,6 +64,8 @@ const DIGEST_OPTIONS: Array<{ value: NotificationPrefs['emailDigest']; label: st
 export default function NotificationPrefsScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
+    const CHANNELS = getChannels(t);
     const [prefs, setPrefs] = useState<NotificationPrefs>(DEFAULTS);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -124,11 +128,9 @@ export default function NotificationPrefsScreen() {
 
     if (loading) {
         return (
-            <View style={[styles.container, { paddingTop: insets.top }]}>
+            <View style={styles.container}>
                 <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                </View>
+                <LoadingView />
             </View>
         );
     }
@@ -137,13 +139,7 @@ export default function NotificationPrefsScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Notifications</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Notifications" />
 
             <ScrollView
                 style={styles.scroll}
@@ -154,7 +150,7 @@ export default function NotificationPrefsScreen() {
                 <Animated.View entering={FadeIn.duration(400)} style={styles.masterRow}>
                     <View style={styles.masterInfo}>
                         <Ionicons name="notifications" size={24} color={prefs.pushEnabled ? colors.gold[400] : colors.text.muted} />
-                        <View style={{ flex: 1, marginLeft: spacing.md }}>
+                        <View style={{ flex: 1, marginStart: spacing.md }}>
                             <Text style={styles.masterLabel}>Push Notifications</Text>
                             <Text style={styles.masterDesc}>{prefs.pushEnabled ? 'Enabled' : 'Disabled'}</Text>
                         </View>
@@ -184,7 +180,7 @@ export default function NotificationPrefsScreen() {
                                 <View style={styles.channelIcon}>
                                     <Ionicons name={ch.icon} size={20} color={prefs.channels[ch.key] ? colors.gold[400] : colors.text.muted} />
                                 </View>
-                                <View style={{ flex: 1, marginLeft: spacing.md }}>
+                                <View style={{ flex: 1, marginStart: spacing.md }}>
                                     <Text style={styles.channelLabel}>{ch.label}</Text>
                                     <Text style={styles.channelDesc}>{ch.description}</Text>
                                 </View>
@@ -284,20 +280,6 @@ export default function NotificationPrefsScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold',
-    },
     scroll: { flex: 1 },
 
     // Master toggle

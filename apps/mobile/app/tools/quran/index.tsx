@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { ScreenHeader } from '../../../components';
 
 // Hardcoded surah list (~3KB, no API call needed)
 const SURAHS = [
@@ -150,6 +151,8 @@ export default function QuranSurahList() {
                     router.push(`/tools/quran/${item.number}` as any);
                 }}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`Surah ${item.number}, ${item.name}, ${item.englishName}, ${item.versesCount} verses, ${item.revelationType}`}
             >
                 <View style={styles.surahNumber}>
                     <Text style={styles.surahNumberText}>{item.number}</Text>
@@ -170,19 +173,20 @@ export default function QuranSurahList() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Quran</Text>
-                <TouchableOpacity
-                    style={styles.searchIconBtn}
-                    onPress={() => router.push('/tools/quran/search' as any)}
-                >
-                    <Ionicons name="search-outline" size={20} color={colors.text.primary} />
-                </TouchableOpacity>
-            </View>
+            <ScreenHeader
+                title="Quran"
+                noBorder
+                rightElement={
+                    <TouchableOpacity
+                        style={styles.searchIconBtn}
+                        onPress={() => router.push('/tools/quran/search' as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Search Quran"
+                    >
+                        <Ionicons name="search-outline" size={20} color={colors.text.primary} />
+                    </TouchableOpacity>
+                }
+            />
 
             {/* Quick filter */}
             <View style={styles.searchBar}>
@@ -193,6 +197,7 @@ export default function QuranSurahList() {
                     placeholderTextColor={colors.text.muted}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
+                    accessibilityLabel="Search surahs"
                 />
             </View>
 
@@ -213,16 +218,6 @@ export default function QuranSurahList() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: { fontSize: 22, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold' },
     searchIconBtn: {
         width: 40, height: 40, borderRadius: 20,
         backgroundColor: colors.surface.glassHover,
@@ -247,7 +242,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     surahNumberText: { fontSize: typography.fontSize.sm, fontWeight: '700', color: colors.gold[400] },
-    surahInfo: { flex: 1, marginLeft: spacing.md },
+    surahInfo: { flex: 1, marginStart: spacing.md },
     surahName: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
     surahEnglish: { fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: 2 },
     surahMeta: { alignItems: 'flex-end' },

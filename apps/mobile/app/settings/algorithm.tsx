@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
+import { ScreenHeader, LoadingView } from '../../components';
 
 interface FeedPreferences {
     recencyWeight: number;
@@ -179,11 +180,9 @@ export default function AlgorithmMixerScreen() {
 
     if (loading) {
         return (
-            <View style={[styles.container, { paddingTop: insets.top }]}>
+            <View style={styles.container}>
                 <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                </View>
+                <LoadingView />
             </View>
         );
     }
@@ -192,15 +191,14 @@ export default function AlgorithmMixerScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Your Algorithm</Text>
-                <TouchableOpacity onPress={handleReset}>
-                    <Text style={styles.resetBtn}>Reset</Text>
-                </TouchableOpacity>
-            </View>
+            <ScreenHeader
+                title="Your Algorithm"
+                rightElement={
+                    <TouchableOpacity onPress={handleReset}>
+                        <Text style={styles.resetBtn}>Reset</Text>
+                    </TouchableOpacity>
+                }
+            />
 
             <ScrollView
                 style={styles.scroll}
@@ -326,20 +324,6 @@ export default function AlgorithmMixerScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold',
-    },
     resetBtn: {
         fontSize: typography.fontSize.sm, color: colors.text.muted, fontWeight: '600',
     },

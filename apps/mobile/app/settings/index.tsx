@@ -23,7 +23,9 @@ import Constants from 'expo-constants';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore } from '../../stores';
+import { ScreenHeader } from '../../components';
 import { apiFetch, apiUpload, API } from '../../lib/api';
+import { useTranslation } from 'react-i18next';
 import { SUPPORTED_LANGUAGES, changeLanguage } from '../../lib/i18n';
 import i18next from 'i18next';
 
@@ -43,6 +45,8 @@ function SettingRow({ icon, label, description, onPress, rightElement, danger }:
             onPress={onPress}
             activeOpacity={onPress ? 0.7 : 1}
             disabled={!onPress}
+            accessibilityRole="button"
+            accessibilityLabel={`${label}${description ? `, ${description}` : ''}`}
         >
             <View style={[styles.settingIcon, danger && styles.settingIconDanger]}>
                 <Ionicons
@@ -65,6 +69,7 @@ function SettingRow({ icon, label, description, onPress, rightElement, danger }:
 export default function SettingsScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
     const user = useAuthStore((s) => s.user);
     const logout = useAuthStore((s) => s.logout);
     const refreshUser = useAuthStore((s) => s.refreshUser);
@@ -102,7 +107,7 @@ export default function SettingsScreen() {
     const handlePickAvatar = useCallback(async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert('Permission Required', 'We need access to your photos to update your avatar.');
+            Alert.alert(t('settings.permissionRequired'), 'We need access to your photos to update your avatar.');
             return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -143,10 +148,10 @@ export default function SettingsScreen() {
     const appVersion = Constants.expoConfig?.version || '1.0.0';
 
     const handleLogout = () => {
-        Alert.alert('Log Out', 'Are you sure you want to log out?', [
+        Alert.alert(t('auth.logout'), t('settings.logoutConfirm'), [
             { text: 'Cancel', style: 'cancel' },
             {
-                text: 'Log Out',
+                text: t('auth.logout'),
                 style: 'destructive',
                 onPress: async () => {
                     await logout();
@@ -229,14 +234,7 @@ export default function SettingsScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Settings</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Settings" />
 
             <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: insets.bottom + 80 }} showsVerticalScrollIndicator={false}>
                 <Animated.View entering={FadeInDown.duration(300)}>
@@ -258,7 +256,7 @@ export default function SettingsScreen() {
                         {showProfileEditor && (
                             <View style={styles.profileEditor}>
                                 {/* Avatar */}
-                                <TouchableOpacity style={styles.avatarEditor} onPress={handlePickAvatar} disabled={isUploadingAvatar}>
+                                <TouchableOpacity style={styles.avatarEditor} onPress={handlePickAvatar} disabled={isUploadingAvatar} accessibilityRole="button" accessibilityLabel="Your profile photo" accessibilityHint="Tap to change your avatar">
                                     {user?.avatarUrl ? (
                                         <Image source={{ uri: user.avatarUrl }} style={styles.editAvatar} transition={150} />
                                     ) : (
@@ -302,7 +300,7 @@ export default function SettingsScreen() {
                                 <Text style={styles.charCount}>{editBio.length}/200</Text>
 
                                 {/* Save button */}
-                                <TouchableOpacity style={styles.saveProfileBtn} onPress={handleSaveProfile} disabled={isSavingProfile}>
+                                <TouchableOpacity style={styles.saveProfileBtn} onPress={handleSaveProfile} disabled={isSavingProfile} accessibilityRole="button" accessibilityLabel="Save profile">
                                     <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.saveProfileGradient}>
                                         {isSavingProfile ? (
                                             <ActivityIndicator size="small" color={colors.obsidian[900]} />
@@ -337,6 +335,9 @@ export default function SettingsScreen() {
                                             key={opt.key}
                                             style={[styles.profileOption, culturalProfile === opt.key && styles.profileOptionActive]}
                                             onPress={() => handleCulturalProfileChange(opt.key)}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`${opt.label} greeting profile, ${opt.desc}`}
+                                            accessibilityState={{ selected: culturalProfile === opt.key }}
                                         >
                                             <Text style={[styles.profileOptionLabel, culturalProfile === opt.key && styles.profileOptionLabelActive]}>{opt.label}</Text>
                                             <Text style={styles.profileOptionDesc}>{opt.desc}</Text>
@@ -401,6 +402,9 @@ export default function SettingsScreen() {
                                     <TouchableOpacity
                                         key={lang.code}
                                         style={[styles.languageOption, currentLang === lang.code && styles.languageOptionActive]}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`${lang.nativeName}, ${lang.name}`}
+                                        accessibilityState={{ selected: currentLang === lang.code }}
                                         onPress={async () => {
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                             await changeLanguage(lang.code as any);
@@ -474,7 +478,7 @@ export default function SettingsScreen() {
                                             onPress: async () => {
                                                 try {
                                                     await apiFetch('/api/v1/account/export', { method: 'POST' });
-                                                    Alert.alert('Export Requested', 'You\'ll receive an email when your data export is ready.');
+                                                    Alert.alert(t('settings.exportRequested'), 'You\'ll receive an email when your data export is ready.');
                                                 } catch {
                                                     Alert.alert('Error', 'Failed to request data export. Please try again.');
                                                 }
@@ -520,23 +524,12 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backButton: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: { fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold' },
     scrollView: { flex: 1 },
     section: { marginTop: spacing.lg, paddingHorizontal: spacing.lg },
     sectionTitle: {
         fontSize: typography.fontSize.xs, fontWeight: '700',
         color: colors.text.muted, textTransform: 'uppercase',
-        letterSpacing: 1, marginBottom: spacing.sm, marginLeft: spacing.sm,
+        letterSpacing: 1, marginBottom: spacing.sm, marginStart: spacing.sm,
     },
     settingRow: {
         flexDirection: 'row', alignItems: 'center',
@@ -550,7 +543,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     settingIconDanger: { backgroundColor: colors.surface.coralSubtle },
-    settingContent: { flex: 1, marginLeft: spacing.md },
+    settingContent: { flex: 1, marginStart: spacing.md },
     settingLabel: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
     settingLabelDanger: { color: colors.coral[500] },
     settingDescription: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },

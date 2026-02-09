@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { ScreenHeader, LoadingView } from '../../components';
 
 const KAABA_LAT = 21.4225;
 const KAABA_LNG = 39.8262;
@@ -40,7 +41,6 @@ function calculateDistance(lat: number, lng: number): number {
 
 export default function QiblaScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
     const [isLoading, setIsLoading] = useState(true);
     const [qiblaAngle, setQiblaAngle] = useState(0);
     const [distance, setDistance] = useState(0);
@@ -86,21 +86,11 @@ export default function QiblaScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], '#0A0A10']} style={StyleSheet.absoluteFill} />
 
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Qibla Direction</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Qibla Direction" />
 
             <View style={styles.content}>
                 {isLoading ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={colors.gold[500]} />
-                        <Text style={styles.loadingText}>Finding Qibla direction...</Text>
-                    </View>
+                    <LoadingView message="Finding Qibla direction..." />
                 ) : (
                     <Animated.View entering={FadeIn.duration(800)} style={styles.compassContainer}>
                         {/* Compass outer ring */}
@@ -165,20 +155,7 @@ export default function QiblaScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: { fontSize: 20, fontWeight: '700', color: colors.text.primary },
     content: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    loadingContainer: { alignItems: 'center' },
-    loadingText: { color: colors.text.muted, marginTop: spacing.md, fontSize: typography.fontSize.sm },
 
     compassContainer: { alignItems: 'center', paddingHorizontal: spacing.xl },
     compassOuter: {

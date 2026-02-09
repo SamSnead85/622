@@ -14,13 +14,14 @@ import {
     Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API_URL, getToken } from '../../lib/api';
+import { ScreenHeader } from '../../components';
 
 // ============================================
 // Types
@@ -94,8 +95,6 @@ const PLATFORMS = [
 
 export default function ImportScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
-
     const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
     const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
     const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -211,26 +210,23 @@ export default function ImportScreen() {
     const platform = PLATFORMS.find((p) => p.id === selectedPlatform);
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.container}>
             <LinearGradient
                 colors={[colors.obsidian[900], colors.obsidian[800]]}
                 style={StyleSheet.absoluteFill}
             />
 
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => {
+            <ScreenHeader
+                title="Import Data"
+                onBack={() => {
                     if (selectedPlatform && importStatus === 'idle') {
                         setSelectedPlatform(null);
                     } else {
                         router.back();
                     }
-                }}>
-                    <Ionicons name="chevron-back" size={22} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Import Data</Text>
-                <View style={{ width: 36 }} />
-            </View>
+                }}
+                noBorder
+            />
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -281,9 +277,9 @@ export default function ImportScreen() {
                     <View>
                         {importStatus === 'idle' && platform && (
                             <View>
-                                <View style={[styles.platformHeader, { borderLeftColor: platform.color }]}>
+                                <View style={[styles.platformHeader, { borderStartColor: platform.color }]}>
                                     <Ionicons name={platform.icon} size={32} color={platform.color} />
-                                    <View style={{ flex: 1, marginLeft: spacing.md }}>
+                                    <View style={{ flex: 1, marginStart: spacing.md }}>
                                         <Text style={styles.platformHeaderName}>{platform.name}</Text>
                                         <Text style={styles.platformHeaderDesc}>{platform.description}</Text>
                                     </View>
@@ -404,27 +400,6 @@ export default function ImportScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.md,
-    },
-    backBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerTitle: {
-        flex: 1,
-        fontSize: typography.fontSize.lg,
-        fontWeight: '700',
-        color: colors.text.primary,
-        textAlign: 'center',
-    },
     scrollContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
     subtitle: {
         fontSize: typography.fontSize.base,
@@ -472,7 +447,7 @@ const styles = StyleSheet.create({
         padding: spacing.lg,
         backgroundColor: colors.surface.glass,
         borderRadius: 16,
-        borderLeftWidth: 4,
+        borderStartWidth: 4,
         marginBottom: spacing.xl,
     },
     platformHeaderName: { fontSize: typography.fontSize.lg, fontWeight: '700', color: colors.text.primary },

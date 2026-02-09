@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { LoadingView } from '../../components';
 import { useCommunitiesStore, Community } from '../../stores';
 import { RetryView } from '../../components/RetryView';
 
@@ -42,6 +43,9 @@ const CommunityCard = memo(({ community }: { community: Community }) => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     router.push(`/community/${community.id}`);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`${community.name}, ${formatCount(community.membersCount)} members`}
+                accessibilityHint="Double tap to open community"
             >
                 {community.coverUrl && (
                     <View style={styles.cardCover}>
@@ -115,11 +119,11 @@ function CreateCommunityModal({ visible, onClose, onCreate }: { visible: boolean
                 <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
                 {/* Modal Header */}
                 <View style={styles.modalHeader}>
-                    <TouchableOpacity onPress={onClose}>
+                    <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancel">
                         <Text style={styles.modalCancel}>Cancel</Text>
                     </TouchableOpacity>
-                    <Text style={styles.modalTitle}>New Community</Text>
-                    <TouchableOpacity onPress={handleCreate} disabled={isCreating || !name.trim()}>
+                    <Text style={styles.modalTitle} accessibilityRole="header">New Community</Text>
+                    <TouchableOpacity onPress={handleCreate} disabled={isCreating || !name.trim()} accessibilityRole="button" accessibilityLabel="Create community" accessibilityState={{ disabled: isCreating || !name.trim() }}>
                         {isCreating ? (
                             <ActivityIndicator size="small" color={colors.gold[500]} />
                         ) : (
@@ -138,6 +142,7 @@ function CreateCommunityModal({ visible, onClose, onCreate }: { visible: boolean
                         placeholderTextColor={colors.text.muted}
                         maxLength={50}
                         autoFocus
+                        accessibilityLabel="Community name"
                     />
 
                     <Text style={styles.inputLabel}>Description</Text>
@@ -149,6 +154,7 @@ function CreateCommunityModal({ visible, onClose, onCreate }: { visible: boolean
                         placeholderTextColor={colors.text.muted}
                         maxLength={500}
                         multiline
+                        accessibilityLabel="Community description"
                     />
 
                     <View style={styles.switchRow}>
@@ -196,12 +202,7 @@ export default function CommunitiesScreen() {
 
     const renderEmpty = () => {
         if (isLoading) {
-            return (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                    <Text style={styles.loadingText}>Loading communities...</Text>
-                </View>
-            );
+            return <LoadingView message="Loading communities..." />;
         }
         if (commError && communities.length === 0) {
             return (
@@ -226,6 +227,8 @@ export default function CommunitiesScreen() {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                         setShowCreateModal(true);
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Create community"
                 >
                     <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.createBtnGradient}>
                         <Ionicons name="add" size={20} color={colors.obsidian[900]} />
@@ -244,7 +247,7 @@ export default function CommunitiesScreen() {
             <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
                 <View style={styles.headerRow}>
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle}>Communities</Text>
+                        <Text style={styles.headerTitle} accessibilityRole="header">Communities</Text>
                         <Text style={styles.headerSubtitle}>Your private groups and tribes</Text>
                     </View>
                     <TouchableOpacity
@@ -253,6 +256,8 @@ export default function CommunitiesScreen() {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                             setShowCreateModal(true);
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Create community"
                     >
                         <Ionicons name="add" size={22} color={colors.gold[500]} />
                     </TouchableOpacity>
@@ -269,6 +274,7 @@ export default function CommunitiesScreen() {
                             value={searchQuery}
                             onChangeText={setSearchQuery}
                             autoCapitalize="none"
+                            accessibilityLabel="Search communities"
                         />
                     </View>
                 )}

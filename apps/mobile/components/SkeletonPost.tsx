@@ -1,5 +1,5 @@
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing } from '@zerog/ui';
 
@@ -144,6 +144,62 @@ export function SkeletonGrid() {
     );
 }
 
+// ============================================
+// SkeletonToContent — crossfade from skeleton to content
+// ============================================
+
+export function SkeletonToContent({
+    isLoaded,
+    children,
+}: {
+    isLoaded: boolean;
+    children: ReactNode;
+}) {
+    const skeletonOpacity = useRef(new Animated.Value(1)).current;
+    const contentOpacity = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (isLoaded) {
+            Animated.parallel([
+                Animated.timing(skeletonOpacity, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(contentOpacity, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        } else {
+            // Reset when going back to loading
+            skeletonOpacity.setValue(1);
+            contentOpacity.setValue(0);
+        }
+    }, [isLoaded]);
+
+    return (
+        <View>
+            {/* Skeleton layer — in normal flow, provides layout height */}
+            <Animated.View
+                style={{ opacity: skeletonOpacity }}
+                pointerEvents={isLoaded ? 'none' : 'auto'}
+            >
+                <SkeletonPost />
+            </Animated.View>
+
+            {/* Content layer — absolute overlay, fades in on top */}
+            <Animated.View
+                style={[StyleSheet.absoluteFillObject, { opacity: contentOpacity }]}
+                pointerEvents={isLoaded ? 'auto' : 'none'}
+            >
+                {children}
+            </Animated.View>
+        </View>
+    );
+}
+
 const styles = StyleSheet.create({
     feed: {
         paddingHorizontal: spacing.md,
@@ -162,7 +218,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     headerText: {
-        marginLeft: spacing.sm,
+        marginStart: spacing.sm,
     },
     actions: {
         flexDirection: 'row',

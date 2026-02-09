@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../lib/api';
+import { ScreenHeader, LoadingView } from '../components';
 
 interface Topic {
     id: string;
@@ -125,19 +126,10 @@ export default function InterestsScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Your Interests</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Your Interests" />
 
             {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                    <Text style={styles.loadingText}>Loading topics...</Text>
-                </View>
+                <LoadingView message="Loading topics..." />
             ) : (
                 <>
                     <ScrollView
@@ -160,16 +152,59 @@ export default function InterestsScreen() {
                             </View>
                         </Animated.View>
 
+                        {/* Ramadan suggestion */}
+                        {(() => {
+                            const now = new Date();
+                            const ramadanStart = new Date(2026, 1, 18);
+                            const ramadanEnd = new Date(2026, 2, 23);
+                            const isRamadanSeason = now >= new Date(2026, 0, 19) && now <= ramadanEnd;
+                            const faithTopic = topics.find((t) => t.slug === 'faith');
+                            if (isRamadanSeason && faithTopic && !selectedIds.has(faithTopic.id)) {
+                                return (
+                                    <Animated.View entering={FadeInDown.duration(400)} style={styles.ramadanSuggestion}>
+                                        <Text style={styles.ramadanSuggestionIcon}>☪️</Text>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={styles.ramadanSuggestionTitle}>Recommended for Ramadan</Text>
+                                            <Text style={styles.ramadanSuggestionText}>
+                                                Add "Faith & Spirituality" to get Ramadan content in your feed
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={styles.ramadanSuggestionBtn}
+                                            onPress={() => toggleTopic(faithTopic.id)}
+                                            accessibilityRole="button"
+                                            accessibilityLabel="Add Faith and Spirituality topic"
+                                        >
+                                            <Text style={styles.ramadanSuggestionBtnText}>Add</Text>
+                                        </TouchableOpacity>
+                                    </Animated.View>
+                                );
+                            }
+                            return null;
+                        })()}
+
                         <View style={styles.grid}>
                             {topics.map((topic, i) => {
                                 const { icon, color } = getTopicVisuals(topic);
                                 const isSelected = selectedIds.has(topic.id);
+                                const isRamadanHighlight = topic.slug === 'faith' && (() => {
+                                    const now = new Date();
+                                    return now >= new Date(2026, 0, 19) && now <= new Date(2026, 2, 23);
+                                })();
                                 return (
                                     <Animated.View key={topic.id} entering={FadeInDown.duration(300).delay(i * 40)}>
                                         <TouchableOpacity
-                                            style={[styles.topicCard, isSelected && { borderColor: color + '80' }]}
+                                            style={[
+                                                styles.topicCard,
+                                                isSelected && { borderColor: color + '80' },
+                                                isRamadanHighlight && !isSelected && styles.ramadanTopicHighlight,
+                                            ]}
                                             onPress={() => toggleTopic(topic.id)}
                                             activeOpacity={0.7}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`${topic.name}${topic.postCount > 0 ? `, ${topic.postCount} posts` : ''}`}
+                                            accessibilityState={{ selected: isSelected }}
+                                            accessibilityHint={isSelected ? 'Double tap to deselect' : 'Double tap to select'}
                                         >
                                             {isSelected && (
                                                 <View style={[StyleSheet.absoluteFill, { backgroundColor: color + '10', borderRadius: 14 }]} />
@@ -211,6 +246,9 @@ export default function InterestsScreen() {
                             onPress={handleSave}
                             disabled={saving || selectedIds.size < 3}
                             activeOpacity={0.9}
+                            accessibilityRole="button"
+                            accessibilityLabel={selectedIds.size < 3 ? `Pick ${3 - selectedIds.size} more topics` : 'Save interests'}
+                            accessibilityState={{ disabled: saving || selectedIds.size < 3 }}
                         >
                             <LinearGradient
                                 colors={selectedIds.size >= 3 ? [colors.gold[400], colors.gold[600]] : [colors.obsidian[500], colors.obsidian[600]]}
@@ -236,21 +274,6 @@ export default function InterestsScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    loadingText: { fontSize: typography.fontSize.base, color: colors.text.muted, marginTop: spacing.lg },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold',
-    },
     scroll: { flex: 1 },
     intro: {
         paddingTop: spacing.xl, paddingBottom: spacing.lg,
@@ -300,6 +323,31 @@ const styles = StyleSheet.create({
         position: 'absolute', top: spacing.sm, right: spacing.sm,
         width: 22, height: 22, borderRadius: 11,
         alignItems: 'center', justifyContent: 'center',
+    },
+    ramadanSuggestion: {
+        flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+        backgroundColor: colors.surface.goldSubtle, borderRadius: 14,
+        padding: spacing.md, marginBottom: spacing.lg,
+        borderWidth: 1, borderColor: colors.gold[500] + '30',
+    },
+    ramadanSuggestionIcon: { fontSize: 24 },
+    ramadanSuggestionTitle: {
+        fontSize: typography.fontSize.sm, fontWeight: '700', color: colors.gold[400],
+    },
+    ramadanSuggestionText: {
+        fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: 2,
+    },
+    ramadanSuggestionBtn: {
+        backgroundColor: colors.gold[500], borderRadius: 10,
+        paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
+    },
+    ramadanSuggestionBtnText: {
+        fontSize: typography.fontSize.sm, fontWeight: '700', color: colors.obsidian[900],
+    },
+    ramadanTopicHighlight: {
+        borderColor: colors.gold[500] + '40',
+        shadowColor: colors.gold[500], shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.15, shadowRadius: 8,
     },
     emptyState: {
         alignItems: 'center', paddingTop: 80,

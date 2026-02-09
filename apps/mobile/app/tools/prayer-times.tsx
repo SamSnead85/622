@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,6 +8,7 @@ import * as Location from 'expo-location';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ScreenHeader, LoadingView } from '../../components';
 
 interface PrayerTime {
     name: string;
@@ -142,25 +143,20 @@ export default function PrayerTimesScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], '#0D0D12']} style={StyleSheet.absoluteFill} />
 
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Prayer Times</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Prayer Times" />
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}>
                 {isLoading ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={colors.gold[500]} />
-                        <Text style={styles.loadingText}>Getting your prayer times...</Text>
-                    </View>
+                    <LoadingView message="Getting your prayer times..." />
                 ) : (
                     <>
                         {/* Next prayer card */}
-                        <Animated.View entering={FadeInDown.duration(500)} style={styles.nextPrayerCard}>
+                        <Animated.View
+                            entering={FadeInDown.duration(500)}
+                            style={styles.nextPrayerCard}
+                            accessibilityRole="header"
+                            accessibilityLabel={`Next prayer: ${nextPrayer || 'Fajr'} in ${countdown}${locationName ? `, location: ${locationName}` : ''}`}
+                        >
                             <LinearGradient
                                 colors={[colors.gold[700] + '30', colors.gold[500] + '10']}
                                 style={StyleSheet.absoluteFill}
@@ -198,6 +194,7 @@ export default function PrayerTimesScreen() {
                                         key={prayer.name}
                                         entering={FadeInDown.duration(400).delay(i * 60)}
                                         style={[styles.prayerRow, isNext && styles.prayerRowActive]}
+                                        accessibilityLabel={`${prayer.name}, ${prayer.arabicName}, ${prayer.time}${isNext ? ', next prayer' : ''}`}
                                     >
                                         <View style={[styles.prayerIcon, isNext && styles.prayerIconActive]}>
                                             <Ionicons name={prayer.icon} size={20} color={isNext ? colors.gold[400] : colors.text.muted} />
@@ -225,19 +222,6 @@ export default function PrayerTimesScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: { fontSize: 20, fontWeight: '700', color: colors.text.primary },
-    loadingContainer: { alignItems: 'center', paddingTop: 100 },
-    loadingText: { color: colors.text.muted, marginTop: spacing.md, fontSize: typography.fontSize.sm },
 
     // Next prayer card
     nextPrayerCard: {
@@ -280,7 +264,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     prayerIconActive: { backgroundColor: colors.surface.goldLight },
-    prayerInfo: { flex: 1, marginLeft: spacing.md },
+    prayerInfo: { flex: 1, marginStart: spacing.md },
     prayerName: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
     prayerNameActive: { color: colors.gold[400] },
     prayerArabic: { fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: 2 },
@@ -288,6 +272,6 @@ const styles = StyleSheet.create({
     prayerTimeActive: { color: colors.gold[400] },
     nextDot: {
         width: 8, height: 8, borderRadius: 4,
-        backgroundColor: colors.gold[500], marginLeft: spacing.sm,
+        backgroundColor: colors.gold[500], marginStart: spacing.sm,
     },
 });

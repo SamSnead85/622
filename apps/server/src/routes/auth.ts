@@ -656,6 +656,141 @@ router.post('/google', async (req, res, next) => {
 });
 
 // ============================================
+// POST /api/v1/auth/apple - Handle Apple Sign In
+// ============================================
+const appleAuthSchema = z.object({
+    identityToken: z.string(),
+    displayName: z.string().optional(),
+});
+
+router.post('/apple', async (req, res, next) => {
+    try {
+        const { identityToken, displayName } = appleAuthSchema.parse(req.body);
+
+        // Decode the Apple identity token (JWT)
+        // Apple tokens are JWTs signed with Apple's public key
+        const tokenParts = identityToken.split('.');
+        if (tokenParts.length !== 3) {
+            throw new AppError('Invalid Apple identity token', 400);
+        }
+
+        let payload: { sub: string; email?: string; email_verified?: string | boolean };
+        try {
+            const payloadBase64 = tokenParts[1].replace(/-/g, '+').replace(/_/g, '/');
+            const payloadJson = Buffer.from(payloadBase64, 'base64').toString('utf-8');
+            payload = JSON.parse(payloadJson);
+        } catch {
+            throw new AppError('Invalid Apple token payload', 400);
+        }
+
+        if (!payload.sub) {
+            throw new AppError('Apple token missing subject identifier', 400);
+        }
+
+        const appleId = payload.sub;
+        const email = payload.email;
+
+        // Look up existing OAuth account
+        let oauthAccount = await prisma.oAuthAccount.findUnique({
+            where: { provider_providerId: { provider: 'apple', providerId: appleId } },
+            include: { user: true },
+        });
+
+        let user;
+
+        if (oauthAccount) {
+            // Existing Apple user — log them in
+            user = oauthAccount.user;
+        } else if (email) {
+            // Check if a user exists with this email
+            user = await prisma.user.findUnique({
+                where: { email: email.toLowerCase() },
+            });
+
+            if (user) {
+                // Link Apple account to existing user
+                await prisma.oAuthAccount.create({
+                    data: {
+                        userId: user.id,
+                        provider: 'apple',
+                        providerId: appleId,
+                    },
+                });
+            } else {
+                // Create new user from Apple profile
+                const username = (email.split('@')[0] || 'user')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9_]/g, '')
+                    .substring(0, 20) +
+                    Math.random().toString(36).substring(2, 6);
+
+                user = await prisma.user.create({
+                    data: {
+                        email: email.toLowerCase(),
+                        username,
+                        displayName: displayName || email.split('@')[0],
+                        isVerified: true, // Apple accounts are pre-verified
+                        oauthAccounts: {
+                            create: {
+                                provider: 'apple',
+                                providerId: appleId,
+                            },
+                        },
+                    },
+                });
+            }
+        } else {
+            // No email provided (user chose "Hide My Email" and first sign-in)
+            // Create user with Apple sub as identifier
+            const username = 'apple_' + Math.random().toString(36).substring(2, 10);
+            user = await prisma.user.create({
+                data: {
+                    email: `${appleId}@privaterelay.appleid.com`,
+                    username,
+                    displayName: displayName || 'Apple User',
+                    isVerified: true,
+                    oauthAccounts: {
+                        create: {
+                            provider: 'apple',
+                            providerId: appleId,
+                        },
+                    },
+                },
+            });
+        }
+
+        if (user.isBanned) {
+            throw new AppError('Account suspended', 403);
+        }
+
+        // Generate session token
+        const { token, expiresAt } = await generateTokens(user.id, {
+            type: req.headers['x-device-type'] as string,
+            name: req.headers['x-device-name'] as string,
+            ip: req.ip,
+        });
+
+        res.json({
+            user: {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                displayName: user.displayName,
+                avatarUrl: user.avatarUrl,
+                coverUrl: user.coverUrl,
+                bio: user.bio,
+                isVerified: user.isVerified,
+            },
+            token,
+            expiresAt,
+            isNewUser: !user.bio,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
 // PASSWORD RESET FLOW
 // ============================================
 

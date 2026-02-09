@@ -10,7 +10,6 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    Image,
     Animated,
     Dimensions,
     Platform,
@@ -24,6 +23,7 @@ import * as Haptics from 'expo-haptics';
 import { colors, typography, spacing } from '@zerog/ui';
 import { socketManager } from '../../lib/socket';
 import { useAuthStore } from '../../stores';
+import { Avatar } from '../../components';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -284,15 +284,13 @@ export default function CallScreen() {
                         </>
                     )}
 
-                    {targetAvatar ? (
-                        <Image source={{ uri: targetAvatar }} style={styles.avatar} />
-                    ) : (
-                        <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                            <Text style={styles.avatarInitial}>
-                                {targetName[0]?.toUpperCase() || '?'}
-                            </Text>
-                        </View>
-                    )}
+                    <Avatar
+                        uri={targetAvatar || undefined}
+                        name={targetName}
+                        customSize={120}
+                        borderColor={colors.gold[400]}
+                        borderWidth={3}
+                    />
                 </View>
 
                 {/* Name & Status */}
@@ -409,13 +407,6 @@ const styles = StyleSheet.create({
 
     // Avatar
     avatarSection: { alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xl },
-    avatar: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: colors.gold[400] },
-    avatarPlaceholder: {
-        backgroundColor: colors.obsidian[600],
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    avatarInitial: { fontSize: 48, fontWeight: '700', color: colors.text.primary },
     pulseRing: {
         position: 'absolute',
         width: 120,

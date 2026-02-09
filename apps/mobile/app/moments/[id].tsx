@@ -17,6 +17,7 @@ import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming } from '
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
+import { Avatar } from '../../components';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MOMENT_DURATION = 5000; // 5 seconds per moment
@@ -155,15 +156,7 @@ export default function MomentViewerScreen() {
 
                 {/* User info */}
                 <View style={styles.userInfo}>
-                    {currentMoment.user.avatarUrl ? (
-                        <Image source={{ uri: currentMoment.user.avatarUrl }} style={styles.userAvatar} />
-                    ) : (
-                        <View style={[styles.userAvatar, styles.avatarPlaceholder]}>
-                            <Text style={styles.avatarLetter}>
-                                {currentMoment.user.displayName?.charAt(0).toUpperCase() || '?'}
-                            </Text>
-                        </View>
-                    )}
+                    <Avatar uri={currentMoment.user.avatarUrl} name={currentMoment.user.displayName} customSize={32} />
                     <Text style={styles.userName}>{currentMoment.user.displayName}</Text>
                     <Text style={styles.timeAgo}>{getTimeAgo(currentMoment.createdAt)}</Text>
                     <View style={{ flex: 1 }} />
@@ -243,13 +236,6 @@ const styles = StyleSheet.create({
     },
     userAvatar: {
         width: 32, height: 32, borderRadius: 16,
-    },
-    avatarPlaceholder: {
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        alignItems: 'center', justifyContent: 'center',
-    },
-    avatarLetter: {
-        fontSize: 14, fontWeight: '700', color: '#fff',
     },
     userName: {
         fontSize: typography.fontSize.base, fontWeight: '700', color: '#fff',

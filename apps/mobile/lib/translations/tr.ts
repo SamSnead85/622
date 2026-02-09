@@ -46,6 +46,8 @@ export default {
         welcomeSubtitle: 'Sizin topluluğunuz. Sizin kurallarınız.',
         loginError: 'Giriş başarısız. Tekrar deneyin.',
         signupError: 'Kayıt başarısız. Tekrar deneyin.',
+        resetPassword: 'Şifre Sıfırla',
+        resetPasswordMessage: 'Sıfırlama bağlantısı almak için e-postanızı girin',
     },
 
     nav: {
@@ -58,6 +60,9 @@ export default {
         notifications: 'Bildirimler',
         settings: 'Ayarlar',
         tools: 'Araçlar',
+        explore: 'Keşfet',
+        groups: 'Gruplar',
+        you: 'Sen',
     },
 
     feed: {
@@ -101,6 +106,7 @@ export default {
         writeCaption: 'Aklınızda ne var?',
         posting: 'Paylaşılıyor...',
         posted: 'Paylaşıldı!',
+        copyLink: 'Bağlantıyı Kopyala',
     },
 
     messages: {
@@ -137,6 +143,15 @@ export default {
         createFirst: 'İlk topluluğunuzu oluşturun',
         name: 'Topluluk Adı',
         description: 'Açıklama',
+        newCommunity: 'Yeni Topluluk',
+        searchMembers: 'Üye ara...',
+        askQuestion: 'Topluluğa bir şey sor...',
+        proposeTitle: 'Ne öneriyorsunuz?',
+        proposeDetail: 'Önerinizi detaylı açıklayın...',
+        rules: 'Kurallar',
+        governance: 'Yönetişim',
+        polls: 'Anketler',
+        manage: 'Üyeleri Yönet',
     },
 
     profile: {
@@ -169,6 +184,32 @@ export default {
         deleteAccount: 'Hesabı Sil',
         privacyMode: 'Gizlilik Modu',
         communityOptIn: 'Topluluğa Katılım',
+        permissionRequired: 'İzin Gerekli',
+        photoAccessMessage: 'Profil resminizi güncellemek için fotoğraflarınıza erişmemiz gerekiyor',
+        logoutConfirm: 'Çıkış yapmak istediğinizden emin misiniz?',
+        exportRequested: 'Dışa Aktarma İstendi',
+        exportEmailMessage: 'Verilerinizle birlikte kısa süre içinde bir e-posta alacaksınız',
+        algorithm: 'Algoritmanız',
+    },
+
+    notifications: {
+        title: 'Bildirimler',
+        social: 'Sosyal',
+        socialDesc: 'Beğeniler, yorumlar, takipler ve bahsetmeler',
+        communitiesDesc: 'Yeni gönderiler, üyelik ve duyurular',
+        messagesNotif: 'Mesajlar',
+        messagesDesc: 'Doğrudan ve grup mesajları',
+        system: 'Sistem',
+        systemDesc: 'Güvenlik uyarıları, güncellemeler ve hesap etkinliği',
+        markAllRead: 'Tümünü okundu olarak işaretle',
+    },
+
+    discover: {
+        title: 'Keşfet',
+        trending: 'Trend',
+        people: 'Kişiler',
+        newContent: 'Yeni',
+        privacyFirst: 'Gizlilik',
     },
 
     call: {
@@ -232,5 +273,17 @@ export default {
         failed: 'İçe aktarma başarısız. Tekrar deneyin.',
         stats: '{{posts}} gönderi, {{connections}} bağlantı içe aktarıldı',
         selectFile: 'Dışa Aktarma Dosyası Seç',
+    },
+
+    ramadan: {
+        banner: 'Ramazan Mübarek',
+        eidBanner: 'Bayramınız Mübarek!',
+        startsIn: '{{days}} gün sonra Ramazan',
+        startsTomorrow: 'Ramazan yarın başlıyor!',
+        toolsPrompt: 'Namaz vakitleri, Kuran ve daha fazlası — Din araçlarınıza erişmek için dokunun',
+        getReady: 'Hazırlanın — namaz vakitleri, Kuran okuyucu ve oruç araçları mevcut',
+        faithRecommend: 'Ramazan için önerilen',
+        addFaith: 'Beslemenizde Ramazan içeriği almak için "İnanç ve Maneviyat" ekleyin',
+        eidMessage: 'Ramazan Bayramı — dualarınız ve orucunuz kabul olsun',
     },
 } as const;

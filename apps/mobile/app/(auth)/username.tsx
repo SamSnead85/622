@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Button, Input, colors, typography, spacing } from '@zerog/ui';
+import { BackButton } from '../../components';
 import { apiFetch, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
 
@@ -162,12 +163,11 @@ export default function UsernameScreen() {
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 >
-                    {/* Back button with icon */}
-                    <TouchableOpacity style={styles.backButton} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.back(); }} activeOpacity={0.7}>
-                        <View style={styles.backButtonInner}>
-                            <Ionicons name="chevron-back" size={22} color={colors.text.secondary} />
-                        </View>
-                    </TouchableOpacity>
+                    {/* Back button */}
+                    <BackButton
+                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.back(); }}
+                        style={{ alignSelf: 'flex-start', marginBottom: spacing['2xl'] }}
+                    />
 
                     <Animated.View style={[styles.header, { opacity: headerAnim, transform: [{ translateY: headerTranslateY }] }]}>
                         <View style={styles.stepIndicator}>
@@ -266,7 +266,7 @@ export default function UsernameScreen() {
                                 ) : (
                                     <>
                                         <Text style={styles.premiumButtonText}>Continue to 0G</Text>
-                                        <Ionicons name="arrow-forward" size={20} color={colors.obsidian[900]} style={{ marginLeft: spacing.sm }} />
+                                        <Ionicons name="arrow-forward" size={20} color={colors.obsidian[900]} style={{ marginStart: spacing.sm }} />
                                     </>
                                 )}
                             </LinearGradient>
@@ -323,13 +323,13 @@ const styles = StyleSheet.create({
     avatarPlaceholder: { width: 64, height: 64, borderRadius: 32, overflow: 'hidden' },
     avatarGradient: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     avatarLetter: { fontSize: 28, fontWeight: '700', color: colors.obsidian[900] },
-    previewText: { marginLeft: spacing.lg, flex: 1 },
+    previewText: { marginStart: spacing.lg, flex: 1 },
     previewHandle: { fontSize: 20, fontWeight: '600', color: colors.text.primary, fontFamily: 'Inter-SemiBold' },
     previewMeta: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 4 },
     inputSection: {},
     inputLabel: { fontSize: typography.fontSize.sm, fontWeight: '500', color: colors.text.secondary, marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 1 },
     inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface.glass, borderRadius: 16, borderWidth: 1, borderColor: colors.border.subtle, paddingHorizontal: spacing.lg },
-    inputPrefix: { fontSize: 18, color: colors.gold[500], fontWeight: '600', marginRight: spacing.xs },
+    inputPrefix: { fontSize: 18, color: colors.gold[500], fontWeight: '600', marginEnd: spacing.xs },
     inputContainer: { flex: 1 },
     inputOverride: { marginBottom: 0 },
     statusIndicator: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     premiumButtonGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 18, paddingHorizontal: spacing.xl },
     premiumButtonText: { fontSize: typography.fontSize.lg, fontWeight: '600', color: colors.obsidian[900], fontFamily: 'Inter-SemiBold', letterSpacing: -0.3 },
     loadingContainer: { flexDirection: 'row', alignItems: 'center' },
-    loadingSpinner: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.obsidian[900], borderTopColor: 'transparent', marginRight: spacing.sm },
+    loadingSpinner: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.obsidian[900], borderTopColor: 'transparent', marginEnd: spacing.sm },
     skipButton: { alignSelf: 'center', paddingVertical: spacing.md },
     skipText: { fontSize: typography.fontSize.base, color: colors.text.muted },
 });

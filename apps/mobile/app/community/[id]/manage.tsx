@@ -5,10 +5,8 @@ import {
     StyleSheet,
     TouchableOpacity,
     FlatList,
-    ActivityIndicator,
     TextInput,
     Alert,
-    Image,
     RefreshControl,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -18,7 +16,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTranslation } from 'react-i18next';
 import { apiFetch, API } from '../../../lib/api';
+import { ScreenHeader, LoadingView, Avatar } from '../../../components';
 
 interface Member {
     id: string;
@@ -49,6 +49,7 @@ export default function CommunityManageScreen() {
     const router = useRouter();
     const { id: communityId } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -115,15 +116,7 @@ export default function CommunityManageScreen() {
         <Animated.View entering={FadeInDown.duration(300).delay(index * 30)}>
             <View style={styles.memberCard}>
                 <View style={styles.memberLeft}>
-                    {item.user.avatarUrl ? (
-                        <Image source={{ uri: item.user.avatarUrl }} style={styles.avatar} />
-                    ) : (
-                        <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                            <Text style={styles.avatarLetter}>
-                                {item.user.displayName?.charAt(0).toUpperCase() || '?'}
-                            </Text>
-                        </View>
-                    )}
+                    <Avatar uri={item.user.avatarUrl} name={item.user.displayName} size="md" />
                     <View style={styles.memberInfo}>
                         <Text style={styles.memberName}>{item.user.displayName}</Text>
                         <Text style={styles.memberUsername}>@{item.user.username}</Text>
@@ -165,13 +158,10 @@ export default function CommunityManageScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Manage Members</Text>
-                <Text style={styles.memberCount}>{members.length}</Text>
-            </View>
+            <ScreenHeader
+                title="Manage Members"
+                rightElement={<Text style={styles.memberCount}>{members.length}</Text>}
+            />
 
             {/* Search */}
             <View style={styles.searchRow}>
@@ -179,7 +169,7 @@ export default function CommunityManageScreen() {
                     <Ionicons name="search-outline" size={18} color={colors.text.muted} />
                     <TextInput
                         style={styles.searchText}
-                        placeholder="Search members..."
+                        placeholder={t('communities.searchMembers')}
                         placeholderTextColor={colors.text.muted}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
@@ -206,9 +196,7 @@ export default function CommunityManageScreen() {
             </View>
 
             {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                </View>
+                <LoadingView />
             ) : (
                 <FlatList
                     data={filteredMembers}
@@ -232,20 +220,6 @@ export default function CommunityManageScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold',
-    },
     memberCount: {
         fontSize: typography.fontSize.base, color: colors.text.muted, fontWeight: '600',
         width: 40, textAlign: 'right',
@@ -284,17 +258,7 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: colors.border.subtle,
     },
     memberLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    avatar: {
-        width: 40, height: 40, borderRadius: 20,
-    },
-    avatarPlaceholder: {
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    avatarLetter: {
-        fontSize: typography.fontSize.lg, fontWeight: '700', color: colors.text.primary,
-    },
-    memberInfo: { marginLeft: spacing.md, flex: 1 },
+    memberInfo: { marginStart: spacing.md, flex: 1 },
     memberName: {
         fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary,
     },

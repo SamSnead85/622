@@ -5,7 +5,6 @@ import {
     StyleSheet,
     FlatList,
     TouchableOpacity,
-    ActivityIndicator,
     RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -15,7 +14,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTranslation } from 'react-i18next';
 import { useNotificationsStore, Notification } from '../../stores';
+import { ScreenHeader, LoadingView, EmptyState } from '../../components';
 
 type FilterTab = 'all' | 'likes' | 'comments' | 'follows';
 
@@ -73,6 +74,7 @@ const NotificationItem = memo(({ item, onPress }: { item: Notification; onPress:
 export default function NotificationsScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
     const { notifications, isLoading, fetchNotifications, markAsRead, markAllAsRead } = useNotificationsStore();
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
@@ -113,22 +115,19 @@ export default function NotificationsScreen() {
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Notifications</Text>
-                {unreadCount > 0 ? (
-                    <TouchableOpacity
-                        style={styles.markAllBtn}
-                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); markAllAsRead(); }}
-                    >
-                        <Text style={styles.markAllText}>Read all</Text>
-                    </TouchableOpacity>
-                ) : (
-                    <View style={{ width: 60 }} />
-                )}
-            </View>
+            <ScreenHeader
+                title={t('notifications.title')}
+                rightElement={
+                    unreadCount > 0 ? (
+                        <TouchableOpacity
+                            style={styles.markAllBtn}
+                            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); markAllAsRead(); }}
+                        >
+                            <Text style={styles.markAllText}>{t('notifications.markAllRead')}</Text>
+                        </TouchableOpacity>
+                    ) : undefined
+                }
+            />
 
             {/* Filter tabs */}
             <View style={styles.filterTabs}>
@@ -147,9 +146,7 @@ export default function NotificationsScreen() {
 
             {/* List */}
             {isLoading && notifications.length === 0 ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                </View>
+                <LoadingView />
             ) : (
                 <FlatList
                     data={filteredNotifications}
@@ -161,13 +158,11 @@ export default function NotificationsScreen() {
                         <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.gold[500]} />
                     }
                     ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Ionicons name="notifications-outline" size={48} color={colors.text.muted} />
-                            <Text style={styles.emptyTitle}>All caught up</Text>
-                            <Text style={styles.emptyText}>
-                                You'll see new notifications here when someone interacts with your content
-                            </Text>
-                        </View>
+                        <EmptyState
+                            icon="notifications-outline"
+                            title="All caught up"
+                            message="You'll see new notifications here when someone interacts with your content"
+                        />
                     }
                 />
             )}
@@ -177,17 +172,6 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backButton: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: { fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold' },
     markAllBtn: { paddingVertical: spacing.xs, paddingHorizontal: spacing.sm },
     markAllText: { fontSize: typography.fontSize.sm, color: colors.gold[500], fontWeight: '600' },
 
@@ -205,9 +189,6 @@ const styles = StyleSheet.create({
     filterTabText: { fontSize: typography.fontSize.sm, color: colors.text.muted, fontWeight: '500' },
     filterTabTextActive: { color: colors.gold[500] },
 
-    // Loading
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-
     // Notification row
     notifRow: {
         flexDirection: 'row', alignItems: 'center',
@@ -221,14 +202,10 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     notifIconUnread: { backgroundColor: colors.surface.goldLight },
-    notifContent: { flex: 1, marginLeft: spacing.md },
+    notifContent: { flex: 1, marginStart: spacing.md },
     notifMessage: { fontSize: typography.fontSize.sm, color: colors.text.secondary, lineHeight: 20 },
     notifMessageUnread: { color: colors.text.primary, fontWeight: '500' },
     notifTime: { fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: 4 },
-    unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.gold[500], marginLeft: spacing.sm },
+    unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.gold[500], marginStart: spacing.sm },
 
-    // Empty
-    emptyContainer: { alignItems: 'center', paddingTop: 80, paddingHorizontal: spacing['2xl'] },
-    emptyTitle: { fontSize: typography.fontSize.xl, fontWeight: '700', color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
-    emptyText: { fontSize: typography.fontSize.base, color: colors.text.muted, textAlign: 'center', lineHeight: 22 },
 });

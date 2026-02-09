@@ -1,88 +1,114 @@
 # 0G — App Store Submission Metadata
 
-## App Name
-0G — Private Community
+## App Information
 
-## Subtitle (30 chars max)
-Your Circle, Your Rules.
+- **App Name**: 0G
+- **Subtitle**: Privacy-First Social Network
+- **Category**: Social Networking
+- **Secondary Category**: Lifestyle
+- **Age Rating**: 12+ (Infrequent/Mild User Generated Content)
+- **Bundle ID**: com.zerog.social
+- **SKU**: zerog-social-001
 
-## Promotional Text (170 chars max)
-Privacy-first social platform. No ads, no algorithms, no surveillance. Private groups, encrypted messaging, live streaming, and cultural tools — all in one app.
+## Description (English)
 
-## Description
-0G is the privacy-first community platform built for people who are tired of being tracked, targeted, and surveilled by social media.
+0G is a privacy-first social network built for communities that value their data, culture, and connections. No ads. No surveillance. No algorithmic manipulation. Just real people, real conversations, and real community.
 
-**Your privacy is not for sale.**
-Unlike other platforms, 0G never sells your data, never shows you ads, and never uses algorithms to manipulate your feed. Your conversations are yours — private and never monetized.
+**Your Community, Your Rules**
+Create or join private communities with democratic governance. Set your own rules, vote on proposals, and moderate your space — together.
 
-**Your circle, your rules.**
-Stay in your family group and never be seen by anyone else. Or join the larger community when you're ready. You control who sees you, who can message you, and what you see.
+**Algorithm Transparency**
+Unlike other platforms, you control what you see. Use the Algorithm Mixer to customize your feed experience. Prioritize content from people you care about.
 
-**Everything you need in one place.**
-- Private groups and communities
-- Direct messaging
-- Photo and video sharing
-- Live streaming
-- Community boards and events
-- Cultural tools (prayer times, Qibla compass, Quran reader, and more)
+**Cultural Tools Built In**
+- Quran reader with all 114 surahs
+- Accurate prayer times based on your location
+- Qibla direction compass
+- Halal product scanner
+- Boycott awareness scanner
 
-**Built for people, not profits.**
-0G was built by people who know what it's like to be surveilled, silenced, and sold out. This is the platform we needed. Now it's yours.
+**Communication**
+- Private and group messaging
+- Voice and video calls
+- Moments (24-hour stories)
+- Community polls and governance
 
-No ads. No algorithms. No surveillance. Just you and your people.
+**Privacy by Design**
+- No data selling. Ever.
+- Minimal data collection
+- Encryption for sensitive data
+- GDPR, PDPL, and global privacy law compliant
+- Full data export at any time
+
+**Available in 5 Languages**
+English, Arabic (العربية), Urdu (اردو), Turkish (Türkçe), and French (Français) — with full right-to-left support.
+
+Download 0G and join the movement for a better social network.
+
+## Description (Arabic - العربية)
+
+0G هو شبكة اجتماعية خصوصية أولاً مصممة للمجتمعات التي تقدر بياناتها وثقافتها واتصالاتها. بدون إعلانات. بدون مراقبة. بدون تلاعب خوارزمي.
+
+مجتمعك، قواعدك. أنشئ أو انضم لمجتمعات خاصة مع حوكمة ديمقراطية. أدوات ثقافية مدمجة: القرآن الكريم، مواقيت الصلاة، اتجاه القبلة، ماسح الحلال. متاح بالعربية مع دعم كامل للكتابة من اليمين إلى اليسار.
 
 ## Keywords
-privacy, community, messaging, groups, family, social, encrypted, no-ads, private, halal, muslim, secure, streaming
 
-## Primary Category
-Social Networking
+privacy, social network, muslim, community, quran, prayer times, halal, islamic, private messaging, no ads, algorithm, governance, arabic, encrypted, family
 
-## Secondary Category
-Lifestyle
+## URLs
 
-## Age Rating
-12+ (Infrequent/Mild User Generated Content)
+- **Privacy Policy**: https://0gravity.ai/privacy
+- **Terms of Service**: https://0gravity.ai/terms
+- **Support URL**: https://0gravity.ai/support
+- **Marketing URL**: https://0gravity.ai
 
-## App Review Notes
-0G is a privacy-first social networking platform. Users can:
-- Create an account with email/password or Google/Apple sign-in
-- Create and join private communities
-- Post text, photos, and videos to their feed
-- Message other users directly
-- Switch between a private feed (visible only to their groups) and a community feed
-- Access cultural tools like prayer times, Qibla compass, and Quran reader (optional, based on profile settings)
+## Privacy Nutrition Labels
 
-**Test Account:**
-Email: [PROVIDE TEST ACCOUNT EMAIL]
-Password: [PROVIDE TEST ACCOUNT PASSWORD]
+### Data Collected
 
-**Notes for Reviewers:**
-- The app requires an internet connection to function.
-- Users must create an account or log in to access content.
-- All user-generated content is subject to our community guidelines.
-- The app does not use non-exempt encryption (ITSAppUsesNonExemptEncryption = false).
-- Location access is only requested when the user accesses prayer times or Qibla direction features.
+| Data Type | Purpose | Linked to Identity |
+|-----------|---------|-------------------|
+| Email Address | Account creation, login | Yes |
+| Display Name | Profile, social features | Yes |
+| User Content (posts, messages) | App functionality | Yes |
+| Photos/Videos | User-generated content | Yes |
+| Location (when permitted) | Prayer times, Qibla | No |
+| Push Notification Token | Notifications | Yes |
+| Device Information | Crash reporting (Sentry) | No |
 
-## Support URL
-https://0gravity.ai/support
+### Data NOT Collected
+- Browsing history
+- Search history
+- Purchase history
+- Financial information
+- Health data
+- Fitness data
+- Advertising data
+- Contacts (unless explicitly imported)
 
-## Privacy Policy URL
-https://0gravity.ai/privacy
+### Data NOT Shared
+- We do not share any user data with third parties for advertising or marketing purposes.
 
-## Marketing URL
-https://0gravity.ai
+## Screenshot Requirements
 
-## Screenshots Needed
-1. **Welcome/Onboarding** — Privacy-first messaging on the welcome carousel
-2. **Feed** — The main feed showing posts with the obsidian-gold theme
-3. **Communities** — Community list with create community flow
-4. **Messages** — Direct messaging with quick contacts strip
-5. **Deen Tools** — Prayer times, Qibla compass, and Quran features
-6. **Profile** — User profile with cultural experience settings
-7. **Settings** — Privacy mode toggle showing private vs community options
-8. **Create Post** — Post creation with media upload
+### iPhone 6.7" (iPhone 15 Pro Max) — Required
+1. Home feed with Ramadan banner
+2. Community detail with governance
+3. Prayer times screen
+4. Quran reader
+5. Algorithm Mixer settings
 
-### Required Sizes
-- iPhone 6.7" (1290 x 2796) — iPhone 15 Pro Max
-- iPhone 6.5" (1284 x 2778) — iPhone 14 Plus
-- iPad Pro 12.9" (2048 x 2732)
+### iPhone 6.5" (iPhone 11 Pro Max) — Required
+Same 5 screenshots
+
+### iPad 12.9" — Required
+Same 5 screenshots (tablet layout)
+
+### Arabic Variants
+Same 5 screenshots in Arabic locale (RTL layout)
+
+## App Preview Video
+- 15-30 seconds
+- Show: onboarding → feed → community → prayer times → messaging
+- Background music: subtle, no lyrics
+- Voiceover or text overlays explaining features

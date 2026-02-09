@@ -4,8 +4,6 @@ import {
     Text,
     StyleSheet,
     ScrollView,
-    ActivityIndicator,
-    TouchableOpacity,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../../lib/api';
+import { ScreenHeader, LoadingView } from '../../../components';
 
 interface Rule {
     id: string;
@@ -52,18 +51,10 @@ export default function CommunityRulesScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Community Rules</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title="Community Rules" />
 
             {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                </View>
+                <LoadingView />
             ) : (
                 <ScrollView
                     style={styles.scroll}
@@ -110,20 +101,6 @@ export default function CommunityRulesScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold',
-    },
     scroll: { flex: 1 },
     communityLabel: {
         fontSize: typography.fontSize.sm, color: colors.text.muted,
@@ -138,7 +115,7 @@ const styles = StyleSheet.create({
         width: 32, height: 32, borderRadius: 10,
         backgroundColor: colors.surface.goldSubtle,
         alignItems: 'center', justifyContent: 'center',
-        marginRight: spacing.md,
+        marginEnd: spacing.md,
     },
     ruleNumberText: {
         fontSize: typography.fontSize.base, fontWeight: '700', color: colors.gold[500],

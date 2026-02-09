@@ -20,6 +20,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, BounceIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { Avatar } from '../../components';
 import { useAuthStore, useFeedStore, mapApiPost } from '../../stores';
 import { apiFetch, apiUpload, API } from '../../lib/api';
 
@@ -194,13 +195,7 @@ export default function CreateScreen() {
 
                 <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                     <View style={styles.composerRow}>
-                        {user?.avatarUrl ? (
-                            <Image source={{ uri: user.avatarUrl }} style={styles.userAvatar} />
-                        ) : (
-                            <View style={[styles.userAvatar, styles.userAvatarPlaceholder]}>
-                                <Text style={styles.userAvatarInitial}>{(user?.displayName || '?')[0].toUpperCase()}</Text>
-                            </View>
-                        )}
+                        <Avatar uri={user?.avatarUrl} name={user?.displayName || '?'} size="md" style={{ marginEnd: spacing.md }} />
                         <TextInput
                             style={styles.textInput}
                             placeholder="What's on your mind?"
@@ -269,7 +264,7 @@ const styles = StyleSheet.create({
     scrollView: { flex: 1 },
     scrollContent: { padding: spacing.lg },
     composerRow: { flexDirection: 'row', alignItems: 'flex-start' },
-    userAvatar: { width: 40, height: 40, borderRadius: 20, marginRight: spacing.md },
+    userAvatar: { width: 40, height: 40, borderRadius: 20, marginEnd: spacing.md },
     userAvatarPlaceholder: { backgroundColor: colors.obsidian[500], alignItems: 'center', justifyContent: 'center' },
     userAvatarInitial: { fontSize: 16, fontWeight: '700', color: colors.text.primary },
     textInput: { flex: 1, fontSize: typography.fontSize.lg, color: colors.text.primary, minHeight: 100, textAlignVertical: 'top', lineHeight: 26 },

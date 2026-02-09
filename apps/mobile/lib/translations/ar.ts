@@ -46,6 +46,8 @@ export default {
         welcomeSubtitle: 'مجتمعك الخاص. قواعدك.',
         loginError: 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.',
         signupError: 'فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.',
+        resetPassword: 'إعادة تعيين كلمة المرور',
+        resetPasswordMessage: 'أدخل بريدك الإلكتروني لتلقي رابط إعادة التعيين',
     },
 
     nav: {
@@ -58,6 +60,9 @@ export default {
         notifications: 'الإشعارات',
         settings: 'الإعدادات',
         tools: 'الأدوات',
+        explore: 'استكشف',
+        groups: 'المجموعات',
+        you: 'أنت',
     },
 
     feed: {
@@ -101,6 +106,7 @@ export default {
         writeCaption: 'بماذا تفكر؟',
         posting: 'جارٍ النشر...',
         posted: 'تم النشر!',
+        copyLink: 'نسخ الرابط',
     },
 
     messages: {
@@ -137,6 +143,15 @@ export default {
         createFirst: 'أنشئ مجتمعك الأول',
         name: 'اسم المجتمع',
         description: 'الوصف',
+        newCommunity: 'مجتمع جديد',
+        searchMembers: 'البحث عن أعضاء...',
+        askQuestion: 'اسأل المجتمع شيئاً...',
+        proposeTitle: 'ما هو اقتراحك؟',
+        proposeDetail: 'اشرح اقتراحك بالتفصيل...',
+        rules: 'القواعد',
+        governance: 'الحوكمة',
+        polls: 'استطلاعات',
+        manage: 'إدارة الأعضاء',
     },
 
     profile: {
@@ -169,6 +184,32 @@ export default {
         deleteAccount: 'حذف الحساب',
         privacyMode: 'وضع الخصوصية',
         communityOptIn: 'الاشتراك في المجتمع',
+        permissionRequired: 'إذن مطلوب',
+        photoAccessMessage: 'نحتاج الوصول إلى صورك لتحديث صورة ملفك الشخصي',
+        logoutConfirm: 'هل أنت متأكد من تسجيل الخروج؟',
+        exportRequested: 'تم طلب التصدير',
+        exportEmailMessage: 'ستتلقى بريداً إلكترونياً ببياناتك قريباً',
+        algorithm: 'خوارزميتك',
+    },
+
+    notifications: {
+        title: 'الإشعارات',
+        social: 'اجتماعي',
+        socialDesc: 'الإعجابات والتعليقات والمتابعات والإشارات',
+        communitiesDesc: 'منشورات جديدة وعضوية وإعلانات',
+        messagesNotif: 'الرسائل',
+        messagesDesc: 'الرسائل المباشرة والجماعية',
+        system: 'النظام',
+        systemDesc: 'تنبيهات الأمان والتحديثات ونشاط الحساب',
+        markAllRead: 'تحديد الكل كمقروء',
+    },
+
+    discover: {
+        title: 'استكشف',
+        trending: 'رائج',
+        people: 'أشخاص',
+        newContent: 'جديد',
+        privacyFirst: 'الخصوصية',
     },
 
     call: {
@@ -232,5 +273,17 @@ export default {
         failed: 'فشل الاستيراد. يرجى المحاولة مرة أخرى.',
         stats: 'تم استيراد {{posts}} منشور و{{connections}} اتصال',
         selectFile: 'اختر ملف التصدير',
+    },
+
+    ramadan: {
+        banner: 'رمضان مبارك',
+        eidBanner: 'عيد مبارك!',
+        startsIn: 'رمضان بعد {{days}} يوم',
+        startsTomorrow: 'رمضان يبدأ غداً!',
+        toolsPrompt: 'مواقيت الصلاة والقرآن والمزيد — اضغط للوصول لأدوات دينك',
+        getReady: 'استعد — مواقيت الصلاة وقارئ القرآن وأدوات الصيام متاحة',
+        faithRecommend: 'موصى به لرمضان',
+        addFaith: 'أضف "الإيمان والروحانية" لتحصل على محتوى رمضان في تغذيتك',
+        eidMessage: 'عيد الفطر — تقبل الله صيامكم وقيامكم',
     },
 } as const;

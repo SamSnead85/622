@@ -35,6 +35,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
+import { Avatar } from '../../components';
 import { useFeedStore, useAuthStore, Post } from '../../stores';
 import { SkeletonFeed } from '../../components/SkeletonPost';
 import { useNetworkQuality } from '../../hooks/useNetworkQuality';
@@ -164,6 +165,9 @@ function ActiveContactBubble({
                 }}
                 onLongPress={onLongPress}
                 style={styles.contactBubble}
+                accessibilityRole="button"
+                accessibilityLabel={isUser ? 'Your story' : `${name}${hasStory ? ', has a new story' : ''}`}
+                accessibilityHint={isUser ? 'Double tap to view or create your story' : hasStory ? `Double tap to view ${name}'s story` : `Double tap to view ${name}'s profile`}
             >
                 <View style={[styles.contactAvatarWrap, hasStory && !isSeen && styles.storyRing, hasStory && isSeen && styles.storyRingSeen]}>
                     {avatarUrl ? (
@@ -328,6 +332,9 @@ function FeedTabs({
             <TouchableOpacity
                 style={[styles.feedTab, activeTab === 'foryou' && styles.feedTabActive]}
                 onPress={() => onTabChange('foryou')}
+                accessibilityRole="tab"
+                accessibilityLabel="For You"
+                accessibilityState={{ selected: activeTab === 'foryou' }}
             >
                 <Text
                     style={[
@@ -342,6 +349,9 @@ function FeedTabs({
             <TouchableOpacity
                 style={[styles.feedTab, activeTab === 'following' && styles.feedTabActive]}
                 onPress={() => onTabChange('following')}
+                accessibilityRole="tab"
+                accessibilityLabel="Following"
+                accessibilityState={{ selected: activeTab === 'following' }}
             >
                 <Text
                     style={[
@@ -406,7 +416,7 @@ function ReadMoreText({ text }: { text: string }) {
                 {text}
             </Text>
             {needsExpansion && !expanded && (
-                <TouchableOpacity onPress={() => setExpanded(true)}>
+                <TouchableOpacity onPress={() => setExpanded(true)} accessibilityRole="button" accessibilityLabel="Read more">
                     <Text style={styles.readMore}>Read more</Text>
                 </TouchableOpacity>
             )}
@@ -456,7 +466,7 @@ function FeedVideoPlayer({ uri, isActive, isFirstVideo, shouldReduceData }: { ur
     };
 
     return (
-        <Pressable onPress={toggleMute} style={styles.videoPlayerContainer}>
+        <Pressable onPress={toggleMute} style={styles.videoPlayerContainer} accessibilityRole="button" accessibilityLabel={isMuted ? 'Video muted, tap to unmute' : 'Video playing, tap to mute'}>
             <VideoView
                 player={player}
                 style={styles.videoPlayer}
@@ -583,6 +593,9 @@ const FeedPostCard = memo(
                                 post.author?.username &&
                                 router.push(`/profile/${post.author.username}`)
                             }
+                            accessibilityRole="button"
+                            accessibilityLabel={`View ${post.author?.displayName || post.author?.username || 'Anonymous'}'s profile`}
+                            accessibilityHint="Double tap to view profile"
                         >
                             <View style={styles.avatarWrap}>
                                 {post.author?.avatarUrl ? (
@@ -621,7 +634,7 @@ const FeedPostCard = memo(
                                             name="checkmark-circle"
                                             size={14}
                                             color={colors.gold[500]}
-                                            style={{ marginLeft: 4 }}
+                                            style={{ marginStart: 4 }}
                                         />
                                     )}
                                 </View>
@@ -661,6 +674,7 @@ const FeedPostCard = memo(
                                     transition={200}
                                     cachePolicy="memory-disk"
                                     recyclingKey={post.id}
+                                    accessibilityLabel={`Post image by ${post.author?.displayName || 'Anonymous'}`}
                                 />
                             )}
                         </View>
@@ -674,6 +688,10 @@ const FeedPostCard = memo(
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                 onLike(post.id);
                             }}
+                            accessibilityRole="button"
+                            accessibilityLabel={post.isLiked ? `Unlike post by ${post.author?.displayName || 'Anonymous'}, ${formatCount(post.likesCount)} likes` : `Like post by ${post.author?.displayName || 'Anonymous'}, ${formatCount(post.likesCount)} likes`}
+                            accessibilityHint="Double tap to like this post"
+                            accessibilityState={{ selected: post.isLiked }}
                         >
                             <Ionicons
                                 name={post.isLiked ? 'heart' : 'heart-outline'}
@@ -688,6 +706,9 @@ const FeedPostCard = memo(
                         <TouchableOpacity
                             style={styles.actionBtn}
                             onPress={() => onPress(post.id)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${formatCount(post.commentsCount)} comments`}
+                            accessibilityHint="Double tap to view comments"
                         >
                             <Ionicons
                                 name="chatbubble-outline"
@@ -706,6 +727,9 @@ const FeedPostCard = memo(
                                     message: `Check out this post on 0G: https://0gravity.ai/post/${post.id}`,
                                 })
                             }
+                            accessibilityRole="button"
+                            accessibilityLabel="Share post"
+                            accessibilityHint="Double tap to share this post"
                         >
                             <Ionicons
                                 name="arrow-redo-outline"
@@ -729,6 +753,8 @@ const FeedPostCard = memo(
                                         onReorder(post.id, 'up');
                                     }}
                                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Move post up"
                                 >
                                     <Ionicons name="chevron-up" size={16} color={colors.text.muted} />
                                 </TouchableOpacity>
@@ -739,6 +765,8 @@ const FeedPostCard = memo(
                                         onReorder(post.id, 'down');
                                     }}
                                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Move post down"
                                 >
                                     <Ionicons name="chevron-down" size={16} color={colors.text.muted} />
                                 </TouchableOpacity>
@@ -751,6 +779,10 @@ const FeedPostCard = memo(
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                 onSave(post.id);
                             }}
+                            accessibilityRole="button"
+                            accessibilityLabel={post.isSaved ? 'Unsave post' : 'Save post'}
+                            accessibilityHint={post.isSaved ? 'Double tap to unsave this post' : 'Double tap to save this post'}
+                            accessibilityState={{ selected: post.isSaved }}
                         >
                             <Ionicons
                                 name={post.isSaved ? 'bookmark' : 'bookmark-outline'}
@@ -979,15 +1011,17 @@ export default function FeedScreen() {
     // ============================================
     const getRamadanBanner = () => {
         const now = new Date();
-        // Ramadan 2026 starts approximately March 17, 2026
-        const ramadanStart = new Date(2026, 2, 17); // Month is 0-indexed
-        const ramadanEnd = new Date(2026, 3, 15); // Approx end
+        // Ramadan 2026 starts approximately February 18, 2026
+        const ramadanStart = new Date(2026, 1, 18); // Month is 0-indexed (1 = February)
+        const ramadanEnd = new Date(2026, 2, 20); // Approx end (~30 days)
+        const eidEnd = new Date(2026, 2, 23); // Eid al-Fitr (~3 days after Ramadan)
         const daysUntil = Math.ceil((ramadanStart.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-        if (daysUntil > 30 || now > ramadanEnd) return null;
+        if (daysUntil > 30 || now > eidEnd) return null;
 
         const isDuring = now >= ramadanStart && now <= ramadanEnd;
-        return { isDuring, daysUntil: Math.max(0, daysUntil) };
+        const isEid = now > ramadanEnd && now <= eidEnd;
+        return { isDuring, isEid, daysUntil: Math.max(0, daysUntil) };
     };
 
     const ramadan = getRamadanBanner();
@@ -1020,6 +1054,9 @@ export default function FeedScreen() {
                         style={styles.ramadanBanner}
                         onPress={() => router.push('/tools' as any)}
                         activeOpacity={0.8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Ramadan banner"
+                        accessibilityHint="Double tap to access Deen tools including prayer times and Quran"
                     >
                         <LinearGradient
                             colors={[colors.surface.goldSubtle, colors.surface.goldMedium, colors.surface.goldSubtle]}
@@ -1031,10 +1068,18 @@ export default function FeedScreen() {
                             <Text style={styles.ramadanEmoji}>☪️</Text>
                             <View style={styles.ramadanTextCol}>
                                 <Text style={styles.ramadanTitle}>
-                                    {ramadan.isDuring ? 'Ramadan Mubarak' : `Ramadan in ${ramadan.daysUntil} days`}
+                                    {ramadan.isEid
+                                        ? 'Eid Mubarak!'
+                                        : ramadan.isDuring
+                                        ? 'Ramadan Mubarak'
+                                        : ramadan.daysUntil <= 1
+                                        ? 'Ramadan starts tomorrow!'
+                                        : `Ramadan in ${ramadan.daysUntil} days`}
                                 </Text>
                                 <Text style={styles.ramadanSubtitle}>
-                                    {ramadan.isDuring
+                                    {ramadan.isEid
+                                        ? 'Eid al-Fitr — may your prayers and fasting be accepted'
+                                        : ramadan.isDuring
                                         ? 'Prayer times, Quran & more — tap to access your Deen tools'
                                         : 'Get ready — prayer times, Quran reader & fasting tools available'}
                                 </Text>
@@ -1052,6 +1097,9 @@ export default function FeedScreen() {
                         style={styles.profileNudge}
                         onPress={() => router.push('/(tabs)/profile')}
                         activeOpacity={0.8}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Complete your profile, ${profileCompletion.percent}% done`}
+                        accessibilityHint="Double tap to complete your profile"
                     >
                         <View style={styles.profileNudgeRing}>
                             <View style={styles.profileNudgeRingBg} />
@@ -1119,6 +1167,8 @@ export default function FeedScreen() {
                     <TouchableOpacity
                         style={styles.emptyActionCard}
                         onPress={() => router.push('/(tabs)/search' as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Find People"
                     >
                         <View style={[styles.emptyActionIcon, { backgroundColor: colors.azure[500] + '18' }]}>
                             <Ionicons name="people" size={20} color={colors.azure[500]} />
@@ -1130,6 +1180,8 @@ export default function FeedScreen() {
                     <TouchableOpacity
                         style={styles.emptyActionCard}
                         onPress={() => router.push('/(tabs)/communities' as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Join Groups"
                     >
                         <View style={[styles.emptyActionIcon, { backgroundColor: colors.emerald[500] + '18' }]}>
                             <Ionicons name="globe-outline" size={20} color={colors.emerald[500]} />
@@ -1141,6 +1193,8 @@ export default function FeedScreen() {
                     <TouchableOpacity
                         style={styles.emptyActionCard}
                         onPress={() => router.push('/(tabs)/create')}
+                        accessibilityRole="button"
+                        accessibilityLabel="Create Post"
                     >
                         <View style={[styles.emptyActionIcon, { backgroundColor: colors.gold[500] + '18' }]}>
                             <Ionicons name="add-circle" size={20} color={colors.gold[500]} />
@@ -1155,6 +1209,9 @@ export default function FeedScreen() {
                     style={styles.emptyToolsCard}
                     onPress={() => router.push('/tools' as any)}
                     activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Explore Tools"
+                    accessibilityHint="Prayer times, Qibla compass, Quran reader, and more"
                 >
                     <View style={styles.emptyToolsHeader}>
                         <Ionicons name="compass" size={18} color={colors.gold[400]} />
@@ -1187,16 +1244,8 @@ export default function FeedScreen() {
             {/* Compact Header — Avatar + Greeting + Actions */}
             <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
                 <View style={styles.headerLeft}>
-                    <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7}>
-                        {user?.avatarUrl ? (
-                            <Image source={{ uri: user.avatarUrl }} style={styles.headerAvatar} cachePolicy="memory-disk" />
-                        ) : (
-                            <View style={[styles.headerAvatar, styles.headerAvatarPlaceholder]}>
-                                <Text style={styles.headerAvatarInitial}>
-                                    {(user?.displayName || 'U')[0].toUpperCase()}
-                                </Text>
-                            </View>
-                        )}
+                    <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Your profile" accessibilityHint="Double tap to view your profile">
+                        <Avatar uri={user?.avatarUrl} name={user?.displayName || 'U'} customSize={34} borderColor={colors.gold[500]} />
                     </TouchableOpacity>
                     <View style={styles.headerGreetingCol}>
                         <Text style={styles.headerGreeting} numberOfLines={1}>
@@ -1205,7 +1254,7 @@ export default function FeedScreen() {
                         </Text>
                         {/* Feed view toggle — only if community opt-in */}
                         {user?.communityOptIn && (
-                            <TouchableOpacity onPress={handleFeedViewToggle} style={styles.feedViewToggle}>
+                            <TouchableOpacity onPress={handleFeedViewToggle} style={styles.feedViewToggle} accessibilityRole="button" accessibilityLabel={feedView === 'private' ? 'Private Feed, tap to switch to Community Feed' : 'Community Feed, tap to switch to Private Feed'}>
                                 <Ionicons
                                     name={feedView === 'private' ? 'lock-closed' : 'globe'}
                                     size={12}
@@ -1223,6 +1272,8 @@ export default function FeedScreen() {
                     <TouchableOpacity
                         style={styles.headerBtn}
                         onPress={() => router.push('/settings/algorithm' as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Algorithm settings"
                     >
                         <Ionicons name="options-outline" size={22} color={colors.gold[400]} />
                     </TouchableOpacity>
@@ -1230,18 +1281,24 @@ export default function FeedScreen() {
                     <TouchableOpacity
                         style={styles.headerBtn}
                         onPress={() => router.push('/tools' as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Tools"
                     >
                         <Ionicons name="compass-outline" size={22} color={colors.gold[400]} />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.headerBtn}
                         onPress={() => router.push('/notifications')}
+                        accessibilityRole="button"
+                        accessibilityLabel="Notifications"
                     >
                         <Ionicons name="notifications-outline" size={22} color={colors.text.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.headerBtn}
                         onPress={() => router.push('/messages')}
+                        accessibilityRole="button"
+                        accessibilityLabel="Messages"
                     >
                         <Ionicons name="mail-outline" size={22} color={colors.text.primary} />
                     </TouchableOpacity>
@@ -1487,7 +1544,7 @@ const styles = StyleSheet.create({
     },
     feedTab: {
         paddingVertical: spacing.md,
-        marginRight: spacing.xl,
+        marginEnd: spacing.xl,
         alignItems: 'center',
     },
     feedTabActive: {},
@@ -1550,7 +1607,7 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: colors.text.primary,
     },
-    authorInfo: { marginLeft: spacing.sm, flex: 1 },
+    authorInfo: { marginStart: spacing.sm, flex: 1 },
     authorNameRow: { flexDirection: 'row', alignItems: 'center' },
     authorName: {
         fontSize: typography.fontSize.base,
@@ -1630,17 +1687,17 @@ const styles = StyleSheet.create({
     actionBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginRight: spacing.lg,
+        marginEnd: spacing.lg,
     },
     actionCount: {
         fontSize: typography.fontSize.sm,
         color: colors.text.secondary,
-        marginLeft: spacing.xs,
+        marginStart: spacing.xs,
     },
     reorderControls: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginRight: spacing.sm,
+        marginEnd: spacing.sm,
         backgroundColor: colors.surface.elevated,
         borderRadius: 12,
         paddingHorizontal: 2,
@@ -1704,7 +1761,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center',
         padding: spacing.md,
     },
-    ramadanEmoji: { fontSize: 24, marginRight: spacing.sm },
+    ramadanEmoji: { fontSize: 24, marginEnd: spacing.sm },
     ramadanTextCol: { flex: 1 },
     ramadanTitle: {
         fontSize: typography.fontSize.base, fontWeight: '700',
@@ -1725,7 +1782,7 @@ const styles = StyleSheet.create({
     profileNudgeRing: {
         width: 44, height: 44, borderRadius: 22,
         alignItems: 'center', justifyContent: 'center',
-        marginRight: spacing.md,
+        marginEnd: spacing.md,
     },
     profileNudgeRingBg: {
         position: 'absolute', width: 44, height: 44, borderRadius: 22,
@@ -1734,7 +1791,7 @@ const styles = StyleSheet.create({
     profileNudgeRingFill: {
         position: 'absolute', width: 44, height: 44, borderRadius: 22,
         borderWidth: 3, borderColor: colors.gold[500],
-        borderRightColor: 'transparent', borderBottomColor: 'transparent',
+        borderEndColor: 'transparent', borderBottomColor: 'transparent',
         transform: [{ rotate: '-45deg' }],
     },
     profileNudgePercent: {

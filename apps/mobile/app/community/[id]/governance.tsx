@@ -22,7 +22,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTranslation } from 'react-i18next';
 import { apiFetch, API } from '../../../lib/api';
+import { ScreenHeader, LoadingView } from '../../../components';
 
 interface Proposal {
     id: string;
@@ -149,6 +151,7 @@ export default function GovernanceScreen() {
     const router = useRouter();
     const { id: communityId } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
     const [proposals, setProposals] = useState<Proposal[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -244,18 +247,17 @@ export default function GovernanceScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Governance</Text>
-                <TouchableOpacity
-                    style={styles.addBtn}
-                    onPress={() => setShowCreate(true)}
-                >
-                    <Ionicons name="add" size={24} color={colors.gold[400]} />
-                </TouchableOpacity>
-            </View>
+            <ScreenHeader
+                title="Governance"
+                rightElement={
+                    <TouchableOpacity
+                        style={styles.addBtn}
+                        onPress={() => setShowCreate(true)}
+                    >
+                        <Ionicons name="add" size={24} color={colors.gold[400]} />
+                    </TouchableOpacity>
+                }
+            />
 
             {/* Info banner */}
             <View style={styles.infoBanner}>
@@ -266,9 +268,7 @@ export default function GovernanceScreen() {
             </View>
 
             {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                </View>
+                <LoadingView />
             ) : (
                 <FlatList
                     data={proposals}
@@ -346,7 +346,7 @@ export default function GovernanceScreen() {
                         <Text style={styles.modalLabel}>Title</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="What do you propose?"
+                            placeholder={t('communities.proposeTitle')}
                             placeholderTextColor={colors.text.muted}
                             value={newTitle}
                             onChangeText={setNewTitle}
@@ -356,7 +356,7 @@ export default function GovernanceScreen() {
                         <Text style={styles.modalLabel}>Description</Text>
                         <TextInput
                             style={[styles.input, styles.inputMulti]}
-                            placeholder="Explain your proposal in detail..."
+                            placeholder={t('communities.proposeDetail')}
                             placeholderTextColor={colors.text.muted}
                             value={newDesc}
                             onChangeText={setNewDesc}
@@ -392,20 +392,6 @@ export default function GovernanceScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
-        borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
-    },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 20, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold',
-    },
     addBtn: {
         width: 40, height: 40, borderRadius: 20,
         backgroundColor: colors.surface.glassHover,

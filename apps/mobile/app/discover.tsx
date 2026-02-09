@@ -6,7 +6,6 @@ import {
     TouchableOpacity,
     ScrollView,
     Dimensions,
-    ActivityIndicator,
     Animated as RNAnimated,
     Easing,
 } from 'react-native';
@@ -20,6 +19,7 @@ import Animated, { FadeInDown, FadeIn, withSpring, useSharedValue, useAnimatedSt
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../lib/api';
 import { useAuthStore } from '../stores';
+import { Avatar, LoadingView } from '../components';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -238,10 +238,7 @@ export default function DiscoverScreen() {
             </View>
 
             {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
-                    <Text style={styles.loadingText}>Finding great content for you...</Text>
-                </View>
+                <LoadingView message="Finding great content for you..." />
             ) : (
                 <ScrollView
                     style={styles.scroll}
@@ -261,20 +258,10 @@ export default function DiscoverScreen() {
                                                 <TouchableOpacity
                                                     onPress={() => router.push(`/profile/${u.username}` as any)}
                                                     activeOpacity={0.8}
+                                                    accessibilityRole="button"
+                                                    accessibilityLabel={`View ${u.displayName}'s profile`}
                                                 >
-                                                    {u.avatarUrl ? (
-                                                        <Image source={{ uri: u.avatarUrl }} style={styles.personAvatar} cachePolicy="memory-disk" />
-                                                    ) : (
-                                                        <View style={[styles.personAvatar, styles.personAvatarPlaceholder]}>
-                                                            <LinearGradient
-                                                                colors={[colors.gold[400], colors.gold[600]]}
-                                                                style={StyleSheet.absoluteFill}
-                                                            />
-                                                            <Text style={styles.personInitial}>
-                                                                {(u.displayName || '?')[0].toUpperCase()}
-                                                            </Text>
-                                                        </View>
-                                                    )}
+                                                    <Avatar uri={u.avatarUrl} name={u.displayName} size="xl" />
                                                 </TouchableOpacity>
                                                 <Text style={styles.personName} numberOfLines={1}>{u.displayName}</Text>
                                                 <Text style={styles.personHandle} numberOfLines={1}>@{u.username}</Text>
@@ -282,6 +269,9 @@ export default function DiscoverScreen() {
                                                 <TouchableOpacity
                                                     style={[styles.followBtn, isFollowed && styles.followBtnActive]}
                                                     onPress={() => handleFollow(u.id)}
+                                                    accessibilityRole="button"
+                                                    accessibilityLabel={isFollowed ? `Unfollow ${u.displayName}` : `Follow ${u.displayName}`}
+                                                    accessibilityHint={isFollowed ? 'Double tap to unfollow' : 'Double tap to follow this person'}
                                                 >
                                                     <Text style={[styles.followBtnText, isFollowed && styles.followBtnTextActive]}>
                                                         {isFollowed ? 'Following' : 'Follow'}
@@ -308,6 +298,8 @@ export default function DiscoverScreen() {
                                                 style={styles.communityRow}
                                                 onPress={() => router.push(`/community/${c.id}` as any)}
                                                 activeOpacity={0.8}
+                                                accessibilityRole="button"
+                                                accessibilityLabel={`${c.name} community, ${c.membersCount} members`}
                                             >
                                                 {c.avatarUrl ? (
                                                     <Image source={{ uri: c.avatarUrl }} style={styles.communityAvatar} cachePolicy="memory-disk" />
@@ -325,6 +317,9 @@ export default function DiscoverScreen() {
                                                 <TouchableOpacity
                                                     style={[styles.joinBtn, isJoined && styles.joinBtnActive]}
                                                     onPress={() => handleJoin(c.id)}
+                                                    accessibilityRole="button"
+                                                    accessibilityLabel={isJoined ? `Leave ${c.name}` : `Join ${c.name}`}
+                                                    accessibilityHint={isJoined ? 'Double tap to leave community' : 'Double tap to join this community'}
                                                 >
                                                     <Text style={[styles.joinBtnText, isJoined && styles.joinBtnTextActive]}>
                                                         {isJoined ? 'Joined' : 'Join'}
@@ -348,6 +343,9 @@ export default function DiscoverScreen() {
                                 router.push('/interests?onboarding=true' as any);
                             }}
                             activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Pick your interests"
+                            accessibilityHint="Choose topics to personalize your feed"
                         >
                             <View style={styles.interestsIconRow}>
                                 <Ionicons name="color-palette-outline" size={20} color={colors.gold[400]} />
@@ -375,6 +373,8 @@ export default function DiscoverScreen() {
                                 router.push('/tools' as any);
                             }}
                             activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Explore tools: Prayer Times, Qibla, Quran, Halal Check, Boycott Check"
                         >
                             <LinearGradient
                                 colors={[colors.surface.goldSubtle, 'transparent']}
@@ -406,7 +406,7 @@ export default function DiscoverScreen() {
                                     {'\n'}Ramadan starts in 2 weeks. Get ready.
                                 </Text>
                             </View>
-                            <Ionicons name="chevron-forward" size={20} color={colors.gold[400]} style={{ marginRight: spacing.md }} />
+                            <Ionicons name="chevron-forward" size={20} color={colors.gold[400]} style={{ marginEnd: spacing.md }} />
                         </TouchableOpacity>
                     </Animated.View>
 
@@ -432,6 +432,8 @@ export default function DiscoverScreen() {
                         router.replace('/(tabs)');
                     }}
                     activeOpacity={0.9}
+                    accessibilityRole="button"
+                    accessibilityLabel={totalFollowed >= 3 ? "Let's go, continue to feed" : 'Skip for now'}
                 >
                     <LinearGradient
                         colors={totalFollowed >= 3 ? [colors.gold[400], colors.gold[600]] : [colors.obsidian[500], colors.obsidian[600]]}
@@ -446,7 +448,7 @@ export default function DiscoverScreen() {
                             name="arrow-forward"
                             size={20}
                             color={totalFollowed >= 3 ? colors.obsidian[900] : colors.text.muted}
-                            style={{ marginLeft: spacing.sm }}
+                            style={{ marginStart: spacing.sm }}
                         />
                     </LinearGradient>
                 </TouchableOpacity>
@@ -487,13 +489,6 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.xs, color: colors.text.muted,
         marginTop: spacing.xs,
     },
-    loadingContainer: {
-        flex: 1, alignItems: 'center', justifyContent: 'center',
-    },
-    loadingText: {
-        fontSize: typography.fontSize.base, color: colors.text.muted,
-        marginTop: spacing.lg,
-    },
     scroll: { flex: 1 },
     sectionTitle: {
         fontSize: typography.fontSize.lg, fontWeight: '700',
@@ -510,18 +505,6 @@ const styles = StyleSheet.create({
         borderRadius: 16, padding: spacing.md,
         borderWidth: 1, borderColor: colors.border.subtle,
         alignItems: 'center',
-    },
-    personAvatar: {
-        width: 64, height: 64, borderRadius: 32,
-        marginBottom: spacing.sm,
-    },
-    personAvatarPlaceholder: {
-        alignItems: 'center', justifyContent: 'center',
-        overflow: 'hidden',
-    },
-    personInitial: {
-        fontSize: 24, fontWeight: '700', color: colors.obsidian[900],
-        zIndex: 1,
     },
     personName: {
         fontSize: typography.fontSize.base, fontWeight: '600',
@@ -565,7 +548,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface.goldSubtle,
         alignItems: 'center', justifyContent: 'center',
     },
-    communityInfo: { flex: 1, marginLeft: spacing.md },
+    communityInfo: { flex: 1, marginStart: spacing.md },
     communityName: {
         fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary,
     },
