@@ -1,5 +1,5 @@
 // ============================================
-// Caravan Social Network - Shared Types
+// 0G Social Network - Shared Types
 // ============================================
 
 // User Types

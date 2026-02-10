@@ -9,6 +9,9 @@ import {
     ScrollView,
     Dimensions,
     Pressable,
+    KeyboardAvoidingView,
+    Platform,
+    RefreshControl,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -199,55 +202,69 @@ export default function SearchScreen() {
     const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
     const [trendingData, setTrendingData] = useState<TrendingTopic[]>(TRENDING_TOPICS);
     const [suggestedData, setSuggestedData] = useState<SuggestedItem[]>(SUGGESTED_ITEMS);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const inputRef = useRef<TextInput>(null);
 
     // Animation values
     const searchBarScale = useSharedValue(1);
 
+    // Fetch trending + suggested data
+    const loadDiscoveryData = useCallback(async () => {
+        await Promise.all([
+            apiFetch<any>(API.trending).then((data) => {
+                if (data?.topics && Array.isArray(data.topics)) {
+                    setTrendingData(data.topics.slice(0, 6).map((t: any, i: number) => ({
+                        id: t.id || `t${i}`,
+                        name: t.name || t.tag,
+                        postsCount: t.postsCount || t.count || 0,
+                        icon: TRENDING_TOPICS[i]?.icon || 'trending-up',
+                        color: TRENDING_TOPICS[i]?.color || colors.gold[500],
+                    })));
+                }
+            }).catch(() => { showError("Couldn't load trending topics"); }),
+
+            apiFetch<any>(`${API.search}?q=&suggested=true&limit=6`).then((data) => {
+                const items: SuggestedItem[] = [];
+                if (data?.users) {
+                    data.users.slice(0, 3).forEach((u: any) => {
+                        items.push({
+                            id: u.id,
+                            type: 'user',
+                            name: u.displayName || u.username,
+                            subtitle: `@${u.username}`,
+                            avatarUrl: u.avatarUrl,
+                            isVerified: u.isVerified,
+                        });
+                    });
+                }
+                if (data?.communities) {
+                    data.communities.slice(0, 3).forEach((c: any) => {
+                        items.push({
+                            id: c.id,
+                            type: 'community',
+                            name: c.name,
+                            subtitle: `${c.membersCount || 0} members`,
+                            avatarUrl: c.avatarUrl,
+                        });
+                    });
+                }
+                if (items.length > 0) setSuggestedData(items);
+            }).catch(() => { showError("Couldn't load suggestions"); }),
+        ]);
+    }, []);
+
     // Fetch trending data on mount
     useEffect(() => {
-        apiFetch<any>(API.trending).then((data) => {
-            if (data?.topics && Array.isArray(data.topics)) {
-                setTrendingData(data.topics.slice(0, 6).map((t: any, i: number) => ({
-                    id: t.id || `t${i}`,
-                    name: t.name || t.tag,
-                    postsCount: t.postsCount || t.count || 0,
-                    icon: TRENDING_TOPICS[i]?.icon || 'trending-up',
-                    color: TRENDING_TOPICS[i]?.color || colors.gold[500],
-                })));
-            }
-        }).catch(() => { showError("Couldn't load trending topics"); });
+        loadDiscoveryData();
+    }, [loadDiscoveryData]);
 
-        // Fetch suggested people/communities
-        apiFetch<any>(`${API.search}?q=&suggested=true&limit=6`).then((data) => {
-            const items: SuggestedItem[] = [];
-            if (data?.users) {
-                data.users.slice(0, 3).forEach((u: any) => {
-                    items.push({
-                        id: u.id,
-                        type: 'user',
-                        name: u.displayName || u.username,
-                        subtitle: `@${u.username}`,
-                        avatarUrl: u.avatarUrl,
-                        isVerified: u.isVerified,
-                    });
-                });
-            }
-            if (data?.communities) {
-                data.communities.slice(0, 3).forEach((c: any) => {
-                    items.push({
-                        id: c.id,
-                        type: 'community',
-                        name: c.name,
-                        subtitle: `${c.membersCount || 0} members`,
-                        avatarUrl: c.avatarUrl,
-                    });
-                });
-            }
-            if (items.length > 0) setSuggestedData(items);
-        }).catch(() => { showError("Couldn't load suggestions"); });
-    }, []);
+    // Pull-to-refresh handler
+    const handleRefresh = useCallback(async () => {
+        setIsRefreshing(true);
+        await loadDiscoveryData();
+        setIsRefreshing(false);
+    }, [loadDiscoveryData]);
 
     // Cleanup debounce
     useEffect(() => {
@@ -733,6 +750,7 @@ export default function SearchScreen() {
             style={styles.discoveryScroll}
             contentContainerStyle={{ paddingBottom: 100 }}
             showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.gold[500]} />}
         >
             {renderRecentSearches()}
             {renderTrending()}
@@ -762,6 +780,7 @@ export default function SearchScreen() {
     // ============================================
 
     return (
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.container}>
             <LinearGradient
                 colors={[colors.obsidian[900], colors.obsidian[800]]}
@@ -883,9 +902,11 @@ export default function SearchScreen() {
                     }}
                     showsVerticalScrollIndicator={false}
                     keyboardDismissMode="on-drag"
+                    refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.gold[500]} />}
                 />
             )}
         </View>
+        </KeyboardAvoidingView>
     );
 }
 

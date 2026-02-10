@@ -16,6 +16,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../../lib/api';
 import { ScreenHeader, LoadingView } from '../../../components';
+import { showError } from '../../../stores/toastStore';
 
 interface PollOption {
     id: string;
@@ -130,7 +131,7 @@ export default function CommunityPollsScreen() {
             const list = data.polls || data || [];
             setPolls(Array.isArray(list) ? list : []);
         } catch {
-            // silent
+            showError('Could not load polls');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -168,6 +169,7 @@ export default function CommunityPollsScreen() {
         } catch {
             // Revert on failure
             loadPolls();
+            showError('Could not submit vote');
         }
     };
 

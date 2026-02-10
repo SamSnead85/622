@@ -690,7 +690,7 @@ function CreateCommunityModal({ visible, onClose, onCreate, initialName = '' }: 
                             value={isPrivate}
                             onValueChange={setIsPrivate}
                             trackColor={{ false: colors.surface.glassHover, true: colors.gold[500] }}
-                            thumbColor="#fff"
+                            thumbColor={colors.text.primary}
                         />
                     </View>
                 </View>
@@ -1391,7 +1391,7 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
     },
     discoveryAvatarWrap: {
-        shadowColor: '#000',
+        shadowColor: colors.obsidian[900],
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.4,
         shadowRadius: 8,

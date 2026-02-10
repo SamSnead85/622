@@ -48,6 +48,7 @@ import { apiFetch, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
 import { socketManager, SocketMessage, TypingEvent } from '../../lib/socket';
 import { Avatar } from '../../components';
+import { showError } from '../../stores/toastStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -549,6 +550,7 @@ export default function ChatScreen() {
                 }
             } catch {
                 // Silently handle — retry available via pull
+                showError('Could not load messages');
             } finally {
                 setIsLoading(false);
             }
@@ -650,6 +652,7 @@ export default function ChatScreen() {
                         : m
                 )
             );
+            showError('Could not send message');
         } finally {
             setIsSending(false);
         }

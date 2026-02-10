@@ -45,6 +45,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
 import { useAuthStore, mapApiPost } from '../../stores';
 import { ScreenHeader, Avatar, GlassCard, AnimatedLikeButton } from '../../components';
+import { showError } from '../../stores/toastStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -532,6 +533,7 @@ export default function PostDetailScreen() {
                       }
                     : p
             );
+            showError('Could not update like');
         }
     }, [post]);
 
@@ -544,6 +546,7 @@ export default function PostDetailScreen() {
             await apiFetch(API.save(post.id), { method: wasSaved ? 'DELETE' : 'POST' });
         } catch {
             setPost((p) => (p ? { ...p, isSaved: wasSaved } : p));
+            showError('Could not save post');
         }
     }, [post]);
 
@@ -590,6 +593,7 @@ export default function PostDetailScreen() {
                 );
                 setComments(reverted);
                 setNestedComments(nestComments(reverted));
+                showError('Could not share post');
             }
         },
         [postId, comments]
@@ -657,6 +661,7 @@ export default function PostDetailScreen() {
             const reverted = updatedComments.filter((c) => c.id !== tempId);
             setComments(reverted);
             setNestedComments(nestComments(reverted));
+            showError('Could not post comment');
         } finally {
             setIsSending(false);
         }

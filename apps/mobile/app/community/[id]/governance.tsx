@@ -25,6 +25,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { useTranslation } from 'react-i18next';
 import { apiFetch, API } from '../../../lib/api';
 import { ScreenHeader, LoadingView } from '../../../components';
+import { showError } from '../../../stores/toastStore';
 
 interface Proposal {
     id: string;
@@ -47,7 +48,7 @@ const TYPE_CONFIG: Record<string, { icon: keyof typeof Ionicons.glyphMap; color:
     MODERATOR_ELECTION: { icon: 'person-add-outline', color: colors.azure[500], label: 'Election' },
     BAN_APPEAL: { icon: 'hand-left-outline', color: colors.coral[500], label: 'Ban Appeal' },
     FEATURE_REQUEST: { icon: 'bulb-outline', color: colors.emerald[500], label: 'Feature' },
-    POLICY_CHANGE: { icon: 'shield-outline', color: '#A78BFA', label: 'Policy' },
+    POLICY_CHANGE: { icon: 'shield-outline', color: colors.azure[400], label: 'Policy' },
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -172,7 +173,7 @@ export default function GovernanceScreen() {
             const list = data.proposals || data || [];
             setProposals(Array.isArray(list) ? list : []);
         } catch {
-            // silent
+            showError('Could not load proposals');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -202,6 +203,7 @@ export default function GovernanceScreen() {
             });
         } catch {
             loadProposals();
+            showError('Could not submit vote');
         }
     };
 

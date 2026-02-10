@@ -148,7 +148,7 @@ export default function UsernameScreen() {
 
     return (
         <View style={styles.container}>
-            <LinearGradient colors={['#0A0A0B', '#0D0D10', '#0A0A0B']} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+            <LinearGradient colors={[colors.obsidian[900], colors.obsidian[900], colors.obsidian[900]]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
 
             <View style={styles.orbContainer} pointerEvents="none">
                 <FloatingOrb delay={0} size={120} startX={SCREEN_WIDTH * 0.1} startY={SCREEN_HEIGHT * 0.2} />
@@ -218,12 +218,12 @@ export default function UsernameScreen() {
                                             {checking && <View style={styles.checkingDot}><View style={styles.loadingDot} /></View>}
                                             {!checking && isAvailable === true && (
                                                 <View style={styles.availableIndicator}>
-                                                    <Ionicons name="checkmark" size={14} color="#fff" />
+                                                    <Ionicons name="checkmark" size={14} color={colors.text.primary} />
                                                 </View>
                                             )}
                                             {!checking && isAvailable === false && (
                                                 <View style={styles.unavailableIndicator}>
-                                                    <Ionicons name="close" size={14} color="#fff" />
+                                                    <Ionicons name="close" size={14} color={colors.text.primary} />
                                                 </View>
                                             )}
                                         </View>
@@ -292,7 +292,7 @@ function RequirementItem({ met, text }: { met: boolean; text: string }) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#0A0A0B' },
+    container: { flex: 1, backgroundColor: colors.obsidian[900] },
     orbContainer: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
     floatingOrb: { position: 'absolute', borderRadius: 999 },
     keyboardView: { flex: 1 },

@@ -68,10 +68,10 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const CATEGORY_COLORS: Record<string, string> = {
     geography: colors.emerald[500],
-    art: '#A855F7',
+    art: colors.azure[400],
     science: colors.azure[500],
     history: colors.amber[500],
-    literature: '#A855F7',
+    literature: colors.azure[400],
     nature: colors.emerald[500],
     culture: colors.coral[500],
     default: colors.gold[500],

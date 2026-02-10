@@ -28,6 +28,7 @@ import { apiFetch, apiUpload, API } from '../../lib/api';
 import { useTranslation } from 'react-i18next';
 import { SUPPORTED_LANGUAGES, changeLanguage } from '../../lib/i18n';
 import i18next from 'i18next';
+import { showError } from '../../stores/toastStore';
 
 // ─── Setting Row Component ───────────────────────────────────────────
 interface SettingRowProps {
@@ -120,6 +121,7 @@ export default function SettingsScreen() {
             setShowProfileEditor(false);
         } catch {
             Alert.alert('Error', 'Failed to save profile. Please try again.');
+            showError('Could not load profile');
         } finally {
             setIsSavingProfile(false);
         }
@@ -147,6 +149,7 @@ export default function SettingsScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {
             Alert.alert('Error', 'Failed to upload avatar. Please try again.');
+            showError('Could not upload photo');
         } finally {
             setIsUploadingAvatar(false);
         }
@@ -165,6 +168,7 @@ export default function SettingsScreen() {
         } catch {
             Alert.alert('Error', 'Failed to update cultural profile.');
             setCulturalProfile(user?.culturalProfile || 'standard');
+            showError('Could not update setting');
         }
     };
 
@@ -223,6 +227,7 @@ export default function SettingsScreen() {
                             Alert.alert('Welcome!', 'You\'re now part of the larger community. You can switch back to private mode anytime from Settings.');
                         } catch {
                             Alert.alert('Error', 'Failed to join community. Please try again.');
+                            showError('Could not update profile');
                         }
                     },
                 },
@@ -248,6 +253,7 @@ export default function SettingsScreen() {
                             Alert.alert('Done', 'You\'re now in private-only mode.');
                         } catch {
                             Alert.alert('Error', 'Failed to leave community.');
+                            showError('Could not delete account');
                         } finally {
                             setIsLeavingCommunity(false);
                         }

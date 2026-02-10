@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # ===========================================
-# CARAVAN DEPLOYMENT SCRIPT
+# 0G DEPLOYMENT SCRIPT
 # ===========================================
 
-echo "🐪 Caravan Deployment Script"
+echo "0G Deployment Script"
 echo "==================================="
 
 # Colors for output

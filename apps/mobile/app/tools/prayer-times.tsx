@@ -275,7 +275,7 @@ export default function PrayerTimesScreen() {
                                             start={{ x: 0, y: 0 }}
                                             end={{ x: 1, y: 1 }}
                                         />
-                                        <Ionicons name="sunny-outline" size={18} color="#FFBA33" />
+                                        <Ionicons name="sunny-outline" size={18} color={colors.gold[400]} />
                                         <View style={styles.sunInfo}>
                                             <Text style={styles.sunLabel}>Sunrise</Text>
                                             <Text style={styles.sunTime}>{formatTime12h(sunriseTime)}</Text>
@@ -348,7 +348,7 @@ export default function PrayerTimesScreen() {
                                                     isNext
                                                         ? colors.gold[400]
                                                         : isSunrise
-                                                          ? '#FFBA33'
+                                                          ? colors.gold[400]
                                                           : colors.text.muted
                                                 }
                                             />

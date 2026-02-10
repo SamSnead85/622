@@ -1,5 +1,5 @@
 // ============================================
-// Caravan UI - Shared Component Library
+// 0G UI - Shared Component Library
 // ============================================
 
 // Theme & Design Tokens

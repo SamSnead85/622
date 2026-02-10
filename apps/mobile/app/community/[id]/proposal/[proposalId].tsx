@@ -46,7 +46,7 @@ const TYPE_CONFIG: Record<string, { icon: keyof typeof Ionicons.glyphMap; color:
     MODERATOR_ELECTION: { icon: 'person-add-outline', color: colors.azure[500], label: 'Election' },
     BAN_APPEAL: { icon: 'hand-left-outline', color: colors.coral[500], label: 'Ban Appeal' },
     FEATURE_REQUEST: { icon: 'bulb-outline', color: colors.emerald[500], label: 'Feature Request' },
-    POLICY_CHANGE: { icon: 'shield-outline', color: '#A78BFA', label: 'Policy Change' },
+    POLICY_CHANGE: { icon: 'shield-outline', color: colors.azure[400], label: 'Policy Change' },
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -225,7 +225,7 @@ export default function ProposalDetailScreen() {
                     <Animated.View entering={FadeInDown.duration(300).delay(300)} style={styles.voteButtons}>
                         <TouchableOpacity style={styles.voteFor} onPress={() => handleVote('FOR')} activeOpacity={0.8}>
                             <LinearGradient colors={[colors.emerald[400], colors.emerald[600]]} style={styles.voteBtnGradient}>
-                                <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                                <Ionicons name="checkmark-circle" size={20} color={colors.text.primary} />
                                 <Text style={styles.voteBtnText}>Support</Text>
                             </LinearGradient>
                         </TouchableOpacity>
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
         gap: spacing.sm, paddingVertical: spacing.md,
     },
-    voteBtnText: { fontSize: typography.fontSize.base, fontWeight: '700', color: '#fff' },
+    voteBtnText: { fontSize: typography.fontSize.base, fontWeight: '700', color: colors.text.primary },
     voteAgainst: {
         flex: 1, borderRadius: 14, borderWidth: 1.5,
         borderColor: colors.coral[500] + '50',

@@ -38,6 +38,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { ScreenHeader } from '../../components';
 import { GlassCard } from '../../components';
 import { useGameStore, useAuthStore } from '../../stores';
+import { showError } from '../../stores/toastStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_GAP = spacing.md;
@@ -451,6 +452,7 @@ export default function GamesHubScreen() {
         } catch {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             Alert.alert('Error', 'Something went wrong. Please try again.');
+            showError('Could not start game');
         } finally {
             setIsCreating(false);
         }

@@ -55,7 +55,7 @@ const CATEGORY_COLORS: Record<string, string> = {
     geography: colors.emerald[500],
     entertainment: colors.coral[500],
     sports: colors.gold[500],
-    art: '#A855F7',
+    art: colors.azure[400],
     technology: colors.azure[400],
     default: colors.gold[500],
 };

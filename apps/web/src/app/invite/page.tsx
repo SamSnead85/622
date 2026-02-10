@@ -74,7 +74,7 @@ const SHARE_PLATFORMS = [
         Icon: MailIcon,
         color: 'from-purple-500 to-purple-600',
         getUrl: (link: string, message: string) =>
-            `mailto:?subject=${encodeURIComponent('Join me on Zero Gravity!')}&body=${encodeURIComponent(message + '\n\n' + link)}`,
+            `mailto:?subject=${encodeURIComponent('Join me on 0G!')}&body=${encodeURIComponent(message + '\n\n' + link)}`,
     },
     {
         id: 'twitter',

@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -177,6 +177,7 @@ export default function QuranSurahList() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedJuz, setSelectedJuz] = useState(0);
     const [searchFocused, setSearchFocused] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     const filteredSurahs = useMemo(() => {
         let list = SURAHS;
@@ -212,6 +213,13 @@ export default function QuranSurahList() {
     const handleJuzPress = useCallback((juzId: number) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setSelectedJuz(juzId);
+    }, []);
+
+    const handleRefresh = useCallback(async () => {
+        setIsRefreshing(true);
+        // Static data — briefly toggle refreshing state for consistency
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        setIsRefreshing(false);
     }, []);
 
     // ─── Render surah row ──
@@ -386,6 +394,7 @@ export default function QuranSurahList() {
                 initialNumToRender={20}
                 maxToRenderPerBatch={15}
                 windowSize={10}
+                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.gold[500]} />}
             />
         </View>
     );

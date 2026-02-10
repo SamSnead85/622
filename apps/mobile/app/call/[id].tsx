@@ -325,12 +325,12 @@ export default function CallScreen() {
 
                         <TouchableOpacity onPress={handleAccept} activeOpacity={0.8}>
                             <LinearGradient
-                                colors={['#34D399', '#10B981']}
+                                colors={[colors.emerald[400], colors.emerald[600]]}
                                 style={[styles.callBtn, styles.acceptBtn]}
                             >
-                                <Ionicons name="call" size={28} color="#fff" />
+                                <Ionicons name="call" size={28} color={colors.text.primary} />
                             </LinearGradient>
-                            <Text style={[styles.callBtnLabel, { color: '#34D399' }]}>Accept</Text>
+                            <Text style={[styles.callBtnLabel, { color: colors.emerald[500] }]}>Accept</Text>
                         </TouchableOpacity>
                     </View>
                 ) : callState === 'connected' ? (
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
         color: colors.text.muted,
         marginBottom: spacing.md,
     },
-    callStatusConnected: { color: '#34D399' },
+    callStatusConnected: { color: colors.emerald[500] },
     encryptionBadge: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -475,8 +475,8 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
     },
     acceptBtn: {},
-    declineBtn: { backgroundColor: '#EF4444' },
-    endCallBtn: { backgroundColor: '#EF4444' },
+    declineBtn: { backgroundColor: colors.coral[500] },
+    endCallBtn: { backgroundColor: colors.coral[500] },
     callBtnLabel: {
         fontSize: typography.fontSize.sm,
         color: colors.text.muted,

@@ -7,6 +7,7 @@ import {
     FlatList,
     Dimensions,
     Animated as RNAnimated,
+    RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -159,6 +160,7 @@ export default function SurahDetailScreen() {
     const [ayahs, setAyahs] = useState<Ayah[]>([]);
     const [surahMeta, setSurahMeta] = useState<SurahMeta | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isRetrying, setIsRetrying] = useState(false);
     const [bookmarkedAyah, setBookmarkedAyah] = useState<number | null>(null);
@@ -275,6 +277,13 @@ export default function SurahDetailScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setIsRetrying(true);
         fetchSurah();
+    }, [fetchSurah]);
+
+    // ── Pull-to-refresh handler ──
+    const handleRefresh = useCallback(async () => {
+        setIsRefreshing(true);
+        await fetchSurah();
+        setIsRefreshing(false);
     }, [fetchSurah]);
 
     // ── Scroll failure handler ──
@@ -542,6 +551,7 @@ export default function SurahDetailScreen() {
                     windowSize={7}
                     onScrollToIndexFailed={onScrollToIndexFailed}
                     getItemLayout={undefined}
+                    refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.gold[500]} />}
                 />
             )}
         </View>
