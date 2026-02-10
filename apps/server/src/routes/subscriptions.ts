@@ -15,7 +15,7 @@ async function getStripe() {
     if (!key) return null;
 
     const { default: Stripe } = await import('stripe');
-    return new Stripe(key, { apiVersion: '2025-01-27.acacia' });
+    return new Stripe(key, { apiVersion: '2026-01-28.clover' });
 }
 
 /** Resolve the client-facing base URL used for redirects. */

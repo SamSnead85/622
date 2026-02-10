@@ -1198,7 +1198,7 @@ router.post('/provisional-signup', async (req, res, next) => {
         }
 
         // Validate invite code if provided
-        let invite = null;
+        let invite: any = null;
         let inviterId: string | null = null;
         if (inviteCode) {
             invite = await prisma.invite.findUnique({ where: { referralCode: inviteCode } });
@@ -1458,7 +1458,7 @@ router.post('/validate-invite', async (req, res, next) => {
         }
 
         // Check if the sender has a primary community to invite into
-        let community = null;
+        let community: any = null;
         const sender = invite.sender;
         if (sender) {
             // Find the first community this user administers

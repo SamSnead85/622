@@ -1110,7 +1110,7 @@ router.post('/:postId/comments', authenticate, async (req: AuthRequest, res, nex
         }
 
         // Validate parent comment exists and belongs to the same post
-        let parentComment = null;
+        let parentComment: Awaited<ReturnType<typeof prisma.comment.findUnique>> = null;
         if (parentId) {
             parentComment = await prisma.comment.findUnique({
                 where: { id: parentId },

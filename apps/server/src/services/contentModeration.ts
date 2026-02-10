@@ -74,7 +74,7 @@ export async function moderateContent(
     let flaggedWords: string[] = [];
 
     // Get territory-specific settings if available
-    let settings = null;
+    let settings: Awaited<ReturnType<typeof getTerritoryModerationSettings>> = null;
     if (territoryId) {
         settings = await getTerritoryModerationSettings(territoryId);
     }

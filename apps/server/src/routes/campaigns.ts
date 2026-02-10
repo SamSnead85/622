@@ -105,7 +105,7 @@ router.post('/:slug/signup', async (req, res, next) => {
         });
 
         // Generate an early access code for the signup if campaign has them
-        let accessCode = null;
+        let accessCode: string | null = null;
         if (campaign.incentiveType === 'early_access') {
             const code = `C${campaign.slug.slice(0, 3).toUpperCase()}${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
             const created = await prisma.accessCode.create({

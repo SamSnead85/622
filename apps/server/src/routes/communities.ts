@@ -142,7 +142,7 @@ router.get('/:idOrSlug', optionalAuth, async (req: AuthRequest, res, next) => {
             throw new AppError('Community not found', 404);
         }
 
-        let membership = null;
+        let membership: any = null;
         if (req.userId) {
             membership = await prisma.communityMember.findUnique({
                 where: {
@@ -481,17 +481,9 @@ router.get('/:communityId/members', optionalAuth, async (req: AuthRequest, res, 
             take,
             skip,
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        username: true,
-                        displayName: true,
-                        avatarUrl: true,
-                        isVerified: true,
-                    },
-                },
+                user: true,
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { joinedAt: 'desc' },
         });
 
         // Filter by search if provided
