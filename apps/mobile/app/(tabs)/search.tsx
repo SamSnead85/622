@@ -189,6 +189,7 @@ function SearchSkeletonList() {
 
 export default function SearchScreen() {
     const router = useRouter();
+    const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
     const user = useAuthStore((s) => s.user);
@@ -205,6 +206,8 @@ export default function SearchScreen() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const inputRef = useRef<TextInput>(null);
+    const flatListRef = useRef<FlatList>(null);
+    const scrollViewRef = useRef<ScrollView>(null);
 
     // Animation values
     const searchBarScale = useSharedValue(1);
@@ -747,6 +750,7 @@ export default function SearchScreen() {
 
     const renderEmptyState = () => (
         <ScrollView
+            ref={scrollViewRef}
             style={styles.discoveryScroll}
             contentContainerStyle={{ paddingBottom: 100 }}
             showsVerticalScrollIndicator={false}
@@ -892,6 +896,7 @@ export default function SearchScreen() {
                 renderEmptyState()
             ) : (
                 <FlatList
+                    ref={flatListRef}
                     data={filteredResults}
                     renderItem={renderResult}
                     keyExtractor={(item) => `${item.type}-${item.id}`}

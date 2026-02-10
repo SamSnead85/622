@@ -257,7 +257,7 @@ export default function CallScreen() {
     return (
         <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
             <LinearGradient
-                colors={[colors.obsidian[900], '#1a1a2e', colors.obsidian[800]]}
+                colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[800]]}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -318,7 +318,7 @@ export default function CallScreen() {
                     <View style={styles.incomingControls}>
                         <TouchableOpacity onPress={handleDecline} activeOpacity={0.8}>
                             <View style={[styles.callBtn, styles.declineBtn]}>
-                                <Ionicons name="call" size={28} color="#fff" style={{ transform: [{ rotate: '135deg' }] }} />
+                                <Ionicons name="call" size={28} color={colors.text.primary} style={{ transform: [{ rotate: '135deg' }] }} />
                             </View>
                             <Text style={styles.callBtnLabel}>Decline</Text>
                         </TouchableOpacity>
@@ -375,7 +375,7 @@ export default function CallScreen() {
 
                         <TouchableOpacity onPress={handleEndCall} activeOpacity={0.8}>
                             <View style={[styles.callBtn, styles.endCallBtn]}>
-                                <Ionicons name="call" size={28} color="#fff" style={{ transform: [{ rotate: '135deg' }] }} />
+                                <Ionicons name="call" size={28} color={colors.text.primary} style={{ transform: [{ rotate: '135deg' }] }} />
                             </View>
                         </TouchableOpacity>
                     </View>
@@ -385,7 +385,7 @@ export default function CallScreen() {
                         {(callState === 'ringing' || callState === 'initiating') && (
                             <TouchableOpacity onPress={handleEndCall} activeOpacity={0.8}>
                                 <View style={[styles.callBtn, styles.endCallBtn]}>
-                                    <Ionicons name="call" size={28} color="#fff" style={{ transform: [{ rotate: '135deg' }] }} />
+                                    <Ionicons name="call" size={28} color={colors.text.primary} style={{ transform: [{ rotate: '135deg' }] }} />
                                 </View>
                                 <Text style={styles.callBtnLabel}>Cancel</Text>
                             </TouchableOpacity>

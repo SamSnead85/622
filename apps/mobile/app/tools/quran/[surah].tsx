@@ -474,7 +474,7 @@ export default function SurahDetailScreen() {
         return (
             <View style={styles.container}>
                 <LinearGradient
-                    colors={[colors.obsidian[900], '#0D0D12']}
+                    colors={[colors.obsidian[900], colors.obsidian[900]]}
                     style={StyleSheet.absoluteFill}
                 />
                 <ScreenHeader title={`Surah ${surahNumber}`} />
@@ -522,7 +522,7 @@ export default function SurahDetailScreen() {
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={[colors.obsidian[900], '#0D0D12']}
+                colors={[colors.obsidian[900], colors.obsidian[900]]}
                 style={StyleSheet.absoluteFill}
             />
 

@@ -270,7 +270,7 @@ function SaveButton({ isSaved, onPress }: { isSaved: boolean; onPress: () => voi
     }));
 
     const handlePress = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         scale.value = withSequence(
             withSpring(1.3, { damping: 4, stiffness: 300 }),
             withSpring(1, { damping: 6, stiffness: 200 })
@@ -539,7 +539,7 @@ export default function PostDetailScreen() {
 
     const handleSave = useCallback(async () => {
         if (!post) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         const wasSaved = post.isSaved;
         setPost((p) => (p ? { ...p, isSaved: !p.isSaved } : p));
         try {
@@ -552,7 +552,7 @@ export default function PostDetailScreen() {
 
     const handleShare = useCallback(async () => {
         if (!post) return;
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         await Share.share({
             message: `Check out this post on 0G: https://0gravity.ai/post/${post.id}`,
         });
@@ -610,7 +610,7 @@ export default function PostDetailScreen() {
 
     const handleComment = useCallback(async () => {
         if (!commentText.trim() || isSending || !postId) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         const text = commentText.trim();
         setCommentText('');
         setIsSending(true);

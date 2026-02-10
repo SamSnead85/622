@@ -11,7 +11,7 @@ import {
     RefreshControl,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -143,6 +143,7 @@ const TABS: { key: ProfileTab; icon: keyof typeof Ionicons.glyphMap; iconActive:
 // ─── Main Screen ─────────────────────────────────────────
 export default function ProfileScreen() {
     const router = useRouter();
+    const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
     const refreshUser = useAuthStore((s) => s.refreshUser);
@@ -154,6 +155,7 @@ export default function ProfileScreen() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
     const [loadedTabs, setLoadedTabs] = useState<Set<ProfileTab>>(new Set(['posts']));
+    const flatListRef = useRef<FlatList>(null);
 
     // Animated tab indicator
     const tabIndicatorX = useSharedValue(0);
@@ -224,6 +226,14 @@ export default function ProfileScreen() {
         if (loadedTabs.has('likes')) loadLikedPosts();
         if (loadedTabs.has('saved')) loadSavedPosts();
     };
+
+    // Scroll to top when tab is tapped while already focused
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('tabPress', () => {
+            flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+        });
+        return unsubscribe;
+    }, [navigation]);
 
     // ── Loading State ────────────────────────────────────
     if (!user) {
@@ -567,6 +577,7 @@ export default function ProfileScreen() {
             </View>
 
             <FlatList
+                ref={flatListRef}
                 data={postsData}
                 renderItem={renderPost}
                 keyExtractor={(item) => item.id}

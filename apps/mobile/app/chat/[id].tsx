@@ -594,7 +594,7 @@ export default function ChatScreen() {
     const handleSend = useCallback(async () => {
         if (!inputText.trim() || isSending || !conversationId) return;
 
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         const text = inputText.trim();
         setInputText('');
 

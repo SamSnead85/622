@@ -18,7 +18,7 @@ import {
     Pressable,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -743,6 +743,7 @@ function CreateFAB({ onPress }: { onPress: () => void }) {
 export default function CommunitiesScreen() {
     const insets = useSafeAreaInsets();
     const router = useRouter();
+    const navigation = useNavigation();
     const user = useAuthStore((s) => s.user);
     const {
         communities,

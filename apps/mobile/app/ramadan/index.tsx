@@ -223,7 +223,7 @@ export default function RamadanHub() {
         <View style={styles.container}>
             {/* Deep gradient background */}
             <LinearGradient
-                colors={[colors.obsidian[900], '#0C0C10', colors.obsidian[900]]}
+                colors={[colors.obsidian[900], colors.obsidian[900], colors.obsidian[900]]}
                 style={StyleSheet.absoluteFill}
             />
 

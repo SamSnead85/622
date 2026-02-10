@@ -34,17 +34,17 @@ const TOPIC_DEFAULTS: Record<string, { icon: string; color: string }> = {
     faith: { icon: 'heart-outline', color: colors.gold[500] },
     family: { icon: 'people-outline', color: colors.coral[500] },
     news: { icon: 'newspaper-outline', color: colors.emerald[500] },
-    sports: { icon: 'football-outline', color: '#FF6B35' },
-    business: { icon: 'briefcase-outline', color: '#8B5CF6' },
-    art: { icon: 'color-palette-outline', color: '#EC4899' },
+    sports: { icon: 'football-outline', color: colors.coral[400] },
+    business: { icon: 'briefcase-outline', color: colors.azure[500] },
+    art: { icon: 'color-palette-outline', color: colors.coral[400] },
     health: { icon: 'fitness-outline', color: colors.emerald[400] },
     education: { icon: 'school-outline', color: colors.azure[400] },
-    food: { icon: 'restaurant-outline', color: '#F59E0B' },
-    travel: { icon: 'airplane-outline', color: '#06B6D4' },
+    food: { icon: 'restaurant-outline', color: colors.gold[500] },
+    travel: { icon: 'airplane-outline', color: colors.azure[400] },
     politics: { icon: 'megaphone-outline', color: colors.coral[400] },
-    science: { icon: 'flask-outline', color: '#A78BFA' },
-    entertainment: { icon: 'film-outline', color: '#F472B6' },
-    gaming: { icon: 'game-controller-outline', color: '#34D399' },
+    science: { icon: 'flask-outline', color: colors.azure[300] },
+    entertainment: { icon: 'film-outline', color: colors.coral[300] },
+    gaming: { icon: 'game-controller-outline', color: colors.emerald[500] },
 };
 
 // ─── Suggested Communities for Onboarding ───────────────────────
@@ -290,7 +290,7 @@ export default function InterestsScreen() {
                                             )}
                                             {isSelected && (
                                                 <View style={[styles.checkBadge, { backgroundColor: color }]}>
-                                                    <Ionicons name="checkmark" size={12} color="#fff" />
+                                                    <Ionicons name="checkmark" size={12} color={colors.text.primary} />
                                                 </View>
                                             )}
                                         </TouchableOpacity>
@@ -355,7 +355,7 @@ export default function InterestsScreen() {
                                                         <Text
                                                             style={[
                                                                 styles.communityJoinBtnText,
-                                                                isJoined && { color: '#fff' },
+                                                                isJoined && { color: colors.text.primary },
                                                             ]}
                                                         >
                                                             {isJoined ? 'Joined' : 'Join'}

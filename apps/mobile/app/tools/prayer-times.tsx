@@ -195,7 +195,7 @@ export default function PrayerTimesScreen() {
 
     return (
         <View style={styles.container}>
-            <LinearGradient colors={[colors.obsidian[900], '#0D0D12']} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={[colors.obsidian[900], colors.obsidian[900]]} style={StyleSheet.absoluteFill} />
 
             <ScreenHeader title="Prayer Times" />
 

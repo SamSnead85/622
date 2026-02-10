@@ -16,7 +16,7 @@ import {
     ScrollView,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -1233,6 +1233,7 @@ const checklistStyles = StyleSheet.create({
 // ============================================
 export default function FeedScreen() {
     const router = useRouter();
+    const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
     const flatListRef = useRef<FlatList>(null);
@@ -1255,6 +1256,7 @@ export default function FeedScreen() {
         user?.communityOptIn && user?.activeFeedView === 'community' ? 'community' : 'private'
     );
     const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+    const [unreadMessages, setUnreadMessages] = useState(0);
 
     // Seed content & checklist state
     const [seedDismissed, setSeedDismissed] = useState(true); // hidden until loaded
@@ -1358,6 +1360,36 @@ export default function FeedScreen() {
     useEffect(() => {
         fetchFeed(true, feedType, feedView);
     }, [feedType, feedView]);
+
+    // Fetch unread messages count
+    useEffect(() => {
+        const fetchUnreadCount = async () => {
+            try {
+                const data = await apiFetch<{ conversations: Array<{ unreadCount: number }> }>(API.conversations);
+                const totalUnread = (data?.conversations || []).reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
+                setUnreadMessages(totalUnread);
+            } catch (error) {
+                console.warn('Failed to fetch unread messages count:', error);
+            }
+        };
+        fetchUnreadCount();
+        // Refresh unread count periodically (every 30 seconds)
+        const interval = setInterval(fetchUnreadCount, 30000);
+        // Refresh when screen comes into focus
+        const unsubscribe = navigation.addListener('focus', fetchUnreadCount);
+        return () => {
+            clearInterval(interval);
+            unsubscribe();
+        };
+    }, [navigation]);
+
+    // Scroll to top when tab is tapped while already focused
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('tabPress', () => {
+            flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+        });
+        return unsubscribe;
+    }, [navigation]);
 
     const handleTabChange = useCallback(
         (tab: 'foryou' | 'following') => {
@@ -1772,11 +1804,18 @@ export default function FeedScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.headerBtn}
-                        onPress={() => router.push('/messages')}
+                        onPress={() => router.push('/messages' as any)}
                         accessibilityRole="button"
                         accessibilityLabel="Messages"
                     >
-                        <Ionicons name="mail-outline" size={22} color={colors.text.primary} />
+                        <View>
+                            <Ionicons name="chatbubble-outline" size={22} color={colors.gold[400]} />
+                            {unreadMessages > 0 && (
+                                <View style={styles.messageBadge}>
+                                    <Text style={styles.messageBadgeText}>{unreadMessages > 99 ? '99+' : unreadMessages}</Text>
+                                </View>
+                            )}
+                        </View>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -1922,6 +1961,23 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface.glassHover,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    messageBadge: {
+        position: 'absolute',
+        top: -4,
+        right: -8,
+        backgroundColor: colors.coral[500],
+        borderRadius: 10,
+        minWidth: 18,
+        height: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 4,
+    },
+    messageBadgeText: {
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: '700',
     },
 
     // Active Contacts Strip

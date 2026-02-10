@@ -60,10 +60,10 @@ const MARKER_COLORS = [
     colors.coral[400],
     colors.emerald[400],
     colors.amber[400],
-    '#C084FC', // purple
-    '#F472B6', // pink
-    '#22D3EE', // cyan
-    '#FB923C', // orange
+    colors.azure[400], // purple → azure
+    colors.coral[300], // pink → coral
+    colors.azure[300], // cyan → azure
+    colors.gold[400], // orange → gold
 ];
 
 // ============================================
