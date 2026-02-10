@@ -35,12 +35,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
-import { Avatar } from '../../components';
+import { Avatar, GlassCard } from '../../components';
 import { useFeedStore, useAuthStore, Post } from '../../stores';
 import { SkeletonFeed } from '../../components/SkeletonPost';
 import { useNetworkQuality } from '../../hooks/useNetworkQuality';
 import { RetryView } from '../../components/RetryView';
 import { apiFetch, API } from '../../lib/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { toHijri } from '../../lib/hijri';
 
 
 // ============================================
@@ -238,7 +240,9 @@ function ActiveContactsStrip({ onCreatePress }: { onCreatePress: () => void }) {
                 }
                 setStoryUsers(users);
             }
-        }).catch(() => {});
+        }).catch((error) => {
+            console.warn('Failed to fetch moments feed:', error);
+        });
     }, []);
 
     // Derive unique authors from feed (simulate "active contacts")
@@ -836,6 +840,395 @@ const FeedPostCard = memo(
 );
 
 // ============================================
+// Seed Content Posts — Official 0G welcome content
+// ============================================
+const SEED_POSTS = [
+    { id: 'seed-1', author: '0G Team', avatar: null, content: 'Welcome to 0G — your private, secure social space. Here, you control who sees your content, how your feed works, and what communities you join. No ads, no tracking, no surveillance. Just you and your people.', tag: 'Welcome' },
+    { id: 'seed-2', author: '0G Team', avatar: null, content: 'Ramadan Mubarak! 🌙 This Ramadan, use 0G to stay connected with family, track your Quran reading progress, get prayer time reminders, and share meaningful moments with your community.', tag: 'Ramadan 2026' },
+    { id: 'seed-3', author: '0G Team', avatar: null, content: 'Did you know? You can customize your feed algorithm in Settings. Choose from Chronological, Family Feed, or create your own custom mix. Your feed, your rules.', tag: 'Pro Tip' },
+    { id: 'seed-4', author: '0G Team', avatar: null, content: 'Your privacy matters. By default, only people you invite can see your posts. You can optionally join the larger community later — but you\'re never forced into it.', tag: 'Privacy First' },
+];
+
+const SEED_TAG_COLORS: Record<string, string> = {
+    'Welcome': colors.emerald[500],
+    'Ramadan 2026': colors.gold[500],
+    'Pro Tip': colors.azure[500],
+    'Privacy First': colors.coral[500],
+};
+
+function SeedContentSection({ onDismiss }: { onDismiss: () => void }) {
+    return (
+        <Animated.View entering={FadeInDown.duration(400).delay(200)}>
+            <GlassCard gold style={seedStyles.container}>
+                {/* Header with dismiss */}
+                <View style={seedStyles.header}>
+                    <View style={seedStyles.logoBadge}>
+                        <Text style={seedStyles.logoText}>0G</Text>
+                    </View>
+                    <Text style={seedStyles.headerTitle}>From the 0G Team</Text>
+                    <TouchableOpacity
+                        onPress={onDismiss}
+                        style={seedStyles.dismissBtn}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Dismiss seed posts"
+                    >
+                        <Ionicons name="close" size={18} color={colors.text.muted} />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Horizontally scrolling seed post cards */}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={seedStyles.scroll}
+                >
+                    {SEED_POSTS.map((post, index) => (
+                        <Animated.View
+                            key={post.id}
+                            entering={FadeInDown.duration(300).delay(300 + index * 80)}
+                        >
+                            <View style={seedStyles.card}>
+                                <View style={[seedStyles.tagPill, { backgroundColor: (SEED_TAG_COLORS[post.tag] || colors.gold[500]) + '20' }]}>
+                                    <Text style={[seedStyles.tagText, { color: SEED_TAG_COLORS[post.tag] || colors.gold[500] }]}>
+                                        {post.tag}
+                                    </Text>
+                                </View>
+                                <Text style={seedStyles.cardContent} numberOfLines={5}>
+                                    {post.content}
+                                </Text>
+                                <View style={seedStyles.cardFooter}>
+                                    <View style={seedStyles.cardAuthorBadge}>
+                                        <Text style={seedStyles.cardAuthorBadgeText}>0G</Text>
+                                    </View>
+                                    <Text style={seedStyles.cardAuthor}>{post.author}</Text>
+                                </View>
+                            </View>
+                        </Animated.View>
+                    ))}
+                </ScrollView>
+            </GlassCard>
+        </Animated.View>
+    );
+}
+
+const seedStyles = StyleSheet.create({
+    container: {
+        marginBottom: spacing.md,
+        paddingBottom: spacing.sm,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: spacing.sm,
+    },
+    logoBadge: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        backgroundColor: colors.gold[500],
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginEnd: spacing.sm,
+    },
+    logoText: {
+        fontSize: 11,
+        fontWeight: '800',
+        color: colors.obsidian[900],
+        letterSpacing: -0.5,
+    },
+    headerTitle: {
+        flex: 1,
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.primary,
+        fontFamily: 'Inter-SemiBold',
+    },
+    dismissBtn: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: colors.surface.glassHover,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    scroll: {
+        paddingHorizontal: spacing.xs,
+        gap: spacing.sm,
+    },
+    card: {
+        width: 240,
+        backgroundColor: colors.surface.glass,
+        borderRadius: 14,
+        padding: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    tagPill: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 3,
+        borderRadius: 20,
+        marginBottom: spacing.sm,
+    },
+    tagText: {
+        fontSize: 10,
+        fontWeight: '700',
+        letterSpacing: 0.3,
+        fontFamily: 'Inter-Bold',
+    },
+    cardContent: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        lineHeight: 19,
+        marginBottom: spacing.md,
+    },
+    cardFooter: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    cardAuthorBadge: {
+        width: 20,
+        height: 20,
+        borderRadius: 6,
+        backgroundColor: colors.gold[500],
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginEnd: 6,
+    },
+    cardAuthorBadgeText: {
+        fontSize: 8,
+        fontWeight: '800',
+        color: colors.obsidian[900],
+        letterSpacing: -0.3,
+    },
+    cardAuthor: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.text.muted,
+        fontFamily: 'Inter-SemiBold',
+    },
+});
+
+// ============================================
+// Getting Started Checklist
+// ============================================
+const CHECKLIST_ITEMS = [
+    { id: 'account', label: 'Create your account', icon: 'checkmark-circle' },
+    { id: 'photo', label: 'Add a profile photo', icon: 'camera' },
+    { id: 'community', label: 'Join a community', icon: 'people' },
+    { id: 'post', label: 'Create your first post', icon: 'create' },
+    { id: 'invite', label: 'Invite a friend or family member', icon: 'person-add' },
+    { id: 'tools', label: 'Try a Deen tool', icon: 'compass' },
+    { id: 'algorithm', label: 'Customize your feed', icon: 'options' },
+];
+
+function GettingStartedChecklist({
+    completedIds,
+    onItemPress,
+}: {
+    completedIds: Set<string>;
+    onItemPress: (id: string) => void;
+}) {
+    const [expanded, setExpanded] = useState(true);
+    const completedCount = completedIds.size;
+    const allDone = completedCount === CHECKLIST_ITEMS.length;
+    const progress = completedCount / CHECKLIST_ITEMS.length;
+
+    return (
+        <Animated.View entering={FadeInDown.duration(400).delay(150)}>
+            <GlassCard style={checklistStyles.container}>
+                {/* Header — tap to collapse/expand */}
+                <TouchableOpacity
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setExpanded(!expanded);
+                    }}
+                    style={checklistStyles.header}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Getting started checklist, ${completedCount} of ${CHECKLIST_ITEMS.length} complete`}
+                >
+                    <View style={checklistStyles.headerLeft}>
+                        <Ionicons name="rocket" size={18} color={colors.gold[500]} />
+                        <Text style={checklistStyles.headerTitle}>Getting Started</Text>
+                    </View>
+                    <View style={checklistStyles.headerRight}>
+                        <Text style={checklistStyles.progressText}>
+                            {completedCount}/{CHECKLIST_ITEMS.length}
+                        </Text>
+                        <Ionicons
+                            name={expanded ? 'chevron-up' : 'chevron-down'}
+                            size={16}
+                            color={colors.text.muted}
+                        />
+                    </View>
+                </TouchableOpacity>
+
+                {/* Progress bar */}
+                <View style={checklistStyles.progressBarBg}>
+                    <View
+                        style={[
+                            checklistStyles.progressBarFill,
+                            { width: `${progress * 100}%` as any },
+                            allDone && checklistStyles.progressBarComplete,
+                        ]}
+                    />
+                </View>
+
+                {/* All done celebration */}
+                {allDone && (
+                    <Animated.View entering={FadeInDown.duration(300)} style={checklistStyles.celebration}>
+                        <Text style={checklistStyles.celebrationEmoji}>🎉✨🌟</Text>
+                        <Text style={checklistStyles.celebrationText}>
+                            You&apos;re all set! Welcome to 0G.
+                        </Text>
+                    </Animated.View>
+                )}
+
+                {/* Checklist items */}
+                {expanded && !allDone && (
+                    <View style={checklistStyles.items}>
+                        {CHECKLIST_ITEMS.map((item, index) => {
+                            const done = completedIds.has(item.id);
+                            return (
+                                <Animated.View
+                                    key={item.id}
+                                    entering={FadeInDown.duration(250).delay(index * 40)}
+                                >
+                                    <TouchableOpacity
+                                        style={[checklistStyles.item, done && checklistStyles.itemDone]}
+                                        onPress={() => !done && onItemPress(item.id)}
+                                        disabled={done}
+                                        activeOpacity={0.7}
+                                        accessibilityRole="checkbox"
+                                        accessibilityState={{ checked: done }}
+                                        accessibilityLabel={item.label}
+                                    >
+                                        <View style={[checklistStyles.itemIcon, done && checklistStyles.itemIconDone]}>
+                                            <Ionicons
+                                                name={(done ? 'checkmark-circle' : item.icon) as any}
+                                                size={18}
+                                                color={done ? colors.emerald[500] : colors.text.muted}
+                                            />
+                                        </View>
+                                        <Text style={[checklistStyles.itemLabel, done && checklistStyles.itemLabelDone]}>
+                                            {item.label}
+                                        </Text>
+                                        {!done && (
+                                            <Ionicons name="chevron-forward" size={14} color={colors.text.muted} />
+                                        )}
+                                    </TouchableOpacity>
+                                </Animated.View>
+                            );
+                        })}
+                    </View>
+                )}
+            </GlassCard>
+        </Animated.View>
+    );
+}
+
+const checklistStyles = StyleSheet.create({
+    container: {
+        marginBottom: spacing.md,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    headerRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+    },
+    headerTitle: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.primary,
+        fontFamily: 'Inter-SemiBold',
+    },
+    progressText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.gold[500],
+        fontFamily: 'Inter-SemiBold',
+    },
+    progressBarBg: {
+        height: 4,
+        backgroundColor: colors.obsidian[600],
+        borderRadius: 2,
+        marginTop: spacing.md,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: colors.gold[500],
+        borderRadius: 2,
+    },
+    progressBarComplete: {
+        backgroundColor: colors.emerald[500],
+    },
+    celebration: {
+        alignItems: 'center',
+        paddingVertical: spacing.lg,
+    },
+    celebrationEmoji: {
+        fontSize: 28,
+        marginBottom: spacing.sm,
+    },
+    celebrationText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.gold[400],
+        fontFamily: 'Inter-SemiBold',
+    },
+    items: {
+        marginTop: spacing.md,
+        gap: spacing.xxs,
+    },
+    item: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: spacing.xs,
+        borderRadius: 10,
+    },
+    itemDone: {
+        opacity: 0.6,
+    },
+    itemIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        backgroundColor: colors.surface.glassHover,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginEnd: spacing.sm,
+    },
+    itemIconDone: {
+        backgroundColor: colors.emerald[500] + '18',
+    },
+    itemLabel: {
+        flex: 1,
+        fontSize: typography.fontSize.sm,
+        fontWeight: '500',
+        color: colors.text.primary,
+        fontFamily: 'Inter-Medium',
+    },
+    itemLabelDone: {
+        textDecorationLine: 'line-through',
+        color: colors.text.muted,
+    },
+});
+
+// ============================================
 // Feed Screen
 // ============================================
 export default function FeedScreen() {
@@ -862,6 +1255,60 @@ export default function FeedScreen() {
         user?.communityOptIn && user?.activeFeedView === 'community' ? 'community' : 'private'
     );
     const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+
+    // Seed content & checklist state
+    const [seedDismissed, setSeedDismissed] = useState(true); // hidden until loaded
+    const [checklistCompleted, setChecklistCompleted] = useState<Set<string>>(new Set(['account']));
+
+    // Load seed dismissed state and checklist completion from AsyncStorage
+    useEffect(() => {
+        AsyncStorage.getItem('@seed-dismissed').then((val) => {
+            setSeedDismissed(val === 'true');
+        });
+        // Load checklist completion
+        Promise.all(
+            CHECKLIST_ITEMS.map(async (item) => {
+                if (item.id === 'account') return item.id;
+                if (item.id === 'photo') return user?.avatarUrl ? item.id : null;
+                const val = await AsyncStorage.getItem(`@checklist-${item.id}`);
+                return val === 'true' ? item.id : null;
+            })
+        ).then((results) => {
+            setChecklistCompleted(new Set(results.filter(Boolean) as string[]));
+        });
+    }, [user?.avatarUrl]);
+
+    const handleDismissSeed = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setSeedDismissed(true);
+        AsyncStorage.setItem('@seed-dismissed', 'true');
+    }, []);
+
+    const handleChecklistItemPress = useCallback((id: string) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        switch (id) {
+            case 'photo':
+                router.push('/(tabs)/profile');
+                break;
+            case 'community':
+                router.push('/(tabs)/communities' as any);
+                break;
+            case 'post':
+                router.push('/(tabs)/create');
+                break;
+            case 'invite':
+                Share.share({ message: 'Join me on 0G — a private, secure social space. https://0gravity.ai/invite' });
+                AsyncStorage.setItem('@checklist-invite', 'true');
+                setChecklistCompleted((prev) => new Set([...prev, 'invite']));
+                break;
+            case 'tools':
+                router.push('/tools' as any);
+                break;
+            case 'algorithm':
+                router.push('/settings/algorithm' as any);
+                break;
+        }
+    }, [router]);
 
     // Scroll tracking
     const scrollY = useSharedValue(0);
@@ -930,7 +1377,9 @@ export default function FeedScreen() {
         apiFetch(API.feedView, {
             method: 'PUT',
             body: JSON.stringify({ feedView: next }),
-        }).catch(() => {});
+        }).catch((error) => {
+            console.warn('Failed to update feed view preference:', error);
+        });
     }, [feedView]);
 
     const handleLike = useCallback(
@@ -986,6 +1435,8 @@ export default function FeedScreen() {
         if (hour < 18) return 'Good afternoon';
         return 'Good evening';
     };
+
+    const hijri = toHijri(new Date());
 
     const renderPost = useCallback(
         ({ item }: { item: Post }) => {
@@ -1128,6 +1579,19 @@ export default function FeedScreen() {
                 </Animated.View>
             )}
 
+            {/* Getting Started Checklist */}
+            {checklistCompleted.size < CHECKLIST_ITEMS.length && (
+                <GettingStartedChecklist
+                    completedIds={checklistCompleted}
+                    onItemPress={handleChecklistItemPress}
+                />
+            )}
+
+            {/* Seed Content Posts — shown when feed is empty or sparse */}
+            {!seedDismissed && posts.length < 5 && (
+                <SeedContentSection onDismiss={handleDismissSeed} />
+            )}
+
             {/* Feed type tabs */}
             <FeedTabs activeTab={feedType} onTabChange={handleTabChange} />
 
@@ -1251,6 +1715,9 @@ export default function FeedScreen() {
                         <Text style={styles.headerGreeting} numberOfLines={1}>
                             {getGreeting()},{' '}
                             {user?.displayName?.split(' ')[0] || 'there'}
+                        </Text>
+                        <Text style={styles.hijriDate}>
+                            {hijri.day} {hijri.monthName} {hijri.year} AH
                         </Text>
                         {/* Feed view toggle — only if community opt-in */}
                         {user?.communityOptIn && (
@@ -1428,6 +1895,12 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
         letterSpacing: -0.3,
         fontFamily: 'Inter-Bold',
+    },
+    hijriDate: {
+        fontSize: typography.fontSize.xs,
+        color: colors.gold[400],
+        fontFamily: 'Inter-Medium',
+        marginTop: 2,
     },
     feedViewToggle: {
         flexDirection: 'row',

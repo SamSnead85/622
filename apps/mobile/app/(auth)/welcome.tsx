@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useRef, useCallback, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -260,6 +260,11 @@ export default function WelcomeScreen() {
                 >
                     Already have an account? Log in
                 </Button>
+
+                <TouchableOpacity onPress={() => router.push('/tools' as any)} style={styles.toolsButton}>
+                    <Ionicons name="compass-outline" size={18} color={colors.gold[400]} />
+                    <Text style={styles.toolsText}>Explore Prayer Times, Qibla & More</Text>
+                </TouchableOpacity>
             </Animated.View>
 
             {/* Footer */}
@@ -390,6 +395,20 @@ const styles = StyleSheet.create({
     },
     loginButton: {
         marginTop: spacing.md,
+    },
+    toolsButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.lg,
+        marginTop: spacing.sm,
+    },
+    toolsText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.gold[400],
+        fontFamily: 'Inter-Medium',
     },
     manifesto: {
         fontSize: typography.fontSize.xs,

@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     ScrollView,
     ActivityIndicator,
+    Share,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +16,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../lib/api';
-import { ScreenHeader, LoadingView } from '../components';
+import { ScreenHeader, LoadingView, GlassCard } from '../components';
 
 interface Topic {
     id: string;
@@ -46,6 +47,51 @@ const TOPIC_DEFAULTS: Record<string, { icon: string; color: string }> = {
     gaming: { icon: 'game-controller-outline', color: '#34D399' },
 };
 
+// ─── Suggested Communities for Onboarding ───────────────────────
+interface SuggestedCommunity {
+    id: string;
+    name: string;
+    description: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    color: string;
+    members: string;
+}
+
+const SUGGESTED_COMMUNITIES: SuggestedCommunity[] = [
+    {
+        id: 'mosque',
+        name: 'Local Mosque',
+        description: 'Connect with your local masjid community',
+        icon: 'moon-outline',
+        color: colors.gold[500],
+        members: 'New',
+    },
+    {
+        id: 'family',
+        name: 'Family Circle',
+        description: 'A private space for family updates and photos',
+        icon: 'people-outline',
+        color: colors.coral[500],
+        members: 'New',
+    },
+    {
+        id: 'study',
+        name: 'Study Circle',
+        description: 'Learn together — Islamic studies, book clubs, and more',
+        icon: 'book-outline',
+        color: colors.azure[500],
+        members: 'New',
+    },
+    {
+        id: 'wellness',
+        name: 'Wellness & Fitness',
+        description: 'Health tips, workout partners, and halal nutrition',
+        icon: 'fitness-outline',
+        color: colors.emerald[500],
+        members: 'New',
+    },
+];
+
 function getTopicVisuals(topic: Topic) {
     const defaults = TOPIC_DEFAULTS[topic.slug] || { icon: 'pricetag-outline', color: colors.gold[500] };
     return {
@@ -64,6 +110,28 @@ export default function InterestsScreen() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [joinedCommunities, setJoinedCommunities] = useState<Set<string>>(new Set());
+
+    const handleJoinCommunity = (communityId: string) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setJoinedCommunities((prev) => {
+            const next = new Set(prev);
+            if (next.has(communityId)) next.delete(communityId);
+            else next.add(communityId);
+            return next;
+        });
+    };
+
+    const handleShareInvite = async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        try {
+            await Share.share({
+                message: 'Join me on 0G — a private, secure social platform. https://0gravity.ai/invite',
+            });
+        } catch {
+            // User cancelled or share failed
+        }
+    };
 
     useEffect(() => {
         loadData();
@@ -111,7 +179,7 @@ export default function InterestsScreen() {
             });
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             if (isOnboarding) {
-                router.back();
+                router.replace('/(tabs)');
             } else {
                 router.back();
             }
@@ -126,7 +194,7 @@ export default function InterestsScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
-            <ScreenHeader title="Your Interests" />
+            <ScreenHeader title={isOnboarding ? 'Almost There' : 'Your Interests'} />
 
             {loading ? (
                 <LoadingView message="Loading topics..." />
@@ -237,34 +305,147 @@ export default function InterestsScreen() {
                                 <Text style={styles.emptyText}>No topics available yet. Check back soon!</Text>
                             </View>
                         )}
+
+                        {/* ── Suggested Communities ── */}
+                        {isOnboarding && (
+                            <Animated.View entering={FadeInDown.duration(400).delay(400)}>
+                                <Text style={styles.communitySectionTitle}>Suggested Communities</Text>
+                                <Text style={styles.communitySectionSubtitle}>
+                                    Join a community to start connecting with people who share your interests
+                                </Text>
+                                <View style={styles.communityCards}>
+                                    {SUGGESTED_COMMUNITIES.map((community, i) => {
+                                        const isJoined = joinedCommunities.has(community.id);
+                                        return (
+                                            <Animated.View key={community.id} entering={FadeInDown.duration(300).delay(450 + i * 70)}>
+                                                <TouchableOpacity
+                                                    style={[
+                                                        styles.communityCard,
+                                                        isJoined && { borderColor: community.color + '60' },
+                                                    ]}
+                                                    onPress={() => handleJoinCommunity(community.id)}
+                                                    activeOpacity={0.7}
+                                                    accessibilityRole="button"
+                                                    accessibilityLabel={`${isJoined ? 'Leave' : 'Join'} ${community.name}`}
+                                                    accessibilityState={{ selected: isJoined }}
+                                                >
+                                                    {isJoined && (
+                                                        <View
+                                                            style={[
+                                                                StyleSheet.absoluteFill,
+                                                                { backgroundColor: community.color + '08', borderRadius: 14 },
+                                                            ]}
+                                                        />
+                                                    )}
+                                                    <View style={[styles.communityCardIcon, { backgroundColor: community.color + '15' }]}>
+                                                        <Ionicons name={community.icon} size={22} color={community.color} />
+                                                    </View>
+                                                    <View style={styles.communityCardInfo}>
+                                                        <Text style={styles.communityCardName}>{community.name}</Text>
+                                                        <Text style={styles.communityCardDesc} numberOfLines={2}>
+                                                            {community.description}
+                                                        </Text>
+                                                    </View>
+                                                    <View
+                                                        style={[
+                                                            styles.communityJoinBtn,
+                                                            isJoined && { backgroundColor: community.color, borderColor: community.color },
+                                                        ]}
+                                                    >
+                                                        <Text
+                                                            style={[
+                                                                styles.communityJoinBtnText,
+                                                                isJoined && { color: '#fff' },
+                                                            ]}
+                                                        >
+                                                            {isJoined ? 'Joined' : 'Join'}
+                                                        </Text>
+                                                    </View>
+                                                </TouchableOpacity>
+                                            </Animated.View>
+                                        );
+                                    })}
+                                </View>
+                            </Animated.View>
+                        )}
+
+                        {/* ── Invite Friends ── */}
+                        {isOnboarding && (
+                            <Animated.View entering={FadeInDown.duration(400).delay(700)} style={styles.inviteSection}>
+                                <View style={styles.inviteIconContainer}>
+                                    <Ionicons name="people-circle-outline" size={36} color={colors.gold[400]} />
+                                </View>
+                                <Text style={styles.inviteTitle}>Bring Your People</Text>
+                                <Text style={styles.inviteText}>
+                                    0G is better with your community. Invite friends, family, and your circle to join you.
+                                </Text>
+                                <TouchableOpacity
+                                    style={styles.inviteButton}
+                                    onPress={handleShareInvite}
+                                    activeOpacity={0.8}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Share invite link"
+                                >
+                                    <Ionicons name="share-outline" size={18} color={colors.gold[400]} />
+                                    <Text style={styles.inviteButtonText}>Share Invite Link</Text>
+                                </TouchableOpacity>
+                            </Animated.View>
+                        )}
                     </ScrollView>
 
-                    {/* Save button */}
+                    {/* Save / Get Started button */}
                     <View style={[styles.saveBar, { paddingBottom: insets.bottom + spacing.md }]}>
-                        <TouchableOpacity
-                            style={[styles.saveBtn, selectedIds.size < 3 && styles.saveBtnDisabled]}
-                            onPress={handleSave}
-                            disabled={saving || selectedIds.size < 3}
-                            activeOpacity={0.9}
-                            accessibilityRole="button"
-                            accessibilityLabel={selectedIds.size < 3 ? `Pick ${3 - selectedIds.size} more topics` : 'Save interests'}
-                            accessibilityState={{ disabled: saving || selectedIds.size < 3 }}
-                        >
-                            <LinearGradient
-                                colors={selectedIds.size >= 3 ? [colors.gold[400], colors.gold[600]] : [colors.obsidian[500], colors.obsidian[600]]}
-                                style={styles.saveBtnGradient}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
+                        {isOnboarding ? (
+                            <TouchableOpacity
+                                style={styles.saveBtn}
+                                onPress={handleSave}
+                                disabled={saving}
+                                activeOpacity={0.9}
+                                accessibilityRole="button"
+                                accessibilityLabel="Get started"
                             >
-                                {saving ? (
-                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
-                                ) : (
-                                    <Text style={[styles.saveBtnText, selectedIds.size < 3 && { color: colors.text.muted }]}>
-                                        {selectedIds.size < 3 ? `Pick ${3 - selectedIds.size} more` : 'Save Interests'}
-                                    </Text>
-                                )}
-                            </LinearGradient>
-                        </TouchableOpacity>
+                                <LinearGradient
+                                    colors={[colors.gold[400], colors.gold[600]]}
+                                    style={styles.saveBtnGradient}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                >
+                                    {saving ? (
+                                        <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                    ) : (
+                                        <View style={styles.getStartedRow}>
+                                            <Text style={styles.saveBtnText}>Get Started</Text>
+                                            <Ionicons name="arrow-forward" size={20} color={colors.obsidian[900]} style={{ marginStart: spacing.sm }} />
+                                        </View>
+                                    )}
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity
+                                style={[styles.saveBtn, selectedIds.size < 3 && styles.saveBtnDisabled]}
+                                onPress={handleSave}
+                                disabled={saving || selectedIds.size < 3}
+                                activeOpacity={0.9}
+                                accessibilityRole="button"
+                                accessibilityLabel={selectedIds.size < 3 ? `Pick ${3 - selectedIds.size} more topics` : 'Save interests'}
+                                accessibilityState={{ disabled: saving || selectedIds.size < 3 }}
+                            >
+                                <LinearGradient
+                                    colors={selectedIds.size >= 3 ? [colors.gold[400], colors.gold[600]] : [colors.obsidian[500], colors.obsidian[600]]}
+                                    style={styles.saveBtnGradient}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                >
+                                    {saving ? (
+                                        <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                    ) : (
+                                        <Text style={[styles.saveBtnText, selectedIds.size < 3 && { color: colors.text.muted }]}>
+                                            {selectedIds.size < 3 ? `Pick ${3 - selectedIds.size} more` : 'Save Interests'}
+                                        </Text>
+                                    )}
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </>
             )}
@@ -356,6 +537,78 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base, color: colors.text.muted,
         marginTop: spacing.lg, textAlign: 'center',
     },
+    // ── Suggested Communities ──
+    communitySectionTitle: {
+        fontSize: typography.fontSize.lg, fontWeight: '700',
+        color: colors.text.primary, fontFamily: 'Inter-Bold',
+        marginTop: spacing['2xl'], marginBottom: spacing.xs,
+    },
+    communitySectionSubtitle: {
+        fontSize: typography.fontSize.sm, color: colors.text.secondary,
+        marginBottom: spacing.md, lineHeight: 20,
+    },
+    communityCards: { gap: spacing.sm },
+    communityCard: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: colors.surface.glass, borderRadius: 14,
+        padding: spacing.md, borderWidth: 1.5, borderColor: colors.border.subtle,
+        position: 'relative', overflow: 'hidden',
+    },
+    communityCardIcon: {
+        width: 44, height: 44, borderRadius: 12,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    communityCardInfo: {
+        flex: 1, marginStart: spacing.md, marginEnd: spacing.sm,
+    },
+    communityCardName: {
+        fontSize: typography.fontSize.base, fontWeight: '600',
+        color: colors.text.primary,
+    },
+    communityCardDesc: {
+        fontSize: typography.fontSize.xs, color: colors.text.muted,
+        marginTop: 2, lineHeight: 16,
+    },
+    communityJoinBtn: {
+        paddingHorizontal: spacing.md, paddingVertical: 6,
+        borderRadius: 16, borderWidth: 1.5, borderColor: colors.gold[500],
+    },
+    communityJoinBtnText: {
+        fontSize: typography.fontSize.sm, fontWeight: '600', color: colors.gold[500],
+    },
+
+    // ── Invite Friends ──
+    inviteSection: {
+        marginTop: spacing['2xl'],
+        backgroundColor: colors.surface.glass, borderRadius: 16,
+        padding: spacing.xl, borderWidth: 1, borderColor: colors.border.subtle,
+        alignItems: 'center',
+    },
+    inviteIconContainer: {
+        width: 56, height: 56, borderRadius: 28,
+        backgroundColor: colors.surface.goldSubtle,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: spacing.md,
+    },
+    inviteTitle: {
+        fontSize: typography.fontSize.lg, fontWeight: '700',
+        color: colors.text.primary, marginBottom: spacing.xs,
+    },
+    inviteText: {
+        fontSize: typography.fontSize.sm, color: colors.text.secondary,
+        textAlign: 'center', lineHeight: 20, marginBottom: spacing.lg,
+    },
+    inviteButton: {
+        flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+        backgroundColor: colors.surface.goldSubtle,
+        paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
+        borderRadius: 14, borderWidth: 1, borderColor: colors.gold[500] + '30',
+    },
+    inviteButtonText: {
+        fontSize: typography.fontSize.base, fontWeight: '600', color: colors.gold[400],
+    },
+
+    // ── Save / Get Started ──
     saveBar: {
         position: 'absolute', bottom: 0, left: 0, right: 0,
         paddingHorizontal: spacing.xl, paddingTop: spacing.md,
@@ -373,5 +626,8 @@ const styles = StyleSheet.create({
     saveBtnText: {
         fontSize: typography.fontSize.lg, fontWeight: '600',
         color: colors.obsidian[900], fontFamily: 'Inter-SemiBold',
+    },
+    getStartedRow: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     },
 });

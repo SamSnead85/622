@@ -265,6 +265,8 @@ function RootLayout() {
                     <Stack.Screen name="analytics" />
                     <Stack.Screen name="community/[id]/governance" />
                     <Stack.Screen name="community/[id]/proposal/[proposalId]" />
+                    <Stack.Screen name="tools" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
                     <Stack.Screen name="games" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen
                         name="call/[id]"

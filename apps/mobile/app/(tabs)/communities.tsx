@@ -59,6 +59,54 @@ const CATEGORY_FILTERS: { key: CategoryFilter; label: string; icon: keyof typeof
 ];
 
 // ============================================
+// Community Templates
+// ============================================
+
+type CommunityTemplate = {
+    id: string;
+    name: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    color: string;
+    description: string;
+    channels: string[];
+};
+
+const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
+    {
+        id: 'mosque',
+        name: 'Mosque Community',
+        icon: 'moon-outline',
+        color: colors.gold[500],
+        description: 'For masjids and Islamic centers',
+        channels: ['Announcements', 'General', 'Youth', 'Events', 'Sisters'],
+    },
+    {
+        id: 'family',
+        name: 'Family Circle',
+        icon: 'heart-outline',
+        color: colors.coral[500],
+        description: 'Stay connected with family',
+        channels: ['Photos & Updates', 'Group Chat', 'Planning'],
+    },
+    {
+        id: 'study',
+        name: 'Study Circle',
+        icon: 'book-outline',
+        color: colors.azure[500],
+        description: 'Learning and discussion groups',
+        channels: ['Resources', 'Discussion', 'Schedule'],
+    },
+    {
+        id: 'custom',
+        name: 'Custom Community',
+        icon: 'add-outline',
+        color: colors.emerald[500],
+        description: 'Start from scratch',
+        channels: ['General'],
+    },
+];
+
+// ============================================
 // Utilities
 // ============================================
 
@@ -442,20 +490,121 @@ function EmptyDiscovery() {
 }
 
 // ============================================
+// Template Selection Modal
+// ============================================
+
+function TemplateSelectionModal({ visible, onClose, onSelect }: {
+    visible: boolean;
+    onClose: () => void;
+    onSelect: (template: CommunityTemplate) => void;
+}) {
+    const insets = useSafeAreaInsets();
+
+    return (
+        <Modal
+            visible={visible}
+            animationType="slide"
+            presentationStyle="pageSheet"
+            onRequestClose={onClose}
+        >
+            <View style={[templateStyles.container, { paddingTop: insets.top }]}>
+                <LinearGradient
+                    colors={[colors.obsidian[900], colors.obsidian[800]]}
+                    style={StyleSheet.absoluteFill}
+                />
+
+                {/* Header */}
+                <View style={styles.modalHeader}>
+                    <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancel">
+                        <Text style={styles.modalCancel}>Cancel</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.modalTitle} accessibilityRole="header">Choose Template</Text>
+                    <View style={{ width: 50 }} />
+                </View>
+
+                <ScrollView
+                    contentContainerStyle={templateStyles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <Animated.View entering={FadeInDown.duration(350).delay(50)}>
+                        <Text style={templateStyles.subtitle}>
+                            Pick a starting point for your community
+                        </Text>
+                    </Animated.View>
+
+                    {COMMUNITY_TEMPLATES.map((template, index) => (
+                        <Animated.View
+                            key={template.id}
+                            entering={FadeInDown.duration(350).delay(100 + index * 70)}
+                        >
+                            <TouchableOpacity
+                                activeOpacity={0.85}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    onSelect(template);
+                                }}
+                                accessibilityRole="button"
+                                accessibilityLabel={`${template.name}: ${template.description}`}
+                            >
+                                <GlassCard style={templateStyles.card} padding="none">
+                                    <View style={templateStyles.cardInner}>
+                                        {/* Icon */}
+                                        <View style={[templateStyles.iconWrap, { backgroundColor: template.color + '18' }]}>
+                                            <Ionicons name={template.icon} size={28} color={template.color} />
+                                        </View>
+
+                                        {/* Text content */}
+                                        <View style={templateStyles.cardText}>
+                                            <Text style={templateStyles.cardTitle}>{template.name}</Text>
+                                            <Text style={templateStyles.cardDescription}>{template.description}</Text>
+
+                                            {/* Channel pills */}
+                                            <View style={templateStyles.channelsRow}>
+                                                {template.channels.map((ch) => (
+                                                    <View key={ch} style={[templateStyles.channelPill, { borderColor: template.color + '30' }]}>
+                                                        <Ionicons name="chatbubble-outline" size={10} color={template.color} />
+                                                        <Text style={[templateStyles.channelText, { color: template.color }]}>{ch}</Text>
+                                                    </View>
+                                                ))}
+                                            </View>
+                                        </View>
+
+                                        {/* Chevron */}
+                                        <Ionicons name="chevron-forward" size={20} color={colors.text.muted} />
+                                    </View>
+                                </GlassCard>
+                            </TouchableOpacity>
+                        </Animated.View>
+                    ))}
+                </ScrollView>
+            </View>
+        </Modal>
+    );
+}
+
+// ============================================
 // Create Community Modal
 // ============================================
 
-function CreateCommunityModal({ visible, onClose, onCreate }: {
+function CreateCommunityModal({ visible, onClose, onCreate, initialName = '' }: {
     visible: boolean;
     onClose: () => void;
     onCreate: () => void;
+    initialName?: string;
 }) {
-    const [name, setName] = useState('');
+    const [name, setName] = useState(initialName);
     const [description, setDescription] = useState('');
     const [isPrivate, setIsPrivate] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
     const insets = useSafeAreaInsets();
     const { createCommunity } = useCommunitiesStore();
+
+    // Sync initialName when modal opens with a new template
+    useEffect(() => {
+        if (visible) {
+            setName(initialName);
+        }
+    }, [visible, initialName]);
 
     const handleCreate = async () => {
         if (!name.trim() || name.trim().length < 3) {
@@ -606,6 +755,8 @@ export default function CommunitiesScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showTemplateModal, setShowTemplateModal] = useState(false);
+    const [selectedTemplate, setSelectedTemplate] = useState<CommunityTemplate | null>(null);
     const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
     const [discoverCommunities, setDiscoverCommunities] = useState<Community[]>([]);
     const [isLoadingDiscover, setIsLoadingDiscover] = useState(false);
@@ -629,8 +780,8 @@ export default function CommunitiesScreen() {
             const data = await apiFetch<any>(`${API.communities}?discover=true&limit=20`);
             const list = data.communities || data.data || data || [];
             setDiscoverCommunities(Array.isArray(list) ? list : []);
-        } catch {
-            // Silently fail — show empty discover
+        } catch (error) {
+            console.warn('Failed to fetch discover communities:', error);
         } finally {
             setIsLoadingDiscover(false);
         }
@@ -642,6 +793,15 @@ export default function CommunitiesScreen() {
         await Promise.all([fetchCommunities(), fetchDiscover()]);
         setIsRefreshing(false);
     };
+
+    const handleTemplateSelect = useCallback((template: CommunityTemplate) => {
+        setSelectedTemplate(template);
+        setShowTemplateModal(false);
+        // Small delay so the template modal dismiss animation finishes
+        setTimeout(() => {
+            setShowCreateModal(true);
+        }, 300);
+    }, []);
 
     const handleJoin = useCallback(async (communityId: string) => {
         await joinCommunity(communityId);
@@ -792,7 +952,7 @@ export default function CommunitiesScreen() {
                         ))}
                     </ScrollView>
                 ) : (
-                    <EmptyYourCommunities onCreatePress={() => setShowCreateModal(true)} />
+                    <EmptyYourCommunities onCreatePress={() => setShowTemplateModal(true)} />
                 )}
             </Animated.View>
 
@@ -959,16 +1119,28 @@ export default function CommunitiesScreen() {
             />
 
             {/* Floating Action Button */}
-            <CreateFAB onPress={() => setShowCreateModal(true)} />
+            <CreateFAB onPress={() => setShowTemplateModal(true)} />
+
+            {/* Template Selection Modal */}
+            <TemplateSelectionModal
+                visible={showTemplateModal}
+                onClose={() => setShowTemplateModal(false)}
+                onSelect={handleTemplateSelect}
+            />
 
             {/* Create Modal */}
             <CreateCommunityModal
                 visible={showCreateModal}
-                onClose={() => setShowCreateModal(false)}
+                onClose={() => {
+                    setShowCreateModal(false);
+                    setSelectedTemplate(null);
+                }}
                 onCreate={() => {
+                    setSelectedTemplate(null);
                     fetchCommunities();
                     fetchDiscover();
                 }}
+                initialName={selectedTemplate?.name ?? ''}
             />
         </View>
     );
@@ -1455,4 +1627,77 @@ const styles = StyleSheet.create({
     },
     switchLabel: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
     switchDescription: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },
+});
+
+// ============================================
+// Template Selection Modal Styles
+// ============================================
+
+const templateStyles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: colors.obsidian[900],
+    },
+    scrollContent: {
+        padding: spacing.xl,
+        paddingBottom: 60,
+        gap: spacing.md,
+    },
+    subtitle: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.secondary,
+        marginBottom: spacing.sm,
+        lineHeight: 22,
+    },
+    card: {
+        overflow: 'hidden',
+    },
+    cardInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.lg,
+        gap: spacing.md,
+    },
+    iconWrap: {
+        width: 56,
+        height: 56,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cardText: {
+        flex: 1,
+        gap: spacing.xs,
+    },
+    cardTitle: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.text.primary,
+        fontFamily: 'Inter-Bold',
+    },
+    cardDescription: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        lineHeight: 18,
+    },
+    channelsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+        marginTop: spacing.xs,
+    },
+    channelPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 8,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+    },
+    channelText: {
+        fontSize: 10,
+        fontWeight: '600',
+    },
 });

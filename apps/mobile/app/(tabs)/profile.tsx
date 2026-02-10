@@ -507,7 +507,7 @@ export default function ProfileScreen() {
                 title: 'No Posts Yet',
                 message: 'Share your first moment with the world.',
                 actionLabel: 'Create Post',
-                onAction: () => router.push('/create' as any),
+                onAction: () => router.push('/(tabs)/create' as any),
             },
             likes: {
                 icon: 'heart-outline' as const,

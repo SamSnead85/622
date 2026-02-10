@@ -115,6 +115,7 @@ export default function ToolsHub() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const isMuslim = user?.culturalProfile === 'muslim';
 
     // Ramadan detection
@@ -208,6 +209,15 @@ export default function ToolsHub() {
                 contentContainerStyle={{ paddingBottom: insets.bottom + 80, paddingHorizontal: spacing.lg }}
                 showsVerticalScrollIndicator={false}
             >
+                {/* Sign-up banner for guest users */}
+                {!isAuthenticated && (
+                    <TouchableOpacity style={styles.signupBanner} onPress={() => router.push('/(auth)/signup' as any)}>
+                        <Ionicons name="sparkles" size={16} color={colors.gold[500]} />
+                        <Text style={styles.signupBannerText}>Sign up for the full 0G experience</Text>
+                        <Ionicons name="chevron-forward" size={14} color={colors.gold[400]} />
+                    </TouchableOpacity>
+                )}
+
                 {/* Bismillah header — Muslim profile users */}
                 {isMuslim && (
                     <Animated.View entering={FadeInDown.duration(500)} style={styles.bismillah}>
@@ -322,6 +332,26 @@ export default function ToolsHub() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
     scrollView: { flex: 1 },
+
+    // Sign-up banner
+    signupBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        backgroundColor: colors.gold[500] + '12',
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '25',
+        borderRadius: 12,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.lg,
+        marginTop: spacing.md,
+    },
+    signupBannerText: {
+        flex: 1,
+        fontSize: typography.fontSize.sm,
+        color: colors.gold[400],
+        fontFamily: 'Inter-Medium',
+    },
 
     // Bismillah
     bismillah: { alignItems: 'center', paddingVertical: spacing.xl },

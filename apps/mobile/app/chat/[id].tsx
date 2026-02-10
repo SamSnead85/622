@@ -19,6 +19,7 @@ import {
     Image,
     Dimensions,
     ActivityIndicator,
+    Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -848,14 +849,7 @@ export default function ChatScreen() {
                     <TouchableOpacity
                         style={styles.headerActionBtn}
                         onPress={() => {
-                            if (participant) {
-                                Haptics.impactAsync(
-                                    Haptics.ImpactFeedbackStyle.Light
-                                );
-                                router.push(
-                                    `/call/${participant.id}?type=audio&name=${encodeURIComponent(participant.displayName)}&avatar=${encodeURIComponent(participant.avatarUrl || '')}`
-                                );
-                            }
+                            Alert.alert('Coming Soon', 'Voice and video calls will be available in a future update.');
                         }}
                         accessibilityRole="button"
                         accessibilityLabel="Start audio call"
@@ -869,14 +863,7 @@ export default function ChatScreen() {
                     <TouchableOpacity
                         style={styles.headerActionBtn}
                         onPress={() => {
-                            if (participant) {
-                                Haptics.impactAsync(
-                                    Haptics.ImpactFeedbackStyle.Light
-                                );
-                                router.push(
-                                    `/call/${participant.id}?type=video&name=${encodeURIComponent(participant.displayName)}&avatar=${encodeURIComponent(participant.avatarUrl || '')}`
-                                );
-                            }
+                            Alert.alert('Coming Soon', 'Voice and video calls will be available in a future update.');
                         }}
                         accessibilityRole="button"
                         accessibilityLabel="Start video call"

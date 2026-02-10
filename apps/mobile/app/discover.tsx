@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -8,20 +8,21 @@ import {
     Dimensions,
     Animated as RNAnimated,
     Easing,
+    TextInput,
+    ActivityIndicator,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown, FadeIn, withSpring, useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
-import { apiFetch, API } from '../lib/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../stores';
-import { Avatar, LoadingView } from '../components';
+import { GlassCard } from '../components';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================
 // Celebration Particles — burst on mount
@@ -84,131 +85,150 @@ function CelebrationBurst() {
     );
 }
 
-interface SuggestedUser {
-    id: string;
-    username: string;
-    displayName: string;
-    avatarUrl?: string;
-    bio?: string;
-    followersCount?: number;
-    isFollowing?: boolean;
-}
-
-interface SuggestedCommunity {
-    id: string;
+// ============================================
+// Prayer Time Helpers
+// ============================================
+interface PrayerTimeData {
     name: string;
-    description?: string;
-    avatarUrl?: string;
-    membersCount?: number;
-    isJoined?: boolean;
+    time: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    arabicName: string;
 }
 
+function formatTime12h(time: string): string {
+    const [h, m] = time.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 || 12;
+    return `${hour12}:${m.toString().padStart(2, '0')} ${period}`;
+}
+
+// ============================================
+// Cultural Profile Types
+// ============================================
+type CulturalProfileType = 'muslim' | 'standard' | 'custom';
+
+const CULTURAL_OPTIONS: {
+    type: CulturalProfileType;
+    title: string;
+    greeting: string;
+    description: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    color: string;
+}[] = [
+    {
+        type: 'muslim',
+        title: 'Muslim',
+        greeting: 'Assalamu Alaikum',
+        description: 'Deen tools, prayer reminders, Islamic greetings',
+        icon: 'moon-outline',
+        color: colors.gold[500],
+    },
+    {
+        type: 'standard',
+        title: 'Standard',
+        greeting: 'Welcome back',
+        description: 'General community focus, all features available',
+        icon: 'people-outline',
+        color: colors.azure[500],
+    },
+    {
+        type: 'custom',
+        title: 'Custom',
+        greeting: 'Your greeting...',
+        description: 'Set your own personal greeting message',
+        icon: 'create-outline',
+        color: colors.emerald[500],
+    },
+];
+
+// ============================================
+// Main Screen
+// ============================================
 export default function DiscoverScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
 
-    const [suggestedUsers, setSuggestedUsers] = useState<SuggestedUser[]>([]);
-    const [suggestedCommunities, setSuggestedCommunities] = useState<SuggestedCommunity[]>([]);
-    const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
-    const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
-    const [loading, setLoading] = useState(true);
+    // Prayer times state
+    const [prayers, setPrayers] = useState<PrayerTimeData[]>([]);
+    const [prayerLoading, setPrayerLoading] = useState(true);
+
+    // Cultural profile state
+    const [selectedProfile, setSelectedProfile] = useState<CulturalProfileType>('muslim');
+    const [customGreeting, setCustomGreeting] = useState('');
 
     useEffect(() => {
-        loadSuggestions();
+        fetchPrayerTimes();
     }, []);
 
-    const loadSuggestions = async () => {
-        setLoading(true);
+    const fetchPrayerTimes = async () => {
         try {
-            const [usersRes, communitiesRes] = await Promise.allSettled([
-                apiFetch<any>(`${API.search}?q=trending&limit=12`),
-                apiFetch<any>(API.communities),
-            ]);
-
-            if (usersRes.status === 'fulfilled' && usersRes.value?.users) {
-                setSuggestedUsers(
-                    usersRes.value.users
-                        .filter((u: any) => u.id !== user?.id)
-                        .slice(0, 10)
-                        .map((u: any) => ({
-                            id: u.id,
-                            username: u.username,
-                            displayName: u.displayName || u.username,
-                            avatarUrl: u.avatarUrl,
-                            bio: u.bio,
-                            followersCount: u.followersCount || 0,
-                        }))
-                );
-            }
-
-            if (communitiesRes.status === 'fulfilled') {
-                const communities = Array.isArray(communitiesRes.value) ? communitiesRes.value : communitiesRes.value?.communities || [];
-                setSuggestedCommunities(
-                    communities.slice(0, 6).map((c: any) => ({
-                        id: c.id,
-                        name: c.name,
-                        description: c.description,
-                        avatarUrl: c.avatarUrl,
-                        membersCount: c.membersCount || c._count?.members || 0,
-                    }))
-                );
+            const res = await fetch(
+                'https://api.aladhan.com/v1/timingsByCity?city=NewYork&country=US&method=2'
+            );
+            const json = await res.json();
+            if (json.code === 200 && json.data) {
+                const t = json.data.timings;
+                setPrayers([
+                    { name: 'Fajr', time: t.Fajr, icon: 'moon-outline', arabicName: 'الفجر' },
+                    { name: 'Dhuhr', time: t.Dhuhr, icon: 'sunny', arabicName: 'الظهر' },
+                    { name: 'Asr', time: t.Asr, icon: 'partly-sunny-outline', arabicName: 'العصر' },
+                    { name: 'Maghrib', time: t.Maghrib, icon: 'cloud-outline', arabicName: 'المغرب' },
+                    { name: 'Isha', time: t.Isha, icon: 'moon', arabicName: 'العشاء' },
+                ]);
             }
         } catch {
-            // Silently handle — discovery is best-effort
+            // Silently handle — prayer times are best-effort during onboarding
         } finally {
-            setLoading(false);
+            setPrayerLoading(false);
         }
     };
 
-    const handleFollow = async (userId: string) => {
+    const handleSelectProfile = (type: CulturalProfileType) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        const isFollowing = followedIds.has(userId);
-        setFollowedIds((prev) => {
-            const next = new Set(prev);
-            if (isFollowing) next.delete(userId);
-            else next.add(userId);
-            return next;
-        });
-        try {
-            if (isFollowing) {
-                await apiFetch(`/users/${userId}/unfollow`, { method: 'POST' });
-            } else {
-                await apiFetch(`/users/${userId}/follow`, { method: 'POST' });
-            }
-        } catch {
-            // Revert on error
-            setFollowedIds((prev) => {
-                const next = new Set(prev);
-                if (isFollowing) next.add(userId);
-                else next.delete(userId);
-                return next;
-            });
-        }
+        setSelectedProfile(type);
     };
 
-    const handleJoin = async (communityId: string) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        const isJoined = joinedIds.has(communityId);
-        setJoinedIds((prev) => {
-            const next = new Set(prev);
-            if (isJoined) next.delete(communityId);
-            else next.add(communityId);
-            return next;
-        });
+    const handleContinue = async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+        // Build and save cultural profile
+        const greeting =
+            selectedProfile === 'muslim'
+                ? 'Assalamu Alaikum'
+                : selectedProfile === 'standard'
+                  ? 'Welcome back'
+                  : customGreeting || 'Hello';
+
         try {
-            await apiFetch(`/communities/${communityId}/${isJoined ? 'leave' : 'join'}`, { method: 'POST' });
+            await AsyncStorage.setItem(
+                '@cultural-profile',
+                JSON.stringify({
+                    type: selectedProfile,
+                    greeting,
+                    enableDeenTools: selectedProfile === 'muslim',
+                    enablePrayerReminders: selectedProfile === 'muslim',
+                })
+            );
         } catch {
-            setJoinedIds((prev) => {
-                const next = new Set(prev);
-                if (isJoined) next.add(communityId);
-                else next.delete(communityId);
-                return next;
-            });
+            // Non-blocking — continue even if save fails
         }
+
+        router.push('/interests?onboarding=true' as any);
     };
 
-    const totalFollowed = followedIds.size + joinedIds.size;
+    // Determine next prayer for highlighting
+    const getNextPrayer = (): string | null => {
+        if (prayers.length === 0) return null;
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        for (const prayer of prayers) {
+            const [h, m] = prayer.time.split(':').map(Number);
+            if (h * 60 + m > currentMinutes) return prayer.name;
+        }
+        return prayers[0].name; // All passed — tomorrow's Fajr
+    };
+    const nextPrayerName = getNextPrayer();
 
     return (
         <View style={styles.container}>
@@ -222,232 +242,197 @@ export default function DiscoverScreen() {
                 <Animated.View entering={FadeIn.duration(600)}>
                     <Text style={styles.welcomeText}>Welcome to 0G</Text>
                     <Text style={styles.subtitle}>
-                        Follow people and join communities to fill your feed with content you care about
-                    </Text>
-                </Animated.View>
-
-                {/* Progress indicator */}
-                <Animated.View entering={FadeInDown.duration(400).delay(200)} style={styles.progressRow}>
-                    <View style={styles.progressBar}>
-                        <View style={[styles.progressFill, { width: `${Math.min(100, totalFollowed * 20)}%` }]} />
-                    </View>
-                    <Text style={styles.progressText}>
-                        {totalFollowed === 0 ? 'Follow at least 3 to get started' : totalFollowed < 3 ? `${3 - totalFollowed} more to go` : 'Looking great!'}
+                        Let's personalize your experience in a few quick steps
                     </Text>
                 </Animated.View>
             </View>
 
-            {loading ? (
-                <LoadingView message="Finding great content for you..." />
-            ) : (
-                <ScrollView
-                    style={styles.scroll}
-                    contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
-                    showsVerticalScrollIndicator={false}
-                >
-                    {/* Suggested People */}
-                    {suggestedUsers.length > 0 && (
-                        <Animated.View entering={FadeInDown.duration(400).delay(300)}>
-                            <Text style={styles.sectionTitle}>People to Follow</Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.peopleScroll}>
-                                {suggestedUsers.map((u, i) => {
-                                    const isFollowed = followedIds.has(u.id);
-                                    return (
-                                        <Animated.View key={u.id} entering={FadeInDown.duration(300).delay(400 + i * 60)}>
-                                            <View style={styles.personCard}>
-                                                <TouchableOpacity
-                                                    onPress={() => router.push(`/profile/${u.username}` as any)}
-                                                    activeOpacity={0.8}
-                                                    accessibilityRole="button"
-                                                    accessibilityLabel={`View ${u.displayName}'s profile`}
-                                                >
-                                                    <Avatar uri={u.avatarUrl} name={u.displayName} size="xl" />
-                                                </TouchableOpacity>
-                                                <Text style={styles.personName} numberOfLines={1}>{u.displayName}</Text>
-                                                <Text style={styles.personHandle} numberOfLines={1}>@{u.username}</Text>
-                                                {u.bio && <Text style={styles.personBio} numberOfLines={2}>{u.bio}</Text>}
-                                                <TouchableOpacity
-                                                    style={[styles.followBtn, isFollowed && styles.followBtnActive]}
-                                                    onPress={() => handleFollow(u.id)}
-                                                    accessibilityRole="button"
-                                                    accessibilityLabel={isFollowed ? `Unfollow ${u.displayName}` : `Follow ${u.displayName}`}
-                                                    accessibilityHint={isFollowed ? 'Double tap to unfollow' : 'Double tap to follow this person'}
-                                                >
-                                                    <Text style={[styles.followBtnText, isFollowed && styles.followBtnTextActive]}>
-                                                        {isFollowed ? 'Following' : 'Follow'}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            </View>
-                                        </Animated.View>
-                                    );
-                                })}
-                            </ScrollView>
-                        </Animated.View>
-                    )}
+            <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* ── Section 1: Prayer Times Preview ── */}
+                <Animated.View entering={FadeInDown.duration(500).delay(300)}>
+                    <Text style={styles.sectionTitle}>Today's Prayer Times</Text>
+                    <View style={styles.prayerCard}>
+                        <LinearGradient
+                            colors={[colors.gold[700] + '18', colors.gold[500] + '05', 'transparent']}
+                            style={StyleSheet.absoluteFill}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                        />
 
-                    {/* Suggested Communities */}
-                    {suggestedCommunities.length > 0 && (
-                        <Animated.View entering={FadeInDown.duration(400).delay(600)}>
-                            <Text style={styles.sectionTitle}>Communities to Join</Text>
-                            <View style={styles.communitiesList}>
-                                {suggestedCommunities.map((c, i) => {
-                                    const isJoined = joinedIds.has(c.id);
-                                    return (
-                                        <Animated.View key={c.id} entering={FadeInDown.duration(300).delay(700 + i * 80)}>
-                                            <TouchableOpacity
-                                                style={styles.communityRow}
-                                                onPress={() => router.push(`/community/${c.id}` as any)}
-                                                activeOpacity={0.8}
-                                                accessibilityRole="button"
-                                                accessibilityLabel={`${c.name} community, ${c.membersCount} members`}
-                                            >
-                                                {c.avatarUrl ? (
-                                                    <Image source={{ uri: c.avatarUrl }} style={styles.communityAvatar} cachePolicy="memory-disk" />
-                                                ) : (
-                                                    <View style={[styles.communityAvatar, styles.communityAvatarPlaceholder]}>
-                                                        <Ionicons name="people" size={20} color={colors.gold[400]} />
-                                                    </View>
-                                                )}
-                                                <View style={styles.communityInfo}>
-                                                    <Text style={styles.communityName} numberOfLines={1}>{c.name}</Text>
-                                                    <Text style={styles.communityMeta} numberOfLines={1}>
-                                                        {c.membersCount} members{c.description ? ` · ${c.description}` : ''}
-                                                    </Text>
-                                                </View>
-                                                <TouchableOpacity
-                                                    style={[styles.joinBtn, isJoined && styles.joinBtnActive]}
-                                                    onPress={() => handleJoin(c.id)}
-                                                    accessibilityRole="button"
-                                                    accessibilityLabel={isJoined ? `Leave ${c.name}` : `Join ${c.name}`}
-                                                    accessibilityHint={isJoined ? 'Double tap to leave community' : 'Double tap to join this community'}
-                                                >
-                                                    <Text style={[styles.joinBtnText, isJoined && styles.joinBtnTextActive]}>
-                                                        {isJoined ? 'Joined' : 'Join'}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            </TouchableOpacity>
-                                        </Animated.View>
-                                    );
-                                })}
+                        {/* Header row: location + next prayer badge */}
+                        <View style={styles.prayerCardHeader}>
+                            <View style={styles.prayerLocationRow}>
+                                <Ionicons name="location-outline" size={14} color={colors.text.muted} />
+                                <Text style={styles.prayerLocationText}>New York, US</Text>
                             </View>
-                        </Animated.View>
-                    )}
-
-                    {/* Pick Your Interests */}
-                    <Animated.View entering={FadeInDown.duration(400).delay(800)}>
-                        <Text style={styles.sectionTitle}>Personalize Your Feed</Text>
-                        <TouchableOpacity
-                            style={styles.interestsCard}
-                            onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                router.push('/interests?onboarding=true' as any);
-                            }}
-                            activeOpacity={0.8}
-                            accessibilityRole="button"
-                            accessibilityLabel="Pick your interests"
-                            accessibilityHint="Choose topics to personalize your feed"
-                        >
-                            <View style={styles.interestsIconRow}>
-                                <Ionicons name="color-palette-outline" size={20} color={colors.gold[400]} />
-                                <Ionicons name="football-outline" size={20} color={colors.coral[400]} />
-                                <Ionicons name="hardware-chip-outline" size={20} color={colors.azure[400]} />
-                                <Ionicons name="newspaper-outline" size={20} color={colors.emerald[400]} />
-                            </View>
-                            <Text style={styles.interestsTitle}>Pick your interests</Text>
-                            <Text style={styles.interestsDesc}>
-                                Choose topics you care about and your feed will show relevant content immediately
-                            </Text>
-                            <View style={styles.interestsArrow}>
-                                <Ionicons name="arrow-forward" size={16} color={colors.gold[400]} />
-                            </View>
-                        </TouchableOpacity>
-                    </Animated.View>
-
-                    {/* Deen Tools Spotlight */}
-                    <Animated.View entering={FadeInDown.duration(400).delay(900)}>
-                        <Text style={styles.sectionTitle}>Powerful Tools</Text>
-                        <TouchableOpacity
-                            style={styles.toolsSpotlight}
-                            onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                router.push('/tools' as any);
-                            }}
-                            activeOpacity={0.8}
-                            accessibilityRole="button"
-                            accessibilityLabel="Explore tools: Prayer Times, Qibla, Quran, Halal Check, Boycott Check"
-                        >
-                            <LinearGradient
-                                colors={[colors.surface.goldSubtle, 'transparent']}
-                                style={StyleSheet.absoluteFill}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                            />
-                            <View style={styles.toolsSpotlightContent}>
-                                <View style={styles.toolsIconRow}>
-                                    <View style={[styles.miniToolIcon, { backgroundColor: colors.gold[500] + '20' }]}>
-                                        <Ionicons name="time-outline" size={18} color={colors.gold[500]} />
-                                    </View>
-                                    <View style={[styles.miniToolIcon, { backgroundColor: colors.emerald[500] + '20' }]}>
-                                        <Ionicons name="compass-outline" size={18} color={colors.emerald[500]} />
-                                    </View>
-                                    <View style={[styles.miniToolIcon, { backgroundColor: '#D4AF3720' }]}>
-                                        <Ionicons name="book-outline" size={18} color="#D4AF37" />
-                                    </View>
-                                    <View style={[styles.miniToolIcon, { backgroundColor: colors.azure[500] + '20' }]}>
-                                        <Ionicons name="scan-outline" size={18} color={colors.azure[500]} />
-                                    </View>
-                                    <View style={[styles.miniToolIcon, { backgroundColor: colors.coral[500] + '20' }]}>
-                                        <Ionicons name="shield-checkmark-outline" size={18} color={colors.coral[500]} />
-                                    </View>
+                            {nextPrayerName && (
+                                <View style={styles.nextPrayerBadge}>
+                                    <Ionicons name="time-outline" size={12} color={colors.gold[400]} />
+                                    <Text style={styles.nextPrayerLabel}>Next: {nextPrayerName}</Text>
                                 </View>
-                                <Text style={styles.toolsSpotlightTitle}>Prayer Times · Qibla · Quran · Halal Check · Boycott Check</Text>
-                                <Text style={styles.toolsSpotlightDesc}>
-                                    Essential daily tools — prayer schedules, direction finder, Quran reader, and product scanners.
-                                    {'\n'}Ramadan starts in 2 weeks. Get ready.
-                                </Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={colors.gold[400]} style={{ marginEnd: spacing.md }} />
-                        </TouchableOpacity>
-                    </Animated.View>
-
-                    {/* Privacy highlight */}
-                    <Animated.View entering={FadeInDown.duration(400).delay(1000)} style={styles.privacyCard}>
-                        <View style={styles.privacyIcon}>
-                            <Ionicons name="shield-checkmark" size={24} color={colors.emerald[500]} />
+                            )}
                         </View>
-                        <Text style={styles.privacyTitle}>Your privacy is protected</Text>
-                        <Text style={styles.privacyText}>
-                            Your account starts in private mode. Only people you follow will see your content. No tracking, no ads, no data selling.
+
+                        {prayerLoading ? (
+                            <View style={styles.prayerLoadingContainer}>
+                                <ActivityIndicator size="small" color={colors.gold[500]} />
+                                <Text style={styles.prayerLoadingText}>Loading prayer times...</Text>
+                            </View>
+                        ) : prayers.length > 0 ? (
+                            <View style={styles.prayerTimesGrid}>
+                                {prayers.map((prayer) => {
+                                    const isNext = prayer.name === nextPrayerName;
+                                    return (
+                                        <View
+                                            key={prayer.name}
+                                            style={[styles.prayerTimeRow, isNext && styles.prayerTimeRowActive]}
+                                        >
+                                            {isNext && (
+                                                <LinearGradient
+                                                    colors={[colors.gold[500] + '10', 'transparent']}
+                                                    style={StyleSheet.absoluteFill}
+                                                    start={{ x: 0, y: 0.5 }}
+                                                    end={{ x: 1, y: 0.5 }}
+                                                />
+                                            )}
+                                            <View style={[styles.prayerTimeIcon, isNext && styles.prayerTimeIconActive]}>
+                                                <Ionicons
+                                                    name={prayer.icon}
+                                                    size={18}
+                                                    color={isNext ? colors.gold[400] : colors.text.muted}
+                                                />
+                                            </View>
+                                            <View style={styles.prayerTimeInfo}>
+                                                <Text style={[styles.prayerTimeName, isNext && styles.prayerTimeNameActive]}>
+                                                    {prayer.name}
+                                                </Text>
+                                                <Text style={styles.prayerTimeArabic}>{prayer.arabicName}</Text>
+                                            </View>
+                                            <Text style={[styles.prayerTimeValue, isNext && styles.prayerTimeValueActive]}>
+                                                {formatTime12h(prayer.time)}
+                                            </Text>
+                                            {isNext && <View style={styles.nextDot} />}
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        ) : (
+                            <View style={styles.prayerLoadingContainer}>
+                                <Ionicons name="cloud-offline-outline" size={20} color={colors.text.muted} />
+                                <Text style={styles.prayerLoadingText}>Could not load prayer times</Text>
+                            </View>
+                        )}
+
+                        <Text style={styles.prayerFooterNote}>
+                            Calculated using ISNA method. You can update your location later.
                         </Text>
-                    </Animated.View>
-                </ScrollView>
-            )}
+                    </View>
+                </Animated.View>
+
+                {/* ── Section 2: Cultural Profile Selector ── */}
+                <Animated.View entering={FadeInDown.duration(500).delay(500)}>
+                    <Text style={styles.sectionTitle}>Your Experience</Text>
+                    <Text style={styles.sectionSubtitle}>
+                        Choose how you'd like to be greeted and what features to enable
+                    </Text>
+
+                    <View style={styles.profileOptions}>
+                        {CULTURAL_OPTIONS.map((option) => {
+                            const isSelected = selectedProfile === option.type;
+                            return (
+                                <TouchableOpacity
+                                    key={option.type}
+                                    style={[
+                                        styles.profileOption,
+                                        isSelected && { borderColor: option.color + '80' },
+                                    ]}
+                                    onPress={() => handleSelectProfile(option.type)}
+                                    activeOpacity={0.7}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ selected: isSelected }}
+                                    accessibilityLabel={`${option.title}: ${option.description}`}
+                                >
+                                    {isSelected && (
+                                        <View
+                                            style={[
+                                                StyleSheet.absoluteFill,
+                                                { backgroundColor: option.color + '08', borderRadius: 14 },
+                                            ]}
+                                        />
+                                    )}
+                                    <View style={[styles.profileOptionIcon, { backgroundColor: option.color + '15' }]}>
+                                        <Ionicons name={option.icon} size={22} color={option.color} />
+                                    </View>
+                                    <View style={styles.profileOptionContent}>
+                                        <Text style={styles.profileOptionTitle}>{option.title}</Text>
+                                        <Text style={styles.profileOptionGreeting}>"{option.greeting}"</Text>
+                                        <Text style={styles.profileOptionDesc}>{option.description}</Text>
+                                    </View>
+                                    {isSelected && (
+                                        <View style={[styles.profileCheckBadge, { backgroundColor: option.color }]}>
+                                            <Ionicons name="checkmark" size={14} color="#fff" />
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        })}
+
+                        {/* Custom greeting input */}
+                        {selectedProfile === 'custom' && (
+                            <Animated.View entering={FadeInDown.duration(300)} style={styles.customGreetingContainer}>
+                                <Text style={styles.customGreetingLabel}>Your greeting</Text>
+                                <View style={styles.customGreetingInputWrapper}>
+                                    <TextInput
+                                        style={styles.customGreetingTextInput}
+                                        placeholder="Type your greeting..."
+                                        placeholderTextColor={colors.text.muted}
+                                        value={customGreeting}
+                                        onChangeText={setCustomGreeting}
+                                        selectionColor={colors.emerald[500]}
+                                        maxLength={50}
+                                    />
+                                </View>
+                            </Animated.View>
+                        )}
+                    </View>
+                </Animated.View>
+
+                {/* ── Privacy Highlight ── */}
+                <Animated.View entering={FadeInDown.duration(400).delay(700)} style={styles.privacyCard}>
+                    <View style={styles.privacyIcon}>
+                        <Ionicons name="shield-checkmark" size={24} color={colors.emerald[500]} />
+                    </View>
+                    <Text style={styles.privacyTitle}>Your privacy is protected</Text>
+                    <Text style={styles.privacyText}>
+                        No tracking, no ads, no data selling. Your account starts in private mode.
+                    </Text>
+                </Animated.View>
+            </ScrollView>
 
             {/* Floating CTA */}
             <View style={[styles.ctaBar, { paddingBottom: insets.bottom + spacing.md }]}>
                 <TouchableOpacity
-                    style={[styles.ctaButton, totalFollowed >= 3 && styles.ctaButtonReady]}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        router.replace('/(tabs)');
-                    }}
+                    style={styles.ctaButton}
+                    onPress={handleContinue}
                     activeOpacity={0.9}
                     accessibilityRole="button"
-                    accessibilityLabel={totalFollowed >= 3 ? "Let's go, continue to feed" : 'Skip for now'}
+                    accessibilityLabel="Continue to choose your interests"
                 >
                     <LinearGradient
-                        colors={totalFollowed >= 3 ? [colors.gold[400], colors.gold[600]] : [colors.obsidian[500], colors.obsidian[600]]}
+                        colors={[colors.gold[400], colors.gold[600]]}
                         style={styles.ctaGradient}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                     >
-                        <Text style={[styles.ctaText, totalFollowed >= 3 && styles.ctaTextReady]}>
-                            {totalFollowed >= 3 ? "Let's Go" : 'Skip for now'}
-                        </Text>
+                        <Text style={styles.ctaText}>Continue</Text>
                         <Ionicons
                             name="arrow-forward"
                             size={20}
-                            color={totalFollowed >= 3 ? colors.obsidian[900] : colors.text.muted}
+                            color={colors.obsidian[900]}
                             style={{ marginStart: spacing.sm }}
                         />
                     </LinearGradient>
@@ -457,8 +442,13 @@ export default function DiscoverScreen() {
     );
 }
 
+// ============================================
+// Styles
+// ============================================
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#0A0A0B' },
+
+    // ── Header ──
     header: {
         paddingHorizontal: spacing.xl,
         paddingBottom: spacing.lg,
@@ -466,200 +456,297 @@ const styles = StyleSheet.create({
         borderBottomColor: colors.border.subtle,
     },
     welcomeText: {
-        fontSize: 32, fontWeight: '700', color: colors.text.primary,
-        fontFamily: 'Inter-Bold', letterSpacing: -0.8,
+        fontSize: 32,
+        fontWeight: '700',
+        color: colors.text.primary,
+        fontFamily: 'Inter-Bold',
+        letterSpacing: -0.8,
     },
     subtitle: {
-        fontSize: typography.fontSize.base, color: colors.text.secondary,
-        marginTop: spacing.sm, lineHeight: 22,
-    },
-    progressRow: {
-        marginTop: spacing.lg,
-    },
-    progressBar: {
-        height: 4, borderRadius: 2,
-        backgroundColor: colors.obsidian[600],
-        overflow: 'hidden',
-    },
-    progressFill: {
-        height: '100%', borderRadius: 2,
-        backgroundColor: colors.gold[500],
-    },
-    progressText: {
-        fontSize: typography.fontSize.xs, color: colors.text.muted,
-        marginTop: spacing.xs,
+        fontSize: typography.fontSize.base,
+        color: colors.text.secondary,
+        marginTop: spacing.sm,
+        lineHeight: 22,
     },
     scroll: { flex: 1 },
     sectionTitle: {
-        fontSize: typography.fontSize.lg, fontWeight: '700',
-        color: colors.text.primary, fontFamily: 'Inter-Bold',
-        paddingHorizontal: spacing.xl, marginTop: spacing.xl, marginBottom: spacing.md,
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.text.primary,
+        fontFamily: 'Inter-Bold',
+        paddingHorizontal: spacing.xl,
+        marginTop: spacing.xl,
+        marginBottom: spacing.sm,
+    },
+    sectionSubtitle: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        paddingHorizontal: spacing.xl,
+        marginBottom: spacing.md,
+        lineHeight: 20,
     },
 
-    // People
-    peopleScroll: {
-        paddingHorizontal: spacing.lg, gap: spacing.md,
+    // ── Prayer Times Card ──
+    prayerCard: {
+        marginHorizontal: spacing.xl,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '20',
+        overflow: 'hidden',
+        padding: spacing.lg,
     },
-    personCard: {
-        width: 150, backgroundColor: colors.surface.glass,
-        borderRadius: 16, padding: spacing.md,
-        borderWidth: 1, borderColor: colors.border.subtle,
+    prayerCardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: spacing.md,
     },
-    personName: {
-        fontSize: typography.fontSize.base, fontWeight: '600',
-        color: colors.text.primary, textAlign: 'center',
+    prayerLocationRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
     },
-    personHandle: {
-        fontSize: typography.fontSize.xs, color: colors.text.muted,
+    prayerLocationText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+    },
+    nextPrayerBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: colors.surface.goldSubtle,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 4,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '15',
+    },
+    nextPrayerLabel: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.gold[400],
+    },
+    prayerLoadingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        paddingVertical: spacing.xl,
+    },
+    prayerLoadingText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+    },
+    prayerTimesGrid: {
+        gap: spacing.xs,
+    },
+    prayerTimeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: spacing.sm + 2,
+        paddingHorizontal: spacing.sm,
+        borderRadius: 12,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    prayerTimeRowActive: {
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '18',
+    },
+    prayerTimeIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        backgroundColor: colors.surface.glass,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    prayerTimeIconActive: {
+        backgroundColor: colors.surface.goldSubtle,
+    },
+    prayerTimeInfo: {
+        flex: 1,
+        marginStart: spacing.md,
+    },
+    prayerTimeName: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.primary,
+    },
+    prayerTimeNameActive: {
+        color: colors.gold[400],
+    },
+    prayerTimeArabic: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        marginTop: 1,
+    },
+    prayerTimeValue: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        color: colors.text.secondary,
+        fontFamily: 'Inter-Bold',
+    },
+    prayerTimeValueActive: {
+        color: colors.gold[400],
+    },
+    nextDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+        backgroundColor: colors.gold[500],
+        marginStart: spacing.sm,
+    },
+    prayerFooterNote: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        marginTop: spacing.md,
+        textAlign: 'center',
+    },
+
+    // ── Cultural Profile ──
+    profileOptions: {
+        paddingHorizontal: spacing.xl,
+        gap: spacing.sm,
+    },
+    profileOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface.glass,
+        borderRadius: 14,
+        padding: spacing.md,
+        borderWidth: 1.5,
+        borderColor: colors.border.subtle,
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    profileOptionIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    profileOptionContent: {
+        flex: 1,
+        marginStart: spacing.md,
+        marginEnd: spacing.lg,
+    },
+    profileOptionTitle: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        color: colors.text.primary,
+    },
+    profileOptionGreeting: {
+        fontSize: typography.fontSize.sm,
+        color: colors.gold[400],
+        fontStyle: 'italic',
         marginTop: 2,
     },
-    personBio: {
-        fontSize: typography.fontSize.xs, color: colors.text.secondary,
-        textAlign: 'center', marginTop: spacing.xs, lineHeight: 16,
+    profileOptionDesc: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        marginTop: 2,
+        lineHeight: 16,
     },
-    followBtn: {
-        marginTop: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: 8,
-        borderRadius: 20, borderWidth: 1.5, borderColor: colors.gold[500],
-    },
-    followBtnActive: {
-        backgroundColor: colors.gold[500], borderColor: colors.gold[500],
-    },
-    followBtnText: {
-        fontSize: typography.fontSize.sm, fontWeight: '600', color: colors.gold[500],
-    },
-    followBtnTextActive: {
-        color: colors.obsidian[900],
-    },
-
-    // Communities
-    communitiesList: {
-        paddingHorizontal: spacing.xl, gap: spacing.sm,
-    },
-    communityRow: {
-        flexDirection: 'row', alignItems: 'center',
-        backgroundColor: colors.surface.glass, borderRadius: 14,
-        padding: spacing.md, borderWidth: 1, borderColor: colors.border.subtle,
-    },
-    communityAvatar: {
-        width: 44, height: 44, borderRadius: 12,
-    },
-    communityAvatarPlaceholder: {
-        backgroundColor: colors.surface.goldSubtle,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    communityInfo: { flex: 1, marginStart: spacing.md },
-    communityName: {
-        fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary,
-    },
-    communityMeta: {
-        fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: 2,
-    },
-    joinBtn: {
-        paddingHorizontal: spacing.md, paddingVertical: 6,
-        borderRadius: 16, borderWidth: 1.5, borderColor: colors.gold[500],
-    },
-    joinBtnActive: {
-        backgroundColor: colors.gold[500],
-    },
-    joinBtnText: {
-        fontSize: typography.fontSize.sm, fontWeight: '600', color: colors.gold[500],
-    },
-    joinBtnTextActive: {
-        color: colors.obsidian[900],
+    profileCheckBadge: {
+        position: 'absolute',
+        top: spacing.sm,
+        right: spacing.sm,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
-    // Interests card
-    interestsCard: {
-        marginHorizontal: spacing.xl,
+    // ── Custom Greeting Input ──
+    customGreetingContainer: {
+        marginTop: spacing.xs,
+    },
+    customGreetingLabel: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.secondary,
+        marginBottom: spacing.xs,
+    },
+    customGreetingInputWrapper: {
         backgroundColor: colors.surface.glass,
-        borderRadius: 16, padding: spacing.lg,
-        borderWidth: 1, borderColor: colors.border.subtle,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
     },
-    interestsIconRow: {
-        flexDirection: 'row', gap: spacing.md, marginBottom: spacing.sm,
-    },
-    interestsTitle: {
-        fontSize: typography.fontSize.base, fontWeight: '700',
-        color: colors.text.primary, marginBottom: 4,
-    },
-    interestsDesc: {
-        fontSize: typography.fontSize.sm, color: colors.text.secondary,
-        lineHeight: 18,
-    },
-    interestsArrow: {
-        position: 'absolute', top: spacing.lg, right: spacing.lg,
+    customGreetingTextInput: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.primary,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+        minHeight: 48,
     },
 
-    // Tools spotlight
-    toolsSpotlight: {
-        marginHorizontal: spacing.xl,
-        backgroundColor: colors.surface.glass,
-        borderRadius: 16, borderWidth: 1, borderColor: colors.border.subtle,
-        overflow: 'hidden', flexDirection: 'row', alignItems: 'center',
-    },
-    toolsSpotlightContent: {
-        flex: 1, padding: spacing.lg,
-    },
-    toolsIconRow: {
-        flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm,
-    },
-    miniToolIcon: {
-        width: 32, height: 32, borderRadius: 8,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    toolsSpotlightTitle: {
-        fontSize: typography.fontSize.xs, color: colors.gold[400],
-        fontWeight: '600', letterSpacing: 0.3,
-    },
-    toolsSpotlightDesc: {
-        fontSize: typography.fontSize.sm, color: colors.text.secondary,
-        marginTop: spacing.xs, lineHeight: 18,
-    },
-
-    // Privacy
+    // ── Privacy ──
     privacyCard: {
-        marginHorizontal: spacing.xl, marginTop: spacing.xl,
-        backgroundColor: colors.surface.glass, borderRadius: 16,
-        padding: spacing.xl, borderWidth: 1, borderColor: colors.border.subtle,
+        marginHorizontal: spacing.xl,
+        marginTop: spacing.xl,
+        backgroundColor: colors.surface.glass,
+        borderRadius: 16,
+        padding: spacing.xl,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
         alignItems: 'center',
     },
     privacyIcon: {
-        width: 48, height: 48, borderRadius: 24,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         backgroundColor: colors.emerald[500] + '15',
-        alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.md,
     },
     privacyTitle: {
-        fontSize: typography.fontSize.lg, fontWeight: '700', color: colors.text.primary,
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.text.primary,
         marginBottom: spacing.xs,
     },
     privacyText: {
-        fontSize: typography.fontSize.sm, color: colors.text.secondary,
-        textAlign: 'center', lineHeight: 20,
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        lineHeight: 20,
     },
 
-    // CTA
+    // ── CTA ──
     ctaBar: {
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        paddingHorizontal: spacing.xl, paddingTop: spacing.md,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: spacing.xl,
+        paddingTop: spacing.md,
         backgroundColor: colors.obsidian[900] + 'F0',
     },
     ctaButton: {
-        borderRadius: 16, overflow: 'hidden',
-    },
-    ctaButtonReady: {
-        shadowColor: colors.gold[500], shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3, shadowRadius: 16, elevation: 8,
+        borderRadius: 16,
+        overflow: 'hidden',
+        shadowColor: colors.gold[500],
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 8,
     },
     ctaGradient: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        paddingVertical: 16, paddingHorizontal: spacing.xl,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        paddingHorizontal: spacing.xl,
     },
     ctaText: {
-        fontSize: typography.fontSize.lg, fontWeight: '600',
-        color: colors.text.muted, fontFamily: 'Inter-SemiBold',
-    },
-    ctaTextReady: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '600',
         color: colors.obsidian[900],
+        fontFamily: 'Inter-SemiBold',
     },
 });
