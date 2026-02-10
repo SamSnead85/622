@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import {
     View,
     Text,
+    TextInput,
     StyleSheet,
     TouchableOpacity,
     KeyboardAvoidingView,
@@ -15,7 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Button, Input, colors, typography, spacing } from '@zerog/ui';
+import { Button, colors, typography, spacing } from '@zerog/ui';
 import { BackButton } from '../../components';
 import { useAuthStore } from '../../stores';
 
@@ -137,49 +138,71 @@ export default function SignupScreen() {
                         </View>
                     </Animated.View>
 
-                    <Animated.View entering={FadeInDown.duration(400).delay(100)}>
+                    <View>
                         <View style={styles.form}>
-                            <Input
-                                label="Display Name"
-                                placeholder="Your name"
-                                autoCapitalize="words"
-                                accessibilityLabel="Display name"
-                                value={displayName}
-                                onChangeText={(text) => {
-                                    setDisplayName(text);
-                                    if (errors.displayName) setErrors((e) => ({ ...e, displayName: '' }));
-                                }}
-                                error={errors.displayName}
-                            />
+                            <View style={styles.fieldGroup}>
+                                <Text style={styles.fieldLabel}>Display Name</Text>
+                                <View style={[styles.fieldInput, errors.displayName ? styles.fieldInputError : undefined]}>
+                                    <TextInput
+                                        style={styles.fieldTextInput}
+                                        placeholder="Your name"
+                                        placeholderTextColor={colors.text.muted}
+                                        autoCapitalize="words"
+                                        accessibilityLabel="Display name"
+                                        value={displayName}
+                                        onChangeText={(text) => {
+                                            setDisplayName(text);
+                                            if (errors.displayName) setErrors((e) => ({ ...e, displayName: '' }));
+                                        }}
+                                        selectionColor={colors.gold[500]}
+                                    />
+                                </View>
+                                {errors.displayName && <Text style={styles.fieldError}>{errors.displayName}</Text>}
+                            </View>
 
-                            <Input
-                                label="Email"
-                                placeholder="Enter your email"
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                autoComplete="email"
-                                accessibilityLabel="Email address"
-                                value={email}
-                                onChangeText={(text) => {
-                                    setEmail(text);
-                                    if (errors.email) setErrors((e) => ({ ...e, email: '' }));
-                                }}
-                                error={errors.email}
-                            />
+                            <View style={styles.fieldGroup}>
+                                <Text style={styles.fieldLabel}>Email</Text>
+                                <View style={[styles.fieldInput, errors.email ? styles.fieldInputError : undefined]}>
+                                    <TextInput
+                                        style={styles.fieldTextInput}
+                                        placeholder="Enter your email"
+                                        placeholderTextColor={colors.text.muted}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        autoComplete="email"
+                                        autoCorrect={false}
+                                        accessibilityLabel="Email address"
+                                        value={email}
+                                        onChangeText={(text) => {
+                                            setEmail(text);
+                                            if (errors.email) setErrors((e) => ({ ...e, email: '' }));
+                                        }}
+                                        selectionColor={colors.gold[500]}
+                                    />
+                                </View>
+                                {errors.email && <Text style={styles.fieldError}>{errors.email}</Text>}
+                            </View>
 
-                            <Input
-                                label="Password"
-                                placeholder="Create a password"
-                                secureTextEntry
-                                accessibilityLabel="Password"
-                                value={password}
-                                onChangeText={(text) => {
-                                    setPassword(text);
-                                    if (errors.password) setErrors((e) => ({ ...e, password: '' }));
-                                }}
-                                error={errors.password}
-                                hint="At least 8 characters"
-                            />
+                            <View style={styles.fieldGroup}>
+                                <Text style={styles.fieldLabel}>Password</Text>
+                                <View style={[styles.fieldInput, errors.password ? styles.fieldInputError : undefined]}>
+                                    <TextInput
+                                        style={styles.fieldTextInput}
+                                        placeholder="Create a password"
+                                        placeholderTextColor={colors.text.muted}
+                                        secureTextEntry
+                                        accessibilityLabel="Password"
+                                        value={password}
+                                        onChangeText={(text) => {
+                                            setPassword(text);
+                                            if (errors.password) setErrors((e) => ({ ...e, password: '' }));
+                                        }}
+                                        selectionColor={colors.gold[500]}
+                                    />
+                                </View>
+                                {errors.password && <Text style={styles.fieldError}>{errors.password}</Text>}
+                                {!errors.password && <Text style={styles.fieldHint}>At least 8 characters</Text>}
+                            </View>
 
                             {/* Password strength indicator */}
                             {password.length > 0 && (
@@ -206,18 +229,25 @@ export default function SignupScreen() {
                                 </View>
                             )}
 
-                            <Input
-                                label="Confirm Password"
-                                placeholder="Confirm your password"
-                                secureTextEntry
-                                accessibilityLabel="Confirm password"
-                                value={confirmPassword}
-                                onChangeText={(text) => {
-                                    setConfirmPassword(text);
-                                    if (errors.confirmPassword) setErrors((e) => ({ ...e, confirmPassword: '' }));
-                                }}
-                                error={errors.confirmPassword}
-                            />
+                            <View style={styles.fieldGroup}>
+                                <Text style={styles.fieldLabel}>Confirm Password</Text>
+                                <View style={[styles.fieldInput, errors.confirmPassword ? styles.fieldInputError : undefined]}>
+                                    <TextInput
+                                        style={styles.fieldTextInput}
+                                        placeholder="Confirm your password"
+                                        placeholderTextColor={colors.text.muted}
+                                        secureTextEntry
+                                        accessibilityLabel="Confirm password"
+                                        value={confirmPassword}
+                                        onChangeText={(text) => {
+                                            setConfirmPassword(text);
+                                            if (errors.confirmPassword) setErrors((e) => ({ ...e, confirmPassword: '' }));
+                                        }}
+                                        selectionColor={colors.gold[500]}
+                                    />
+                                </View>
+                                {errors.confirmPassword && <Text style={styles.fieldError}>{errors.confirmPassword}</Text>}
+                            </View>
 
                             <Button
                                 variant="primary"
@@ -232,9 +262,9 @@ export default function SignupScreen() {
                                 Create Account
                             </Button>
                         </View>
-                    </Animated.View>
+                    </View>
 
-                    <Animated.View entering={FadeInDown.duration(400).delay(200)}>
+                    <View>
                         <View style={styles.divider}>
                             <View style={styles.dividerLine} />
                             <Text style={styles.dividerText}>or sign up with</Text>
@@ -262,7 +292,7 @@ export default function SignupScreen() {
                                 <Text style={styles.comingSoonBadge}>Soon</Text>
                             </TouchableOpacity>
                         </View>
-                    </Animated.View>
+                    </View>
 
                     <View style={styles.loginContainer}>
                         <Text style={styles.loginText}>Already have an account? </Text>
@@ -421,5 +451,40 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.xs,
         color: colors.gold[400],
         lineHeight: 18,
+    },
+    fieldGroup: {
+        marginBottom: spacing.lg,
+    },
+    fieldLabel: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.secondary,
+        marginBottom: spacing.xs,
+    },
+    fieldInput: {
+        backgroundColor: colors.surface.glass,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    fieldInputError: {
+        borderColor: colors.coral[500],
+    },
+    fieldTextInput: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.primary,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+        minHeight: 50,
+    },
+    fieldError: {
+        fontSize: typography.fontSize.xs,
+        color: colors.coral[500],
+        marginTop: spacing.xs,
+    },
+    fieldHint: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        marginTop: spacing.xs,
     },
 });

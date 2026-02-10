@@ -1,7 +1,8 @@
 // ============================================
-// Real-Time Chat Screen
+// Chat/DM Screen — Premium real-time messaging
 // Socket.io powered with typing indicators,
-// read receipts, and presence status
+// read receipts, presence, image support,
+// timestamp grouping, and haptic feedback
 // ============================================
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -14,18 +15,40 @@ import {
     TextInput,
     KeyboardAvoidingView,
     Platform,
-    Animated,
+    Pressable,
+    Image,
+    Dimensions,
+    ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Animated, {
+    FadeIn,
+    FadeInDown,
+    FadeInUp,
+    SlideInRight,
+    SlideInLeft,
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    withTiming,
+    withRepeat,
+    withSequence,
+    withDelay,
+    interpolate,
+    Extrapolation,
+    Easing,
+} from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
 import { socketManager, SocketMessage, TypingEvent } from '../../lib/socket';
-import { Avatar, LoadingView } from '../../components';
+import { Avatar } from '../../components';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================
 // Types
@@ -50,52 +73,288 @@ interface ChatParticipant {
     isOnline?: boolean;
 }
 
+type ListItem = Message | { type: 'date'; label: string; id: string };
+
 // ============================================
-// Typing Indicator Component
+// Typing Indicator — three bouncing gold dots
 // ============================================
 
 function TypingIndicator({ name }: { name: string }) {
-    const dot1 = useRef(new Animated.Value(0)).current;
-    const dot2 = useRef(new Animated.Value(0)).current;
-    const dot3 = useRef(new Animated.Value(0)).current;
+    const dot1 = useSharedValue(0);
+    const dot2 = useSharedValue(0);
+    const dot3 = useSharedValue(0);
 
     useEffect(() => {
-        const animate = (dot: Animated.Value, delay: number) =>
-            Animated.loop(
-                Animated.sequence([
-                    Animated.delay(delay),
-                    Animated.timing(dot, { toValue: 1, duration: 300, useNativeDriver: true }),
-                    Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true }),
-                    Animated.delay(600 - delay),
-                ])
+        const bounce = (delay: number) =>
+            withDelay(
+                delay,
+                withRepeat(
+                    withSequence(
+                        withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) }),
+                        withTiming(0, { duration: 300, easing: Easing.in(Easing.ease) }),
+                        withDelay(400, withTiming(0, { duration: 0 }))
+                    ),
+                    -1,
+                    false
+                )
             );
 
-        const a1 = animate(dot1, 0);
-        const a2 = animate(dot2, 200);
-        const a3 = animate(dot3, 400);
+        dot1.value = bounce(0);
+        dot2.value = bounce(150);
+        dot3.value = bounce(300);
 
-        a1.start();
-        a2.start();
-        a3.start();
-
-        return () => { a1.stop(); a2.stop(); a3.stop(); };
+        return () => {
+            dot1.value = 0;
+            dot2.value = 0;
+            dot3.value = 0;
+        };
     }, []);
 
-    const dotStyle = (dot: Animated.Value) => ({
-        opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
-        transform: [{ translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }],
-    });
+    const d1Style = useAnimatedStyle(() => ({
+        opacity: interpolate(dot1.value, [0, 1], [0.3, 1], Extrapolation.CLAMP),
+        transform: [
+            { translateY: interpolate(dot1.value, [0, 1], [0, -5], Extrapolation.CLAMP) },
+            { scale: interpolate(dot1.value, [0, 1], [0.85, 1.15], Extrapolation.CLAMP) },
+        ],
+    }));
+
+    const d2Style = useAnimatedStyle(() => ({
+        opacity: interpolate(dot2.value, [0, 1], [0.3, 1], Extrapolation.CLAMP),
+        transform: [
+            { translateY: interpolate(dot2.value, [0, 1], [0, -5], Extrapolation.CLAMP) },
+            { scale: interpolate(dot2.value, [0, 1], [0.85, 1.15], Extrapolation.CLAMP) },
+        ],
+    }));
+
+    const d3Style = useAnimatedStyle(() => ({
+        opacity: interpolate(dot3.value, [0, 1], [0.3, 1], Extrapolation.CLAMP),
+        transform: [
+            { translateY: interpolate(dot3.value, [0, 1], [0, -5], Extrapolation.CLAMP) },
+            { scale: interpolate(dot3.value, [0, 1], [0.85, 1.15], Extrapolation.CLAMP) },
+        ],
+    }));
 
     return (
-        <View style={styles.typingContainer}>
+        <Animated.View
+            entering={FadeIn.duration(200)}
+            style={styles.typingContainer}
+        >
             <View style={styles.typingBubble}>
-                <Text style={styles.typingName}>{name}</Text>
+                <Text style={styles.typingName}>{name} is typing</Text>
                 <View style={styles.typingDots}>
-                    <Animated.View style={[styles.typingDot, dotStyle(dot1)]} />
-                    <Animated.View style={[styles.typingDot, dotStyle(dot2)]} />
-                    <Animated.View style={[styles.typingDot, dotStyle(dot3)]} />
+                    <Animated.View style={[styles.typingDot, d1Style]} />
+                    <Animated.View style={[styles.typingDot, d2Style]} />
+                    <Animated.View style={[styles.typingDot, d3Style]} />
                 </View>
             </View>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Read Receipt (double checkmarks)
+// ============================================
+
+function ReadReceipt({ status }: { status?: string }) {
+    switch (status) {
+        case 'sending':
+            return (
+                <Ionicons
+                    name="time-outline"
+                    size={13}
+                    color="rgba(255,255,255,0.4)"
+                />
+            );
+        case 'sent':
+            return (
+                <Ionicons
+                    name="checkmark"
+                    size={13}
+                    color="rgba(255,255,255,0.5)"
+                />
+            );
+        case 'delivered':
+            return (
+                <Ionicons
+                    name="checkmark-done"
+                    size={13}
+                    color="rgba(255,255,255,0.5)"
+                />
+            );
+        case 'read':
+            return (
+                <Ionicons
+                    name="checkmark-done"
+                    size={13}
+                    color={colors.gold[400]}
+                />
+            );
+        default:
+            return null;
+    }
+}
+
+// ============================================
+// Message Bubble
+// ============================================
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function MessageBubble({
+    item,
+    isOwn,
+    showTail,
+    participant,
+    formatTime,
+}: {
+    item: Message;
+    isOwn: boolean;
+    showTail: boolean;
+    participant: ChatParticipant | null;
+    formatTime: (ts: string) => string;
+}) {
+    const hasMedia = !!item.mediaUrl;
+    const isImage = item.mediaType === 'IMAGE' || item.mediaType === 'image';
+
+    return (
+        <Animated.View
+            entering={isOwn ? SlideInRight.duration(250).springify() : SlideInLeft.duration(250).springify()}
+            style={[styles.msgRow, isOwn ? styles.ownRow : styles.otherRow]}
+        >
+            {/* Receiver avatar */}
+            {!isOwn && showTail && (
+                <Avatar
+                    uri={participant?.avatarUrl}
+                    name={participant?.displayName}
+                    customSize={28}
+                    style={{ marginEnd: spacing.xs, marginBottom: 2 }}
+                />
+            )}
+            {!isOwn && !showTail && <View style={{ width: 28 + spacing.xs }} />}
+
+            {isOwn ? (
+                <View style={styles.ownBubbleWrap}>
+                    {/* Media */}
+                    {hasMedia && isImage && (
+                        <View style={styles.mediaBubble}>
+                            <Image
+                                source={{ uri: item.mediaUrl }}
+                                style={styles.mediaImage}
+                                resizeMode="cover"
+                            />
+                        </View>
+                    )}
+
+                    {/* Text bubble */}
+                    {item.content ? (
+                        <LinearGradient
+                            colors={[colors.gold[500], colors.gold[600]]}
+                            style={[
+                                styles.msgBubble,
+                                styles.ownBubble,
+                                showTail && styles.ownBubbleTail,
+                            ]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                        >
+                            <Text style={[styles.msgText, styles.ownText]} selectable>
+                                {item.content}
+                            </Text>
+                        </LinearGradient>
+                    ) : null}
+
+                    {/* Meta row: time + read receipt */}
+                    <View style={styles.ownMeta}>
+                        <Text style={[styles.msgTime, styles.ownTime]}>
+                            {formatTime(item.createdAt)}
+                        </Text>
+                        <ReadReceipt status={item.status} />
+                    </View>
+                </View>
+            ) : (
+                <View style={styles.otherBubbleWrap}>
+                    {/* Media */}
+                    {hasMedia && isImage && (
+                        <View style={styles.mediaBubble}>
+                            <Image
+                                source={{ uri: item.mediaUrl }}
+                                style={styles.mediaImage}
+                                resizeMode="cover"
+                            />
+                        </View>
+                    )}
+
+                    {/* Text bubble */}
+                    {item.content ? (
+                        <View
+                            style={[
+                                styles.msgBubble,
+                                styles.otherBubble,
+                                showTail && styles.otherBubbleTail,
+                            ]}
+                        >
+                            <Text style={styles.msgText} selectable>
+                                {item.content}
+                            </Text>
+                        </View>
+                    ) : null}
+
+                    <Text style={styles.msgTime}>{formatTime(item.createdAt)}</Text>
+                </View>
+            )}
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Skeleton Loader for Chat
+// ============================================
+
+function ChatSkeleton() {
+    const shimmer = useSharedValue(0);
+
+    useEffect(() => {
+        shimmer.value = withRepeat(
+            withTiming(1, { duration: 1200 }),
+            -1,
+            true
+        );
+    }, []);
+
+    const shimmerStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(shimmer.value, [0, 1], [0.3, 0.6], Extrapolation.CLAMP),
+    }));
+
+    const Block = ({ w, h, r = 8, self }: { w: number; h: number; r?: number; self?: 'flex-start' | 'flex-end' }) => (
+        <Animated.View
+            style={[
+                {
+                    width: w,
+                    height: h,
+                    borderRadius: r,
+                    backgroundColor: colors.obsidian[600],
+                    alignSelf: self || 'flex-start',
+                    marginBottom: spacing.sm,
+                },
+                shimmerStyle,
+            ]}
+        />
+    );
+
+    return (
+        <View style={{ padding: spacing.lg, flex: 1 }}>
+            <Block w={100} h={12} r={6} self="center" />
+            <View style={{ height: spacing.lg }} />
+            <Block w={200} h={40} r={16} />
+            <Block w={160} h={36} r={16} />
+            <Block w={220} h={48} r={16} self="flex-end" />
+            <Block w={180} h={36} r={16} self="flex-end" />
+            <View style={{ height: spacing.md }} />
+            <Block w={100} h={12} r={6} self="center" />
+            <View style={{ height: spacing.md }} />
+            <Block w={240} h={44} r={16} />
+            <Block w={190} h={36} r={16} self="flex-end" />
+            <Block w={140} h={40} r={16} />
         </View>
     );
 }
@@ -110,6 +369,7 @@ export default function ChatScreen() {
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
     const flatListRef = useRef<FlatList>(null);
+    const inputRef = useRef<TextInput>(null);
 
     // State
     const [messages, setMessages] = useState<Message[]>([]);
@@ -120,6 +380,22 @@ export default function ChatScreen() {
     const [isTyping, setIsTyping] = useState(false);
     const [typingUser, setTypingUser] = useState<string | null>(null);
     const [isOnline, setIsOnline] = useState(false);
+
+    // Animated send button glow
+    const sendGlow = useSharedValue(0);
+
+    useEffect(() => {
+        if (inputText.trim().length > 0) {
+            sendGlow.value = withSpring(1, { damping: 12, stiffness: 150 });
+        } else {
+            sendGlow.value = withTiming(0, { duration: 200 });
+        }
+    }, [inputText]);
+
+    const sendBtnAnimStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: interpolate(sendGlow.value, [0, 1], [0.85, 1], Extrapolation.CLAMP) }],
+        opacity: interpolate(sendGlow.value, [0, 1], [0.5, 1], Extrapolation.CLAMP),
+    }));
 
     // Refs
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -140,65 +416,92 @@ export default function ChatScreen() {
             if (msg.conversationId !== conversationId) return;
 
             setMessages((prev) => {
-                // Avoid duplicates
                 if (prev.some((m) => m.id === msg.id)) return prev;
-                return [...prev, {
-                    id: msg.id,
-                    content: msg.content,
-                    senderId: msg.senderId,
-                    createdAt: msg.createdAt,
-                    mediaUrl: msg.mediaUrl,
-                    mediaType: msg.mediaType,
-                    status: 'delivered',
-                }];
+                return [
+                    ...prev,
+                    {
+                        id: msg.id,
+                        content: msg.content,
+                        senderId: msg.senderId,
+                        createdAt: msg.createdAt,
+                        mediaUrl: msg.mediaUrl,
+                        mediaType: msg.mediaType,
+                        status: 'delivered',
+                    },
+                ];
             });
 
-            // Mark as read if it's from the other person
+            // Mark as read if from the other person
             if (msg.senderId !== user?.id) {
                 socketManager.markMessageRead(conversationId, msg.id);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
 
             // Scroll to bottom
             setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
         });
 
-        // Listen for typing indicators
-        const unsubTypingStart = socketManager.on('typing:start', (data: TypingEvent) => {
-            if (data.conversationId === conversationId && data.userId !== user?.id) {
-                setTypingUser(data.username);
-                setIsTyping(true);
+        // Typing indicators
+        const unsubTypingStart = socketManager.on(
+            'typing:start',
+            (data: TypingEvent) => {
+                if (
+                    data.conversationId === conversationId &&
+                    data.userId !== user?.id
+                ) {
+                    setTypingUser(data.username);
+                    setIsTyping(true);
+                }
             }
-        });
+        );
 
-        const unsubTypingStop = socketManager.on('typing:stop', (data: TypingEvent) => {
-            if (data.conversationId === conversationId && data.userId !== user?.id) {
-                setIsTyping(false);
-                setTypingUser(null);
+        const unsubTypingStop = socketManager.on(
+            'typing:stop',
+            (data: TypingEvent) => {
+                if (
+                    data.conversationId === conversationId &&
+                    data.userId !== user?.id
+                ) {
+                    setIsTyping(false);
+                    setTypingUser(null);
+                }
             }
-        });
+        );
 
-        // Listen for read receipts
-        const unsubRead = socketManager.on('message:read', (data: { userId: string; conversationId: string; messageId: string }) => {
-            if (data.conversationId === conversationId && data.userId !== user?.id) {
-                setMessages((prev) =>
-                    prev.map((m) => {
-                        if (m.senderId === user?.id && !m.isRead) {
-                            return { ...m, isRead: true, status: 'read' };
-                        }
-                        return m;
-                    })
-                );
+        // Read receipts
+        const unsubRead = socketManager.on(
+            'message:read',
+            (data: { userId: string; conversationId: string; messageId: string }) => {
+                if (
+                    data.conversationId === conversationId &&
+                    data.userId !== user?.id
+                ) {
+                    setMessages((prev) =>
+                        prev.map((m) => {
+                            if (m.senderId === user?.id && !m.isRead) {
+                                return { ...m, isRead: true, status: 'read' as const };
+                            }
+                            return m;
+                        })
+                    );
+                }
             }
-        });
+        );
 
-        // Listen for presence
-        const unsubOnline = socketManager.on('user:online', (data: { userId: string }) => {
-            if (data.userId === participant?.id) setIsOnline(true);
-        });
+        // Presence
+        const unsubOnline = socketManager.on(
+            'user:online',
+            (data: { userId: string }) => {
+                if (data.userId === participant?.id) setIsOnline(true);
+            }
+        );
 
-        const unsubOffline = socketManager.on('user:offline', (data: { userId: string }) => {
-            if (data.userId === participant?.id) setIsOnline(false);
-        });
+        const unsubOffline = socketManager.on(
+            'user:offline',
+            (data: { userId: string }) => {
+                if (data.userId === participant?.id) setIsOnline(false);
+            }
+        );
 
         return () => {
             socketManager.leaveConversation(conversationId);
@@ -225,9 +528,9 @@ export default function ChatScreen() {
                 setMessages(
                     Array.isArray(msgs)
                         ? msgs.map((m: any) => ({
-                            ...m,
-                            status: m.isRead ? 'read' : 'delivered',
-                        }))
+                              ...m,
+                              status: m.isRead ? ('read' as const) : ('delivered' as const),
+                          }))
                         : []
                 );
 
@@ -235,7 +538,9 @@ export default function ChatScreen() {
                     setParticipant(data.participant);
                     setIsOnline(data.participant.isOnline ?? false);
                 } else if (data.participants) {
-                    const other = data.participants.find((p: any) => p.id !== user?.id);
+                    const other = data.participants.find(
+                        (p: any) => p.id !== user?.id
+                    );
                     if (other) {
                         setParticipant(other);
                         setIsOnline(other.isOnline ?? false);
@@ -255,28 +560,29 @@ export default function ChatScreen() {
     // Typing Management
     // ============================================
 
-    const handleInputChange = useCallback((text: string) => {
-        setInputText(text);
+    const handleInputChange = useCallback(
+        (text: string) => {
+            setInputText(text);
+            if (!conversationId) return;
 
-        if (!conversationId) return;
-
-        if (text.length > 0 && !isTypingRef.current) {
-            isTypingRef.current = true;
-            socketManager.startTyping(conversationId);
-        }
-
-        // Reset typing timeout
-        if (typingTimeoutRef.current) {
-            clearTimeout(typingTimeoutRef.current);
-        }
-
-        typingTimeoutRef.current = setTimeout(() => {
-            if (isTypingRef.current) {
-                isTypingRef.current = false;
-                socketManager.stopTyping(conversationId);
+            if (text.length > 0 && !isTypingRef.current) {
+                isTypingRef.current = true;
+                socketManager.startTyping(conversationId);
             }
-        }, 2000);
-    }, [conversationId]);
+
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+            }
+
+            typingTimeoutRef.current = setTimeout(() => {
+                if (isTypingRef.current) {
+                    isTypingRef.current = false;
+                    socketManager.stopTyping(conversationId);
+                }
+            }, 2000);
+        },
+        [conversationId]
+    );
 
     // ============================================
     // Send Message
@@ -285,7 +591,7 @@ export default function ChatScreen() {
     const handleSend = useCallback(async () => {
         if (!inputText.trim() || isSending || !conversationId) return;
 
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         const text = inputText.trim();
         setInputText('');
 
@@ -307,7 +613,10 @@ export default function ChatScreen() {
         setMessages((prev) => [...prev, optimisticMsg]);
 
         // Scroll to bottom
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+        setTimeout(
+            () => flatListRef.current?.scrollToEnd({ animated: true }),
+            50
+        );
 
         // Send via Socket for real-time
         socketManager.sendMessage({ conversationId, content: text });
@@ -324,16 +633,19 @@ export default function ChatScreen() {
             setMessages((prev) =>
                 prev.map((m) =>
                     m.id === optimisticId
-                        ? { ...realMsg, id: realMsg.id || optimisticId, status: 'sent' }
+                        ? {
+                              ...realMsg,
+                              id: realMsg.id || optimisticId,
+                              status: 'sent' as const,
+                          }
                         : m
                 )
             );
         } catch {
-            // Mark as failed
             setMessages((prev) =>
                 prev.map((m) =>
                     m.id === optimisticId
-                        ? { ...m, status: 'sending' } // Keep as sending — offline queue will retry
+                        ? { ...m, status: 'sending' as const }
                         : m
                 )
             );
@@ -343,113 +655,127 @@ export default function ChatScreen() {
     }, [inputText, isSending, user?.id, conversationId]);
 
     // ============================================
-    // Formatting
+    // Format Helpers
     // ============================================
 
     const formatTime = useCallback((timestamp: string) => {
         const date = new Date(timestamp);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+        });
     }, []);
 
-    // ============================================
-    // Message Status Icon
-    // ============================================
+    const formatDateLabel = useCallback((dateStr: string) => {
+        const today = new Date();
+        const date = new Date(dateStr);
+        const todayStr = today.toLocaleDateString();
+        const yesterdayStr = new Date(
+            Date.now() - 86400000
+        ).toLocaleDateString();
+        const msgDateStr = date.toLocaleDateString();
 
-    const StatusIcon = useCallback(({ status }: { status?: string }) => {
-        switch (status) {
-            case 'sending':
-                return <Ionicons name="time-outline" size={12} color={colors.obsidian[500]} />;
-            case 'sent':
-                return <Ionicons name="checkmark" size={12} color={colors.obsidian[500]} />;
-            case 'delivered':
-                return <Ionicons name="checkmark-done" size={12} color={colors.obsidian[500]} />;
-            case 'read':
-                return <Ionicons name="checkmark-done" size={12} color={colors.gold[400]} />;
-            default:
-                return null;
-        }
-    }, []);
+        if (msgDateStr === todayStr) return 'Today';
+        if (msgDateStr === yesterdayStr) return 'Yesterday';
 
-    // ============================================
-    // Render Message
-    // ============================================
-
-    const renderMessage = useCallback(({ item }: { item: Message }) => {
-        const isOwn = item.senderId === user?.id;
-
-        return (
-            <View style={[styles.msgRow, isOwn ? styles.ownRow : styles.otherRow]}>
-                {!isOwn && (
-                    <Avatar uri={participant?.avatarUrl} name={participant?.displayName} size="xs" style={{ marginEnd: spacing.xs }} />
-                )}
-
-                {isOwn ? (
-                    <View>
-                        <LinearGradient
-                            colors={[colors.gold[500], colors.gold[600]]}
-                            style={[styles.msgBubble, styles.ownBubble]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                        >
-                            <Text style={[styles.msgText, styles.ownText]}>{item.content}</Text>
-                        </LinearGradient>
-                        <View style={styles.msgMeta}>
-                            <Text style={[styles.msgTime, styles.ownTime]}>
-                                {formatTime(item.createdAt)}
-                            </Text>
-                            <StatusIcon status={item.status} />
-                        </View>
-                    </View>
-                ) : (
-                    <View>
-                        <View style={[styles.msgBubble, styles.otherBubble]}>
-                            <Text style={styles.msgText}>{item.content}</Text>
-                        </View>
-                        <Text style={styles.msgTime}>{formatTime(item.createdAt)}</Text>
-                    </View>
-                )}
-            </View>
+        // Same week — show day name
+        const diffDays = Math.floor(
+            (today.getTime() - date.getTime()) / 86400000
         );
-    }, [user?.id, participant?.avatarUrl, participant?.displayName, formatTime]);
+        if (diffDays < 7) {
+            return date.toLocaleDateString(undefined, { weekday: 'long' });
+        }
+
+        return date.toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            year:
+                date.getFullYear() !== today.getFullYear()
+                    ? 'numeric'
+                    : undefined,
+        });
+    }, []);
 
     // ============================================
-    // Date Separators
+    // Messages with Date Separators
     // ============================================
 
-    const messagesWithDates = useMemo(() => {
+    const listData: ListItem[] = useMemo(() => {
         if (messages.length === 0) return [];
-        const result: (Message | { type: 'date'; label: string; id: string })[] = [];
+        const result: ListItem[] = [];
         let lastDate = '';
 
         messages.forEach((msg) => {
             const msgDate = new Date(msg.createdAt).toLocaleDateString();
             if (msgDate !== lastDate) {
                 lastDate = msgDate;
-                const today = new Date().toLocaleDateString();
-                const yesterday = new Date(Date.now() - 86400000).toLocaleDateString();
-                let label = msgDate;
-                if (msgDate === today) label = 'Today';
-                else if (msgDate === yesterday) label = 'Yesterday';
-                result.push({ type: 'date', label, id: `date-${msgDate}` });
+                result.push({
+                    type: 'date',
+                    label: formatDateLabel(msg.createdAt),
+                    id: `date-${msgDate}`,
+                });
             }
             result.push(msg);
         });
 
         return result;
-    }, [messages]);
+    }, [messages, formatDateLabel]);
 
-    const renderItem = useCallback(({ item }: { item: any }) => {
-        if (item.type === 'date') {
+    // ============================================
+    // Determine if bubble should show tail
+    // (first in a consecutive group from same sender)
+    // ============================================
+
+    const shouldShowTail = useCallback(
+        (index: number): boolean => {
+            const item = listData[index];
+            if (!item || 'type' in item) return false;
+
+            // Check if previous message is from same sender
+            const prevItem = listData[index - 1];
+            if (!prevItem || 'type' in prevItem) return true;
+            return prevItem.senderId !== item.senderId;
+        },
+        [listData]
+    );
+
+    // ============================================
+    // Render Items
+    // ============================================
+
+    const renderItem = useCallback(
+        ({ item, index }: { item: ListItem; index: number }) => {
+            if ('type' in item && item.type === 'date') {
+                return (
+                    <Animated.View
+                        entering={FadeIn.duration(300)}
+                        style={styles.dateSeparator}
+                    >
+                        <View style={styles.dateLine} />
+                        <View style={styles.datePill}>
+                            <Text style={styles.dateLabel}>{item.label}</Text>
+                        </View>
+                        <View style={styles.dateLine} />
+                    </Animated.View>
+                );
+            }
+
+            const msg = item as Message;
+            const isOwn = msg.senderId === user?.id;
+            const showTail = shouldShowTail(index);
+
             return (
-                <View style={styles.dateSeparator}>
-                    <View style={styles.dateLine} />
-                    <Text style={styles.dateLabel}>{item.label}</Text>
-                    <View style={styles.dateLine} />
-                </View>
+                <MessageBubble
+                    item={msg}
+                    isOwn={isOwn}
+                    showTail={showTail}
+                    participant={participant}
+                    formatTime={formatTime}
+                />
             );
-        }
-        return renderMessage({ item });
-    }, [renderMessage]);
+        },
+        [user?.id, participant, formatTime, shouldShowTail]
+    );
 
     // ============================================
     // Render
@@ -466,83 +792,133 @@ export default function ChatScreen() {
                 style={StyleSheet.absoluteFill}
             />
 
-            {/* Header */}
+            {/* ====== Header ====== */}
             <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
-                    <Ionicons name="chevron-back" size={22} color={colors.text.primary} />
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => router.back()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Go back"
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                    <Ionicons
+                        name="chevron-back"
+                        size={22}
+                        color={colors.text.primary}
+                    />
                 </TouchableOpacity>
 
                 {participant && (
                     <TouchableOpacity
                         style={styles.userInfo}
-                        onPress={() => router.push(`/profile/${participant.username}`)}
+                        onPress={() =>
+                            router.push(`/profile/${participant.username}`)
+                        }
                         activeOpacity={0.7}
                         accessibilityRole="button"
                         accessibilityLabel={`${participant.displayName}, ${isOnline ? 'online' : 'offline'}`}
                         accessibilityHint="Opens profile"
                     >
                         <View style={styles.avatarWrapper}>
-                            <Avatar uri={participant.avatarUrl} name={participant.displayName} size="md" />
+                            <Avatar
+                                uri={participant.avatarUrl}
+                                name={participant.displayName}
+                                customSize={40}
+                            />
                             {isOnline && <View style={styles.onlineDot} />}
                         </View>
                         <View style={styles.userDetails}>
                             <Text style={styles.displayName} numberOfLines={1}>
                                 {participant.displayName}
                             </Text>
-                            <Text style={[styles.onlineStatus, isOnline && styles.onlineActive]}>
+                            <Text
+                                style={[
+                                    styles.onlineStatus,
+                                    isOnline && styles.onlineActive,
+                                ]}
+                            >
                                 {isOnline ? 'Online' : 'Offline'}
                             </Text>
                         </View>
                     </TouchableOpacity>
                 )}
 
-                {/* Call buttons */}
+                {/* Call actions */}
                 <View style={styles.headerActions}>
                     <TouchableOpacity
                         style={styles.headerActionBtn}
                         onPress={() => {
                             if (participant) {
-                                router.push(`/call/${participant.id}?type=audio&name=${encodeURIComponent(participant.displayName)}&avatar=${encodeURIComponent(participant.avatarUrl || '')}`);
+                                Haptics.impactAsync(
+                                    Haptics.ImpactFeedbackStyle.Light
+                                );
+                                router.push(
+                                    `/call/${participant.id}?type=audio&name=${encodeURIComponent(participant.displayName)}&avatar=${encodeURIComponent(participant.avatarUrl || '')}`
+                                );
                             }
                         }}
                         accessibilityRole="button"
                         accessibilityLabel="Start audio call"
                     >
-                        <Ionicons name="call-outline" size={20} color={colors.text.primary} />
+                        <Ionicons
+                            name="call-outline"
+                            size={19}
+                            color={colors.text.primary}
+                        />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.headerActionBtn}
                         onPress={() => {
                             if (participant) {
-                                router.push(`/call/${participant.id}?type=video&name=${encodeURIComponent(participant.displayName)}&avatar=${encodeURIComponent(participant.avatarUrl || '')}`);
+                                Haptics.impactAsync(
+                                    Haptics.ImpactFeedbackStyle.Light
+                                );
+                                router.push(
+                                    `/call/${participant.id}?type=video&name=${encodeURIComponent(participant.displayName)}&avatar=${encodeURIComponent(participant.avatarUrl || '')}`
+                                );
                             }
                         }}
                         accessibilityRole="button"
                         accessibilityLabel="Start video call"
                     >
-                        <Ionicons name="videocam-outline" size={20} color={colors.text.primary} />
+                        <Ionicons
+                            name="videocam-outline"
+                            size={19}
+                            color={colors.text.primary}
+                        />
                     </TouchableOpacity>
                 </View>
             </View>
 
-            {/* Messages */}
+            {/* ====== Messages ====== */}
             {isLoading ? (
-                <LoadingView />
+                <ChatSkeleton />
             ) : (
                 <FlatList
                     ref={flatListRef}
-                    data={messagesWithDates}
+                    data={listData}
                     renderItem={renderItem}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={[styles.messagesList, { paddingBottom: spacing.md }]}
+                    contentContainerStyle={[
+                        styles.messagesList,
+                        { paddingBottom: spacing.md },
+                    ]}
                     showsVerticalScrollIndicator={false}
-                    onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+                    onContentSizeChange={() =>
+                        flatListRef.current?.scrollToEnd({ animated: false })
+                    }
                     ListEmptyComponent={
                         <View style={styles.emptyChat}>
                             <View style={styles.emptyChatIcon}>
-                                <Ionicons name="chatbubble-ellipses-outline" size={48} color={colors.gold[400]} />
+                                <Ionicons
+                                    name="chatbubble-ellipses-outline"
+                                    size={48}
+                                    color={colors.gold[400]}
+                                />
                             </View>
-                            <Text style={styles.emptyChatTitle}>Start the conversation</Text>
+                            <Text style={styles.emptyChatTitle}>
+                                Start the conversation
+                            </Text>
                             <Text style={styles.emptyChatText}>
                                 Messages are end-to-end encrypted. Say hello!
                             </Text>
@@ -551,17 +927,32 @@ export default function ChatScreen() {
                 />
             )}
 
-            {/* Typing Indicator */}
+            {/* ====== Typing Indicator ====== */}
             {isTyping && typingUser && <TypingIndicator name={typingUser} />}
 
-            {/* Input */}
-            <View style={[styles.inputContainer, { paddingBottom: insets.bottom + spacing.sm }]}>
+            {/* ====== Input Bar ====== */}
+            <View
+                style={[
+                    styles.inputContainer,
+                    { paddingBottom: insets.bottom + spacing.sm },
+                ]}
+            >
                 <View style={styles.inputWrapper}>
-                    <TouchableOpacity style={styles.attachBtn} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Add attachment">
-                        <Ionicons name="add-circle-outline" size={24} color={colors.text.muted} />
+                    <TouchableOpacity
+                        style={styles.attachBtn}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel="Add attachment"
+                    >
+                        <Ionicons
+                            name="add-circle-outline"
+                            size={24}
+                            color={colors.text.muted}
+                        />
                     </TouchableOpacity>
 
                     <TextInput
+                        ref={inputRef}
                         style={styles.textInput}
                         placeholder="Message..."
                         placeholderTextColor={colors.text.muted}
@@ -576,17 +967,45 @@ export default function ChatScreen() {
                     />
 
                     {inputText.trim() ? (
-                        <TouchableOpacity onPress={handleSend} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Send message">
-                            <LinearGradient
-                                colors={[colors.gold[400], colors.gold[600]]}
-                                style={styles.sendButton}
-                            >
-                                <Ionicons name="arrow-up" size={18} color={colors.obsidian[900]} />
-                            </LinearGradient>
+                        <TouchableOpacity
+                            onPress={handleSend}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Send message"
+                            disabled={isSending}
+                        >
+                            <Animated.View style={sendBtnAnimStyle}>
+                                <LinearGradient
+                                    colors={[colors.gold[400], colors.gold[600]]}
+                                    style={styles.sendButton}
+                                >
+                                    {isSending ? (
+                                        <ActivityIndicator
+                                            size="small"
+                                            color={colors.obsidian[900]}
+                                        />
+                                    ) : (
+                                        <Ionicons
+                                            name="arrow-up"
+                                            size={18}
+                                            color={colors.obsidian[900]}
+                                        />
+                                    )}
+                                </LinearGradient>
+                            </Animated.View>
                         </TouchableOpacity>
                     ) : (
-                        <TouchableOpacity style={styles.micBtn} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Record voice message">
-                            <Ionicons name="mic-outline" size={22} color={colors.text.muted} />
+                        <TouchableOpacity
+                            style={styles.micBtn}
+                            activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel="Record voice message"
+                        >
+                            <Ionicons
+                                name="mic-outline"
+                                size={22}
+                                color={colors.text.muted}
+                            />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -619,7 +1038,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    userInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', marginStart: spacing.sm },
+    userInfo: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginStart: spacing.sm,
+    },
     avatarWrapper: { position: 'relative' },
     onlineDot: {
         position: 'absolute',
@@ -628,14 +1052,22 @@ const styles = StyleSheet.create({
         width: 12,
         height: 12,
         borderRadius: 6,
-        backgroundColor: '#34D399',
+        backgroundColor: colors.emerald[400],
         borderWidth: 2,
         borderColor: colors.obsidian[900],
     },
     userDetails: { marginStart: spacing.sm, flex: 1 },
-    displayName: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
-    onlineStatus: { fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: 1 },
-    onlineActive: { color: '#34D399' },
+    displayName: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.primary,
+    },
+    onlineStatus: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        marginTop: 1,
+    },
+    onlineActive: { color: colors.emerald[400] },
     headerActions: { flexDirection: 'row', gap: spacing.xs },
     headerActionBtn: {
         width: 36,
@@ -647,36 +1079,106 @@ const styles = StyleSheet.create({
     },
 
     // Messages
-    messagesList: { paddingHorizontal: spacing.md, paddingTop: spacing.lg },
-    msgRow: { marginBottom: spacing.sm, maxWidth: '78%', flexDirection: 'row', alignItems: 'flex-end' },
+    messagesList: {
+        paddingHorizontal: spacing.md,
+        paddingTop: spacing.lg,
+    },
+    msgRow: {
+        marginBottom: spacing.xs,
+        maxWidth: '78%',
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+    },
     ownRow: { alignSelf: 'flex-end' },
     otherRow: { alignSelf: 'flex-start' },
-    msgBubble: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
-    ownBubble: { borderBottomRightRadius: 6, minWidth: 60 },
-    otherBubble: { backgroundColor: colors.surface.glassHover, borderBottomLeftRadius: 6, minWidth: 60 },
-    msgText: { fontSize: typography.fontSize.base, color: colors.text.primary, lineHeight: 22 },
-    ownText: { color: colors.obsidian[900] },
-    msgMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4, marginTop: 2, paddingEnd: 4 },
-    msgTime: { fontSize: 11, color: colors.text.muted, marginTop: 2, paddingHorizontal: 4 },
+    msgBubble: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+    },
+    ownBubble: {
+        borderBottomRightRadius: 6,
+        minWidth: 60,
+    },
+    ownBubbleTail: {
+        borderBottomRightRadius: 6,
+    },
+    otherBubble: {
+        backgroundColor: colors.surface.glassHover,
+        borderBottomLeftRadius: 6,
+        minWidth: 60,
+    },
+    otherBubbleTail: {
+        borderBottomLeftRadius: 6,
+    },
+    ownBubbleWrap: { alignItems: 'flex-end' },
+    otherBubbleWrap: { alignItems: 'flex-start' },
+    msgText: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.primary,
+        lineHeight: 22,
+    },
+    ownText: { color: colors.obsidian[900], fontWeight: '500' },
+    ownMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: 4,
+        marginTop: 2,
+        paddingEnd: 4,
+    },
+    msgTime: {
+        fontSize: 11,
+        color: colors.text.muted,
+        marginTop: 2,
+        paddingHorizontal: 4,
+    },
     ownTime: { color: colors.text.muted },
+
+    // Media in bubbles
+    mediaBubble: {
+        borderRadius: 16,
+        overflow: 'hidden',
+        marginBottom: spacing.xs,
+    },
+    mediaImage: {
+        width: 200,
+        height: 200,
+        borderRadius: 16,
+        backgroundColor: colors.obsidian[700],
+    },
 
     // Date separator
     dateSeparator: {
         flexDirection: 'row',
         alignItems: 'center',
         marginVertical: spacing.md,
-        paddingHorizontal: spacing.lg,
+        paddingHorizontal: spacing.md,
     },
-    dateLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border.subtle },
+    dateLine: {
+        flex: 1,
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: colors.border.subtle,
+    },
+    datePill: {
+        backgroundColor: colors.surface.glass,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
     dateLabel: {
         fontSize: typography.fontSize.xs,
         color: colors.text.muted,
-        marginHorizontal: spacing.md,
         fontWeight: '500',
     },
 
     // Typing indicator
-    typingContainer: { paddingHorizontal: spacing.md, paddingBottom: spacing.xs },
+    typingContainer: {
+        paddingHorizontal: spacing.md,
+        paddingBottom: spacing.xs,
+    },
     typingBubble: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -685,35 +1187,46 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 8,
         alignSelf: 'flex-start',
-        gap: 8,
+        gap: spacing.sm,
     },
-    typingName: { fontSize: typography.fontSize.xs, color: colors.text.muted },
-    typingDots: { flexDirection: 'row', gap: 3 },
+    typingName: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+    },
+    typingDots: { flexDirection: 'row', gap: 4 },
     typingDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
+        width: 7,
+        height: 7,
+        borderRadius: 3.5,
         backgroundColor: colors.gold[400],
     },
 
     // Empty
-    emptyChat: { alignItems: 'center', paddingTop: 80 },
+    emptyChat: { alignItems: 'center', paddingTop: 100 },
     emptyChatIcon: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: colors.surface.glass,
+        width: 88,
+        height: 88,
+        borderRadius: 44,
+        backgroundColor: colors.surface.goldSubtle,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: spacing.lg,
+        borderWidth: 1,
+        borderColor: colors.surface.goldLight,
     },
     emptyChatTitle: {
-        fontSize: typography.fontSize.lg,
-        fontWeight: '600',
+        fontSize: typography.fontSize.xl,
+        fontWeight: '700',
         color: colors.text.primary,
         marginBottom: spacing.xs,
     },
-    emptyChatText: { fontSize: typography.fontSize.sm, color: colors.text.muted, textAlign: 'center', paddingHorizontal: spacing.xl },
+    emptyChatText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        textAlign: 'center',
+        paddingHorizontal: spacing.xl,
+        lineHeight: 20,
+    },
 
     // Input
     inputContainer: {

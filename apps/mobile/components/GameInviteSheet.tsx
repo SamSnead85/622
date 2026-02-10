@@ -14,7 +14,7 @@ import {
     Pressable,
     Dimensions,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+// No expo-clipboard needed — using Share API
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
@@ -35,7 +35,7 @@ export function GameInviteSheet({ code, visible, onClose }: GameInviteSheetProps
     // ---- Copy room code ----
     const handleCopy = useCallback(async () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        await Clipboard.setStringAsync(code);
+        await Share.share({ message: `Join my game on 0G! Code: ${code}\nhttps://0gravity.ai/game/${code}` });
     }, [code]);
 
     // ---- Share via native sheet ----

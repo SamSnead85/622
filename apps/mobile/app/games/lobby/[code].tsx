@@ -11,6 +11,7 @@ import {
     ScrollView,
     TouchableOpacity,
     Alert,
+    Share,
     Dimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -30,7 +31,7 @@ import Animated, {
     Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
+// Clipboard via Share API (no extra dependency)
 import { colors, typography, spacing } from '@zerog/ui';
 import { ScreenHeader, GlassCard, Avatar, LoadingView, GameInviteSheet } from '../../../components';
 import { useGameStore, useAuthStore } from '../../../stores';
@@ -222,9 +223,9 @@ export default function LobbyScreen() {
 
     // ---- Copy room code ----
     const handleCopyCode = useCallback(async () => {
-        await Clipboard.setStringAsync(roomCode);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Copied!', 'Room code copied to clipboard.');
+        await Share.share({ message: `Join my game on 0G! Room code: ${roomCode}\nhttps://0gravity.ai/game/${roomCode}` });
+
     }, [roomCode]);
 
     // ---- Open invite sheet ----

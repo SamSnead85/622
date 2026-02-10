@@ -102,7 +102,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border.subtle,
         borderRadius: borderRadius.lg,
-        overflow: 'hidden',
     },
     inputContainerFocused: {
         borderColor: colors.gold[500],

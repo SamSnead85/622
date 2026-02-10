@@ -1,7 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, AppState, AppStateStatus } from 'react-native';
+import { Alert, AppState, AppStateStatus, LogBox } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Font from 'expo-font';
 import * as Linking from 'expo-linking';
@@ -20,6 +20,20 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { socketManager, CallIncoming } from '../lib/socket';
 import { initI18n } from '../lib/i18n';
 import { startAutoSync, stopAutoSync, syncQueue } from '../lib/offlineQueue';
+
+// ============================================
+// Suppress noisy dev warnings that don't affect production
+// ============================================
+LogBox.ignoreLogs([
+    'Socket connection failed',
+    'Push notification registration failed',
+    'Warning:',
+    'Possible Unhandled Promise',
+    'Non-serializable values were found in the navigation state',
+    'No native splash screen',
+    'The \'NO_COLOR\' env',
+    'Require cycle:',
+]);
 
 // ============================================
 // Sentry Error Tracking

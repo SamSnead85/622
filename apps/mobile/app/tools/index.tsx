@@ -4,26 +4,45 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { colors, typography, spacing } from '@zerog/ui';
+import Animated, { FadeInDown, FadeIn, FadeInRight } from 'react-native-reanimated';
+import { colors, typography, spacing, shadows } from '@zerog/ui';
 import { useAuthStore } from '../../stores';
-import { ScreenHeader } from '../../components';
+import { ScreenHeader, GlassCard } from '../../components';
 
+// ─── Types ────────────────────────────────────────────────────────
 interface ToolCardProps {
     icon: keyof typeof Ionicons.glyphMap;
     title: string;
     description: string;
-    color: string;
+    gradient: [string, string];
+    iconColor: string;
     badge?: string;
+    badgeColor?: string;
     onPress: () => void;
     delay: number;
+    featured?: boolean;
 }
 
-function ToolCard({ icon, title, description, color, badge, onPress, delay }: ToolCardProps) {
+// ─── Tool Card Component ──────────────────────────────────────────
+function ToolCard({
+    icon,
+    title,
+    description,
+    gradient,
+    iconColor,
+    badge,
+    badgeColor,
+    onPress,
+    delay,
+    featured = false,
+}: ToolCardProps) {
     return (
-        <Animated.View entering={FadeInDown.duration(400).delay(delay)}>
+        <Animated.View
+            entering={FadeInDown.duration(450).delay(delay).springify().damping(18)}
+            style={featured ? styles.toolCardFeaturedWrapper : styles.toolCardWrapper}
+        >
             <TouchableOpacity
-                style={styles.toolCard}
+                style={[styles.toolCard, featured && styles.toolCardFeatured]}
                 onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     onPress();
@@ -32,21 +51,66 @@ function ToolCard({ icon, title, description, color, badge, onPress, delay }: To
                 accessibilityRole="button"
                 accessibilityLabel={`${title}, ${description}`}
             >
+                {/* Gradient overlay */}
+                <LinearGradient
+                    colors={[gradient[0] + '12', gradient[1] + '06']}
+                    style={StyleSheet.absoluteFill}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                />
+
+                {/* Badge */}
                 {badge && (
-                    <View style={styles.toolBadge}>
+                    <View style={[styles.toolBadge, { backgroundColor: badgeColor || colors.gold[500] }]}>
                         <Text style={styles.toolBadgeText}>{badge}</Text>
                     </View>
                 )}
-                <View style={[styles.toolIcon, { backgroundColor: color + '18' }]}>
-                    <Ionicons name={icon} size={28} color={color} />
+
+                {/* Icon with glow */}
+                <View style={styles.toolIconContainer}>
+                    <LinearGradient
+                        colors={[gradient[0] + '25', gradient[1] + '10']}
+                        style={styles.toolIconGlow}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                    />
+                    <Ionicons name={icon} size={featured ? 30 : 26} color={iconColor} />
                 </View>
-                <Text style={styles.toolTitle}>{title}</Text>
-                <Text style={styles.toolDesc}>{description}</Text>
+
+                {/* Text */}
+                <Text style={[styles.toolTitle, featured && styles.toolTitleFeatured]} numberOfLines={1}>
+                    {title}
+                </Text>
+                <Text style={styles.toolDesc} numberOfLines={2}>
+                    {description}
+                </Text>
+
+                {/* Accent line at bottom */}
+                {featured && (
+                    <LinearGradient
+                        colors={[gradient[0], gradient[1]]}
+                        style={styles.toolAccentLine}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                    />
+                )}
             </TouchableOpacity>
         </Animated.View>
     );
 }
 
+// ─── Section Header ───────────────────────────────────────────────
+function SectionHeader({ title, icon, delay }: { title: string; icon: keyof typeof Ionicons.glyphMap; delay: number }) {
+    return (
+        <Animated.View entering={FadeInRight.duration(400).delay(delay)} style={styles.sectionHeader}>
+            <Ionicons name={icon} size={16} color={colors.gold[400]} />
+            <Text style={styles.sectionTitle}>{title}</Text>
+            <View style={styles.sectionLine} />
+        </Animated.View>
+    );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────
 export default function ToolsHub() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
@@ -61,52 +125,77 @@ export default function ToolsHub() {
     const isRamadanSeason = daysUntil <= 30 && now <= ramadanEnd;
     const isDuringRamadan = now >= ramadanStart && now <= ramadanEnd;
 
-    const tools = [
-        {
-            icon: 'game-controller-outline' as const,
-            title: '0G Arena',
-            description: 'Party games & trivia',
-            color: '#D4AF37',
-            route: '/games',
-            badge: 'NEW',
-        },
+    const navigate = (route: string) => router.push(route as any);
+
+    // ─── Deen Tools ──────────────────────
+    const deenTools = [
         {
             icon: 'time-outline' as const,
             title: 'Prayer Times',
-            description: 'Daily salah schedule with countdown',
-            color: colors.gold[500],
+            description: 'Salah schedule with live countdown',
+            gradient: [colors.gold[500], colors.amber[500]] as [string, string],
+            iconColor: colors.gold[400],
             route: '/tools/prayer-times',
-            badge: isRamadanSeason ? (isDuringRamadan ? 'RAMADAN' : 'SOON') : undefined,
+            badge: isRamadanSeason ? (isDuringRamadan ? 'RAMADAN' : `${daysUntil}d`) : undefined,
+            badgeColor: colors.gold[500],
+            featured: true,
         },
         {
             icon: 'compass-outline' as const,
             title: 'Qibla',
-            description: 'Find the direction to Mecca',
-            color: colors.emerald[500],
+            description: 'Direction to Mecca',
+            gradient: [colors.emerald[500], colors.emerald[300]] as [string, string],
+            iconColor: colors.emerald[400],
             route: '/tools/qibla',
+            featured: true,
         },
         {
             icon: 'book-outline' as const,
             title: 'Quran',
             description: 'Read, search & reflect',
-            color: '#D4AF37',
+            gradient: [colors.gold[500], colors.gold[300]] as [string, string],
+            iconColor: colors.gold[400],
             route: '/tools/quran',
+            featured: true,
         },
+    ];
+
+    // ─── Scanners ────────────────────────
+    const scannerTools = [
         {
             icon: 'scan-outline' as const,
             title: 'Halal Check',
             description: 'Scan barcodes for halal status',
-            color: colors.azure[500],
+            gradient: [colors.azure[500], colors.azure[300]] as [string, string],
+            iconColor: colors.azure[400],
             route: '/tools/halal-scanner',
         },
         {
             icon: 'shield-checkmark-outline' as const,
             title: 'Boycott Check',
-            description: 'Check products & find alternatives',
-            color: colors.coral[500],
+            description: 'Products & alternatives',
+            gradient: [colors.coral[500], colors.coral[300]] as [string, string],
+            iconColor: colors.coral[400],
             route: '/tools/boycott-scanner',
         },
     ];
+
+    // ─── Games ───────────────────────────
+    const gameTools = [
+        {
+            icon: 'game-controller-outline' as const,
+            title: '0G Arena',
+            description: 'Party games, trivia & more',
+            gradient: ['#D4AF37', '#FF6B6B'] as [string, string],
+            iconColor: '#E5C158',
+            route: '/games',
+            badge: 'NEW',
+            badgeColor: colors.coral[500],
+        },
+    ];
+
+    // Stagger base delay
+    const baseDelay = isMuslim || isRamadanSeason ? 200 : 100;
 
     return (
         <View style={styles.container}>
@@ -119,11 +208,13 @@ export default function ToolsHub() {
                 contentContainerStyle={{ paddingBottom: insets.bottom + 80, paddingHorizontal: spacing.lg }}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Bismillah header — show for Muslim profile users */}
+                {/* Bismillah header — Muslim profile users */}
                 {isMuslim && (
                     <Animated.View entering={FadeInDown.duration(500)} style={styles.bismillah}>
                         <Text style={styles.bismillahText}>بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</Text>
-                        <Text style={styles.bismillahTranslation}>In the name of God, the Most Gracious, the Most Merciful</Text>
+                        <Text style={styles.bismillahTranslation}>
+                            In the name of God, the Most Gracious, the Most Merciful
+                        </Text>
                     </Animated.View>
                 )}
 
@@ -139,7 +230,7 @@ export default function ToolsHub() {
                         <Text style={styles.ramadanEmoji}>☪️</Text>
                         <View style={styles.ramadanInfo}>
                             <Text style={styles.ramadanTitle}>
-                                {isDuringRamadan ? 'Ramadan Mubarak' : `Ramadan starts in ${daysUntil} days`}
+                                {isDuringRamadan ? 'Ramadan Mubarak' : `Ramadan in ${daysUntil} days`}
                             </Text>
                             <Text style={styles.ramadanSubtext}>
                                 {isDuringRamadan
@@ -159,109 +250,257 @@ export default function ToolsHub() {
                     </Animated.View>
                 )}
 
-                {/* Tools grid */}
-                <View style={styles.grid}>
-                    {tools.map((tool, i) => (
+                {/* ── Deen Tools Section ── */}
+                <SectionHeader title="Deen Tools" icon="moon-outline" delay={baseDelay} />
+                <View style={styles.gridFeatured}>
+                    {deenTools.map((tool, i) => (
                         <ToolCard
                             key={tool.route}
                             icon={tool.icon}
                             title={tool.title}
                             description={tool.description}
-                            color={tool.color}
+                            gradient={tool.gradient}
+                            iconColor={tool.iconColor}
                             badge={tool.badge}
-                            onPress={() => router.push(tool.route as any)}
-                            delay={i * 80}
+                            badgeColor={tool.badgeColor}
+                            onPress={() => navigate(tool.route)}
+                            delay={baseDelay + 80 + i * 90}
+                            featured={tool.featured}
+                        />
+                    ))}
+                </View>
+
+                {/* ── Scanners Section ── */}
+                <SectionHeader title="Scanners" icon="scan-outline" delay={baseDelay + 400} />
+                <View style={styles.grid}>
+                    {scannerTools.map((tool, i) => (
+                        <ToolCard
+                            key={tool.route}
+                            icon={tool.icon}
+                            title={tool.title}
+                            description={tool.description}
+                            gradient={tool.gradient}
+                            iconColor={tool.iconColor}
+                            onPress={() => navigate(tool.route)}
+                            delay={baseDelay + 480 + i * 90}
+                        />
+                    ))}
+                </View>
+
+                {/* ── Games & Fun Section ── */}
+                <SectionHeader title="Games & Fun" icon="game-controller-outline" delay={baseDelay + 650} />
+                <View style={styles.grid}>
+                    {gameTools.map((tool, i) => (
+                        <ToolCard
+                            key={tool.route}
+                            icon={tool.icon}
+                            title={tool.title}
+                            description={tool.description}
+                            gradient={tool.gradient}
+                            iconColor={tool.iconColor}
+                            badge={tool.badge}
+                            badgeColor={tool.badgeColor}
+                            onPress={() => navigate(tool.route)}
+                            delay={baseDelay + 730 + i * 90}
                         />
                     ))}
                 </View>
 
                 {/* Privacy footer */}
-                <Animated.View entering={FadeInDown.duration(400).delay(500)} style={styles.privacyFooter}>
+                <Animated.View entering={FadeInDown.duration(400).delay(baseDelay + 900)} style={styles.privacyFooter}>
                     <Ionicons name="lock-closed" size={14} color={colors.emerald[500]} />
-                    <Text style={styles.privacyFooterText}>All tools work offline. No data is shared with third parties.</Text>
+                    <Text style={styles.privacyFooterText}>
+                        All tools work offline. No data is shared with third parties.
+                    </Text>
                 </Animated.View>
             </ScrollView>
         </View>
     );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
     scrollView: { flex: 1 },
-    bismillah: {
-        alignItems: 'center',
-        paddingVertical: spacing.xl,
-    },
+
+    // Bismillah
+    bismillah: { alignItems: 'center', paddingVertical: spacing.xl },
     bismillahText: {
-        fontSize: 24, color: colors.gold[400],
-        fontFamily: 'System', textAlign: 'center',
+        fontSize: 24,
+        color: colors.gold[400],
+        fontFamily: 'System',
+        textAlign: 'center',
     },
     bismillahTranslation: {
-        fontSize: typography.fontSize.sm, color: colors.text.muted,
-        marginTop: spacing.xs, textAlign: 'center',
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        marginTop: spacing.xs,
+        textAlign: 'center',
     },
-    toolsIntro: {
-        paddingVertical: spacing.lg, alignItems: 'center',
-    },
+
+    // Intro
+    toolsIntro: { paddingVertical: spacing.lg, alignItems: 'center' },
     toolsIntroText: {
-        fontSize: typography.fontSize.base, color: colors.text.secondary,
-        textAlign: 'center', lineHeight: 22, maxWidth: 280,
+        fontSize: typography.fontSize.base,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        lineHeight: 22,
+        maxWidth: 280,
     },
+
+    // Ramadan
     ramadanCard: {
-        borderRadius: 14, overflow: 'hidden',
-        flexDirection: 'row', alignItems: 'center',
-        padding: spacing.lg, marginBottom: spacing.lg,
-        borderWidth: 1, borderColor: colors.gold[500] + '30',
+        borderRadius: 14,
+        overflow: 'hidden',
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.lg,
+        marginBottom: spacing.lg,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '30',
     },
     ramadanEmoji: { fontSize: 28, marginEnd: spacing.md },
     ramadanInfo: { flex: 1 },
     ramadanTitle: {
-        fontSize: typography.fontSize.lg, fontWeight: '700',
-        color: colors.gold[400], fontFamily: 'Inter-Bold',
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.gold[400],
+        fontFamily: 'Inter-Bold',
     },
     ramadanSubtext: {
-        fontSize: typography.fontSize.sm, color: colors.text.secondary,
-        marginTop: 4, lineHeight: 18,
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        marginTop: 4,
+        lineHeight: 18,
+    },
+
+    // Section Headers
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: spacing.xl,
+        marginBottom: spacing.md,
+        gap: spacing.sm,
+    },
+    sectionTitle: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '700',
+        color: colors.text.secondary,
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+    },
+    sectionLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: colors.border.subtle,
+        marginStart: spacing.sm,
+    },
+
+    // Grids
+    gridFeatured: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.md,
     },
     grid: {
-        flexDirection: 'row', flexWrap: 'wrap',
-        gap: spacing.md, justifyContent: 'space-between',
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.md,
+    },
+
+    // Tool Card
+    toolCardWrapper: {
+        width: '47%' as any,
+        minWidth: 150,
+        flexGrow: 1,
+    },
+    toolCardFeaturedWrapper: {
+        width: '47%' as any,
+        minWidth: 150,
+        flexGrow: 1,
     },
     toolCard: {
-        width: '47%' as any,
         backgroundColor: colors.surface.glass,
-        borderRadius: 16, padding: spacing.lg,
-        borderWidth: 1, borderColor: colors.border.subtle,
-        minWidth: 150, flexGrow: 1,
+        borderRadius: 18,
+        padding: spacing.lg,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        overflow: 'hidden',
         position: 'relative',
+        minHeight: 140,
+    },
+    toolCardFeatured: {
+        borderColor: colors.gold[500] + '18',
+        ...shadows.sm,
     },
     toolBadge: {
-        position: 'absolute', top: spacing.sm, right: spacing.sm,
-        backgroundColor: colors.gold[500], borderRadius: 6,
-        paddingHorizontal: 6, paddingVertical: 2,
+        position: 'absolute',
+        top: spacing.sm,
+        right: spacing.sm,
+        borderRadius: 6,
+        paddingHorizontal: 7,
+        paddingVertical: 2.5,
+        zIndex: 10,
     },
     toolBadgeText: {
-        fontSize: 9, fontWeight: '700', color: colors.obsidian[900],
-        letterSpacing: 0.5,
+        fontSize: 9,
+        fontWeight: '800',
+        color: colors.obsidian[900],
+        letterSpacing: 0.6,
     },
-    toolIcon: {
-        width: 52, height: 52, borderRadius: 14,
-        alignItems: 'center', justifyContent: 'center',
+
+    // Icon
+    toolIconContainer: {
+        width: 52,
+        height: 52,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: spacing.md,
+        overflow: 'hidden',
     },
+    toolIconGlow: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 16,
+    },
+
+    // Text
     toolTitle: {
-        fontSize: typography.fontSize.base, fontWeight: '700',
-        color: colors.text.primary, marginBottom: 4,
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        color: colors.text.primary,
+        marginBottom: 4,
+    },
+    toolTitleFeatured: {
+        color: colors.gold[300],
     },
     toolDesc: {
-        fontSize: typography.fontSize.xs, color: colors.text.muted, lineHeight: 16,
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        lineHeight: 16,
     },
+
+    // Accent line
+    toolAccentLine: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 2,
+        opacity: 0.6,
+    },
+
+    // Privacy
     privacyFooter: {
-        flexDirection: 'row', alignItems: 'center',
-        justifyContent: 'center', gap: spacing.sm,
-        marginTop: spacing.xl, paddingVertical: spacing.lg,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        marginTop: spacing['2xl'],
+        paddingVertical: spacing.lg,
     },
     privacyFooterText: {
-        fontSize: typography.fontSize.xs, color: colors.text.muted,
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
     },
 });

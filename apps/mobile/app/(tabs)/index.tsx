@@ -1277,6 +1277,15 @@ export default function FeedScreen() {
                     >
                         <Ionicons name="options-outline" size={22} color={colors.gold[400]} />
                     </TouchableOpacity>
+                    {/* Games shortcut */}
+                    <TouchableOpacity
+                        style={styles.headerBtn}
+                        onPress={() => router.push('/games' as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Games"
+                    >
+                        <Ionicons name="game-controller-outline" size={22} color={colors.gold[400]} />
+                    </TouchableOpacity>
                     {/* Tools shortcut — accessible to all users */}
                     <TouchableOpacity
                         style={styles.headerBtn}

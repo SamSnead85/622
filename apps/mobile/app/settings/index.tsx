@@ -29,6 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { SUPPORTED_LANGUAGES, changeLanguage } from '../../lib/i18n';
 import i18next from 'i18next';
 
+// ─── Setting Row Component ───────────────────────────────────────────
 interface SettingRowProps {
     icon: keyof typeof Ionicons.glyphMap;
     label: string;
@@ -39,10 +40,17 @@ interface SettingRowProps {
 }
 
 function SettingRow({ icon, label, description, onPress, rightElement, danger }: SettingRowProps) {
+    const handlePress = () => {
+        if (onPress) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onPress();
+        }
+    };
+
     return (
         <TouchableOpacity
-            style={styles.settingRow}
-            onPress={onPress}
+            style={[styles.settingRow, danger && styles.settingRowDanger]}
+            onPress={handlePress}
             activeOpacity={onPress ? 0.7 : 1}
             disabled={!onPress}
             accessibilityRole="button"
@@ -52,20 +60,33 @@ function SettingRow({ icon, label, description, onPress, rightElement, danger }:
                 <Ionicons
                     name={icon}
                     size={20}
-                    color={danger ? colors.coral[500] : colors.text.secondary}
+                    color={danger ? colors.coral[500] : colors.gold[500]}
                 />
             </View>
             <View style={styles.settingContent}>
                 <Text style={[styles.settingLabel, danger && styles.settingLabelDanger]}>{label}</Text>
-                {description && <Text style={styles.settingDescription}>{description}</Text>}
+                {description && <Text style={[styles.settingDescription, danger && styles.settingDescriptionDanger]}>{description}</Text>}
             </View>
             {rightElement || (onPress ? (
-                <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+                <Ionicons name="chevron-forward" size={16} color={danger ? colors.coral[400] : colors.text.muted} />
             ) : null)}
         </TouchableOpacity>
     );
 }
 
+// ─── Section Header Component ────────────────────────────────────────
+function SectionHeader({ title, icon }: { title: string; icon?: keyof typeof Ionicons.glyphMap }) {
+    return (
+        <View style={styles.sectionHeader}>
+            {icon && (
+                <Ionicons name={icon} size={14} color={colors.gold[500]} style={{ marginRight: 6 }} />
+            )}
+            <Text style={styles.sectionTitle}>{title}</Text>
+        </View>
+    );
+}
+
+// ─── Main Settings Screen ────────────────────────────────────────────
 export default function SettingsScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
@@ -105,6 +126,7 @@ export default function SettingsScreen() {
     }, [editDisplayName, editBio, refreshUser]);
 
     const handlePickAvatar = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
             Alert.alert(t('settings.permissionRequired'), 'We need access to your photos to update your avatar.');
@@ -131,6 +153,7 @@ export default function SettingsScreen() {
     }, [refreshUser]);
 
     const handleCulturalProfileChange = async (profile: string) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setCulturalProfile(profile);
         try {
             await apiFetch(`${API.users}/profile`, {
@@ -148,6 +171,7 @@ export default function SettingsScreen() {
     const appVersion = Constants.expoConfig?.version || '1.0.0';
 
     const handleLogout = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         Alert.alert(t('auth.logout'), t('settings.logoutConfirm'), [
             { text: 'Cancel', style: 'cancel' },
             {
@@ -162,6 +186,7 @@ export default function SettingsScreen() {
     };
 
     const handleDeleteAccount = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         Alert.alert(
             'Delete Account',
             'This action is permanent and cannot be undone. All your data will be deleted. Are you sure?',
@@ -183,6 +208,7 @@ export default function SettingsScreen() {
     };
 
     const handleJoinCommunity = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         Alert.alert(
             'Join the Community',
             'You\'ll become visible on the community feed and others can discover your public profile. Your private groups remain private. You can switch back to private mode anytime.',
@@ -205,6 +231,7 @@ export default function SettingsScreen() {
     };
 
     const handleLeaveCommunity = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         Alert.alert(
             'Leave Community',
             'You\'ll return to private-only mode. Your private groups and content stay safe. You can rejoin anytime.',
@@ -230,6 +257,9 @@ export default function SettingsScreen() {
         );
     };
 
+    // Stagger delay helper
+    const stagger = (index: number) => FadeInDown.duration(400).delay(index * 80).springify();
+
     return (
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
@@ -237,12 +267,53 @@ export default function SettingsScreen() {
             <ScreenHeader title="Settings" />
 
             <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: insets.bottom + 80 }} showsVerticalScrollIndicator={false}>
-                <Animated.View entering={FadeInDown.duration(300)}>
-                    {/* Account */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Account</Text>
+
+                {/* ─── Profile Summary Card ───────────────────────── */}
+                <Animated.View entering={stagger(0)} style={styles.section}>
+                    <TouchableOpacity
+                        style={styles.profileCard}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.push(`/profile/${user?.id}` as any);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="View your profile"
+                    >
+                        <View style={styles.profileCardInner}>
+                            {user?.avatarUrl ? (
+                                <Image source={{ uri: user.avatarUrl }} style={styles.profileAvatar} transition={150} />
+                            ) : (
+                                <View style={[styles.profileAvatar, styles.profileAvatarPlaceholder]}>
+                                    <Ionicons name="person" size={28} color={colors.gold[500]} />
+                                </View>
+                            )}
+                            <View style={styles.profileInfo}>
+                                <Text style={styles.profileName} numberOfLines={1}>
+                                    {user?.displayName || 'Your Name'}
+                                </Text>
+                                {user?.username ? (
+                                    <Text style={styles.profileUsername} numberOfLines={1}>
+                                        @{user.username}
+                                    </Text>
+                                ) : null}
+                                <Text style={styles.profileEmail} numberOfLines={1}>
+                                    {user?.email || 'No email set'}
+                                </Text>
+                            </View>
+                            <View style={styles.profileChevron}>
+                                <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+                </Animated.View>
+
+                {/* ─── Account ────────────────────────────────────── */}
+                <Animated.View entering={stagger(1)} style={styles.section}>
+                    <SectionHeader title="Account" icon="person-circle-outline" />
+                    <View style={styles.card}>
                         <SettingRow
-                            icon="person-outline"
+                            icon="create-outline"
                             label="Edit Profile"
                             description="Update your name, bio, and avatar"
                             onPress={() => {
@@ -300,7 +371,13 @@ export default function SettingsScreen() {
                                 <Text style={styles.charCount}>{editBio.length}/200</Text>
 
                                 {/* Save button */}
-                                <TouchableOpacity style={styles.saveProfileBtn} onPress={handleSaveProfile} disabled={isSavingProfile} accessibilityRole="button" accessibilityLabel="Save profile">
+                                <TouchableOpacity
+                                    style={styles.saveProfileBtn}
+                                    onPress={handleSaveProfile}
+                                    disabled={isSavingProfile}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Save profile"
+                                >
                                     <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.saveProfileGradient}>
                                         {isSavingProfile ? (
                                             <ActivityIndicator size="small" color={colors.obsidian[900]} />
@@ -312,16 +389,28 @@ export default function SettingsScreen() {
                             </View>
                         )}
 
-                        <SettingRow icon="lock-closed-outline" label="Password & Security" description="Change password, enable 2FA" />
-                        <SettingRow icon="mail-outline" label="Email" description={user?.email || 'Not set'} />
+                        <SettingRow
+                            icon="lock-closed-outline"
+                            label="Password & Security"
+                            description="Change password, enable 2FA"
+                            onPress={() => router.push('/settings/security' as any)}
+                        />
+                        <SettingRow
+                            icon="mail-outline"
+                            label="Email"
+                            description={user?.email || 'Not set'}
+                            onPress={() => router.push('/settings/email' as any)}
+                        />
                     </View>
+                </Animated.View>
 
-                    {/* Cultural Experience */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Cultural Experience</Text>
-                        <View style={styles.settingRow}>
+                {/* ─── Cultural Experience ────────────────────────── */}
+                <Animated.View entering={stagger(2)} style={styles.section}>
+                    <SectionHeader title="Cultural Experience" icon="globe-outline" />
+                    <View style={styles.card}>
+                        <View style={styles.settingRowFlat}>
                             <View style={styles.settingIcon}>
-                                <Ionicons name="globe-outline" size={20} color={colors.text.secondary} />
+                                <Ionicons name="sparkles-outline" size={20} color={colors.gold[500]} />
                             </View>
                             <View style={[styles.settingContent, { gap: spacing.sm }]}>
                                 <Text style={styles.settingLabel}>Greeting Profile</Text>
@@ -355,10 +444,12 @@ export default function SettingsScreen() {
                             />
                         )}
                     </View>
+                </Animated.View>
 
-                    {/* Privacy */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Privacy</Text>
+                {/* ─── Privacy ────────────────────────────────────── */}
+                <Animated.View entering={stagger(3)} style={styles.section}>
+                    <SectionHeader title="Privacy" icon="shield-half-outline" />
+                    <View style={styles.card}>
                         <SettingRow
                             icon="shield-outline"
                             label="Privacy Mode"
@@ -373,7 +464,7 @@ export default function SettingsScreen() {
                             <SettingRow
                                 icon="eye-off-outline"
                                 label="Switch to Private Mode"
-                                description="Leave the community feed and become invisible to others. Your private groups stay safe. You can rejoin anytime from here."
+                                description="Leave the community feed and become invisible to others. Your private groups stay safe. You can rejoin anytime."
                                 onPress={handleLeaveCommunity}
                                 danger
                             />
@@ -386,15 +477,19 @@ export default function SettingsScreen() {
                             />
                         )}
                     </View>
+                </Animated.View>
 
-                    {/* Language & Data */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Language & Data</Text>
+                {/* ─── Language & Data ────────────────────────────── */}
+                <Animated.View entering={stagger(4)} style={styles.section}>
+                    <SectionHeader title="Language & Data" icon="language-outline" />
+                    <View style={styles.card}>
                         <SettingRow
                             icon="language-outline"
                             label="Language"
                             description={currentLanguageName}
-                            onPress={() => setShowLanguagePicker(!showLanguagePicker)}
+                            onPress={() => {
+                                setShowLanguagePicker(!showLanguagePicker);
+                            }}
                         />
                         {showLanguagePicker && (
                             <View style={styles.languagePicker}>
@@ -431,10 +526,12 @@ export default function SettingsScreen() {
                             onPress={() => router.push('/settings/import' as any)}
                         />
                     </View>
+                </Animated.View>
 
-                    {/* Feed & Personalization */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Feed & Personalization</Text>
+                {/* ─── Feed & Personalization ─────────────────────── */}
+                <Animated.View entering={stagger(5)} style={styles.section}>
+                    <SectionHeader title="Feed & Personalization" icon="color-wand-outline" />
+                    <View style={styles.card}>
                         <SettingRow
                             icon="options-outline"
                             label="Algorithm Mixer"
@@ -448,10 +545,12 @@ export default function SettingsScreen() {
                             onPress={() => router.push('/interests' as any)}
                         />
                     </View>
+                </Animated.View>
 
-                    {/* Notifications */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Notifications</Text>
+                {/* ─── Notifications ──────────────────────────────── */}
+                <Animated.View entering={stagger(6)} style={styles.section}>
+                    <SectionHeader title="Notifications" icon="notifications-outline" />
+                    <View style={styles.card}>
                         <SettingRow
                             icon="notifications-outline"
                             label="Push Notifications"
@@ -459,10 +558,12 @@ export default function SettingsScreen() {
                             onPress={() => router.push('/settings/notifications' as any)}
                         />
                     </View>
+                </Animated.View>
 
-                    {/* Privacy & Data */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Privacy & Data</Text>
+                {/* ─── Privacy & Data ─────────────────────────────── */}
+                <Animated.View entering={stagger(7)} style={styles.section}>
+                    <SectionHeader title="Privacy & Data" icon="lock-closed-outline" />
+                    <View style={styles.card}>
                         <SettingRow
                             icon="download-outline"
                             label="Export Your Data"
@@ -494,10 +595,12 @@ export default function SettingsScreen() {
                             description="We don't monetize your personal data"
                         />
                     </View>
+                </Animated.View>
 
-                    {/* About */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>About</Text>
+                {/* ─── About ──────────────────────────────────────── */}
+                <Animated.View entering={stagger(8)} style={styles.section}>
+                    <SectionHeader title="About" icon="information-circle-outline" />
+                    <View style={styles.card}>
                         <SettingRow icon="phone-portrait-outline" label="App Version" description={appVersion} />
                         <SettingRow
                             icon="document-text-outline"
@@ -505,48 +608,193 @@ export default function SettingsScreen() {
                             onPress={() => Linking.openURL('https://0gravity.ai/terms')}
                         />
                         <SettingRow
-                            icon="shield-checkmark-outline"
+                            icon="reader-outline"
                             label="Privacy Policy"
                             onPress={() => Linking.openURL('https://0gravity.ai/privacy')}
                         />
                     </View>
+                </Animated.View>
 
-                    {/* Danger zone */}
-                    <View style={styles.section}>
-                        <SettingRow icon="log-out-outline" label="Log Out" onPress={handleLogout} danger />
-                        <SettingRow icon="trash-outline" label="Delete Account" description="Permanently delete your account" onPress={handleDeleteAccount} danger />
+                {/* ─── Danger Zone ─────────────────────────────────── */}
+                <Animated.View entering={stagger(9)} style={styles.section}>
+                    <View style={styles.dangerHeader}>
+                        <Ionicons name="warning-outline" size={14} color={colors.coral[500]} style={{ marginRight: 6 }} />
+                        <Text style={styles.dangerTitle}>Danger Zone</Text>
+                    </View>
+                    <View style={styles.dangerCard}>
+                        <SettingRow
+                            icon="log-out-outline"
+                            label="Log Out"
+                            description="Sign out of your account"
+                            onPress={handleLogout}
+                            danger
+                        />
+                        <View style={styles.dangerDivider} />
+                        <SettingRow
+                            icon="trash-outline"
+                            label="Delete Account"
+                            description="Permanently delete your account and all data"
+                            onPress={handleDeleteAccount}
+                            danger
+                        />
                     </View>
                 </Animated.View>
+
+                {/* Footer */}
+                <Animated.View entering={stagger(10)} style={styles.footer}>
+                    <Text style={styles.footerText}>Made with care by 0G</Text>
+                    <Text style={styles.footerVersion}>v{appVersion}</Text>
+                </Animated.View>
+
             </ScrollView>
         </View>
     );
 }
 
+// ─── Styles ──────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    scrollView: { flex: 1 },
-    section: { marginTop: spacing.lg, paddingHorizontal: spacing.lg },
-    sectionTitle: {
-        fontSize: typography.fontSize.xs, fontWeight: '700',
-        color: colors.text.muted, textTransform: 'uppercase',
-        letterSpacing: 1, marginBottom: spacing.sm, marginStart: spacing.sm,
+    container: {
+        flex: 1,
+        backgroundColor: colors.obsidian[900],
     },
+    scrollView: {
+        flex: 1,
+    },
+    section: {
+        marginTop: spacing.lg,
+        paddingHorizontal: spacing.lg,
+    },
+
+    // ─── Section Headers ─────────────────────────
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: spacing.sm,
+        marginStart: spacing.xs,
+    },
+    sectionTitle: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '700',
+        color: colors.text.muted,
+        textTransform: 'uppercase',
+        letterSpacing: 1.2,
+    },
+
+    // ─── Cards (grouping rows) ───────────────────
+    card: {
+        backgroundColor: colors.surface.glass,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        overflow: 'hidden',
+    },
+
+    // ─── Profile Summary Card ────────────────────
+    profileCard: {
+        backgroundColor: colors.surface.glass,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        overflow: 'hidden',
+    },
+    profileCardInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.lg,
+    },
+    profileAvatar: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        borderWidth: 2,
+        borderColor: colors.gold[500],
+    },
+    profileAvatarPlaceholder: {
+        backgroundColor: colors.surface.goldSubtle,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    profileInfo: {
+        flex: 1,
+        marginLeft: spacing.md,
+    },
+    profileName: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.text.primary,
+    },
+    profileUsername: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '500',
+        color: colors.gold[400],
+        marginTop: 1,
+    },
+    profileEmail: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        marginTop: 2,
+    },
+    profileChevron: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.surface.glassHover,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    // ─── Setting Rows ────────────────────────────
     settingRow: {
-        flexDirection: 'row', alignItems: 'center',
-        backgroundColor: colors.surface.glass, borderRadius: 14,
-        padding: spacing.md, marginBottom: spacing.xs,
-        borderWidth: 1, borderColor: colors.surface.glass,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.subtle,
+    },
+    settingRowDanger: {
+        borderBottomColor: 'rgba(255, 107, 107, 0.08)',
+    },
+    settingRowFlat: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.subtle,
     },
     settingIcon: {
-        width: 40, height: 40, borderRadius: 12,
+        width: 38,
+        height: 38,
+        borderRadius: 10,
         backgroundColor: colors.surface.glassHover,
-        alignItems: 'center', justifyContent: 'center',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    settingIconDanger: { backgroundColor: colors.surface.coralSubtle },
-    settingContent: { flex: 1, marginStart: spacing.md },
-    settingLabel: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
-    settingLabelDanger: { color: colors.coral[500] },
-    settingDescription: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },
+    settingIconDanger: {
+        backgroundColor: colors.surface.coralSubtle,
+    },
+    settingContent: {
+        flex: 1,
+        marginStart: spacing.md,
+    },
+    settingLabel: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.primary,
+    },
+    settingLabelDanger: {
+        color: colors.coral[500],
+    },
+    settingDescription: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        marginTop: 2,
+    },
+    settingDescriptionDanger: {
+        color: colors.coral[300],
+        opacity: 0.7,
+    },
+
+    // ─── Cultural Profile Options ────────────────
     profileOptions: {
         flexDirection: 'row',
         gap: spacing.xs,
@@ -578,18 +826,31 @@ const styles = StyleSheet.create({
         color: colors.text.muted,
         marginTop: 2,
     },
-    badge: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: 8 },
-    badgeCommunity: { backgroundColor: colors.surface.azureSubtle },
-    badgePrivate: { backgroundColor: colors.surface.goldLight },
-    badgeText: { fontSize: typography.fontSize.xs, fontWeight: '600', color: colors.gold[400] },
-    // Profile Editor
+
+    // ─── Badges ──────────────────────────────────
+    badge: {
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 3,
+        borderRadius: 8,
+    },
+    badgeCommunity: {
+        backgroundColor: colors.surface.azureSubtle,
+    },
+    badgePrivate: {
+        backgroundColor: colors.surface.goldLight,
+    },
+    badgeText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.gold[400],
+    },
+
+    // ─── Profile Editor ──────────────────────────
     profileEditor: {
-        backgroundColor: colors.surface.glass,
-        borderRadius: 14,
+        backgroundColor: colors.surface.glassHover,
         padding: spacing.lg,
-        marginBottom: spacing.xs,
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.subtle,
     },
     avatarEditor: {
         alignSelf: 'center',
@@ -629,7 +890,7 @@ const styles = StyleSheet.create({
         marginTop: spacing.sm,
     },
     editorInput: {
-        backgroundColor: colors.surface.glassHover,
+        backgroundColor: colors.surface.glass,
         borderRadius: 10,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
@@ -663,14 +924,13 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: colors.obsidian[900],
     },
-    // Language Picker
+
+    // ─── Language Picker ─────────────────────────
     languagePicker: {
-        backgroundColor: colors.surface.glass,
-        borderRadius: 14,
+        backgroundColor: colors.surface.glassHover,
         padding: spacing.sm,
-        marginBottom: spacing.xs,
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.subtle,
         gap: spacing.xs,
     },
     languageOption: {
@@ -705,5 +965,49 @@ const styles = StyleSheet.create({
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 4,
+    },
+
+    // ─── Danger Zone ─────────────────────────────
+    dangerHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: spacing.sm,
+        marginStart: spacing.xs,
+    },
+    dangerTitle: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '700',
+        color: colors.coral[500],
+        textTransform: 'uppercase',
+        letterSpacing: 1.2,
+    },
+    dangerCard: {
+        backgroundColor: 'rgba(255, 107, 107, 0.04)',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 107, 107, 0.15)',
+        overflow: 'hidden',
+    },
+    dangerDivider: {
+        height: 1,
+        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    },
+
+    // ─── Footer ──────────────────────────────────
+    footer: {
+        alignItems: 'center',
+        paddingVertical: spacing['2xl'],
+        paddingHorizontal: spacing.lg,
+    },
+    footerText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        fontWeight: '500',
+    },
+    footerVersion: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        marginTop: spacing.xs,
+        opacity: 0.6,
     },
 });

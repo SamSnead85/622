@@ -5,10 +5,10 @@ import {
     StyleSheet,
     TouchableOpacity,
     Dimensions,
-    ActivityIndicator,
     Alert,
     FlatList,
     Platform,
+    RefreshControl,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -16,44 +16,130 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+    FadeInDown,
+    FadeIn,
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+    Easing,
+} from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
-import { Avatar, LoadingView } from '../../components';
+import { Avatar, LoadingView, EmptyState, SkeletonGrid } from '../../components';
 import { useAuthStore, Post, mapApiPost } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const POST_SIZE = (SCREEN_WIDTH - spacing.xl * 2 - spacing.xs * 2) / 3;
+const COVER_HEIGHT = 200;
+const AVATAR_SIZE = 108;
+const AVATAR_RING_SIZE = AVATAR_SIZE + 8;
+const POST_GAP = 2;
+const POST_SIZE = (SCREEN_WIDTH - POST_GAP * 2) / 3;
 
+// ─── Helpers ─────────────────────────────────────────────
 const formatCount = (num: number) => {
     if (!num) return '0';
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+    if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
     return num.toString();
 };
 
-const PostGridItem = memo(({ post }: { post: Post }) => {
+// ─── Post Grid Item ──────────────────────────────────────
+const PostGridItem = memo(({ post, index }: { post: Post; index: number }) => {
     const router = useRouter();
+
     return (
-        <TouchableOpacity style={styles.postItem} activeOpacity={0.9} onPress={() => router.push(`/post/${post.id}`)} accessibilityRole="button" accessibilityLabel={post.content ? `Post: ${post.content.substring(0, 80)}` : 'View post'}>
-            {post.mediaUrl ? (
-                <Image source={{ uri: post.mediaUrl }} style={styles.postImage} transition={150} cachePolicy="memory-disk" recyclingKey={post.id} accessibilityLabel="Post image" />
-            ) : (
-                <View style={[styles.postImage, styles.textPostBg]}>
-                    <Text style={styles.textPostContent} numberOfLines={3}>{post.content}</Text>
-                </View>
-            )}
-            {post.mediaType === 'VIDEO' && (
-                <View style={styles.videoIndicator}>
-                    <Ionicons name="play" size={10} color={colors.text.primary} />
-                </View>
-            )}
-        </TouchableOpacity>
+        <Animated.View entering={FadeIn.delay(Math.min(index * 30, 300)).duration(250)}>
+            <TouchableOpacity
+                style={styles.postItem}
+                activeOpacity={0.85}
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push(`/post/${post.id}`);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={post.content ? `Post: ${post.content.substring(0, 80)}` : 'View post'}
+            >
+                {post.mediaUrl ? (
+                    <Image
+                        source={{ uri: post.mediaUrl }}
+                        style={styles.postImage}
+                        transition={200}
+                        cachePolicy="memory-disk"
+                        recyclingKey={post.id}
+                        contentFit="cover"
+                        accessibilityLabel="Post image"
+                    />
+                ) : (
+                    <LinearGradient
+                        colors={[colors.obsidian[600], colors.obsidian[700]]}
+                        style={[styles.postImage, styles.textPostBg]}
+                    >
+                        <Text style={styles.textPostContent} numberOfLines={4}>
+                            {post.content}
+                        </Text>
+                    </LinearGradient>
+                )}
+                {post.mediaType === 'VIDEO' && (
+                    <View style={styles.videoIndicator}>
+                        <Ionicons name="play" size={10} color="#fff" />
+                    </View>
+                )}
+                {(post.likesCount > 0 || post.commentsCount > 0) && (
+                    <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.5)']}
+                        style={styles.postOverlay}
+                    >
+                        <View style={styles.postMeta}>
+                            {post.likesCount > 0 && (
+                                <View style={styles.postMetaItem}>
+                                    <Ionicons name="heart" size={10} color="#fff" />
+                                    <Text style={styles.postMetaText}>{formatCount(post.likesCount)}</Text>
+                                </View>
+                            )}
+                        </View>
+                    </LinearGradient>
+                )}
+            </TouchableOpacity>
+        </Animated.View>
     );
 });
 
+// ─── Stat Item ───────────────────────────────────────────
+const StatItem = memo(({
+    value,
+    label,
+    onPress,
+}: {
+    value: number;
+    label: string;
+    onPress?: () => void;
+}) => (
+    <TouchableOpacity
+        style={styles.stat}
+        activeOpacity={0.7}
+        onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onPress?.();
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`${formatCount(value)} ${label}`}
+    >
+        <Text style={styles.statValue}>{formatCount(value)}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+    </TouchableOpacity>
+));
+
+// ─── Tab Types ───────────────────────────────────────────
 type ProfileTab = 'posts' | 'likes' | 'saved';
 
+const TABS: { key: ProfileTab; icon: keyof typeof Ionicons.glyphMap; iconActive: keyof typeof Ionicons.glyphMap; label: string }[] = [
+    { key: 'posts', icon: 'grid-outline', iconActive: 'grid', label: 'Posts' },
+    { key: 'likes', icon: 'heart-outline', iconActive: 'heart', label: 'Likes' },
+    { key: 'saved', icon: 'bookmark-outline', iconActive: 'bookmark', label: 'Saved' },
+];
+
+// ─── Main Screen ─────────────────────────────────────────
 export default function ProfileScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
@@ -68,6 +154,26 @@ export default function ProfileScreen() {
     const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
     const [loadedTabs, setLoadedTabs] = useState<Set<ProfileTab>>(new Set(['posts']));
 
+    // Animated tab indicator
+    const tabIndicatorX = useSharedValue(0);
+    const TAB_WIDTH = (SCREEN_WIDTH - spacing.xl * 2) / 3;
+
+    const indicatorStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: tabIndicatorX.value }],
+        width: TAB_WIDTH,
+    }));
+
+    const switchTab = useCallback((tab: ProfileTab) => {
+        const idx = TABS.findIndex((t) => t.key === tab);
+        tabIndicatorX.value = withTiming(idx * TAB_WIDTH, {
+            duration: 280,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        });
+        setActiveTab(tab);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }, [TAB_WIDTH]);
+
+    // ── Data Loading ─────────────────────────────────────
     const loadUserPosts = async () => {
         try {
             const data = await apiFetch<any>(`${API.userPosts(user!.id)}?limit=50`);
@@ -75,8 +181,10 @@ export default function ProfileScreen() {
             setUserPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
         } catch (e: any) {
             Alert.alert('Error', e.message || 'Failed to load posts');
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
         }
-        finally { setIsLoading(false); setIsRefreshing(false); }
     };
 
     const loadLikedPosts = async () => {
@@ -85,7 +193,7 @@ export default function ProfileScreen() {
             const data = await apiFetch<any>(API.likedPosts(user.id));
             const rawPosts = data.posts || data.data || [];
             setLikedPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
-        } catch { /* silent — endpoint may not exist yet */ }
+        } catch { /* silent */ }
     };
 
     const loadSavedPosts = async () => {
@@ -93,14 +201,13 @@ export default function ProfileScreen() {
             const data = await apiFetch<any>(API.savedPosts);
             const rawPosts = data.posts || data.data || [];
             setSavedPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
-        } catch { /* silent — endpoint may not exist yet */ }
+        } catch { /* silent */ }
     };
 
     useEffect(() => {
         if (user?.id) loadUserPosts();
     }, [user?.id]);
 
-    // Load tab data on first visit
     useEffect(() => {
         if (loadedTabs.has(activeTab)) return;
         setLoadedTabs((prev) => new Set(prev).add(activeTab));
@@ -110,151 +217,350 @@ export default function ProfileScreen() {
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         await refreshUser();
         await loadUserPosts();
         if (loadedTabs.has('likes')) loadLikedPosts();
         if (loadedTabs.has('saved')) loadSavedPosts();
     };
 
+    // ── Loading State ────────────────────────────────────
     if (!user) {
-        return <LoadingView />;
+        return (
+            <View style={styles.container}>
+                <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
+                <LoadingView message="Loading profile..." />
+            </View>
+        );
     }
 
+    // ── Header ───────────────────────────────────────────
     const renderHeader = () => (
-        <Animated.View entering={FadeInDown.duration(400)}>
-            {/* Cover photo area */}
-            <View style={styles.coverArea}>
+        <View>
+            {/* Cover Photo */}
+            <Animated.View entering={FadeIn.duration(500)} style={styles.coverArea}>
                 {user.coverUrl ? (
-                    <Image source={{ uri: user.coverUrl }} style={styles.coverImage} transition={300} cachePolicy="memory-disk" contentFit="cover" />
+                    <Image
+                        source={{ uri: user.coverUrl }}
+                        style={styles.coverImage}
+                        transition={400}
+                        cachePolicy="memory-disk"
+                        contentFit="cover"
+                    />
                 ) : (
                     <LinearGradient
-                        colors={[colors.obsidian[700], colors.obsidian[800]]}
+                        colors={[colors.gold[700], colors.gold[600], colors.gold[500]]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
                         style={styles.coverImage}
-                    />
+                    >
+                        {/* Decorative pattern overlay */}
+                        <View style={styles.coverPattern}>
+                            <LinearGradient
+                                colors={['rgba(0,0,0,0.15)', 'transparent', 'rgba(0,0,0,0.1)']}
+                                style={StyleSheet.absoluteFill}
+                            />
+                        </View>
+                    </LinearGradient>
                 )}
+                {/* Bottom fade into background */}
                 <LinearGradient
-                    colors={['transparent', colors.obsidian[900]]}
-                    style={styles.coverGradient}
+                    colors={['transparent', 'rgba(10,10,11,0.6)', colors.obsidian[900]]}
+                    locations={[0, 0.6, 1]}
+                    style={styles.coverFade}
                 />
-            </View>
+            </Animated.View>
 
+            {/* Profile Content */}
             <View style={styles.profileContent}>
-                {/* Avatar (overlapping cover) */}
-                <View style={styles.avatarSection}>
-                    <View style={styles.avatarContainer}>
-                        <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.avatarBorder}>
+                {/* Avatar */}
+                <Animated.View
+                    entering={FadeInDown.delay(100).duration(400).springify().damping(18)}
+                    style={styles.avatarSection}
+                >
+                    <View style={styles.avatarWrapper}>
+                        <LinearGradient
+                            colors={[colors.gold[400], colors.gold[500], colors.gold[600]]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.avatarRing}
+                        >
                             <View style={styles.avatarInner}>
-                                <Avatar uri={user.avatarUrl} name={user.displayName || user.username || '?'} size="2xl" />
+                                <Avatar
+                                    uri={user.avatarUrl}
+                                    name={user.displayName || user.username || '?'}
+                                    customSize={AVATAR_SIZE}
+                                />
                             </View>
                         </LinearGradient>
+                        {/* Gold glow shadow */}
+                        <View style={styles.avatarGlow} />
                     </View>
-                </View>
+                </Animated.View>
 
-                {/* User info */}
-                <View style={styles.userInfo}>
+                {/* User Info */}
+                <Animated.View
+                    entering={FadeInDown.delay(180).duration(400).springify().damping(18)}
+                    style={styles.userInfo}
+                >
                     <View style={styles.nameRow}>
-                        <Text style={styles.displayName} accessibilityRole="header">{user.displayName}</Text>
-                        {user.isVerified && <Ionicons name="checkmark-circle" size={18} color={colors.gold[500]} style={{ marginStart: 6 }} />}
+                        <Text style={styles.displayName} accessibilityRole="header">
+                            {user.displayName}
+                        </Text>
+                        {user.isVerified && (
+                            <Ionicons
+                                name="checkmark-circle"
+                                size={20}
+                                color={colors.gold[500]}
+                                style={{ marginStart: 6 }}
+                            />
+                        )}
                     </View>
                     <Text style={styles.username}>@{user.username}</Text>
-                    {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
-                </View>
+                </Animated.View>
 
-                {/* Privacy badge */}
-                <View style={styles.privacyBadge}>
-                    <Ionicons name={user.communityOptIn ? 'globe-outline' : 'lock-closed'} size={12} color={colors.gold[400]} />
+                {/* Bio */}
+                {user.bio ? (
+                    <Animated.View
+                        entering={FadeInDown.delay(240).duration(400).springify().damping(18)}
+                        style={styles.bioSection}
+                    >
+                        <Text style={styles.bio}>{user.bio}</Text>
+                        <TouchableOpacity
+                            style={styles.bioEditBtn}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                router.push('/settings');
+                            }}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            accessibilityLabel="Edit bio"
+                        >
+                            <Ionicons name="pencil" size={12} color={colors.gold[400]} />
+                        </TouchableOpacity>
+                    </Animated.View>
+                ) : (
+                    <Animated.View
+                        entering={FadeInDown.delay(240).duration(400).springify().damping(18)}
+                    >
+                        <TouchableOpacity
+                            style={styles.addBioBtn}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                router.push('/settings');
+                            }}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="add-circle-outline" size={14} color={colors.gold[400]} />
+                            <Text style={styles.addBioText}>Add a bio</Text>
+                        </TouchableOpacity>
+                    </Animated.View>
+                )}
+
+                {/* Privacy Badge */}
+                <Animated.View
+                    entering={FadeInDown.delay(280).duration(400).springify().damping(18)}
+                    style={styles.privacyBadge}
+                >
+                    <Ionicons
+                        name={user.communityOptIn ? 'globe-outline' : 'lock-closed'}
+                        size={12}
+                        color={colors.gold[400]}
+                    />
                     <Text style={styles.privacyText}>
                         {user.communityOptIn ? 'Community Member' : 'Private Mode'}
                     </Text>
-                </View>
+                </Animated.View>
 
                 {/* Stats */}
-                <View style={styles.statsContainer}>
-                    <TouchableOpacity style={styles.stat} accessibilityRole="button" accessibilityLabel={`${formatCount(user.postsCount)} posts`}>
-                        <Text style={styles.statValue}>{formatCount(user.postsCount)}</Text>
-                        <Text style={styles.statLabel}>Posts</Text>
-                    </TouchableOpacity>
-                    <View style={styles.statDivider} />
-                    <TouchableOpacity style={styles.stat} accessibilityRole="button" accessibilityLabel={`${formatCount(user.followersCount)} followers`}>
-                        <Text style={styles.statValue}>{formatCount(user.followersCount)}</Text>
-                        <Text style={styles.statLabel}>Followers</Text>
-                    </TouchableOpacity>
-                    <View style={styles.statDivider} />
-                    <TouchableOpacity style={styles.stat} accessibilityRole="button" accessibilityLabel={`${formatCount(user.followingCount)} following`}>
-                        <Text style={styles.statValue}>{formatCount(user.followingCount)}</Text>
-                        <Text style={styles.statLabel}>Following</Text>
-                    </TouchableOpacity>
-                </View>
+                <Animated.View
+                    entering={FadeInDown.delay(320).duration(400).springify().damping(18)}
+                >
+                    <LinearGradient
+                        colors={[colors.surface.glassHover, colors.surface.glass]}
+                        style={styles.statsContainer}
+                    >
+                        <StatItem value={user.postsCount} label="Posts" />
+                        <View style={styles.statDivider} />
+                        <StatItem value={user.followersCount} label="Followers" />
+                        <View style={styles.statDivider} />
+                        <StatItem value={user.followingCount} label="Following" />
+                    </LinearGradient>
+                </Animated.View>
 
-                {/* Action buttons */}
-                <View style={styles.profileActions}>
-                    <TouchableOpacity style={[styles.editButton, { flex: 1 }]} activeOpacity={0.8} onPress={() => router.push('/settings')} accessibilityRole="button" accessibilityLabel="Edit profile">
-                        <Ionicons name="create-outline" size={16} color={colors.text.primary} />
+                {/* Action Buttons */}
+                <Animated.View
+                    entering={FadeInDown.delay(380).duration(400).springify().damping(18)}
+                    style={styles.profileActions}
+                >
+                    <TouchableOpacity
+                        style={styles.editButton}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            router.push('/settings');
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Edit profile"
+                    >
+                        <Ionicons name="create-outline" size={16} color={colors.gold[500]} />
                         <Text style={styles.editButtonText}>Edit Profile</Text>
                     </TouchableOpacity>
+
                     {(user.postsCount || 0) > 0 && (
-                        <TouchableOpacity style={styles.analyticsButton} activeOpacity={0.8} onPress={() => router.push('/analytics' as any)} accessibilityRole="button" accessibilityLabel="View analytics">
-                            <Ionicons name="analytics-outline" size={16} color={colors.gold[400]} />
+                        <TouchableOpacity
+                            style={styles.analyticsButton}
+                            activeOpacity={0.8}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                router.push('/analytics' as any);
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel="View analytics"
+                        >
+                            <Ionicons name="analytics-outline" size={18} color={colors.gold[400]} />
                         </TouchableOpacity>
                     )}
-                </View>
 
-                {/* Content tabs */}
-                <View style={styles.contentTabs}>
-                    {(['posts', 'likes', 'saved'] as ProfileTab[]).map((tab) => (
+                    <TouchableOpacity
+                        style={styles.shareButton}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Share profile"
+                    >
+                        <Ionicons name="share-outline" size={18} color={colors.text.secondary} />
+                    </TouchableOpacity>
+                </Animated.View>
+
+                {/* Premium Segmented Tabs */}
+                <Animated.View
+                    entering={FadeInDown.delay(440).duration(400).springify().damping(18)}
+                    style={styles.tabContainer}
+                >
+                    {/* Active indicator */}
+                    <Animated.View style={[styles.tabIndicator, indicatorStyle]}>
+                        <LinearGradient
+                            colors={[colors.surface.goldMedium, colors.surface.goldSubtle]}
+                            style={styles.tabIndicatorInner}
+                        />
+                    </Animated.View>
+
+                    {TABS.map((tab) => (
                         <TouchableOpacity
-                            key={tab}
-                            style={[styles.contentTab, activeTab === tab && styles.contentTabActive]}
-                            onPress={() => setActiveTab(tab)}
+                            key={tab.key}
+                            style={styles.tab}
+                            onPress={() => switchTab(tab.key)}
+                            activeOpacity={0.7}
                             accessibilityRole="tab"
-                            accessibilityLabel={tab.charAt(0).toUpperCase() + tab.slice(1)}
-                            accessibilityState={{ selected: activeTab === tab }}
+                            accessibilityLabel={tab.label}
+                            accessibilityState={{ selected: activeTab === tab.key }}
                         >
                             <Ionicons
-                                name={tab === 'posts' ? 'grid-outline' : tab === 'likes' ? 'heart-outline' : 'bookmark-outline'}
-                                size={20}
-                                color={activeTab === tab ? colors.gold[500] : colors.text.muted}
+                                name={activeTab === tab.key ? tab.iconActive : tab.icon}
+                                size={18}
+                                color={activeTab === tab.key ? colors.gold[500] : colors.text.muted}
                             />
-                            <Text style={[styles.contentTabText, activeTab === tab && styles.contentTabTextActive]}>
-                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            <Text
+                                style={[
+                                    styles.tabText,
+                                    activeTab === tab.key && styles.tabTextActive,
+                                ]}
+                            >
+                                {tab.label}
                             </Text>
                         </TouchableOpacity>
                     ))}
-                </View>
+
+                    {/* Bottom gold line */}
+                    <View style={styles.tabBottomLine} />
+                </Animated.View>
             </View>
-        </Animated.View>
+        </View>
     );
 
-    const postsData = activeTab === 'posts' ? userPosts : activeTab === 'likes' ? likedPosts : savedPosts;
+    // ── Data ─────────────────────────────────────────────
+    const postsData =
+        activeTab === 'posts' ? userPosts : activeTab === 'likes' ? likedPosts : savedPosts;
 
-    const renderPost = useCallback(({ item }: { item: Post }) => <PostGridItem post={item} />, []);
+    const renderPost = useCallback(
+        ({ item, index }: { item: Post; index: number }) => (
+            <PostGridItem post={item} index={index} />
+        ),
+        [],
+    );
 
+    // ── Empty & Loading States ───────────────────────────
     const renderEmpty = () => {
         if (isLoading) {
-            return <View style={styles.centered}><ActivityIndicator size="small" color={colors.gold[500]} /></View>;
+            return (
+                <View style={styles.skeletonWrap}>
+                    <SkeletonGrid />
+                </View>
+            );
         }
+
+        const config = {
+            posts: {
+                icon: 'camera-outline' as const,
+                title: 'No Posts Yet',
+                message: 'Share your first moment with the world.',
+                actionLabel: 'Create Post',
+                onAction: () => router.push('/create' as any),
+            },
+            likes: {
+                icon: 'heart-outline' as const,
+                title: 'No Liked Posts',
+                message: "Posts you've liked will appear here.",
+                actionLabel: undefined,
+                onAction: undefined,
+            },
+            saved: {
+                icon: 'bookmark-outline' as const,
+                title: 'No Saved Posts',
+                message: 'Save posts to revisit them later.',
+                actionLabel: undefined,
+                onAction: undefined,
+            },
+        };
+
+        const c = config[activeTab];
+
         return (
-            <View style={styles.emptyPosts}>
-                <Ionicons
-                    name={activeTab === 'posts' ? 'camera-outline' : activeTab === 'likes' ? 'heart-outline' : 'bookmark-outline'}
-                    size={40}
-                    color={colors.text.muted}
-                />
-                <Text style={styles.emptyText}>
-                    {activeTab === 'posts' ? 'No posts yet' : activeTab === 'likes' ? 'No liked posts yet' : 'No saved posts yet'}
-                </Text>
-            </View>
+            <EmptyState
+                icon={c.icon}
+                title={c.title}
+                message={c.message}
+                actionLabel={c.actionLabel}
+                onAction={c.onAction}
+                compact
+            />
         );
     };
 
+    // ── Render ────────────────────────────────────────────
     return (
         <View style={styles.container}>
-            <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
+            <LinearGradient
+                colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+                locations={[0, 0.5, 1]}
+                style={StyleSheet.absoluteFill}
+            />
 
-            {/* Header buttons (floating) */}
-            <View style={[styles.headerButtons, { paddingTop: insets.top + spacing.sm }]}>
-                <View />
-                <TouchableOpacity style={styles.headerButton} onPress={() => router.push('/settings')} accessibilityRole="button" accessibilityLabel="Settings">
+            {/* Floating Header Buttons */}
+            <View style={[styles.headerBar, { paddingTop: insets.top + spacing.xs }]}>
+                <View style={styles.headerLeft} />
+                <TouchableOpacity
+                    style={styles.headerIconBtn}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        router.push('/settings');
+                    }}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Settings"
+                >
                     <Ionicons name="settings-outline" size={22} color={colors.text.primary} />
                 </TouchableOpacity>
             </View>
@@ -269,8 +575,15 @@ export default function ProfileScreen() {
                 columnWrapperStyle={styles.postsRow}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
                 showsVerticalScrollIndicator={false}
-                onRefresh={handleRefresh}
-                refreshing={isRefreshing}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={handleRefresh}
+                        tintColor={colors.gold[500]}
+                        progressBackgroundColor={colors.obsidian[700]}
+                        colors={[colors.gold[500]]}
+                    />
+                }
                 removeClippedSubviews={Platform.OS === 'android'}
                 maxToRenderPerBatch={12}
                 windowSize={9}
@@ -280,106 +593,389 @@ export default function ProfileScreen() {
     );
 }
 
+// ─── Styles ──────────────────────────────────────────────
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    centered: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing['2xl'] },
-
-    // Header buttons
-    headerButtons: {
-        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100,
-        flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.lg,
-    },
-    headerButton: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface.overlayLight, alignItems: 'center', justifyContent: 'center',
+    container: {
+        flex: 1,
+        backgroundColor: colors.obsidian[900],
     },
 
-    // Cover
-    coverArea: { height: 160, position: 'relative' },
-    coverImage: { width: '100%', height: '100%' },
-    coverGradient: { ...StyleSheet.absoluteFillObject },
-
-    profileContent: { paddingHorizontal: spacing.xl, marginTop: -40 },
-
-    // Avatar
-    avatarSection: { alignItems: 'center', marginBottom: spacing.md },
-    avatarContainer: {},
-    avatarBorder: { padding: 4, borderRadius: 56 },
-    avatarInner: { borderRadius: 52, borderWidth: 4, borderColor: colors.obsidian[900], overflow: 'hidden' },
-    avatarImage: { width: 96, height: 96 },
-    avatarPlaceholder: { backgroundColor: colors.obsidian[500], alignItems: 'center', justifyContent: 'center' },
-    avatarInitial: { fontSize: 36, fontWeight: '700', color: colors.text.primary },
-
-    // User info
-    userInfo: { alignItems: 'center', marginBottom: spacing.md },
-    nameRow: { flexDirection: 'row', alignItems: 'center' },
-    displayName: { fontSize: 26, fontWeight: '700', color: colors.text.primary, letterSpacing: -0.5, fontFamily: 'Inter-Bold' },
-    username: { fontSize: typography.fontSize.base, color: colors.text.muted, marginTop: spacing.xs },
-    bio: { fontSize: typography.fontSize.base, color: colors.text.secondary, textAlign: 'center', marginTop: spacing.md, lineHeight: 22 },
-
-    // Privacy badge
-    privacyBadge: {
-        flexDirection: 'row', alignItems: 'center', alignSelf: 'center',
-        backgroundColor: colors.surface.goldSubtle, paddingHorizontal: spacing.md,
-        paddingVertical: spacing.xs, borderRadius: 20, marginBottom: spacing.lg, gap: spacing.xs,
+    // ── Floating Header ──────────────────────────────────
+    headerBar: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.sm,
     },
-    privacyText: { fontSize: typography.fontSize.xs, color: colors.gold[400], fontWeight: '600' },
-
-    // Stats
-    statsContainer: {
-        flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
-        backgroundColor: colors.surface.glass, borderRadius: 16,
-        paddingVertical: spacing.lg, marginBottom: spacing.lg,
-        borderWidth: 1, borderColor: colors.border.subtle,
-    },
-    stat: { flex: 1, alignItems: 'center' },
-    statValue: { fontSize: typography.fontSize.xl, fontWeight: '700', color: colors.text.primary },
-    statLabel: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },
-    statDivider: { width: 1, height: 32, backgroundColor: colors.border.subtle },
-
-    // Action buttons
-    profileActions: {
-        flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xl,
-    },
-    editButton: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        backgroundColor: colors.surface.glassHover, paddingVertical: spacing.md,
-        borderRadius: 12,
-        borderWidth: 1, borderColor: colors.border.subtle, gap: spacing.sm,
-    },
-    editButtonText: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
-    analyticsButton: {
-        width: 48, alignItems: 'center', justifyContent: 'center',
-        backgroundColor: colors.surface.glassHover, borderRadius: 12,
-        borderWidth: 1, borderColor: colors.gold[500] + '30',
+    headerLeft: { width: 40 },
+    headerIconBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
     },
 
-    // Content tabs
-    contentTabs: {
-        flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border.subtle,
+    // ── Cover ────────────────────────────────────────────
+    coverArea: {
+        height: COVER_HEIGHT,
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    coverImage: {
+        width: '100%',
+        height: '100%',
+    },
+    coverPattern: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    coverFade: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: COVER_HEIGHT * 0.6,
+    },
+
+    // ── Profile Content ──────────────────────────────────
+    profileContent: {
+        paddingHorizontal: spacing.xl,
+        marginTop: -(AVATAR_RING_SIZE / 2),
+    },
+
+    // ── Avatar ───────────────────────────────────────────
+    avatarSection: {
+        alignItems: 'center',
         marginBottom: spacing.md,
     },
-    contentTab: {
-        flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        paddingVertical: spacing.md, gap: spacing.xs,
+    avatarWrapper: {
+        position: 'relative',
     },
-    contentTabActive: { borderBottomWidth: 2, borderBottomColor: colors.gold[500] },
-    contentTabText: { fontSize: typography.fontSize.sm, color: colors.text.muted, fontWeight: '500' },
-    contentTabTextActive: { color: colors.gold[500] },
+    avatarRing: {
+        width: AVATAR_RING_SIZE,
+        height: AVATAR_RING_SIZE,
+        borderRadius: AVATAR_RING_SIZE / 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...Platform.select({
+            ios: {
+                shadowColor: colors.gold[500],
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.5,
+                shadowRadius: 16,
+            },
+            android: {
+                elevation: 8,
+            },
+        }),
+    },
+    avatarInner: {
+        width: AVATAR_SIZE,
+        height: AVATAR_SIZE,
+        borderRadius: AVATAR_SIZE / 2,
+        borderWidth: 3,
+        borderColor: colors.obsidian[900],
+        overflow: 'hidden',
+    },
+    avatarGlow: {
+        position: 'absolute',
+        top: -8,
+        left: -8,
+        right: -8,
+        bottom: -8,
+        borderRadius: (AVATAR_RING_SIZE + 16) / 2,
+        backgroundColor: 'transparent',
+        ...Platform.select({
+            ios: {
+                shadowColor: colors.gold[500],
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.3,
+                shadowRadius: 20,
+            },
+        }),
+    },
 
-    // Posts grid
-    postsRow: { paddingHorizontal: spacing.xl, gap: spacing.xs },
-    postItem: { width: POST_SIZE, height: POST_SIZE, borderRadius: 8, overflow: 'hidden', marginBottom: spacing.xs },
-    postImage: { width: '100%', height: '100%' },
-    textPostBg: { backgroundColor: colors.obsidian[600], padding: spacing.sm, alignItems: 'center', justifyContent: 'center' },
-    textPostContent: { fontSize: typography.fontSize.xs, color: colors.text.primary, textAlign: 'center' },
+    // ── User Info ────────────────────────────────────────
+    userInfo: {
+        alignItems: 'center',
+        marginBottom: spacing.sm,
+    },
+    nameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    displayName: {
+        fontSize: typography.fontSize['3xl'],
+        fontWeight: '700',
+        color: colors.text.primary,
+        letterSpacing: typography.letterSpacing.tight,
+        fontFamily: 'Inter-Bold',
+    },
+    username: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.muted,
+        marginTop: spacing.xxs,
+    },
+
+    // ── Bio ──────────────────────────────────────────────
+    bioSection: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        paddingHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+    },
+    bio: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        lineHeight: 22,
+        flex: 1,
+    },
+    bioEditBtn: {
+        marginLeft: spacing.sm,
+        marginTop: 2,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: colors.surface.goldSubtle,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    addBioBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.xs,
+        paddingVertical: spacing.sm,
+        marginBottom: spacing.sm,
+    },
+    addBioText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.gold[400],
+        fontWeight: '500',
+    },
+
+    // ── Privacy Badge ────────────────────────────────────
+    privacyBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'center',
+        backgroundColor: colors.surface.goldSubtle,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs + 2,
+        borderRadius: 20,
+        marginBottom: spacing.lg,
+        gap: spacing.xs,
+        borderWidth: 1,
+        borderColor: colors.surface.goldLight,
+    },
+    privacyText: {
+        fontSize: typography.fontSize.xs,
+        color: colors.gold[400],
+        fontWeight: '600',
+    },
+
+    // ── Stats ────────────────────────────────────────────
+    statsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 16,
+        paddingVertical: spacing.lg + 2,
+        marginBottom: spacing.lg,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        overflow: 'hidden',
+    },
+    stat: {
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: spacing.xs,
+    },
+    statValue: {
+        fontSize: typography.fontSize['2xl'],
+        fontWeight: '700',
+        color: colors.text.primary,
+        fontFamily: 'Inter-Bold',
+    },
+    statLabel: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        marginTop: 2,
+        fontWeight: '500',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    statDivider: {
+        width: 1,
+        height: 36,
+        backgroundColor: colors.border.subtle,
+    },
+
+    // ── Action Buttons ───────────────────────────────────
+    profileActions: {
+        flexDirection: 'row',
+        gap: spacing.sm,
+        marginBottom: spacing.xl,
+    },
+    editButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: spacing.md + 2,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: colors.gold[500],
+        backgroundColor: colors.surface.goldFaded,
+        gap: spacing.sm,
+    },
+    editButtonText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.gold[500],
+    },
+    analyticsButton: {
+        width: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.surface.glassHover,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '30',
+    },
+    shareButton: {
+        width: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.surface.glass,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+
+    // ── Premium Segmented Tabs ───────────────────────────
+    tabContainer: {
+        flexDirection: 'row',
+        backgroundColor: colors.surface.glass,
+        borderRadius: 14,
+        padding: spacing.xs,
+        marginBottom: spacing.lg,
+        position: 'relative',
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        overflow: 'hidden',
+    },
+    tabIndicator: {
+        position: 'absolute',
+        top: spacing.xs,
+        left: spacing.xs,
+        bottom: spacing.xs,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    tabIndicatorInner: {
+        flex: 1,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '25',
+    },
+    tab: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: spacing.md,
+        gap: spacing.xs,
+        zIndex: 1,
+    },
+    tabText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        fontWeight: '500',
+    },
+    tabTextActive: {
+        color: colors.gold[500],
+        fontWeight: '600',
+    },
+    tabBottomLine: {
+        display: 'none',
+    },
+
+    // ── Posts Grid ────────────────────────────────────────
+    postsRow: {
+        gap: POST_GAP,
+    },
+    postItem: {
+        width: POST_SIZE,
+        height: POST_SIZE,
+        overflow: 'hidden',
+        backgroundColor: colors.obsidian[700],
+    },
+    postImage: {
+        width: '100%',
+        height: '100%',
+    },
+    textPostBg: {
+        padding: spacing.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    textPostContent: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.primary,
+        textAlign: 'center',
+        lineHeight: 16,
+    },
     videoIndicator: {
-        position: 'absolute', top: spacing.sm, right: spacing.sm,
-        backgroundColor: colors.surface.overlayMedium, width: 24, height: 24, borderRadius: 12,
-        alignItems: 'center', justifyContent: 'center',
+        position: 'absolute',
+        top: spacing.sm,
+        right: spacing.sm,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    postOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 32,
+        justifyContent: 'flex-end',
+        paddingHorizontal: spacing.sm,
+        paddingBottom: spacing.xs,
+    },
+    postMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+    },
+    postMetaItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+    },
+    postMetaText: {
+        fontSize: 9,
+        color: '#fff',
+        fontWeight: '600',
     },
 
-    // Empty
-    emptyPosts: { alignItems: 'center', paddingVertical: spacing['3xl'] },
-    emptyText: { fontSize: typography.fontSize.base, color: colors.text.muted, marginTop: spacing.md },
+    // ── Skeleton ─────────────────────────────────────────
+    skeletonWrap: {
+        paddingTop: spacing.md,
+    },
 });

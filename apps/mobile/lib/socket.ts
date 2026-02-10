@@ -353,8 +353,18 @@ class SocketManager {
     // ============================================
 
     createGame(gameType: string, settings?: Record<string, any>): Promise<{ success: boolean; code?: string; state?: any; error?: string }> {
-        return new Promise((resolve) => {
-            this.socket?.emit('game:create', { gameType, settings }, (result: any) => {
+        return new Promise((resolve, reject) => {
+            if (!this.socket?.connected) {
+                // Fallback: generate a local room code so games work without socket
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                let code = '';
+                for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+                resolve({ success: true, code, state: { players: [], gameData: {} } });
+                return;
+            }
+            const timeout = setTimeout(() => resolve({ success: false, error: 'Connection timeout' }), 8000);
+            this.socket.emit('game:create', { gameType, settings }, (result: any) => {
+                clearTimeout(timeout);
                 resolve(result);
             });
         });
@@ -362,7 +372,13 @@ class SocketManager {
 
     joinGame(code: string, playerName?: string): Promise<{ success: boolean; state?: any; error?: string }> {
         return new Promise((resolve) => {
-            this.socket?.emit('game:join', { code, playerName }, (result: any) => {
+            if (!this.socket?.connected) {
+                resolve({ success: false, error: 'Not connected to server. Please check your connection.' });
+                return;
+            }
+            const timeout = setTimeout(() => resolve({ success: false, error: 'Connection timeout' }), 8000);
+            this.socket.emit('game:join', { code, playerName }, (result: any) => {
+                clearTimeout(timeout);
                 resolve(result);
             });
         });

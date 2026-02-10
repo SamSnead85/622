@@ -1,6 +1,7 @@
 // ============================================
-// Daily Challenge — Solo daily trivia mode
-// 7 date-seeded questions, streak tracking, no Socket.io
+// Daily Challenge — Solo daily trivia mode (Enhanced)
+// Smooth timer ring, score popups, fire streak,
+// answer color feedback, share results
 // ============================================
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -9,6 +10,7 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
+    Pressable,
     Dimensions,
     Share,
     ScrollView,
@@ -17,13 +19,18 @@ import Animated, {
     FadeInDown,
     FadeIn,
     FadeOut,
+    SlideInRight,
     useSharedValue,
     useAnimatedStyle,
     useAnimatedProps,
     withTiming,
     withSpring,
     withSequence,
+    withDelay,
+    withRepeat,
     Easing,
+    interpolate,
+    runOnJS,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,14 +42,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
 import { ScreenHeader, GlassCard, Button } from '../../components';
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 // ============================================
 // Constants
 // ============================================
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const TIMER_DURATION = 20;
-const TIMER_SIZE = 56;
-const TIMER_STROKE_WIDTH = 4;
+const TIMER_SIZE = 64;
+const TIMER_STROKE_WIDTH = 5;
 const TIMER_RADIUS = (TIMER_SIZE - TIMER_STROKE_WIDTH) / 2;
 const TIMER_CIRCUMFERENCE = 2 * Math.PI * TIMER_RADIUS;
 const TOTAL_QUESTIONS = 7;
@@ -66,6 +75,17 @@ const CATEGORY_COLORS: Record<string, string> = {
     nature: colors.emerald[500],
     culture: colors.coral[500],
     default: colors.gold[500],
+};
+
+const CATEGORY_ICONS: Record<string, string> = {
+    geography: 'globe-outline',
+    art: 'color-palette-outline',
+    science: 'flask-outline',
+    history: 'time-outline',
+    literature: 'book-outline',
+    nature: 'leaf-outline',
+    culture: 'people-outline',
+    default: 'help-circle-outline',
 };
 
 // ============================================
@@ -122,28 +142,53 @@ function getTodayDateString(): string {
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
 // ============================================
-// Timer Ring Component
+// Timer Ring Component (Smooth)
 // ============================================
 
 function TimerRing({ timeLeft }: { timeLeft: number }) {
     const progress = useSharedValue(1);
+    const pulseScale = useSharedValue(1);
 
     useEffect(() => {
+        // Smooth continuous animation for 1 second
         progress.value = withTiming(timeLeft / TIMER_DURATION, {
-            duration: 900,
+            duration: 1000,
             easing: Easing.linear,
         });
-    }, [timeLeft, progress]);
+
+        // Pulse effect when urgent
+        if (timeLeft <= 5 && timeLeft > 0) {
+            pulseScale.value = withSequence(
+                withSpring(1.08, { damping: 8, stiffness: 300 }),
+                withSpring(1, { damping: 10, stiffness: 200 }),
+            );
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+    }, [timeLeft, progress, pulseScale]);
 
     const animatedProps = useAnimatedProps(() => ({
         strokeDashoffset: TIMER_CIRCUMFERENCE * (1 - progress.value),
     }));
 
+    const animatedContainerStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: pulseScale.value }],
+    }));
+
     const isUrgent = timeLeft <= 5;
+    const strokeColor = isUrgent ? colors.coral[500] : colors.gold[500];
 
     return (
-        <View style={styles.timerContainer} accessibilityRole="timer" accessibilityLabel={`${timeLeft} seconds remaining`}>
+        <Animated.View
+            style={[styles.timerContainer, animatedContainerStyle]}
+            accessibilityRole="timer"
+            accessibilityLabel={`${timeLeft} seconds remaining`}
+        >
+            {/* Glow effect for urgent state */}
+            {isUrgent && (
+                <View style={styles.timerGlow} />
+            )}
             <Svg width={TIMER_SIZE} height={TIMER_SIZE} style={styles.timerSvg}>
+                {/* Background track */}
                 <Circle
                     cx={TIMER_SIZE / 2}
                     cy={TIMER_SIZE / 2}
@@ -152,11 +197,12 @@ function TimerRing({ timeLeft }: { timeLeft: number }) {
                     strokeWidth={TIMER_STROKE_WIDTH}
                     fill="transparent"
                 />
+                {/* Progress ring */}
                 <AnimatedCircle
                     cx={TIMER_SIZE / 2}
                     cy={TIMER_SIZE / 2}
                     r={TIMER_RADIUS}
-                    stroke={isUrgent ? colors.coral[500] : colors.gold[500]}
+                    stroke={strokeColor}
                     strokeWidth={TIMER_STROKE_WIDTH}
                     fill="transparent"
                     strokeDasharray={TIMER_CIRCUMFERENCE}
@@ -169,7 +215,7 @@ function TimerRing({ timeLeft }: { timeLeft: number }) {
             <Text style={[styles.timerText, isUrgent && styles.timerTextUrgent]}>
                 {timeLeft}
             </Text>
-        </View>
+        </Animated.View>
     );
 }
 
@@ -187,12 +233,13 @@ function ProgressDots({ current, total, answers }: { current: number; total: num
 
                 let dotColor = colors.obsidian[600]; // empty
                 if (isActive) dotColor = colors.gold[500];
-                else if (isCompleted && wasCorrect === true) dotColor = colors.gold[500];
+                else if (isCompleted && wasCorrect === true) dotColor = colors.emerald[500];
                 else if (isCompleted && wasCorrect === false) dotColor = colors.coral[500];
 
                 return (
-                    <View
+                    <Animated.View
                         key={i}
+                        entering={FadeIn.delay(i * 40).duration(300)}
                         style={[
                             styles.progressDot,
                             { backgroundColor: dotColor },
@@ -206,7 +253,89 @@ function ProgressDots({ current, total, answers }: { current: number; total: num
 }
 
 // ============================================
-// Option Button Component
+// Score Popup Component
+// ============================================
+
+function ScorePopup({ points, visible }: { points: number; visible: boolean }) {
+    const translateY = useSharedValue(0);
+    const opacity = useSharedValue(0);
+    const popScale = useSharedValue(0.5);
+
+    useEffect(() => {
+        if (visible && points > 0) {
+            translateY.value = 0;
+            opacity.value = 0;
+            popScale.value = 0.5;
+
+            opacity.value = withSequence(
+                withTiming(1, { duration: 200 }),
+                withDelay(800, withTiming(0, { duration: 500 })),
+            );
+            translateY.value = withTiming(-60, { duration: 1500, easing: Easing.out(Easing.ease) });
+            popScale.value = withSequence(
+                withSpring(1.2, { damping: 8 }),
+                withSpring(1, { damping: 12 }),
+            );
+        }
+    }, [visible, points, translateY, opacity, popScale]);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: translateY.value },
+            { scale: popScale.value },
+        ],
+        opacity: opacity.value,
+    }));
+
+    if (!visible || points <= 0) return null;
+
+    return (
+        <Animated.View style={[styles.scorePopup, animatedStyle]} pointerEvents="none">
+            <LinearGradient
+                colors={[colors.gold[500], colors.gold[400]]}
+                style={styles.scorePopupBg}
+            >
+                <Text style={styles.scorePopupText}>+{points}</Text>
+            </LinearGradient>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Streak Fire Animation
+// ============================================
+
+function StreakFire({ streak }: { streak: number }) {
+    const fireScale = useSharedValue(1);
+    const isHot = streak >= 3;
+
+    useEffect(() => {
+        if (isHot) {
+            fireScale.value = withRepeat(
+                withSequence(
+                    withTiming(1.15, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+                    withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+                ),
+                -1,
+                false,
+            );
+        }
+    }, [isHot, fireScale]);
+
+    const animatedFire = useAnimatedStyle(() => ({
+        transform: [{ scale: fireScale.value }],
+    }));
+
+    return (
+        <Animated.View style={[styles.streakBadge, streak >= 7 && styles.streakBadgeGlow, animatedFire]}>
+            <Ionicons name="flame" size={18} color={isHot ? colors.gold[400] : colors.gold[500]} />
+            <Text style={styles.streakText}>{streak}</Text>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Option Button Component (Enhanced)
 // ============================================
 
 interface OptionButtonProps {
@@ -229,43 +358,84 @@ function OptionButton({
     onPress,
 }: OptionButtonProps) {
     const scale = useSharedValue(1);
+    const shake = useSharedValue(0);
 
     const isCorrect = showResult && correctIndex === index;
     const isWrong = showResult && selected && correctIndex !== index;
 
+    useEffect(() => {
+        if (isWrong) {
+            // Shake animation for wrong answer
+            shake.value = withSequence(
+                withTiming(-6, { duration: 50 }),
+                withTiming(6, { duration: 50 }),
+                withTiming(-4, { duration: 50 }),
+                withTiming(4, { duration: 50 }),
+                withTiming(0, { duration: 50 }),
+            );
+        }
+        if (isCorrect) {
+            // Bounce for correct answer
+            scale.value = withSequence(
+                withSpring(1.03, { damping: 8 }),
+                withSpring(1, { damping: 12 }),
+            );
+        }
+    }, [isCorrect, isWrong, scale, shake]);
+
     const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
+        transform: [
+            { scale: scale.value },
+            { translateX: shake.value },
+        ],
     }));
+
+    const handlePressIn = useCallback(() => {
+        if (hasAnswered) return;
+        scale.value = withSpring(0.96, { damping: 15, stiffness: 300 });
+    }, [hasAnswered, scale]);
+
+    const handlePressOut = useCallback(() => {
+        if (hasAnswered) return;
+        scale.value = withSpring(1, { damping: 10, stiffness: 200 });
+    }, [hasAnswered, scale]);
 
     const handlePress = useCallback(() => {
         if (hasAnswered) return;
-        scale.value = withSequence(
-            withSpring(0.95, { damping: 15 }),
-            withSpring(1, { damping: 10 }),
-        );
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress(index);
-    }, [hasAnswered, index, onPress, scale]);
+    }, [hasAnswered, index, onPress]);
 
     const getBorderColor = () => {
-        if (isCorrect) return colors.gold[500];
+        if (isCorrect) return colors.emerald[500];
         if (isWrong) return colors.coral[500];
         if (selected) return colors.gold[500];
         return colors.border.subtle;
     };
 
     const getBackgroundColor = () => {
-        if (isCorrect) return colors.surface.goldSubtle;
-        if (isWrong) return colors.surface.coralSubtle;
+        if (isCorrect) return colors.emerald[500] + '15';
+        if (isWrong) return colors.coral[500] + '12';
         if (selected) return colors.surface.goldSubtle;
         return colors.surface.glass;
     };
 
+    const getLabelBg = () => {
+        if (isCorrect) return colors.emerald[500];
+        if (isWrong) return colors.coral[500];
+        return colors.obsidian[600];
+    };
+
     return (
         <Animated.View
-            entering={FadeInDown.delay(100 + index * 80).duration(300)}
+            entering={FadeInDown.delay(100 + index * 80).duration(300).springify()}
             style={animatedStyle}
         >
-            <TouchableOpacity
+            <Pressable
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                onPress={handlePress}
+                disabled={hasAnswered}
                 style={[
                     styles.optionButton,
                     {
@@ -273,14 +443,11 @@ function OptionButton({
                         backgroundColor: getBackgroundColor(),
                     },
                 ]}
-                onPress={handlePress}
-                disabled={hasAnswered}
-                activeOpacity={0.8}
                 accessibilityRole="button"
                 accessibilityLabel={`Option ${OPTION_LABELS[index]}: ${text}`}
                 accessibilityState={{ selected, disabled: hasAnswered }}
             >
-                <View style={[styles.optionLabel, isCorrect && styles.optionLabelCorrect, isWrong && styles.optionLabelWrong]}>
+                <View style={[styles.optionLabel, { backgroundColor: getLabelBg() }]}>
                     <Text style={[styles.optionLabelText, (isCorrect || isWrong) && styles.optionLabelTextActive]}>
                         {OPTION_LABELS[index]}
                     </Text>
@@ -289,7 +456,7 @@ function OptionButton({
                 <Text
                     style={[
                         styles.optionText,
-                        selected && styles.optionTextSelected,
+                        selected && !showResult && styles.optionTextSelected,
                         isCorrect && styles.optionTextCorrect,
                         isWrong && styles.optionTextWrong,
                     ]}
@@ -299,31 +466,46 @@ function OptionButton({
                 </Text>
 
                 {showResult && isCorrect && (
-                    <Ionicons name="checkmark-circle" size={22} color={colors.gold[500]} />
+                    <Animated.View entering={FadeIn.duration(200)}>
+                        <Ionicons name="checkmark-circle" size={22} color={colors.emerald[500]} />
+                    </Animated.View>
                 )}
                 {showResult && isWrong && (
-                    <Ionicons name="close-circle" size={22} color={colors.coral[500]} />
+                    <Animated.View entering={FadeIn.duration(200)}>
+                        <Ionicons name="close-circle" size={22} color={colors.coral[500]} />
+                    </Animated.View>
                 )}
-            </TouchableOpacity>
+            </Pressable>
         </Animated.View>
     );
 }
 
 // ============================================
-// Results Screen Component
+// Results Screen Component (Enhanced)
 // ============================================
 
 interface ResultsViewProps {
     score: number;
     correctCount: number;
     streak: number;
+    answers: (boolean | null)[];
     onShare: () => void;
     onBack: () => void;
 }
 
-function ResultsView({ score, correctCount, streak, onShare, onBack }: ResultsViewProps) {
+function ResultsView({ score, correctCount, streak, answers, onShare, onBack }: ResultsViewProps) {
     const insets = useSafeAreaInsets();
     const isHighStreak = streak >= 7;
+    const percentage = Math.round((correctCount / TOTAL_QUESTIONS) * 100);
+
+    const getPerformanceLabel = () => {
+        if (percentage >= 90) return { text: 'Perfect!', icon: 'star' as const, color: colors.gold[400] };
+        if (percentage >= 70) return { text: 'Great Job!', icon: 'trophy' as const, color: colors.gold[500] };
+        if (percentage >= 50) return { text: 'Good Try!', icon: 'thumbs-up' as const, color: colors.azure[400] };
+        return { text: 'Keep Going!', icon: 'fitness' as const, color: colors.coral[400] };
+    };
+
+    const perf = getPerformanceLabel();
 
     return (
         <ScrollView
@@ -333,8 +515,11 @@ function ResultsView({ score, correctCount, streak, onShare, onBack }: ResultsVi
         >
             {/* Trophy / completion header */}
             <Animated.View entering={FadeInDown.delay(100).duration(600)} style={styles.resultsHeader}>
-                <Ionicons name="trophy" size={48} color={colors.gold[500]} />
-                <Text style={styles.resultsTitleText}>Challenge Complete!</Text>
+                <View style={styles.resultsTrophyBg}>
+                    <Ionicons name={perf.icon} size={40} color={perf.color} />
+                </View>
+                <Text style={[styles.resultsTitleText, { color: perf.color }]}>{perf.text}</Text>
+                <Text style={styles.resultsSubtitleText}>Challenge Complete</Text>
             </Animated.View>
 
             {/* Score card */}
@@ -348,17 +533,23 @@ function ResultsView({ score, correctCount, streak, onShare, onBack }: ResultsVi
 
                     <View style={styles.resultsStatsRow}>
                         <View style={styles.resultsStat}>
-                            <Ionicons name="checkmark-circle" size={20} color={colors.emerald[500]} />
+                            <View style={[styles.resultsStatIcon, { backgroundColor: colors.emerald[500] + '15' }]}>
+                                <Ionicons name="checkmark-circle" size={18} color={colors.emerald[500]} />
+                            </View>
                             <Text style={styles.resultsStatValue}>{correctCount}</Text>
                             <Text style={styles.resultsStatLabel}>Correct</Text>
                         </View>
                         <View style={styles.resultsStat}>
-                            <Ionicons name="close-circle" size={20} color={colors.coral[500]} />
+                            <View style={[styles.resultsStatIcon, { backgroundColor: colors.coral[500] + '15' }]}>
+                                <Ionicons name="close-circle" size={18} color={colors.coral[500]} />
+                            </View>
                             <Text style={styles.resultsStatValue}>{TOTAL_QUESTIONS - correctCount}</Text>
                             <Text style={styles.resultsStatLabel}>Wrong</Text>
                         </View>
                         <View style={styles.resultsStat}>
-                            <Ionicons name="speedometer" size={20} color={colors.azure[500]} />
+                            <View style={[styles.resultsStatIcon, { backgroundColor: colors.azure[500] + '15' }]}>
+                                <Ionicons name="speedometer" size={18} color={colors.azure[500]} />
+                            </View>
                             <Text style={styles.resultsStatValue}>{Math.round(score / TOTAL_QUESTIONS)}</Text>
                             <Text style={styles.resultsStatLabel}>Avg Pts</Text>
                         </View>
@@ -366,11 +557,33 @@ function ResultsView({ score, correctCount, streak, onShare, onBack }: ResultsVi
                 </GlassCard>
             </Animated.View>
 
+            {/* Answer breakdown dots */}
+            <Animated.View entering={FadeInDown.delay(350).duration(400)} style={styles.answerBreakdown}>
+                <Text style={styles.answerBreakdownTitle}>Answer Breakdown</Text>
+                <View style={styles.answerBreakdownRow}>
+                    {answers.map((a, i) => (
+                        <View
+                            key={i}
+                            style={[
+                                styles.answerDot,
+                                {
+                                    backgroundColor: a === true ? colors.emerald[500] : a === false ? colors.coral[500] : colors.obsidian[600],
+                                },
+                            ]}
+                        >
+                            <Text style={styles.answerDotText}>{i + 1}</Text>
+                        </View>
+                    ))}
+                </View>
+            </Animated.View>
+
             {/* Streak card */}
             <Animated.View entering={FadeInDown.delay(400).duration(500)}>
                 <GlassCard style={[styles.resultsStreakCard, isHighStreak && styles.resultsStreakCardGlow]} padding="lg">
                     <View style={styles.resultsStreakRow}>
-                        <Ionicons name="flame" size={28} color={isHighStreak ? colors.gold[400] : colors.gold[500]} />
+                        <View style={styles.resultsStreakFireBg}>
+                            <Ionicons name="flame" size={28} color={isHighStreak ? colors.gold[400] : colors.gold[500]} />
+                        </View>
                         <View style={styles.resultsStreakInfo}>
                             <Text style={[styles.resultsStreakValue, isHighStreak && styles.resultsStreakValueGlow]}>
                                 {streak} Day Streak
@@ -385,13 +598,22 @@ function ResultsView({ score, correctCount, streak, onShare, onBack }: ResultsVi
 
             {/* Action buttons */}
             <Animated.View entering={FadeInDown.delay(550).duration(400)} style={styles.resultsActions}>
-                <Button
-                    title="Share Score"
-                    icon="share-outline"
+                <TouchableOpacity
                     onPress={onShare}
-                    variant="primary"
-                    fullWidth
-                />
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Share your score"
+                >
+                    <LinearGradient
+                        colors={[colors.gold[500], colors.gold[400]]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.shareButton}
+                    >
+                        <Ionicons name="share-outline" size={20} color={colors.obsidian[900]} />
+                        <Text style={styles.shareButtonText}>Share Score</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
                 <Button
                     title="Back to Arena"
                     icon="arrow-back"
@@ -415,7 +637,9 @@ function AlreadyCompletedView({ streak, onBack }: { streak: number; onBack: () =
     return (
         <View style={[styles.alreadyContainer, { paddingBottom: insets.bottom + spacing.xl }]}>
             <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.alreadyContent}>
-                <Ionicons name="checkmark-circle" size={64} color={colors.emerald[500]} />
+                <View style={styles.alreadyCheckBg}>
+                    <Ionicons name="checkmark-circle" size={48} color={colors.emerald[500]} />
+                </View>
                 <Text style={styles.alreadyTitle}>Challenge Complete!</Text>
                 <Text style={styles.alreadySubtext}>
                     You've already completed today's daily challenge. Come back tomorrow for a new one!
@@ -462,6 +686,9 @@ export default function DailyChallengeScreen() {
     const [answers, setAnswers] = useState<(boolean | null)[]>(Array(TOTAL_QUESTIONS).fill(null));
     const [streak, setStreak] = useState(0);
     const [questionKey, setQuestionKey] = useState(0);
+    const [lastPoints, setLastPoints] = useState(0);
+    const [showScorePopup, setShowScorePopup] = useState(false);
+    const [correctStreak, setCorrectStreak] = useState(0);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -470,6 +697,7 @@ export default function DailyChallengeScreen() {
     const currentQuestion = questions[questionIndex];
     const category = currentQuestion?.category?.toLowerCase() ?? 'default';
     const categoryColor = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.default;
+    const categoryIcon = CATEGORY_ICONS[category] ?? CATEGORY_ICONS.default;
 
     // ============================================
     // Initialize — check streak & completion
@@ -515,6 +743,7 @@ export default function DailyChallengeScreen() {
                     if (!hasAnswered) {
                         setHasAnswered(true);
                         setShowResult(true);
+                        setCorrectStreak(0);
                         setAnswers((prev) => {
                             const next = [...prev];
                             next[questionIndex] = false;
@@ -541,6 +770,7 @@ export default function DailyChallengeScreen() {
         (index: number) => {
             if (hasAnswered || !currentQuestion) return;
 
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setHasAnswered(true);
             setSelectedAnswer(index);
             if (timerRef.current) clearInterval(timerRef.current);
@@ -552,7 +782,17 @@ export default function DailyChallengeScreen() {
             const points = isCorrect ? 50 + timeBonus : 0;
 
             setScore((prev) => prev + points);
-            if (isCorrect) setCorrectCount((prev) => prev + 1);
+            if (isCorrect) {
+                setCorrectCount((prev) => prev + 1);
+                setCorrectStreak((prev) => prev + 1);
+            } else {
+                setCorrectStreak(0);
+            }
+
+            // Score popup
+            setLastPoints(points);
+            setShowScorePopup(true);
+            setTimeout(() => setShowScorePopup(false), 1600);
 
             setAnswers((prev) => {
                 const next = [...prev];
@@ -603,6 +843,7 @@ export default function DailyChallengeScreen() {
     // ============================================
 
     const completeChallenge = useCallback(async () => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         try {
             const todayStr = getTodayDateString();
             const [lastDate, storedStreak] = await Promise.all([
@@ -642,20 +883,22 @@ export default function DailyChallengeScreen() {
 
     const handleShare = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        const emojiMap = answers.map((a) => a === true ? '\u2705' : a === false ? '\u274C' : '\u2B1C').join('');
         try {
             await Share.share({
-                message: `🔥 Daily Challenge — ${score}/${TOTAL_QUESTIONS * MAX_SCORE_PER_QUESTION} pts | ${correctCount}/${TOTAL_QUESTIONS} correct | ${streak} day streak! #0GArena`,
+                message: `Daily Challenge ${getTodayDateString()}\n${emojiMap}\nScore: ${score}/${TOTAL_QUESTIONS * MAX_SCORE_PER_QUESTION} | ${correctCount}/${TOTAL_QUESTIONS} correct\nStreak: ${streak} days \uD83D\uDD25\n#0GArena`,
             });
         } catch {
             // User cancelled
         }
-    }, [score, correctCount, streak]);
+    }, [score, correctCount, streak, answers]);
 
     // ============================================
     // Navigation
     // ============================================
 
     const handleBack = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         router.back();
     }, [router]);
 
@@ -705,6 +948,7 @@ export default function DailyChallengeScreen() {
                     score={score}
                     correctCount={correctCount}
                     streak={streak}
+                    answers={answers}
                     onShare={handleShare}
                     onBack={handleBack}
                 />
@@ -733,10 +977,7 @@ export default function DailyChallengeScreen() {
                 </TouchableOpacity>
 
                 {/* Streak Badge */}
-                <View style={[styles.streakBadge, streak >= 7 && styles.streakBadgeGlow]}>
-                    <Ionicons name="flame" size={16} color={colors.gold[500]} />
-                    <Text style={styles.streakText}>{streak}</Text>
-                </View>
+                <StreakFire streak={streak} />
 
                 {/* Timer */}
                 <TimerRing timeLeft={timeLeft} />
@@ -751,13 +992,19 @@ export default function DailyChallengeScreen() {
             {/* Progress Dots */}
             <ProgressDots current={questionIndex} total={TOTAL_QUESTIONS} answers={answers} />
 
-            {/* Question Counter */}
+            {/* Question Counter + Correct Streak */}
             <Animated.View entering={FadeIn.duration(300)} style={styles.roundBadgeContainer}>
                 <View style={styles.roundBadge}>
                     <Text style={styles.roundText}>
                         Q {questionIndex + 1}/{TOTAL_QUESTIONS}
                     </Text>
                 </View>
+                {correctStreak >= 2 && (
+                    <Animated.View entering={FadeIn.duration(300)} style={styles.correctStreakBadge}>
+                        <Ionicons name="flame" size={12} color={colors.gold[400]} />
+                        <Text style={styles.correctStreakText}>{correctStreak} in a row!</Text>
+                    </Animated.View>
+                )}
             </Animated.View>
 
             {/* Question Area */}
@@ -770,9 +1017,9 @@ export default function DailyChallengeScreen() {
                 {currentQuestion?.category && (
                     <Animated.View
                         entering={FadeInDown.delay(50).duration(300)}
-                        style={[styles.categoryBadge, { backgroundColor: categoryColor + '20', borderColor: categoryColor + '40' }]}
+                        style={[styles.categoryBadge, { backgroundColor: categoryColor + '15', borderColor: categoryColor + '30' }]}
                     >
-                        <View style={[styles.categoryDot, { backgroundColor: categoryColor }]} />
+                        <Ionicons name={categoryIcon as any} size={14} color={categoryColor} />
                         <Text style={[styles.categoryText, { color: categoryColor }]}>
                             {currentQuestion.category}
                         </Text>
@@ -788,6 +1035,9 @@ export default function DailyChallengeScreen() {
                     {currentQuestion?.text}
                 </Animated.Text>
             </Animated.View>
+
+            {/* Score Popup */}
+            <ScorePopup points={lastPoints} visible={showScorePopup} />
 
             {/* Answer Options */}
             <View style={styles.optionsContainer}>
@@ -810,18 +1060,24 @@ export default function DailyChallengeScreen() {
                 {showResult && (
                     <Animated.View entering={FadeInDown.duration(300)} style={styles.resultBadge}>
                         {selectedAnswer === currentQuestion?.correct ? (
-                            <>
-                                <Ionicons name="checkmark-circle" size={18} color={colors.emerald[500]} />
-                                <Text style={[styles.resultText, { color: colors.emerald[500] }]}>Correct!</Text>
+                            <LinearGradient
+                                colors={[colors.emerald[500] + '20', colors.emerald[500] + '08']}
+                                style={styles.resultBadgeBg}
+                            >
+                                <Ionicons name="checkmark-circle" size={20} color={colors.emerald[500]} />
+                                <Text style={[styles.resultText, { color: colors.emerald[400] }]}>Correct!</Text>
                                 <Text style={styles.bonusText}>+{50 + Math.round((timeLeft / TIMER_DURATION) * 50)} pts</Text>
-                            </>
+                            </LinearGradient>
                         ) : (
-                            <>
-                                <Ionicons name="close-circle" size={18} color={colors.coral[500]} />
-                                <Text style={[styles.resultText, { color: colors.coral[500] }]}>
+                            <LinearGradient
+                                colors={[colors.coral[500] + '20', colors.coral[500] + '08']}
+                                style={styles.resultBadgeBg}
+                            >
+                                <Ionicons name="close-circle" size={20} color={colors.coral[500]} />
+                                <Text style={[styles.resultText, { color: colors.coral[400] }]}>
                                     {selectedAnswer === null ? "Time's up!" : 'Wrong!'}
                                 </Text>
-                            </>
+                            </LinearGradient>
                         )}
                     </Animated.View>
                 )}
@@ -848,21 +1104,23 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.sm,
     },
     leaveButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         backgroundColor: colors.surface.glass,
         alignItems: 'center',
         justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
     },
     streakBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
         backgroundColor: colors.surface.glass,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
-        borderRadius: 10,
+        paddingHorizontal: spacing.sm + 2,
+        paddingVertical: spacing.xs + 2,
+        borderRadius: 12,
         borderWidth: 1,
         borderColor: colors.border.subtle,
     },
@@ -885,6 +1143,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
+        backgroundColor: colors.surface.glass,
+        paddingHorizontal: spacing.sm + 2,
+        paddingVertical: spacing.xs + 2,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
     },
     scoreText: {
         fontSize: typography.fontSize.lg,
@@ -903,8 +1167,15 @@ const styles = StyleSheet.create({
     timerSvg: {
         position: 'absolute',
     },
+    timerGlow: {
+        position: 'absolute',
+        width: TIMER_SIZE + 12,
+        height: TIMER_SIZE + 12,
+        borderRadius: (TIMER_SIZE + 12) / 2,
+        backgroundColor: colors.coral[500] + '10',
+    },
     timerText: {
-        fontSize: typography.fontSize.lg,
+        fontSize: typography.fontSize.xl,
         fontWeight: '700',
         color: colors.text.primary,
         fontFamily: 'Inter-Bold',
@@ -939,7 +1210,10 @@ const styles = StyleSheet.create({
 
     // ---- Round Badge ----
     roundBadgeContainer: {
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
         paddingBottom: spacing.xs,
     },
     roundBadge: {
@@ -956,6 +1230,22 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
         fontFamily: 'Inter-Bold',
     },
+    correctStreakBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: colors.gold[500] + '15',
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs + 2,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '30',
+    },
+    correctStreakText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '700',
+        color: colors.gold[400],
+    },
 
     // ---- Question Area ----
     questionArea: {
@@ -968,21 +1258,16 @@ const styles = StyleSheet.create({
     categoryBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.xs,
+        gap: spacing.xs + 2,
         paddingHorizontal: spacing.md,
-        paddingVertical: spacing.xs + 1,
+        paddingVertical: spacing.xs + 2,
         borderRadius: 20,
         borderWidth: 1,
         marginBottom: spacing.lg,
     },
-    categoryDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-    },
     categoryText: {
         fontSize: typography.fontSize.xs,
-        fontWeight: '600',
+        fontWeight: '700',
         textTransform: 'uppercase',
         letterSpacing: 1,
     },
@@ -995,6 +1280,25 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Bold',
     },
 
+    // ---- Score Popup ----
+    scorePopup: {
+        position: 'absolute',
+        top: '35%',
+        alignSelf: 'center',
+        zIndex: 100,
+    },
+    scorePopupBg: {
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.sm,
+        borderRadius: 20,
+    },
+    scorePopupText: {
+        fontSize: typography.fontSize['2xl'],
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+        color: colors.obsidian[900],
+    },
+
     // ---- Options ----
     optionsContainer: {
         paddingHorizontal: spacing.lg,
@@ -1004,34 +1308,27 @@ const styles = StyleSheet.create({
     optionButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        height: 56,
+        height: 58,
         borderRadius: 14,
         paddingHorizontal: spacing.md,
-        borderWidth: 1,
+        borderWidth: 1.5,
         gap: spacing.md,
     },
     optionLabel: {
-        width: 28,
-        height: 28,
-        borderRadius: 8,
-        backgroundColor: colors.obsidian[600],
+        width: 30,
+        height: 30,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    optionLabelCorrect: {
-        backgroundColor: colors.gold[500],
-    },
-    optionLabelWrong: {
-        backgroundColor: colors.coral[500],
+    optionLabelTextActive: {
+        color: colors.obsidian[900],
     },
     optionLabelText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
         color: colors.text.secondary,
         fontFamily: 'Inter-Bold',
-    },
-    optionLabelTextActive: {
-        color: colors.obsidian[900],
     },
     optionText: {
         flex: 1,
@@ -1043,7 +1340,7 @@ const styles = StyleSheet.create({
         color: colors.gold[400],
     },
     optionTextCorrect: {
-        color: colors.gold[500],
+        color: colors.emerald[400],
     },
     optionTextWrong: {
         color: colors.coral[400],
@@ -1056,12 +1353,19 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.sm,
-        minHeight: 44,
+        minHeight: 48,
     },
     resultBadge: {
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    resultBadgeBg: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.xs,
+        gap: spacing.sm,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.sm + 2,
+        borderRadius: 16,
     },
     resultText: {
         fontSize: typography.fontSize.base,
@@ -1089,12 +1393,26 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: spacing.xl,
     },
+    resultsTrophyBg: {
+        width: 80,
+        height: 80,
+        borderRadius: 24,
+        backgroundColor: colors.surface.goldSubtle,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '20',
+        marginBottom: spacing.md,
+    },
     resultsTitleText: {
         fontSize: typography.fontSize['2xl'],
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: colors.gold[400],
-        marginTop: spacing.md,
+    },
+    resultsSubtitleText: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.secondary,
+        marginTop: spacing.xs,
     },
     resultsScoreCard: {
         alignItems: 'center',
@@ -1131,7 +1449,14 @@ const styles = StyleSheet.create({
     },
     resultsStat: {
         alignItems: 'center',
-        gap: 4,
+        gap: 6,
+    },
+    resultsStatIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     resultsStatValue: {
         fontSize: typography.fontSize.xl,
@@ -1143,6 +1468,37 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.xs,
         color: colors.text.muted,
     },
+
+    // ---- Answer Breakdown ----
+    answerBreakdown: {
+        alignItems: 'center',
+        marginBottom: spacing.lg,
+    },
+    answerBreakdownTitle: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.secondary,
+        marginBottom: spacing.md,
+    },
+    answerBreakdownRow: {
+        flexDirection: 'row',
+        gap: spacing.sm,
+    },
+    answerDot: {
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    answerDotText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+        color: colors.text.primary,
+    },
+
+    // ---- Streak Card ----
     resultsStreakCard: {
         marginBottom: spacing.xl,
     },
@@ -1158,6 +1514,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
+    },
+    resultsStreakFireBg: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        backgroundColor: colors.gold[500] + '15',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '25',
     },
     resultsStreakInfo: {
         flex: 1,
@@ -1176,6 +1542,25 @@ const styles = StyleSheet.create({
         color: colors.text.secondary,
         marginTop: 2,
     },
+
+    // ---- Share Button ----
+    shareButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        paddingVertical: spacing.md + 2,
+        borderRadius: 14,
+        marginBottom: spacing.md,
+    },
+    shareButtonText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+        color: colors.obsidian[900],
+    },
+
+    // ---- Actions ----
     resultsActions: {
         gap: spacing.md,
     },
@@ -1193,6 +1578,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.md,
+    },
+    alreadyCheckBg: {
+        width: 80,
+        height: 80,
+        borderRadius: 24,
+        backgroundColor: colors.emerald[500] + '12',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: colors.emerald[500] + '25',
     },
     alreadyTitle: {
         fontSize: typography.fontSize['2xl'],
