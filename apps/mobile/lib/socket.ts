@@ -398,6 +398,10 @@ class SocketManager {
         this.socket?.emit('game:action', { code, action, payload });
     }
 
+    updateGameSettings(code: string, settings: Record<string, any>): void {
+        this.socket?.emit('game:settings', { code, settings });
+    }
+
     leaveGame(code: string): void {
         this.socket?.emit('game:leave', { code });
     }

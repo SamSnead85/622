@@ -31,6 +31,7 @@ import Animated, {
     Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // Clipboard via Share API (no extra dependency)
 import { colors, typography, spacing } from '@zerog/ui';
 import { ScreenHeader, GlassCard, Avatar, LoadingView, GameInviteSheet } from '../../../components';
@@ -163,24 +164,42 @@ export default function LobbyScreen() {
     const [selectedRounds, setSelectedRounds] = useState(5);
     const [isJoining, setIsJoining] = useState(false);
     const [showInvite, setShowInvite] = useState(false);
+    const [socketConnected, setSocketConnected] = useState(socketManager.isConnected);
 
     const roomCode = (code || '').toUpperCase();
     const { players, isHost, status, gameType, error } = gameStore;
     const minPlayers = MIN_PLAYERS[gameType || 'trivia'] || 2;
     const canStart = players.filter((p) => p.isConnected).length >= minPlayers;
 
-    // ---- Join game on mount ----
+    // ---- Join game on mount (supports guest players) ----
     useEffect(() => {
         if (!roomCode) return;
 
         // If we're already in this game (host), don't re-join
         if (gameStore.gameCode === roomCode && isHost) return;
 
-        setIsJoining(true);
-        gameStore.joinGame(roomCode, authStore.user?.displayName).finally(() => {
-            setIsJoining(false);
-        });
+        const joinWithName = async () => {
+            setIsJoining(true);
+            try {
+                // Resolve player name: authenticated user > guest name > fallback
+                const guestName = await AsyncStorage.getItem('@guest-name');
+                const playerName = authStore.user?.displayName || guestName || 'Player';
+                await gameStore.joinGame(roomCode, playerName);
+            } finally {
+                setIsJoining(false);
+            }
+        };
+
+        joinWithName();
     }, [roomCode]);
+
+    // ---- Socket connection status ----
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setSocketConnected(socketManager.isConnected);
+        }, 3000);
+        return () => clearInterval(interval);
+    }, []);
 
     // ---- Socket event listeners ----
     useEffect(() => {
@@ -315,6 +334,14 @@ export default function LobbyScreen() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
+                {/* ---- Connection Status ---- */}
+                {!socketConnected && (
+                    <Animated.View entering={FadeInDown.duration(300)} style={styles.connectionBanner}>
+                        <Ionicons name="cloud-offline-outline" size={16} color={colors.coral[400]} />
+                        <Text style={styles.connectionBannerText}>Reconnecting to server...</Text>
+                    </Animated.View>
+                )}
+
                 {/* ---- Room Code Display ---- */}
                 <Animated.View entering={FadeInDown.delay(50).duration(500)}>
                     <TouchableOpacity
@@ -324,7 +351,10 @@ export default function LobbyScreen() {
                         accessibilityLabel={`Room code: ${roomCode}. Tap to copy`}
                     >
                         <GlassCard gold style={styles.codeCard} padding="lg">
-                            <Text style={styles.codeLabel}>ROOM CODE</Text>
+                            <View style={styles.codeHeaderRow}>
+                                <Text style={styles.codeLabel}>ROOM CODE</Text>
+                                <View style={[styles.connectionDot, { backgroundColor: socketConnected ? colors.emerald[500] : colors.coral[500] }]} />
+                            </View>
                             <View style={styles.codeRow}>
                                 <Text style={styles.codeText}>{roomCode}</Text>
                                 <View style={styles.copyIcon}>
@@ -378,6 +408,7 @@ export default function LobbyScreen() {
                                         onPress={() => {
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                             setSelectedRounds(rounds);
+                                            socketManager.updateGameSettings(roomCode, { rounds });
                                         }}
                                         accessibilityRole="button"
                                         accessibilityLabel={`${rounds} rounds`}
@@ -496,13 +527,41 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: spacing.xl,
     },
+    connectionBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        backgroundColor: colors.coral[500] + '15',
+        borderRadius: 12,
+        paddingVertical: spacing.sm,
+        marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.coral[500] + '30',
+    },
+    connectionBannerText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.coral[400],
+    },
+    codeHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.sm,
+    },
+    connectionDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+    },
     codeLabel: {
         fontSize: typography.fontSize.xs,
         fontWeight: '600',
         color: colors.text.muted,
         textTransform: 'uppercase',
         letterSpacing: 2,
-        marginBottom: spacing.sm,
     },
     codeRow: {
         flexDirection: 'row',

@@ -211,6 +211,17 @@ function RootLayout() {
     useEffect(() => {
         const handleDeepLink = (event: { url: string }) => {
             const url = event.url;
+
+            // Helper: route game links based on auth state
+            const navigateToGame = (gameCode: string) => {
+                if (isAuthenticated) {
+                    router.push(`/games/lobby/${gameCode}` as any);
+                } else {
+                    // Guest flow — collect a display name first
+                    router.push(`/games/guest-join?code=${gameCode}` as any);
+                }
+            };
+
             try {
                 // Normalize URL for parsing - convert custom scheme to http for URL constructor
                 let urlToParse = url;
@@ -227,7 +238,7 @@ function RootLayout() {
                     if (type === 'game' && id) {
                         // Handle game codes (6 character alphanumeric)
                         const gameCode = id.toUpperCase();
-                        router.push(`/games/lobby/${gameCode}` as any);
+                        navigateToGame(gameCode);
                     } else if (type === 'post' && id) {
                         router.push(`/post/${id}` as any);
                     } else if (type === 'community' && id) {
@@ -242,7 +253,7 @@ function RootLayout() {
                 const gameMatch = url.match(/\/game\/([A-Z0-9]{6})/i);
                 if (gameMatch) {
                     const gameCode = gameMatch[1].toUpperCase();
-                    router.push(`/games/lobby/${gameCode}` as any);
+                    navigateToGame(gameCode);
                     return;
                 }
                 
@@ -275,7 +286,7 @@ function RootLayout() {
         // Listen for new deep links while app is open
         const subscription = Linking.addEventListener('url', handleDeepLink);
         return () => subscription.remove();
-    }, []);
+    }, [isAuthenticated]);
 
     // ============================================
     // Render

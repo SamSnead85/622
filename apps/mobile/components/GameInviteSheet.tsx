@@ -13,12 +13,13 @@ import {
     Share,
     Pressable,
     Dimensions,
+    Linking,
 } from 'react-native';
-// No expo-clipboard needed — using Share API
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { showSuccess } from '../stores/toastStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DEEP_LINK_BASE = 'https://0gravity.ai/game';
@@ -31,24 +32,28 @@ interface GameInviteSheetProps {
 
 export function GameInviteSheet({ code, visible, onClose }: GameInviteSheetProps) {
     const gameUrl = `${DEEP_LINK_BASE}/${code}`;
+    const shareMessage = `🎮 Join my game on 0G!\n\nRoom Code: ${code}\n\nTap to join: ${gameUrl}\n\nDon't have the app? No worries — you can play as a guest!`;
 
-    // ---- Copy room code ----
+    // ---- Copy link via share sheet ----
     const handleCopy = useCallback(async () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        await Share.share({ message: `Join my game on 0G! Code: ${code}\nhttps://0gravity.ai/game/${code}` });
-    }, [code]);
+        try {
+            await Share.share({ message: gameUrl });
+        } catch {
+            // User cancelled
+        }
+        showSuccess('Link shared!');
+    }, [gameUrl]);
 
     // ---- Share via native sheet ----
     const handleShare = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         try {
-            await Share.share({
-                message: `Join my game on 0G Arena! 🎮\n\nRoom Code: ${code}\nJoin here: ${gameUrl}`,
-            });
+            await Share.share({ message: shareMessage });
         } catch {
             // User cancelled
         }
-    }, [code, gameUrl]);
+    }, [shareMessage]);
 
     return (
         <Modal
@@ -115,8 +120,47 @@ export function GameInviteSheet({ code, visible, onClose }: GameInviteSheetProps
                             </View>
                         </Animated.View>
 
-                        {/* ---- Share Button ---- */}
+                        {/* ---- Quick Share Buttons ---- */}
                         <Animated.View entering={FadeInDown.delay(300).duration(400)}>
+                            <View style={styles.quickShareRow}>
+                                <TouchableOpacity
+                                    onPress={() => Linking.openURL(`whatsapp://send?text=${encodeURIComponent(shareMessage)}`)}
+                                    activeOpacity={0.7}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Share via WhatsApp"
+                                >
+                                    <View style={styles.quickShareBtn}>
+                                        <Ionicons name="logo-whatsapp" size={24} color={colors.emerald[500]} />
+                                        <Text style={styles.quickShareLabel}>WhatsApp</Text>
+                                    </View>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => Linking.openURL(`sms:&body=${encodeURIComponent(shareMessage)}`)}
+                                    activeOpacity={0.7}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Share via Messages"
+                                >
+                                    <View style={styles.quickShareBtn}>
+                                        <Ionicons name="chatbubble-outline" size={24} color={colors.azure[500]} />
+                                        <Text style={styles.quickShareLabel}>Message</Text>
+                                    </View>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={handleCopy}
+                                    activeOpacity={0.7}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Copy invite link"
+                                >
+                                    <View style={styles.quickShareBtn}>
+                                        <Ionicons name="copy-outline" size={24} color={colors.gold[500]} />
+                                        <Text style={styles.quickShareLabel}>Copy Link</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
+                        </Animated.View>
+
+                        {/* ---- Share Button ---- */}
+                        <Animated.View entering={FadeInDown.delay(400).duration(400)}>
                             <TouchableOpacity
                                 onPress={handleShare}
                                 activeOpacity={0.8}
@@ -130,7 +174,7 @@ export function GameInviteSheet({ code, visible, onClose }: GameInviteSheetProps
                         </Animated.View>
 
                         {/* ---- Manual Code Note ---- */}
-                        <Animated.View entering={FadeInDown.delay(400).duration(400)}>
+                        <Animated.View entering={FadeInDown.delay(500).duration(400)}>
                             <View style={styles.noteContainer}>
                                 <Ionicons name="keypad-outline" size={16} color={colors.text.muted} />
                                 <Text style={styles.noteText}>
@@ -261,6 +305,30 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.xs,
         color: colors.text.muted,
         marginTop: spacing.sm,
+    },
+
+    // ---- Quick Share ----
+    quickShareRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: spacing.xl,
+        marginBottom: spacing.lg,
+    },
+    quickShareBtn: {
+        alignItems: 'center',
+        gap: spacing.xs,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.md,
+        borderRadius: 14,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        minWidth: 80,
+    },
+    quickShareLabel: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.text.secondary,
     },
 
     // ---- Share Button ----

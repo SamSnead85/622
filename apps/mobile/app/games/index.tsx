@@ -34,6 +34,7 @@ import Animated, {
     interpolate,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
 import { ScreenHeader } from '../../components';
 import { GlassCard } from '../../components';
@@ -260,14 +261,40 @@ function GameCard({ game, index, onPlay }: GameCardProps) {
 }
 
 // ============================================
+// Game Stats Helper
+// ============================================
+
+export async function updateGameStats(won: boolean) {
+    try {
+        const data = await AsyncStorage.getItem('@game-stats');
+        const stats = data ? JSON.parse(data) : { played: 0, wins: 0, streak: 0 };
+        stats.played++;
+        if (won) { stats.wins++; stats.streak++; } else { stats.streak = 0; }
+        await AsyncStorage.setItem('@game-stats', JSON.stringify(stats));
+    } catch {}
+}
+
+// ============================================
 // Stats Section
 // ============================================
 
 function StatsSection() {
+    const [gameStats, setGameStats] = useState({ played: 0, winRate: 0, streak: 0 });
+
+    useEffect(() => {
+        AsyncStorage.getItem('@game-stats').then(data => {
+            if (data) {
+                const parsed = JSON.parse(data);
+                const winRate = parsed.played > 0 ? Math.round((parsed.wins / parsed.played) * 100) : 0;
+                setGameStats({ played: parsed.played, winRate, streak: parsed.streak || 0 });
+            }
+        }).catch(() => {});
+    }, []);
+
     const stats = [
-        { label: 'Games Played', value: '24', icon: 'game-controller' as const, color: colors.azure[500] },
-        { label: 'Win Rate', value: '68%', icon: 'trophy' as const, color: colors.gold[500] },
-        { label: 'Streak', value: '5', icon: 'flame' as const, color: colors.coral[500] },
+        { label: 'Games Played', value: String(gameStats.played), icon: 'game-controller' as const, color: colors.azure[500] },
+        { label: 'Win Rate', value: `${gameStats.winRate}%`, icon: 'trophy' as const, color: colors.gold[500] },
+        { label: 'Streak', value: String(gameStats.streak), icon: 'flame' as const, color: colors.coral[500] },
     ];
 
     return (
@@ -424,6 +451,9 @@ export default function GamesHubScreen() {
     const [isCreating, setIsCreating] = useState(false);
     const inputRef = useRef<TextInput>(null);
 
+    // ---- Auth state for guest flow ----
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
     // ---- Join Game by Code ----
     const handleJoin = useCallback(() => {
         const code = roomCode.trim().toUpperCase();
@@ -433,8 +463,15 @@ export default function GamesHubScreen() {
             return;
         }
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        router.push(`/games/lobby/${code}`);
-    }, [roomCode, router]);
+
+        if (isAuthenticated) {
+            // Authenticated users go directly to the lobby
+            router.push(`/games/lobby/${code}`);
+        } else {
+            // Guests go through the guest-join flow
+            router.push(`/games/guest-join?code=${code}` as any);
+        }
+    }, [roomCode, router, isAuthenticated]);
 
     // ---- Create & Play a Game ----
     const handlePlay = useCallback(async (type: string) => {
@@ -469,6 +506,12 @@ export default function GamesHubScreen() {
     const handleDaily = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         router.push('/games/daily');
+    }, [router]);
+
+    // ---- Solo Practice ----
+    const handlePractice = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push('/games/practice');
     }, [router]);
 
     return (
@@ -551,6 +594,59 @@ export default function GamesHubScreen() {
                         />
                     ))}
                 </View>
+
+                {/* ---- Solo Practice Banner ---- */}
+                <Animated.View entering={FadeInUp.delay(650).duration(500)}>
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={handlePractice}
+                        accessibilityRole="button"
+                        accessibilityLabel="Solo Practice"
+                    >
+                        <GlassCard style={styles.practiceCard} padding="md">
+                            <View style={styles.dailyContent}>
+                                <View style={styles.dailyLeft}>
+                                    <View style={styles.dailyIconRow}>
+                                        <LinearGradient
+                                            colors={[colors.azure[500], colors.azure[400]]}
+                                            style={styles.dailyFireBg}
+                                        >
+                                            <Ionicons name="school" size={20} color={colors.obsidian[900]} />
+                                        </LinearGradient>
+                                        <View>
+                                            <Text style={styles.practiceTitle}>Solo Practice</Text>
+                                            <Text style={styles.dailyDesc}>
+                                                280+ questions across 11 topics
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            </View>
+                            <View style={styles.practiceTopicRow}>
+                                <View style={styles.practiceTopicChip}>
+                                    <Ionicons name="moon-outline" size={12} color={colors.gold[400]} />
+                                    <Text style={styles.practiceTopicText}>Islamic</Text>
+                                </View>
+                                <View style={styles.practiceTopicChip}>
+                                    <Ionicons name="flask-outline" size={12} color={colors.azure[400]} />
+                                    <Text style={styles.practiceTopicText}>Science</Text>
+                                </View>
+                                <View style={styles.practiceTopicChip}>
+                                    <Ionicons name="globe-outline" size={12} color={colors.emerald[400]} />
+                                    <Text style={styles.practiceTopicText}>Geography</Text>
+                                </View>
+                                <View style={styles.practiceTopicChip}>
+                                    <Ionicons name="ellipsis-horizontal" size={12} color={colors.text.muted} />
+                                    <Text style={styles.practiceTopicText}>+8 more</Text>
+                                </View>
+                            </View>
+                            <View style={styles.dailyArrowRow}>
+                                <Text style={[styles.dailyArrowText, { color: colors.azure[500] }]}>Choose Topics & Play</Text>
+                                <Ionicons name="chevron-forward" size={16} color={colors.azure[500]} />
+                            </View>
+                        </GlassCard>
+                    </TouchableOpacity>
+                </Animated.View>
 
                 {/* ---- Daily Challenge Banner ---- */}
                 <Animated.View entering={FadeInUp.delay(700).duration(500)}>
@@ -964,6 +1060,39 @@ const styles = StyleSheet.create({
         fontWeight: '800',
         color: colors.text.primary,
         letterSpacing: 1,
+    },
+
+    // ---- Solo Practice ----
+    practiceCard: {
+        marginBottom: spacing.md,
+    },
+    practiceTitle: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+        color: colors.azure[400],
+    },
+    practiceTopicRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.xs,
+        marginBottom: spacing.sm,
+    },
+    practiceTopicChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: colors.surface.glass,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    practiceTopicText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: colors.text.muted,
     },
 
     // ---- Daily Challenge ----

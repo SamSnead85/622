@@ -41,6 +41,11 @@ import Svg, { Circle } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
 import { ScreenHeader, GlassCard, Button } from '../../components';
+import {
+    getDailyQuestions as getEngineDailyQuestions,
+    CATEGORY_INFO,
+    type TriviaQuestion,
+} from '../../lib/triviaEngine';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -63,71 +68,52 @@ const STORAGE_KEY_LAST_DATE = 'daily_challenge_last_date';
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // ============================================
-// Category Colors
+// Category Colors & Icons (from engine)
 // ============================================
 
 const CATEGORY_COLORS: Record<string, string> = {
-    geography: colors.emerald[500],
-    art: colors.azure[400],
-    science: colors.azure[500],
+    islamic: colors.gold[500],
+    quran: colors.gold[400],
     history: colors.amber[500],
+    science: colors.azure[500],
+    geography: colors.emerald[500],
+    pop_culture: colors.coral[500],
+    sports: colors.emerald[400],
+    food: colors.gold[500],
+    technology: colors.azure[400],
     literature: colors.azure[400],
-    nature: colors.emerald[500],
-    culture: colors.coral[500],
+    general: colors.gold[500],
     default: colors.gold[500],
 };
 
 const CATEGORY_ICONS: Record<string, string> = {
-    geography: 'globe-outline',
-    art: 'color-palette-outline',
-    science: 'flask-outline',
+    islamic: 'moon-outline',
+    quran: 'book-outline',
     history: 'time-outline',
-    literature: 'book-outline',
-    nature: 'leaf-outline',
-    culture: 'people-outline',
+    science: 'flask-outline',
+    geography: 'globe-outline',
+    pop_culture: 'film-outline',
+    sports: 'football-outline',
+    food: 'restaurant-outline',
+    technology: 'hardware-chip-outline',
+    literature: 'library-outline',
+    general: 'bulb-outline',
     default: 'help-circle-outline',
 };
 
 // ============================================
-// Question Pool (20 questions)
+// Map TriviaEngine questions to daily format
 // ============================================
 
-const dailyQuestions = [
-    { text: 'What is the largest ocean on Earth?', options: ['Atlantic', 'Pacific', 'Indian', 'Arctic'], correct: 1, category: 'Geography' },
-    { text: 'Who painted the Mona Lisa?', options: ['Michelangelo', 'Raphael', 'Leonardo da Vinci', 'Donatello'], correct: 2, category: 'Art' },
-    { text: 'What is the chemical symbol for gold?', options: ['Go', 'Gd', 'Au', 'Ag'], correct: 2, category: 'Science' },
-    { text: 'Which planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Jupiter', 'Saturn'], correct: 1, category: 'Science' },
-    { text: 'What year did the Berlin Wall fall?', options: ['1987', '1989', '1991', '1993'], correct: 1, category: 'History' },
-    { text: 'What is the smallest country in the world?', options: ['Monaco', 'Vatican City', 'San Marino', 'Liechtenstein'], correct: 1, category: 'Geography' },
-    { text: 'Who wrote "Romeo and Juliet"?', options: ['Charles Dickens', 'William Shakespeare', 'Jane Austen', 'Mark Twain'], correct: 1, category: 'Literature' },
-    { text: 'What is the speed of light in km/s?', options: ['150,000', '300,000', '450,000', '600,000'], correct: 1, category: 'Science' },
-    { text: 'Which element has the atomic number 1?', options: ['Helium', 'Hydrogen', 'Lithium', 'Carbon'], correct: 1, category: 'Science' },
-    { text: 'What is the capital of Japan?', options: ['Osaka', 'Kyoto', 'Tokyo', 'Nagoya'], correct: 2, category: 'Geography' },
-    { text: 'Who discovered penicillin?', options: ['Louis Pasteur', 'Alexander Fleming', 'Joseph Lister', 'Robert Koch'], correct: 1, category: 'Science' },
-    { text: 'What is the largest mammal?', options: ['African Elephant', 'Blue Whale', 'Giraffe', 'Hippopotamus'], correct: 1, category: 'Nature' },
-    { text: 'In what year did World War I begin?', options: ['1912', '1914', '1916', '1918'], correct: 1, category: 'History' },
-    { text: 'What is the hardest natural substance?', options: ['Gold', 'Iron', 'Diamond', 'Titanium'], correct: 2, category: 'Science' },
-    { text: 'Which country has the most pyramids?', options: ['Egypt', 'Mexico', 'Sudan', 'Peru'], correct: 2, category: 'Geography' },
-    { text: 'What is the most spoken language in the world?', options: ['English', 'Spanish', 'Mandarin Chinese', 'Hindi'], correct: 2, category: 'Culture' },
-    { text: 'How many bones are in the adult human body?', options: ['186', '196', '206', '216'], correct: 2, category: 'Science' },
-    { text: 'Who was the first person to walk on the moon?', options: ['Buzz Aldrin', 'Neil Armstrong', 'Michael Collins', 'Yuri Gagarin'], correct: 1, category: 'History' },
-    { text: 'What is the deepest ocean trench?', options: ['Tonga Trench', 'Mariana Trench', 'Java Trench', 'Puerto Rico Trench'], correct: 1, category: 'Geography' },
-    { text: 'What is the longest river in Africa?', options: ['Congo', 'Niger', 'Nile', 'Zambezi'], correct: 2, category: 'Geography' },
-];
-
-// ============================================
-// Date-seeded random selection
-// ============================================
-
-function getDailyQuestions(): typeof dailyQuestions {
-    const today = new Date();
-    const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-    const shuffled = [...dailyQuestions].sort((a, b) => {
-        const hashA = (seed * 31 + dailyQuestions.indexOf(a)) % 1000;
-        const hashB = (seed * 31 + dailyQuestions.indexOf(b)) % 1000;
-        return hashA - hashB;
-    });
-    return shuffled.slice(0, TOTAL_QUESTIONS);
+function getDailyQuestionsFromEngine() {
+    const engineQs = getEngineDailyQuestions();
+    return engineQs.map(q => ({
+        text: q.question,
+        options: q.options,
+        correct: q.correctIndex,
+        category: CATEGORY_INFO[q.category]?.label || q.category,
+        categoryKey: q.category,
+    }));
 }
 
 function getTodayDateString(): string {
@@ -692,10 +678,10 @@ export default function DailyChallengeScreen() {
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // Get today's questions
-    const questions = useMemo(() => getDailyQuestions(), []);
+    // Get today's questions from engine (280+ question bank)
+    const questions = useMemo(() => getDailyQuestionsFromEngine(), []);
     const currentQuestion = questions[questionIndex];
-    const category = currentQuestion?.category?.toLowerCase() ?? 'default';
+    const category = (currentQuestion as any)?.categoryKey ?? 'default';
     const categoryColor = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.default;
     const categoryIcon = CATEGORY_ICONS[category] ?? CATEGORY_ICONS.default;
 

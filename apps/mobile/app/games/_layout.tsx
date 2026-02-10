@@ -11,6 +11,7 @@ export default function GamesLayout() {
             }}
         >
             <Stack.Screen name="index" />
+            <Stack.Screen name="guest-join" />
             <Stack.Screen name="lobby/[code]" />
             <Stack.Screen name="results/[code]" />
             <Stack.Screen name="trivia/[code]" />
@@ -19,6 +20,7 @@ export default function GamesLayout() {
             <Stack.Screen name="infiltrator/[code]" />
             <Stack.Screen name="cipher/[code]" />
             <Stack.Screen name="daily" />
+            <Stack.Screen name="practice" />
         </Stack>
     );
 }

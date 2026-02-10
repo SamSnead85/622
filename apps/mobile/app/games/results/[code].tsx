@@ -35,7 +35,8 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { colors, typography, spacing } from '@zerog/ui';
 import { ScreenHeader, GlassCard, Avatar } from '../../../components';
-import { useGameStore } from '../../../stores';
+import { useGameStore, useAuthStore } from '../../../stores';
+import { updateGameStats } from '../index';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -283,10 +284,15 @@ export default function ResultsScreen() {
     const podiumPlayers = sortedPlayers.slice(0, 3);
     const remainingPlayers = sortedPlayers.slice(3);
 
-    // Trigger haptic on mount
+    const currentUserId = useAuthStore((s) => s.user?.id);
+
+    // Trigger haptic on mount & update stats
     useEffect(() => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }, []);
+        // Determine if current user won
+        const isWinner = sortedPlayers.length > 0 && sortedPlayers[0]?.userId === currentUserId;
+        updateGameStats(!!isWinner).catch(() => {});
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ---- Play Again ----
     const handlePlayAgain = useCallback(async () => {
