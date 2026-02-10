@@ -18,6 +18,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { useTranslation } from 'react-i18next';
 import { apiFetch, API } from '../../lib/api';
 import { ScreenHeader, LoadingView } from '../../components';
+import { showError } from '../../stores/toastStore';
 
 interface NotificationPrefs {
     pushEnabled: boolean;
@@ -93,7 +94,7 @@ export default function NotificationPrefsScreen() {
                 },
             });
         } catch {
-            // Use defaults
+            showError("Couldn't load notification settings");
         } finally {
             setLoading(false);
         }
@@ -121,6 +122,7 @@ export default function NotificationPrefsScreen() {
             setHasChanges(false);
         } catch {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            showError('Failed to save notification settings');
         } finally {
             setSaving(false);
         }
@@ -163,6 +165,7 @@ export default function NotificationPrefsScreen() {
                         }}
                         trackColor={{ false: colors.obsidian[600], true: colors.gold[500] + '60' }}
                         thumbColor={prefs.pushEnabled ? colors.gold[500] : colors.text.muted}
+                        accessibilityLabel="Toggle push notifications"
                     />
                 </Animated.View>
 
@@ -176,6 +179,8 @@ export default function NotificationPrefsScreen() {
                                 style={styles.channelRow}
                                 onPress={() => toggleChannel(ch.key)}
                                 activeOpacity={0.7}
+                                accessibilityLabel={`Toggle ${ch.label.toLowerCase()} notifications`}
+                                accessibilityRole="button"
                             >
                                 <View style={styles.channelIcon}>
                                     <Ionicons name={ch.icon} size={20} color={prefs.channels[ch.key] ? colors.gold[400] : colors.text.muted} />
@@ -189,6 +194,7 @@ export default function NotificationPrefsScreen() {
                                     onValueChange={() => toggleChannel(ch.key)}
                                     trackColor={{ false: colors.obsidian[600], true: colors.gold[500] + '60' }}
                                     thumbColor={prefs.channels[ch.key] ? colors.gold[500] : colors.text.muted}
+                                    accessibilityLabel={`Toggle ${ch.label.toLowerCase()} notifications`}
                                 />
                             </TouchableOpacity>
                         ))}
@@ -212,6 +218,8 @@ export default function NotificationPrefsScreen() {
                                             update({ quietHoursFrom: preset.from, quietHoursTo: preset.to });
                                         }}
                                         activeOpacity={0.7}
+                                        accessibilityLabel={`Set quiet hours to ${preset.label}`}
+                                        accessibilityRole="button"
                                     >
                                         <Ionicons name="moon-outline" size={14} color={isActive ? colors.gold[400] : colors.text.muted} />
                                         <Text style={[styles.presetLabel, isActive && styles.presetLabelActive]}>{preset.label}</Text>
@@ -237,6 +245,8 @@ export default function NotificationPrefsScreen() {
                                         update({ emailDigest: opt.value });
                                     }}
                                     activeOpacity={0.7}
+                                    accessibilityLabel={`Set email digest to ${opt.label}`}
+                                    accessibilityRole="button"
                                 >
                                     <Text style={[styles.digestLabel, isActive && styles.digestLabelActive]}>{opt.label}</Text>
                                     <Text style={styles.digestDesc}>{opt.description}</Text>
@@ -263,7 +273,7 @@ export default function NotificationPrefsScreen() {
             {/* Save button */}
             {hasChanges && (
                 <Animated.View entering={FadeInDown.duration(300)} style={[styles.saveBar, { paddingBottom: insets.bottom + spacing.md }]}>
-                    <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving} activeOpacity={0.9}>
+                    <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving} activeOpacity={0.9} accessibilityLabel="Save preferences" accessibilityRole="button">
                         <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.saveBtnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                             {saving ? (
                                 <ActivityIndicator size="small" color={colors.obsidian[900]} />

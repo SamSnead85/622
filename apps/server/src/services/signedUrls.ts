@@ -7,7 +7,11 @@
 
 import crypto from 'crypto';
 
-const SIGNING_SECRET = process.env.URL_SIGNING_SECRET || crypto.randomBytes(32).toString('hex');
+const SIGNING_SECRET = process.env.URL_SIGNING_SECRET;
+if (!SIGNING_SECRET && process.env.NODE_ENV === 'production') {
+    throw new Error('URL_SIGNING_SECRET environment variable is required in production');
+}
+const signingSecret = SIGNING_SECRET || 'dev-fallback-key-not-for-production';
 
 // ============================================
 // SIGNED URL GENERATION
@@ -90,7 +94,7 @@ export function validateSignedUrl(url: string, currentUserId?: string): { valid:
  */
 function generateSignature(data: string): string {
     return crypto
-        .createHmac('sha256', SIGNING_SECRET)
+        .createHmac('sha256', signingSecret)
         .update(data)
         .digest('base64url');
 }

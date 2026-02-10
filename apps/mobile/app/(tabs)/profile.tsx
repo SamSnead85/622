@@ -28,6 +28,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { Avatar, LoadingView, EmptyState, SkeletonGrid } from '../../components';
 import { useAuthStore, Post, mapApiPost } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
+import { showError } from '../../stores/toastStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_HEIGHT = 200;
@@ -193,7 +194,7 @@ export default function ProfileScreen() {
             const data = await apiFetch<any>(API.likedPosts(user.id));
             const rawPosts = data.posts || data.data || [];
             setLikedPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
-        } catch { /* silent */ }
+        } catch { showError("Couldn't load liked posts"); }
     };
 
     const loadSavedPosts = async () => {
@@ -201,7 +202,7 @@ export default function ProfileScreen() {
             const data = await apiFetch<any>(API.savedPosts);
             const rawPosts = data.posts || data.data || [];
             setSavedPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
-        } catch { /* silent */ }
+        } catch { showError("Couldn't load saved posts"); }
     };
 
     useEffect(() => {

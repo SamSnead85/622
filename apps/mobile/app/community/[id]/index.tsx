@@ -19,6 +19,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { Post, mapApiPost, useCommunitiesStore } from '../../../stores';
 import { apiFetch, API } from '../../../lib/api';
 import { ScreenHeader, LoadingView } from '../../../components';
+import { showError } from '../../../stores/toastStore';
 
 const formatCount = (num: number) => {
     if (!num) return '0';
@@ -75,7 +76,7 @@ export default function CommunityDetailScreen() {
                 const postsData = await apiFetch<any>(`${API.posts}?communityId=${communityId}&limit=20`);
                 const rawPosts = postsData.posts || postsData.data || [];
                 setPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
-            } catch { /* Posts might not be accessible */ }
+            } catch { showError("Couldn't load community posts"); }
         } catch (e: any) {
             if (!isRefreshing) Alert.alert('Error', e.message || 'Failed to load community');
         } finally { setIsLoading(false); setIsRefreshing(false); }
@@ -95,7 +96,7 @@ export default function CommunityDetailScreen() {
                 await joinCommunity(community.id);
                 setCommunity((c) => c ? { ...c, role: 'member', membersCount: c.membersCount + 1 } : c);
             }
-        } catch { /* silent */ }
+        } catch { showError('Action failed, please try again'); }
         finally { setIsJoinLoading(false); }
     };
 
@@ -114,7 +115,7 @@ export default function CommunityDetailScreen() {
                 <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
                 <Ionicons name="people-outline" size={48} color={colors.text.muted} />
                 <Text style={styles.errorText}>Community not found</Text>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backLink} accessibilityLabel="Go back" accessibilityRole="button">
                     <Text style={styles.backLinkText}>Go back</Text>
                 </TouchableOpacity>
             </View>
@@ -162,6 +163,8 @@ export default function CommunityDetailScreen() {
                         <TouchableOpacity
                             style={[styles.joinButton, community.role && styles.leaveButton]}
                             onPress={handleJoinLeave} disabled={isJoinLoading} activeOpacity={0.8}
+                            accessibilityLabel={community.role ? 'Leave community' : 'Join community'}
+                            accessibilityRole="button"
                         >
                             {community.role ? (
                                 <Text style={styles.leaveButtonText}>
@@ -187,6 +190,8 @@ export default function CommunityDetailScreen() {
                                 <TouchableOpacity
                                     style={styles.actionBtn}
                                     onPress={() => router.push(`/community/${communityId}/polls` as any)}
+                                    accessibilityLabel="Polls"
+                                    accessibilityRole="button"
                                 >
                                     <Ionicons name="bar-chart-outline" size={18} color={colors.gold[400]} />
                                     <Text style={styles.actionBtnText}>Polls</Text>
@@ -194,6 +199,8 @@ export default function CommunityDetailScreen() {
                                 <TouchableOpacity
                                     style={styles.actionBtn}
                                     onPress={() => router.push(`/community/${communityId}/rules` as any)}
+                                    accessibilityLabel="Rules"
+                                    accessibilityRole="button"
                                 >
                                     <Ionicons name="book-outline" size={18} color={colors.gold[400]} />
                                     <Text style={styles.actionBtnText}>Rules</Text>
@@ -201,6 +208,8 @@ export default function CommunityDetailScreen() {
                                 <TouchableOpacity
                                     style={styles.actionBtn}
                                     onPress={() => router.push(`/community/${communityId}/governance` as any)}
+                                    accessibilityLabel="Governance"
+                                    accessibilityRole="button"
                                 >
                                     <Ionicons name="people-circle-outline" size={18} color={colors.gold[400]} />
                                     <Text style={styles.actionBtnText}>Governance</Text>
@@ -209,6 +218,8 @@ export default function CommunityDetailScreen() {
                                     <TouchableOpacity
                                         style={styles.actionBtn}
                                         onPress={() => router.push(`/community/${communityId}/manage` as any)}
+                                        accessibilityLabel="Manage"
+                                        accessibilityRole="button"
                                     >
                                         <Ionicons name="settings-outline" size={18} color={colors.gold[400]} />
                                         <Text style={styles.actionBtnText}>Manage</Text>

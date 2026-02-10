@@ -585,6 +585,7 @@ model ConversationParticipant {
 
   @@unique([conversationId, userId])
   @@index([userId])
+  @@index([conversationId, lastReadAt])
 }
 
 model Message {
@@ -639,6 +640,7 @@ model MemberStatus {
 
   @@unique([userId, communityId])
   @@index([communityId])
+  @@index([expiresAt])
 }
 
 // ============================================
@@ -658,6 +660,7 @@ model Poll {
 
   @@index([communityId])
   @@index([creatorId])
+  @@index([expiresAt])
 }
 
 model PollOption {
@@ -699,6 +702,7 @@ model Album {
   photos      AlbumPhoto[]
 
   @@index([communityId])
+  @@index([updatedAt])
 }
 
 model AlbumPhoto {
@@ -729,6 +733,7 @@ model CallLog {
 
   @@index([callerId])
   @@index([receiverId])
+  @@index([startedAt])
 }
 
 model Migration {
@@ -1222,6 +1227,7 @@ model Report {
   @@index([status])
   @@index([targetType])
   @@index([createdAt])
+  @@index([reporterId])
 }
 
 model Topic {

@@ -10,6 +10,42 @@ interface AuthenticatedSocket extends Socket {
 // Track which game room each socket is in
 const socketGameMap = new Map<string, string>(); // socketId -> gameCode
 
+// Clean up abandoned games every 5 minutes
+setInterval(() => {
+    const now = Date.now();
+    const ONE_HOUR = 60 * 60 * 1000;
+    const seen = new Set<string>();
+
+    for (const [socketId, code] of socketGameMap.entries()) {
+        seen.add(code);
+    }
+
+    let cleaned = 0;
+    for (const code of seen) {
+        const game = getGame(code);
+        if (!game) {
+            // Game already removed from engine — prune stale socketGameMap entries
+            for (const [socketId, c] of socketGameMap.entries()) {
+                if (c === code) socketGameMap.delete(socketId);
+            }
+            cleaned++;
+            continue;
+        }
+        // Use roundStartedAt as last-activity proxy; fall back to 0 (treat as stale)
+        const lastActivity = game.roundStartedAt || 0;
+        if (now - lastActivity > ONE_HOUR && game.status !== 'playing') {
+            removeGame(code);
+            for (const [socketId, c] of socketGameMap.entries()) {
+                if (c === code) socketGameMap.delete(socketId);
+            }
+            cleaned++;
+        }
+    }
+    if (cleaned > 0) {
+        logger.info(`Game cleanup: removed ${cleaned} abandoned game(s)`);
+    }
+}, 5 * 60 * 1000);
+
 function sanitizeStateForPlayer(state: GameState, playerId: string): any {
     // Remove private game data that shouldn't be visible to all players
     const { gameData, ...publicState } = state;

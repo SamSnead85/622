@@ -38,6 +38,7 @@ import { Avatar, GlassCard, LoadingView } from '../../components';
 import { useCommunitiesStore, useAuthStore, Community } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { RetryView } from '../../components/RetryView';
+import { showError } from '../../stores/toastStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -249,7 +250,7 @@ const DiscoveryCommunityCard = memo(({ community, index, onJoin }: {
             await onJoin(community.id);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {
-            // silent
+            showError('Failed to join community');
         } finally {
             setIsJoining(false);
         }
@@ -428,7 +429,7 @@ function CategoryPills({
                             name={cat.icon}
                             size={14}
                             color={isActive ? colors.gold[500] : colors.text.muted}
-                            style={{ marginEnd: 4 }}
+                            style={styles.pillIconMargin}
                         />
                         <Text style={[styles.pillText, isActive && styles.pillTextActive]}>
                             {cat.label}
@@ -519,7 +520,7 @@ function TemplateSelectionModal({ visible, onClose, onSelect }: {
                         <Text style={styles.modalCancel}>Cancel</Text>
                     </TouchableOpacity>
                     <Text style={styles.modalTitle} accessibilityRole="header">Choose Template</Text>
-                    <View style={{ width: 50 }} />
+                    <View style={styles.modalHeaderSpacer} />
                 </View>
 
                 <ScrollView
@@ -650,7 +651,7 @@ function CreateCommunityModal({ visible, onClose, onCreate, initialName = '' }: 
                         {isCreating ? (
                             <ActivityIndicator size="small" color={colors.gold[500]} />
                         ) : (
-                            <Text style={[styles.modalDone, (!name.trim()) && { opacity: 0.4 }]}>Create</Text>
+                            <Text style={[styles.modalDone, (!name.trim()) && styles.modalDoneDisabled]}>Create</Text>
                         )}
                     </TouchableOpacity>
                 </View>
@@ -670,7 +671,7 @@ function CreateCommunityModal({ visible, onClose, onCreate, initialName = '' }: 
 
                     <Text style={styles.inputLabel}>Description</Text>
                     <TextInput
-                        style={[styles.modalInput, { minHeight: 80, textAlignVertical: 'top' }]}
+                        style={[styles.modalInput, styles.modalTextArea]}
                         value={description}
                         onChangeText={setDescription}
                         placeholder="What is this community about?"
@@ -681,7 +682,7 @@ function CreateCommunityModal({ visible, onClose, onCreate, initialName = '' }: 
                     />
 
                     <View style={styles.switchRow}>
-                        <View style={{ flex: 1 }}>
+                        <View style={styles.flex1}>
                             <Text style={styles.switchLabel}>Private Community</Text>
                             <Text style={styles.switchDescription}>Only invited members can join and see content</Text>
                         </View>
@@ -1031,7 +1032,7 @@ export default function CommunitiesScreen() {
             <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
                 <Animated.View entering={FadeInDown.duration(400)}>
                     <View style={styles.headerRow}>
-                        <View style={{ flex: 1 }}>
+                        <View style={styles.flex1}>
                             <Text style={styles.headerTitle} accessibilityRole="header">
                                 Communities
                             </Text>
@@ -1627,6 +1628,13 @@ const styles = StyleSheet.create({
     },
     switchLabel: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
     switchDescription: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },
+
+    // Extracted inline styles
+    flex1: { flex: 1 },
+    pillIconMargin: { marginEnd: 4 },
+    modalHeaderSpacer: { width: 50 },
+    modalDoneDisabled: { opacity: 0.4 },
+    modalTextArea: { minHeight: 80, textAlignVertical: 'top' },
 });
 
 // ============================================

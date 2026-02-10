@@ -110,6 +110,7 @@ interface AuthState {
     isAuthenticated: boolean;
     isLoading: boolean;
     isInitialized: boolean;
+    isRefreshing: boolean;
     error: string | null;
 
     initialize: () => Promise<void>;
@@ -129,6 +130,7 @@ export const useAuthStore = create<AuthState>()(
     isAuthenticated: false,
     isLoading: false,
     isInitialized: false,
+    isRefreshing: false,
     error: null,
 
     initialize: async () => {
@@ -291,6 +293,13 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             error: null,
         });
+        // Reset all other stores on logout
+        useFeedStore.getState().reset();
+        useCommunitiesStore.getState().reset();
+        useNotificationsStore.getState().reset();
+        useMomentsStore.getState().reset();
+        useGovernanceStore.getState().reset();
+        useGameStore.getState().reset();
     },
 
     updateUser: (updates) => {
@@ -301,6 +310,8 @@ export const useAuthStore = create<AuthState>()(
     },
 
     refreshUser: async () => {
+        if (get().isRefreshing) return;
+        set({ isRefreshing: true });
         try {
             const data = await apiFetch<any>(API.me);
             const rawUser = data.user || data;
@@ -319,6 +330,8 @@ export const useAuthStore = create<AuthState>()(
             }
         } catch (error) {
             // Silently fail — user might be offline
+        } finally {
+            set({ isRefreshing: false });
         }
     },
 
@@ -357,6 +370,7 @@ interface FeedState {
     reportPost: (postId: string, reason?: string) => Promise<void>;
     addPost: (post: Post) => void;
     clear: () => void;
+    reset: () => void;
 }
 
 // Map server post shape to mobile Post interface
@@ -604,9 +618,13 @@ export const useFeedStore = create<FeedState>()(
 
     addPost: (post) => {
         set((state) => ({ posts: [post, ...state.posts] }));
+        // Invalidate cache: refresh feed in background to sync with server
+        get().fetchFeed(true);
     },
 
     clear: () => set({ posts: [], nextCursor: null, hasMore: true }),
+
+    reset: () => set({ posts: [], nextCursor: null, hasMore: true, isLoading: false, isRefreshing: false, error: null }),
 }),
         {
             name: 'feed-storage',
@@ -625,23 +643,27 @@ export const useFeedStore = create<FeedState>()(
 interface CommunitiesState {
     communities: Community[];
     isLoading: boolean;
+    isFetching: boolean;
     error: string | null;
 
     fetchCommunities: () => Promise<void>;
     joinCommunity: (communityId: string) => Promise<void>;
     leaveCommunity: (communityId: string) => Promise<void>;
     createCommunity: (name: string, description: string, isPrivate: boolean) => Promise<Community>;
+    reset: () => void;
 }
 
 export const useCommunitiesStore = create<CommunitiesState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
     communities: [],
     isLoading: false,
+    isFetching: false,
     error: null,
 
     fetchCommunities: async () => {
-        set({ isLoading: true, error: null });
+        if (get().isFetching) return;
+        set({ isFetching: true, isLoading: true, error: null });
         try {
             const data = await apiFetch<any>(API.communities);
             const communities = data.communities || data.data || data || [];
@@ -654,6 +676,8 @@ export const useCommunitiesStore = create<CommunitiesState>()(
                 error: error.message || 'Failed to load communities',
                 isLoading: false,
             });
+        } finally {
+            set({ isFetching: false });
         }
     },
 
@@ -665,6 +689,8 @@ export const useCommunitiesStore = create<CommunitiesState>()(
                     c.id === communityId ? { ...c, role: 'member' as const } : c
                 ),
             }));
+            // Refresh communities list to sync with server
+            get().fetchCommunities();
         } catch (error: any) {
             console.error('Failed to join community:', error);
         }
@@ -678,6 +704,8 @@ export const useCommunitiesStore = create<CommunitiesState>()(
                     c.id === communityId ? { ...c, role: null } : c
                 ),
             }));
+            // Refresh communities list to sync with server
+            get().fetchCommunities();
         } catch (error: any) {
             console.error('Failed to leave community:', error);
         }
@@ -694,6 +722,8 @@ export const useCommunitiesStore = create<CommunitiesState>()(
         }));
         return community;
     },
+
+    reset: () => set({ communities: [], isLoading: false, isFetching: false, error: null }),
 }),
         {
             name: 'communities-storage',
@@ -727,19 +757,25 @@ interface NotificationsState {
     notifications: Notification[];
     unreadCount: number;
     isLoading: boolean;
+    isFetching: boolean;
+    error: string | null;
 
     fetchNotifications: () => Promise<void>;
     markAsRead: (notificationId: string) => Promise<void>;
     markAllAsRead: () => Promise<void>;
+    reset: () => void;
 }
 
 export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     notifications: [],
     unreadCount: 0,
     isLoading: false,
+    isFetching: false,
+    error: null as string | null,
 
     fetchNotifications: async () => {
-        set({ isLoading: true });
+        if (get().isFetching) return;
+        set({ isFetching: true, isLoading: true, error: null });
         try {
             const data = await apiFetch<any>(API.notifications);
             const notifications = data.notifications || data.data || [];
@@ -751,7 +787,9 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
                 isLoading: false,
             });
         } catch {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to load notifications' });
+        } finally {
+            set({ isFetching: false });
         }
     },
 
@@ -794,6 +832,8 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
             });
         }
     },
+
+    reset: () => set({ notifications: [], unreadCount: 0, isLoading: false, isFetching: false, error: null }),
 }));
 
 // ============================================
@@ -822,10 +862,12 @@ interface MomentsState {
     momentsByUser: Record<string, Moment[]>;
     isLoading: boolean;
     lastFetched: number;
+    error: string | null;
     fetchStoryFeed: () => Promise<void>;
     fetchUserMoments: (userId: string) => Promise<Moment[]>;
     addMomentUser: (user: MomentUser) => void;
     markSeen: (userId: string) => void;
+    reset: () => void;
 }
 
 export const useMomentsStore = create<MomentsState>()((set, get) => ({
@@ -833,12 +875,13 @@ export const useMomentsStore = create<MomentsState>()((set, get) => ({
     momentsByUser: {},
     isLoading: false,
     lastFetched: 0,
+    error: null as string | null,
 
     fetchStoryFeed: async () => {
         // Skip if fetched within the last 30 seconds
         if (Date.now() - get().lastFetched < 30_000 && get().storyUsers.length > 0) return;
 
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const data = await apiFetch<any>(API.momentsFeed);
             const list = data?.moments || data || [];
@@ -860,7 +903,7 @@ export const useMomentsStore = create<MomentsState>()((set, get) => ({
                 set({ storyUsers: users, lastFetched: Date.now() });
             }
         } catch {
-            // silent
+            set({ error: 'Failed to load moments' });
         } finally {
             set({ isLoading: false });
         }
@@ -894,6 +937,8 @@ export const useMomentsStore = create<MomentsState>()((set, get) => ({
             ),
         }));
     },
+
+    reset: () => set({ storyUsers: [], momentsByUser: {}, isLoading: false, lastFetched: 0, error: null }),
 }));
 
 // ============================================
@@ -919,17 +964,20 @@ export interface Proposal {
 interface GovernanceState {
     proposalsByCommunity: Record<string, Proposal[]>;
     isLoading: boolean;
+    error: string | null;
     fetchProposals: (communityId: string) => Promise<void>;
     voteOnProposal: (communityId: string, proposalId: string, vote: 'FOR' | 'AGAINST') => Promise<void>;
     updateProposalVotes: (proposalId: string, votesFor: number, votesAgainst: number) => void;
+    reset: () => void;
 }
 
 export const useGovernanceStore = create<GovernanceState>()((set, get) => ({
     proposalsByCommunity: {},
     isLoading: false,
+    error: null as string | null,
 
     fetchProposals: async (communityId: string) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const data = await apiFetch<any>(API.proposals(communityId));
             const list = data.proposals || data || [];
@@ -941,7 +989,7 @@ export const useGovernanceStore = create<GovernanceState>()((set, get) => ({
                 isLoading: false,
             }));
         } catch {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to load proposals' });
         }
     },
 
@@ -988,6 +1036,8 @@ export const useGovernanceStore = create<GovernanceState>()((set, get) => ({
             return { proposalsByCommunity: updated };
         });
     },
+
+    reset: () => set({ proposalsByCommunity: {}, isLoading: false, error: null }),
 }));
 
 // ============================================

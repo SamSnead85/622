@@ -17,6 +17,7 @@ import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming } from '
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
+import { showError } from '../../stores/toastStore';
 import { Avatar } from '../../components';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -75,6 +76,7 @@ export default function MomentViewerScreen() {
             const list = data.moments || data || [];
             setMoments(Array.isArray(list) ? list : []);
         } catch {
+            showError("Couldn't load moment");
             router.back();
         }
     };

@@ -539,6 +539,12 @@ export default function SettingsScreen() {
                             onPress={() => router.push('/settings/algorithm' as any)}
                         />
                         <SettingRow
+                            icon="analytics-outline"
+                            label="Feed DNA & Insights"
+                            description="See exactly how your feed works — no black boxes"
+                            onPress={() => router.push('/settings/algorithm-insights' as any)}
+                        />
+                        <SettingRow
                             icon="pricetags-outline"
                             label="Your Interests"
                             description="Pick topics that personalize your feed"
@@ -564,6 +570,12 @@ export default function SettingsScreen() {
                 <Animated.View entering={stagger(7)} style={styles.section}>
                     <SectionHeader title="Privacy & Data" icon="lock-closed-outline" />
                     <View style={styles.card}>
+                        <SettingRow
+                            icon="shield-checkmark-outline"
+                            label="Privacy Dashboard"
+                            description="See what data is stored and who can see you"
+                            onPress={() => router.push('/settings/privacy-dashboard' as any)}
+                        />
                         <SettingRow
                             icon="download-outline"
                             label="Export Your Data"

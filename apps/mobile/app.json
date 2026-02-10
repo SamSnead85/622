@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "scheme": "zerog",
     "userInterfaceStyle": "dark",
+    "jsEngine": "hermes",
     "description": "Privacy-first community platform. No ads. No algorithms. No surveillance. Private groups, encrypted messaging, live streaming, cultural tools, and community boards — all in one place.",
     "splash": {
       "image": "./assets/splash.png",

@@ -5,7 +5,7 @@
 // timestamp grouping, and haptic feedback
 // ============================================
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import {
     View,
     Text,
@@ -201,7 +201,7 @@ function ReadReceipt({ status }: { status?: string }) {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function MessageBubble({
+const MessageBubble = memo(function MessageBubble({
     item,
     isOwn,
     showTail,
@@ -228,10 +228,10 @@ function MessageBubble({
                     uri={participant?.avatarUrl}
                     name={participant?.displayName}
                     customSize={28}
-                    style={{ marginEnd: spacing.xs, marginBottom: 2 }}
+                    style={styles.receiverAvatar}
                 />
             )}
-            {!isOwn && !showTail && <View style={{ width: 28 + spacing.xs }} />}
+            {!isOwn && !showTail && <View style={styles.avatarSpacer} />}
 
             {isOwn ? (
                 <View style={styles.ownBubbleWrap}>
@@ -305,7 +305,7 @@ function MessageBubble({
             )}
         </Animated.View>
     );
-}
+});
 
 // ============================================
 // Skeleton Loader for Chat
@@ -1250,4 +1250,8 @@ const styles = StyleSheet.create({
         margin: 2,
     },
     micBtn: { padding: 8, justifyContent: 'center' },
+
+    // MessageBubble extracted styles
+    receiverAvatar: { marginEnd: spacing.xs, marginBottom: 2 },
+    avatarSpacer: { width: 28 + spacing.xs },
 });

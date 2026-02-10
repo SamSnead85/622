@@ -143,7 +143,7 @@ export default function SplashIndex() {
                     }}
                 >
                     <Text style={styles.brandName}>0G</Text>
-                    <Text style={styles.tagline}>Zero Gravity Social</Text>
+                    <Text style={styles.tagline}>0G</Text>
                 </Animated.View>
             </View>
 

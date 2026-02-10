@@ -17,6 +17,7 @@ import { StyleSheet } from 'react-native';
 import { useAuthStore } from '../stores';
 import { colors } from '@zerog/ui';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { ToastProvider } from '../components/ToastProvider';
 import { socketManager, CallIncoming } from '../lib/socket';
 import { initI18n } from '../lib/i18n';
 import { startAutoSync, stopAutoSync, syncQueue } from '../lib/offlineQueue';
@@ -277,6 +278,7 @@ function RootLayout() {
                         }}
                     />
                 </Stack>
+                <ToastProvider />
             </GestureHandlerRootView>
         </ErrorBoundary>
     );

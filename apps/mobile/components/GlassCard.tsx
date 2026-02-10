@@ -44,9 +44,11 @@ export function GlassCard({
     radius = 'lg',
     border = true,
     gold = false,
+    onPress,
 }: GlassCardProps) {
     return (
         <View
+            accessibilityRole={onPress ? 'button' : undefined}
             style={[
                 styles.card,
                 {

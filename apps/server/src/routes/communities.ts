@@ -459,6 +459,8 @@ router.get('/:communityId/members', optionalAuth, async (req: AuthRequest, res, 
     try {
         const { communityId } = req.params;
         const { search, role } = req.query;
+        const take = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const skip = parseInt(req.query.offset as string) || 0;
 
         const community = await prisma.community.findUnique({ where: { id: communityId }, select: { isPublic: true } });
         if (!community) throw new AppError('Community not found', 404);
@@ -476,6 +478,8 @@ router.get('/:communityId/members', optionalAuth, async (req: AuthRequest, res, 
 
         const members = await prisma.communityMember.findMany({
             where,
+            take,
+            skip,
             include: {
                 user: {
                     select: {
@@ -487,10 +491,7 @@ router.get('/:communityId/members', optionalAuth, async (req: AuthRequest, res, 
                     },
                 },
             },
-            orderBy: [
-                { role: 'asc' },  // ADMIN first, then MODERATOR, then MEMBER
-                { joinedAt: 'asc' },
-            ],
+            orderBy: { createdAt: 'desc' },
         });
 
         // Filter by search if provided
@@ -673,8 +674,8 @@ router.post('/:communityId/invite', authenticate, async (req: AuthRequest, res, 
         const { communityId } = req.params;
         const { userIds } = req.body;
 
-        if (!Array.isArray(userIds) || userIds.length === 0) {
-            throw new AppError('userIds array is required', 400);
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0 || userIds.length > 100) {
+            return res.status(400).json({ error: 'userIds must be an array of 1-100 user IDs' });
         }
 
         const community = await prisma.community.findUnique({
@@ -956,6 +957,8 @@ router.delete('/:communityId/status', authenticate, async (req: AuthRequest, res
 router.get('/:communityId/polls', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { communityId } = req.params;
+        const take = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const skip = parseInt(req.query.offset as string) || 0;
 
         const membership = await prisma.communityMember.findUnique({
             where: { userId_communityId: { userId: req.userId!, communityId } },
@@ -964,6 +967,8 @@ router.get('/:communityId/polls', authenticate, async (req: AuthRequest, res, ne
 
         const polls = await prisma.poll.findMany({
             where: { communityId },
+            take,
+            skip,
             orderBy: { createdAt: 'desc' },
             include: {
                 options: {
@@ -1099,6 +1104,8 @@ router.post('/:communityId/polls/:pollId/vote', authenticate, async (req: AuthRe
 router.get('/:communityId/albums', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { communityId } = req.params;
+        const take = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const skip = parseInt(req.query.offset as string) || 0;
 
         const membership = await prisma.communityMember.findUnique({
             where: { userId_communityId: { userId: req.userId!, communityId } },
@@ -1107,6 +1114,8 @@ router.get('/:communityId/albums', authenticate, async (req: AuthRequest, res, n
 
         const albums = await prisma.album.findMany({
             where: { communityId },
+            take,
+            skip,
             orderBy: { updatedAt: 'desc' },
             include: {
                 photos: { take: 4, orderBy: { createdAt: 'desc' } },

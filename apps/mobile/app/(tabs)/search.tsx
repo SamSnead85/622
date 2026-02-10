@@ -31,6 +31,7 @@ import { useTranslation } from 'react-i18next';
 import { Avatar, GlassCard } from '../../components';
 import { apiFetch, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
+import { showError } from '../../stores/toastStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -216,7 +217,7 @@ export default function SearchScreen() {
                     color: TRENDING_TOPICS[i]?.color || colors.gold[500],
                 })));
             }
-        }).catch(() => {});
+        }).catch(() => { showError("Couldn't load trending topics"); });
 
         // Fetch suggested people/communities
         apiFetch<any>(`${API.search}?q=&suggested=true&limit=6`).then((data) => {
@@ -245,7 +246,7 @@ export default function SearchScreen() {
                 });
             }
             if (items.length > 0) setSuggestedData(items);
-        }).catch(() => {});
+        }).catch(() => { showError("Couldn't load suggestions"); });
     }, []);
 
     // Cleanup debounce
@@ -326,6 +327,7 @@ export default function SearchScreen() {
             }
         } catch {
             setResults([]);
+            showError('Search failed, please try again');
         } finally {
             setIsSearching(false);
         }

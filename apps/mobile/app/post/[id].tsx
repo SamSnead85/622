@@ -4,7 +4,7 @@
 // staggered animations, haptic feedback, share sheet
 // ============================================
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import {
     View,
     Text,
@@ -300,7 +300,7 @@ function SaveButton({ isSaved, onPress }: { isSaved: boolean; onPress: () => voi
 // Nested Comment Item (with reply support)
 // ============================================
 
-function CommentItem({
+const CommentItem = memo(function CommentItem({
     comment,
     index,
     depth,
@@ -332,7 +332,7 @@ function CommentItem({
                         uri={comment.author?.avatarUrl}
                         name={comment.author?.displayName}
                         customSize={depth > 0 ? 28 : 32}
-                        style={{ marginTop: 4 }}
+                        style={styles.commentAvatarOffset}
                     />
                 </TouchableOpacity>
                 <View style={styles.commentContent}>
@@ -346,7 +346,7 @@ function CommentItem({
                                     name="checkmark-circle"
                                     size={12}
                                     color={colors.gold[500]}
-                                    style={{ marginStart: 3 }}
+                                    style={styles.commentVerifiedIcon}
                                 />
                             )}
                         </View>
@@ -413,7 +413,7 @@ function CommentItem({
                 ))}
         </Animated.View>
     );
-}
+});
 
 // ============================================
 // Main Post Detail Screen
@@ -551,7 +551,7 @@ export default function PostDetailScreen() {
         if (!post) return;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         await Share.share({
-            message: `Check out this post on Caravan: https://caravan.social/post/${post.id}`,
+            message: `Check out this post on 0G: https://0gravity.ai/post/${post.id}`,
         });
     }, [post]);
 
@@ -748,12 +748,12 @@ export default function PostDetailScreen() {
                                     {post.author?.displayName || 'Anonymous'}
                                 </Text>
                                 {post.author?.isVerified && (
-                                    <Ionicons
-                                        name="checkmark-circle"
-                                        size={15}
-                                        color={colors.gold[500]}
-                                        style={{ marginStart: 4 }}
-                                    />
+                                <Ionicons
+                                    name="checkmark-circle"
+                                    size={15}
+                                    color={colors.gold[500]}
+                                    style={styles.authorVerifiedIcon}
+                                />
                                 )}
                             </View>
                             <View style={styles.postMetaRow}>
@@ -866,7 +866,7 @@ export default function PostDetailScreen() {
                             )}
                         </TouchableOpacity>
 
-                        <View style={{ flex: 1 }} />
+                        <View style={styles.flex1} />
 
                         <SaveButton isSaved={post.isSaved} onPress={handleSave} />
                     </View>
@@ -997,7 +997,7 @@ export default function PostDetailScreen() {
                     uri={user?.avatarUrl}
                     name={user?.displayName}
                     customSize={32}
-                    style={{ marginEnd: spacing.sm }}
+                    style={styles.commentInputAvatar}
                 />
                 <TextInput
                     ref={inputRef}
@@ -1331,4 +1331,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+
+    // Extracted inline styles
+    flex1: { flex: 1 },
+    commentAvatarOffset: { marginTop: 4 },
+    commentVerifiedIcon: { marginStart: 3 },
+    authorVerifiedIcon: { marginStart: 4 },
+    commentInputAvatar: { marginEnd: spacing.sm },
 });

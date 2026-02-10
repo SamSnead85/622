@@ -13,7 +13,25 @@ const REQUEST_TIMEOUT_MS = 15_000;
 // Request Deduplication
 // Prevents identical GET requests from firing concurrently
 // ============================================
-const inflightRequests = new Map<string, Promise<any>>();
+const inflightRequests = new Map<string, { promise: Promise<any>; timestamp: number }>();
+
+const INFLIGHT_TTL_MS = 30_000; // 30s TTL for stale entries
+const INFLIGHT_MAX_SIZE = 100;  // Safety valve — clear all if exceeded
+
+function cleanupInflight(): void {
+    // Safety valve: if map grows too large, clear everything
+    if (inflightRequests.size > INFLIGHT_MAX_SIZE) {
+        inflightRequests.clear();
+        return;
+    }
+    // Remove entries older than TTL
+    const now = Date.now();
+    for (const [key, entry] of inflightRequests) {
+        if (now - entry.timestamp > INFLIGHT_TTL_MS) {
+            inflightRequests.delete(key);
+        }
+    }
+}
 
 function getDedupeKey(url: string, method: string): string | null {
     // Only dedupe GET requests
@@ -191,8 +209,9 @@ export const apiFetch = async <T = any>(
 
     // Deduplicate concurrent identical GET requests
     const dedupeKey = getDedupeKey(url, method);
+    cleanupInflight();
     if (dedupeKey && inflightRequests.has(dedupeKey) && !_isRetry) {
-        return inflightRequests.get(dedupeKey) as Promise<T>;
+        return inflightRequests.get(dedupeKey)!.promise as Promise<T>;
     }
 
     const requestPromise = (async () => {
@@ -258,9 +277,9 @@ export const apiFetch = async <T = any>(
     throw lastError;
     })();
 
-    // Store inflight promise for deduplication
+    // Store inflight promise for deduplication with timestamp
     if (dedupeKey) {
-        inflightRequests.set(dedupeKey, requestPromise);
+        inflightRequests.set(dedupeKey, { promise: requestPromise, timestamp: Date.now() });
         requestPromise.finally(() => {
             inflightRequests.delete(dedupeKey);
         });

@@ -53,13 +53,17 @@ function verifyCode(secret: string, code: string, email: string): boolean {
 // ENCRYPTION HELPERS
 // ============================================
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+if (!ENCRYPTION_KEY && process.env.NODE_ENV === 'production') {
+    throw new Error('ENCRYPTION_KEY environment variable is required in production');
+}
+const key = ENCRYPTION_KEY || 'dev-fallback-key-not-for-production-x';
 const ALGORITHM = 'aes-256-gcm';
 
 function encrypt(text: string): string {
     const iv = crypto.randomBytes(16);
-    const key = Buffer.from(ENCRYPTION_KEY.slice(0, 32), 'utf-8');
-    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+    const keyBuffer = Buffer.from(key.slice(0, 32), 'utf-8');
+    const cipher = crypto.createCipheriv(ALGORITHM, keyBuffer, iv);
 
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -74,9 +78,9 @@ function decrypt(encryptedText: string): string {
 
     const iv = Buffer.from(ivHex, 'hex');
     const authTag = Buffer.from(authTagHex, 'hex');
-    const key = Buffer.from(ENCRYPTION_KEY.slice(0, 32), 'utf-8');
+    const keyBuffer = Buffer.from(key.slice(0, 32), 'utf-8');
 
-    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    const decipher = crypto.createDecipheriv(ALGORITHM, keyBuffer, iv);
     decipher.setAuthTag(authTag);
 
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');

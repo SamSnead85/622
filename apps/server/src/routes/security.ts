@@ -58,7 +58,7 @@ router.use(requireRole('SUPERADMIN'));
  * GET /admin/security/policies
  * List all security policies
  */
-router.get('/policies', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/policies', authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const policies = await prisma.platformSecurityPolicy.findMany({
             orderBy: { type: 'asc' },
@@ -73,7 +73,7 @@ router.get('/policies', async (req: Request, res: Response, next: NextFunction) 
  * POST /admin/security/policies/initialize
  * Initialize default security policies
  */
-router.post('/policies/initialize', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/policies/initialize', authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user?.id;
         await initializeSecurityPolicies(userId);
@@ -96,7 +96,7 @@ router.post('/policies/initialize', async (req: Request, res: Response, next: Ne
  * PUT /admin/security/policies/:id
  * Update a security policy
  */
-router.put('/policies/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/policies/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const { isActive, config } = req.body;
@@ -126,7 +126,7 @@ router.put('/policies/:id', async (req: Request, res: Response, next: NextFuncti
  * GET /admin/security/geo-blocks
  * List platform-wide geo-blocks
  */
-router.get('/geo-blocks', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/geo-blocks', authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const blocks = await listGeoBlocks(null); // null = platform-wide
         res.json(blocks);
@@ -139,7 +139,7 @@ router.get('/geo-blocks', async (req: Request, res: Response, next: NextFunction
  * POST /admin/security/geo-blocks
  * Add a platform-wide geo-block
  */
-router.post('/geo-blocks', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/geo-blocks', authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { countryCode, countryName, reason, blockType, expiresAt } = req.body;
         const userId = (req as any).user?.id;
@@ -175,7 +175,7 @@ router.post('/geo-blocks', async (req: Request, res: Response, next: NextFunctio
  * DELETE /admin/security/geo-blocks/:id
  * Remove a geo-block
  */
-router.delete('/geo-blocks/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/geo-blocks/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const userId = (req as any).user?.id;
@@ -200,7 +200,7 @@ router.delete('/geo-blocks/:id', async (req: Request, res: Response, next: NextF
  * GET /admin/security/countries
  * Get list of countries for UI
  */
-router.get('/countries', (req: Request, res: Response) => {
+router.get('/countries', authenticate, (req: Request, res: Response) => {
     res.json({
         allCountries: ALL_COUNTRIES,
         highRiskCountries: HIGH_RISK_COUNTRIES,
@@ -215,7 +215,7 @@ router.get('/countries', (req: Request, res: Response) => {
  * GET /admin/security/blocked-ips
  * List all blocked IPs
  */
-router.get('/blocked-ips', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/blocked-ips', authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const ips = await listBlockedIPs();
         res.json(ips);
@@ -228,7 +228,7 @@ router.get('/blocked-ips', async (req: Request, res: Response, next: NextFunctio
  * POST /admin/security/blocked-ips
  * Block an IP address
  */
-router.post('/blocked-ips', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/blocked-ips', authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { ipAddress, reason, threatLevel, expiresAt } = req.body;
         const userId = (req as any).user?.id;
@@ -264,7 +264,7 @@ router.post('/blocked-ips', async (req: Request, res: Response, next: NextFuncti
  * DELETE /admin/security/blocked-ips/:ip
  * Unblock an IP address
  */
-router.delete('/blocked-ips/:ip', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/blocked-ips/:ip', authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { ip } = req.params;
         const userId = (req as any).user?.id;
@@ -293,7 +293,7 @@ router.delete('/blocked-ips/:ip', async (req: Request, res: Response, next: Next
  * GET /admin/security/audit-log
  * Get security audit log entries
  */
-router.get('/audit-log', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/audit-log', authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const {
             action,
@@ -329,7 +329,7 @@ router.get('/audit-log', async (req: Request, res: Response, next: NextFunction)
  * GET /admin/security/lookup/:ip
  * Look up geolocation for an IP
  */
-router.get('/lookup/:ip', (req: Request, res: Response) => {
+router.get('/lookup/:ip', authenticate, (req: Request, res: Response) => {
     const { ip } = req.params;
     const geo = getGeoFromIP(ip);
     res.json(geo);

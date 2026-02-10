@@ -260,8 +260,10 @@ class SocketManager {
             this.reconnectTimer = null;
         }
         this.joinedConversations.clear();
+        this.socket?.removeAllListeners();
         this.socket?.disconnect();
         this.socket = null;
+        this.listeners = {} as EventListeners;
         this._isConnected = false;
     }
 
@@ -415,6 +417,12 @@ class SocketManager {
     on(event: string, callback: EventCallback): () => void {
         if (!this.listeners[event]) {
             this.listeners[event] = [];
+        }
+        // Safety: prevent listener accumulation
+        const MAX_LISTENERS_PER_EVENT = 10;
+        if (this.listeners[event]?.length >= MAX_LISTENERS_PER_EVENT) {
+            console.warn(`Too many listeners for ${event}, removing oldest`);
+            this.listeners[event].shift();
         }
         this.listeners[event].push(callback);
 

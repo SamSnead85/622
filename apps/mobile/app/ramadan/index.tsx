@@ -206,7 +206,7 @@ export default function RamadanHub() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         try {
             await Share.share({
-                message: `${dailyVerse.arabic}\n\n"${dailyVerse.english}"\n— Quran ${dailyVerse.ref}\n\nShared from Caravan`,
+                message: `${dailyVerse.arabic}\n\n"${dailyVerse.english}"\n— Quran ${dailyVerse.ref}\n\nShared from 0G`,
             });
         } catch {}
     };

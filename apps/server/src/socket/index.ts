@@ -13,8 +13,8 @@ interface AuthenticatedSocket extends Socket {
 
 const connectedUsers = new Map<string, Set<string>>(); // userId -> Set<socketId>
 
-// Active WebRTC calls: callId -> { from, to, offer }
-const activeCalls = new Map<string, { from: string; to: string; offer?: any }>();
+// Active WebRTC calls: callId -> { from, to, offer, createdAt }
+const activeCalls = new Map<string, { from: string; to: string; offer?: any; createdAt: number }>();
 
 // Socket-level rate limiting
 const socketRateLimits = new Map<string, { count: number; resetAt: number }>();
@@ -77,10 +77,22 @@ function startMapCleanup(io: SocketServer) {
 
     // Clean stale calls every 5 minutes (calls shouldn't last >2 hours)
     setInterval(() => {
-        // activeCalls doesn't have timestamps, so we impose a max size limit
+        const now = Date.now();
+        const TWO_HOURS = 2 * 60 * 60 * 1000;
+        let cleaned = 0;
+        for (const [callId, call] of activeCalls.entries()) {
+            if (now - call.createdAt > TWO_HOURS) {
+                activeCalls.delete(callId);
+                cleaned++;
+            }
+        }
+        // Emergency cleanup if map still exceeds safe size
         if (activeCalls.size > 10000) {
             activeCalls.clear();
             logger.warn('Active calls map cleared (exceeded 10k entries)');
+        }
+        if (cleaned > 0) {
+            logger.info(`Call cleanup: removed ${cleaned} stale call(s)`);
         }
     }, 5 * 60 * 1000);
 }
@@ -330,7 +342,7 @@ export const setupSocketHandlers = (io: SocketServer) => {
         // === WebRTC Call Signaling ===
         socket.on('call:initiate', async (data: { callId: string; userId: string; type: 'audio' | 'video'; offer: any }) => {
             const { callId, userId: targetUserId, type, offer } = data;
-            activeCalls.set(callId, { from: userId, to: targetUserId, offer });
+            activeCalls.set(callId, { from: userId, to: targetUserId, offer, createdAt: Date.now() });
 
             // Fetch caller info so the receiver can see who's calling
             let callerInfo: { id: string; username: string; displayName: string; avatarUrl?: string } = {

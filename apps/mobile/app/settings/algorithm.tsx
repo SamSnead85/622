@@ -17,6 +17,7 @@ import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
 import { ScreenHeader, LoadingView } from '../../components';
+import { showError } from '../../stores/toastStore';
 
 interface FeedPreferences {
     recencyWeight: number;
@@ -92,6 +93,8 @@ function SliderControl({
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             onChange(step);
                         }}
+                        accessibilityLabel={`${label} weight, set to ${step}%`}
+                        accessibilityRole="adjustable"
                     >
                         <View style={[styles.sliderDot, i <= activeIndex && styles.sliderDotActive]} />
                     </TouchableOpacity>
@@ -126,7 +129,7 @@ export default function AlgorithmMixerScreen() {
                     : DEFAULTS.contentTypes,
             });
         } catch {
-            // Use defaults
+            showError("Couldn't load algorithm settings");
         } finally {
             setLoading(false);
         }
@@ -160,6 +163,7 @@ export default function AlgorithmMixerScreen() {
             setHasChanges(false);
         } catch {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            showError('Failed to save algorithm settings');
         } finally {
             setSaving(false);
         }
@@ -194,7 +198,7 @@ export default function AlgorithmMixerScreen() {
             <ScreenHeader
                 title="Your Algorithm"
                 rightElement={
-                    <TouchableOpacity onPress={handleReset}>
+                    <TouchableOpacity onPress={handleReset} accessibilityLabel="Reset algorithm settings" accessibilityRole="button">
                         <Text style={styles.resetBtn}>Reset</Text>
                     </TouchableOpacity>
                 }
@@ -267,6 +271,8 @@ export default function AlgorithmMixerScreen() {
                                     style={[styles.contentTypeCard, isActive && styles.contentTypeCardActive]}
                                     onPress={() => toggleContentType(ct.key)}
                                     activeOpacity={0.7}
+                                    accessibilityLabel={`Toggle ${ct.label.toLowerCase()} content`}
+                                    accessibilityRole="button"
                                 >
                                     <Ionicons
                                         name={ct.icon}
@@ -302,6 +308,8 @@ export default function AlgorithmMixerScreen() {
                         onPress={handleSave}
                         disabled={saving}
                         activeOpacity={0.9}
+                        accessibilityLabel="Save preferences"
+                        accessibilityRole="button"
                     >
                         <LinearGradient
                             colors={[colors.gold[400], colors.gold[600]]}

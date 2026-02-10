@@ -9,8 +9,13 @@ const router = Router();
 // GET /api/v1/messages - Alias for /conversations
 router.get('/', authenticate, async (req: AuthRequest, res, next) => {
     try {
+        const take = Math.min(parseInt(req.query.limit as string) || 30, 100);
+        const skip = parseInt(req.query.offset as string) || 0;
+
         const conversations = await prisma.conversationParticipant.findMany({
             where: { userId: req.userId },
+            take,
+            skip,
             include: {
                 conversation: {
                     include: {
@@ -228,6 +233,10 @@ router.post('/conversations', authenticate, async (req: AuthRequest, res, next) 
         });
 
         const { participantIds, isGroup, groupName } = createSchema.parse(req.body);
+
+        if (!participantIds || !Array.isArray(participantIds) || participantIds.length === 0 || participantIds.length > 50) {
+            return res.status(400).json({ error: 'participantIds must be an array of 1-50 user IDs' });
+        }
 
         // For DMs, check if conversation already exists
         if (!isGroup && participantIds.length === 1) {
