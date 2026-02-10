@@ -287,7 +287,7 @@ export default function CommunityDetailScreen() {
                                         <Text style={styles.postTime}>{timeAgo(post.createdAt)}</Text>
                                     </View>
                                     {post.content ? <Text style={styles.postContent} numberOfLines={3}>{post.content}</Text> : null}
-                                    {post.mediaUrl && <Image source={{ uri: post.mediaUrl }} placeholder={IMAGE_PLACEHOLDER.blurhash} transition={IMAGE_PLACEHOLDER.transition} cachePolicy="memory-disk" style={styles.postMedia} contentFit="cover" />}
+                                    {post.mediaUrl && <Image source={{ uri: post.thumbnailUrl || post.mediaUrl }} placeholder={IMAGE_PLACEHOLDER.blurhash} transition={IMAGE_PLACEHOLDER.transition} cachePolicy="memory-disk" style={styles.postMedia} contentFit="cover" />}
                                     <View style={styles.postStats}>
                                         <View style={styles.postStatItem}>
                                             <Ionicons name="heart-outline" size={14} color={colors.text.muted} />

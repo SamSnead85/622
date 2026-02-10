@@ -136,6 +136,60 @@ export const getOptimizedImageUrl = (
 };
 
 /**
+ * Transform a full Cloudinary URL to serve an optimized version.
+ * Injects width, quality, and format transformations into the URL.
+ *
+ * Input:  https://res.cloudinary.com/xxx/image/upload/v123/folder/image.jpg
+ * Output: https://res.cloudinary.com/xxx/image/upload/w_400,q_auto,f_auto/v123/folder/image.jpg
+ *
+ * Non-Cloudinary URLs are returned unchanged.
+ */
+export const transformImageUrl = (
+    url: string | null | undefined,
+    width: number,
+    quality: number | 'auto' = 'auto'
+): string | null => {
+    if (!url) return null;
+
+    // Only transform Cloudinary URLs
+    if (!url.includes('res.cloudinary.com')) return url;
+
+    // Already has transformations? Replace them.
+    // Cloudinary URL pattern: /upload/[optional transforms]/vXXX/...
+    const transformStr = `w_${width},q_${quality},f_auto,c_limit`;
+
+    // Insert transforms after /upload/
+    const transformed = url.replace(
+        /\/upload\/(v\d+\/)/,
+        `/upload/${transformStr}/v$1`.replace('/v', '/')
+    );
+
+    // Fallback: if regex didn't match (different URL format), try simpler insert
+    if (transformed === url) {
+        return url.replace('/upload/', `/upload/${transformStr}/`);
+    }
+
+    return transformed;
+};
+
+/**
+ * Generate feed-optimized image URLs for a post.
+ * Returns { thumbnailUrl, mediaUrl } where thumbnailUrl is small (400px)
+ * and mediaUrl stays original for detail views.
+ */
+export const getFeedImageUrls = (mediaUrl: string | null | undefined, mediaType?: string) => {
+    // Don't transform video URLs
+    if (!mediaUrl || mediaType === 'VIDEO') {
+        return { thumbnailUrl: null, feedMediaUrl: mediaUrl || null };
+    }
+
+    return {
+        thumbnailUrl: transformImageUrl(mediaUrl, 200, 70),      // Tiny preview (list/grid)
+        feedMediaUrl: transformImageUrl(mediaUrl, 800, 'auto'),   // Feed-sized (not full-res)
+    };
+};
+
+/**
  * Check if Cloudinary is configured
  */
 export const isCloudinaryConfigured = () => {

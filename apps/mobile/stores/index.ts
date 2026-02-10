@@ -59,6 +59,8 @@ export interface Post {
     id: string;
     content: string;
     mediaUrl?: string;
+    thumbnailUrl?: string;      // 200px grid thumbnail (from server)
+    fullMediaUrl?: string;      // Original resolution (for detail views)
     mediaType?: string;
     mediaCropY?: number;
     mediaAspectRatio?: string;
@@ -407,7 +409,9 @@ export function mapApiPost(raw: any): Post {
     return {
         id: raw.id,
         content: raw.caption || raw.content || '',
-        mediaUrl: raw.mediaUrl,
+        mediaUrl: raw.mediaUrl,                               // 800px feed-optimized (from server)
+        thumbnailUrl: raw.thumbnailUrl,                       // 200px grid thumbnail (from server)
+        fullMediaUrl: raw.fullMediaUrl || raw.mediaUrl,       // Original resolution for detail views
         mediaType: raw.type || raw.mediaType,
         mediaCropY: raw.mediaCropY,
         mediaAspectRatio: raw.mediaAspectRatio,

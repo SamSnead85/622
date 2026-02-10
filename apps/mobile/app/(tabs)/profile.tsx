@@ -64,7 +64,7 @@ const PostGridItem = memo(({ post, index }: { post: Post; index: number }) => {
             >
                 {post.mediaUrl ? (
                     <Image
-                        source={{ uri: post.mediaUrl }}
+                        source={{ uri: post.thumbnailUrl || post.mediaUrl }}
                         style={styles.postImage}
                         placeholder={IMAGE_PLACEHOLDER.blurhash}
                         transition={IMAGE_PLACEHOLDER.transition}

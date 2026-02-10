@@ -55,7 +55,7 @@ const PostGridItem = memo(({ post }: { post: Post }) => {
         <TouchableOpacity style={styles.postItem} activeOpacity={0.9} onPress={() => router.push(`/post/${post.id}`)}>
             {post.mediaUrl ? (
                 <Image 
-                    source={{ uri: post.mediaUrl }} 
+                    source={{ uri: post.thumbnailUrl || post.mediaUrl }} 
                     style={styles.postImage}
                     placeholder={IMAGE_PLACEHOLDER.blurhash}
                     transition={IMAGE_PLACEHOLDER.transition}

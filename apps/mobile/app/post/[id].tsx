@@ -781,14 +781,14 @@ export default function PostDetailScreen() {
                         </Text>
                     ) : null}
 
-                    {/* Media */}
-                    {post.mediaUrl && (
+                    {/* Media — use fullMediaUrl (original res) for detail view, fall back to mediaUrl */}
+                    {(post.fullMediaUrl || post.mediaUrl) && (
                         <View style={styles.mediaContainer}>
                             {post.mediaType === 'VIDEO' ? (
-                                <PostVideoPlayer uri={post.mediaUrl} />
+                                <PostVideoPlayer uri={post.fullMediaUrl || post.mediaUrl} />
                             ) : (
                                 <Image
-                                    source={{ uri: post.mediaUrl }}
+                                    source={{ uri: post.fullMediaUrl || post.mediaUrl }}
                                     placeholder={IMAGE_PLACEHOLDER.blurhash}
                                     transition={IMAGE_PLACEHOLDER.transition}
                                     cachePolicy="memory-disk"

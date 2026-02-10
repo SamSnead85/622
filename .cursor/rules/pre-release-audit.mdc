@@ -1,0 +1,38 @@
+---
+description: Pre-release build audit loop — run before every deploy, commit, or release to catch accumulated issues
+alwaysApply: true
+---
+
+# Pre-Release Audit Loop
+
+Before every commit, deploy, or release, run this loop until zero issues remain:
+
+## The Loop: Analyze → Fix → Verify → Repeat
+
+### Pass 1: Build Verification
+1. Run `npx prisma generate` in `apps/server/`
+2. Run `npx tsc --noEmit` in `apps/server/` — zero errors required
+3. Run `npm run build` in `apps/server/` — must exit 0
+4. Run `next build` in `apps/web/` — must exit 0 (use `NEXT_PUBLIC_API_URL=https://placeholder.railway.app`)
+5. If ANY errors, fix them before proceeding
+
+### Pass 2: Code Quality Sweep
+- TypeScript: no `let x = null` without explicit type annotation (use `let x: Type | null = null`)
+- No empty catch blocks without explanatory comments
+- No `any` types without justification
+- Prisma queries with `.include` must match property access downstream
+- All `orderBy` fields must exist on the model
+
+### Pass 3: Mobile App Checks
+- Run linter on recently edited files
+- Verify `expo-image` used instead of React Native `Image` for all remote images
+- Verify all images have `placeholder`, `transition`, `cachePolicy` props
+- Check for memory leaks: every `setInterval`/`setTimeout` must have cleanup in `useEffect` return
+
+### Exit Criteria
+- Server `tsc --noEmit` exits 0
+- Server `npm run build` exits 0
+- Web `next build` exits 0
+- No unhandled TypeScript errors in any workspace
+
+If issues are found in any pass, fix them and re-run that pass. Do NOT push until all passes are green.
