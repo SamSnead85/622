@@ -133,7 +133,7 @@ export default function MomentViewerScreen() {
         );
     }
 
-    const isOwn = currentMoment.user.id === currentUser?.id;
+    const isOwn = currentMoment?.user?.id === currentUser?.id;
 
     return (
         <View style={styles.container}>

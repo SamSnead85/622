@@ -545,6 +545,7 @@ export default function SurahDetailScreen() {
                         paddingTop: spacing.sm,
                     }}
                     showsVerticalScrollIndicator={false}
+                    removeClippedSubviews={true}
                     ListHeaderComponent={<SurahInfoHeader />}
                     initialNumToRender={10}
                     maxToRenderPerBatch={10}

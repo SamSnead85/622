@@ -100,7 +100,7 @@ export default function SplashIndex() {
     // Still initializing — show animated splash
     return (
         <LinearGradient
-            colors={[colors.obsidian[900], '#0D0D10', colors.obsidian[900]]}
+            colors={[colors.obsidian[900], colors.obsidian[900], colors.obsidian[900]]}
             style={styles.container}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}

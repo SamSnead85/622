@@ -897,6 +897,10 @@ export default function ChatScreen() {
                     onContentSizeChange={() =>
                         flatListRef.current?.scrollToEnd({ animated: false })
                     }
+                    removeClippedSubviews={true}
+                    maxToRenderPerBatch={8}
+                    windowSize={5}
+                    initialNumToRender={15}
                     ListEmptyComponent={
                         <View style={styles.emptyChat}>
                             <View style={styles.emptyChatIcon}>

@@ -257,8 +257,8 @@ function ActiveContactsStrip({ onCreatePress }: { onCreatePress: () => void }) {
                 seen.add(post.author.id);
                 contacts.push({
                     id: post.author.id,
-                    username: post.author.username,
-                    displayName: post.author.displayName,
+                    username: post.author?.username || 'unknown',
+                    displayName: post.author?.displayName || 'Anonymous',
                     avatarUrl: post.author.avatarUrl,
                     isOnline: contacts.length < 3, // First 3 shown as "online" (simulated)
                 });
@@ -1975,7 +1975,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     messageBadgeText: {
-        color: '#fff',
+        color: colors.text.primary,
         fontSize: 10,
         fontWeight: '700',
     },

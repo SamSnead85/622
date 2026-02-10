@@ -377,6 +377,14 @@ export default function MessagesScreen() {
 
     // ---- Navigate to conversation ----
 
+    const handleConversationPress = useCallback((conversationId: string) => {
+        router.push(`/chat/${conversationId}` as any);
+    }, [router]);
+
+    const handleConversationLongPress = useCallback((conversation: any) => {
+        handleLongPress(conversation);
+    }, [handleLongPress]);
+
     const handleContactPress = useCallback((contact: OnlineContact) => {
         const existing = conversations.find((conv) => conv.participant.id === contact.id);
         if (existing) {
@@ -474,8 +482,8 @@ export default function MessagesScreen() {
                     renderItem={({ item, index }) => (
                         <ConversationItem
                             conversation={item}
-                            onPress={() => router.push(`/chat/${item.id}`)}
-                            onLongPress={() => handleLongPress(item)}
+                            onPress={() => handleConversationPress(item.id)}
+                            onLongPress={() => handleConversationLongPress(item)}
                             userId={user?.id}
                             index={index}
                         />
@@ -486,6 +494,10 @@ export default function MessagesScreen() {
                         { paddingBottom: insets.bottom + spacing.xl + 80 },
                     ]}
                     showsVerticalScrollIndicator={false}
+                    removeClippedSubviews={true}
+                    maxToRenderPerBatch={8}
+                    windowSize={5}
+                    initialNumToRender={6}
                     refreshControl={
                         <RefreshControl
                             refreshing={isRefreshing}

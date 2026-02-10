@@ -276,6 +276,7 @@ export default function TriviaScreen() {
     const [questionKey, setQuestionKey] = useState(0); // for re-triggering entrance animations
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const previousScore = useRef(0);
 
     // Derived data
@@ -314,6 +315,7 @@ export default function TriviaScreen() {
 
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
     }, [currentQuestion, showResult, hasAnswered, gameStore]);
 
@@ -327,11 +329,13 @@ export default function TriviaScreen() {
             setScorePopup({ points: gained, visible: true });
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-            const timer = setTimeout(() => {
+            timeoutRef.current = setTimeout(() => {
                 setScorePopup({ points: 0, visible: false });
             }, 1500);
 
-            return () => clearTimeout(timer);
+            return () => {
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            };
         }
         previousScore.current = myScore;
     }, [myScore, showResult]);

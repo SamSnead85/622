@@ -134,7 +134,7 @@ export default function QiblaScreen() {
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={[colors.obsidian[900], '#0A0A10', colors.obsidian[900]]}
+                colors={[colors.obsidian[900], colors.obsidian[900], colors.obsidian[900]]}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}

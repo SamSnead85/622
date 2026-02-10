@@ -907,6 +907,10 @@ export default function SearchScreen() {
                     }}
                     showsVerticalScrollIndicator={false}
                     keyboardDismissMode="on-drag"
+                    removeClippedSubviews={true}
+                    maxToRenderPerBatch={8}
+                    windowSize={5}
+                    initialNumToRender={6}
                     refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.gold[500]} />}
                 />
             )}

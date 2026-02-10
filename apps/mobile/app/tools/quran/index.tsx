@@ -391,9 +391,11 @@ export default function QuranSurahList() {
                 }
                 contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
                 showsVerticalScrollIndicator={false}
+                removeClippedSubviews={true}
                 initialNumToRender={20}
                 maxToRenderPerBatch={15}
                 windowSize={10}
+                getItemLayout={(_, index) => ({ length: 72, offset: 72 * index, index })}
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.gold[500]} />}
             />
         </View>

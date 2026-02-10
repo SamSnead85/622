@@ -88,13 +88,11 @@ function RootLayout() {
 
     useEffect(() => {
         if (!i18nReady) {
-            const check = setInterval(() => {
-                if (i18nReady) {
-                    setI18nLoaded(true);
-                    clearInterval(check);
-                }
-            }, 50);
-            return () => clearInterval(check);
+            // Check once after a reasonable delay instead of polling
+            const timeout = setTimeout(() => {
+                setI18nLoaded(true); // Proceed regardless after 500ms
+            }, 500);
+            return () => clearTimeout(timeout);
         } else {
             setI18nLoaded(true);
         }

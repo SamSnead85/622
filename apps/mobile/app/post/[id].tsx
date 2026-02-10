@@ -957,6 +957,10 @@ export default function PostDetailScreen() {
                 ListHeaderComponent={renderHeader}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}
                 showsVerticalScrollIndicator={false}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={8}
+                windowSize={5}
+                initialNumToRender={6}
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}

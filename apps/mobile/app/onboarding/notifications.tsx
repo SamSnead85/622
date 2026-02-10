@@ -139,7 +139,7 @@ export default function NotificationPrimingScreen() {
 
     return (
         <LinearGradient
-            colors={[colors.obsidian[900], '#0D0D10', colors.obsidian[800]]}
+            colors={[colors.obsidian[900], colors.obsidian[900], colors.obsidian[800]]}
             style={styles.container}
         >
             <View style={[styles.content, { paddingTop: insets.top + spacing['3xl'], paddingBottom: insets.bottom + spacing.lg }]}>
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border.subtle,
         // Subtle lift shadow
-        shadowColor: '#000',
+        shadowColor: colors.obsidian[900],
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,

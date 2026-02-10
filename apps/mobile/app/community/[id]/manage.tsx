@@ -106,8 +106,8 @@ export default function CommunityManageScreen() {
 
     const filteredMembers = members.filter((m) => {
         const matchesSearch = !searchQuery ||
-            m.user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            m.user.username.toLowerCase().includes(searchQuery.toLowerCase());
+            (m.user?.displayName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (m.user?.username || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesRole = !filterRole || m.role === filterRole;
         return matchesSearch && matchesRole;
     });
