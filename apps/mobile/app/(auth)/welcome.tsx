@@ -200,7 +200,7 @@ export default function WelcomeScreen() {
 
     return (
         <LinearGradient
-            colors={[colors.obsidian[900], '#0D0D10', colors.obsidian[900]]}
+            colors={[colors.obsidian[900], colors.obsidian[900], colors.obsidian[900]]}
             style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
         >
             {/* Skip button */}
