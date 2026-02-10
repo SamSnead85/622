@@ -7,6 +7,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 import { colors, typography } from '@zerog/ui';
+import { AVATAR_PLACEHOLDER } from '../lib/imagePlaceholder';
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
@@ -84,7 +85,9 @@ export function Avatar({
                 source={{ uri }}
                 style={[containerStyle, style]}
                 contentFit="cover"
-                transition={200}
+                placeholder={AVATAR_PLACEHOLDER.blurhash}
+                transition={AVATAR_PLACEHOLDER.transition}
+                cachePolicy="memory-disk"
                 accessibilityLabel={label || `${name || 'User'}'s avatar`}
                 accessibilityRole="image"
             />

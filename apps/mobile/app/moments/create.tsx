@@ -5,13 +5,13 @@ import {
     StyleSheet,
     TouchableOpacity,
     TextInput,
-    Image,
     ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
     Platform,
     Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,7 @@ import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, apiUpload, API } from '../../lib/api';
 import { ScreenHeader, BackButton } from '../../components';
+import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -139,7 +140,14 @@ export default function MomentCreateScreen() {
                 ) : (
                     /* Preview + Caption */
                     <View style={styles.previewArea}>
-                        <Image source={{ uri: mediaUri }} style={styles.preview} resizeMode="cover" />
+                        <Image 
+                            source={{ uri: mediaUri }} 
+                            style={styles.preview} 
+                            contentFit="cover"
+                            placeholder={IMAGE_PLACEHOLDER.blurhash}
+                            transition={IMAGE_PLACEHOLDER.transition}
+                            cachePolicy="memory-disk"
+                        />
                         <LinearGradient
                             colors={['transparent', colors.obsidian[900] + 'CC', colors.obsidian[900]]}
                             style={styles.previewGradient}

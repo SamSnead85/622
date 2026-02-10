@@ -387,8 +387,9 @@ interface FeedState {
     hasMore: boolean;
     nextCursor: string | null;
     error: string | null;
+    cacheTimestamp: number;
 
-    fetchFeed: (refresh?: boolean, feedType?: 'foryou' | 'following', feedView?: 'private' | 'community') => Promise<void>;
+    fetchFeed: (refresh?: boolean, feedType?: 'foryou' | 'following', feedView?: 'private' | 'community', silent?: boolean) => Promise<void>;
     likePost: (postId: string) => Promise<void>;
     unlikePost: (postId: string) => Promise<void>;
     savePost: (postId: string) => Promise<void>;
@@ -436,8 +437,9 @@ export const useFeedStore = create<FeedState>()(
     hasMore: true,
     nextCursor: null,
     error: null,
+    cacheTimestamp: 0,
 
-    fetchFeed: async (refresh = false, feedType: 'foryou' | 'following' = 'foryou', feedView: 'private' | 'community' = 'private') => {
+    fetchFeed: async (refresh = false, feedType: 'foryou' | 'following' = 'foryou', feedView: 'private' | 'community' = 'private', silent = false) => {
         const state = get();
         // Prevent concurrent fetches — block if already loading OR refreshing
         if (state.isLoading || state.isRefreshing) {
@@ -445,13 +447,18 @@ export const useFeedStore = create<FeedState>()(
         }
 
         if (refresh) {
-            // SWR: keep existing posts visible while refreshing (no blank screen)
-            // Only show isLoading spinner if we have NO cached posts
-            set({
-                isRefreshing: true,
-                isLoading: state.posts.length === 0,
-                nextCursor: null,
-            });
+            if (silent) {
+                // Silent background refresh — no spinners shown
+                set({ nextCursor: null });
+            } else {
+                // SWR: keep existing posts visible while refreshing (no blank screen)
+                // Only show isLoading spinner if we have NO cached posts
+                set({
+                    isRefreshing: true,
+                    isLoading: state.posts.length === 0,
+                    nextCursor: null,
+                });
+            }
         } else {
             set({ isLoading: true });
         }
@@ -474,6 +481,7 @@ export const useFeedStore = create<FeedState>()(
                     isLoading: false,
                     hasMore: !!newCursor,
                     nextCursor: newCursor,
+                    cacheTimestamp: Date.now(),
                 });
             } else {
                 // Deduplicate: only append posts whose IDs aren't already present
@@ -652,14 +660,24 @@ export const useFeedStore = create<FeedState>()(
 
     clear: () => set({ posts: [], nextCursor: null, hasMore: true }),
 
-    reset: () => set({ posts: [], nextCursor: null, hasMore: true, isLoading: false, isRefreshing: false, error: null }),
+    reset: () => set({ posts: [], nextCursor: null, hasMore: true, isLoading: false, isRefreshing: false, error: null, cacheTimestamp: 0 }),
 }),
         {
             name: 'feed-storage',
             storage: zustandStorage,
             partialize: (state) => ({
-                posts: state.posts.slice(0, 20), // Only cache first 20 posts
+                posts: state.posts.slice(0, 50), // Cache first 50 posts for faster startup
+                cacheTimestamp: state.cacheTimestamp,
             }),
+            onRehydrateStorage: () => (state) => {
+                if (state) {
+                    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+                    if (Date.now() - state.cacheTimestamp > CACHE_TTL) {
+                        // Cache is stale, clear posts so fresh data is fetched
+                        useFeedStore.setState({ posts: [], cacheTimestamp: 0 });
+                    }
+                }
+            },
         }
     )
 );

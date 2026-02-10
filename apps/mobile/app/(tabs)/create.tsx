@@ -18,6 +18,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import Animated, {
     FadeIn,
@@ -34,10 +36,29 @@ import { Avatar } from '../../components';
 import { useAuthStore, useFeedStore, useCommunitiesStore, mapApiPost } from '../../stores';
 import { apiFetch, apiUpload, API } from '../../lib/api';
 import type { Community } from '../../stores';
+import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 const MAX_LENGTH = 2000;
 const WARN_THRESHOLD = 1800;
 const DANGER_THRESHOLD = 1950;
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+// ============================================
+// Image Compression Utility
+// ============================================
+
+async function compressImage(uri: string): Promise<string> {
+    try {
+        const result = await ImageManipulator.manipulateAsync(
+            uri,
+            [{ resize: { width: 1920 } }],
+            { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        return result.uri;
+    } catch {
+        return uri; // Fallback to original if compression fails
+    }
+}
 
 // ============================================
 // Visibility & Audience Types
@@ -221,7 +242,7 @@ function AudienceSelector({
                             }}
                         >
                             {community.avatarUrl ? (
-                                <Image source={{ uri: community.avatarUrl }} style={styles.communityThumb} />
+                                <Image source={{ uri: community.avatarUrl }} style={styles.communityThumb} placeholder={AVATAR_PLACEHOLDER.blurhash} transition={AVATAR_PLACEHOLDER.transition} cachePolicy="memory-disk" />
                             ) : (
                                 <View style={[styles.communityThumb, styles.communityThumbPlaceholder]}>
                                     <Text style={styles.communityThumbInitial}>
@@ -347,6 +368,7 @@ export default function CreateScreen() {
     const [content, setContent] = useState('');
     const [mediaUri, setMediaUri] = useState<string | null>(null);
     const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+    const [selectedMedia, setSelectedMedia] = useState<ImagePicker.ImagePickerAsset[]>([]);
     const [visibility, setVisibility] = useState<PostVisibility>('public');
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
     const [isPublishing, setIsPublishing] = useState(false);
@@ -375,13 +397,17 @@ export default function CreateScreen() {
     const handlePickPhoto = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
+            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            allowsMultipleSelection: true,
+            selectionLimit: 4,
             quality: 0.8,
+            allowsEditing: false,
+            videoMaxDuration: 120,
         });
-        if (!result.canceled && result.assets[0]) {
+        if (!result.canceled && result.assets.length > 0) {
+            setSelectedMedia(result.assets);
             setMediaUri(result.assets[0].uri);
-            setMediaType('image');
+            setMediaType(result.assets[0].type === 'video' ? 'video' : 'image');
         }
     }, []);
 
@@ -424,11 +450,19 @@ export default function CreateScreen() {
         setShowLinkInput(!showLinkInput);
     }, [showLinkInput]);
 
-    const handleRemoveMedia = useCallback(() => {
+    const handleRemoveMedia = useCallback((index?: number) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setMediaUri(null);
-        setMediaType(null);
-    }, []);
+        if (index !== undefined && selectedMedia.length > 1) {
+            const updated = selectedMedia.filter((_, i) => i !== index);
+            setSelectedMedia(updated);
+            setMediaUri(updated[0]?.uri || null);
+            setMediaType(updated[0]?.type === 'video' ? 'video' : updated[0] ? 'image' : null);
+        } else {
+            setMediaUri(null);
+            setMediaType(null);
+            setSelectedMedia([]);
+        }
+    }, [selectedMedia]);
 
     const handleMediaBarPress = useCallback((key: string) => {
         switch (key) {
@@ -445,7 +479,7 @@ export default function CreateScreen() {
     // ============================================
 
     const handleCancel = useCallback(() => {
-        if (content.trim() || mediaUri) {
+        if (content.trim() || mediaUri || selectedMedia.length > 0) {
             Alert.alert(
                 'Discard Post?',
                 'You have unsaved changes. Are you sure you want to discard this post?',
@@ -461,7 +495,7 @@ export default function CreateScreen() {
         } else {
             router.back();
         }
-    }, [content, mediaUri, router]);
+    }, [content, mediaUri, selectedMedia, router]);
 
     // ============================================
     // Publish
@@ -477,14 +511,28 @@ export default function CreateScreen() {
         try {
             let uploadedMediaUrl: string | undefined;
             let uploadedMediaType: string | undefined;
+            let processedMediaUri = mediaUri;
 
-            if (mediaUri) {
+            if (processedMediaUri) {
+                // File size validation
+                const fileInfo = await FileSystem.getInfoAsync(processedMediaUri);
+                if (fileInfo.exists && fileInfo.size && fileInfo.size > MAX_FILE_SIZE) {
+                    Alert.alert('File Too Large', 'Maximum file size is 50MB.');
+                    setIsPublishing(false);
+                    return;
+                }
+
+                // Compress images before upload
+                if (mediaType === 'image') {
+                    processedMediaUri = await compressImage(processedMediaUri);
+                }
+
                 setUploadProgress(10);
-                const fileName = mediaUri.split('/').pop() || 'media';
+                const fileName = processedMediaUri.split('/').pop() || 'media';
                 const mimeType = mediaType === 'video' ? 'video/mp4' : 'image/jpeg';
                 const uploadResult = await apiUpload(
                     API.uploadPost,
-                    mediaUri,
+                    processedMediaUri,
                     mimeType,
                     fileName,
                     (progress) => setUploadProgress(progress * 0.8),
@@ -524,20 +572,21 @@ export default function CreateScreen() {
                 setContent('');
                 setMediaUri(null);
                 setMediaType(null);
+                setSelectedMedia([]);
                 setUploadProgress(0);
                 setShowSuccess(false);
                 setLinkUrl('');
                 setShowLinkInput(false);
                 setSelectedCommunity(null);
                 router.push('/(tabs)');
-            }, 1400);
+            }, 800);
         } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to publish post. Please try again.');
         } finally {
             setIsPublishing(false);
             setUploadProgress(0);
         }
-    }, [content, mediaUri, mediaType, visibility, selectedCommunity, linkUrl, addPost, router]);
+    }, [content, mediaUri, mediaType, visibility, selectedCommunity, linkUrl, selectedMedia, addPost, router]);
 
     // ============================================
     // Derived State
@@ -690,14 +739,49 @@ export default function CreateScreen() {
                         </Animated.View>
                     )}
 
-                    {/* Media Preview */}
-                    {mediaUri && (
+                    {/* Media Preview Strip (multiple) */}
+                    {selectedMedia.length > 1 && (
+                        <Animated.View entering={FadeInDown.springify()} style={styles.mediaStripContainer}>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.mediaStripContent}
+                            >
+                                {selectedMedia.map((asset, index) => (
+                                    <View key={asset.uri} style={styles.mediaStripItem}>
+                                        <Image
+                                            source={{ uri: asset.uri }}
+                                            style={styles.mediaStripThumb}
+                                            contentFit="cover"
+                                            transition={200}
+                                        />
+                                        {asset.type === 'video' && (
+                                            <View style={styles.mediaStripVideoTag}>
+                                                <Ionicons name="videocam" size={8} color={colors.text.primary} />
+                                            </View>
+                                        )}
+                                        <TouchableOpacity
+                                            style={styles.mediaStripRemoveBtn}
+                                            onPress={() => handleRemoveMedia(index)}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Ionicons name="close" size={12} color={colors.text.primary} />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </ScrollView>
+                        </Animated.View>
+                    )}
+
+                    {/* Single Media Preview */}
+                    {mediaUri && selectedMedia.length <= 1 && (
                         <Animated.View entering={FadeInDown.springify()} style={styles.mediaPreview}>
                             <Image
                                 source={{ uri: mediaUri }}
                                 style={styles.mediaPreviewImage}
                                 contentFit="cover"
-                                transition={200}
+                                placeholder={IMAGE_PLACEHOLDER.blurhash}
+                                transition={IMAGE_PLACEHOLDER.transition}
                             />
                             {mediaType === 'video' && (
                                 <View style={styles.videoTag}>
@@ -707,7 +791,7 @@ export default function CreateScreen() {
                             )}
                             <TouchableOpacity
                                 style={styles.removeMediaBtn}
-                                onPress={handleRemoveMedia}
+                                onPress={() => handleRemoveMedia()}
                                 activeOpacity={0.7}
                             >
                                 <Ionicons name="close" size={16} color={colors.text.primary} />
@@ -1050,6 +1134,45 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 16,
+        backgroundColor: colors.surface.overlay,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    // Media Strip (multi-select)
+    mediaStripContainer: {
+        marginBottom: spacing.md,
+    },
+    mediaStripContent: {
+        gap: spacing.sm,
+    },
+    mediaStripItem: {
+        width: 100,
+        height: 100,
+        borderRadius: borderRadius.lg,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    mediaStripThumb: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: colors.obsidian[700],
+    },
+    mediaStripVideoTag: {
+        position: 'absolute',
+        bottom: spacing.xs,
+        left: spacing.xs,
+        backgroundColor: colors.surface.overlay,
+        padding: 3,
+        borderRadius: borderRadius.sm,
+    },
+    mediaStripRemoveBtn: {
+        position: 'absolute',
+        top: spacing.xs,
+        right: spacing.xs,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
         backgroundColor: colors.surface.overlay,
         alignItems: 'center',
         justifyContent: 'center',

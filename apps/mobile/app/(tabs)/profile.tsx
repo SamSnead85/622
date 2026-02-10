@@ -29,6 +29,7 @@ import { Avatar, LoadingView, EmptyState, SkeletonGrid } from '../../components'
 import { useAuthStore, Post, mapApiPost } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { showError } from '../../stores/toastStore';
+import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_HEIGHT = 200;
@@ -65,7 +66,8 @@ const PostGridItem = memo(({ post, index }: { post: Post; index: number }) => {
                     <Image
                         source={{ uri: post.mediaUrl }}
                         style={styles.postImage}
-                        transition={200}
+                        placeholder={IMAGE_PLACEHOLDER.blurhash}
+                        transition={IMAGE_PLACEHOLDER.transition}
                         cachePolicy="memory-disk"
                         recyclingKey={post.id}
                         contentFit="cover"
@@ -254,6 +256,7 @@ export default function ProfileScreen() {
                     <Image
                         source={{ uri: user.coverUrl }}
                         style={styles.coverImage}
+                        placeholder={IMAGE_PLACEHOLDER.blurhash}
                         transition={400}
                         cachePolicy="memory-disk"
                         contentFit="cover"

@@ -5,11 +5,11 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Image,
     Dimensions,
     RefreshControl,
     Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +20,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore, Post, mapApiPost } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { ScreenHeader, LoadingView, Avatar } from '../../components';
+import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const POST_SIZE = (SCREEN_WIDTH - spacing.xl * 2 - spacing.xs * 2) / 3;
@@ -53,7 +54,14 @@ const PostGridItem = memo(({ post }: { post: Post }) => {
     return (
         <TouchableOpacity style={styles.postItem} activeOpacity={0.9} onPress={() => router.push(`/post/${post.id}`)}>
             {post.mediaUrl ? (
-                <Image source={{ uri: post.mediaUrl }} style={styles.postImage} />
+                <Image 
+                    source={{ uri: post.mediaUrl }} 
+                    style={styles.postImage}
+                    placeholder={IMAGE_PLACEHOLDER.blurhash}
+                    transition={IMAGE_PLACEHOLDER.transition}
+                    cachePolicy="memory-disk"
+                    contentFit="cover"
+                />
             ) : (
                 <View style={[styles.postImage, styles.textPostBg]}>
                     <Text style={styles.textPostContent} numberOfLines={3}>{post.content}</Text>

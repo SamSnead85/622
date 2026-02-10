@@ -43,6 +43,7 @@ import { RetryView } from '../../components/RetryView';
 import { apiFetch, API } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { toHijri } from '../../lib/hijri';
+import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 
 // ============================================
@@ -176,7 +177,8 @@ function ActiveContactBubble({
                         <Image
                             source={{ uri: avatarUrl }}
                             style={[styles.contactAvatar, hasStory && styles.contactAvatarWithStory]}
-                            transition={150}
+                            placeholder={AVATAR_PLACEHOLDER.blurhash}
+                            transition={AVATAR_PLACEHOLDER.transition}
                             cachePolicy="memory-disk"
                         />
                     ) : (
@@ -606,7 +608,8 @@ const FeedPostCard = memo(
                                     <Image
                                         source={{ uri: post.author.avatarUrl }}
                                         style={styles.avatar}
-                                        transition={150}
+                                        placeholder={AVATAR_PLACEHOLDER.blurhash}
+                                        transition={AVATAR_PLACEHOLDER.transition}
                                         cachePolicy="memory-disk"
                                         recyclingKey={post.author.id}
                                     />
@@ -675,7 +678,8 @@ const FeedPostCard = memo(
                                             : { aspectRatio: 1.5 },
                                     ]}
                                     contentFit="cover"
-                                    transition={200}
+                                    placeholder={IMAGE_PLACEHOLDER.blurhash}
+                                    transition={IMAGE_PLACEHOLDER.transition}
                                     cachePolicy="memory-disk"
                                     recyclingKey={post.id}
                                     accessibilityLabel={`Post image by ${post.author?.displayName || 'Anonymous'}`}
@@ -806,6 +810,8 @@ const FeedPostCard = memo(
                                         <Image
                                             source={{ uri: post.author.avatarUrl }}
                                             style={styles.authorNoteAvatar}
+                                            placeholder={AVATAR_PLACEHOLDER.blurhash}
+                                            transition={AVATAR_PLACEHOLDER.transition}
                                             cachePolicy="memory-disk"
                                         />
                                     ) : (
@@ -1351,37 +1357,72 @@ export default function FeedScreen() {
         const imageUrls = posts
             .filter((p) => p.mediaUrl && p.mediaType !== 'VIDEO')
             .map((p) => p.mediaUrl!)
-            .slice(0, 10); // Prefetch first 10 images
+            .slice(0, 20); // Prefetch first 20 images
         if (imageUrls.length > 0) {
             Image.prefetch(imageUrls);
         }
     }, [posts]);
 
+    // Prefetch next page images when user is near the bottom of the current feed
+    const prefetchedPageRef = useRef<number>(0);
+    const onViewableForPrefetch = useCallback(
+        ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+            if (viewableItems.length === 0 || posts.length === 0) return;
+            const lastViewableIndex = Math.max(
+                ...viewableItems.map((v) => v.index ?? 0)
+            );
+            // When user is within 5 posts of the bottom, prefetch next batch
+            if (lastViewableIndex >= posts.length - 5 && hasMore && prefetchedPageRef.current < posts.length) {
+                prefetchedPageRef.current = posts.length;
+                // Trigger load of next page (images will be prefetched when posts state updates)
+                if (!isLoading) {
+                    fetchFeed(false, feedType, feedView);
+                }
+            }
+        },
+        [posts.length, hasMore, isLoading, fetchFeed, feedType, feedView]
+    );
+
+    // Extracted so it can be used in parallel fetch and periodic refresh
+    const fetchUnreadCount = useCallback(async () => {
+        try {
+            const data = await apiFetch<{ conversations: Array<{ unreadCount: number }> }>(API.conversations);
+            const totalUnread = (data?.conversations || []).reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
+            setUnreadMessages(totalUnread);
+        } catch (error) {
+            console.warn('Failed to fetch unread messages count:', error);
+        }
+    }, []);
+
+    // Parallel fetch: feed + unread messages on mount and tab/view changes
+    // Uses silent mode when cached posts exist to avoid spinners on tab switch
     useEffect(() => {
-        fetchFeed(true, feedType, feedView);
+        const hasCachedPosts = useFeedStore.getState().posts.length > 0;
+        Promise.allSettled([
+            fetchFeed(true, feedType, feedView, hasCachedPosts),
+            fetchUnreadCount(),
+        ]);
     }, [feedType, feedView]);
 
-    // Fetch unread messages count
+    // Periodic unread count refresh (every 30 seconds) + on screen focus
     useEffect(() => {
-        const fetchUnreadCount = async () => {
-            try {
-                const data = await apiFetch<{ conversations: Array<{ unreadCount: number }> }>(API.conversations);
-                const totalUnread = (data?.conversations || []).reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
-                setUnreadMessages(totalUnread);
-            } catch (error) {
-                console.warn('Failed to fetch unread messages count:', error);
-            }
-        };
-        fetchUnreadCount();
-        // Refresh unread count periodically (every 30 seconds)
         const interval = setInterval(fetchUnreadCount, 30000);
-        // Refresh when screen comes into focus
         const unsubscribe = navigation.addListener('focus', fetchUnreadCount);
         return () => {
             clearInterval(interval);
             unsubscribe();
         };
-    }, [navigation]);
+    }, [navigation, fetchUnreadCount]);
+
+    // Background refresh: silently refresh feed every 3 minutes
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (!isLoading && !isRefreshing) {
+                fetchFeed(true, feedType, feedView, true);
+            }
+        }, 3 * 60 * 1000);
+        return () => clearInterval(interval);
+    }, [isLoading, isRefreshing, fetchFeed, feedType, feedView]);
 
     // Scroll to top when tab is tapped while already focused
     useEffect(() => {

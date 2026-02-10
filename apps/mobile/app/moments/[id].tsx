@@ -4,10 +4,10 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    Image,
     Dimensions,
     StatusBar,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,6 +19,7 @@ import { apiFetch, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
 import { showError } from '../../stores/toastStore';
 import { Avatar } from '../../components';
+import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MOMENT_DURATION = 5000; // 5 seconds per moment
@@ -140,7 +141,14 @@ export default function MomentViewerScreen() {
             <StatusBar barStyle="light-content" />
 
             {/* Media */}
-            <Image source={{ uri: currentMoment.mediaUrl }} style={styles.media} resizeMode="cover" />
+            <Image 
+                source={{ uri: currentMoment.mediaUrl }} 
+                style={styles.media} 
+                contentFit="cover"
+                placeholder={IMAGE_PLACEHOLDER.blurhash}
+                transition={IMAGE_PLACEHOLDER.transition}
+                cachePolicy="memory-disk"
+            />
 
             {/* Gradient overlays */}
             <LinearGradient

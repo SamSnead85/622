@@ -41,6 +41,7 @@ import { useCommunitiesStore, useAuthStore, Community } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { RetryView } from '../../components/RetryView';
 import { showError } from '../../stores/toastStore';
+import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -254,7 +255,8 @@ const YourCommunityChip = memo(({ community, index }: { community: Community; in
                         source={{ uri: community.coverUrl }}
                         style={styles.yourChipCover}
                         contentFit="cover"
-                        transition={200}
+                        placeholder={IMAGE_PLACEHOLDER.blurhash}
+                        transition={IMAGE_PLACEHOLDER.transition}
                         cachePolicy="memory-disk"
                     />
                 ) : (
@@ -340,7 +342,8 @@ const DiscoveryCommunityCard = memo(({ community, index, onJoin }: {
                             source={{ uri: community.coverUrl }}
                             style={StyleSheet.absoluteFill}
                             contentFit="cover"
-                            transition={200}
+                            placeholder={IMAGE_PLACEHOLDER.blurhash}
+                            transition={IMAGE_PLACEHOLDER.transition}
                             cachePolicy="memory-disk"
                         />
                     ) : (

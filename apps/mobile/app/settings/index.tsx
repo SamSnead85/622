@@ -29,6 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { SUPPORTED_LANGUAGES, changeLanguage } from '../../lib/i18n';
 import i18next from 'i18next';
 import { showError } from '../../stores/toastStore';
+import { AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 // ─── Setting Row Component ───────────────────────────────────────────
 interface SettingRowProps {
@@ -288,7 +289,7 @@ export default function SettingsScreen() {
                     >
                         <View style={styles.profileCardInner}>
                             {user?.avatarUrl ? (
-                                <Image source={{ uri: user.avatarUrl }} style={styles.profileAvatar} transition={150} />
+                                <Image source={{ uri: user.avatarUrl }} style={styles.profileAvatar} placeholder={AVATAR_PLACEHOLDER.blurhash} transition={AVATAR_PLACEHOLDER.transition} cachePolicy="memory-disk" />
                             ) : (
                                 <View style={[styles.profileAvatar, styles.profileAvatarPlaceholder]}>
                                     <Ionicons name="person" size={28} color={colors.gold[500]} />
@@ -335,7 +336,7 @@ export default function SettingsScreen() {
                                 {/* Avatar */}
                                 <TouchableOpacity style={styles.avatarEditor} onPress={handlePickAvatar} disabled={isUploadingAvatar} accessibilityRole="button" accessibilityLabel="Your profile photo" accessibilityHint="Tap to change your avatar">
                                     {user?.avatarUrl ? (
-                                        <Image source={{ uri: user.avatarUrl }} style={styles.editAvatar} transition={150} />
+                                        <Image source={{ uri: user.avatarUrl }} style={styles.editAvatar} placeholder={AVATAR_PLACEHOLDER.blurhash} transition={AVATAR_PLACEHOLDER.transition} cachePolicy="memory-disk" />
                                     ) : (
                                         <View style={[styles.editAvatar, styles.editAvatarPlaceholder]}>
                                             <Ionicons name="person" size={32} color={colors.text.muted} />

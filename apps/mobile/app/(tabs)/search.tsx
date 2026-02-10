@@ -35,6 +35,7 @@ import { Avatar, GlassCard } from '../../components';
 import { apiFetch, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
 import { showError } from '../../stores/toastStore';
+import { AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -507,7 +508,8 @@ export default function SearchScreen() {
                         <Image
                             source={{ uri: item.avatarUrl }}
                             style={styles.resultAvatar}
-                            transition={200}
+                            placeholder={AVATAR_PLACEHOLDER.blurhash}
+                            transition={AVATAR_PLACEHOLDER.transition}
                             cachePolicy="memory-disk"
                         />
                     ) : (

@@ -11,7 +11,6 @@ import {
     StyleSheet,
     FlatList,
     TouchableOpacity,
-    Image,
     TextInput,
     KeyboardAvoidingView,
     Platform,
@@ -22,6 +21,8 @@ import {
     RefreshControl,
     ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
+import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -788,6 +789,9 @@ export default function PostDetailScreen() {
                             ) : (
                                 <Image
                                     source={{ uri: post.mediaUrl }}
+                                    placeholder={IMAGE_PLACEHOLDER.blurhash}
+                                    transition={IMAGE_PLACEHOLDER.transition}
+                                    cachePolicy="memory-disk"
                                     style={[
                                         styles.mediaImage,
                                         post.mediaAspectRatio
@@ -797,7 +801,7 @@ export default function PostDetailScreen() {
                                               }
                                             : {},
                                     ]}
-                                    resizeMode="cover"
+                                    contentFit="cover"
                                 />
                             )}
                         </View>

@@ -5,11 +5,12 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Image,
     RefreshControl,
     Alert,
     Share,
 } from 'react-native';
+import { Image } from 'expo-image';
+import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../../lib/imagePlaceholder';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -138,14 +139,14 @@ export default function CommunityDetailScreen() {
                 <Animated.View entering={FadeInDown.duration(400)}>
                     {community.coverUrl && (
                         <View style={styles.coverContainer}>
-                            <Image source={{ uri: community.coverUrl }} style={styles.coverImage} />
+                            <Image source={{ uri: community.coverUrl }} placeholder={IMAGE_PLACEHOLDER.blurhash} transition={IMAGE_PLACEHOLDER.transition} cachePolicy="memory-disk" style={styles.coverImage} contentFit="cover" />
                             <LinearGradient colors={['transparent', colors.obsidian[900]]} style={styles.coverGradient} />
                         </View>
                     )}
 
                     <View style={styles.content}>
                         <View style={styles.communityInfo}>
-                            {community.avatarUrl && <Image source={{ uri: community.avatarUrl }} style={styles.avatar} />}
+                            {community.avatarUrl && <Image source={{ uri: community.avatarUrl }} placeholder={AVATAR_PLACEHOLDER.blurhash} transition={AVATAR_PLACEHOLDER.transition} cachePolicy="memory-disk" style={styles.avatar} />}
                             <Text style={styles.communityName}>{community.name}</Text>
                             <Text style={styles.communityDescription}>{community.description}</Text>
                         </View>
@@ -286,7 +287,7 @@ export default function CommunityDetailScreen() {
                                         <Text style={styles.postTime}>{timeAgo(post.createdAt)}</Text>
                                     </View>
                                     {post.content ? <Text style={styles.postContent} numberOfLines={3}>{post.content}</Text> : null}
-                                    {post.mediaUrl && <Image source={{ uri: post.mediaUrl }} style={styles.postMedia} resizeMode="cover" />}
+                                    {post.mediaUrl && <Image source={{ uri: post.mediaUrl }} placeholder={IMAGE_PLACEHOLDER.blurhash} transition={IMAGE_PLACEHOLDER.transition} cachePolicy="memory-disk" style={styles.postMedia} contentFit="cover" />}
                                     <View style={styles.postStats}>
                                         <View style={styles.postStatItem}>
                                             <Ionicons name="heart-outline" size={14} color={colors.text.muted} />

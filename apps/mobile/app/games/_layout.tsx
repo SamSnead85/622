@@ -7,6 +7,8 @@ export default function GamesLayout() {
             screenOptions={{
                 headerShown: false,
                 contentStyle: { backgroundColor: colors.obsidian[900] },
+                gestureEnabled: true,
+                gestureDirection: 'horizontal',
                 animation: 'slide_from_right',
             }}
         >

@@ -16,11 +16,11 @@ import {
     KeyboardAvoidingView,
     Platform,
     Pressable,
-    Image,
     Dimensions,
     ActivityIndicator,
     Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -49,6 +49,7 @@ import { useAuthStore } from '../../stores';
 import { socketManager, SocketMessage, TypingEvent } from '../../lib/socket';
 import { Avatar } from '../../components';
 import { showError } from '../../stores/toastStore';
+import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -242,7 +243,10 @@ const MessageBubble = memo(function MessageBubble({
                             <Image
                                 source={{ uri: item.mediaUrl }}
                                 style={styles.mediaImage}
-                                resizeMode="cover"
+                                contentFit="cover"
+                                placeholder={IMAGE_PLACEHOLDER.blurhash}
+                                transition={IMAGE_PLACEHOLDER.transition}
+                                cachePolicy="memory-disk"
                             />
                         </View>
                     )}
@@ -281,7 +285,10 @@ const MessageBubble = memo(function MessageBubble({
                             <Image
                                 source={{ uri: item.mediaUrl }}
                                 style={styles.mediaImage}
-                                resizeMode="cover"
+                                contentFit="cover"
+                                placeholder={IMAGE_PLACEHOLDER.blurhash}
+                                transition={IMAGE_PLACEHOLDER.transition}
+                                cachePolicy="memory-disk"
                             />
                         </View>
                     )}
