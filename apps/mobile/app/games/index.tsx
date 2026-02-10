@@ -3,7 +3,7 @@
 // Animated hero, better cards, stats, quick play
 // ============================================
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
     View,
     Text,
@@ -52,12 +52,45 @@ const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 // Game Definitions
 // ============================================
 
-const games = [
-    { type: 'trivia', name: 'Rapid Fire', icon: 'flash' as const, desc: 'Fast-paced trivia blitz', players: '2-8', color: colors.amber[500], isNew: false },
-    { type: 'predict', name: 'Predict', icon: 'people' as const, desc: 'Guess what others think', players: '3-8', color: colors.azure[500], isNew: true },
-    { type: 'wavelength', name: 'Wavelength', icon: 'radio' as const, desc: 'Read minds on a spectrum', players: '2-8', color: colors.emerald[500], isNew: false },
-    { type: 'infiltrator', name: 'Infiltrator', icon: 'eye-off' as const, desc: 'Find the hidden spy', players: '4-8', color: colors.coral[500], isNew: true },
-    { type: 'cipher', name: 'Cipher', icon: 'grid' as const, desc: 'Strategic word deduction', players: '4-8', color: colors.gold[500], isNew: false },
+type GameCategory = 'party' | 'brain' | 'strategy' | 'solo';
+
+interface GameDef {
+    type: string;
+    name: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    desc: string;
+    players: string;
+    color: string;
+    isNew: boolean;
+    category: GameCategory;
+    isSolo?: boolean;
+}
+
+const GAME_CATEGORIES: { key: GameCategory; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+    { key: 'party', label: 'Party', icon: 'people' },
+    { key: 'brain', label: 'Brain', icon: 'bulb' },
+    { key: 'strategy', label: 'Strategy', icon: 'extension-puzzle' },
+    { key: 'solo', label: 'Solo', icon: 'person' },
+];
+
+const games: GameDef[] = [
+    // Party Games — fun, loud, group play
+    { type: 'emoji-charades', name: 'Emoji Charades', icon: 'happy' as const, desc: 'Describe with emojis, guess the phrase!', players: '3-8', color: colors.amber[500], isNew: true, category: 'party' },
+    { type: 'predict', name: 'Predict', icon: 'people' as const, desc: 'Guess what others think', players: '3-8', color: colors.azure[500], isNew: false, category: 'party' },
+    { type: 'wavelength', name: 'Wavelength', icon: 'radio' as const, desc: 'Read minds on a spectrum', players: '2-8', color: colors.emerald[500], isNew: false, category: 'party' },
+    { type: 'infiltrator', name: 'Infiltrator', icon: 'eye-off' as const, desc: 'Find the hidden spy', players: '4-8', color: colors.coral[500], isNew: false, category: 'party' },
+
+    // Brain Games — quick thinking, reflexes
+    { type: 'trivia', name: 'Rapid Fire', icon: 'flash' as const, desc: 'Fast-paced trivia blitz', players: '2-8', color: colors.amber[500], isNew: false, category: 'brain' },
+    { type: 'speed-match', name: 'Speed Match', icon: 'speedometer' as const, desc: 'Color Rush, Memory, Math — how fast are you?', players: '1-2', color: colors.coral[500], isNew: true, category: 'brain' },
+    { type: 'word-blitz', name: 'Word Blitz', icon: 'text' as const, desc: 'Daily word puzzle + race mode', players: '1-2', color: colors.emerald[500], isNew: true, category: 'brain' },
+
+    // Strategy Games — deeper thinking
+    { type: 'cipher', name: 'Cipher', icon: 'grid' as const, desc: 'Strategic word deduction', players: '4-8', color: colors.gold[500], isNew: false, category: 'strategy' },
+
+    // Solo Games — play anytime
+    { type: 'daily', name: 'Daily Challenge', icon: 'calendar' as const, desc: '7 trivia questions, new every day', players: '1', color: colors.gold[500], isNew: false, category: 'solo', isSolo: true },
+    { type: 'practice', name: 'Solo Practice', icon: 'school' as const, desc: 'Unlimited trivia by topic', players: '1', color: colors.azure[500], isNew: false, category: 'solo', isSolo: true },
 ];
 
 // ============================================
@@ -452,7 +485,13 @@ export default function GamesHubScreen() {
     const gameStore = useGameStore();
     const [roomCode, setRoomCode] = useState('');
     const [isCreating, setIsCreating] = useState(false);
+    const [activeCategory, setActiveCategory] = useState<GameCategory | null>(null);
     const inputRef = useRef<TextInput>(null);
+
+    const filteredGames = useMemo(() => {
+        if (!activeCategory) return games;
+        return games.filter(g => g.category === activeCategory);
+    }, [activeCategory]);
 
     // ---- Auth state for guest flow ----
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -478,6 +517,13 @@ export default function GamesHubScreen() {
 
     // ---- Create & Play a Game ----
     const handlePlay = useCallback(async (type: string) => {
+        // Solo games navigate directly
+        if (type === 'daily') { router.push('/games/daily'); return; }
+        if (type === 'practice') { router.push('/games/practice'); return; }
+        if (type === 'word-blitz') { router.push('/games/word-blitz'); return; }
+        if (type === 'speed-match') { router.push('/games/speed-match'); return; }
+
+        // Multiplayer games create a lobby
         if (isCreating) return;
         setIsCreating(true);
         try {
@@ -498,10 +544,11 @@ export default function GamesHubScreen() {
         }
     }, [isCreating, gameStore, router]);
 
-    // ---- Quick Play — pick random game ----
+    // ---- Quick Play — pick random multiplayer game ----
     const handleQuickPlay = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        const randomGame = games[Math.floor(Math.random() * games.length)];
+        const multiplayerGames = games.filter(g => !g.isSolo);
+        const randomGame = multiplayerGames[Math.floor(Math.random() * multiplayerGames.length)];
         handlePlay(randomGame.type);
     }, [handlePlay]);
 
@@ -586,9 +633,40 @@ export default function GamesHubScreen() {
                     <Text style={styles.sectionBadge}>{games.length} Games</Text>
                 </Animated.View>
 
+                {/* ---- Category Tabs ---- */}
+                <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.categoryTabs}
+                    >
+                        <TouchableOpacity
+                            style={[styles.categoryTab, !activeCategory && styles.categoryTabActive]}
+                            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveCategory(null); }}
+                            accessibilityRole="tab"
+                            accessibilityLabel="All games"
+                        >
+                            <Ionicons name="apps" size={14} color={!activeCategory ? colors.gold[500] : colors.text.muted} />
+                            <Text style={[styles.categoryTabText, !activeCategory && styles.categoryTabTextActive]}>All</Text>
+                        </TouchableOpacity>
+                        {GAME_CATEGORIES.map(cat => (
+                            <TouchableOpacity
+                                key={cat.key}
+                                style={[styles.categoryTab, activeCategory === cat.key && styles.categoryTabActive]}
+                                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveCategory(cat.key); }}
+                                accessibilityRole="tab"
+                                accessibilityLabel={`${cat.label} games`}
+                            >
+                                <Ionicons name={cat.icon} size={14} color={activeCategory === cat.key ? colors.gold[500] : colors.text.muted} />
+                                <Text style={[styles.categoryTabText, activeCategory === cat.key && styles.categoryTabTextActive]}>{cat.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </Animated.View>
+
                 {/* ---- Game Cards Grid ---- */}
                 <View style={styles.gamesGrid}>
-                    {games.map((game, index) => (
+                    {filteredGames.map((game, index) => (
                         <GameCard
                             key={game.type}
                             game={game}
@@ -959,6 +1037,36 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
         borderRadius: 8,
         overflow: 'hidden',
+    },
+
+    // ---- Category Tabs ----
+    categoryTabs: {
+        flexDirection: 'row',
+        gap: spacing.sm,
+        paddingBottom: spacing.md,
+    },
+    categoryTab: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: spacing.md,
+        paddingVertical: 8,
+        borderRadius: 10,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    categoryTabActive: {
+        backgroundColor: colors.surface.goldSubtle,
+        borderColor: colors.gold[500] + '30',
+    },
+    categoryTabText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.muted,
+    },
+    categoryTabTextActive: {
+        color: colors.gold[500],
     },
 
     // ---- Game Cards Grid ----

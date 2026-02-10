@@ -21,6 +21,9 @@ export default function GamesLayout() {
             <Stack.Screen name="cipher/[code]" />
             <Stack.Screen name="daily" />
             <Stack.Screen name="practice" />
+            <Stack.Screen name="speed-match" />
+            <Stack.Screen name="word-blitz" />
+            <Stack.Screen name="emoji-charades/[code]" />
         </Stack>
     );
 }
