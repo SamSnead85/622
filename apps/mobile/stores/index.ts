@@ -117,6 +117,7 @@ interface AuthState {
     login: (email: string, password: string) => Promise<void>;
     signup: (email: string, password: string, displayName: string) => Promise<void>;
     appleLogin: (identityToken: string, fullName?: { givenName?: string; familyName?: string } | null) => Promise<void>;
+    googleLogin: (idToken: string) => Promise<void>;
     logout: () => Promise<void>;
     updateUser: (updates: Partial<User>) => void;
     refreshUser: () => Promise<void>;
@@ -280,6 +281,33 @@ export const useAuthStore = create<AuthState>()(
         } catch (error: any) {
             set({
                 error: error.message || 'Apple sign-in failed. Please try again.',
+                isLoading: false,
+            });
+            throw error;
+        }
+    },
+
+    googleLogin: async (idToken) => {
+        set({ isLoading: true, error: null });
+        try {
+            const data = await apiFetch<any>(API.googleAuth, {
+                method: 'POST',
+                body: JSON.stringify({ idToken }),
+            });
+
+            if (data.token) {
+                await saveToken(data.token);
+            }
+
+            const user = data.user || data;
+            set({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+            });
+        } catch (error: any) {
+            set({
+                error: error.message || 'Google sign-in failed. Please try again.',
                 isLoading: false,
             });
             throw error;

@@ -1,4 +1,10 @@
-import { useState } from 'react';
+// ============================================
+// Login Screen — Enhanced with biometric auth,
+// Google Sign In, password visibility, haptics,
+// auto-advance fields, and polished animations
+// ============================================
+
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
     View,
     Text,
@@ -9,31 +15,284 @@ import {
     Platform,
     ScrollView,
     Alert,
+    ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
+import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Animated, {
+    FadeInDown,
+    FadeInUp,
+    FadeIn,
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+    withSpring,
+    withSequence,
+    interpolateColor,
+} from 'react-native-reanimated';
 import { Button, colors, typography, spacing } from '@zerog/ui';
 import { BackButton } from '../../components';
 import { useAuthStore } from '../../stores';
+
+WebBrowser.maybeCompleteAuthSession();
+
+const BIOMETRIC_ENABLED_KEY = '@biometric-enabled';
+const LAST_EMAIL_KEY = '@last-login-email';
+
+// ============================================
+// Animated Input Field Component
+// ============================================
+
+interface AnimatedFieldProps {
+    label: string;
+    placeholder: string;
+    value: string;
+    onChangeText: (text: string) => void;
+    error?: string;
+    secureTextEntry?: boolean;
+    keyboardType?: 'default' | 'email-address';
+    autoCapitalize?: 'none' | 'sentences' | 'words';
+    autoComplete?: 'email' | 'password' | 'off';
+    autoCorrect?: boolean;
+    returnKeyType?: 'next' | 'done' | 'go';
+    onSubmitEditing?: () => void;
+    inputRef?: React.RefObject<TextInput>;
+    delay?: number;
+    icon?: keyof typeof Ionicons.glyphMap;
+}
+
+function AnimatedField({
+    label, placeholder, value, onChangeText, error, secureTextEntry,
+    keyboardType = 'default', autoCapitalize = 'none', autoComplete = 'off',
+    autoCorrect = false, returnKeyType = 'next', onSubmitEditing,
+    inputRef, delay = 0, icon,
+}: AnimatedFieldProps) {
+    const [isSecure, setIsSecure] = useState(secureTextEntry ?? false);
+    const isFocused = useSharedValue(0);
+
+    const handleFocus = useCallback(() => {
+        isFocused.value = withTiming(1, { duration: 200 });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }, [isFocused]);
+
+    const handleBlur = useCallback(() => {
+        isFocused.value = withTiming(0, { duration: 200 });
+    }, [isFocused]);
+
+    const animatedBorderStyle = useAnimatedStyle(() => ({
+        borderColor: error
+            ? colors.coral[500]
+            : interpolateColor(isFocused.value, [0, 1], [colors.border.subtle, colors.gold[500] + '60']),
+    }));
+
+    return (
+        <Animated.View
+            entering={FadeInDown.delay(delay).duration(400).springify()}
+            style={styles.fieldGroup}
+        >
+            <Text style={styles.fieldLabel}>{label}</Text>
+            <Animated.View style={[styles.fieldInput, animatedBorderStyle]}>
+                {icon && (
+                    <View style={styles.fieldIconContainer}>
+                        <Ionicons name={icon} size={18} color={colors.text.muted} />
+                    </View>
+                )}
+                <TextInput
+                    ref={inputRef}
+                    style={[styles.fieldTextInput, icon && styles.fieldTextInputWithIcon]}
+                    placeholder={placeholder}
+                    placeholderTextColor={colors.text.muted}
+                    keyboardType={keyboardType}
+                    autoCapitalize={autoCapitalize}
+                    autoComplete={autoComplete}
+                    autoCorrect={autoCorrect}
+                    secureTextEntry={isSecure}
+                    returnKeyType={returnKeyType}
+                    onSubmitEditing={onSubmitEditing}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    value={value}
+                    onChangeText={onChangeText}
+                    selectionColor={colors.gold[500]}
+                    accessibilityLabel={label}
+                />
+                {secureTextEntry && (
+                    <TouchableOpacity
+                        style={styles.visibilityToggle}
+                        onPress={() => {
+                            setIsSecure(!isSecure);
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }}
+                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                        accessibilityLabel={isSecure ? 'Show password' : 'Hide password'}
+                    >
+                        <Ionicons
+                            name={isSecure ? 'eye-off-outline' : 'eye-outline'}
+                            size={20}
+                            color={colors.text.muted}
+                        />
+                    </TouchableOpacity>
+                )}
+            </Animated.View>
+            {error && (
+                <Animated.Text entering={FadeIn.duration(200)} style={styles.fieldError}>
+                    {error}
+                </Animated.Text>
+            )}
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Social Button Component
+// ============================================
+
+function SocialButton({
+    icon, label, onPress, color, bgColor, borderColor, loading, delay = 0,
+}: {
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    onPress: () => void;
+    color: string;
+    bgColor: string;
+    borderColor: string;
+    loading?: boolean;
+    delay?: number;
+}) {
+    return (
+        <Animated.View entering={FadeInDown.delay(delay).duration(400).springify()}>
+            <TouchableOpacity
+                style={[styles.socialButton, { backgroundColor: bgColor, borderColor }]}
+                onPress={onPress}
+                activeOpacity={0.7}
+                disabled={loading}
+                accessibilityRole="button"
+                accessibilityLabel={label}
+            >
+                {loading ? (
+                    <ActivityIndicator size="small" color={color} />
+                ) : (
+                    <Ionicons name={icon} size={20} color={color} />
+                )}
+                <Text style={[styles.socialButtonText, { color }]}>{label}</Text>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Login Screen
+// ============================================
 
 export default function LoginScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const login = useAuthStore((s) => s.login);
-    const isLoading = useAuthStore((s) => s.isLoading);
-
     const appleLogin = useAuthStore((s) => s.appleLogin);
+    const googleLogin = useAuthStore((s) => s.googleLogin);
+    const isLoading = useAuthStore((s) => s.isLoading);
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+    const [biometricAvailable, setBiometricAvailable] = useState(false);
+    const [biometricType, setBiometricType] = useState<string>('Biometrics');
+    const [showBiometric, setShowBiometric] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
 
-    const handleAppleLogin = async () => {
+    const passwordRef = useRef<TextInput>(null);
+
+    // ---- Check biometric availability ----
+    useEffect(() => {
+        const checkBiometric = async () => {
+            try {
+                const compatible = await LocalAuthentication.hasHardwareAsync();
+                const enrolled = await LocalAuthentication.isEnrolledAsync();
+                const biometricEnabled = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
+                const lastEmail = await AsyncStorage.getItem(LAST_EMAIL_KEY);
+
+                if (compatible && enrolled) {
+                    setBiometricAvailable(true);
+
+                    // Determine biometric type for display
+                    const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+                    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+                        setBiometricType('Face ID');
+                    } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+                        setBiometricType('Touch ID');
+                    }
+
+                    // Auto-prompt if biometric was previously enabled
+                    if (biometricEnabled === 'true' && lastEmail) {
+                        setEmail(lastEmail);
+                        setShowBiometric(true);
+                    }
+                }
+            } catch {
+                // Biometric not available
+            }
+        };
+        checkBiometric();
+    }, []);
+
+    // ---- Biometric authentication ----
+    const handleBiometricAuth = useCallback(async () => {
         try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            const result = await LocalAuthentication.authenticateAsync({
+                promptMessage: `Sign in with ${biometricType}`,
+                cancelLabel: 'Use Password',
+                disableDeviceFallback: true,
+            });
+
+            if (result.success) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                // Biometric success — the existing token from SecureStore handles auth
+                // Re-initialize to use the stored token
+                const { initialize } = useAuthStore.getState();
+                await initialize();
+                const isAuth = useAuthStore.getState().isAuthenticated;
+                if (isAuth) {
+                    router.replace('/(tabs)');
+                } else {
+                    // Token expired, need password
+                    setShowBiometric(false);
+                    Alert.alert('Session Expired', 'Please sign in with your password.');
+                }
+            }
+        } catch {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
+    }, [biometricType, router]);
+
+    // ---- Auto-prompt biometric on mount ----
+    useEffect(() => {
+        if (showBiometric) {
+            // Small delay for screen to render
+            const timer = setTimeout(handleBiometricAuth, 600);
+            return () => clearTimeout(timer);
+        }
+    }, [showBiometric, handleBiometricAuth]);
+
+    // ---- Email validation ----
+    const validateEmail = (text: string) => {
+        if (!text.trim()) return 'Email is required';
+        if (!/\S+@\S+\.\S+/.test(text)) return 'Please enter a valid email';
+        return undefined;
+    };
+
+    // ---- Apple Sign In ----
+    const handleAppleLogin = useCallback(async () => {
+        try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             const credential = await AppleAuthentication.signInAsync({
                 requestedScopes: [
                     AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -43,33 +302,113 @@ export default function LoginScreen() {
 
             if (credential.identityToken) {
                 await appleLogin(credential.identityToken, credential.fullName);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 router.replace('/(tabs)');
             }
         } catch (error: any) {
             if (error.code !== 'ERR_REQUEST_CANCELED') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                 Alert.alert('Apple Sign In', 'Sign in with Apple failed. Please try again.');
             }
         }
-    };
+    }, [appleLogin, router]);
 
-    const handleLogin = async () => {
+    // ---- Google Sign In ----
+    const handleGoogleLogin = useCallback(async () => {
+        try {
+            setGoogleLoading(true);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+            // Use expo-auth-session with Google's OAuth
+            const redirectUri = AuthSession.makeRedirectUri({ preferLocalhost: false });
+            const clientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
+
+            if (!clientId) {
+                Alert.alert('Google Sign In', 'Google Sign In is being configured. Please use email or Apple Sign In for now.');
+                setGoogleLoading(false);
+                return;
+            }
+
+            const discovery = {
+                authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+                tokenEndpoint: 'https://oauth2.googleapis.com/token',
+            };
+
+            const request = new AuthSession.AuthRequest({
+                clientId,
+                redirectUri,
+                scopes: ['openid', 'profile', 'email'],
+                responseType: AuthSession.ResponseType.IdToken,
+            });
+
+            const result = await request.promptAsync(discovery);
+
+            if (result.type === 'success' && result.params?.id_token) {
+                await googleLogin(result.params.id_token);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                router.replace('/(tabs)');
+            }
+        } catch (error: any) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            if (error?.message?.includes('configured')) {
+                Alert.alert('Google Sign In', 'Google Sign In is being configured. Please use email or Apple Sign In for now.');
+            } else {
+                Alert.alert('Google Sign In', 'Sign in with Google failed. Please try again.');
+            }
+        } finally {
+            setGoogleLoading(false);
+        }
+    }, [googleLogin, router]);
+
+    // ---- Email/Password Login ----
+    const handleLogin = useCallback(async () => {
+        const emailError = validateEmail(email);
         const newErrors: { email?: string; password?: string } = {};
-        if (!email.trim()) newErrors.email = 'Email is required';
+        if (emailError) newErrors.email = emailError;
         if (!password) newErrors.password = 'Password is required';
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             return;
         }
 
         try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             await login(email.trim(), password);
+
+            // Save email for biometric login next time
+            await AsyncStorage.setItem(LAST_EMAIL_KEY, email.trim());
+
+            // Offer biometric setup if available
+            if (biometricAvailable) {
+                const biometricEnabled = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
+                if (biometricEnabled !== 'true') {
+                    Alert.alert(
+                        `Enable ${biometricType}?`,
+                        `Sign in faster next time using ${biometricType}.`,
+                        [
+                            { text: 'Not Now', style: 'cancel' },
+                            {
+                                text: 'Enable',
+                                onPress: async () => {
+                                    await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, 'true');
+                                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                },
+                            },
+                        ],
+                    );
+                }
+            }
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             router.replace('/(tabs)');
         } catch (error: any) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             const message = error?.data?.error || error?.message || 'Invalid email or password';
             setErrors({ email: message });
         }
-    };
+    }, [email, password, login, router, biometricAvailable, biometricType]);
 
     return (
         <LinearGradient
@@ -89,68 +428,122 @@ export default function LoginScreen() {
                     keyboardShouldPersistTaps="handled"
                 >
                     {/* Back button */}
-                    <BackButton style={{ alignSelf: 'flex-start', marginBottom: spacing.xl }} />
+                    <BackButton style={{ alignSelf: 'flex-start', marginBottom: spacing.lg }} />
 
-                    <Animated.View entering={FadeInDown.duration(400)}>
+                    {/* Header */}
+                    <Animated.View entering={FadeInDown.delay(50).duration(500).springify()}>
                         <View style={styles.header}>
                             <Text style={styles.title} accessibilityRole="header">Welcome back</Text>
                             <Text style={styles.subtitle}>
-                                Sign in to continue to your private community
+                                Sign in to your private community
                             </Text>
                         </View>
                     </Animated.View>
 
-                    <View>
-                        <View style={styles.form}>
-                            <View style={styles.fieldGroup}>
-                                <Text style={styles.fieldLabel}>Email</Text>
-                                <View style={[styles.fieldInput, errors.email ? styles.fieldInputError : undefined]}>
-                                    <TextInput
-                                        style={styles.fieldTextInput}
-                                        placeholder="Enter your email"
-                                        placeholderTextColor={colors.text.muted}
-                                        keyboardType="email-address"
-                                        autoCapitalize="none"
-                                        autoComplete="email"
-                                        autoCorrect={false}
-                                        accessibilityLabel="Email address"
-                                        value={email}
-                                        onChangeText={(text) => {
-                                            setEmail(text);
-                                            if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
-                                        }}
-                                        selectionColor={colors.gold[500]}
-                                    />
-                                </View>
-                                {errors.email && <Text style={styles.fieldError}>{errors.email}</Text>}
-                            </View>
+                    {/* Social Sign In — Placed first for frictionless access */}
+                    <Animated.View entering={FadeInDown.delay(100).duration(400)}>
+                        <View style={styles.socialButtons}>
+                            {Platform.OS === 'ios' && (
+                                <SocialButton
+                                    icon="logo-apple"
+                                    label="Continue with Apple"
+                                    onPress={handleAppleLogin}
+                                    color={colors.text.primary}
+                                    bgColor={colors.obsidian[600]}
+                                    borderColor={colors.border.default}
+                                    delay={120}
+                                />
+                            )}
+                            <SocialButton
+                                icon="logo-google"
+                                label="Continue with Google"
+                                onPress={handleGoogleLogin}
+                                color={colors.text.primary}
+                                bgColor={colors.surface.glass}
+                                borderColor={colors.border.subtle}
+                                loading={googleLoading}
+                                delay={160}
+                            />
+                        </View>
+                    </Animated.View>
 
-                            <View style={styles.fieldGroup}>
-                                <Text style={styles.fieldLabel}>Password</Text>
-                                <View style={[styles.fieldInput, errors.password ? styles.fieldInputError : undefined]}>
-                                    <TextInput
-                                        style={styles.fieldTextInput}
-                                        placeholder="Enter your password"
-                                        placeholderTextColor={colors.text.muted}
-                                        secureTextEntry
-                                        accessibilityLabel="Password"
-                                        value={password}
-                                        onChangeText={(text) => {
-                                            setPassword(text);
-                                            if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
-                                        }}
-                                        selectionColor={colors.gold[500]}
+                    {/* Biometric Quick Sign In */}
+                    {biometricAvailable && showBiometric && (
+                        <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+                            <TouchableOpacity
+                                style={styles.biometricButton}
+                                onPress={handleBiometricAuth}
+                                activeOpacity={0.7}
+                            >
+                                <LinearGradient
+                                    colors={[colors.gold[500] + '15', colors.gold[500] + '05']}
+                                    style={styles.biometricGradient}
+                                >
+                                    <Ionicons
+                                        name={biometricType === 'Face ID' ? 'scan-outline' : 'finger-print-outline'}
+                                        size={28}
+                                        color={colors.gold[500]}
                                     />
-                                </View>
-                                {errors.password && <Text style={styles.fieldError}>{errors.password}</Text>}
-                            </View>
+                                    <Text style={styles.biometricText}>
+                                        Sign in with {biometricType}
+                                    </Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </Animated.View>
+                    )}
 
+                    {/* Divider */}
+                    <Animated.View entering={FadeIn.delay(220).duration(300)} style={styles.divider}>
+                        <View style={styles.dividerLine} />
+                        <Text style={styles.dividerText}>or use email</Text>
+                        <View style={styles.dividerLine} />
+                    </Animated.View>
+
+                    {/* Email & Password Form */}
+                    <View style={styles.form}>
+                        <AnimatedField
+                            label="Email"
+                            placeholder="you@example.com"
+                            value={email}
+                            onChangeText={(text) => {
+                                setEmail(text);
+                                if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+                            }}
+                            error={errors.email}
+                            keyboardType="email-address"
+                            autoComplete="email"
+                            returnKeyType="next"
+                            onSubmitEditing={() => passwordRef.current?.focus()}
+                            icon="mail-outline"
+                            delay={260}
+                        />
+
+                        <AnimatedField
+                            label="Password"
+                            placeholder="Enter your password"
+                            value={password}
+                            onChangeText={(text) => {
+                                setPassword(text);
+                                if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
+                            }}
+                            error={errors.password}
+                            secureTextEntry
+                            autoComplete="password"
+                            returnKeyType="go"
+                            onSubmitEditing={handleLogin}
+                            inputRef={passwordRef}
+                            icon="lock-closed-outline"
+                            delay={300}
+                        />
+
+                        <Animated.View entering={FadeInDown.delay(340).duration(400)}>
                             <TouchableOpacity
                                 style={styles.forgotButton}
                                 onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                     Alert.alert(
                                         'Reset Password',
-                                        'Password reset is available at 0gravity.ai. Please visit the web app to reset your password.',
+                                        'Visit 0gravity.ai to reset your password. In-app password reset is coming soon.',
                                         [{ text: 'OK' }]
                                     );
                                 }}
@@ -159,7 +552,9 @@ export default function LoginScreen() {
                             >
                                 <Text style={styles.forgotText}>Forgot password?</Text>
                             </TouchableOpacity>
+                        </Animated.View>
 
+                        <Animated.View entering={FadeInDown.delay(380).duration(400)}>
                             <Button
                                 variant="primary"
                                 size="lg"
@@ -168,72 +563,42 @@ export default function LoginScreen() {
                                 onPress={handleLogin}
                                 style={styles.submitButton}
                                 accessibilityRole="button"
-                                accessibilityLabel="Log in"
+                                accessibilityLabel="Sign in"
                             >
                                 Sign In
                             </Button>
-                        </View>
+                        </Animated.View>
                     </View>
 
-                    <View>
-                        <View style={styles.divider}>
-                            <View style={styles.dividerLine} />
-                            <Text style={styles.dividerText}>or continue with</Text>
-                            <View style={styles.dividerLine} />
-                        </View>
-
-                        <View style={styles.socialButtons}>
-                            {Platform.OS === 'ios' && (
-                                <TouchableOpacity
-                                    style={[styles.socialButton, styles.appleButton]}
-                                    onPress={handleAppleLogin}
-                                    activeOpacity={0.7}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Sign in with Apple"
-                                >
-                                    <Ionicons name="logo-apple" size={20} color={colors.text.primary} />
-                                    <Text style={[styles.socialButtonText, { color: colors.text.primary }]}>
-                                        Sign in with Apple
-                                    </Text>
-                                </TouchableOpacity>
-                            )}
-                            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Sign in with Google, coming soon" accessibilityState={{ disabled: true }}>
-                                <Ionicons name="logo-google" size={18} color={colors.text.muted} />
-                                <Text style={styles.socialButtonText}>Google</Text>
-                                <Text style={styles.comingSoonBadge}>Soon</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    <View style={styles.signupContainer}>
+                    {/* Sign Up Link */}
+                    <Animated.View entering={FadeInUp.delay(420).duration(400)} style={styles.signupContainer}>
                         <Text style={styles.signupText}>Don't have an account? </Text>
-                        <TouchableOpacity onPress={() => router.push('/(auth)/signup')} accessibilityRole="link" accessibilityLabel="Create an account">
+                        <TouchableOpacity
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                router.push('/(auth)/signup');
+                            }}
+                            accessibilityRole="link"
+                            accessibilityLabel="Create an account"
+                        >
                             <Text style={styles.signupLink}>Sign up</Text>
                         </TouchableOpacity>
-                    </View>
+                    </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
         </LinearGradient>
     );
 }
 
+// ============================================
+// Styles
+// ============================================
+
 const styles = StyleSheet.create({
     container: { flex: 1 },
     keyboardView: { flex: 1 },
     scrollContent: { flexGrow: 1, paddingHorizontal: spacing.xl },
-    backButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: colors.surface.glassHover,
-        alignItems: 'center',
-        justifyContent: 'center',
-        alignSelf: 'flex-start',
-        marginBottom: spacing.xl,
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
-    },
-    header: { marginBottom: spacing['2xl'] },
+    header: { marginBottom: spacing.xl },
     title: {
         fontSize: typography.fontSize['3xl'],
         fontWeight: '700',
@@ -246,18 +611,53 @@ const styles = StyleSheet.create({
         color: colors.text.secondary,
         marginTop: spacing.sm,
     },
-    form: { marginBottom: spacing.xl },
-    forgotButton: {
-        alignSelf: 'flex-end',
-        marginTop: -spacing.sm,
-        marginBottom: spacing.lg,
+
+    // ---- Social Buttons ----
+    socialButtons: {
+        gap: spacing.sm,
+        marginBottom: spacing.md,
     },
-    forgotText: { fontSize: typography.fontSize.sm, color: colors.gold[500] },
-    submitButton: { marginTop: spacing.md },
+    socialButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderRadius: 14,
+        paddingVertical: spacing.md + 2,
+        gap: spacing.sm,
+    },
+    socialButtonText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+    },
+
+    // ---- Biometric ----
+    biometricButton: {
+        marginBottom: spacing.md,
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    biometricGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.md,
+        paddingVertical: spacing.lg,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '30',
+    },
+    biometricText: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '600',
+        color: colors.gold[400],
+    },
+
+    // ---- Divider ----
     divider: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: spacing.xl,
+        marginVertical: spacing.lg,
     },
     dividerLine: { flex: 1, height: 1, backgroundColor: colors.border.subtle },
     dividerText: {
@@ -265,53 +665,11 @@ const styles = StyleSheet.create({
         color: colors.text.muted,
         paddingHorizontal: spacing.md,
     },
-    socialButtons: { flexDirection: 'row', gap: spacing.md },
-    socialButton: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.surface.glass,
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
-        borderRadius: 12,
-        paddingVertical: spacing.md,
-        gap: spacing.sm,
-        opacity: 0.6,
-    },
-    appleButton: {
-        opacity: 1,
-        backgroundColor: colors.obsidian[600],
-        borderColor: colors.border.default,
-    },
-    socialButtonText: {
-        fontSize: typography.fontSize.base,
-        color: colors.text.muted,
-        fontWeight: '500',
-    },
-    comingSoonBadge: {
-        fontSize: 9,
-        color: colors.text.muted,
-        backgroundColor: colors.surface.glassActive,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-        overflow: 'hidden',
-        fontWeight: '600',
-    },
-    signupContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        marginTop: spacing['2xl'],
-    },
-    signupText: { fontSize: typography.fontSize.base, color: colors.text.secondary },
-    signupLink: {
-        fontSize: typography.fontSize.base,
-        color: colors.gold[500],
-        fontWeight: '600',
-    },
+
+    // ---- Form ----
+    form: { marginBottom: spacing.lg },
     fieldGroup: {
-        marginBottom: spacing.lg,
+        marginBottom: spacing.md,
     },
     fieldLabel: {
         fontSize: typography.fontSize.sm,
@@ -320,24 +678,54 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xs,
     },
     fieldInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: colors.surface.glass,
         borderRadius: 14,
-        borderWidth: 1,
+        borderWidth: 1.5,
         borderColor: colors.border.subtle,
     },
-    fieldInputError: {
-        borderColor: colors.coral[500],
+    fieldIconContainer: {
+        paddingLeft: spacing.md,
     },
     fieldTextInput: {
+        flex: 1,
         fontSize: typography.fontSize.base,
         color: colors.text.primary,
-        paddingHorizontal: spacing.lg,
+        paddingHorizontal: spacing.md,
         paddingVertical: spacing.md,
         minHeight: 50,
+    },
+    fieldTextInputWithIcon: {
+        paddingLeft: spacing.sm,
+    },
+    visibilityToggle: {
+        paddingRight: spacing.md,
+        paddingVertical: spacing.md,
     },
     fieldError: {
         fontSize: typography.fontSize.xs,
         color: colors.coral[500],
         marginTop: spacing.xs,
+    },
+    forgotButton: {
+        alignSelf: 'flex-end',
+        marginTop: -spacing.xs,
+        marginBottom: spacing.md,
+    },
+    forgotText: { fontSize: typography.fontSize.sm, color: colors.gold[500], fontWeight: '500' },
+    submitButton: { marginTop: spacing.xs },
+
+    // ---- Sign Up Link ----
+    signupContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: spacing.xl,
+    },
+    signupText: { fontSize: typography.fontSize.base, color: colors.text.secondary },
+    signupLink: {
+        fontSize: typography.fontSize.base,
+        color: colors.gold[500],
+        fontWeight: '600',
     },
 });
