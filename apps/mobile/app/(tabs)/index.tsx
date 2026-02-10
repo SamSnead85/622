@@ -1804,7 +1804,7 @@ export default function FeedScreen() {
                 ListHeaderComponent={renderHeader}
                 contentContainerStyle={{
                     paddingHorizontal: spacing.md,
-                    paddingBottom: insets.bottom + 100,
+                    paddingBottom: 100,
                 }}
                 showsVerticalScrollIndicator={false}
                 onScroll={scrollHandler}

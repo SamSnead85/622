@@ -16,7 +16,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTranslation } from 'react-i18next';
 import { useNotificationsStore, Notification } from '../../stores';
-import { ScreenHeader, LoadingView, EmptyState } from '../../components';
+import { ScreenHeader, EmptyState } from '../../components';
+import SkeletonList from '../../components/SkeletonList';
 
 // ============================================
 // Types
@@ -306,7 +307,7 @@ export default function NotificationsScreen() {
 
             {/* List */}
             {isLoading && notifications.length === 0 ? (
-                <LoadingView />
+                <SkeletonList variant="notification" count={8} />
             ) : (
                 <SectionList
                     sections={sections}

@@ -27,7 +27,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // ============================================
 // Celebration Particles — burst on mount
 // ============================================
-const PARTICLE_COLORS = [colors.gold[400], colors.gold[500], colors.emerald[500], colors.azure[500], colors.coral[400], '#F0D47A'];
+const PARTICLE_COLORS = [colors.gold[400], colors.gold[500], colors.emerald[500], colors.azure[500], colors.coral[400], colors.gold[400]];
 const NUM_PARTICLES = 24;
 
 function CelebrationBurst() {
@@ -232,7 +232,7 @@ export default function DiscoverScreen() {
 
     return (
         <View style={styles.container}>
-            <LinearGradient colors={['#0A0A0B', '#0D0D10', '#0A0A0B']} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={[colors.obsidian[900], colors.obsidian[900], colors.obsidian[900]]} style={StyleSheet.absoluteFill} />
 
             {/* Celebration particles on first mount */}
             <CelebrationBurst />
@@ -374,7 +374,7 @@ export default function DiscoverScreen() {
                                     </View>
                                     {isSelected && (
                                         <View style={[styles.profileCheckBadge, { backgroundColor: option.color }]}>
-                                            <Ionicons name="checkmark" size={14} color="#fff" />
+                                            <Ionicons name="checkmark" size={14} color={colors.text.primary} />
                                         </View>
                                     )}
                                 </TouchableOpacity>
@@ -446,7 +446,7 @@ export default function DiscoverScreen() {
 // Styles
 // ============================================
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#0A0A0B' },
+    container: { flex: 1, backgroundColor: colors.obsidian[900] },
 
     // ── Header ──
     header: {

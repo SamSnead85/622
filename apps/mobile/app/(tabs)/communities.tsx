@@ -1102,7 +1102,7 @@ export default function CommunitiesScreen() {
                 ListEmptyComponent={renderEmptyDiscover}
                 contentContainerStyle={[
                     styles.listContent,
-                    { paddingBottom: insets.bottom + 120 },
+                    { paddingBottom: 100 },
                 ]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={

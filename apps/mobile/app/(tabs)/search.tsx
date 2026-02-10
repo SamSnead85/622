@@ -93,7 +93,7 @@ const TRENDING_TOPICS: TrendingTopic[] = [
     { id: '2', name: 'Community Builds', postsCount: 218, icon: 'people-outline', color: colors.azure[500] },
     { id: '3', name: 'Privacy Tips', postsCount: 189, icon: 'shield-checkmark-outline', color: colors.emerald[500] },
     { id: '4', name: 'Faith & Wellness', postsCount: 156, icon: 'heart-outline', color: colors.coral[500] },
-    { id: '5', name: 'Book Club', postsCount: 134, icon: 'book-outline', color: '#B388FF' },
+    { id: '5', name: 'Book Club', postsCount: 134, icon: 'book-outline', color: colors.azure[300] },
     { id: '6', name: 'Tech Halal', postsCount: 98, icon: 'code-slash-outline', color: colors.azure[400] },
 ];
 
@@ -111,7 +111,7 @@ const DISCOVERY_CATEGORIES = [
     { id: 'people', icon: 'people' as const, label: 'People', color: colors.azure[500] },
     { id: 'communities', icon: 'globe-outline' as const, label: 'Communities', color: colors.emerald[500] },
     { id: 'new', icon: 'sparkles' as const, label: 'New Content', color: colors.gold[500] },
-    { id: 'tools', icon: 'compass' as const, label: 'Tools', color: '#D4AF37', route: '/tools' },
+    { id: 'tools', icon: 'compass' as const, label: 'Tools', color: colors.gold[500], route: '/tools' },
     { id: 'privacy', icon: 'shield-checkmark' as const, label: 'Privacy First', color: colors.emerald[400], route: '/settings' },
 ];
 
@@ -731,7 +731,7 @@ export default function SearchScreen() {
     const renderEmptyState = () => (
         <ScrollView
             style={styles.discoveryScroll}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+            contentContainerStyle={{ paddingBottom: 100 }}
             showsVerticalScrollIndicator={false}
         >
             {renderRecentSearches()}
@@ -878,7 +878,7 @@ export default function SearchScreen() {
                     keyExtractor={(item) => `${item.type}-${item.id}`}
                     contentContainerStyle={{
                         paddingHorizontal: spacing.lg,
-                        paddingBottom: insets.bottom + 100,
+                        paddingBottom: 100,
                         paddingTop: spacing.sm,
                     }}
                     showsVerticalScrollIndicator={false}

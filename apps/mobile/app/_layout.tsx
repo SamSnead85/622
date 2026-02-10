@@ -207,17 +207,65 @@ function RootLayout() {
     }, [isAuthenticated]);
 
     // ============================================
-    // Deep Link Handling (Game Invites)
+    // Deep Link Handling (Game Invites, Posts, Communities, Profiles)
     // ============================================
 
     useEffect(() => {
         const handleDeepLink = (event: { url: string }) => {
             const url = event.url;
-            // Handle zerog://game/CODE or https://0gravity.ai/game/CODE
-            const gameMatch = url.match(/\/game\/([A-Z0-9]{6})/i);
-            if (gameMatch) {
-                const gameCode = gameMatch[1].toUpperCase();
-                router.push(`/games/lobby/${gameCode}` as any);
+            try {
+                // Normalize URL for parsing - convert custom scheme to http for URL constructor
+                let urlToParse = url;
+                if (url.startsWith('zerog://')) {
+                    urlToParse = url.replace('zerog://', 'https://');
+                }
+                
+                const parsed = new URL(urlToParse);
+                const pathParts = parsed.pathname.split('/').filter(Boolean);
+                
+                if (pathParts.length >= 2) {
+                    const [type, id] = pathParts;
+                    
+                    if (type === 'game' && id) {
+                        // Handle game codes (6 character alphanumeric)
+                        const gameCode = id.toUpperCase();
+                        router.push(`/games/lobby/${gameCode}` as any);
+                    } else if (type === 'post' && id) {
+                        router.push(`/post/${id}` as any);
+                    } else if (type === 'community' && id) {
+                        router.push(`/community/${id}` as any);
+                    } else if (type === 'profile' && id) {
+                        router.push(`/profile/${id}` as any);
+                    }
+                }
+            } catch (error) {
+                // Fallback to regex matching if URL parsing fails
+                // Try game link pattern
+                const gameMatch = url.match(/\/game\/([A-Z0-9]{6})/i);
+                if (gameMatch) {
+                    const gameCode = gameMatch[1].toUpperCase();
+                    router.push(`/games/lobby/${gameCode}` as any);
+                    return;
+                }
+                
+                // Try other patterns with regex as fallback
+                const postMatch = url.match(/\/(?:post|zerog:\/\/post)\/([^\/\?]+)/i);
+                if (postMatch) {
+                    router.push(`/post/${postMatch[1]}` as any);
+                    return;
+                }
+                
+                const communityMatch = url.match(/\/(?:community|zerog:\/\/community)\/([^\/\?]+)/i);
+                if (communityMatch) {
+                    router.push(`/community/${communityMatch[1]}` as any);
+                    return;
+                }
+                
+                const profileMatch = url.match(/\/(?:profile|zerog:\/\/profile)\/([^\/\?]+)/i);
+                if (profileMatch) {
+                    router.push(`/profile/${profileMatch[1]}` as any);
+                    return;
+                }
             }
         };
 

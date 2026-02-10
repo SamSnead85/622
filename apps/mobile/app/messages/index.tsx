@@ -21,7 +21,8 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { RetryView } from '../../components/RetryView';
-import { ScreenHeader, LoadingView, Avatar, EmptyState } from '../../components';
+import { ScreenHeader, Avatar, EmptyState } from '../../components';
+import SkeletonList from '../../components/SkeletonList';
 
 // ============================================
 // Types
@@ -457,7 +458,7 @@ export default function MessagesScreen() {
 
             {/* Conversations list */}
             {isLoading ? (
-                <LoadingView />
+                <SkeletonList variant="message" count={8} />
             ) : loadError && conversations.length === 0 ? (
                 <RetryView
                     message="Couldn't load messages. Check your connection."

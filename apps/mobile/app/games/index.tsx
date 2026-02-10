@@ -84,7 +84,7 @@ function NewBadge() {
     return (
         <Animated.View style={[styles.newBadge, animatedStyle]}>
             <LinearGradient
-                colors={[colors.coral[500], '#FF4081']}
+                colors={[colors.coral[500], colors.coral[400]]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.newBadgeGradient}
@@ -960,7 +960,7 @@ const styles = StyleSheet.create({
     newBadgeText: {
         fontSize: 9,
         fontWeight: '800',
-        color: '#FFFFFF',
+        color: colors.text.primary,
         letterSpacing: 1,
     },
 

@@ -83,7 +83,7 @@ const PostGridItem = memo(({ post, index }: { post: Post; index: number }) => {
                 )}
                 {post.mediaType === 'VIDEO' && (
                     <View style={styles.videoIndicator}>
-                        <Ionicons name="play" size={10} color="#fff" />
+                        <Ionicons name="play" size={10} color={colors.text.primary} />
                     </View>
                 )}
                 {(post.likesCount > 0 || post.commentsCount > 0) && (
@@ -94,7 +94,7 @@ const PostGridItem = memo(({ post, index }: { post: Post; index: number }) => {
                         <View style={styles.postMeta}>
                             {post.likesCount > 0 && (
                                 <View style={styles.postMetaItem}>
-                                    <Ionicons name="heart" size={10} color="#fff" />
+                                    <Ionicons name="heart" size={10} color={colors.text.primary} />
                                     <Text style={styles.postMetaText}>{formatCount(post.likesCount)}</Text>
                                 </View>
                             )}
@@ -574,7 +574,7 @@ export default function ProfileScreen() {
                 ListHeaderComponent={renderHeader}
                 ListEmptyComponent={renderEmpty}
                 columnWrapperStyle={styles.postsRow}
-                contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+                contentContainerStyle={{ paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
@@ -971,7 +971,7 @@ const styles = StyleSheet.create({
     },
     postMetaText: {
         fontSize: 9,
-        color: '#fff',
+        color: colors.text.primary,
         fontWeight: '600',
     },
 

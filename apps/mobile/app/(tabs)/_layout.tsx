@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing } from '@zerog/ui';
 import { useTranslation } from 'react-i18next';
+import { useNotificationsStore } from '../../stores';
 
 // ============================================
 // Tab Icon — uniform for all tabs including Create
@@ -18,9 +19,10 @@ interface TabIconProps {
     iconNameFocused: keyof typeof Ionicons.glyphMap;
     focused: boolean;
     isCreate?: boolean;
+    badge?: number;
 }
 
-function TabIcon({ label, iconName, iconNameFocused, focused, isCreate }: TabIconProps) {
+function TabIcon({ label, iconName, iconNameFocused, focused, isCreate, badge }: TabIconProps) {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const prevFocused = useRef(focused);
 
@@ -54,15 +56,22 @@ function TabIcon({ label, iconName, iconNameFocused, focused, isCreate }: TabIco
                     <Ionicons
                         name={focused ? iconNameFocused : iconName}
                         size={20}
-                        color={focused ? colors.obsidian[900] : colors.text.primary}
+                        color={focused ? colors.gold[500] : colors.text.primary}
                     />
                 </View>
             ) : (
-                <Ionicons
-                    name={focused ? iconNameFocused : iconName}
-                    size={23}
-                    color={focused ? colors.text.primary : colors.text.muted}
-                />
+                <View>
+                    <Ionicons
+                        name={focused ? iconNameFocused : iconName}
+                        size={23}
+                        color={focused ? colors.text.primary : colors.text.muted}
+                    />
+                    {badge != null && badge > 0 && (
+                        <View style={styles.badge}>
+                            <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+                        </View>
+                    )}
+                </View>
             )}
             <Text
                 style={[
@@ -88,6 +97,7 @@ function TabIcon({ label, iconName, iconNameFocused, focused, isCreate }: TabIco
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
+    const unreadCount = useNotificationsStore((s) => s.unreadCount);
 
     return (
         <Tabs
@@ -118,6 +128,7 @@ export default function TabLayout() {
                             iconName="home-outline"
                             iconNameFocused="home"
                             focused={focused}
+                            badge={unreadCount}
                         />
                     ),
                 }}
@@ -233,6 +244,25 @@ const styles = StyleSheet.create({
         borderRadius: 2,
         backgroundColor: colors.text.primary,
         marginTop: 3,
+    },
+
+    // Notification badge
+    badge: {
+        position: 'absolute',
+        top: -4,
+        right: -8,
+        backgroundColor: colors.coral[500],
+        borderRadius: 10,
+        minWidth: 18,
+        height: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 4,
+    },
+    badgeText: {
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: '700',
     },
 
     // Create tab — subtle pill shape instead of floating circle

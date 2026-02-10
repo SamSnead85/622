@@ -163,7 +163,7 @@ export default function MomentViewerScreen() {
                     <Text style={styles.timeAgo}>{getTimeAgo(currentMoment.createdAt)}</Text>
                     <View style={{ flex: 1 }} />
                     <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
-                        <Ionicons name="close" size={24} color="#fff" />
+                        <Ionicons name="close" size={24} color={colors.text.primary} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -193,7 +193,7 @@ export default function MomentViewerScreen() {
                 )}
                 {isOwn && (
                     <View style={styles.viewCount}>
-                        <Ionicons name="eye-outline" size={16} color="#fff" />
+                        <Ionicons name="eye-outline" size={16} color={colors.text.primary} />
                         <Text style={styles.viewCountText}>{currentMoment.viewCount || 0}</Text>
                     </View>
                 )}
@@ -210,7 +210,7 @@ function getTimeAgo(dateStr: string): string {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#000' },
+    container: { flex: 1, backgroundColor: colors.obsidian[900] },
     media: { ...StyleSheet.absoluteFillObject },
     topGradient: {
         position: 'absolute', top: 0, left: 0, right: 0, height: 180,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
         borderRadius: 2,
     },
     progressFill: {
-        height: '100%', backgroundColor: '#fff', borderRadius: 2,
+        height: '100%', backgroundColor: colors.text.primary, borderRadius: 2,
     },
     userInfo: {
         flexDirection: 'row', alignItems: 'center',
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
         width: 32, height: 32, borderRadius: 16,
     },
     userName: {
-        fontSize: typography.fontSize.base, fontWeight: '700', color: '#fff',
+        fontSize: typography.fontSize.base, fontWeight: '700', color: colors.text.primary,
     },
     timeAgo: {
         fontSize: typography.fontSize.sm, color: 'rgba(255,255,255,0.6)',
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.lg, zIndex: 10,
     },
     caption: {
-        fontSize: typography.fontSize.base, color: '#fff',
+        fontSize: typography.fontSize.base, color: colors.text.primary,
         fontWeight: '500', lineHeight: 22, marginBottom: spacing.sm,
         textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 4,
@@ -268,6 +268,6 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
     },
     viewCountText: {
-        fontSize: typography.fontSize.sm, color: '#fff', fontWeight: '600',
+        fontSize: typography.fontSize.sm, color: colors.text.primary, fontWeight: '600',
     },
 });

@@ -331,7 +331,7 @@ export default function ImportScreen() {
                         {importStatus === 'complete' && importResult && (
                             <View style={styles.resultSection}>
                                 <View style={styles.successIcon}>
-                                    <Ionicons name="checkmark-circle" size={64} color="#34D399" />
+                                    <Ionicons name="checkmark-circle" size={64} color={colors.emerald[500]} />
                                 </View>
                                 <Text style={styles.resultTitle}>Import Complete!</Text>
                                 {importResult.stats && (
@@ -368,7 +368,7 @@ export default function ImportScreen() {
                         {importStatus === 'failed' && (
                             <View style={styles.resultSection}>
                                 <View style={styles.failIcon}>
-                                    <Ionicons name="close-circle" size={64} color="#EF4444" />
+                                    <Ionicons name="close-circle" size={64} color={colors.coral[500]} />
                                 </View>
                                 <Text style={styles.resultTitle}>Import Failed</Text>
                                 <Text style={styles.resultSubtitle}>
