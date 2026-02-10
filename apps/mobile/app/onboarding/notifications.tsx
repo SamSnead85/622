@@ -290,20 +290,20 @@ const styles = StyleSheet.create({
         width: GLOW_OUTER,
         height: GLOW_OUTER,
         borderRadius: GLOW_OUTER / 2,
-        backgroundColor: 'rgba(212, 175, 55, 0.06)',
+        backgroundColor: colors.gold[500] + '0F',
     },
     glowMiddle: {
         position: 'absolute',
         width: GLOW_MIDDLE,
         height: GLOW_MIDDLE,
         borderRadius: GLOW_MIDDLE / 2,
-        backgroundColor: 'rgba(212, 175, 55, 0.10)',
+        backgroundColor: colors.gold[500] + '1A',
     },
     glowInner: {
         width: BELL_SIZE,
         height: BELL_SIZE,
         borderRadius: BELL_SIZE / 2,
-        backgroundColor: 'rgba(212, 175, 55, 0.15)',
+        backgroundColor: colors.surface.goldMedium,
         alignItems: 'center',
         justifyContent: 'center',
         // Gold glow shadow

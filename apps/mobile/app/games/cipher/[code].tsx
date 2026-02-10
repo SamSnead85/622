@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     teamScoreCardActive: {
-        backgroundColor: 'rgba(255,255,255,0.03)',
+        backgroundColor: colors.surface.glass,
     },
     teamDot: {
         width: 8,

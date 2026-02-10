@@ -45,9 +45,10 @@ export default function HalalScannerScreen() {
         try {
             // Open Food Facts API
             const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
+            if (!res.ok) throw new Error('Network error');
             const json = await res.json();
 
-            if (json.status !== 1 || !json.product) {
+            if (json?.status !== 1 || !json?.product) {
                 setResult({
                     status: 'unknown',
                     productName: 'Product not found',
@@ -58,7 +59,7 @@ export default function HalalScannerScreen() {
             }
 
             const product = json.product;
-            const ingredientsText = (product.ingredients_text || '').toLowerCase();
+            const ingredientsText = (product?.ingredients_text || '').toLowerCase();
             const ingredientsList = ingredientsText.split(/[,;]/).map((i: string) => i.trim()).filter(Boolean);
 
             // Check for haram ingredients

@@ -806,8 +806,8 @@ export default function SearchScreen() {
                     <View style={styles.searchContainer}>
                         <LinearGradient
                             colors={[
-                                'rgba(255,255,255,0.06)',
-                                'rgba(255,255,255,0.03)',
+                                colors.surface.glassHover,
+                                colors.surface.glass,
                             ]}
                             style={StyleSheet.absoluteFill}
                             start={{ x: 0, y: 0 }}
@@ -952,7 +952,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         paddingHorizontal: spacing.md,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: colors.border.subtle,
         overflow: 'hidden',
         backgroundColor: colors.surface.glass,
     },

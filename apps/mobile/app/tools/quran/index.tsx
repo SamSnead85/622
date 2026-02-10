@@ -303,6 +303,8 @@ export default function QuranSurahList() {
                         keyExtractor={(item) => item.id.toString()}
                         contentContainerStyle={styles.juzTabsContent}
                         style={styles.juzTabs}
+                        maxToRenderPerBatch={15}
+                        initialNumToRender={15}
                         renderItem={({ item }) => {
                             const active = item.id === selectedJuz;
                             return (

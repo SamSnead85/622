@@ -267,11 +267,12 @@ function GameCard({ game, index, onPlay }: GameCardProps) {
 export async function updateGameStats(won: boolean) {
     try {
         const data = await AsyncStorage.getItem('@game-stats');
-        const stats = data ? JSON.parse(data) : { played: 0, wins: 0, streak: 0 };
+        let stats = { played: 0, wins: 0, streak: 0 };
+        if (data) { try { stats = JSON.parse(data); } catch { /* corrupted, use defaults */ } }
         stats.played++;
         if (won) { stats.wins++; stats.streak++; } else { stats.streak = 0; }
         await AsyncStorage.setItem('@game-stats', JSON.stringify(stats));
-    } catch {}
+    } catch { /* non-critical: stats tracking failure doesn't affect gameplay */ }
 }
 
 // ============================================
@@ -284,9 +285,11 @@ function StatsSection() {
     useEffect(() => {
         AsyncStorage.getItem('@game-stats').then(data => {
             if (data) {
-                const parsed = JSON.parse(data);
-                const winRate = parsed.played > 0 ? Math.round((parsed.wins / parsed.played) * 100) : 0;
-                setGameStats({ played: parsed.played, winRate, streak: parsed.streak || 0 });
+                try {
+                    const parsed = JSON.parse(data);
+                    const winRate = parsed.played > 0 ? Math.round((parsed.wins / parsed.played) * 100) : 0;
+                    setGameStats({ played: parsed.played || 0, winRate, streak: parsed.streak || 0 });
+                } catch { /* corrupted stats, use defaults */ }
             }
         }).catch(() => {});
     }, []);

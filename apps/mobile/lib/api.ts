@@ -125,37 +125,46 @@ async function fetchWithTimeout(
 // ============================================
 
 let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
 
 async function attemptTokenRefresh(): Promise<string | null> {
-    if (isRefreshing) return null;
+    // If a refresh is already in progress, wait for it instead of returning null
+    if (isRefreshing && refreshPromise) {
+        return refreshPromise;
+    }
     isRefreshing = true;
 
-    try {
-        const token = await getToken();
-        if (!token) return null;
+    refreshPromise = (async () => {
+        try {
+            const token = await getToken();
+            if (!token) return null;
 
-        const url = `${API_URL}/api/v1/auth/refresh`;
-        const res = await fetchWithTimeout(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-            },
-        });
+            const url = `${API_URL}/api/v1/auth/refresh`;
+            const res = await fetchWithTimeout(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
-        if (res.ok) {
-            const data = await res.json();
-            if (data.token) {
-                await saveToken(data.token);
-                return data.token;
+            if (res.ok) {
+                const data = await res.json();
+                if (data.token) {
+                    await saveToken(data.token);
+                    return data.token;
+                }
             }
+            return null;
+        } catch {
+            return null;
+        } finally {
+            isRefreshing = false;
+            refreshPromise = null;
         }
-        return null;
-    } catch {
-        return null;
-    } finally {
-        isRefreshing = false;
-    }
+    })();
+
+    return refreshPromise;
 }
 
 // ============================================

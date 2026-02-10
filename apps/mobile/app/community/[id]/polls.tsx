@@ -206,6 +206,10 @@ export default function CommunityPollsScreen() {
                     keyExtractor={(item) => item.id}
                     renderItem={renderPoll}
                     contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 40 }}
+                    removeClippedSubviews={true}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    initialNumToRender={10}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.gold[500]} />}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>

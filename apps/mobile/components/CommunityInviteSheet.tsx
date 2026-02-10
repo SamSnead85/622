@@ -263,7 +263,7 @@ export function CommunityInviteSheet({
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        backgroundColor: colors.surface.overlayMedium,
         justifyContent: 'flex-end',
     },
     sheet: {

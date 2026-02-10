@@ -205,7 +205,7 @@ export default function CommunityDetailScreen() {
                                                 message: `Join ${community.name} on 0G!\n\n${community.description}\n\n${link}`,
                                                 url: link,
                                             });
-                                        } catch {}
+                                        } catch { /* user cancelled share sheet */ }
                                     }}
                                     activeOpacity={0.8}
                                     accessibilityRole="button"
@@ -280,7 +280,7 @@ export default function CommunityDetailScreen() {
                             </View>
                         ) : (
                             posts.map((post) => (
-                                <TouchableOpacity key={post.id} style={styles.postCard} onPress={() => router.push(`/post/${post.id}`)} activeOpacity={0.8}>
+                                <TouchableOpacity key={post.id} style={styles.postCard} onPress={() => router.push(`/post/${post.id}`)} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={`Post by ${post.author?.displayName || 'Anonymous'}`}>
                                     <View style={styles.postHeader}>
                                         <Text style={styles.postAuthor}>{post.author?.displayName || 'Anonymous'}</Text>
                                         <Text style={styles.postTime}>{timeAgo(post.createdAt)}</Text>

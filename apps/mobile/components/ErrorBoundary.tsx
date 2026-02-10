@@ -72,7 +72,7 @@ export class ErrorBoundary extends Component<Props, State> {
                             <Text style={styles.devText}>{this.state.error.message}</Text>
                         </ScrollView>
                     )}
-                    <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry} activeOpacity={0.8}>
+                    <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Retry">
                         <Ionicons name="refresh" size={18} color={colors.obsidian[900]} />
                         <Text style={styles.retryText}>Try Again</Text>
                     </TouchableOpacity>

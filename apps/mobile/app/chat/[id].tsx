@@ -164,7 +164,7 @@ function ReadReceipt({ status }: { status?: string }) {
                 <Ionicons
                     name="time-outline"
                     size={13}
-                    color="rgba(255,255,255,0.4)"
+                    color={colors.text.muted}
                 />
             );
         case 'sent':
@@ -172,7 +172,7 @@ function ReadReceipt({ status }: { status?: string }) {
                 <Ionicons
                     name="checkmark"
                     size={13}
-                    color="rgba(255,255,255,0.5)"
+                    color={colors.text.secondary}
                 />
             );
         case 'delivered':
@@ -180,7 +180,7 @@ function ReadReceipt({ status }: { status?: string }) {
                 <Ionicons
                     name="checkmark-done"
                     size={13}
-                    color="rgba(255,255,255,0.5)"
+                    color={colors.text.secondary}
                 />
             );
         case 'read':
@@ -402,6 +402,13 @@ export default function ChatScreen() {
     // Refs
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isTypingRef = useRef(false);
+
+    // Clean up typing timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        };
+    }, []);
 
     // ============================================
     // Socket Connection & Event Handlers

@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
     // ---- Countdown ----
     countdownOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backgroundColor: colors.surface.overlayHeavy,
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 100,

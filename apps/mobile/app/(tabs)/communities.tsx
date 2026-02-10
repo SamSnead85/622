@@ -264,7 +264,7 @@ const YourCommunityChip = memo(({ community, index }: { community: Community; in
                     />
                 )}
                 <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.85)']}
+                    colors={['transparent', colors.surface.overlayHeavy]}
                     style={styles.yourChipOverlay}
                 />
                 <View style={styles.yourChipContent}>
@@ -1147,7 +1147,7 @@ export default function CommunitiesScreen() {
                 message,
                 url: inviteLink,
             });
-        } catch {}
+        } catch { /* user cancelled share sheet */ }
     }, []);
 
     // ============================================
@@ -1408,8 +1408,8 @@ export default function CommunitiesScreen() {
                     <View style={styles.searchContainer}>
                         <LinearGradient
                             colors={[
-                                'rgba(255,255,255,0.06)',
-                                'rgba(255,255,255,0.03)',
+                                colors.surface.glassHover,
+                                colors.surface.glass,
                             ]}
                             style={StyleSheet.absoluteFill}
                             start={{ x: 0, y: 0 }}
@@ -1546,7 +1546,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
         marginTop: spacing.md,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: colors.border.subtle,
         overflow: 'hidden',
         backgroundColor: colors.surface.glass,
     },
@@ -1735,7 +1735,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: 'rgba(0,0,0,0.55)',
+        backgroundColor: colors.surface.overlayMedium,
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 8,

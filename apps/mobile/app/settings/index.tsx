@@ -770,7 +770,7 @@ const styles = StyleSheet.create({
         borderBottomColor: colors.border.subtle,
     },
     settingRowDanger: {
-        borderBottomColor: 'rgba(255, 107, 107, 0.08)',
+        borderBottomColor: colors.coral[500] + '14',
     },
     settingRowFlat: {
         flexDirection: 'row',
@@ -1000,15 +1000,15 @@ const styles = StyleSheet.create({
         letterSpacing: 1.2,
     },
     dangerCard: {
-        backgroundColor: 'rgba(255, 107, 107, 0.04)',
+        backgroundColor: colors.coral[500] + '0A',
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: 'rgba(255, 107, 107, 0.15)',
+        borderColor: colors.coral[500] + '26',
         overflow: 'hidden',
     },
     dangerDivider: {
         height: 1,
-        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+        backgroundColor: colors.coral[500] + '1A',
     },
 
     // ─── Footer ──────────────────────────────────

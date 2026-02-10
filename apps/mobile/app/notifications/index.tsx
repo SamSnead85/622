@@ -315,6 +315,10 @@ export default function NotificationsScreen() {
                     renderSectionHeader={renderSectionHeader}
                     keyExtractor={(item) => item.id}
                     stickySectionHeadersEnabled={false}
+                    removeClippedSubviews={true}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    initialNumToRender={10}
                     contentContainerStyle={[
                         styles.listContent,
                         { paddingBottom: insets.bottom + 40 },

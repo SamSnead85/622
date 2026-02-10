@@ -114,7 +114,7 @@ export default function MomentCreateScreen() {
                         </Text>
 
                         <View style={styles.pickerBtns}>
-                            <TouchableOpacity style={styles.pickerBtn} onPress={() => pickMedia('camera')}>
+                            <TouchableOpacity style={styles.pickerBtn} onPress={() => pickMedia('camera')} accessibilityRole="button" accessibilityLabel="Take photo or video with camera">
                                 <LinearGradient
                                     colors={[colors.gold[400], colors.gold[600]]}
                                     style={styles.pickerBtnGradient}
@@ -123,7 +123,7 @@ export default function MomentCreateScreen() {
                                     <Text style={styles.pickerBtnText}>Camera</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.pickerBtn} onPress={() => pickMedia('gallery')}>
+                            <TouchableOpacity style={styles.pickerBtn} onPress={() => pickMedia('gallery')} accessibilityRole="button" accessibilityLabel="Choose from gallery">
                                 <View style={styles.pickerBtnOutline}>
                                     <Ionicons name="images" size={24} color={colors.gold[400]} />
                                     <Text style={styles.pickerBtnTextOutline}>Gallery</Text>
@@ -163,6 +163,8 @@ export default function MomentCreateScreen() {
                                         setMediaUri(null);
                                         setCaption('');
                                     }}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Retake photo or video"
                                 >
                                     <Ionicons name="refresh" size={18} color={colors.text.primary} />
                                     <Text style={styles.retakeText}>Retake</Text>
@@ -173,6 +175,8 @@ export default function MomentCreateScreen() {
                                     onPress={handlePost}
                                     disabled={posting}
                                     activeOpacity={0.9}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Share moment"
                                 >
                                     <LinearGradient
                                         colors={[colors.gold[400], colors.gold[600]]}

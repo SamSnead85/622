@@ -158,11 +158,11 @@ export default function MomentViewerScreen() {
 
                 {/* User info */}
                 <View style={styles.userInfo}>
-                    <Avatar uri={currentMoment.user.avatarUrl} name={currentMoment.user.displayName} customSize={32} />
-                    <Text style={styles.userName}>{currentMoment.user.displayName}</Text>
+                    <Avatar uri={currentMoment?.user?.avatarUrl} name={currentMoment?.user?.displayName} customSize={32} />
+                    <Text style={styles.userName}>{currentMoment?.user?.displayName}</Text>
                     <Text style={styles.timeAgo}>{getTimeAgo(currentMoment.createdAt)}</Text>
                     <View style={{ flex: 1 }} />
-                    <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
+                    <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close moment viewer">
                         <Ionicons name="close" size={24} color={colors.text.primary} />
                     </TouchableOpacity>
                 </View>
@@ -176,6 +176,8 @@ export default function MomentViewerScreen() {
                     onLongPress={() => setPaused(true)}
                     onPressOut={() => setPaused(false)}
                     activeOpacity={1}
+                    accessibilityRole="button"
+                    accessibilityLabel="Previous moment"
                 />
                 <TouchableOpacity
                     style={styles.tapRight}
@@ -183,6 +185,8 @@ export default function MomentViewerScreen() {
                     onLongPress={() => setPaused(true)}
                     onPressOut={() => setPaused(false)}
                     activeOpacity={1}
+                    accessibilityRole="button"
+                    accessibilityLabel="Next moment"
                 />
             </View>
 
@@ -226,7 +230,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', gap: 3,
     },
     progressSegment: {
-        flex: 1, height: 2.5, backgroundColor: 'rgba(255,255,255,0.3)',
+        flex: 1, height: 2.5, backgroundColor: colors.text.muted,
         borderRadius: 2,
     },
     progressFill: {
@@ -243,11 +247,11 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base, fontWeight: '700', color: colors.text.primary,
     },
     timeAgo: {
-        fontSize: typography.fontSize.sm, color: 'rgba(255,255,255,0.6)',
+        fontSize: typography.fontSize.sm, color: colors.text.secondary,
     },
     closeBtn: {
         width: 36, height: 36, borderRadius: 18,
-        backgroundColor: 'rgba(0,0,0,0.3)',
+        backgroundColor: colors.surface.overlayLight,
         alignItems: 'center', justifyContent: 'center',
     },
     tapAreas: { flex: 1, flexDirection: 'row' },
@@ -260,7 +264,7 @@ const styles = StyleSheet.create({
     caption: {
         fontSize: typography.fontSize.base, color: colors.text.primary,
         fontWeight: '500', lineHeight: 22, marginBottom: spacing.sm,
-        textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 },
+        textShadowColor: colors.surface.overlayMedium, textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 4,
     },
     viewCount: {

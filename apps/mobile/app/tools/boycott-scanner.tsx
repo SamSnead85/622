@@ -37,13 +37,15 @@ export default function BoycottScannerScreen() {
                 // Check cache first
                 const cached = await AsyncStorage.getItem(BOYCOTT_CACHE_KEY);
                 if (cached) {
-                    const { data, timestamp } = JSON.parse(cached);
-                    // Refresh weekly
-                    if (Date.now() - timestamp < 7 * 24 * 60 * 60 * 1000) {
-                        setBrands(data);
-                        setIsLoading(false);
-                        return;
-                    }
+                    try {
+                        const { data, timestamp } = JSON.parse(cached);
+                        // Refresh weekly
+                        if (Date.now() - timestamp < 7 * 24 * 60 * 60 * 1000) {
+                            setBrands(data);
+                            setIsLoading(false);
+                            return;
+                        }
+                    } catch { /* corrupted cache, ignore */ }
                 }
 
                 const res = await fetch(BOYCOTT_DATA_URL);
@@ -62,10 +64,12 @@ export default function BoycottScannerScreen() {
                 try {
                     const cached = await AsyncStorage.getItem(BOYCOTT_CACHE_KEY);
                     if (cached) {
-                        const { data } = JSON.parse(cached);
-                        setBrands(data);
+                        try {
+                            const { data } = JSON.parse(cached);
+                            setBrands(data);
+                        } catch { /* corrupted cache, ignore */ }
                     }
-                } catch {}
+                } catch { /* fetch failure handled by finally block loading state */ }
             } finally {
                 setIsLoading(false);
             }

@@ -50,16 +50,18 @@ export default function PrayerTimesScreen() {
             // Check cache first
             const cached = await AsyncStorage.getItem(CACHE_KEY);
             if (cached) {
-                const { data, date, location, sunrise, sunset } = JSON.parse(cached);
-                const today = new Date().toDateString();
-                if (date === today) {
-                    setPrayers(data);
-                    setLocationName(location);
-                    if (sunrise) setSunriseTime(sunrise);
-                    if (sunset) setSunsetTime(sunset);
-                    setIsLoading(false);
-                    return;
-                }
+                try {
+                    const { data, date, location, sunrise, sunset } = JSON.parse(cached);
+                    const today = new Date().toDateString();
+                    if (date === today) {
+                        setPrayers(data);
+                        setLocationName(location);
+                        if (sunrise) setSunriseTime(sunrise);
+                        if (sunset) setSunsetTime(sunset);
+                        setIsLoading(false);
+                        return;
+                    }
+                } catch { /* corrupted cache, ignore */ }
             }
 
             // Get location
@@ -76,9 +78,10 @@ export default function PrayerTimesScreen() {
             // Reverse geocode for city name
             let cityName = 'Your Location';
             try {
-                const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
+                const geoResults = await Location.reverseGeocodeAsync({ latitude, longitude });
+                const geo = geoResults?.[0];
                 if (geo) cityName = geo.city || geo.subregion || 'Your Location';
-            } catch {}
+            } catch { /* reverse geocode optional — fallback to default name */ }
             setLocationName(cityName);
 
             // Fetch from AlAdhan API

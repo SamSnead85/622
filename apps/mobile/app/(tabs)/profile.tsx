@@ -88,7 +88,7 @@ const PostGridItem = memo(({ post, index }: { post: Post; index: number }) => {
                 )}
                 {(post.likesCount > 0 || post.commentsCount > 0) && (
                     <LinearGradient
-                        colors={['transparent', 'rgba(0,0,0,0.5)']}
+                        colors={['transparent', colors.surface.overlayMedium]}
                         style={styles.postOverlay}
                     >
                         <View style={styles.postMeta}>
@@ -268,7 +268,7 @@ export default function ProfileScreen() {
                         {/* Decorative pattern overlay */}
                         <View style={styles.coverPattern}>
                             <LinearGradient
-                                colors={['rgba(0,0,0,0.15)', 'transparent', 'rgba(0,0,0,0.1)']}
+                                colors={[colors.surface.overlayLight, 'transparent', colors.surface.overlayLight]}
                                 style={StyleSheet.absoluteFill}
                             />
                         </View>
@@ -276,7 +276,7 @@ export default function ProfileScreen() {
                 )}
                 {/* Bottom fade into background */}
                 <LinearGradient
-                    colors={['transparent', 'rgba(10,10,11,0.6)', colors.obsidian[900]]}
+                    colors={['transparent', colors.surface.overlayMedium, colors.obsidian[900]]}
                     locations={[0, 0.6, 1]}
                     style={styles.coverFade}
                 />
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(0,0,0,0.45)',
+        backgroundColor: colors.surface.overlayLight,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -953,7 +953,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: spacing.sm,
         right: spacing.sm,
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        backgroundColor: colors.surface.overlayMedium,
         width: 22,
         height: 22,
         borderRadius: 11,

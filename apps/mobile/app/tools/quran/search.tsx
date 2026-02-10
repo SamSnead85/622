@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -54,6 +54,12 @@ export default function QuranSearch() {
         }
     }, []);
 
+    useEffect(() => {
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
+    }, []);
+
     const handleQueryChange = (text: string) => {
         setQuery(text);
         if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -88,6 +94,10 @@ export default function QuranSearch() {
             {/* Results */}
             <FlatList
                 data={results}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={10}
+                windowSize={5}
+                initialNumToRender={10}
                 renderItem={({ item }) => (
                     <Animated.View entering={FadeIn.duration(200)}>
                         <TouchableOpacity

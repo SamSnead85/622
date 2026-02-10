@@ -90,7 +90,7 @@ function ShimmerBlock({
                 }}
             >
                 <LinearGradient
-                    colors={['transparent', 'rgba(255,255,255,0.04)', 'transparent']}
+                    colors={['transparent', colors.surface.glass, 'transparent']}
                     start={{ x: 0, y: 0.5 }}
                     end={{ x: 1, y: 0.5 }}
                     style={{ width: SCREEN_WIDTH, height: '100%' }}
@@ -167,6 +167,7 @@ export default function SurahDetailScreen() {
     const [activeAyah, setActiveAyah] = useState<number | null>(null);
 
     const flatListRef = useRef<FlatList>(null);
+    const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const bookmarkKey = `@quran-bookmark-${surahNumber}`;
 
     // ── Load bookmark ──
@@ -250,7 +251,7 @@ export default function SurahDetailScreen() {
                 const index = combined.findIndex((a) => a.numberInSurah === savedAyah);
                 if (index > 0) {
                     // Short delay to ensure list is rendered
-                    setTimeout(() => {
+                    scrollTimerRef.current = setTimeout(() => {
                         flatListRef.current?.scrollToIndex({
                             index,
                             animated: true,
@@ -270,6 +271,9 @@ export default function SurahDetailScreen() {
 
     useEffect(() => {
         fetchSurah();
+        return () => {
+            if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+        };
     }, [fetchSurah]);
 
     // ── Retry handler ──
@@ -289,9 +293,9 @@ export default function SurahDetailScreen() {
     // ── Scroll failure handler ──
     const onScrollToIndexFailed = useCallback(
         (info: { index: number; averageItemLength: number }) => {
-            const offset = info.averageItemLength * info.index;
-            flatListRef.current?.scrollToOffset({ offset, animated: true });
-            setTimeout(() => {
+        const offset = info.averageItemLength * info.index;
+        flatListRef.current?.scrollToOffset({ offset, animated: true });
+            scrollTimerRef.current = setTimeout(() => {
                 flatListRef.current?.scrollToIndex({
                     index: info.index,
                     animated: true,

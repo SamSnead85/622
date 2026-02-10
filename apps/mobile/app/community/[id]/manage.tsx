@@ -75,12 +75,13 @@ export default function CommunityManageScreen() {
     };
 
     const handleAction = (member: Member, action: 'promote' | 'demote' | 'mute' | 'ban' | 'remove') => {
+        const name = member.user?.displayName || member.user?.username || 'this member';
         const labels: Record<string, string> = {
-            promote: `Promote ${member.user.displayName} to moderator?`,
-            demote: `Remove moderator role from ${member.user.displayName}?`,
-            mute: `Mute ${member.user.displayName}?`,
-            ban: `Ban ${member.user.displayName} from this community?`,
-            remove: `Remove ${member.user.displayName} from this community?`,
+            promote: `Promote ${name} to moderator?`,
+            demote: `Remove moderator role from ${name}?`,
+            mute: `Mute ${name}?`,
+            ban: `Ban ${name} from this community?`,
+            remove: `Remove ${name} from this community?`,
         };
 
         Alert.alert('Confirm Action', labels[action], [
@@ -116,10 +117,10 @@ export default function CommunityManageScreen() {
         <Animated.View entering={FadeInDown.duration(300).delay(index * 30)}>
             <View style={styles.memberCard}>
                 <View style={styles.memberLeft}>
-                    <Avatar uri={item.user.avatarUrl} name={item.user.displayName} size="md" />
+                    <Avatar uri={item.user?.avatarUrl} name={item.user?.displayName || 'Member'} size="md" />
                     <View style={styles.memberInfo}>
-                        <Text style={styles.memberName}>{item.user.displayName}</Text>
-                        <Text style={styles.memberUsername}>@{item.user.username}</Text>
+                        <Text style={styles.memberName}>{item.user?.displayName || 'Member'}</Text>
+                        <Text style={styles.memberUsername}>@{item.user?.username || 'unknown'}</Text>
                     </View>
                 </View>
                 <View style={styles.memberRight}>
@@ -143,7 +144,7 @@ export default function CommunityManageScreen() {
                                 actions.push({ text: 'Mute User', onPress: () => handleAction(item, 'mute') });
                                 actions.push({ text: 'Ban User', onPress: () => handleAction(item, 'ban'), style: 'destructive' });
                                 actions.push({ text: 'Cancel', onPress: () => {}, style: 'cancel' });
-                                Alert.alert(item.user.displayName, `@${item.user.username}`, actions);
+                                Alert.alert(item.user?.displayName || 'Member', `@${item.user?.username || 'unknown'}`, actions);
                             }}
                         >
                             <Ionicons name="ellipsis-horizontal" size={18} color={colors.text.muted} />
@@ -203,6 +204,10 @@ export default function CommunityManageScreen() {
                     keyExtractor={(item) => item.id || item.userId}
                     renderItem={renderMember}
                     contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 40 }}
+                    removeClippedSubviews={true}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    initialNumToRender={10}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadMembers(); }} tintColor={colors.gold[500]} />}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>

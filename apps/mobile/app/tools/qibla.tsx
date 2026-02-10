@@ -114,7 +114,8 @@ export default function QiblaScreen() {
                 });
 
                 try {
-                    const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
+                    const geoResults = await Location.reverseGeocodeAsync({ latitude, longitude });
+                    const geo = geoResults?.[0];
                     if (geo) setLocationName(geo.city || geo.subregion || 'Your Location');
                 } catch {
                     setLocationName('Your Location');

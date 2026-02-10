@@ -44,7 +44,7 @@ function ToastItem({ id, message, type }: { id: string; message: string; type: T
       exiting={FadeOutUp.duration(200)}
       style={[styles.toast, { borderLeftColor: accentColors[type] }]}
     >
-      <Pressable style={styles.toastContent} onPress={() => dismiss(id)}>
+      <Pressable style={styles.toastContent} onPress={() => dismiss(id)} accessibilityRole="button" accessibilityLabel="Dismiss notification">
         <Ionicons
           name={iconNames[type]}
           size={20}

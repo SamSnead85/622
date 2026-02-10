@@ -308,9 +308,9 @@ export default function MessagesScreen() {
         ? conversations.filter((conv) => {
             const q = searchQuery.toLowerCase();
             return (
-                conv.participant.displayName?.toLowerCase().includes(q) ||
-                conv.participant.username?.toLowerCase().includes(q) ||
-                conv.lastMessage?.content?.toLowerCase().includes(q)
+                conv?.participant?.displayName?.toLowerCase().includes(q) ||
+                conv?.participant?.username?.toLowerCase().includes(q) ||
+                conv?.lastMessage?.content?.toLowerCase().includes(q)
             );
         })
         : conversations;
@@ -386,7 +386,7 @@ export default function MessagesScreen() {
     }, [handleLongPress]);
 
     const handleContactPress = useCallback((contact: OnlineContact) => {
-        const existing = conversations.find((conv) => conv.participant.id === contact.id);
+        const existing = conversations.find((conv) => conv?.participant?.id === contact.id);
         if (existing) {
             router.push(`/chat/${existing.id}`);
         } else {

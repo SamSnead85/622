@@ -53,7 +53,7 @@ function ShimmerBlock({
                 }}
             >
                 <LinearGradient
-                    colors={['transparent', 'rgba(255,255,255,0.04)', 'transparent']}
+                    colors={['transparent', colors.surface.glass, 'transparent']}
                     start={{ x: 0, y: 0.5 }}
                     end={{ x: 1, y: 0.5 }}
                     style={{ width: SCREEN_WIDTH, height: '100%' }}

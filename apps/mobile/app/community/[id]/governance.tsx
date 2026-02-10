@@ -277,6 +277,10 @@ export default function GovernanceScreen() {
                     keyExtractor={(item) => item.id}
                     renderItem={renderProposal}
                     contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 40 }}
+                    removeClippedSubviews={true}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    initialNumToRender={10}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadProposals(); }} tintColor={colors.gold[500]} />}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
@@ -538,7 +542,7 @@ const styles = StyleSheet.create({
     // Modal
     modalOverlay: {
         flex: 1, justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        backgroundColor: colors.surface.overlayMedium,
     },
     modalContent: {
         backgroundColor: colors.obsidian[800],

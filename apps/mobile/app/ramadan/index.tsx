@@ -120,7 +120,7 @@ export default function RamadanHub() {
             try {
                 const stored = await AsyncStorage.getItem(QURAN_STORAGE_KEY);
                 if (stored) setJuzCount(parseInt(stored, 10) || 0);
-            } catch {}
+            } catch { /* AsyncStorage read failure — use default 0 */ }
         })();
     }, []);
 
@@ -141,7 +141,9 @@ export default function RamadanHub() {
                 // Check cache first
                 const cached = await AsyncStorage.getItem(PRAYER_CACHE_KEY);
                 if (cached) {
-                    const { maghrib, date } = JSON.parse(cached);
+                    let parsed: any = {};
+                    try { parsed = JSON.parse(cached); } catch { /* corrupted cache */ }
+                    const { maghrib, date } = parsed;
                     if (date === new Date().toDateString()) {
                         setMaghribTime(maghrib);
                         setIsLoadingPrayer(false);
@@ -208,7 +210,7 @@ export default function RamadanHub() {
             await Share.share({
                 message: `${dailyVerse.arabic}\n\n"${dailyVerse.english}"\n— Quran ${dailyVerse.ref}\n\nShared from 0G`,
             });
-        } catch {}
+        } catch { /* user cancelled share sheet */ }
     };
 
     const navigate = (route: string) => {

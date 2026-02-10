@@ -22,7 +22,7 @@ const ShimmerBlock = ({ width, height, borderRadius = 8 }: { width: number | str
     <View style={[{ width: width as any, height, borderRadius, backgroundColor: colors.surface.glass, overflow: 'hidden' }]}>
       <RNAnimated.View style={[StyleSheet.absoluteFill, { transform: [{ translateX }] }]}>
         <LinearGradient
-          colors={['transparent', 'rgba(255,255,255,0.05)', 'transparent']}
+          colors={['transparent', colors.surface.glass, 'transparent']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
           style={StyleSheet.absoluteFill}
         />

@@ -50,7 +50,7 @@ const PLATFORMS = [
         id: 'whatsapp' as Platform,
         name: 'WhatsApp',
         icon: 'chatbubbles' as const,
-        color: '#25D366',
+        color: colors.emerald[500],
         description: 'Import chat history and media from WhatsApp export files',
         steps: [
             'Open the WhatsApp chat you want to export',
@@ -65,7 +65,7 @@ const PLATFORMS = [
         id: 'instagram' as Platform,
         name: 'Instagram',
         icon: 'camera' as const,
-        color: '#E1306C',
+        color: colors.coral[500],
         description: 'Import posts, reels, and connections from your Instagram data download',
         steps: [
             'Go to Instagram Settings → Privacy & Security',
@@ -80,7 +80,7 @@ const PLATFORMS = [
         id: 'tiktok' as Platform,
         name: 'TikTok',
         icon: 'musical-notes' as const,
-        color: '#00F2EA',
+        color: colors.azure[400],
         description: 'Import videos and connections from your TikTok data download',
         steps: [
             'Go to TikTok Settings → Privacy',
