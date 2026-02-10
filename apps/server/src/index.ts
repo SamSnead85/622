@@ -204,6 +204,19 @@ app.use((req, res, next) => {
 // Compress responses
 app.use(compression());
 
+// Cache control headers
+app.use((req, res, next) => {
+    // Static assets: cache for 1 year
+    if (req.path.startsWith('/uploads/')) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    // API responses: no cache by default (overridable per route)
+    else if (req.path.startsWith('/api/')) {
+        res.setHeader('Cache-Control', 'no-store');
+    }
+    next();
+});
+
 // Enhanced health check with dependency probes
 app.get('/health', async (_, res) => {
     const checks: Record<string, { status: string; latencyMs?: number; error?: string }> = {};
@@ -230,6 +243,15 @@ app.get('/health', async (_, res) => {
             checks.redis = { status: 'unavailable', error: err.message?.slice(0, 120) };
         }
     }
+
+    // Storage probe (check if storage is configured)
+    let storageStatus = 'unknown';
+    try {
+        storageStatus = process.env.SUPABASE_URL ? 'configured' : 'not_configured';
+    } catch {
+        storageStatus = 'error';
+    }
+    checks.storage = { status: storageStatus };
 
     const overall = Object.values(checks).every((c) => c.status === 'ok') ? 'healthy' : 'degraded';
     const statusCode = checks.database?.status === 'ok' ? 200 : 503;
@@ -302,6 +324,21 @@ async function startServer() {
 
     // Initialize growth partner qualification worker (daily job)
     await initGrowthQualificationWorker();
+
+    // Start session cleanup job (runs every 6 hours)
+    const { prisma } = await import('./db/client.js');
+    setInterval(async () => {
+        try {
+            const result = await prisma.session.deleteMany({
+                where: { expiresAt: { lt: new Date() } }
+            });
+            if (result.count > 0) {
+                logger.info(`Cleaned ${result.count} expired sessions`);
+            }
+        } catch (error) {
+            logger.warn('Session cleanup failed:', error);
+        }
+    }, 6 * 60 * 60 * 1000); // Every 6 hours
 
     // Start server
     const PORT = parseInt(process.env.PORT || '5180');

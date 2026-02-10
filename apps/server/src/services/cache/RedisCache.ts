@@ -14,14 +14,17 @@ export class CacheService {
         if (process.env.REDIS_URL) {
             try {
                 this.redis = new Redis(process.env.REDIS_URL, {
-                    retryStrategy: (times) => {
+                    maxRetriesPerRequest: 3,
+                    retryStrategy: (times: number) => {
                         if (times > 3) {
                             logger.error('Redis connection failed after 3 retries');
                             return null;
                         }
-                        return Math.min(times * 50, 2000);
+                        return Math.min(times * 200, 5000);
                     },
-                    maxRetriesPerRequest: 3,
+                    enableReadyCheck: true,
+                    connectTimeout: 10000,
+                    keepAlive: 30000,
                 });
 
                 this.redis.on('connect', () => {

@@ -27,11 +27,11 @@ function buildDatabaseUrl(): string {
     // For Supabase pooler connections: append production-safe defaults
     const isSupabase = raw.includes('supabase.com') || raw.includes('pooler.supabase.com');
     if (isSupabase) {
-        return `${raw}?pgbouncer=true&connection_limit=10&connect_timeout=15&pool_timeout=15&sslmode=require`;
+        return `${raw}?pgbouncer=true&connection_limit=25&connect_timeout=15&pool_timeout=15&sslmode=require`;
     }
 
     // For non-Supabase (local dev, self-hosted): just set a reasonable connection limit
-    return `${raw}?connection_limit=20&connect_timeout=15`;
+    return `${raw}?connection_limit=30&connect_timeout=15`;
 }
 
 const globalForPrisma = globalThis as unknown as {

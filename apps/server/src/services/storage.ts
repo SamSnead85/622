@@ -16,6 +16,7 @@ import { logger } from '../utils/logger.js';
 const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local'; // local | supabase | s3 | r2
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const BUCKET = process.env.STORAGE_BUCKET || 'og-media';
+const CDN_URL = process.env.CDN_URL; // Optional: Cloudflare/CloudFront CDN
 
 // SERVER_URL is required in production for generating file URLs
 const SERVER_URL = (() => {
@@ -156,7 +157,7 @@ export async function uploadFile(
 
             return {
                 key: result.public_id,
-                url: result.secure_url,
+                url: rewriteUrlWithCdn(result.secure_url),
                 size: sanitizedBuffer.length,
             };
         } catch (cloudinaryError) {
@@ -176,7 +177,7 @@ export async function uploadFile(
 
         return {
             key,
-            url: `${SERVER_URL}/uploads/${key}`,
+            url: rewriteUrlWithCdn(`${SERVER_URL}/uploads/${key}`),
             size: sanitizedBuffer.length,
         };
     }
@@ -207,7 +208,7 @@ export async function uploadFile(
 
         return {
             key,
-            url: getPublicUrl(key),
+            url: rewriteUrlWithCdn(getPublicUrl(key)),
             size: sanitizedBuffer.length,
         };
     }
@@ -274,14 +275,14 @@ export async function deleteFile(key: string): Promise<void> {
  */
 export async function getSignedDownloadUrl(key: string, expiresIn = 3600): Promise<string> {
     if (STORAGE_PROVIDER === 'local') {
-        return `${SERVER_URL}/uploads/${key}`;
+        return rewriteUrlWithCdn(`${SERVER_URL}/uploads/${key}`);
     }
 
     if (STORAGE_PROVIDER === 'supabase') {
         const supabase = getSupabaseClient();
         if (supabase) {
             const { data } = await supabase.storage.from(BUCKET).createSignedUrl(key, expiresIn);
-            return data?.signedUrl || getPublicUrl(key);
+            return rewriteUrlWithCdn(data?.signedUrl || getPublicUrl(key));
         }
     }
 
@@ -290,7 +291,8 @@ export async function getSignedDownloadUrl(key: string, expiresIn = 3600): Promi
             Bucket: BUCKET,
             Key: key,
         });
-        return getSignedUrl(s3Client, command, { expiresIn });
+        const signedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+        return rewriteUrlWithCdn(signedUrl);
     }
 
     return getPublicUrl(key);
@@ -300,20 +302,38 @@ export async function getSignedDownloadUrl(key: string, expiresIn = 3600): Promi
  * Get public URL for a file
  */
 export function getPublicUrl(key: string): string {
+    let url: string;
     switch (STORAGE_PROVIDER) {
         case 'supabase':
-            return `${process.env.SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${key}`;
+            url = `${process.env.SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${key}`;
+            break;
         case 'r2':
-            return `${process.env.R2_PUBLIC_URL || process.env.R2_ENDPOINT}/${BUCKET}/${key}`;
+            url = `${process.env.R2_PUBLIC_URL || process.env.R2_ENDPOINT}/${BUCKET}/${key}`;
+            break;
         case 's3':
         default:
-            return `https://${BUCKET}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+            url = `https://${BUCKET}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+            break;
     }
+    return rewriteUrlWithCdn(url);
 }
 
 // ============================================
 // HELPERS
 // ============================================
+
+/**
+ * Rewrite URL to use CDN if configured
+ */
+function rewriteUrlWithCdn(url: string): string {
+    if (!CDN_URL || !url) return url;
+    try {
+        const parsed = new URL(url);
+        return `${CDN_URL}${parsed.pathname}`;
+    } catch {
+        return url;
+    }
+}
 
 function getExtensionFromMime(mimeType: string): string {
     const map: Record<string, string> = {
