@@ -241,6 +241,9 @@ function RootLayout() {
                         navigateToGame(gameCode);
                     } else if (type === 'post' && id) {
                         router.push(`/post/${id}` as any);
+                    } else if (type === 'group' && id) {
+                        // Group invite — lightweight join flow (no registration required)
+                        router.push(`/join-group?code=${id}&name=${parsed.searchParams.get('name') || ''}` as any);
                     } else if (type === 'community' && id) {
                         router.push(`/community/${id}` as any);
                     } else if (type === 'profile' && id) {
@@ -264,6 +267,13 @@ function RootLayout() {
                     return;
                 }
                 
+                // Try group invite pattern (lightweight join)
+                const groupMatch = url.match(/\/group\/([^\/\?]+)/i);
+                if (groupMatch) {
+                    router.push(`/join-group?code=${groupMatch[1]}` as any);
+                    return;
+                }
+
                 const communityMatch = url.match(/\/(?:community|zerog:\/\/community)\/([^\/\?]+)/i);
                 if (communityMatch) {
                     router.push(`/community/${communityMatch[1]}` as any);

@@ -16,6 +16,8 @@ import {
     RefreshControl,
     Dimensions,
     Pressable,
+    Share,
+    Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter, useNavigation } from 'expo-router';
@@ -104,6 +106,68 @@ const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
         color: colors.emerald[500],
         description: 'Start from scratch',
         channels: ['General'],
+    },
+];
+
+// ============================================
+// Featured Seed Groups
+// ============================================
+
+type FeaturedGroup = {
+    id: string;
+    name: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    color: string;
+    description: string;
+    memberCount: number;
+    tags: string[];
+    gradient: [string, string];
+    nextEvent?: { title: string; date: string };
+};
+
+const FEATURED_GROUPS: FeaturedGroup[] = [
+    {
+        id: 'seed-muslim-entrepreneurs',
+        name: 'Muslim Entrepreneurs',
+        icon: 'rocket-outline',
+        color: colors.gold[500],
+        description: 'Connect with Muslim business owners, founders, and aspiring entrepreneurs. Share wins, get advice, find partners.',
+        memberCount: 0,
+        tags: ['Business', 'Networking', 'Startups'],
+        gradient: [colors.gold[600], colors.gold[400]],
+    },
+    {
+        id: 'seed-halal-investing',
+        name: 'Halal Stock Investing',
+        icon: 'trending-up-outline',
+        color: colors.emerald[500],
+        description: 'Halal stock picks, live trading discussions, Shariah-compliant portfolio strategies. Trade together, grow together.',
+        memberCount: 0,
+        tags: ['Stocks', 'Halal Finance', 'Trading'],
+        gradient: [colors.emerald[600], colors.emerald[400]],
+        nextEvent: { title: 'Weekly Market Review', date: 'Every Friday' },
+    },
+    {
+        id: 'seed-tampa-ai-builders',
+        name: 'Tampa AI Builders',
+        icon: 'hardware-chip-outline',
+        color: colors.azure[500],
+        description: 'Tampa Bay\'s AI & ML community. Monthly meetups, hackathons, demos, and knowledge sharing. Build the future together.',
+        memberCount: 0,
+        tags: ['AI', 'Machine Learning', 'Tampa'],
+        gradient: [colors.azure[600], colors.azure[400]],
+        nextEvent: { title: 'Monthly Meetup', date: 'First Saturday' },
+    },
+    {
+        id: 'seed-tampa-muslim-ai',
+        name: 'Tampa Muslim AI Builders',
+        icon: 'code-slash-outline',
+        color: colors.coral[500],
+        description: 'Muslim technologists in Tampa Bay building with AI. Monthly meetups, hackathons with cash prizes, and speaker events.',
+        memberCount: 0,
+        tags: ['AI', 'Muslim Tech', 'Hackathons'],
+        gradient: [colors.coral[500], colors.gold[500]],
+        nextEvent: { title: 'Hackathon — $500 Prize', date: 'Coming Soon' },
     },
 ];
 
@@ -491,6 +555,234 @@ function EmptyDiscovery() {
 }
 
 // ============================================
+// Featured Group Card (Seed Groups)
+// ============================================
+
+const FeaturedGroupCard = memo(({ group, index, onJoin, onShare }: {
+    group: FeaturedGroup;
+    index: number;
+    onJoin: (group: FeaturedGroup) => void;
+    onShare: (group: FeaturedGroup) => void;
+}) => {
+    const [isJoining, setIsJoining] = useState(false);
+
+    const handleJoin = async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setIsJoining(true);
+        try {
+            await onJoin(group);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {
+            showError('Failed to join group');
+        } finally {
+            setIsJoining(false);
+        }
+    };
+
+    return (
+        <Animated.View entering={FadeInDown.duration(350).delay(80 + index * 90)}>
+            <View style={featuredStyles.card}>
+                {/* Gradient Header */}
+                <LinearGradient
+                    colors={group.gradient}
+                    style={featuredStyles.header}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <View style={featuredStyles.headerContent}>
+                        <View style={featuredStyles.iconCircle}>
+                            <Ionicons name={group.icon} size={22} color={colors.obsidian[900]} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={featuredStyles.groupName}>{group.name}</Text>
+                            <View style={featuredStyles.tagsRow}>
+                                {group.tags.map((tag) => (
+                                    <View key={tag} style={featuredStyles.tag}>
+                                        <Text style={featuredStyles.tagText}>{tag}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+                    </View>
+                </LinearGradient>
+
+                {/* Body */}
+                <View style={featuredStyles.body}>
+                    <Text style={featuredStyles.description} numberOfLines={2}>
+                        {group.description}
+                    </Text>
+
+                    {/* Next Event */}
+                    {group.nextEvent && (
+                        <View style={featuredStyles.eventRow}>
+                            <Ionicons name="calendar-outline" size={14} color={colors.gold[500]} />
+                            <Text style={featuredStyles.eventTitle}>{group.nextEvent.title}</Text>
+                            <Text style={featuredStyles.eventDate}>{group.nextEvent.date}</Text>
+                        </View>
+                    )}
+
+                    {/* Action Row */}
+                    <View style={featuredStyles.actionRow}>
+                        <TouchableOpacity
+                            style={featuredStyles.joinBtn}
+                            onPress={handleJoin}
+                            disabled={isJoining}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Join ${group.name}`}
+                        >
+                            <LinearGradient
+                                colors={[colors.gold[400], colors.gold[600]]}
+                                style={featuredStyles.joinGradient}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            >
+                                {isJoining ? (
+                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                ) : (
+                                    <>
+                                        <Ionicons name="add" size={16} color={colors.obsidian[900]} />
+                                        <Text style={featuredStyles.joinText}>Join Group</Text>
+                                    </>
+                                )}
+                            </LinearGradient>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={featuredStyles.shareBtn}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                onShare(group);
+                            }}
+                            activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Share ${group.name}`}
+                        >
+                            <Ionicons name="share-outline" size={18} color={colors.gold[500]} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Animated.View>
+    );
+});
+
+const featuredStyles = StyleSheet.create({
+    sectionContainer: {
+        marginBottom: spacing.lg,
+    },
+    card: {
+        backgroundColor: colors.surface.glass,
+        borderRadius: 16,
+        marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        overflow: 'hidden',
+    },
+    header: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.md,
+    },
+    headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+    },
+    iconCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    groupName: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.obsidian[900],
+        fontFamily: 'Inter-Bold',
+    },
+    tagsRow: {
+        flexDirection: 'row',
+        gap: 6,
+        marginTop: 4,
+        flexWrap: 'wrap',
+    },
+    tag: {
+        backgroundColor: 'rgba(0,0,0,0.15)',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+    },
+    tagText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: colors.obsidian[900],
+    },
+    body: {
+        padding: spacing.md,
+    },
+    description: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        lineHeight: 20,
+        marginBottom: spacing.sm,
+    },
+    eventRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: colors.surface.goldSubtle,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 6,
+        borderRadius: 8,
+        marginBottom: spacing.sm,
+    },
+    eventTitle: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.gold[500],
+        flex: 1,
+    },
+    eventDate: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+    },
+    actionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    joinBtn: {
+        flex: 1,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    joinGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        gap: 4,
+    },
+    joinText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '700',
+        color: colors.obsidian[900],
+    },
+    shareBtn: {
+        width: 42,
+        height: 42,
+        borderRadius: 10,
+        backgroundColor: colors.surface.goldSubtle,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+});
+
+// ============================================
 // Template Selection Modal
 // ============================================
 
@@ -762,6 +1054,7 @@ export default function CommunitiesScreen() {
     const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
     const [discoverCommunities, setDiscoverCommunities] = useState<Community[]>([]);
     const [isLoadingDiscover, setIsLoadingDiscover] = useState(false);
+    const [joinedFeatured, setJoinedFeatured] = useState<Set<string>>(new Set());
 
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const searchInputRef = useRef<TextInput>(null);
@@ -812,6 +1105,50 @@ export default function CommunitiesScreen() {
             prev.map((c) => c.id === communityId ? { ...c, role: 'member' as const } : c)
         );
     }, [joinCommunity]);
+
+    // ============================================
+    // Featured Group Handlers
+    // ============================================
+
+    const handleJoinFeaturedGroup = useCallback(async (group: FeaturedGroup) => {
+        try {
+            // Create the community on the server and auto-join
+            const data = await apiFetch<any>(API.communities, {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: group.name,
+                    description: group.description,
+                    isPublic: true,
+                }),
+            });
+            const newCommunity = data.community || data;
+            // Refresh communities list
+            fetchCommunities();
+            setJoinedFeatured((prev) => new Set(prev).add(group.id));
+            // Navigate to the new community
+            if (newCommunity?.id) {
+                router.push(`/community/${newCommunity.id}` as any);
+            }
+        } catch (err: any) {
+            // If community already exists, try to find and join it
+            if (err.message?.includes('already exists') || err.message?.includes('duplicate')) {
+                showError('This group already exists — check your communities!');
+            } else {
+                throw err;
+            }
+        }
+    }, [fetchCommunities, router]);
+
+    const handleShareFeaturedGroup = useCallback(async (group: FeaturedGroup) => {
+        const inviteLink = `https://0gravity.ai/group/${group.id}`;
+        const message = `🔗 Join ${group.name} on 0G!\n\n${group.description}\n\nTap to join: ${inviteLink}\n\nNo account needed — join in seconds!`;
+        try {
+            await Share.share({
+                message,
+                url: inviteLink,
+            });
+        } catch {}
+    }, []);
 
     // ============================================
     // Search with debounce (300ms)
@@ -958,8 +1295,27 @@ export default function CommunitiesScreen() {
                 )}
             </Animated.View>
 
+            {/* Featured Groups Section */}
+            <Animated.View entering={FadeInDown.duration(350).delay(100)}>
+                <View style={featuredStyles.sectionContainer}>
+                    {renderSectionHeader('Featured Groups', 'star', FEATURED_GROUPS.length)}
+                    <Text style={styles.featuredSubtitle}>
+                        Join a group — invite friends via text or WhatsApp. No signup required.
+                    </Text>
+                    {FEATURED_GROUPS.filter((g) => !joinedFeatured.has(g.id)).map((group, index) => (
+                        <FeaturedGroupCard
+                            key={group.id}
+                            group={group}
+                            index={index}
+                            onJoin={handleJoinFeaturedGroup}
+                            onShare={handleShareFeaturedGroup}
+                        />
+                    ))}
+                </View>
+            </Animated.View>
+
             {/* Discover Section Header */}
-            <Animated.View entering={FadeInDown.duration(350).delay(150)}>
+            <Animated.View entering={FadeInDown.duration(350).delay(200)}>
                 <View style={styles.discoverHeaderRow}>
                     {renderSectionHeader('Discover', 'compass', filteredDiscover.length)}
                 </View>
@@ -1343,6 +1699,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 1,
         borderColor: colors.gold[500] + '30',
+    },
+
+    // Featured subtitle
+    featuredSubtitle: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        marginBottom: spacing.md,
+        lineHeight: 18,
     },
 
     // Discover header

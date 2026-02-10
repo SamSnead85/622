@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -8,6 +8,7 @@ import {
     Image,
     RefreshControl,
     Alert,
+    Share,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,8 +19,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { Post, mapApiPost, useCommunitiesStore } from '../../../stores';
 import { apiFetch, API } from '../../../lib/api';
-import { ScreenHeader, LoadingView } from '../../../components';
-import { showError } from '../../../stores/toastStore';
+import { ScreenHeader, LoadingView, CommunityInviteSheet } from '../../../components';
+import { showError, showSuccess } from '../../../stores/toastStore';
 
 const formatCount = (num: number) => {
     if (!num) return '0';
@@ -65,6 +66,7 @@ export default function CommunityDetailScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isJoinLoading, setIsJoinLoading] = useState(false);
+    const [showInviteSheet, setShowInviteSheet] = useState(false);
 
     const loadCommunity = async () => {
         if (!communityId) return;
@@ -177,6 +179,44 @@ export default function CommunityDetailScreen() {
                             )}
                         </TouchableOpacity>
 
+                        {/* Share / Invite Row */}
+                        {community.role && (
+                            <View style={styles.shareRow}>
+                                <TouchableOpacity
+                                    style={styles.shareBtn}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setShowInviteSheet(true);
+                                    }}
+                                    activeOpacity={0.8}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Invite people to this group"
+                                >
+                                    <Ionicons name="person-add-outline" size={16} color={colors.gold[500]} />
+                                    <Text style={styles.shareBtnText}>Invite People</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.shareBtn}
+                                    onPress={async () => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        const link = `https://0gravity.ai/group/${communityId}`;
+                                        try {
+                                            await Share.share({
+                                                message: `Join ${community.name} on 0G!\n\n${community.description}\n\n${link}`,
+                                                url: link,
+                                            });
+                                        } catch {}
+                                    }}
+                                    activeOpacity={0.8}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Share group link"
+                                >
+                                    <Ionicons name="share-outline" size={16} color={colors.gold[500]} />
+                                    <Text style={styles.shareBtnText}>Share</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
                         {community.role && (
                             <View style={styles.roleBadge}>
                                 <Ionicons name="shield-checkmark" size={12} color={colors.gold[500]} />
@@ -263,6 +303,16 @@ export default function CommunityDetailScreen() {
                     </View>
                 </Animated.View>
             </ScrollView>
+
+            {/* Invite Sheet */}
+            <CommunityInviteSheet
+                communityId={communityId || ''}
+                communityName={community.name}
+                memberCount={community.membersCount}
+                description={community.description}
+                visible={showInviteSheet}
+                onClose={() => setShowInviteSheet(false)}
+            />
         </View>
     );
 }
@@ -300,6 +350,29 @@ const styles = StyleSheet.create({
     joinButtonText: { fontSize: typography.fontSize.base, fontWeight: '700', color: colors.obsidian[900] },
     leaveButton: { borderWidth: 1, borderColor: colors.border.strong, paddingVertical: spacing.md, alignItems: 'center' },
     leaveButtonText: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.secondary },
+
+    shareRow: {
+        flexDirection: 'row',
+        gap: spacing.sm,
+        marginBottom: spacing.md,
+    },
+    shareBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        backgroundColor: colors.surface.goldSubtle,
+        paddingVertical: spacing.sm,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    shareBtnText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.gold[500],
+    },
 
     roleBadge: {
         alignSelf: 'center', backgroundColor: colors.surface.goldMedium,
