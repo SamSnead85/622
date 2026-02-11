@@ -18,6 +18,8 @@ export interface Post {
     author: PostAuthor;
     content: string;
     mediaUrl?: string;
+    thumbnailUrl?: string;      // Poster/thumbnail URL (generated server-side for videos)
+    fullMediaUrl?: string;      // Original resolution (for detail views)
     mediaType?: 'IMAGE' | 'VIDEO';
     mediaCropY?: number; // Vertical crop position 0-100 (50 = center)
     mediaAspectRatio?: '16:9' | '4:3' | '1:1' | '4:5' | 'original';

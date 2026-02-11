@@ -243,6 +243,21 @@ class SocketManager {
             'game:ended',
             'game:error',
             'game:invite',
+            // Livestream events
+            'stream:chat',
+            'stream:reaction',
+            'stream:gift',
+            'stream:viewers',
+            'stream:ended',
+            // Audio Spaces events
+            'space:update',
+            'space:user-joined',
+            'space:user-left',
+            'space:speak-request',
+            'space:promoted',
+            'space:mute-update',
+            'space:reaction',
+            'space:ended',
         ];
 
         forwardEvents.forEach((event) => {
@@ -409,6 +424,62 @@ class SocketManager {
 
     sendGameInvite(code: string, targetUserId: string, gameType?: string): void {
         this.socket?.emit('game:invite', { code, targetUserId, gameType });
+    }
+
+    // ============================================
+    // Audio Spaces
+    // ============================================
+
+    joinSpace(spaceId: string): void {
+        this.socket?.emit('space:join', { spaceId });
+    }
+
+    leaveSpace(spaceId: string): void {
+        this.socket?.emit('space:leave', { spaceId });
+    }
+
+    requestSpeak(spaceId: string): void {
+        this.socket?.emit('space:speak-request', { spaceId });
+    }
+
+    approveSpeaker(spaceId: string, speakerId: string): void {
+        this.socket?.emit('space:approve-speaker', { spaceId, speakerId });
+    }
+
+    toggleSpaceMute(spaceId: string, muted: boolean): void {
+        this.socket?.emit('space:mute', { spaceId, muted });
+    }
+
+    sendSpaceReaction(spaceId: string, emoji: string): void {
+        this.socket?.emit('space:reaction', { spaceId, emoji });
+    }
+
+    endSpace(spaceId: string): void {
+        this.socket?.emit('space:end', { spaceId });
+    }
+
+    // ============================================
+    // Livestream / Campfire
+    // ============================================
+
+    joinStream(streamId: string): void {
+        this.socket?.emit('stream:join', { streamId });
+    }
+
+    leaveStream(streamId: string): void {
+        this.socket?.emit('stream:leave', { streamId });
+    }
+
+    sendStreamChat(data: { streamId: string; content: string; userId: string; username: string; displayName: string; avatarUrl?: string }): void {
+        this.socket?.emit('stream:chat', data);
+    }
+
+    sendStreamReaction(data: { streamId: string; emoji: string; userId?: string }): void {
+        this.socket?.emit('stream:reaction', data);
+    }
+
+    sendStreamGift(data: { streamId: string; giftType: string; userId?: string; username?: string; displayName?: string }): void {
+        this.socket?.emit('stream:gift', data);
     }
 
     // ============================================

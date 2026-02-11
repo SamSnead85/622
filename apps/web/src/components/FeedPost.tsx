@@ -114,12 +114,13 @@ export function YouTubeEmbed({ src }: { src: string }) {
 interface AutoPlayVideoProps {
     src: string;
     postId?: string;
+    poster?: string;
     className?: string;
     aspectRatio?: string;
     cropY?: number;
 }
 
-export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY }: AutoPlayVideoProps) {
+export function AutoPlayVideo({ src, postId, poster, className = '', aspectRatio, cropY }: AutoPlayVideoProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(true);
@@ -246,6 +247,7 @@ export function AutoPlayVideo({ src, postId, className = '', aspectRatio, cropY 
             <video
                 ref={videoRef}
                 src={src}
+                poster={poster}
                 className={`w-full h-full ${useCrop ? 'object-cover' : 'object-contain max-h-[500px]'} bg-black ${className}`}
                 style={useCrop && cropY != null ? { objectPosition: `center ${cropY}%` } : undefined}
                 preload="metadata"
@@ -518,6 +520,7 @@ function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, movePo
                             <AutoPlayVideo
                                 src={post.mediaUrl}
                                 postId={post.id}
+                                poster={post.thumbnailUrl}
                                 aspectRatio={resolvedRatio}
                                 cropY={post.mediaCropY ?? undefined}
                             />
@@ -664,6 +667,7 @@ export const FeedPost = memo(FeedPostInner, (prev, next) => {
         p.commentsCount === n.commentsCount &&
         p.content === n.content &&
         p.mediaUrl === n.mediaUrl &&
+        p.thumbnailUrl === n.thumbnailUrl &&
         prev.zenMode === next.zenMode &&
         prev.isFirst === next.isFirst &&
         prev.isLast === next.isLast

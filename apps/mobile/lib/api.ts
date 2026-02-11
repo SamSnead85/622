@@ -688,4 +688,21 @@ export const API = {
 
     // Reports
     submitReport: '/api/v1/reports',
+
+    // Livestream / Campfire
+    livestreamActive: '/api/v1/livestream/active',
+    livestreamVods: '/api/v1/livestream/vods',
+    livestreamCreate: '/api/v1/livestream/create',
+    livestream: (id: string) => `/api/v1/livestream/${id}`,
+    livestreamEnd: (id: string) => `/api/v1/livestream/${id}/end`,
+
+    // Audio Spaces
+    spacesActive: '/api/v1/spaces/active',
+    spacesCreate: '/api/v1/spaces/create',
+    space: (id: string) => `/api/v1/spaces/${id}`,
+    spaceJoin: (id: string) => `/api/v1/spaces/${id}/join`,
+    spaceLeave: (id: string) => `/api/v1/spaces/${id}/leave`,
+    spaceRequestSpeak: (id: string) => `/api/v1/spaces/${id}/request-speak`,
+    spaceApproveSpeaker: (id: string) => `/api/v1/spaces/${id}/approve-speaker`,
+    spaceEnd: (id: string) => `/api/v1/spaces/${id}/end`,
 };

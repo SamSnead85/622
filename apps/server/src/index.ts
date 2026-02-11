@@ -40,6 +40,7 @@ import adminRouter from './routes/admin.js';
 import campaignsRouter from './routes/campaigns.js';
 import creatorsRouter from './routes/creators.js';
 import growthRouter from './routes/growth.js';
+import { spacesRouter } from './routes/spaces.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 import { setupSocketHandlers } from './socket/index.js';
@@ -306,6 +307,7 @@ app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/campaigns', campaignsRouter);
 app.use('/api/v1/creators', creatorsRouter);
 app.use('/api/v1/growth', growthRouter);
+app.use('/api/v1/spaces', spacesRouter);
 
 
 // Sentry error handler (must be before custom error handler)

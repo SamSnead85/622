@@ -426,8 +426,9 @@ function ReadMoreText({ text }: { text: string }) {
 
 // ============================================
 // Feed Video Player (auto-play with mute toggle)
+// Shows poster thumbnail instantly while video buffers — no spinner.
 // ============================================
-function FeedVideoPlayer({ uri, isActive, isFirstVideo, shouldReduceData }: { uri: string; isActive: boolean; isFirstVideo: boolean; shouldReduceData?: boolean }) {
+function FeedVideoPlayer({ uri, thumbnailUrl, isActive, isFirstVideo, shouldReduceData }: { uri: string; thumbnailUrl?: string; isActive: boolean; isFirstVideo: boolean; shouldReduceData?: boolean }) {
     const [isMuted, setIsMuted] = useState(!isFirstVideo);
     const [showFirstFrame, setShowFirstFrame] = useState(false);
 
@@ -474,7 +475,22 @@ function FeedVideoPlayer({ uri, isActive, isFirstVideo, shouldReduceData }: { ur
                 contentFit="cover"
                 onFirstFrameRender={() => setShowFirstFrame(true)}
             />
-            {!showFirstFrame && (
+            {/* Poster thumbnail: shown instantly while the video buffers.
+                Once the first video frame renders we fade it out. */}
+            {!showFirstFrame && thumbnailUrl && (
+                <View style={styles.videoPosterOverlay}>
+                    <Image
+                        source={{ uri: thumbnailUrl }}
+                        style={styles.videoPoster}
+                        contentFit="cover"
+                        placeholder={IMAGE_PLACEHOLDER.blurhash}
+                        transition={100}
+                        cachePolicy="memory-disk"
+                    />
+                </View>
+            )}
+            {/* Fallback: if there's no poster, show the subtle buffering indicator */}
+            {!showFirstFrame && !thumbnailUrl && (
                 <View style={styles.videoBuffering}>
                     <View style={styles.videoBufferingInner}>
                         <ActivityIndicator size="small" color={colors.gold[500]} />
@@ -677,6 +693,7 @@ const FeedPostCard = memo(
                             {post.mediaType === 'VIDEO' ? (
                                 <FeedVideoPlayer
                                     uri={post.mediaUrl}
+                                    thumbnailUrl={post.thumbnailUrl}
                                     isActive={isVideoActive}
                                     isFirstVideo={isFirstVideo}
                                     shouldReduceData={shouldReduceData}
@@ -1395,15 +1412,23 @@ export default function FeedScreen() {
         }
     }, [posts]);
 
-    // Prefetch upcoming images for instant rendering as user scrolls
+    // Prefetch upcoming images AND video poster thumbnails for instant rendering
     useEffect(() => {
         if (posts.length === 0) return;
         const imageUrls = posts
             .filter((p) => p.mediaUrl && p.mediaType !== 'VIDEO')
             .map((p) => p.mediaUrl!)
             .slice(0, 20); // Prefetch first 20 images
-        if (imageUrls.length > 0) {
-            imageUrls.forEach((url) => RNImage.prefetch(url).catch(() => {}));
+
+        // Also prefetch video poster thumbnails so they display instantly
+        const videoThumbnails = posts
+            .filter((p) => p.mediaType === 'VIDEO' && p.thumbnailUrl)
+            .map((p) => p.thumbnailUrl!)
+            .slice(0, 10);
+
+        const allUrls = [...imageUrls, ...videoThumbnails];
+        if (allUrls.length > 0) {
+            allUrls.forEach((url) => RNImage.prefetch(url).catch(() => {}));
         }
     }, [posts]);
 
@@ -2325,6 +2350,14 @@ const styles = StyleSheet.create({
         backgroundColor: colors.obsidian[800],
     },
     videoPlayer: {
+        width: '100%',
+        height: '100%',
+    },
+    videoPosterOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 1,
+    },
+    videoPoster: {
         width: '100%',
         height: '100%',
     },

@@ -52,7 +52,16 @@ export const uploadImage = async (
 };
 
 /**
- * Upload video to Cloudinary with transcoding
+ * Upload video to Cloudinary with transcoding and multi-quality eager transforms.
+ *
+ * Eager transforms pre-generate:
+ *   - 360p (preview / thumbnail quality)
+ *   - 720p (mobile playback)
+ *   - 1080p (desktop playback)
+ *   - A JPEG poster frame from the first second of the video
+ *
+ * These are created asynchronously so the upload response returns immediately.
+ * Clients can construct the derivative URLs from the base public_id.
  */
 export const uploadVideo = async (
     buffer: Buffer,
@@ -60,7 +69,7 @@ export const uploadVideo = async (
         folder?: string;
         publicId?: string;
     } = {}
-) => {
+): Promise<any> => {
     if (!process.env.CLOUDINARY_CLOUD_NAME) {
         throw new Error('Cloudinary not configured');
     }
@@ -74,12 +83,16 @@ export const uploadVideo = async (
                 // Video optimizations
                 quality: 'auto',
                 format: 'mp4',
-                // Adaptive streaming
+                // ── Multi-quality eager transforms for adaptive delivery ──
                 eager: [
-                    {
-                        streaming_profile: 'hd',
-                        format: 'm3u8',
-                    },
+                    // 360p — lightweight preview / thumbnail video
+                    { width: 640, height: 360, crop: 'limit', format: 'mp4', quality: 'auto' },
+                    // 720p — mobile-optimized
+                    { width: 1280, height: 720, crop: 'limit', format: 'mp4', quality: 'auto' },
+                    // 1080p — desktop quality
+                    { width: 1920, height: 1080, crop: 'limit', format: 'mp4', quality: 'auto' },
+                    // Poster frame — JPEG from the first second
+                    { width: 800, height: 450, crop: 'fill', gravity: 'auto', format: 'jpg', quality: 80, start_offset: '0' },
                 ],
                 eager_async: true,
             },
@@ -174,19 +187,85 @@ export const transformImageUrl = (
 
 /**
  * Generate feed-optimized image URLs for a post.
- * Returns { thumbnailUrl, mediaUrl } where thumbnailUrl is small (400px)
- * and mediaUrl stays original for detail views.
+ * Returns { thumbnailUrl, feedMediaUrl } where thumbnailUrl is small (200px)
+ * and feedMediaUrl is appropriately sized for the feed.
+ *
+ * For VIDEO posts the feedMediaUrl is unchanged (browser streams the video)
+ * but we generate a poster/thumbnail URL from Cloudinary's video-to-image transform.
  */
 export const getFeedImageUrls = (mediaUrl: string | null | undefined, mediaType?: string) => {
-    // Don't transform video URLs
-    if (!mediaUrl || mediaType === 'VIDEO') {
-        return { thumbnailUrl: null, feedMediaUrl: mediaUrl || null };
+    if (!mediaUrl) {
+        return { thumbnailUrl: null, feedMediaUrl: null };
+    }
+
+    // ── Video posts: generate a poster thumbnail from the video URL ──
+    if (mediaType === 'VIDEO') {
+        return {
+            thumbnailUrl: getVideoThumbnailUrl(mediaUrl),
+            feedMediaUrl: transformVideoUrl(mediaUrl),
+        };
     }
 
     return {
         thumbnailUrl: transformImageUrl(mediaUrl, 200, 70),      // Tiny preview (list/grid)
         feedMediaUrl: transformImageUrl(mediaUrl, 800, 'auto'),   // Feed-sized (not full-res)
     };
+};
+
+/**
+ * Generate a poster/thumbnail image from a Cloudinary video URL.
+ *
+ * Converts:
+ *   .../video/upload/v123/folder/video.mp4
+ * To:
+ *   .../video/upload/so_0,w_400,h_225,c_fill,f_jpg,q_80/v123/folder/video.jpg
+ *
+ * Non-Cloudinary URLs return null (no server-side thumbnail available).
+ */
+export const getVideoThumbnailUrl = (videoUrl: string | null | undefined): string | null => {
+    if (!videoUrl) return null;
+    if (!videoUrl.includes('res.cloudinary.com')) return null;
+
+    const transforms = 'so_0,w_400,h_225,c_fill,f_jpg,q_80';
+
+    // Insert transforms after /upload/
+    let thumbUrl = videoUrl.replace(
+        /\/upload\/(v\d+\/)/,
+        `/upload/${transforms}/$1`
+    );
+
+    // Fallback if regex didn't match
+    if (thumbUrl === videoUrl) {
+        thumbUrl = videoUrl.replace('/upload/', `/upload/${transforms}/`);
+    }
+
+    // Change extension to .jpg so Cloudinary returns an image
+    thumbUrl = thumbUrl.replace(/\.(mp4|mov|webm|m3u8)(\?.*)?$/i, '.jpg');
+
+    return thumbUrl;
+};
+
+/**
+ * Apply f_auto,q_auto delivery optimizations to a Cloudinary video URL.
+ * Non-Cloudinary URLs pass through unchanged.
+ */
+export const transformVideoUrl = (videoUrl: string | null | undefined): string | null => {
+    if (!videoUrl) return null;
+    if (!videoUrl.includes('res.cloudinary.com')) return videoUrl;
+
+    const transforms = 'f_auto,q_auto';
+
+    // Insert transforms after /upload/
+    let optimized = videoUrl.replace(
+        /\/upload\/(v\d+\/)/,
+        `/upload/${transforms}/$1`
+    );
+
+    if (optimized === videoUrl) {
+        optimized = videoUrl.replace('/upload/', `/upload/${transforms}/`);
+    }
+
+    return optimized;
 };
 
 /**

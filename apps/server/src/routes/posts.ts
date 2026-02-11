@@ -6,7 +6,7 @@ import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
 import { cache } from '../services/cache/RedisCache.js';
 import { queueNotification } from '../services/notifications/NotificationQueue.js';
 import { logger } from '../utils/logger.js';
-import { getFeedImageUrls, transformImageUrl } from '../services/cloudinary.js';
+import { getFeedImageUrls, transformImageUrl, getVideoThumbnailUrl } from '../services/cloudinary.js';
 
 const router = Router();
 
@@ -393,11 +393,16 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                 // This is the #1 speed improvement — reduces ~3MB per image to ~50KB.
                 const { thumbnailUrl: optimizedThumb, feedMediaUrl } = getFeedImageUrls(post.mediaUrl, post.type);
 
+                // ── Video poster: use DB thumbnailUrl, or derive one from Cloudinary ──
+                const videoThumbnail = post.type === 'VIDEO'
+                    ? (post.thumbnailUrl || getVideoThumbnailUrl(post.mediaUrl))
+                    : null;
+
                 return {
                     ...post,
                     // Optimized URLs: feedMediaUrl is 800px for feed, thumbnailUrl is 200px for grids
                     mediaUrl: feedMediaUrl ?? post.mediaUrl,
-                    thumbnailUrl: optimizedThumb ?? post.thumbnailUrl,
+                    thumbnailUrl: optimizedThumb ?? videoThumbnail ?? post.thumbnailUrl,
                     // Keep the original full-res URL for detail views
                     fullMediaUrl: post.mediaUrl,
                     // User avatar: serve at 200px for feed

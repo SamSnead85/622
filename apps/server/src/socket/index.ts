@@ -5,6 +5,7 @@ import { logger } from '../utils/logger.js';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { Redis } from 'ioredis';
 import { setupGameSocketHandlers } from './gameHandlers.js';
+import { activeSpaces, SpaceRoom } from '../routes/spaces.js';
 
 interface AuthenticatedSocket extends Socket {
     userId?: string;
@@ -663,9 +664,219 @@ export const setupSocketHandlers = (io: SocketServer) => {
             }
         });
 
+        // === Audio Spaces Events ===
+
+        socket.on('space:join', async (data: { spaceId: string }) => {
+            try {
+                if (!checkSocketRateLimit(userId)) return;
+                const { spaceId } = data;
+                const space = activeSpaces.get(spaceId);
+                if (!space || space.status !== 'live') return;
+
+                socket.join(`space:${spaceId}`);
+
+                // Broadcast updated state to all in the room
+                io.to(`space:${spaceId}`).emit('space:update', {
+                    spaceId,
+                    speakers: Array.from(space.speakers.values()),
+                    listeners: Array.from(space.listeners.values()),
+                    speakerCount: space.speakers.size,
+                    listenerCount: space.listeners.size,
+                });
+
+                io.to(`space:${spaceId}`).emit('space:user-joined', {
+                    userId,
+                    username: socket.username,
+                });
+
+                logger.info(`User ${socket.username} joined space room ${spaceId}`);
+            } catch (error) {
+                logger.error('Error in space:join socket:', error);
+            }
+        });
+
+        socket.on('space:leave', async (data: { spaceId: string }) => {
+            try {
+                const { spaceId } = data;
+                const space = activeSpaces.get(spaceId);
+
+                socket.leave(`space:${spaceId}`);
+
+                if (space) {
+                    // Remove from speakers/listeners/requests
+                    space.speakers.delete(userId);
+                    space.listeners.delete(userId);
+                    space.speakRequests.delete(userId);
+
+                    // If host leaves, end the space
+                    if (space.hostId === userId && space.status === 'live') {
+                        space.status = 'ended';
+                        io.to(`space:${spaceId}`).emit('space:ended', { spaceId, reason: 'Host left' });
+                        logger.info(`Space "${space.title}" ended (host disconnected)`);
+                    } else {
+                        io.to(`space:${spaceId}`).emit('space:update', {
+                            spaceId,
+                            speakers: Array.from(space.speakers.values()),
+                            listeners: Array.from(space.listeners.values()),
+                            speakerCount: space.speakers.size,
+                            listenerCount: space.listeners.size,
+                        });
+
+                        io.to(`space:${spaceId}`).emit('space:user-left', {
+                            userId,
+                            username: socket.username,
+                        });
+                    }
+                }
+
+                logger.info(`User ${socket.username} left space room ${spaceId}`);
+            } catch (error) {
+                logger.error('Error in space:leave socket:', error);
+            }
+        });
+
+        socket.on('space:speak-request', async (data: { spaceId: string }) => {
+            try {
+                if (!checkSocketRateLimit(userId)) return;
+                const { spaceId } = data;
+                const space = activeSpaces.get(spaceId);
+                if (!space || space.status !== 'live') return;
+
+                // Notify the host about the speak request
+                const hostSockets = connectedUsers.get(space.hostId);
+                if (hostSockets) {
+                    const request = space.speakRequests.get(userId);
+                    hostSockets.forEach(socketId => {
+                        io.to(socketId).emit('space:speak-request', {
+                            spaceId,
+                            userId,
+                            name: request?.name || socket.username,
+                            avatar: request?.avatar || null,
+                        });
+                    });
+                }
+            } catch (error) {
+                logger.error('Error in space:speak-request socket:', error);
+            }
+        });
+
+        socket.on('space:approve-speaker', async (data: { spaceId: string; speakerId: string }) => {
+            try {
+                if (!checkSocketRateLimit(userId)) return;
+                const { spaceId, speakerId } = data;
+                const space = activeSpaces.get(spaceId);
+                if (!space || space.status !== 'live') return;
+                if (space.hostId !== userId) return; // Only host can approve
+
+                // Notify the approved speaker
+                const speakerSockets = connectedUsers.get(speakerId);
+                if (speakerSockets) {
+                    speakerSockets.forEach(socketId => {
+                        io.to(socketId).emit('space:promoted', { spaceId });
+                    });
+                }
+
+                // Broadcast updated state
+                io.to(`space:${spaceId}`).emit('space:update', {
+                    spaceId,
+                    speakers: Array.from(space.speakers.values()),
+                    listeners: Array.from(space.listeners.values()),
+                    speakerCount: space.speakers.size,
+                    listenerCount: space.listeners.size,
+                    speakRequests: Array.from(space.speakRequests.entries()).map(([uid, req]) => ({
+                        userId: uid,
+                        name: req.name,
+                        avatar: req.avatar,
+                    })),
+                });
+            } catch (error) {
+                logger.error('Error in space:approve-speaker socket:', error);
+            }
+        });
+
+        socket.on('space:mute', async (data: { spaceId: string; muted: boolean }) => {
+            try {
+                if (!checkSocketRateLimit(userId)) return;
+                const { spaceId, muted } = data;
+                const space = activeSpaces.get(spaceId);
+                if (!space || space.status !== 'live') return;
+
+                const speaker = space.speakers.get(userId);
+                if (speaker) {
+                    speaker.isMuted = muted;
+                    io.to(`space:${spaceId}`).emit('space:mute-update', {
+                        spaceId,
+                        userId,
+                        muted,
+                    });
+                }
+            } catch (error) {
+                logger.error('Error in space:mute socket:', error);
+            }
+        });
+
+        socket.on('space:reaction', (data: { spaceId: string; emoji: string }) => {
+            if (!checkSocketRateLimit(userId)) return;
+            const { spaceId, emoji } = data;
+            if (!emoji || emoji.length > 4) return;
+
+            const space = activeSpaces.get(spaceId);
+            if (!space || space.status !== 'live') return;
+
+            io.to(`space:${spaceId}`).emit('space:reaction', {
+                userId,
+                username: socket.username,
+                emoji,
+                timestamp: Date.now(),
+            });
+        });
+
+        socket.on('space:end', async (data: { spaceId: string }) => {
+            try {
+                const { spaceId } = data;
+                const space = activeSpaces.get(spaceId);
+                if (!space) return;
+                if (space.hostId !== userId) return; // Only host can end
+
+                space.status = 'ended';
+                io.to(`space:${spaceId}`).emit('space:ended', { spaceId, reason: 'Host ended the space' });
+                logger.info(`Space "${space.title}" ended by host via socket`);
+            } catch (error) {
+                logger.error('Error in space:end socket:', error);
+            }
+        });
+
         // Handle disconnect
         socket.on('disconnect', async () => {
             logger.info(`User disconnected: ${socket.username}`);
+
+            // Clean up space rooms — remove user from any active spaces
+            const socketRooms = Array.from(socket.rooms);
+            for (const room of socketRooms) {
+                if (room.startsWith('space:')) {
+                    const spaceId = room.replace('space:', '');
+                    const space = activeSpaces.get(spaceId);
+                    if (space && space.status === 'live') {
+                        space.speakers.delete(userId);
+                        space.listeners.delete(userId);
+                        space.speakRequests.delete(userId);
+
+                        if (space.hostId === userId) {
+                            space.status = 'ended';
+                            io.to(room).emit('space:ended', { spaceId, reason: 'Host disconnected' });
+                        } else {
+                            io.to(room).emit('space:update', {
+                                spaceId,
+                                speakers: Array.from(space.speakers.values()),
+                                listeners: Array.from(space.listeners.values()),
+                                speakerCount: space.speakers.size,
+                                listenerCount: space.listeners.size,
+                            });
+                            io.to(room).emit('space:user-left', { userId, username: socket.username });
+                        }
+                    }
+                }
+            }
 
             // Clean up stream rooms -- decrement viewer counts for any streams this socket was in
             const rooms = Array.from(socket.rooms);
