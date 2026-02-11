@@ -222,14 +222,16 @@ app.get('/health', async (_, res) => {
     const checks: Record<string, { status: string; latencyMs?: number; error?: string }> = {};
     const start = Date.now();
 
-    // Database probe
+    // Database probe (with 5s timeout to prevent health check from hanging)
     try {
         const dbStart = Date.now();
         const { prisma } = await import('./db/client.js');
-        await prisma.$queryRaw`SELECT 1`;
+        const dbCheck = prisma.$queryRaw`SELECT 1`;
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('DB probe timeout (5s)')), 5000));
+        await Promise.race([dbCheck, timeout]);
         checks.database = { status: 'ok', latencyMs: Date.now() - dbStart };
     } catch (err: any) {
-        checks.database = { status: 'error', error: err.message?.slice(0, 120) };
+        checks.database = { status: 'degraded', error: err.message?.slice(0, 120) };
     }
 
     // Redis probe (optional — only if configured)
@@ -254,9 +256,12 @@ app.get('/health', async (_, res) => {
     checks.storage = { status: storageStatus };
 
     const overall = Object.values(checks).every((c) => c.status === 'ok') ? 'healthy' : 'degraded';
-    const statusCode = checks.database?.status === 'ok' ? 200 : 503;
 
-    res.status(statusCode).json({
+    // Always return 200 for the health check — Railway uses this to determine if the
+    // container is alive. Returning 503 causes Railway to kill the container and restart,
+    // creating a crash loop when the DB is slow to connect on cold start.
+    // The "status" field in the JSON body indicates actual health for monitoring.
+    res.status(200).json({
         status: overall,
         timestamp: new Date().toISOString(),
         version: '1.0.0',
