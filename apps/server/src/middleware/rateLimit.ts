@@ -72,10 +72,10 @@ export const rateLimiters = {
         max: 100,
     }),
 
-    // Auth endpoints - 5 attempts per 15 minutes per IP
+    // Auth endpoints - 15 attempts per 15 minutes per IP
     auth: rateLimit({
         windowMs: 15 * 60 * 1000,
-        max: 5,
+        max: 15,
         message: 'Too many authentication attempts, please try again later',
     }),
 

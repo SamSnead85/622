@@ -7,7 +7,7 @@
 import * as SecureStore from 'expo-secure-store';
 
 const TOKEN_KEY = '0g_token';
-const REQUEST_TIMEOUT_MS = 15_000;
+const REQUEST_TIMEOUT_MS = 10_000;
 
 // ============================================
 // Dev-only logging (replaces bare console.log)
@@ -281,8 +281,8 @@ async function attemptTokenRefresh(): Promise<string | null> {
 // Exponential Backoff Retry for Network Errors
 // ============================================
 
-const MAX_RETRIES = 2;
-const RETRY_DELAYS = [1000, 2000]; // 1s, 2s exponential backoff
+const MAX_RETRIES = 1;
+const RETRY_DELAYS = [1500]; // Single retry after 1.5s
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
