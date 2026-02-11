@@ -480,7 +480,10 @@ export default function LoginScreen() {
             // Save email for biometric login next time
             await AsyncStorage.setItem(LAST_EMAIL_KEY, email.trim());
 
-            // Offer biometric setup if available
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+            // Offer biometric setup if available — navigate INSIDE the alert callbacks
+            // so the user can interact with the dialog before the screen changes.
             if (biometricAvailable) {
                 const biometricEnabled = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
                 if (biometricEnabled !== 'true') {
@@ -488,20 +491,28 @@ export default function LoginScreen() {
                         `Enable ${biometricType}?`,
                         `Sign in faster next time using ${biometricType}.`,
                         [
-                            { text: 'Not Now', style: 'cancel' },
+                            {
+                                text: 'Not Now',
+                                style: 'cancel',
+                                onPress: () => router.replace('/(tabs)'),
+                            },
                             {
                                 text: 'Enable',
                                 onPress: async () => {
                                     await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, 'true');
                                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                    router.replace('/(tabs)');
                                 },
                             },
                         ],
+                        // If user taps outside the alert (Android), still navigate
+                        { cancelable: true, onDismiss: () => router.replace('/(tabs)') },
                     );
+                    return; // Don't navigate below — the alert callbacks handle it
                 }
             }
 
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            // No biometric prompt needed — navigate directly
             router.replace('/(tabs)');
         } catch (error: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
