@@ -63,6 +63,26 @@ if (SENTRY_DSN) {
     });
 }
 
+// ============================================
+// Global unhandled promise rejection handler
+// Prevents red "uncaught exception" screens in Expo for non-fatal errors
+// (e.g., failed API calls, AsyncStorage errors, socket disconnects)
+// ============================================
+if (typeof global !== 'undefined') {
+    const originalHandler = (global as any).ErrorUtils?.getGlobalHandler?.();
+    (global as any).ErrorUtils?.setGlobalHandler?.((error: Error, isFatal?: boolean) => {
+        // Only suppress non-fatal errors in dev (Expo shows red screen for all)
+        if (__DEV__ && !isFatal) {
+            console.warn('[Suppressed non-fatal error]', error?.message || error);
+            return;
+        }
+        // In production or for fatal errors, use the original handler
+        if (originalHandler) {
+            originalHandler(error, isFatal);
+        }
+    });
+}
+
 // Prevent splash screen from auto-hiding until we check auth + load fonts
 SplashScreen.preventAutoHideAsync();
 

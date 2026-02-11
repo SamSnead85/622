@@ -251,7 +251,7 @@ function ActiveContactsStrip({ onCreatePress }: { onCreatePress: () => void }) {
                     id: post.author.id,
                     username: post.author?.username || 'unknown',
                     displayName: post.author?.displayName || 'Anonymous',
-                    avatarUrl: post.author.avatarUrl,
+                    avatarUrl: post.author?.avatarUrl || undefined,
                     isOnline: contacts.length < 3, // First 3 shown as "online" (simulated)
                 });
             }
@@ -626,7 +626,7 @@ const FeedPostCard = memo(
                                         placeholder={AVATAR_PLACEHOLDER.blurhash}
                                         transition={AVATAR_PLACEHOLDER.transition}
                                         cachePolicy="memory-disk"
-                                        recyclingKey={post.author.id}
+                                        recyclingKey={post.author?.id || post.id}
                                     />
                                 ) : (
                                     <View style={[styles.avatar, styles.avatarPlaceholder]}>
@@ -1273,7 +1273,7 @@ export default function FeedScreen() {
     // Reduced motion support — respect system preference
     const [reduceMotion, setReduceMotion] = useState(false);
     useEffect(() => {
-        AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+        AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => {});
         const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
         return () => sub.remove();
     }, []);
@@ -1306,18 +1306,22 @@ export default function FeedScreen() {
     useEffect(() => {
         AsyncStorage.getItem('@seed-dismissed').then((val) => {
             setSeedDismissed(val === 'true');
-        });
+        }).catch(() => { /* non-critical */ });
         // Load checklist completion
         Promise.all(
             CHECKLIST_ITEMS.map(async (item) => {
-                if (item.id === 'account') return item.id;
-                if (item.id === 'photo') return user?.avatarUrl ? item.id : null;
-                const val = await AsyncStorage.getItem(`@checklist-${item.id}`);
-                return val === 'true' ? item.id : null;
+                try {
+                    if (item.id === 'account') return item.id;
+                    if (item.id === 'photo') return user?.avatarUrl ? item.id : null;
+                    const val = await AsyncStorage.getItem(`@checklist-${item.id}`);
+                    return val === 'true' ? item.id : null;
+                } catch {
+                    return null;
+                }
             })
         ).then((results) => {
             setChecklistCompleted(new Set(results.filter(Boolean) as string[]));
-        });
+        }).catch(() => { /* non-critical */ });
     }, [user?.avatarUrl]);
 
     const handleDismissSeed = useCallback(() => {
@@ -1407,10 +1411,9 @@ export default function FeedScreen() {
     const prefetchedVideoUrls = useRef<Set<string>>(new Set());
     const onViewableForPrefetch = useCallback(
         ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-            if (viewableItems.length === 0 || posts.length === 0) return;
-            const lastViewableIndex = Math.max(
-                ...viewableItems.map((v) => v.index ?? 0)
-            );
+            if (!viewableItems || viewableItems.length === 0 || posts.length === 0) return;
+            const indices = viewableItems.map((v) => v.index ?? 0);
+            const lastViewableIndex = indices.length > 0 ? Math.max(...indices) : 0;
             // When user is within 5 posts of the bottom, prefetch next batch
             if (lastViewableIndex >= posts.length - 5 && hasMore && prefetchedPageRef.current < posts.length) {
                 prefetchedPageRef.current = posts.length;

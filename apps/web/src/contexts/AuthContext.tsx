@@ -70,61 +70,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Check for existing session on mount and handle token refresh
     useEffect(() => {
+        // Safety timeout: never let the loading state hang for more than 8 seconds.
+        // Mobile browsers and slow networks can cause the auth check to stall.
+        const safetyTimer = setTimeout(() => {
+            setIsLoading(false);
+        }, 8000);
+
         const checkAuth = async () => {
-            // Travel Shield: If stealth is active, load decoy profile
-            if (isStealthActive()) {
-                setUser(DECOY_USER as User);
-                setIsStealth(true);
-                setIsLoading(false);
-                return;
-            }
-
-            const token = localStorage.getItem('0g_token');
-            const tokenExpiry = localStorage.getItem('0g_token_expiry');
-
-            if (!token) {
-                setIsLoading(false);
-                return;
-            }
-
-            // Check if token is about to expire (within 7 days) and refresh if needed
-            const shouldRefresh = tokenExpiry &&
-                new Date(tokenExpiry).getTime() - Date.now() < 7 * 24 * 60 * 60 * 1000;
-
             try {
-                const response = await apiFetch(API_ENDPOINTS.me);
-                if (response.ok) {
-                    const data = await response.json();
-                    setUser(data.user);
+                // Travel Shield: If stealth is active, load decoy profile
+                if (typeof window !== 'undefined' && isStealthActive()) {
+                    setUser(DECOY_USER as User);
+                    setIsStealth(true);
+                    setIsLoading(false);
+                    return;
+                }
 
-                    // Auto-refresh token if approaching expiry
-                    if (shouldRefresh) {
-                        try {
-                            const refreshResponse = await apiFetch(API_ENDPOINTS.refresh, {
-                                method: 'POST',
-                            });
-                            if (refreshResponse.ok) {
-                                const refreshData = await refreshResponse.json();
-                                localStorage.setItem('0g_token', refreshData.token);
-                                localStorage.setItem('0g_token_expiry', refreshData.expiresAt);
+                if (typeof window === 'undefined') {
+                    setIsLoading(false);
+                    return;
+                }
+
+                const token = localStorage.getItem('0g_token');
+                const tokenExpiry = localStorage.getItem('0g_token_expiry');
+
+                if (!token) {
+                    setIsLoading(false);
+                    return;
+                }
+
+                // Check if token is about to expire (within 7 days) and refresh if needed
+                const shouldRefresh = tokenExpiry &&
+                    new Date(tokenExpiry).getTime() - Date.now() < 7 * 24 * 60 * 60 * 1000;
+
+                // Add a per-request timeout so the auth check doesn't hang
+                const controller = new AbortController();
+                const requestTimer = setTimeout(() => controller.abort(), 6000);
+
+                try {
+                    const response = await apiFetch(API_ENDPOINTS.me, { signal: controller.signal });
+                    clearTimeout(requestTimer);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        setUser(data.user);
+
+                        // Auto-refresh token if approaching expiry
+                        if (shouldRefresh) {
+                            try {
+                                const refreshResponse = await apiFetch(API_ENDPOINTS.refresh, {
+                                    method: 'POST',
+                                });
+                                if (refreshResponse.ok) {
+                                    const refreshData = await refreshResponse.json();
+                                    localStorage.setItem('0g_token', refreshData.token);
+                                    localStorage.setItem('0g_token_expiry', refreshData.expiresAt);
+                                }
+                            } catch {
+                                // Token refresh failed, continuing with current token
                             }
-                        } catch (refreshError) {
-                            // Token refresh failed, continuing with current token
                         }
+                    } else {
+                        // Token invalid, clear it
+                        localStorage.removeItem('0g_token');
+                        localStorage.removeItem('0g_token_expiry');
                     }
-                } else {
-                    // Token invalid, clear it
-                    localStorage.removeItem('0g_token');
-                    localStorage.removeItem('0g_token_expiry');
+                } catch (error: any) {
+                    clearTimeout(requestTimer);
+                    // Only clear tokens if it's an auth error, not a network/timeout error
+                    if (error?.name !== 'AbortError' && typeof navigator !== 'undefined' && navigator.onLine) {
+                        localStorage.removeItem('0g_token');
+                        localStorage.removeItem('0g_token_expiry');
+                    }
                 }
             } catch (error) {
+                // Catch-all: localStorage or any other unexpected error
                 console.error('Auth check failed:', error);
-                // Only clear tokens if it's an auth error, not a network error
-                if (navigator.onLine) {
-                    localStorage.removeItem('0g_token');
-                    localStorage.removeItem('0g_token_expiry');
-                }
             } finally {
+                clearTimeout(safetyTimer);
                 setIsLoading(false);
             }
         };
@@ -404,7 +427,15 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     }
 
     if (!isAuthenticated) {
-        return null;
+        // Show a brief redirect message instead of blank screen
+        return (
+            <div className="min-h-screen bg-[#050508] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-3" />
+                    <p className="text-white/50 text-sm">Redirecting to sign in...</p>
+                </div>
+            </div>
+        );
     }
 
     return <>{children}</>;

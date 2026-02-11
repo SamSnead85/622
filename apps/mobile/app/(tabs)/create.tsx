@@ -929,7 +929,7 @@ export default function CreateScreen() {
             } catch {
                 // Ignore corrupt draft
             }
-        });
+        }).catch(() => { /* non-critical */ });
     }, []);
 
     // Auto-save draft when debounced content changes
