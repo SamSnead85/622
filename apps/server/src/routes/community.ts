@@ -91,14 +91,36 @@ router.post('/bulletins', authenticate, async (req: AuthRequest, res: Response, 
 // Update bulletin
 router.patch('/bulletins/:id', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+        const updateBulletinSchema = z.object({
+            title: z.string().min(3).max(200).optional(),
+            content: z.string().min(10).max(10000).optional(),
+            category: z.enum(['SOCIAL_JUSTICE', 'CAREER', 'BUSINESS', 'COMMUNITY', 'CULTURE', 'TECH', 'ACTIVISM', 'GENERAL']).optional(),
+            mediaUrl: z.string().url().optional(),
+            externalLink: z.string().url().optional(),
+            tags: z.array(z.string()).optional(),
+            location: z.string().optional(),
+            locationGeo: z.string().optional(),
+            eventDate: z.string().datetime().optional(),
+        });
+
+        const raw = updateBulletinSchema.parse(req.body);
+        // Convert eventDate string to Date for the service layer
+        const data = {
+            ...raw,
+            eventDate: raw.eventDate ? new Date(raw.eventDate) : undefined,
+        };
+
         const bulletin = await bulletinService.updateBulletin(
             req.params.id,
             req.userId!,
-            req.body
+            data
         );
 
         res.json(bulletin);
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: 'Invalid input', details: error.errors });
+        }
         next(error);
     }
 });

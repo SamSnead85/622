@@ -427,10 +427,4 @@ export function BadgeShowcase({
     );
 }
 
-export default {
-    StoryChapters,
-    ValuesDisplay,
-    ValuesEditor,
-    ConnectionDepthDisplay,
-    BadgeShowcase,
-};
+// All components are individually named-exported above.

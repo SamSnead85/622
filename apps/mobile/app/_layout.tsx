@@ -18,6 +18,7 @@ import { useAuthStore } from '../stores';
 import { colors } from '@zerog/ui';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ToastProvider } from '../components/ToastProvider';
+import { OfflineBanner } from '../components/OfflineBanner';
 import { socketManager, CallIncoming } from '../lib/socket';
 import { initI18n } from '../lib/i18n';
 import { startAutoSync, stopAutoSync, syncQueue } from '../lib/offlineQueue';
@@ -320,6 +321,7 @@ function RootLayout() {
         <ErrorBoundary screenName="Root">
             <GestureHandlerRootView style={styles.container}>
                 <StatusBar style="light" />
+                <OfflineBanner />
                 <Stack
                     screenOptions={{
                         headerShown: false,

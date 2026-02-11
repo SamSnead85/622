@@ -283,7 +283,8 @@ export default function MomentsPage() {
         };
 
         fetchPosts();
-    }, [API_URL]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Handle video playback
     useEffect(() => {
@@ -315,26 +316,7 @@ export default function MomentsPage() {
         }
     }, [currentIndex, posts.length]);
 
-    // Keyboard navigation
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowDown' && currentIndex < posts.length - 1) {
-                setCurrentIndex(prev => prev + 1);
-            } else if (e.key === 'ArrowUp' && currentIndex > 0) {
-                setCurrentIndex(prev => prev - 1);
-            } else if (e.key === 'm') {
-                setIsMuted(prev => !prev);
-            } else if (e.key === ' ') {
-                e.preventDefault();
-                togglePlayPause();
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [currentIndex, posts.length]);
-
-    // Toggle play/pause
+    // Toggle play/pause (defined before the useEffect that references it)
     const togglePlayPause = useCallback(() => {
         const currentPost = posts[currentIndex];
         if (currentPost?.mediaType === 'VIDEO') {
@@ -351,24 +333,8 @@ export default function MomentsPage() {
         }
     }, [currentIndex, posts]);
 
-    // Double-tap to like
-    const handleTap = useCallback((postId: string) => {
-        const now = Date.now();
-        const DOUBLE_TAP_DELAY = 300;
-
-        if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-            handleLike(postId);
-            setShowHeart(true);
-            setTimeout(() => setShowHeart(false), 1200);
-        } else {
-            // Single tap - toggle play/pause
-            togglePlayPause();
-        }
-        lastTapRef.current = now;
-    }, [togglePlayPause]);
-
     // Handle like
-    const handleLike = async (postId: string) => {
+    const handleLike = useCallback(async (postId: string) => {
         if (!isAuthenticated) {
             router.push('/login');
             return;
@@ -390,7 +356,42 @@ export default function MomentsPage() {
         } catch (err) {
             console.error('Error liking post:', err);
         }
-    };
+    }, [isAuthenticated, router]);
+
+    // Keyboard navigation
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowDown' && currentIndex < posts.length - 1) {
+                setCurrentIndex(prev => prev + 1);
+            } else if (e.key === 'ArrowUp' && currentIndex > 0) {
+                setCurrentIndex(prev => prev - 1);
+            } else if (e.key === 'm') {
+                setIsMuted(prev => !prev);
+            } else if (e.key === ' ') {
+                e.preventDefault();
+                togglePlayPause();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [currentIndex, posts.length, togglePlayPause]);
+
+    // Double-tap to like
+    const handleTap = useCallback((postId: string) => {
+        const now = Date.now();
+        const DOUBLE_TAP_DELAY = 300;
+
+        if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+            handleLike(postId);
+            setShowHeart(true);
+            setTimeout(() => setShowHeart(false), 1200);
+        } else {
+            // Single tap - toggle play/pause
+            togglePlayPause();
+        }
+        lastTapRef.current = now;
+    }, [togglePlayPause, handleLike]);
 
     // Handle bookmark (persist via save/unsave API)
     const handleBookmark = async (postId: string) => {

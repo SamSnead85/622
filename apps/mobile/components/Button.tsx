@@ -51,9 +51,9 @@ interface ButtonProps {
 }
 
 const SIZE_CONFIG = {
-    sm: { paddingH: spacing.md, paddingV: spacing.xs + 2, fontSize: typography.fontSize.sm, iconSize: 14 },
-    md: { paddingH: spacing.xl, paddingV: spacing.md, fontSize: typography.fontSize.base, iconSize: 18 },
-    lg: { paddingH: spacing['2xl'], paddingV: spacing.lg, fontSize: typography.fontSize.lg, iconSize: 20 },
+    sm: { paddingH: spacing.md, paddingV: spacing.xs + 2, fontSize: typography.fontSize.sm, iconSize: 14, minHeight: 36 },
+    md: { paddingH: spacing.xl, paddingV: spacing.md, fontSize: typography.fontSize.base, iconSize: 18, minHeight: 44 },
+    lg: { paddingH: spacing['2xl'], paddingV: spacing.lg, fontSize: typography.fontSize.lg, iconSize: 20, minHeight: 52 },
 };
 
 function ButtonComponent({
@@ -91,6 +91,7 @@ function ButtonComponent({
                 {
                     paddingHorizontal: sizeConfig.paddingH,
                     paddingVertical: sizeConfig.paddingV,
+                    minHeight: sizeConfig.minHeight,
                 },
                 variantStyles.container,
                 fullWidth && styles.fullWidth,
@@ -102,7 +103,8 @@ function ButtonComponent({
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel={label || title}
-            accessibilityState={{ disabled: isDisabled }}
+            accessibilityState={{ disabled: isDisabled, busy: loading }}
+            accessibilityHint={loading ? 'Loading, please wait' : undefined}
         >
             {loading ? (
                 <ActivityIndicator

@@ -1,15 +1,26 @@
 import { Router, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
+
+const createScheduledPostSchema = z.object({
+    type: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'POLL', 'RALLY']).optional().default('TEXT'),
+    caption: z.string().min(1).max(5000),
+    mediaUrl: z.string().url().optional(),
+    thumbnailUrl: z.string().url().optional(),
+    communityId: z.string().uuid().optional(),
+    topicIds: z.array(z.string()).optional().default([]),
+    scheduledFor: z.string().datetime({ message: 'scheduledFor must be a valid ISO 8601 datetime' }),
+});
 
 const router = Router();
 
 // Create scheduled post
 router.post('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const { type, caption, mediaUrl, thumbnailUrl, communityId, topicIds, scheduledFor } = req.body;
+        const data = createScheduledPostSchema.parse(req.body);
 
-        const scheduledDate = new Date(scheduledFor);
+        const scheduledDate = new Date(data.scheduledFor);
         if (scheduledDate <= new Date()) {
             res.status(400).json({ error: 'Scheduled time must be in the future' });
             return;
@@ -18,18 +29,21 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response, next: Nex
         const scheduled = await prisma.scheduledPost.create({
             data: {
                 userId: req.userId!,
-                type: type || 'TEXT',
-                caption,
-                mediaUrl,
-                thumbnailUrl,
-                communityId,
-                topicIds: topicIds || [],
+                type: data.type,
+                caption: data.caption,
+                mediaUrl: data.mediaUrl,
+                thumbnailUrl: data.thumbnailUrl,
+                communityId: data.communityId,
+                topicIds: data.topicIds,
                 scheduledFor: scheduledDate,
             },
         });
 
         res.status(201).json(scheduled);
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: 'Invalid input', details: error.errors });
+        }
         next(error);
     }
 });

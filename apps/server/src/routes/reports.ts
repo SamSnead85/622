@@ -50,16 +50,25 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
             return res.status(403).json({ error: 'Forbidden' });
         }
 
-        const reports = await prisma.report.findMany({
-            include: {
-                reporter: {
-                    select: { username: true, displayName: true }
-                }
-            },
-            orderBy: { createdAt: 'desc' }
-        });
+        const page = Math.max(1, parseInt(req.query.page as string) || 1);
+        const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const skip = (page - 1) * limit;
 
-        res.json({ reports });
+        const [reports, total] = await Promise.all([
+            prisma.report.findMany({
+                include: {
+                    reporter: {
+                        select: { username: true, displayName: true }
+                    }
+                },
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip,
+            }),
+            prisma.report.count(),
+        ]);
+
+        res.json({ data: reports, meta: { page, limit, total } });
     } catch (error) {
         next(error);
     }
@@ -75,20 +84,23 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response, next: N
             return res.status(403).json({ error: 'Forbidden' });
         }
 
-        const { status, notes } = req.body;
-
-        // Validate Status Enum?
-        // Let Prisma handle enum validation or Zod. 
-        // For now, raw update is fine, prisma will throw if invalid.
+        const updateSchema = z.object({
+            status: z.enum(['PENDING', 'REVIEWING', 'RESOLVED', 'DISMISSED']),
+            notes: z.string().max(5000).optional(),
+        });
+        const data = updateSchema.parse(req.body);
 
         const report = await prisma.report.update({
             where: { id: req.params.id },
-            data: { status, notes }
+            data: { status: data.status, notes: data.notes }
         });
 
         res.json({ report });
 
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: 'Invalid input', details: error.errors });
+        }
         next(error);
     }
 });

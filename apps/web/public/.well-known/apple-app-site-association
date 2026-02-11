@@ -1,0 +1,35 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": [
+          "APPLE_TEAM_ID.com.zerog.social"
+        ],
+        "components": [
+          {
+            "/": "/join/*",
+            "comment": "Invite links open directly in the app"
+          },
+          {
+            "/": "/c/*",
+            "comment": "Community links open in the app"
+          },
+          {
+            "/": "/post/*",
+            "comment": "Post links open in the app"
+          },
+          {
+            "/": "/invite",
+            "comment": "General invite page opens in the app"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "APPLE_TEAM_ID.com.zerog.social"
+    ]
+  }
+}

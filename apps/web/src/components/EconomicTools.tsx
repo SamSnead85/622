@@ -630,11 +630,4 @@ export function InvestorNetwork({ investors, onInvestorClick, onRequestIntro }: 
 // EXPORTS
 // ============================================================================
 
-export default {
-    ListingCard,
-    JobCard,
-    InvestorCard,
-    Marketplace,
-    JobBoard,
-    InvestorNetwork,
-};
+// All components are individually named-exported above.

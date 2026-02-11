@@ -532,10 +532,4 @@ export function CoFounderMatching({ matches, onConnect, onViewProfile }: CoFound
 // EXPORTS
 // ============================================================================
 
-export default {
-    FounderProfileCard,
-    StartupCard,
-    CoFounderMatchCard,
-    StartupShowcase,
-    CoFounderMatching,
-};
+// All components are individually named-exported above.

@@ -5,9 +5,18 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+import { shallow } from 'zustand/shallow';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiFetch, apiUpload, saveToken, removeToken, getToken, API } from '../lib/api';
+import { apiFetch, apiUpload, saveToken, removeToken, getToken, API, clearApiCache, setSessionExpiredHandler } from '../lib/api';
 import { socketManager } from '../lib/socket';
+
+// ============================================
+// Conditional logging — only in development
+// ============================================
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const devLog = __DEV__ ? (...args: any[]) => console.log('[stores]', ...args) : () => {};
+const devError = __DEV__ ? (...args: any[]) => console.error('[stores]', ...args) : () => {};
 
 // ============================================
 // Shared User Normalization
@@ -170,10 +179,23 @@ export const useAuthStore = create<AuthState>()(
     error: null,
 
     initialize: async () => {
+        // Prevent redundant initialize calls (e.g. double-mount in React Strict Mode)
+        if (get().isInitialized || get().isLoading) return;
+        set({ isLoading: true });
+
         try {
-            const token = await getToken();
+            // Wrap AsyncStorage read in its own try/catch — storage can throw on corrupt data
+            let token: string | null = null;
+            try {
+                token = await getToken();
+            } catch (storageError) {
+                devError('Failed to read token from storage:', storageError);
+                set({ isInitialized: true, isAuthenticated: false, isLoading: false });
+                return;
+            }
+
             if (!token) {
-                set({ isInitialized: true, isAuthenticated: false });
+                set({ isInitialized: true, isAuthenticated: false, isLoading: false });
                 return;
             }
 
@@ -184,19 +206,20 @@ export const useAuthStore = create<AuthState>()(
                     user,
                     isAuthenticated: true,
                     isInitialized: true,
+                    isLoading: false,
                 });
             } else {
                 await removeToken();
-                set({ isInitialized: true, isAuthenticated: false });
+                set({ isInitialized: true, isAuthenticated: false, isLoading: false });
             }
         } catch (error) {
             // Don't clear token on network errors — user might be offline
             const isNetwork = error instanceof TypeError ||
                 (error instanceof Error && error.message.toLowerCase().includes('network'));
             if (!isNetwork) {
-                await removeToken();
+                try { await removeToken(); } catch { /* storage write failed, ignore */ }
             }
-            set({ isInitialized: true, isAuthenticated: isNetwork ? false : false });
+            set({ isInitialized: true, isAuthenticated: false, isLoading: false });
         }
     },
 
@@ -337,6 +360,18 @@ export const useAuthStore = create<AuthState>()(
         useMomentsStore.getState().reset();
         useGovernanceStore.getState().reset();
         useGameStore.getState().reset();
+        // Clear in-memory API response cache
+        clearApiCache();
+        // Clear persisted store data from AsyncStorage
+        try {
+            await AsyncStorage.multiRemove([
+                'feed-storage',
+                'communities-storage',
+                'notifications-storage',
+            ]);
+        } catch {
+            // Storage cleanup failed — non-critical
+        }
     },
 
     updateUser: (updates) => {
@@ -384,6 +419,21 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // ============================================
+// Session Expired Handler
+// When the API layer detects an expired/invalid token
+// and refresh fails, this triggers a logout with a message.
+// ============================================
+
+setSessionExpiredHandler(() => {
+    const state = useAuthStore.getState();
+    if (state.isAuthenticated) {
+        state.logout();
+        // Set error message so the login screen can display it
+        useAuthStore.setState({ error: 'Your session has expired. Please log in again.' });
+    }
+});
+
+// ============================================
 // Feed Store
 // ============================================
 
@@ -395,6 +445,8 @@ interface FeedState {
     nextCursor: string | null;
     error: string | null;
     cacheTimestamp: number;
+    /** True when showing persisted data because network is unavailable */
+    isShowingCachedData: boolean;
 
     fetchFeed: (refresh?: boolean, feedType?: 'foryou' | 'following', feedView?: 'private' | 'community', silent?: boolean) => Promise<void>;
     likePost: (postId: string) => Promise<void>;
@@ -439,6 +491,8 @@ export function mapApiPost(raw: any): Post {
 
 // Race condition guard: only the latest fetchFeed request applies its results
 let _feedRequestId = 0;
+// AbortController for cancelling stale in-flight requests
+let _feedAbortController: AbortController | null = null;
 
 export const useFeedStore = create<FeedState>()(
     persist(
@@ -450,13 +504,22 @@ export const useFeedStore = create<FeedState>()(
     nextCursor: null,
     error: null,
     cacheTimestamp: 0,
+    isShowingCachedData: false,
 
     fetchFeed: async (refresh = false, feedType: 'foryou' | 'following' = 'foryou', feedView: 'private' | 'community' = 'private', silent = false) => {
-        const state = get();
+        // Use getState() for freshest state to avoid stale closure reads
+        const state = useFeedStore.getState();
         // Prevent concurrent fetches — block if already loading OR refreshing
         if (state.isLoading || state.isRefreshing) {
             if (!refresh) return; // Allow refresh to override, but not load-more
         }
+
+        // Cancel any in-flight request before starting a new one
+        if (_feedAbortController) {
+            _feedAbortController.abort();
+        }
+        _feedAbortController = new AbortController();
+        const signal = _feedAbortController.signal;
 
         // Increment and capture request ID to detect stale responses
         const requestId = ++_feedRequestId;
@@ -482,7 +545,8 @@ export const useFeedStore = create<FeedState>()(
             const cursor = refresh ? '' : state.nextCursor;
             const cursorParam = cursor ? `&cursor=${cursor}` : '';
             const data = await apiFetch<any>(
-                `${API.feed}?type=${feedType}&feedView=${feedView}&limit=20${cursorParam}`
+                `${API.feed}?type=${feedType}&feedView=${feedView}&limit=20${cursorParam}`,
+                { signal }
             );
 
             // Discard stale response — a newer request has been started
@@ -493,13 +557,21 @@ export const useFeedStore = create<FeedState>()(
             const newCursor = data.nextCursor || null;
 
             if (refresh) {
+                // Normalize: deduplicate even on refresh (server might return overlapping data)
+                const seen = new Set<string>();
+                const uniquePosts = posts.filter((p: Post) => {
+                    if (seen.has(p.id)) return false;
+                    seen.add(p.id);
+                    return true;
+                });
                 set({
-                    posts,
+                    posts: uniquePosts,
                     isRefreshing: false,
                     isLoading: false,
                     hasMore: !!newCursor,
                     nextCursor: newCursor,
                     cacheTimestamp: Date.now(),
+                    isShowingCachedData: false,
                 });
             } else {
                 // Deduplicate: only append posts whose IDs aren't already present
@@ -517,13 +589,21 @@ export const useFeedStore = create<FeedState>()(
                 });
             }
         } catch (error: any) {
+            // Silently ignore aborted requests
+            if (error?.name === 'AbortError') return;
             // Discard stale error — a newer request has been started
             if (requestId !== _feedRequestId) return;
+
             // SWR: on error, keep existing cached posts visible
+            // If we have cached posts and this is a network error, flag as cached data
+            const currentPosts = useFeedStore.getState().posts;
+            const isNetwork = error instanceof TypeError ||
+                (error instanceof Error && error.message.toLowerCase().includes('network'));
             set({
                 error: error.message || 'Failed to load feed',
                 isLoading: false,
                 isRefreshing: false,
+                isShowingCachedData: isNetwork && currentPosts.length > 0,
             });
         }
     },
@@ -673,14 +753,19 @@ export const useFeedStore = create<FeedState>()(
     },
 
     addPost: (post) => {
-        set((state) => ({ posts: [post, ...state.posts] }));
+        // Deduplicate: don't add if post already exists
+        set((state) => {
+            if (state.posts.some((p) => p.id === post.id)) return state;
+            return { posts: [post, ...state.posts] };
+        });
         // Invalidate cache: refresh feed in background to sync with server
-        get().fetchFeed(true);
+        // Use getState() to avoid stale closure reference
+        useFeedStore.getState().fetchFeed(true, undefined, undefined, true);
     },
 
-    clear: () => set({ posts: [], nextCursor: null, hasMore: true }),
+    clear: () => set({ posts: [], nextCursor: null, hasMore: true, isShowingCachedData: false }),
 
-    reset: () => set({ posts: [], nextCursor: null, hasMore: true, isLoading: false, isRefreshing: false, error: null, cacheTimestamp: 0 }),
+    reset: () => set({ posts: [], nextCursor: null, hasMore: true, isLoading: false, isRefreshing: false, error: null, cacheTimestamp: 0, isShowingCachedData: false }),
 }),
         {
             name: 'feed-storage',
@@ -691,10 +776,14 @@ export const useFeedStore = create<FeedState>()(
             }),
             onRehydrateStorage: () => (state) => {
                 if (state) {
-                    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+                    // Use a longer TTL (30 min) so offline users still see cached content
+                    const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
                     if (Date.now() - state.cacheTimestamp > CACHE_TTL) {
                         // Cache is stale, clear posts so fresh data is fetched
-                        useFeedStore.setState({ posts: [], cacheTimestamp: 0 });
+                        useFeedStore.setState({ posts: [], cacheTimestamp: 0, isShowingCachedData: false });
+                    } else if (state.posts.length > 0) {
+                        // Mark as cached data until a successful network fetch replaces it
+                        useFeedStore.setState({ isShowingCachedData: true });
                     }
                 }
             },
@@ -711,13 +800,16 @@ interface CommunitiesState {
     isLoading: boolean;
     isFetching: boolean;
     error: string | null;
+    lastFetched: number;
 
-    fetchCommunities: () => Promise<void>;
+    fetchCommunities: (force?: boolean) => Promise<void>;
     joinCommunity: (communityId: string) => Promise<void>;
     leaveCommunity: (communityId: string) => Promise<void>;
     createCommunity: (name: string, description: string, isPrivate: boolean) => Promise<Community>;
     reset: () => void;
 }
+
+const COMMUNITIES_CACHE_TTL = 2 * 60 * 1000; // 2 minutes
 
 export const useCommunitiesStore = create<CommunitiesState>()(
     persist(
@@ -726,16 +818,35 @@ export const useCommunitiesStore = create<CommunitiesState>()(
     isLoading: false,
     isFetching: false,
     error: null,
+    lastFetched: 0,
 
-    fetchCommunities: async () => {
+    fetchCommunities: async (force = false) => {
         if (get().isFetching) return;
+
+        // TTL cache: skip fetch if data is fresh (unless forced)
+        if (!force && get().communities.length > 0 &&
+            Date.now() - get().lastFetched < COMMUNITIES_CACHE_TTL) {
+            return;
+        }
+
         set({ isFetching: true, isLoading: true, error: null });
         try {
             const data = await apiFetch<any>(API.communities);
-            const communities = data.communities || data.data || data || [];
+            const raw = data.communities || data.data || data || [];
+            const communities = Array.isArray(raw) ? raw : [];
+
+            // Deduplicate by ID (server may return duplicates across pages)
+            const seen = new Set<string>();
+            const unique = communities.filter((c: Community) => {
+                if (seen.has(c.id)) return false;
+                seen.add(c.id);
+                return true;
+            });
+
             set({
-                communities: Array.isArray(communities) ? communities : [],
+                communities: unique,
                 isLoading: false,
+                lastFetched: Date.now(),
             });
         } catch (error: any) {
             set({
@@ -762,7 +873,7 @@ export const useCommunitiesStore = create<CommunitiesState>()(
         } catch (error: any) {
             // Revert on failure
             set({ communities: prev });
-            console.error('Failed to join community:', error);
+            devError('Failed to join community:', error);
         }
     },
 
@@ -781,7 +892,7 @@ export const useCommunitiesStore = create<CommunitiesState>()(
         } catch (error: any) {
             // Revert on failure
             set({ communities: prev });
-            console.error('Failed to leave community:', error);
+            devError('Failed to leave community:', error);
         }
     },
 
@@ -791,19 +902,22 @@ export const useCommunitiesStore = create<CommunitiesState>()(
             body: JSON.stringify({ name, description, isPublic: !isPrivate }),
         });
         const community = data.community || data;
-        set((state) => ({
-            communities: [community, ...state.communities],
-        }));
+        // Deduplicate: don't add if already exists (race with fetchCommunities)
+        set((state) => {
+            if (state.communities.some((c) => c.id === community.id)) return state;
+            return { communities: [community, ...state.communities] };
+        });
         return community;
     },
 
-    reset: () => set({ communities: [], isLoading: false, isFetching: false, error: null }),
+    reset: () => set({ communities: [], isLoading: false, isFetching: false, error: null, lastFetched: 0 }),
 }),
         {
             name: 'communities-storage',
             storage: zustandStorage,
             partialize: (state) => ({
                 communities: state.communities,
+                lastFetched: state.lastFetched,
             }),
         }
     )
@@ -854,12 +968,21 @@ export const useNotificationsStore = create<NotificationsState>()(
         set({ isFetching: true, isLoading: true, error: null });
         try {
             const data = await apiFetch<any>(API.notifications);
-            const notifications = data.notifications || data.data || [];
+            const raw = data.notifications || data.data || [];
+            const notifications = Array.isArray(raw) ? raw : [];
+
+            // Deduplicate by ID — polling can return overlapping results
+            const seen = new Set<string>();
+            const unique = notifications.filter((n: Notification) => {
+                if (seen.has(n.id)) return false;
+                seen.add(n.id);
+                return true;
+            });
+
+            const unreadCount = unique.filter((n: Notification) => !n.isRead).length;
             set({
-                notifications: Array.isArray(notifications) ? notifications : [],
-                unreadCount: Array.isArray(notifications)
-                    ? notifications.filter((n: Notification) => !n.isRead).length
-                    : 0,
+                notifications: unique,
+                unreadCount,
                 isLoading: false,
             });
         } catch {
@@ -956,7 +1079,8 @@ interface MomentsState {
     reset: () => void;
 }
 
-export const useMomentsStore = create<MomentsState>()((set, get) => ({
+export const useMomentsStore = create<MomentsState>()(
+    immer((set, get) => ({
     storyUsers: [],
     momentsByUser: {},
     isLoading: false,
@@ -965,9 +1089,10 @@ export const useMomentsStore = create<MomentsState>()((set, get) => ({
 
     fetchStoryFeed: async () => {
         // Skip if fetched within the last 30 seconds
-        if (Date.now() - get().lastFetched < 30_000 && get().storyUsers.length > 0) return;
+        const state = useMomentsStore.getState();
+        if (Date.now() - state.lastFetched < 30_000 && state.storyUsers.length > 0) return;
 
-        set({ isLoading: true, error: null });
+        set((draft) => { draft.isLoading = true; draft.error = null; });
         try {
             const data = await apiFetch<any>(API.momentsFeed);
             const list = data?.moments || data || [];
@@ -986,12 +1111,12 @@ export const useMomentsStore = create<MomentsState>()((set, get) => ({
                         });
                     }
                 }
-                set({ storyUsers: users, lastFetched: Date.now() });
+                set((draft) => { draft.storyUsers = users; draft.lastFetched = Date.now(); });
             }
         } catch {
-            set({ error: 'Failed to load moments' });
+            set((draft) => { draft.error = 'Failed to load moments'; });
         } finally {
-            set({ isLoading: false });
+            set((draft) => { draft.isLoading = false; });
         }
     },
 
@@ -1000,9 +1125,9 @@ export const useMomentsStore = create<MomentsState>()((set, get) => ({
             const data = await apiFetch<any>(`${API.momentsFeed}?userId=${userId}`);
             const list = data?.moments || data || [];
             const moments = Array.isArray(list) ? list : [];
-            set((state) => ({
-                momentsByUser: { ...state.momentsByUser, [userId]: moments },
-            }));
+            set((draft) => {
+                draft.momentsByUser[userId] = moments;
+            });
             return moments;
         } catch {
             return [];
@@ -1010,22 +1135,27 @@ export const useMomentsStore = create<MomentsState>()((set, get) => ({
     },
 
     addMomentUser: (user: MomentUser) => {
-        set((state) => {
-            if (state.storyUsers.some((u) => u.userId === user.userId)) return state;
-            return { storyUsers: [user, ...state.storyUsers] };
+        set((draft) => {
+            if (draft.storyUsers.some((u) => u.userId === user.userId)) return;
+            draft.storyUsers.unshift(user);
         });
     },
 
     markSeen: (userId: string) => {
-        set((state) => ({
-            storyUsers: state.storyUsers.map((u) =>
-                u.userId === userId ? { ...u, isSeen: true } : u
-            ),
-        }));
+        set((draft) => {
+            const user = draft.storyUsers.find((u) => u.userId === userId);
+            if (user) user.isSeen = true;
+        });
     },
 
-    reset: () => set({ storyUsers: [], momentsByUser: {}, isLoading: false, lastFetched: 0, error: null }),
-}));
+    reset: () => set((draft) => {
+        draft.storyUsers = [];
+        draft.momentsByUser = {};
+        draft.isLoading = false;
+        draft.lastFetched = 0;
+        draft.error = null;
+    }),
+})));
 
 // ============================================
 // Governance Store — caches proposals and votes
@@ -1057,47 +1187,36 @@ interface GovernanceState {
     reset: () => void;
 }
 
-export const useGovernanceStore = create<GovernanceState>()((set, get) => ({
+export const useGovernanceStore = create<GovernanceState>()(
+    immer((set, get) => ({
     proposalsByCommunity: {},
     isLoading: false,
     error: null as string | null,
 
     fetchProposals: async (communityId: string) => {
-        set({ isLoading: true, error: null });
+        set((draft) => { draft.isLoading = true; draft.error = null; });
         try {
             const data = await apiFetch<any>(API.proposals(communityId));
             const list = data.proposals || data || [];
-            set((state) => ({
-                proposalsByCommunity: {
-                    ...state.proposalsByCommunity,
-                    [communityId]: Array.isArray(list) ? list : [],
-                },
-                isLoading: false,
-            }));
+            set((draft) => {
+                draft.proposalsByCommunity[communityId] = Array.isArray(list) ? list : [];
+                draft.isLoading = false;
+            });
         } catch {
-            set({ isLoading: false, error: 'Failed to load proposals' });
+            set((draft) => { draft.isLoading = false; draft.error = 'Failed to load proposals'; });
         }
     },
 
     voteOnProposal: async (communityId: string, proposalId: string, vote: 'FOR' | 'AGAINST') => {
-        // Optimistic update
-        set((state) => {
-            const proposals = state.proposalsByCommunity[communityId] || [];
-            return {
-                proposalsByCommunity: {
-                    ...state.proposalsByCommunity,
-                    [communityId]: proposals.map((p) =>
-                        p.id === proposalId
-                            ? {
-                                ...p,
-                                userVote: vote,
-                                votesFor: vote === 'FOR' ? p.votesFor + 1 : p.votesFor,
-                                votesAgainst: vote === 'AGAINST' ? p.votesAgainst + 1 : p.votesAgainst,
-                            }
-                            : p
-                    ),
-                },
-            };
+        // Optimistic update — immer makes nested mutation clean
+        set((draft) => {
+            const proposals = draft.proposalsByCommunity[communityId] || [];
+            const proposal = proposals.find((p) => p.id === proposalId);
+            if (proposal) {
+                proposal.userVote = vote;
+                if (vote === 'FOR') proposal.votesFor += 1;
+                if (vote === 'AGAINST') proposal.votesAgainst += 1;
+            }
         });
 
         try {
@@ -1106,25 +1225,29 @@ export const useGovernanceStore = create<GovernanceState>()((set, get) => ({
                 body: JSON.stringify({ vote }),
             });
         } catch {
-            // Revert — refetch
-            get().fetchProposals(communityId);
+            // Revert — refetch from server
+            useGovernanceStore.getState().fetchProposals(communityId);
         }
     },
 
     updateProposalVotes: (proposalId: string, votesFor: number, votesAgainst: number) => {
-        set((state) => {
-            const updated: Record<string, Proposal[]> = {};
-            for (const [cid, proposals] of Object.entries(state.proposalsByCommunity)) {
-                updated[cid] = proposals.map((p) =>
-                    p.id === proposalId ? { ...p, votesFor, votesAgainst } : p
-                );
+        set((draft) => {
+            for (const proposals of Object.values(draft.proposalsByCommunity)) {
+                const proposal = proposals.find((p) => p.id === proposalId);
+                if (proposal) {
+                    proposal.votesFor = votesFor;
+                    proposal.votesAgainst = votesAgainst;
+                }
             }
-            return { proposalsByCommunity: updated };
         });
     },
 
-    reset: () => set({ proposalsByCommunity: {}, isLoading: false, error: null }),
-}));
+    reset: () => set((draft) => {
+        draft.proposalsByCommunity = {};
+        draft.isLoading = false;
+        draft.error = null;
+    }),
+})));
 
 // ============================================
 // Game Store
@@ -1260,48 +1383,53 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
         get().reset();
     },
 
-    updateFromState: (state) => {
-        set({
-            status: state.status || get().status,
-            players: state.players || get().players,
-            round: state.round ?? get().round,
-            totalRounds: state.totalRounds ?? get().totalRounds,
-            gameData: state.gameData || get().gameData,
-        });
+    updateFromState: (incoming) => {
+        // Use set() updater to avoid stale get() reads from rapid socket events
+        set((prev) => ({
+            status: incoming.status || prev.status,
+            players: incoming.players || prev.players,
+            round: incoming.round ?? prev.round,
+            totalRounds: incoming.totalRounds ?? prev.totalRounds,
+            gameData: incoming.gameData || prev.gameData,
+        }));
     },
 
     updateFromDelta: (delta) => {
-        set({
-            players: delta.players || get().players,
-            round: delta.round ?? get().round,
-            gameData: { ...get().gameData, ...delta.gameData },
-        });
+        set((prev) => ({
+            players: delta.players || prev.players,
+            round: delta.round ?? prev.round,
+            gameData: { ...prev.gameData, ...delta.gameData },
+        }));
     },
 
     setRoundEnd: (data) => {
-        set({
-            status: 'round_end',
-            players: data.players || get().players,
-        });
+        set((prev) => ({
+            status: 'round_end' as const,
+            players: data.players || prev.players,
+        }));
     },
 
     setGameEnded: (data) => {
-        set({
-            status: 'finished',
+        set((prev) => ({
+            status: 'finished' as const,
             players: data.finalScores?.map((s: any) => ({
-                ...get().players.find(p => p.id === s.id),
+                ...prev.players.find(p => p.id === s.id),
                 score: s.score,
                 name: s.name,
-            })) || get().players,
-        });
+            })) || prev.players,
+        }));
     },
 
     addPlayer: (data) => {
-        set({ players: [...get().players.filter(p => p.id !== data.player.id), data.player] });
+        set((prev) => ({
+            players: [...prev.players.filter(p => p.id !== data.player.id), data.player],
+        }));
     },
 
     removePlayer: (playerId) => {
-        set({ players: get().players.map(p => p.id === playerId ? { ...p, isConnected: false } : p) });
+        set((prev) => ({
+            players: prev.players.map(p => p.id === playerId ? { ...p, isConnected: false } : p),
+        }));
     },
 
     reset: () => {
@@ -1321,3 +1449,50 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
 
     setError: (error) => set({ error }),
 }));
+
+// ============================================
+// Memoized Selectors
+// Stable references prevent unnecessary re-renders
+// Usage: const posts = useFeedPosts();
+// ============================================
+
+/** Feed posts — only re-renders when the posts array identity changes */
+export const useFeedPosts = () => useFeedStore((s) => s.posts);
+
+/** Feed loading states — grouped to avoid multiple subscriptions */
+export const useFeedStatus = () =>
+    useFeedStore(
+        (s) => ({ isLoading: s.isLoading, isRefreshing: s.isRefreshing, hasMore: s.hasMore, error: s.error, isShowingCachedData: s.isShowingCachedData }),
+        shallow
+    );
+
+/** Feed actions — stable references (functions never change identity in zustand) */
+export const useFeedActions = () =>
+    useFeedStore(
+        (s) => ({
+            fetchFeed: s.fetchFeed,
+            likePost: s.likePost,
+            unlikePost: s.unlikePost,
+            savePost: s.savePost,
+            unsavePost: s.unsavePost,
+            movePost: s.movePost,
+            deletePost: s.deletePost,
+        }),
+        shallow
+    );
+
+/** Auth user — only re-renders when user object changes */
+export const useCurrentUser = () => useAuthStore((s) => s.user);
+
+/** Auth status — grouped */
+export const useAuthStatus = () =>
+    useAuthStore(
+        (s) => ({ isAuthenticated: s.isAuthenticated, isInitialized: s.isInitialized, isLoading: s.isLoading }),
+        shallow
+    );
+
+/** Unread notification count — cheap subscription for badge display */
+export const useUnreadCount = () => useNotificationsStore((s) => s.unreadCount);
+
+/** Community list */
+export const useCommunityList = () => useCommunitiesStore((s) => s.communities);

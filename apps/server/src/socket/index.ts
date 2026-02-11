@@ -114,7 +114,6 @@ export const setupSocketHandlers = (io: SocketServer) => {
     startMapCleanup(io);
 
     // Authentication middleware
-    // Authentication middleware
     io.use(async (socket: AuthenticatedSocket, next) => {
         try {
             const token = socket.handshake.auth.token;
@@ -331,10 +330,14 @@ export const setupSocketHandlers = (io: SocketServer) => {
 
         // Handle presence updates
         socket.on('presence:update', async (status: 'online' | 'away' | 'busy') => {
-            await prisma.user.update({
-                where: { id: userId },
-                data: { lastActiveAt: new Date() },
-            });
+            try {
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: { lastActiveAt: new Date() },
+                });
+            } catch (error) {
+                logger.error('Error updating presence:', error);
+            }
 
             socket.broadcast.emit('presence:update', { userId, status });
         });

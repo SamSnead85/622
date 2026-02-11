@@ -511,13 +511,4 @@ export function ReplyPreview({
     );
 }
 
-export default {
-    WhisperModeToggle,
-    ScheduleMessagePicker,
-    MoodSelector,
-    MoodBadge,
-    VoiceBubble,
-    ReadReceipts,
-    MessageReactionPicker,
-    ReplyPreview,
-};
+// All components are individually named-exported above.

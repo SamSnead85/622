@@ -1,9 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { inviteService } from '../services/invite/InviteService.js';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db/client.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Auth request type
 interface AuthRequest extends Request {

@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { prisma } from '../db/client.js';
 import crypto from 'crypto';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Optional auth — sets req.user if token present, continues otherwise
 const optionalAuth = (req: AuthRequest, res: any, next: any) => {
@@ -141,11 +140,21 @@ router.post('/:slug/signup', async (req, res, next) => {
 // GET /api/v1/campaigns — List all campaigns (admin)
 router.get('/', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const campaigns = await prisma.campaign.findMany({
-            orderBy: { createdAt: 'desc' },
-            include: { _count: { select: { signups: true, accessCodes: true } } },
-        });
-        res.json(campaigns);
+        const page = Math.max(1, parseInt(req.query.page as string) || 1);
+        const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const skip = (page - 1) * limit;
+
+        const [campaigns, total] = await Promise.all([
+            prisma.campaign.findMany({
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip,
+                include: { _count: { select: { signups: true, accessCodes: true } } },
+            }),
+            prisma.campaign.count(),
+        ]);
+
+        res.json({ data: campaigns, meta: { page, limit, total } });
     } catch (error) {
         next(error);
     }
@@ -205,9 +214,22 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res, next)
 // PATCH /api/v1/campaigns/:id — Update campaign (admin)
 router.patch('/:id', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
+        // Whitelist allowed fields to prevent overwriting id, createdById, etc.
+        const { title, description, status, startDate, endDate, maxSignups, slug, imageUrl, requirements } = req.body;
+        const updateData: Record<string, any> = {};
+        if (title !== undefined) updateData.title = title;
+        if (description !== undefined) updateData.description = description;
+        if (status !== undefined) updateData.status = status;
+        if (startDate !== undefined) updateData.startDate = new Date(startDate);
+        if (endDate !== undefined) updateData.endDate = new Date(endDate);
+        if (maxSignups !== undefined) updateData.maxSignups = maxSignups;
+        if (slug !== undefined) updateData.slug = slug;
+        if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+        if (requirements !== undefined) updateData.requirements = requirements;
+
         const campaign = await prisma.campaign.update({
             where: { id: req.params.id },
-            data: req.body,
+            data: updateData,
         });
         res.json(campaign);
     } catch (error) {

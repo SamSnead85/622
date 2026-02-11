@@ -57,15 +57,12 @@ router.get('/feed', async (req: AuthRequest, res: Response, next: NextFunction) 
  * POST /api/moments
  * Create a new moment
  */
-router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        if (!req.user?.id) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
 
         const input = createMomentSchema.parse(req.body);
         const moment = await momentService.createMoment({
-            userId: req.user.id,
+            userId: req.user!.id,
             ...input,
         });
 
@@ -100,13 +97,9 @@ router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
  * POST /api/moments/:id/view
  * Mark a moment as viewed
  */
-router.post('/:id/view', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/:id/view', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        if (!req.user?.id) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-
-        await momentService.viewMoment(req.params.id, req.user.id);
+        await momentService.viewMoment(req.params.id, req.user!.id);
         res.json({ success: true });
     } catch (error) {
         next(error);
@@ -117,13 +110,9 @@ router.post('/:id/view', async (req: AuthRequest, res: Response, next: NextFunct
  * GET /api/moments/:id/viewers
  * Get viewers of a moment (owner only)
  */
-router.get('/:id/viewers', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/:id/viewers', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        if (!req.user?.id) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-
-        const viewers = await momentService.getMomentViewers(req.params.id, req.user.id);
+        const viewers = await momentService.getMomentViewers(req.params.id, req.user!.id);
         res.json({ viewers });
     } catch (error) {
         if ((error as Error).message.includes('not authorized')) {
@@ -137,13 +126,9 @@ router.get('/:id/viewers', async (req: AuthRequest, res: Response, next: NextFun
  * DELETE /api/moments/:id
  * Delete a moment
  */
-router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.delete('/:id', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        if (!req.user?.id) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-
-        await momentService.deleteMoment(req.params.id, req.user.id);
+        await momentService.deleteMoment(req.params.id, req.user!.id);
         res.json({ success: true });
     } catch (error) {
         if ((error as Error).message.includes('not authorized')) {
@@ -157,9 +142,12 @@ router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction
  * POST /api/moments/cleanup
  * Cleanup expired moments (admin/cron only)
  */
-router.post('/cleanup', async (req, res, next) => {
+router.post('/cleanup', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        // In production, this would be protected by admin auth
+        // Only admins can trigger manual cleanup
+        if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPERADMIN') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
         const cleanedCount = await momentService.cleanupExpiredMoments();
         res.json({ success: true, cleanedCount });
     } catch (error) {

@@ -10,14 +10,21 @@ import { getFeedImageUrls, transformImageUrl } from '../services/cloudinary.js';
 
 const router = Router();
 
+// Helper: clamp limit to prevent unbounded queries
+function clampLimit(raw: string | undefined, defaultVal = 20, max = 100): number {
+    const parsed = parseInt(raw || String(defaultVal));
+    return Math.min(Math.max(1, isNaN(parsed) ? defaultVal : parsed), max);
+}
+
 // GET /api/v1/posts - List all public posts (no auth required)
 router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
-        const { cursor, limit = '20' } = req.query;
+        const { cursor, limit: rawLimit } = req.query;
+        const limit = clampLimit(rawLimit as string, 20, 50);
 
         const posts = await prisma.post.findMany({
             where: { isPublic: true, deletedAt: null },
-            take: parseInt(limit as string) + 1,
+            take: limit + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: { createdAt: 'desc' },
             include: {
@@ -39,7 +46,7 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
             },
         });
 
-        const hasMore = posts.length > parseInt(limit as string);
+        const hasMore = posts.length > limit;
         const results = hasMore ? posts.slice(0, -1) : posts;
 
         res.json({
@@ -58,7 +65,8 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
 // GET /api/v1/posts/feed
 router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        const { cursor, limit = '10', type = 'foryou', view } = req.query;
+        const { cursor, limit: rawFeedLimit, type = 'foryou', view } = req.query;
+        const limit = clampLimit(rawFeedLimit as string, 10, 50);
 
         // ── Privacy-First Feed Isolation ──
         // Determine which feed view the user is requesting.
@@ -162,8 +170,8 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
         try {
             // For "For You" feed, fetch more posts to rank them intelligently
             const fetchLimit = type === 'foryou'
-                ? parseInt(limit as string) * 3  // Fetch 3x to have pool for ranking
-                : parseInt(limit as string) + 1;
+                ? limit * 3  // Fetch 3x to have pool for ranking
+                : limit + 1;
 
             posts = await prisma.post.findMany({
                 where: whereClause,
@@ -342,10 +350,10 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             }
 
             // Take only the requested limit — all posts are in the pool, none removed
-            posts = rankedPosts.slice(0, parseInt(limit as string) + 1);
+            posts = rankedPosts.slice(0, limit + 1);
         }
 
-        const hasMore = posts.length > parseInt(limit as string);
+        const hasMore = posts.length > limit;
         const results = hasMore ? posts.slice(0, -1) : posts;
 
         // Check if current user liked/saved posts
@@ -976,11 +984,12 @@ router.delete('/:postId/like', authenticate, async (req: AuthRequest, res, next)
 // GET /api/v1/posts/saved - List saved posts for current user
 router.get('/saved', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        const { cursor, limit = '20' } = req.query;
+        const { cursor, limit: rawLimit } = req.query;
+        const limit = clampLimit(rawLimit as string, 20, 50);
 
         const saves = await prisma.save.findMany({
             where: { userId: req.userId! },
-            take: parseInt(limit as string) + 1,
+            take: limit + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: { createdAt: 'desc' },
             include: {
@@ -1003,7 +1012,7 @@ router.get('/saved', authenticate, async (req: AuthRequest, res, next) => {
             },
         });
 
-        const hasMore = saves.length > parseInt(limit as string);
+        const hasMore = saves.length > limit;
         const results = hasMore ? saves.slice(0, -1) : saves;
 
         res.json({
@@ -1064,11 +1073,12 @@ router.delete('/:postId/save', authenticate, async (req: AuthRequest, res, next)
 router.get('/:postId/comments', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
-        const { cursor, limit = '50' } = req.query;
+        const { cursor, limit: rawCommentLimit } = req.query;
+        const limit = clampLimit(rawCommentLimit as string, 50, 100);
 
         const comments = await prisma.comment.findMany({
             where: { postId, parentId: null },
-            take: parseInt(limit as string) + 1,
+            take: limit + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: { createdAt: 'desc' },
             include: {
@@ -1087,7 +1097,7 @@ router.get('/:postId/comments', optionalAuth, async (req: AuthRequest, res, next
             },
         });
 
-        const hasMore = comments.length > parseInt(limit as string);
+        const hasMore = comments.length > limit;
         const results = hasMore ? comments.slice(0, -1) : comments;
 
         res.json({

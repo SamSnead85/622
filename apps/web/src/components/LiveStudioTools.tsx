@@ -515,10 +515,4 @@ export function StreamChatOverlay({ messages, isSlowMode = false, slowModeSecond
 // EXPORTS
 // ============================================================================
 
-export default {
-    QAOverlay,
-    DonationTicker,
-    StreamMetricsDashboard,
-    MultiStreamLayout,
-    StreamChatOverlay,
-};
+// All components are individually named-exported above.

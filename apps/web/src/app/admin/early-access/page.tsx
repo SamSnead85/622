@@ -42,21 +42,22 @@ function AdminContent() {
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
     const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
-    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
     const fetchRequests = useCallback(async () => {
         try {
+            const hdrs = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
             const url = filter === 'all'
                 ? `${API_URL}/api/v1/auth/admin/early-access`
                 : `${API_URL}/api/v1/auth/admin/early-access?status=${filter}`;
-            const res = await fetch(url, { headers });
+            const res = await fetch(url, { headers: hdrs });
             if (res.ok) setRequests(await res.json());
         } catch { /* */ }
     }, [filter, token]);
 
     const fetchCodes = useCallback(async () => {
         try {
-            const res = await fetch(`${API_URL}/api/v1/auth/admin/access-codes`, { headers });
+            const hdrs = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+            const res = await fetch(`${API_URL}/api/v1/auth/admin/access-codes`, { headers: hdrs });
             if (res.ok) setCodes(await res.json());
         } catch { /* */ }
     }, [token]);
@@ -68,8 +69,9 @@ function AdminContent() {
 
     const approveRequest = async (id: string) => {
         setActionLoading(id);
+        const hdrs = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
         try {
-            const res = await fetch(`${API_URL}/api/v1/auth/admin/early-access/${id}/approve`, { method: 'POST', headers });
+            const res = await fetch(`${API_URL}/api/v1/auth/admin/early-access/${id}/approve`, { method: 'POST', headers: hdrs });
             if (res.ok) await fetchRequests();
         } catch { /* */ }
         setActionLoading(null);
@@ -77,17 +79,19 @@ function AdminContent() {
 
     const rejectRequest = async (id: string) => {
         setActionLoading(id);
+        const hdrs = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
         try {
-            const res = await fetch(`${API_URL}/api/v1/auth/admin/early-access/${id}/reject`, { method: 'POST', headers });
+            const res = await fetch(`${API_URL}/api/v1/auth/admin/early-access/${id}/reject`, { method: 'POST', headers: hdrs });
             if (res.ok) await fetchRequests();
         } catch { /* */ }
         setActionLoading(null);
     };
 
     const createCode = async () => {
+        const hdrs = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
         try {
             const res = await fetch(`${API_URL}/api/v1/auth/admin/access-codes`, {
-                method: 'POST', headers,
+                method: 'POST', headers: hdrs,
                 body: JSON.stringify(newCodeForm),
             });
             if (res.ok) {
@@ -99,8 +103,9 @@ function AdminContent() {
     };
 
     const deactivateCode = async (id: string) => {
+        const hdrs = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
         try {
-            await fetch(`${API_URL}/api/v1/auth/admin/access-codes/${id}`, { method: 'DELETE', headers });
+            await fetch(`${API_URL}/api/v1/auth/admin/access-codes/${id}`, { method: 'DELETE', headers: hdrs });
             await fetchCodes();
         } catch { /* */ }
     };

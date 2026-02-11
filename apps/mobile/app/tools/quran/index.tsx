@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ScreenHeader, GlassCard } from '../../../components';
+import { ScreenHeader } from '../../../components';
 
 // ─── Storage keys ─────────────────────────────────────────────────
 const BOOKMARKS_KEY = '@quran-bookmarks';
@@ -211,9 +211,24 @@ export default function QuranSurahList() {
                     AsyncStorage.getItem(PROGRESS_KEY),
                     AsyncStorage.getItem(LAST_READ_KEY),
                 ]);
-                if (bm) setBookmarks(JSON.parse(bm));
-                if (prog) setReadSurahs(new Set(JSON.parse(prog)));
-                if (lr) setLastRead(JSON.parse(lr));
+                if (bm) {
+                    try {
+                        const parsed = JSON.parse(bm);
+                        if (Array.isArray(parsed)) setBookmarks(parsed);
+                    } catch { /* corrupted bookmark data */ }
+                }
+                if (prog) {
+                    try {
+                        const parsed = JSON.parse(prog);
+                        if (Array.isArray(parsed)) setReadSurahs(new Set(parsed));
+                    } catch { /* corrupted progress data */ }
+                }
+                if (lr) {
+                    try {
+                        const parsed = JSON.parse(lr);
+                        if (parsed && typeof parsed.surahNumber === 'number') setLastRead(parsed);
+                    } catch { /* corrupted last-read data */ }
+                }
             } catch { /* ignore read failure */ }
         })();
     }, []);
@@ -244,10 +259,10 @@ export default function QuranSurahList() {
     }, [searchQuery, selectedJuz]);
 
     const handleSurahPress = useCallback(
-        async (surahNumber: number) => {
+        (surahNumber: number) => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-            // Track reading progress
+            // Track reading progress (fire-and-forget)
             setReadSurahs((prev) => {
                 const next = new Set(prev);
                 next.add(surahNumber);
@@ -255,7 +270,7 @@ export default function QuranSurahList() {
                 return next;
             });
 
-            // Update last read
+            // Update last read (fire-and-forget)
             const lr: LastRead = { surahNumber, ayahNumber: 1, timestamp: Date.now() };
             setLastRead(lr);
             AsyncStorage.setItem(LAST_READ_KEY, JSON.stringify(lr)).catch(() => {});

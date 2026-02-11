@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_ENDPOINTS, apiFetch } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,13 +25,7 @@ export function CampfireInvite({ isOpen, onClose, streamTitle, streamId }: Campf
     const [loading, setLoading] = useState(true);
     const [pinged, setPinged] = useState<Set<string>>(new Set());
 
-    useEffect(() => {
-        if (isOpen && user?.id) {
-            fetchFriends();
-        }
-    }, [isOpen, user?.id]);
-
-    const fetchFriends = async () => {
+    const fetchFriends = useCallback(async () => {
         try {
             setLoading(true);
             // Fetch who I am following as a proxy for "Friends" to ping
@@ -45,7 +39,13 @@ export function CampfireInvite({ isOpen, onClose, streamTitle, streamId }: Campf
         } finally {
             setLoading(false);
         }
-    };
+    }, [user?.id]);
+
+    useEffect(() => {
+        if (isOpen && user?.id) {
+            fetchFriends();
+        }
+    }, [isOpen, user?.id, fetchFriends]);
 
     const handlePing = async (targetUserId: string) => {
         setPinged(prev => new Set(prev).add(targetUserId));

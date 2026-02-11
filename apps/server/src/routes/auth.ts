@@ -3,10 +3,15 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { v4 as uuid } from 'uuid';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 import { logger } from '../utils/logger.js';
+
+// Apple JWKS endpoint for verifying Apple Sign-In tokens
+const APPLE_JWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
 
 const router = Router();
 
@@ -127,7 +132,7 @@ router.post('/validate-code', async (req, res, next) => {
 });
 
 // POST /api/v1/auth/signup
-router.post('/signup', async (req, res, next) => {
+router.post('/signup', rateLimiters.auth, async (req, res, next) => {
     try {
         const { email, password, username, displayName, groupOnly, primaryCommunityId, accessCode } = signupSchema.parse(req.body);
 
@@ -298,7 +303,7 @@ router.post('/signup', async (req, res, next) => {
 });
 
 // POST /api/v1/auth/login
-router.post('/login', async (req, res, next) => {
+router.post('/login', rateLimiters.auth, async (req, res, next) => {
     try {
         const { email, password, rememberMe } = loginSchema.parse(req.body);
 
@@ -663,24 +668,22 @@ const appleAuthSchema = z.object({
     displayName: z.string().optional(),
 });
 
-router.post('/apple', async (req, res, next) => {
+router.post('/apple', rateLimiters.auth, async (req, res, next) => {
     try {
         const { identityToken, displayName } = appleAuthSchema.parse(req.body);
 
-        // Decode the Apple identity token (JWT)
-        // Apple tokens are JWTs signed with Apple's public key
-        const tokenParts = identityToken.split('.');
-        if (tokenParts.length !== 3) {
-            throw new AppError('Invalid Apple identity token', 400);
-        }
-
+        // Verify the Apple identity token cryptographically
+        // This validates the JWT signature against Apple's public keys (JWKS)
         let payload: { sub: string; email?: string; email_verified?: string | boolean };
         try {
-            const payloadBase64 = tokenParts[1].replace(/-/g, '+').replace(/_/g, '/');
-            const payloadJson = Buffer.from(payloadBase64, 'base64').toString('utf-8');
-            payload = JSON.parse(payloadJson);
-        } catch {
-            throw new AppError('Invalid Apple token payload', 400);
+            const { payload: verified } = await jwtVerify(identityToken, APPLE_JWKS, {
+                issuer: 'https://appleid.apple.com',
+                audience: process.env.APPLE_CLIENT_ID || 'com.zerog.social',
+            });
+            payload = verified as { sub: string; email?: string; email_verified?: string | boolean };
+        } catch (jwtError) {
+            logger.warn('Apple JWT verification failed', { error: (jwtError as Error).message });
+            throw new AppError('Invalid or expired Apple identity token', 401);
         }
 
         if (!payload.sub) {
@@ -804,7 +807,7 @@ const resetPasswordSchema = z.object({
 });
 
 // POST /api/v1/auth/forgot-password
-router.post('/forgot-password', async (req, res, next) => {
+router.post('/forgot-password', rateLimiters.auth, async (req, res, next) => {
     try {
         const { email } = forgotPasswordSchema.parse(req.body);
 
@@ -843,7 +846,7 @@ router.post('/forgot-password', async (req, res, next) => {
 });
 
 // POST /api/v1/auth/reset-password
-router.post('/reset-password', async (req, res, next) => {
+router.post('/reset-password', rateLimiters.auth, async (req, res, next) => {
     try {
         const { token, password } = resetPasswordSchema.parse(req.body);
 

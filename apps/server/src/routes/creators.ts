@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { prisma } from '../db/client.js';
 import crypto from 'crypto';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const requireAdmin = (req: AuthRequest, res: any, next: any) => {
     if (!req.user || (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN')) {
@@ -129,17 +128,27 @@ router.post('/me/generate-code', authenticate, async (req: AuthRequest, res, nex
 // GET /api/v1/creators — List all creator applications
 router.get('/', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
+        const page = Math.max(1, parseInt(req.query.page as string) || 1);
+        const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const skip = (page - 1) * limit;
+
         const { status } = req.query;
         const where = status ? { status: status as string } : {};
 
-        const creators = await prisma.creatorProfile.findMany({
-            where,
-            orderBy: { createdAt: 'desc' },
-            include: {
-                user: { select: { id: true, username: true, displayName: true, avatarUrl: true, email: true } },
-            },
-        });
-        res.json(creators);
+        const [creators, total] = await Promise.all([
+            prisma.creatorProfile.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip,
+                include: {
+                    user: { select: { id: true, username: true, displayName: true, avatarUrl: true, email: true } },
+                },
+            }),
+            prisma.creatorProfile.count({ where }),
+        ]);
+
+        res.json({ data: creators, meta: { page, limit, total } });
     } catch (error) {
         next(error);
     }

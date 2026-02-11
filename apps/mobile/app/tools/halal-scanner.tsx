@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -38,14 +38,18 @@ export default function HalalScannerScreen() {
     const [barcode, setBarcode] = useState('');
     const [isScanning, setIsScanning] = useState(false);
     const [result, setResult] = useState<ScanResult | null>(null);
+    const [scanError, setScanError] = useState<string | null>(null);
+    const [lastScannedCode, setLastScannedCode] = useState('');
 
-    const lookupProduct = async (code: string) => {
+    const lookupProduct = useCallback(async (code: string) => {
         setIsScanning(true);
         setResult(null);
+        setScanError(null);
+        setLastScannedCode(code);
         try {
             // Open Food Facts API
-            const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
-            if (!res.ok) throw new Error('Network error');
+            const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json`);
+            if (!res.ok) throw new Error(`Network error (${res.status})`);
             const json = await res.json();
 
             if (json?.status !== 1 || !json?.product) {
@@ -55,6 +59,7 @@ export default function HalalScannerScreen() {
                     ingredients: [],
                     flaggedIngredients: [],
                 });
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
                 return;
             }
 
@@ -74,10 +79,10 @@ export default function HalalScannerScreen() {
             setResult({
                 status,
                 productName: product.product_name || 'Unknown Product',
-                brand: product.brands,
+                brand: product.brands || undefined,
                 ingredients: ingredientsList.slice(0, 20),
                 flaggedIngredients: [...haramFound, ...doubtfulFound],
-                imageUrl: product.image_front_small_url,
+                imageUrl: product.image_front_small_url || undefined,
             });
 
             Haptics.notificationAsync(
@@ -86,11 +91,13 @@ export default function HalalScannerScreen() {
                         Haptics.NotificationFeedbackType.Warning
             );
         } catch (err) {
-            Alert.alert('Error', 'Failed to look up product. Check your connection.');
+            console.error('Halal scan error:', err);
+            setScanError('Failed to look up product. Check your connection and try again.');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         } finally {
             setIsScanning(false);
         }
-    };
+    }, []);
 
     const statusConfig = {
         halal: { color: colors.emerald[500], icon: 'checkmark-circle' as const, label: 'Likely Halal', bg: colors.emerald[500] + '15' },
@@ -138,6 +145,22 @@ export default function HalalScannerScreen() {
                     </Text>
                 </Animated.View>
 
+                {/* Scan Error with Retry */}
+                {scanError && !result && (
+                    <Animated.View entering={FadeIn.duration(400)} style={styles.errorCard}>
+                        <Ionicons name="cloud-offline-outline" size={24} color={colors.coral[400]} />
+                        <Text style={styles.errorText}>{scanError}</Text>
+                        <TouchableOpacity
+                            style={styles.retryBtn}
+                            onPress={() => lastScannedCode && lookupProduct(lastScannedCode)}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="refresh" size={16} color={colors.obsidian[900]} />
+                            <Text style={styles.retryBtnText}>Retry</Text>
+                        </TouchableOpacity>
+                    </Animated.View>
+                )}
+
                 {/* Result */}
                 {result && (
                     <Animated.View entering={FadeIn.duration(500)} style={[styles.resultCard, { backgroundColor: statusConfig[result.status].bg }]}>
@@ -152,7 +175,7 @@ export default function HalalScannerScreen() {
                                     {statusConfig[result.status].label}
                                 </Text>
                                 <Text style={styles.resultProductName}>{result.productName}</Text>
-                                {result.brand && <Text style={styles.resultBrand}>{result.brand}</Text>}
+                                {result.brand ? <Text style={styles.resultBrand}>{result.brand}</Text> : null}
                             </View>
                         </View>
 
@@ -170,7 +193,7 @@ export default function HalalScannerScreen() {
                         )}
 
                         <Text style={styles.disclaimer}>
-                            ⚠️ For guidance only. Always verify with your local halal certification authority.
+                            For guidance only. Always verify with your local halal certification authority.
                         </Text>
                     </Animated.View>
                 )}
@@ -237,6 +260,37 @@ const styles = StyleSheet.create({
     disclaimer: {
         fontSize: typography.fontSize.xs, color: colors.text.muted,
         marginTop: spacing.md, lineHeight: 16,
+    },
+
+    errorCard: {
+        alignItems: 'center',
+        backgroundColor: colors.coral[500] + '10',
+        borderRadius: 16,
+        padding: spacing.xl,
+        borderWidth: 1,
+        borderColor: colors.coral[500] + '25',
+        marginBottom: spacing.lg,
+        gap: spacing.md,
+    },
+    errorText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        lineHeight: 20,
+    },
+    retryBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        backgroundColor: colors.gold[500],
+        paddingHorizontal: spacing.xl,
+        paddingVertical: spacing.sm + 2,
+        borderRadius: 12,
+    },
+    retryBtnText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '700',
+        color: colors.obsidian[900],
     },
 
     tipCard: {

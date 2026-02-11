@@ -119,7 +119,70 @@ async function main() {
         console.log('✅ Miraj Collective community seeded:', mirajCommunity.slug);
     }
 
+    // ============================================
+    // Seed: Apple Reviewer Test Account
+    // ============================================
+    const reviewerEmail = 'reviewer@0gravity.ai';
+    const reviewerPassword = 'Review0G2026!';
+    const reviewerUsername = 'applereview';
+
+    const existingReviewer = await prisma.user.findUnique({
+        where: { email: reviewerEmail },
+    });
+
+    let reviewer;
+    if (existingReviewer) {
+        reviewer = existingReviewer;
+        console.log('✅ Apple reviewer account already exists:', reviewerEmail);
+    } else {
+        const reviewerHash = await bcrypt.hash(reviewerPassword, 12);
+        reviewer = await prisma.user.create({
+            data: {
+                email: reviewerEmail,
+                username: reviewerUsername,
+                displayName: 'Alex Reviewer',
+                passwordHash: reviewerHash,
+                role: 'USER',
+                isVerified: true,
+                bio: 'Exploring the 0G community platform. Privacy-first social networking.',
+                communityOptIn: true,
+            },
+        });
+        console.log('✅ Apple reviewer account created:', reviewerEmail);
+    }
+
+    // Create sample posts for the reviewer to see in the feed
+    if (reviewer) {
+        const existingPosts = await prisma.post.count({ where: { userId: reviewer.id } });
+        if (existingPosts === 0) {
+            await prisma.post.createMany({
+                data: [
+                    {
+                        userId: reviewer.id,
+                        content: 'Just joined 0G! Excited to explore a social platform that actually respects privacy. No ads, no tracking, no algorithms deciding what I see.',
+                        isPublic: true,
+                    },
+                    {
+                        userId: reviewer.id,
+                        content: 'The community features here are impressive. Private groups with real encryption, customizable feeds, and the ability to control your own algorithm. This is what social media should be.',
+                        isPublic: true,
+                    },
+                    {
+                        userId: reviewer.id,
+                        content: 'Tested the games module with friends today — trivia night was a blast! Great way to connect without leaving the app.',
+                        isPublic: true,
+                    },
+                ],
+            });
+            console.log('✅ Sample posts created for reviewer account');
+        }
+    }
+
     console.log('\n🎉 Seed completed!\n');
+    console.log('📋 Apple Reviewer Credentials:');
+    console.log(`   Email: ${reviewerEmail}`);
+    console.log(`   Password: ${reviewerPassword}`);
+    console.log('   (Provide these in App Store Connect review notes)\n');
 }
 
 main()

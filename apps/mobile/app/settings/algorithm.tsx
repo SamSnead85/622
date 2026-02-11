@@ -9,7 +9,6 @@ import {
     Switch,
     Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -59,6 +58,12 @@ function getSliderLabel(value: number, type: 'recency' | 'engagement' | 'followi
     return '';
 }
 
+function getSliderEmoji(value: number, type: 'recency' | 'engagement' | 'following'): string {
+    if (type === 'recency') return value >= 60 ? '🕐' : '🔥';
+    if (type === 'engagement') return value >= 60 ? '📈' : '💎';
+    return value >= 60 ? '👥' : '🔍';
+}
+
 const SLIDER_HELP: Record<string, { title: string; message: string }> = {
     recency: {
         title: 'Recency',
@@ -94,12 +99,22 @@ function SliderControl({
         Math.abs(step - value) < Math.abs(steps[closest]! - value) ? i : closest, 0);
 
     const helpInfo = SLIDER_HELP[type];
+    const isDefault = value === DEFAULTS[type === 'recency' ? 'recencyWeight' : type === 'engagement' ? 'engagementWeight' : 'followingRatio'];
 
     return (
         <View style={styles.sliderCard}>
             <View style={styles.sliderHeader}>
-                <Ionicons name={icon} size={18} color={colors.gold[400]} />
-                <Text style={styles.sliderLabel}>{label}</Text>
+                <View style={styles.sliderIconWrap}>
+                    <Ionicons name={icon} size={18} color={colors.gold[400]} />
+                </View>
+                <View style={styles.sliderHeaderText}>
+                    <Text style={styles.sliderLabel}>{label}</Text>
+                    {!isDefault && (
+                        <View style={styles.modifiedBadge}>
+                            <Text style={styles.modifiedBadgeText}>Modified</Text>
+                        </View>
+                    )}
+                </View>
                 {helpInfo && (
                     <TouchableOpacity
                         onPress={() => Alert.alert(helpInfo.title, helpInfo.message)}
@@ -129,13 +144,16 @@ function SliderControl({
                     </TouchableOpacity>
                 ))}
             </View>
-            <Text style={styles.sliderValue}>{getSliderLabel(value, type)}</Text>
+            <View style={styles.sliderValueRow}>
+                <Text style={styles.sliderEmoji}>{getSliderEmoji(value, type)}</Text>
+                <Text style={styles.sliderValue}>{getSliderLabel(value, type)}</Text>
+                <Text style={styles.sliderPercent}>{value}%</Text>
+            </View>
         </View>
     );
 }
 
 export default function AlgorithmMixerScreen() {
-    const router = useRouter();
     const insets = useSafeAreaInsets();
     const [prefs, setPrefs] = useState<FeedPreferences>(DEFAULTS);
     const [loading, setLoading] = useState(true);
@@ -164,7 +182,7 @@ export default function AlgorithmMixerScreen() {
         }
     };
 
-    const updatePref = useCallback((key: keyof FeedPreferences, value: any) => {
+    const updatePref = useCallback((key: keyof FeedPreferences, value: number | Record<string, number>) => {
         setPrefs((prev) => ({ ...prev, [key]: value }));
         setHasChanges(true);
     }, []);
@@ -200,15 +218,29 @@ export default function AlgorithmMixerScreen() {
 
     const handleReset = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setPrefs(DEFAULTS);
-        setHasChanges(true);
+        Alert.alert(
+            'Reset to Default',
+            'This will restore all algorithm settings to their original values. Your feed will return to the default balanced mix.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Reset',
+                    style: 'destructive',
+                    onPress: () => {
+                        setPrefs(DEFAULTS);
+                        setHasChanges(true);
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    },
+                },
+            ]
+        );
     };
 
     const contentTypes = [
-        { key: 'VIDEO', icon: 'videocam' as const, label: 'Videos', help: 'Controls whether video posts appear in your feed. Disable to hide all video content.' },
-        { key: 'IMAGE', icon: 'image' as const, label: 'Images', help: 'Controls whether image posts appear in your feed. Disable to hide photo-based content.' },
-        { key: 'TEXT', icon: 'document-text' as const, label: 'Text Posts', help: 'Controls whether text-only posts appear in your feed. Disable to focus on media content.' },
-        { key: 'AUDIO', icon: 'musical-note' as const, label: 'Audio', help: 'Controls whether audio posts appear in your feed. Disable to hide audio-based content.' },
+        { key: 'VIDEO', icon: 'videocam' as const, label: 'Videos', description: 'Video posts and reels', help: 'Controls whether video posts appear in your feed. Disable to hide all video content.' },
+        { key: 'IMAGE', icon: 'image' as const, label: 'Images', description: 'Photos and graphics', help: 'Controls whether image posts appear in your feed. Disable to hide photo-based content.' },
+        { key: 'TEXT', icon: 'document-text' as const, label: 'Text Posts', description: 'Written posts and threads', help: 'Controls whether text-only posts appear in your feed. Disable to focus on media content.' },
+        { key: 'AUDIO', icon: 'musical-note' as const, label: 'Audio', description: 'Music and voice notes', help: 'Controls whether audio posts appear in your feed. Disable to hide audio-based content.' },
     ];
 
     if (loading) {
@@ -227,7 +259,13 @@ export default function AlgorithmMixerScreen() {
             <ScreenHeader
                 title="Your Algorithm"
                 rightElement={
-                    <TouchableOpacity onPress={handleReset} accessibilityLabel="Reset algorithm settings" accessibilityRole="button">
+                    <TouchableOpacity
+                        onPress={handleReset}
+                        style={styles.resetBtnWrap}
+                        accessibilityLabel="Reset algorithm settings to default"
+                        accessibilityRole="button"
+                    >
+                        <Ionicons name="refresh-outline" size={14} color={colors.text.muted} />
                         <Text style={styles.resetBtn}>Reset</Text>
                     </TouchableOpacity>
                 }
@@ -246,7 +284,9 @@ export default function AlgorithmMixerScreen() {
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                     />
-                    <Ionicons name="options" size={24} color={colors.gold[400]} />
+                    <View style={styles.heroIconWrap}>
+                        <Ionicons name="options" size={24} color={colors.gold[400]} />
+                    </View>
                     <Text style={styles.heroTitle}>You control your feed</Text>
                     <Text style={styles.heroText}>
                         Unlike other apps, you decide exactly how your feed works. No hidden algorithms. Adjust the sliders below and save.
@@ -289,28 +329,29 @@ export default function AlgorithmMixerScreen() {
 
                 {/* Content Types */}
                 <Animated.View entering={FadeInDown.duration(400).delay(400)}>
-                    <Text style={styles.sectionTitle}>Content Types</Text>
+                    <View style={styles.sectionHeader}>
+                        <Ionicons name="apps-outline" size={14} color={colors.gold[500]} />
+                        <Text style={styles.sectionTitle}>Content Types</Text>
+                    </View>
                     <Text style={styles.sectionDesc}>Choose what types of content appear in your feed</Text>
                     <View style={styles.contentTypesGrid}>
                         {contentTypes.map((ct) => {
                             const isActive = (prefs.contentTypes[ct.key] ?? 1) > 0;
                             return (
-                                <TouchableOpacity
-                                    key={ct.key}
-                                    style={[styles.contentTypeCard, isActive && styles.contentTypeCardActive]}
-                                    onPress={() => toggleContentType(ct.key)}
-                                    activeOpacity={0.7}
-                                    accessibilityLabel={`Toggle ${ct.label.toLowerCase()} content`}
-                                    accessibilityRole="button"
-                                >
-                                    <Ionicons
-                                        name={ct.icon}
-                                        size={22}
-                                        color={isActive ? colors.gold[400] : colors.text.muted}
-                                    />
-                                    <Text style={[styles.contentTypeLabel, isActive && styles.contentTypeLabelActive]}>
-                                        {ct.label}
-                                    </Text>
+                                <View key={ct.key} style={[styles.contentTypeCard, isActive && styles.contentTypeCardActive]}>
+                                    <View style={[styles.contentTypeIcon, isActive && styles.contentTypeIconActive]}>
+                                        <Ionicons
+                                            name={ct.icon}
+                                            size={20}
+                                            color={isActive ? colors.gold[400] : colors.text.muted}
+                                        />
+                                    </View>
+                                    <View style={styles.contentTypeInfo}>
+                                        <Text style={[styles.contentTypeLabel, isActive && styles.contentTypeLabelActive]}>
+                                            {ct.label}
+                                        </Text>
+                                        <Text style={styles.contentTypeDesc}>{ct.description}</Text>
+                                    </View>
                                     <TouchableOpacity
                                         onPress={() => Alert.alert(ct.label, ct.help)}
                                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -319,17 +360,41 @@ export default function AlgorithmMixerScreen() {
                                     >
                                         <Ionicons name="help-circle-outline" size={16} color={colors.text.muted} />
                                     </TouchableOpacity>
-                                    <View style={[styles.contentTypeToggle, isActive && styles.contentTypeToggleActive]}>
-                                        <View style={[styles.contentTypeToggleDot, isActive && styles.contentTypeToggleDotActive]} />
-                                    </View>
-                                </TouchableOpacity>
+                                    <Switch
+                                        value={isActive}
+                                        onValueChange={() => toggleContentType(ct.key)}
+                                        trackColor={{ false: colors.obsidian[600], true: colors.gold[500] + '60' }}
+                                        thumbColor={isActive ? colors.gold[500] : colors.text.muted}
+                                        accessibilityLabel={`Toggle ${ct.label.toLowerCase()} content`}
+                                    />
+                                </View>
                             );
                         })}
                     </View>
                 </Animated.View>
 
+                {/* Reset to Default Card */}
+                <Animated.View entering={FadeInDown.duration(400).delay(500)}>
+                    <TouchableOpacity
+                        style={styles.resetCard}
+                        onPress={handleReset}
+                        activeOpacity={0.7}
+                        accessibilityLabel="Reset all settings to default"
+                        accessibilityRole="button"
+                    >
+                        <View style={styles.resetCardIcon}>
+                            <Ionicons name="refresh-outline" size={20} color={colors.text.muted} />
+                        </View>
+                        <View style={styles.resetCardContent}>
+                            <Text style={styles.resetCardLabel}>Reset to Default</Text>
+                            <Text style={styles.resetCardDesc}>Restore all algorithm settings to their original values</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+                    </TouchableOpacity>
+                </Animated.View>
+
                 {/* Transparency note */}
-                <Animated.View entering={FadeInDown.duration(400).delay(500)} style={styles.transparencyNote}>
+                <Animated.View entering={FadeInDown.duration(400).delay(600)} style={styles.transparencyNote}>
                     <Ionicons name="eye-outline" size={16} color={colors.emerald[500]} />
                     <Text style={styles.transparencyText}>
                         Full transparency: these settings directly control how your feed is ranked. No hidden factors.
@@ -357,7 +422,10 @@ export default function AlgorithmMixerScreen() {
                             {saving ? (
                                 <ActivityIndicator size="small" color={colors.obsidian[900]} />
                             ) : (
-                                <Text style={styles.saveBtnText}>Save Preferences</Text>
+                                <>
+                                    <Ionicons name="checkmark-circle" size={18} color={colors.obsidian[900]} />
+                                    <Text style={styles.saveBtnText}>Save Preferences</Text>
+                                </>
                             )}
                         </LinearGradient>
                     </TouchableOpacity>
@@ -369,10 +437,17 @@ export default function AlgorithmMixerScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
+    scroll: { flex: 1 },
+
+    // Reset button
+    resetBtnWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
     resetBtn: {
         fontSize: typography.fontSize.sm, color: colors.text.muted, fontWeight: '600',
     },
-    scroll: { flex: 1 },
 
     // Hero
     heroCard: {
@@ -381,10 +456,16 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: colors.gold[500] + '20',
         alignItems: 'center',
     },
+    heroIconWrap: {
+        width: 48, height: 48, borderRadius: 14,
+        backgroundColor: colors.surface.goldSubtle,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: spacing.sm,
+    },
     heroTitle: {
         fontSize: typography.fontSize.xl, fontWeight: '700',
         color: colors.text.primary, fontFamily: 'Inter-Bold',
-        marginTop: spacing.sm, marginBottom: spacing.xs,
+        marginBottom: spacing.xs,
     },
     heroText: {
         fontSize: typography.fontSize.sm, color: colors.text.secondary,
@@ -401,9 +482,27 @@ const styles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
         marginBottom: 4,
     },
+    sliderIconWrap: {
+        width: 32, height: 32, borderRadius: 8,
+        backgroundColor: colors.surface.goldSubtle,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    sliderHeaderText: {
+        flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    },
     sliderLabel: {
         fontSize: typography.fontSize.base, fontWeight: '600',
-        color: colors.text.primary, flex: 1,
+        color: colors.text.primary,
+    },
+    modifiedBadge: {
+        backgroundColor: colors.gold[500] + '20',
+        paddingHorizontal: 6, paddingVertical: 1,
+        borderRadius: 4,
+    },
+    modifiedBadgeText: {
+        fontSize: 9, fontWeight: '700',
+        color: colors.gold[400], textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     helpIcon: {
         width: 24, height: 24, borderRadius: 12,
@@ -412,6 +511,7 @@ const styles = StyleSheet.create({
     sliderDescription: {
         fontSize: typography.fontSize.xs, color: colors.text.muted,
         marginBottom: spacing.md, lineHeight: 16,
+        marginStart: 32 + spacing.sm,
     },
     sliderTrack: {
         flexDirection: 'row', alignItems: 'center',
@@ -434,21 +534,38 @@ const styles = StyleSheet.create({
     sliderDotActive: {
         backgroundColor: colors.gold[500], borderColor: colors.gold[400],
     },
+    sliderValueRow: {
+        flexDirection: 'row', alignItems: 'center',
+        justifyContent: 'center', gap: spacing.xs,
+    },
+    sliderEmoji: {
+        fontSize: 14,
+    },
     sliderValue: {
         fontSize: typography.fontSize.sm, color: colors.gold[400],
-        fontWeight: '600', textAlign: 'center',
+        fontWeight: '600',
+    },
+    sliderPercent: {
+        fontSize: typography.fontSize.xs, color: colors.text.muted,
+        fontWeight: '500',
     },
 
-    // Content Types
+    // Section header
+    sectionHeader: {
+        flexDirection: 'row', alignItems: 'center',
+        gap: 6, marginTop: spacing.lg, marginBottom: 4,
+    },
     sectionTitle: {
-        fontSize: typography.fontSize.lg, fontWeight: '700',
-        color: colors.text.primary, fontFamily: 'Inter-Bold',
-        marginTop: spacing.lg, marginBottom: 4,
+        fontSize: typography.fontSize.xs, fontWeight: '700',
+        color: colors.text.muted, textTransform: 'uppercase',
+        letterSpacing: 1.2,
     },
     sectionDesc: {
         fontSize: typography.fontSize.xs, color: colors.text.muted,
         marginBottom: spacing.md,
     },
+
+    // Content Types
     contentTypesGrid: {
         gap: spacing.sm,
     },
@@ -456,33 +573,57 @@ const styles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center',
         backgroundColor: colors.surface.glass, borderRadius: 14,
         padding: spacing.md, borderWidth: 1, borderColor: colors.border.subtle,
-        gap: spacing.md,
+        gap: spacing.sm,
     },
     contentTypeCardActive: {
         borderColor: colors.gold[500] + '40',
     },
+    contentTypeIcon: {
+        width: 36, height: 36, borderRadius: 10,
+        backgroundColor: colors.surface.glassHover,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    contentTypeIconActive: {
+        backgroundColor: colors.surface.goldSubtle,
+    },
+    contentTypeInfo: {
+        flex: 1,
+    },
     contentTypeLabel: {
-        flex: 1, fontSize: typography.fontSize.base,
-        color: colors.text.muted, fontWeight: '500',
+        fontSize: typography.fontSize.base,
+        color: colors.text.muted, fontWeight: '600',
     },
     contentTypeLabelActive: {
         color: colors.text.primary,
     },
-    contentTypeToggle: {
-        width: 40, height: 22, borderRadius: 11,
-        backgroundColor: colors.obsidian[600], padding: 2,
-        justifyContent: 'center',
+    contentTypeDesc: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted, marginTop: 1,
     },
-    contentTypeToggleActive: {
-        backgroundColor: colors.gold[500],
+
+    // Reset Card
+    resetCard: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: colors.surface.glass, borderRadius: 14,
+        padding: spacing.md, marginTop: spacing.xl,
+        borderWidth: 1, borderColor: colors.border.subtle,
+        gap: spacing.md,
     },
-    contentTypeToggleDot: {
-        width: 18, height: 18, borderRadius: 9,
-        backgroundColor: colors.obsidian[400],
+    resetCardIcon: {
+        width: 36, height: 36, borderRadius: 10,
+        backgroundColor: colors.surface.glassHover,
+        alignItems: 'center', justifyContent: 'center',
     },
-    contentTypeToggleDotActive: {
-        backgroundColor: colors.obsidian[900],
-        alignSelf: 'flex-end',
+    resetCardContent: {
+        flex: 1,
+    },
+    resetCardLabel: {
+        fontSize: typography.fontSize.base, fontWeight: '600',
+        color: colors.text.secondary,
+    },
+    resetCardDesc: {
+        fontSize: typography.fontSize.xs, color: colors.text.muted,
+        marginTop: 1,
     },
 
     // Transparency
@@ -508,8 +649,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3, shadowRadius: 16, elevation: 8,
     },
     saveBtnGradient: {
+        flexDirection: 'row',
         alignItems: 'center', justifyContent: 'center',
-        paddingVertical: 16,
+        paddingVertical: 16, gap: spacing.sm,
     },
     saveBtnText: {
         fontSize: typography.fontSize.lg, fontWeight: '600',

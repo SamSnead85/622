@@ -24,9 +24,17 @@
       "config": {
         "usesNonExemptEncryption": false
       },
+      "associatedDomains": [
+        "applinks:0gravity.ai",
+        "applinks:*.0gravity.ai"
+      ],
       "entitlements": {
         "com.apple.developer.applesignin": [
           "Default"
+        ],
+        "com.apple.developer.associated-domains": [
+          "applinks:0gravity.ai",
+          "applinks:*.0gravity.ai"
         ]
       },
       "infoPlist": {
@@ -35,6 +43,7 @@
         "NSMicrophoneUsageDescription": "Allow 0G to access your microphone to record videos and voice messages",
         "NSLocationWhenInUseUsageDescription": "Allow 0G to access your location for prayer times and Qibla direction",
         "NSFaceIDUsageDescription": "Allow 0G to use Face ID for quick and secure sign-in",
+        "NSUserNotificationsUsageDescription": "0G sends you notifications about messages, posts, and community updates",
         "ITSAppUsesNonExemptEncryption": false
       },
       "privacyManifests": {

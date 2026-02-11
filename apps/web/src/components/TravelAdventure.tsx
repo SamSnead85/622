@@ -882,12 +882,4 @@ export function AdventureList({
     );
 }
 
-// Export everything
-export default {
-    AdventureCard,
-    CreateAdventureWizard,
-    AdventureList,
-    useTravelAdventures,
-    DESTINATION_PRESETS,
-    RESPONSE_OPTIONS,
-};
+// All components and hooks are individually named-exported above.

@@ -20,6 +20,7 @@ import {
     Alert,
     RefreshControl,
     ActivityIndicator,
+    Animated as RNAnimated,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
@@ -44,6 +45,7 @@ import Animated, {
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
+import { timeAgo, formatCount } from '../../lib/utils';
 import { useAuthStore, mapApiPost } from '../../stores';
 import { ScreenHeader, Avatar, GlassCard, AnimatedLikeButton } from '../../components';
 import { showError } from '../../stores/toastStore';
@@ -92,23 +94,6 @@ interface PostDetail {
 // ============================================
 // Helpers
 // ============================================
-
-function timeAgo(dateStr: string) {
-    const now = Date.now();
-    const d = new Date(dateStr).getTime();
-    const seconds = Math.floor((now - d) / 1000);
-    if (seconds < 60) return 'just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-    return new Date(dateStr).toLocaleDateString();
-}
-
-function formatCount(n: number): string {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-    return String(n);
-}
 
 /** Nest flat comments into a tree by parentId */
 function nestComments(flat: Comment[]): Comment[] {
@@ -314,6 +299,7 @@ const CommentItem = memo(function CommentItem({
     postId,
     onLike,
     onReply,
+    isNew,
 }: {
     comment: Comment;
     index: number;
@@ -321,11 +307,25 @@ const CommentItem = memo(function CommentItem({
     postId: string;
     onLike: (id: string) => void;
     onReply: (parentId: string, authorName: string) => void;
+    isNew?: boolean;
 }) {
     const maxDepth = 3;
     const indent = Math.min(depth, maxDepth) * 28;
 
+    // Smooth fade-in for newly added comments
+    const fadeAnim = useRef(new RNAnimated.Value(isNew ? 0 : 1)).current;
+    useEffect(() => {
+        if (isNew) {
+            RNAnimated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 400,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [isNew, fadeAnim]);
+
     return (
+        <RNAnimated.View style={{ opacity: fadeAnim }}>
         <Animated.View
             entering={FadeInDown.duration(300).delay(Math.min(index * 60, 400))}
             style={{ marginStart: indent }}
@@ -419,6 +419,7 @@ const CommentItem = memo(function CommentItem({
                     />
                 ))}
         </Animated.View>
+        </RNAnimated.View>
     );
 });
 
@@ -433,6 +434,7 @@ export default function PostDetailScreen() {
     const user = useAuthStore((s) => s.user);
     const flatListRef = useRef<FlatList>(null);
     const inputRef = useRef<TextInput>(null);
+    const newCommentIds = useRef<Set<string>>(new Set());
 
     const [post, setPost] = useState<PostDetail | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
@@ -442,6 +444,7 @@ export default function PostDetailScreen() {
     const [commentText, setCommentText] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     // ============================================
     // Data Fetching
@@ -451,6 +454,7 @@ export default function PostDetailScreen() {
         async (refresh = false) => {
             if (!postId) return;
             if (refresh) setIsRefreshing(true);
+            setError(null);
             try {
                 const [postData, commentsData] = await Promise.all([
                     apiFetch<any>(API.post(postId)),
@@ -495,7 +499,9 @@ export default function PostDetailScreen() {
                 setNestedComments(nestComments(flat));
             } catch (e: any) {
                 if (!refresh) {
-                    Alert.alert('Error', e.message || 'Failed to load post');
+                    setError(e.message || 'Failed to load post');
+                } else {
+                    showError(e.message || 'Failed to refresh');
                 }
             } finally {
                 setIsLoading(false);
@@ -636,6 +642,7 @@ export default function PostDetailScreen() {
             parentId: replyTo?.id || null,
         };
 
+        newCommentIds.current.add(tempId);
         const updatedComments = [...comments, temp];
         setComments(updatedComments);
         setNestedComments(nestComments(updatedComments));
@@ -659,6 +666,8 @@ export default function PostDetailScreen() {
                 isLiked: raw.isLiked ?? false,
                 parentId: raw.parentId || temp.parentId,
             };
+            newCommentIds.current.delete(tempId);
+            newCommentIds.current.add(real.id);
             const finalComments = updatedComments.map((c) => (c.id === tempId ? real : c));
             setComments(finalComments);
             setNestedComments(nestComments(finalComments));
@@ -691,7 +700,47 @@ export default function PostDetailScreen() {
     }
 
     // ============================================
-    // Error State
+    // Error State — load failure with retry
+    // ============================================
+
+    if (error && !post) {
+        return (
+            <View style={[styles.container, styles.centered]}>
+                <LinearGradient
+                    colors={[colors.obsidian[900], colors.obsidian[800]]}
+                    style={StyleSheet.absoluteFill}
+                />
+                <ScreenHeader title="Post" />
+                <View style={styles.errorContainer}>
+                    <View style={styles.errorIconWrap}>
+                        <Ionicons
+                            name="cloud-offline-outline"
+                            size={48}
+                            color={colors.text.muted}
+                        />
+                    </View>
+                    <Text style={styles.errorText}>Something went wrong</Text>
+                    <Text style={styles.errorSubtext}>{error}</Text>
+                    <TouchableOpacity
+                        onPress={() => {
+                            setIsLoading(true);
+                            setError(null);
+                            loadData();
+                        }}
+                        style={styles.retryButton}
+                        accessibilityRole="button"
+                        accessibilityLabel="Tap to retry loading post"
+                    >
+                        <Ionicons name="refresh" size={18} color={colors.obsidian[900]} />
+                        <Text style={styles.retryButtonText}>Tap to retry</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
+
+    // ============================================
+    // Not Found State
     // ============================================
 
     if (!post) {
@@ -740,7 +789,7 @@ export default function PostDetailScreen() {
                         style={styles.authorRow}
                         onPress={() =>
                             post.author?.username &&
-                            router.push(`/profile/${post.author.username}`)
+                            router.push(`/profile/${post.author?.username}`)
                         }
                         activeOpacity={0.7}
                         accessibilityRole="button"
@@ -770,7 +819,7 @@ export default function PostDetailScreen() {
                             <View style={styles.postMetaRow}>
                                 {post.author?.username ? (
                                     <Text style={styles.authorHandle}>
-                                        @{post.author.username}
+                                        @{post.author?.username}
                                     </Text>
                                 ) : null}
                                 <Text style={styles.metaDot}>·</Text>
@@ -903,6 +952,25 @@ export default function PostDetailScreen() {
     ), [post, comments, handleLike, handleSave, handleShare, router]);
 
     // ============================================
+    // Memoized comment renderer
+    // ============================================
+
+    const renderComment = useCallback(
+        ({ item, index }: { item: Comment; index: number }) => (
+            <CommentItem
+                comment={item}
+                index={index}
+                depth={0}
+                postId={postId!}
+                onLike={handleCommentLike}
+                onReply={handleReply}
+                isNew={newCommentIds.current.has(item.id)}
+            />
+        ),
+        [postId, handleCommentLike, handleReply]
+    );
+
+    // ============================================
     // Render
     // ============================================
 
@@ -952,16 +1020,7 @@ export default function PostDetailScreen() {
             <FlatList
                 ref={flatListRef}
                 data={nestedComments}
-                renderItem={({ item, index }) => (
-                    <CommentItem
-                        comment={item}
-                        index={index}
-                        depth={0}
-                        postId={postId!}
-                        onLike={handleCommentLike}
-                        onReply={handleReply}
-                    />
-                )}
+                renderItem={renderComment}
                 keyExtractor={(item) => item.id}
                 ListHeaderComponent={renderHeader}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}
@@ -1098,6 +1157,20 @@ const styles = StyleSheet.create({
     backLinkText: {
         fontSize: typography.fontSize.base,
         color: colors.gold[500],
+        fontWeight: '600',
+    },
+    retryButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.lg,
+        backgroundColor: colors.gold[500],
+        borderRadius: 20,
+    },
+    retryButtonText: {
+        fontSize: typography.fontSize.base,
+        color: colors.obsidian[900],
         fontWeight: '600',
     },
 

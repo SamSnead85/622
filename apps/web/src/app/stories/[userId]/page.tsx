@@ -97,7 +97,8 @@ export default function StoriesViewerPage() {
         };
 
         fetchStories();
-    }, [userId, API_URL]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userId]);
 
     const currentUserStories = usersWithStories[currentUserIndex];
     const currentStory = currentUserStories?.stories[currentStoryIndex];
@@ -115,7 +116,8 @@ export default function StoriesViewerPage() {
         }
         // Reset like state when story changes
         setIsLiked(false);
-    }, [currentStory, isAuthenticated, API_URL]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentStory, isAuthenticated]);
 
     // Handle like on current story (creates a like via posts API since moments are posts)
     const handleLikeStory = async () => {

@@ -15,12 +15,13 @@ import Animated, {
     FadeInDown,
     FadeIn,
     FadeOut,
+    ZoomIn,
     useSharedValue,
     useAnimatedStyle,
     withTiming,
     withSpring,
     withSequence,
-    runOnJS,
+    withDelay,
     useAnimatedProps,
     Easing,
 } from 'react-native-reanimated';
@@ -119,15 +120,66 @@ function TimerRing({ timeLeft }: { timeLeft: number }) {
 // ============================================
 
 function ScorePopup({ points, visible }: { points: number; visible: boolean }) {
+    const popScale = useSharedValue(0.5);
+    const popOpacity = useSharedValue(0);
+    const popY = useSharedValue(0);
+
+    useEffect(() => {
+        if (visible && points > 0) {
+            popScale.value = 0.5;
+            popOpacity.value = 0;
+            popY.value = 0;
+
+            popScale.value = withSequence(
+                withSpring(1.3, { damping: 8, stiffness: 400 }),
+                withSpring(1, { damping: 12 }),
+            );
+            popOpacity.value = withSequence(
+                withTiming(1, { duration: 150 }),
+                withDelay(800, withTiming(0, { duration: 400 })),
+            );
+            popY.value = withTiming(-30, { duration: 1400, easing: Easing.out(Easing.ease) });
+        }
+    }, [visible, points, popScale, popOpacity, popY]);
+
     if (!visible || points === 0) return null;
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: popScale.value }, { translateY: popY.value }],
+        opacity: popOpacity.value,
+    }));
+
+    return (
+        <Animated.View style={[styles.scorePopup, animatedStyle]}>
+            <LinearGradient
+                colors={[colors.gold[500], colors.gold[400]]}
+                style={styles.scorePopupGradient}
+            >
+                <Text style={styles.scorePopupText}>+{points}</Text>
+            </LinearGradient>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Celebration Flash (correct answer)
+// ============================================
+
+function CelebrationFlash({ visible }: { visible: boolean }) {
+    if (!visible) return null;
 
     return (
         <Animated.View
-            entering={FadeInDown.duration(200).springify()}
-            exiting={FadeOut.duration(400)}
-            style={styles.scorePopup}
+            entering={FadeIn.duration(100)}
+            exiting={FadeOut.duration(600)}
+            style={styles.celebrationFlash}
+            pointerEvents="none"
         >
-            <Text style={styles.scorePopupText}>+{points}</Text>
+            <View style={styles.celebrationInner}>
+                <Animated.View entering={ZoomIn.duration(300).springify()}>
+                    <Ionicons name="checkmark-circle" size={64} color={colors.emerald[400]} />
+                </Animated.View>
+            </View>
         </Animated.View>
     );
 }
@@ -274,9 +326,12 @@ export default function TriviaScreen() {
     const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
     const [scorePopup, setScorePopup] = useState<{ points: number; visible: boolean }>({ points: 0, visible: false });
     const [questionKey, setQuestionKey] = useState(0); // for re-triggering entrance animations
+    const [showCelebration, setShowCelebration] = useState(false);
+    const [streak, setStreak] = useState(0);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const celebrationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const previousScore = useRef(0);
     const hasAnsweredRef = useRef(false);
 
@@ -329,10 +384,16 @@ export default function TriviaScreen() {
     // ============================================
 
     useEffect(() => {
-        if (myScore > previousScore.current && showResult) {
+        if (showResult && myScore > previousScore.current) {
             const gained = myScore - previousScore.current;
             setScorePopup({ points: gained, visible: true });
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+            // Show celebration flash
+            setShowCelebration(true);
+            setStreak((s) => s + 1);
+            if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
+            celebrationTimeoutRef.current = setTimeout(() => setShowCelebration(false), 800);
 
             timeoutRef.current = setTimeout(() => {
                 setScorePopup({ points: 0, visible: false });
@@ -340,10 +401,27 @@ export default function TriviaScreen() {
 
             return () => {
                 if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
             };
+        } else if (showResult && myScore === previousScore.current && hasAnswered) {
+            // Wrong answer — haptic feedback and reset streak
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            setStreak(0);
         }
         previousScore.current = myScore;
-    }, [myScore, showResult]);
+    }, [myScore, showResult, hasAnswered]);
+
+    // ============================================
+    // Cleanup all timers on unmount
+    // ============================================
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
+        };
+    }, []);
 
     // ============================================
     // Socket Listeners
@@ -359,6 +437,7 @@ export default function TriviaScreen() {
                 setHasAnswered(false);
                 setSelectedAnswer(null);
                 setShowResult(false);
+                setShowCelebration(false);
                 setTimeLeft(TIMER_DURATION);
                 setQuestionKey((k) => k + 1);
             }),
@@ -469,11 +548,19 @@ export default function TriviaScreen() {
                 {/* Timer */}
                 <TimerRing timeLeft={timeLeft} />
 
-                {/* Score */}
-                <View style={styles.scoreContainer}>
-                    <Ionicons name="star" size={14} color={colors.gold[500]} />
-                    <Text style={styles.scoreText}>{myScore}</Text>
-                    <ScorePopup points={scorePopup.points} visible={scorePopup.visible} />
+                {/* Score + Streak */}
+                <View style={styles.scoreStreakRow}>
+                    {streak >= 2 && (
+                        <Animated.View entering={ZoomIn.duration(200).springify()} style={styles.streakBadge}>
+                            <Ionicons name="flame" size={12} color={colors.coral[400]} />
+                            <Text style={styles.streakText}>{streak}</Text>
+                        </Animated.View>
+                    )}
+                    <View style={styles.scoreContainer}>
+                        <Ionicons name="star" size={14} color={colors.gold[500]} />
+                        <Text style={styles.scoreText}>{myScore}</Text>
+                        <ScorePopup points={scorePopup.points} visible={scorePopup.visible} />
+                    </View>
                 </View>
             </View>
 
@@ -522,6 +609,9 @@ export default function TriviaScreen() {
                     />
                 ))}
             </View>
+
+            {/* Celebration Flash */}
+            <CelebrationFlash visible={showCelebration} />
 
             {/* Status Bar */}
             <View style={[styles.statusBar, { paddingBottom: insets.bottom + spacing.sm }]}>
@@ -599,6 +689,28 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
         color: colors.text.primary,
+        fontFamily: 'Inter-Bold',
+    },
+    scoreStreakRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    streakBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+        backgroundColor: colors.coral[500] + '15',
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: colors.coral[500] + '30',
+    },
+    streakText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '700',
+        color: colors.coral[400],
         fontFamily: 'Inter-Bold',
     },
     scoreContainer: {
@@ -752,14 +864,33 @@ const styles = StyleSheet.create({
     // Score Popup
     scorePopup: {
         position: 'absolute',
-        top: -24,
-        right: 0,
+        top: -28,
+        right: -4,
+        zIndex: 50,
+    },
+    scorePopupGradient: {
+        paddingHorizontal: spacing.sm + 2,
+        paddingVertical: 3,
+        borderRadius: 12,
     },
     scorePopupText: {
-        fontSize: typography.fontSize.lg,
+        fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: colors.gold[400],
+        color: colors.obsidian[900],
         fontFamily: 'Inter-Bold',
+    },
+
+    // Celebration Flash
+    celebrationFlash: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: colors.emerald[500] + '08',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 50,
+    },
+    celebrationInner: {
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     // Status Bar

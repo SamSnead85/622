@@ -9,8 +9,8 @@ import {
     Linking,
     TextInput,
     ActivityIndicator,
-    KeyboardAvoidingView,
     Platform,
+    Switch,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -40,11 +40,15 @@ interface SettingRowProps {
     onPress?: () => void;
     rightElement?: React.ReactNode;
     danger?: boolean;
+    toggle?: { value: boolean; onValueChange: (v: boolean) => void };
 }
 
-function SettingRow({ icon, label, description, onPress, rightElement, danger }: SettingRowProps) {
+function SettingRow({ icon, label, description, onPress, rightElement, danger, toggle }: SettingRowProps) {
     const handlePress = () => {
-        if (onPress) {
+        if (toggle) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            toggle.onValueChange(!toggle.value);
+        } else if (onPress) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onPress();
         }
@@ -54,10 +58,11 @@ function SettingRow({ icon, label, description, onPress, rightElement, danger }:
         <TouchableOpacity
             style={[styles.settingRow, danger && styles.settingRowDanger]}
             onPress={handlePress}
-            activeOpacity={onPress ? 0.7 : 1}
-            disabled={!onPress}
-            accessibilityRole="button"
+            activeOpacity={onPress || toggle ? 0.7 : 1}
+            disabled={!onPress && !toggle}
+            accessibilityRole={toggle ? 'switch' : 'button'}
             accessibilityLabel={`${label}${description ? `, ${description}` : ''}`}
+            accessibilityState={toggle ? { checked: toggle.value } : undefined}
         >
             <View style={[styles.settingIcon, danger && styles.settingIconDanger]}>
                 <Ionicons
@@ -70,7 +75,17 @@ function SettingRow({ icon, label, description, onPress, rightElement, danger }:
                 <Text style={[styles.settingLabel, danger && styles.settingLabelDanger]}>{label}</Text>
                 {description && <Text style={[styles.settingDescription, danger && styles.settingDescriptionDanger]}>{description}</Text>}
             </View>
-            {rightElement || (onPress ? (
+            {toggle ? (
+                <Switch
+                    value={toggle.value}
+                    onValueChange={(val) => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        toggle.onValueChange(val);
+                    }}
+                    trackColor={{ false: colors.obsidian[600], true: colors.gold[500] + '60' }}
+                    thumbColor={toggle.value ? colors.gold[500] : colors.text.muted}
+                />
+            ) : rightElement || (onPress ? (
                 <Ionicons name="chevron-forward" size={16} color={danger ? colors.coral[400] : colors.text.muted} />
             ) : null)}
         </TouchableOpacity>
@@ -525,31 +540,38 @@ export default function SettingsScreen() {
                     <SectionHeader title="Privacy" icon="shield-half-outline" />
                     <View style={styles.card}>
                         <SettingRow
-                            icon="shield-outline"
-                            label="Privacy Mode"
-                            description={user?.communityOptIn ? 'Community member — visible to others' : 'Private — only your groups can see you'}
-                            rightElement={
-                                <View style={[styles.badge, user?.communityOptIn ? styles.badgeCommunity : styles.badgePrivate]}>
-                                    <Text style={styles.badgeText}>{user?.communityOptIn ? 'Public' : 'Private'}</Text>
-                                </View>
-                            }
+                            icon={user?.communityOptIn ? 'globe-outline' : 'lock-closed-outline'}
+                            label="Community Visibility"
+                            description={user?.communityOptIn ? 'Visible on community feed — others can discover you' : 'Private mode — only your groups can see you'}
+                            toggle={{
+                                value: !!user?.communityOptIn,
+                                onValueChange: (val) => {
+                                    if (val) {
+                                        handleJoinCommunity();
+                                    } else {
+                                        handleLeaveCommunity();
+                                    }
+                                },
+                            }}
                         />
-                        {user?.communityOptIn ? (
-                            <SettingRow
-                                icon="eye-off-outline"
-                                label="Switch to Private Mode"
-                                description="Leave the community feed and become invisible to others. Your private groups stay safe. You can rejoin anytime."
-                                onPress={handleLeaveCommunity}
-                                danger
+                        <View style={styles.privacyStatusRow}>
+                            <Ionicons
+                                name={user?.communityOptIn ? 'eye-outline' : 'eye-off-outline'}
+                                size={14}
+                                color={user?.communityOptIn ? colors.gold[400] : colors.emerald[500]}
                             />
-                        ) : (
-                            <SettingRow
-                                icon="people-outline"
-                                label="Join the Larger Community"
-                                description="See the community feed and become discoverable. You can switch back to private anytime from this settings page."
-                                onPress={handleJoinCommunity}
-                            />
-                        )}
+                            <Text style={styles.privacyStatusText}>
+                                {user?.communityOptIn
+                                    ? 'Your profile is discoverable. Switch off to go private anytime.'
+                                    : 'You are invisible to others outside your groups.'}
+                            </Text>
+                        </View>
+                        <SettingRow
+                            icon="shield-checkmark-outline"
+                            label="Privacy Dashboard"
+                            description="See what data is stored and your privacy score"
+                            onPress={() => router.push('/settings/privacy-dashboard' as any)}
+                        />
                     </View>
                 </Animated.View>}
 
@@ -642,14 +664,8 @@ export default function SettingsScreen() {
 
                 {/* ─── Privacy & Data ─────────────────────────────── */}
                 {isSectionVisible('privacydata') && <Animated.View entering={stagger(7)} style={styles.section}>
-                    <SectionHeader title="Privacy & Data" icon="lock-closed-outline" />
+                    <SectionHeader title="Data & Storage" icon="server-outline" />
                     <View style={styles.card}>
-                        <SettingRow
-                            icon="shield-checkmark-outline"
-                            label="Privacy Dashboard"
-                            description="See what data is stored and who can see you"
-                            onPress={() => router.push('/settings/privacy-dashboard' as any)}
-                        />
                         <SettingRow
                             icon="download-outline"
                             label="Export Your Data"
@@ -664,10 +680,11 @@ export default function SettingsScreen() {
                                             text: 'Request Export',
                                             onPress: async () => {
                                                 try {
-                                                    await apiFetch('/api/v1/account/export', { method: 'POST' });
+                                                    await apiFetch(API.accountExport, { method: 'POST' });
                                                     Alert.alert(t('settings.exportRequested'), 'You\'ll receive an email when your data export is ready.');
                                                 } catch {
                                                     Alert.alert('Error', 'Failed to request data export. Please try again.');
+                                                    showError('Could not request data export');
                                                 }
                                             },
                                         },
@@ -676,9 +693,15 @@ export default function SettingsScreen() {
                             }}
                         />
                         <SettingRow
-                            icon="shield-checkmark-outline"
-                            label="Your data is encrypted and never sold"
-                            description="We don't monetize your personal data"
+                            icon="lock-closed-outline"
+                            label="Encryption"
+                            description="Your data is encrypted with AES-256 and never sold"
+                            rightElement={
+                                <View style={styles.encryptedBadge}>
+                                    <Ionicons name="checkmark-circle" size={14} color={colors.emerald[500]} />
+                                    <Text style={styles.encryptedBadgeText}>Active</Text>
+                                </View>
+                            }
                         />
                     </View>
                 </Animated.View>}
@@ -716,6 +739,14 @@ export default function SettingsScreen() {
                             danger
                         />
                         <View style={styles.dangerDivider} />
+                        <View style={styles.dangerBanner}>
+                            <View style={styles.dangerBannerIcon}>
+                                <Ionicons name="alert-circle" size={20} color={colors.coral[500]} />
+                            </View>
+                            <Text style={styles.dangerBannerText}>
+                                Deleting your account is permanent. All your posts, comments, and data will be removed forever.
+                            </Text>
+                        </View>
                         <SettingRow
                             icon="trash-outline"
                             label="Delete Account"
@@ -947,22 +978,38 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
 
-    // ─── Badges ──────────────────────────────────
-    badge: {
+    // ─── Privacy Status ─────────────────────────────
+    privacyStatusRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        backgroundColor: colors.surface.glassHover,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.subtle,
+        gap: spacing.sm,
+    },
+    privacyStatusText: {
+        flex: 1,
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        lineHeight: 16,
+    },
+
+    // ─── Encrypted Badge ────────────────────────────
+    encryptedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: colors.emerald[500] + '14',
         paddingHorizontal: spacing.sm,
         paddingVertical: 3,
         borderRadius: 8,
     },
-    badgeCommunity: {
-        backgroundColor: colors.surface.azureSubtle,
-    },
-    badgePrivate: {
-        backgroundColor: colors.surface.goldLight,
-    },
-    badgeText: {
+    encryptedBadgeText: {
         fontSize: typography.fontSize.xs,
         fontWeight: '600',
-        color: colors.gold[400],
+        color: colors.emerald[500],
     },
 
     // ─── Profile Editor ──────────────────────────
@@ -1111,6 +1158,30 @@ const styles = StyleSheet.create({
     dangerDivider: {
         height: 1,
         backgroundColor: colors.coral[500] + '1A',
+    },
+    dangerBanner: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        padding: spacing.md,
+        backgroundColor: colors.coral[500] + '0F',
+        borderBottomWidth: 1,
+        borderBottomColor: colors.coral[500] + '1A',
+        gap: spacing.sm,
+    },
+    dangerBannerIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: colors.coral[500] + '1A',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 1,
+    },
+    dangerBannerText: {
+        flex: 1,
+        fontSize: typography.fontSize.xs,
+        color: colors.coral[300],
+        lineHeight: 17,
     },
 
     // ─── Footer ──────────────────────────────────

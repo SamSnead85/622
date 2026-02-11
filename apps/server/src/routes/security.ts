@@ -26,10 +26,10 @@ import {
     HIGH_RISK_COUNTRIES,
     getGeoFromIP,
 } from '../services/geoblock.js';
-import { PrismaClient, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
+import { prisma } from '../db/client.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Require SuperAdmin role
 const requireRole = (role: Role) => {

@@ -16,6 +16,7 @@ import {
     ScrollView,
     Alert,
     ActivityIndicator,
+    Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +33,8 @@ import Animated, {
     useSharedValue,
     useAnimatedStyle,
     withTiming,
+    withSequence,
+    withSpring,
     interpolateColor,
 } from 'react-native-reanimated';
 import { Button, colors, typography, spacing } from '@zerog/ui';
@@ -43,21 +46,70 @@ import { apiFetch, API } from '../../lib/api';
 WebBrowser.maybeCompleteAuthSession();
 
 // ============================================
+// User-friendly error message mapping
+// ============================================
+
+function friendlyError(raw: string): string {
+    const lower = raw.toLowerCase();
+    if (lower.includes('already') || lower.includes('exists') || lower.includes('duplicate') || lower.includes('in use')) {
+        return 'An account with this email already exists. Try logging in instead.';
+    }
+    if (lower.includes('too many') || lower.includes('rate limit') || lower.includes('throttl')) {
+        return 'Too many attempts. Please wait a moment and try again.';
+    }
+    if (lower.includes('network') || lower.includes('fetch') || lower.includes('timeout')) {
+        return 'Connection issue. Please check your internet and try again.';
+    }
+    if (lower.includes('password') && (lower.includes('weak') || lower.includes('short') || lower.includes('simple'))) {
+        return 'Please choose a stronger password with at least 8 characters.';
+    }
+    if (lower.includes('access code') || lower.includes('invite') || lower.includes('invitation')) {
+        return 'Invalid access code. Please check your invitation and try again.';
+    }
+    if (lower.includes('server') || lower.includes('500') || lower.includes('internal')) {
+        return 'Something went wrong on our end. Please try again in a moment.';
+    }
+    if (raw.length < 100 && !raw.includes('Error:') && !raw.includes('at ')) {
+        return raw;
+    }
+    return 'Sign up failed. Please try again.';
+}
+
+// ============================================
 // Password Strength
 // ============================================
 
-function getPasswordStrength(password: string): { level: number; label: string; color: string } {
+function getPasswordStrength(password: string): { level: number; label: string; color: string; tips: string[] } {
     let score = 0;
-    if (password.length >= 8) score++;
-    if (password.length >= 12) score++;
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
-    if (/\d/.test(password)) score++;
-    if (/[^a-zA-Z0-9]/.test(password)) score++;
+    const tips: string[] = [];
 
-    if (score <= 1) return { level: 1, label: 'Weak', color: colors.coral[500] };
-    if (score <= 2) return { level: 2, label: 'Fair', color: colors.amber[500] };
-    if (score <= 3) return { level: 3, label: 'Good', color: colors.gold[500] };
-    return { level: 4, label: 'Strong', color: colors.emerald[500] };
+    if (password.length >= 8) {
+        score++;
+    } else {
+        tips.push('At least 8 characters');
+    }
+    if (password.length >= 12) score++;
+
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) {
+        score++;
+    } else {
+        tips.push('Mix uppercase and lowercase');
+    }
+    if (/\d/.test(password)) {
+        score++;
+    } else {
+        tips.push('Add a number');
+    }
+    if (/[^a-zA-Z0-9]/.test(password)) {
+        score++;
+    } else {
+        tips.push('Add a special character');
+    }
+
+    if (score <= 1) return { level: 1, label: 'Weak', color: colors.coral[500], tips };
+    if (score <= 2) return { level: 2, label: 'Fair', color: colors.amber[500], tips };
+    if (score <= 3) return { level: 3, label: 'Good', color: colors.gold[500], tips };
+    return { level: 4, label: 'Strong', color: colors.emerald[500], tips: [] };
 }
 
 // ============================================
@@ -81,16 +133,31 @@ interface AnimatedFieldProps {
     inputRef?: React.RefObject<TextInput>;
     delay?: number;
     icon?: keyof typeof Ionicons.glyphMap;
+    rightElement?: React.ReactNode;
 }
 
 function AnimatedField({
     label, placeholder, value, onChangeText, error, hint, secureTextEntry,
     keyboardType = 'default', autoCapitalize = 'none', autoComplete = 'off',
     autoCorrect = false, returnKeyType = 'next', onSubmitEditing,
-    inputRef, delay = 0, icon,
+    inputRef, delay = 0, icon, rightElement,
 }: AnimatedFieldProps) {
     const [isSecure, setIsSecure] = useState(secureTextEntry ?? false);
     const isFocused = useSharedValue(0);
+    const shakeX = useSharedValue(0);
+
+    // Shake animation when error appears
+    useEffect(() => {
+        if (error) {
+            shakeX.value = withSequence(
+                withTiming(-8, { duration: 50 }),
+                withTiming(8, { duration: 50 }),
+                withTiming(-6, { duration: 50 }),
+                withTiming(6, { duration: 50 }),
+                withTiming(0, { duration: 50 }),
+            );
+        }
+    }, [error, shakeX]);
 
     const handleFocus = useCallback(() => {
         isFocused.value = withTiming(1, { duration: 200 });
@@ -107,16 +174,20 @@ function AnimatedField({
             : interpolateColor(isFocused.value, [0, 1], [colors.border.subtle, colors.gold[500] + '60']),
     }));
 
+    const animatedShakeStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: shakeX.value }],
+    }));
+
     return (
         <Animated.View
             entering={FadeInDown.delay(delay).duration(400).springify()}
-            style={styles.fieldGroup}
+            style={[styles.fieldGroup, animatedShakeStyle]}
         >
             <Text style={styles.fieldLabel}>{label}</Text>
             <Animated.View style={[styles.fieldInput, animatedBorderStyle]}>
                 {icon && (
                     <View style={styles.fieldIconContainer}>
-                        <Ionicons name={icon} size={18} color={colors.text.muted} />
+                        <Ionicons name={icon} size={18} color={error ? colors.coral[400] : colors.text.muted} />
                     </View>
                 )}
                 <TextInput
@@ -137,6 +208,7 @@ function AnimatedField({
                     onChangeText={onChangeText}
                     selectionColor={colors.gold[500]}
                     accessibilityLabel={label}
+                    accessibilityHint={error ? `Error: ${error}` : hint || undefined}
                 />
                 {secureTextEntry && (
                     <TouchableOpacity
@@ -147,6 +219,7 @@ function AnimatedField({
                         }}
                         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                         accessibilityLabel={isSecure ? 'Show password' : 'Hide password'}
+                        accessibilityRole="button"
                     >
                         <Ionicons
                             name={isSecure ? 'eye-off-outline' : 'eye-outline'}
@@ -155,9 +228,14 @@ function AnimatedField({
                         />
                     </TouchableOpacity>
                 )}
+                {rightElement}
             </Animated.View>
             {error && (
-                <Animated.Text entering={FadeIn.duration(200)} style={styles.fieldError}>
+                <Animated.Text
+                    entering={FadeIn.duration(200)}
+                    style={styles.fieldError}
+                    accessibilityLiveRegion="assertive"
+                >
                     {error}
                 </Animated.Text>
             )}
@@ -188,11 +266,15 @@ function SocialButton({
         <Animated.View entering={FadeInDown.delay(delay).duration(400).springify()}>
             <TouchableOpacity
                 style={[styles.socialButton, { backgroundColor: bgColor, borderColor }]}
-                onPress={onPress}
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onPress();
+                }}
                 activeOpacity={0.7}
                 disabled={loading}
                 accessibilityRole="button"
                 accessibilityLabel={label}
+                accessibilityState={{ busy: loading }}
             >
                 {loading ? (
                     <ActivityIndicator size="small" color={color} />
@@ -201,6 +283,49 @@ function SocialButton({
                 )}
                 <Text style={[styles.socialButtonText, { color }]}>{label}</Text>
             </TouchableOpacity>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// General Error Banner
+// ============================================
+
+function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+    return (
+        <Animated.View entering={FadeInDown.duration(300).springify()} style={styles.errorBanner}>
+            <Ionicons name="alert-circle" size={18} color={colors.coral[400]} />
+            <Text style={styles.errorBannerText}>{message}</Text>
+            <TouchableOpacity
+                onPress={onDismiss}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityLabel="Dismiss error"
+                accessibilityRole="button"
+            >
+                <Ionicons name="close" size={16} color={colors.coral[400]} />
+            </TouchableOpacity>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Password Match Indicator
+// ============================================
+
+function PasswordMatchIndicator({ password, confirmPassword }: { password: string; confirmPassword: string }) {
+    if (!confirmPassword) return null;
+
+    const matches = password === confirmPassword;
+    return (
+        <Animated.View entering={FadeIn.duration(200)} style={styles.matchIndicator}>
+            <Ionicons
+                name={matches ? 'checkmark-circle' : 'close-circle'}
+                size={14}
+                color={matches ? colors.emerald[500] : colors.coral[500]}
+            />
+            <Text style={[styles.matchText, { color: matches ? colors.emerald[500] : colors.coral[500] }]}>
+                {matches ? 'Passwords match' : 'Passwords do not match'}
+            </Text>
         </Animated.View>
     );
 }
@@ -223,6 +348,7 @@ export default function SignupScreen() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [generalError, setGeneralError] = useState<string | null>(null);
     const [googleLoading, setGoogleLoading] = useState(false);
     const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
 
@@ -232,6 +358,13 @@ export default function SignupScreen() {
     const emailRef = useRef<TextInput>(null);
     const passwordRef = useRef<TextInput>(null);
     const confirmRef = useRef<TextInput>(null);
+    const scrollRef = useRef<ScrollView>(null);
+
+    // Button scale animation
+    const buttonScale = useSharedValue(1);
+    const animatedButtonStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: buttonScale.value }],
+    }));
 
     // Username availability check
     useEffect(() => {
@@ -267,6 +400,7 @@ export default function SignupScreen() {
     const handleAppleSignup = useCallback(async () => {
         try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setGeneralError(null);
             const credential = await AppleAuthentication.signInAsync({
                 requestedScopes: [
                     AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -282,7 +416,7 @@ export default function SignupScreen() {
         } catch (error: any) {
             if (error.code !== 'ERR_REQUEST_CANCELED') {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                Alert.alert('Apple Sign Up', 'Sign up with Apple failed. Please try again.');
+                setGeneralError('Apple Sign Up failed. Please try again.');
             }
         }
     }, [appleLogin, router]);
@@ -291,13 +425,14 @@ export default function SignupScreen() {
     const handleGoogleSignup = useCallback(async () => {
         try {
             setGoogleLoading(true);
+            setGeneralError(null);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
             const redirectUri = AuthSession.makeRedirectUri({ preferLocalhost: false });
             const clientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 
             if (!clientId) {
-                Alert.alert('Google Sign Up', 'Google Sign In is being configured. Please use email or Apple for now.');
+                setGeneralError('Google Sign Up is being set up. Please use email or Apple for now.');
                 setGoogleLoading(false);
                 return;
             }
@@ -323,7 +458,7 @@ export default function SignupScreen() {
             }
         } catch {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Google Sign Up', 'Sign up with Google failed. Please try again.');
+            setGeneralError('Google Sign Up failed. Please try again.');
         } finally {
             setGoogleLoading(false);
         }
@@ -334,42 +469,61 @@ export default function SignupScreen() {
         const newErrors: Record<string, string> = {};
 
         if (!displayName.trim()) newErrors.displayName = 'Name is required';
+        else if (displayName.trim().length < 2) newErrors.displayName = 'Name must be at least 2 characters';
+
+        if (username && usernameStatus === 'taken') {
+            newErrors.username = 'This username is already taken';
+        } else if (username && usernameStatus === 'invalid') {
+            newErrors.username = 'Username must be 3-20 characters, letters, numbers, and underscores only';
+        }
+
         if (!email.trim()) {
             newErrors.email = 'Email is required';
         } else if (!/\S+@\S+\.\S+/.test(email)) {
-            newErrors.email = 'Please enter a valid email';
+            newErrors.email = 'Please enter a valid email address';
         }
         if (!password) {
             newErrors.password = 'Password is required';
         } else if (password.length < 8) {
             newErrors.password = 'Password must be at least 8 characters';
+        } else if (passwordStrength.level <= 1) {
+            newErrors.password = 'Please choose a stronger password';
         }
-        if (password !== confirmPassword) {
+        if (!confirmPassword) {
+            newErrors.confirmPassword = 'Please confirm your password';
+        } else if (password !== confirmPassword) {
             newErrors.confirmPassword = 'Passwords do not match';
         }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    }, [displayName, email, password, confirmPassword]);
+    }, [displayName, username, usernameStatus, email, password, confirmPassword, passwordStrength.level]);
 
     // ---- Email/Password Signup ----
     const handleSignup = useCallback(async () => {
+        Keyboard.dismiss();
+        setGeneralError(null);
+
         if (!validateForm()) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             return;
         }
 
         try {
+            buttonScale.value = withSequence(
+                withSpring(0.96, { damping: 15 }),
+                withSpring(1, { damping: 15 }),
+            );
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             await signup(email.trim(), password, displayName.trim());
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             router.replace('/(auth)/username');
         } catch (error: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            const message = error?.data?.error || error?.message || 'Signup failed';
-            setErrors({ email: message });
+            const rawMessage = error?.data?.error || error?.message || 'Signup failed';
+            setGeneralError(friendlyError(rawMessage));
         }
-    }, [validateForm, signup, email, password, displayName, router]);
+    }, [validateForm, signup, email, password, displayName, router, buttonScale]);
 
     return (
         <LinearGradient
@@ -379,14 +533,18 @@ export default function SignupScreen() {
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
                 <ScrollView
+                    ref={scrollRef}
                     contentContainerStyle={[
                         styles.scrollContent,
-                        { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 },
+                        { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 40 },
                     ]}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="interactive"
+                    bounces={false}
                 >
                     {/* Back button */}
                     <BackButton style={{ alignSelf: 'flex-start', marginBottom: spacing.lg }} />
@@ -400,6 +558,14 @@ export default function SignupScreen() {
                             </Text>
                         </View>
                     </Animated.View>
+
+                    {/* General Error Banner */}
+                    {generalError && (
+                        <ErrorBanner
+                            message={generalError}
+                            onDismiss={() => setGeneralError(null)}
+                        />
+                    )}
 
                     {/* Social Sign Up — First for minimum friction */}
                     <Animated.View entering={FadeInDown.delay(100).duration(400)}>
@@ -444,6 +610,7 @@ export default function SignupScreen() {
                             onChangeText={(text) => {
                                 setDisplayName(text);
                                 if (errors.displayName) setErrors((e) => ({ ...e, displayName: '' }));
+                                if (generalError) setGeneralError(null);
                             }}
                             error={errors.displayName}
                             autoCapitalize="words"
@@ -463,6 +630,7 @@ export default function SignupScreen() {
                                 if (errors.username) setErrors((e) => ({ ...e, username: '' }));
                             }}
                             error={errors.username}
+                            hint="3-20 characters, letters, numbers, and underscores"
                             autoCapitalize="none"
                             autoComplete="off"
                             autoCorrect={false}
@@ -473,12 +641,12 @@ export default function SignupScreen() {
                             delay={260}
                         />
                         {/* Username availability status */}
-                        {username.length > 0 && (
+                        {username.length > 0 && !errors.username && (
                             <Animated.View entering={FadeIn.duration(200)} style={styles.usernameStatus}>
                                 {usernameStatus === 'checking' && (
                                     <View style={styles.usernameStatusRow}>
                                         <ActivityIndicator size="small" color={colors.text.muted} style={{ transform: [{ scale: 0.7 }] }} />
-                                        <Text style={styles.usernameStatusChecking}>Checking...</Text>
+                                        <Text style={styles.usernameStatusChecking}>Checking availability...</Text>
                                     </View>
                                 )}
                                 {usernameStatus === 'available' && (
@@ -496,7 +664,7 @@ export default function SignupScreen() {
                                 {usernameStatus === 'invalid' && (
                                     <View style={styles.usernameStatusRow}>
                                         <Ionicons name="close-circle" size={14} color={colors.coral[500]} />
-                                        <Text style={styles.usernameStatusTaken}>Username must be 3-20 characters, letters and numbers only</Text>
+                                        <Text style={styles.usernameStatusTaken}>Use only letters, numbers, and underscores (3-20 chars)</Text>
                                     </View>
                                 )}
                             </Animated.View>
@@ -509,6 +677,7 @@ export default function SignupScreen() {
                             onChangeText={(text) => {
                                 setEmail(text);
                                 if (errors.email) setErrors((e) => ({ ...e, email: '' }));
+                                if (generalError) setGeneralError(null);
                             }}
                             error={errors.email}
                             keyboardType="email-address"
@@ -529,7 +698,6 @@ export default function SignupScreen() {
                                 if (errors.password) setErrors((e) => ({ ...e, password: '' }));
                             }}
                             error={errors.password}
-                            hint="At least 8 characters"
                             secureTextEntry
                             autoComplete="password"
                             returnKeyType="next"
@@ -542,25 +710,32 @@ export default function SignupScreen() {
                         {/* Password Strength Indicator */}
                         {password.length > 0 && (
                             <Animated.View entering={FadeIn.duration(300)} style={styles.strengthContainer}>
-                                <View style={styles.strengthBar}>
-                                    {[1, 2, 3, 4].map((level) => (
-                                        <View
-                                            key={level}
-                                            style={[
-                                                styles.strengthSegment,
-                                                {
-                                                    backgroundColor:
-                                                        level <= passwordStrength.level
-                                                            ? passwordStrength.color
-                                                            : colors.obsidian[600],
-                                                },
-                                            ]}
-                                        />
-                                    ))}
+                                <View style={styles.strengthBarRow}>
+                                    <View style={styles.strengthBar}>
+                                        {[1, 2, 3, 4].map((level) => (
+                                            <View
+                                                key={level}
+                                                style={[
+                                                    styles.strengthSegment,
+                                                    {
+                                                        backgroundColor:
+                                                            level <= passwordStrength.level
+                                                                ? passwordStrength.color
+                                                                : colors.obsidian[600],
+                                                    },
+                                                ]}
+                                            />
+                                        ))}
+                                    </View>
+                                    <Text style={[styles.strengthLabel, { color: passwordStrength.color }]}>
+                                        {passwordStrength.label}
+                                    </Text>
                                 </View>
-                                <Text style={[styles.strengthLabel, { color: passwordStrength.color }]}>
-                                    {passwordStrength.label}
-                                </Text>
+                                {passwordStrength.tips.length > 0 && passwordStrength.level <= 2 && (
+                                    <Text style={styles.strengthTip}>
+                                        Tip: {passwordStrength.tips[0]}
+                                    </Text>
+                                )}
                             </Animated.View>
                         )}
 
@@ -581,7 +756,12 @@ export default function SignupScreen() {
                             delay={360}
                         />
 
-                        <Animated.View entering={FadeInDown.delay(400).duration(400)}>
+                        {/* Password Match Indicator */}
+                        {confirmPassword.length > 0 && !errors.confirmPassword && (
+                            <PasswordMatchIndicator password={password} confirmPassword={confirmPassword} />
+                        )}
+
+                        <Animated.View entering={FadeInDown.delay(400).duration(400)} style={animatedButtonStyle}>
                             <Button
                                 variant="primary"
                                 size="lg"
@@ -590,9 +770,9 @@ export default function SignupScreen() {
                                 onPress={handleSignup}
                                 style={styles.submitButton}
                                 accessibilityRole="button"
-                                accessibilityLabel="Create account"
+                                accessibilityLabel={isLoading ? 'Creating account' : 'Create account'}
                             >
-                                Create Account
+                                {isLoading ? 'Creating Account...' : 'Create Account'}
                             </Button>
                         </Animated.View>
                     </View>
@@ -655,6 +835,26 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         color: colors.text.secondary,
         marginTop: spacing.sm,
+    },
+
+    // ---- Error Banner ----
+    errorBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface.coralSubtle,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.coral[500] + '30',
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.md,
+        marginBottom: spacing.lg,
+        gap: spacing.sm,
+    },
+    errorBannerText: {
+        flex: 1,
+        fontSize: typography.fontSize.sm,
+        color: colors.coral[400],
+        lineHeight: 18,
     },
 
     // ---- Social Buttons ----
@@ -739,11 +939,13 @@ const styles = StyleSheet.create({
 
     // ---- Password Strength ----
     strengthContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
         marginTop: -spacing.xs,
         marginBottom: spacing.md,
         paddingHorizontal: 2,
+    },
+    strengthBarRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     strengthBar: {
         flexDirection: 'row',
@@ -759,6 +961,25 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.xs,
         fontWeight: '600',
         marginStart: spacing.sm,
+    },
+    strengthTip: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        marginTop: spacing.xs,
+    },
+
+    // ---- Password Match ----
+    matchIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: -spacing.xs,
+        marginBottom: spacing.sm,
+        paddingHorizontal: 2,
+    },
+    matchText: {
+        fontSize: 11,
+        fontWeight: '500',
     },
 
     // ---- Username Status ----

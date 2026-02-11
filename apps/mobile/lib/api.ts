@@ -10,6 +10,28 @@ const TOKEN_KEY = '0g_token';
 const REQUEST_TIMEOUT_MS = 15_000;
 
 // ============================================
+// Dev-only logging (replaces bare console.log)
+// ============================================
+function devLog(...args: unknown[]): void {
+    if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.log('[api]', ...args);
+    }
+}
+function devWarn(...args: unknown[]): void {
+    if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.warn('[api]', ...args);
+    }
+}
+function devError(...args: unknown[]): void {
+    if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.error('[api]', ...args);
+    }
+}
+
+// ============================================
 // Request Deduplication
 // Prevents identical GET requests from firing concurrently
 // ============================================
@@ -39,6 +61,47 @@ function getDedupeKey(url: string, method: string): string | null {
     return url;
 }
 
+// ============================================
+// Response Cache (in-memory, GET only)
+// ============================================
+const DEFAULT_CACHE_TTL_MS = 30_000; // 30 seconds
+const CACHE_MAX_SIZE = 200;
+
+interface CacheEntry<T = unknown> {
+    data: T;
+    expiresAt: number;
+}
+
+const responseCache = new Map<string, CacheEntry>();
+
+function getCached<T>(key: string): T | undefined {
+    const entry = responseCache.get(key);
+    if (!entry) return undefined;
+    if (Date.now() > entry.expiresAt) {
+        responseCache.delete(key);
+        return undefined;
+    }
+    return entry.data as T;
+}
+
+function setCache<T>(key: string, data: T, ttlMs: number = DEFAULT_CACHE_TTL_MS): void {
+    // Evict oldest entries when cache is full
+    if (responseCache.size >= CACHE_MAX_SIZE) {
+        const firstKey = responseCache.keys().next().value;
+        if (firstKey !== undefined) responseCache.delete(firstKey);
+    }
+    responseCache.set(key, { data, expiresAt: Date.now() + ttlMs });
+}
+
+/** Clear the entire response cache, or a single key. */
+export function clearApiCache(key?: string): void {
+    if (key) {
+        responseCache.delete(key);
+    } else {
+        responseCache.clear();
+    }
+}
+
 // API URL configuration
 // Set EXPO_PUBLIC_API_URL in .env for local dev (e.g., http://192.168.1.100:5180)
 // Production builds MUST have this set at build time.
@@ -62,7 +125,7 @@ export const saveToken = async (token: string): Promise<void> => {
     try {
         await SecureStore.setItemAsync(TOKEN_KEY, token);
     } catch (e) {
-        console.error('Failed to save token:', e);
+        devError('Failed to save token:', e);
     }
 };
 
@@ -70,7 +133,7 @@ export const removeToken = async (): Promise<void> => {
     try {
         await SecureStore.deleteItemAsync(TOKEN_KEY);
     } catch (e) {
-        console.error('Failed to remove token:', e);
+        devError('Failed to remove token:', e);
     }
 };
 
@@ -87,6 +150,53 @@ export function isNetworkError(error: unknown): boolean {
             msg.includes('request timed out');
     }
     return false;
+}
+
+// ============================================
+// JWT Token Expiry Check
+// Decodes the JWT payload (without verifying) to
+// check if the token has expired locally. This avoids
+// making a network request with an obviously expired token.
+// ============================================
+
+function decodeJwtPayload(token: string): { exp?: number } | null {
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        // Base64url decode the payload
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join('')
+        );
+        return JSON.parse(jsonPayload);
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Check if a JWT token is expired.
+ * Returns true if the token has an `exp` claim that is in the past.
+ * Includes a 60-second buffer to account for clock skew.
+ */
+export function isTokenExpired(token: string): boolean {
+    const payload = decodeJwtPayload(token);
+    if (!payload?.exp) return false; // No exp claim — assume valid
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    return payload.exp < nowSeconds - 60; // 60s buffer for clock skew
+}
+
+/**
+ * Callback invoked when a session expires and refresh fails.
+ * Set by the auth store to redirect to login.
+ */
+let _onSessionExpired: (() => void) | null = null;
+
+export function setSessionExpiredHandler(handler: () => void): void {
+    _onSessionExpired = handler;
 }
 
 // ============================================
@@ -171,8 +281,8 @@ async function attemptTokenRefresh(): Promise<string | null> {
 // Exponential Backoff Retry for Network Errors
 // ============================================
 
-const MAX_RETRIES = 3;
-const RETRY_DELAYS = [1000, 2000, 4000]; // 1s, 2s, 4s
+const MAX_RETRIES = 2;
+const RETRY_DELAYS = [1000, 2000]; // 1s, 2s exponential backoff
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -197,16 +307,42 @@ function isRetryableError(error: unknown): boolean {
 // API Fetch Helper
 // ============================================
 
+/** Extended options for apiFetch. Superset of RequestInit. */
+export interface ApiFetchOptions extends RequestInit {
+    /** Set to `false` to bypass the response cache for this request. */
+    cache?: boolean;
+    /** Custom cache TTL in milliseconds (default 30 000). */
+    cacheTtl?: number;
+}
+
 export const apiFetch = async <T = any>(
     endpoint: string,
-    options: RequestInit = {},
+    options: ApiFetchOptions = {},
     _isRetry: boolean = false
 ): Promise<T> => {
-    const token = await getToken();
+    const { cache: useCache = true, cacheTtl, ...fetchOptions } = options;
+
+    let token = await getToken();
+
+    // Pre-check: if token is expired, try refreshing before making the request
+    if (token && isTokenExpired(token) && !_isRetry) {
+        devWarn('Token expired locally, attempting refresh before request');
+        const newToken = await attemptTokenRefresh();
+        if (newToken) {
+            token = newToken;
+        } else {
+            // Refresh failed — clear token and notify session expired
+            await removeToken();
+            if (_onSessionExpired) _onSessionExpired();
+            const err: any = new Error('Your session has expired. Please log in again.');
+            err.status = 401;
+            throw err;
+        }
+    }
 
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...((options.headers as Record<string, string>) || {}),
+        ...((fetchOptions.headers as Record<string, string>) || {}),
     };
 
     if (token) {
@@ -214,12 +350,23 @@ export const apiFetch = async <T = any>(
     }
 
     const url = endpoint.startsWith('http') ? endpoint : `${API_URL}${endpoint}`;
-    const method = options.method || 'GET';
+    const method = fetchOptions.method || 'GET';
+    const isGet = method.toUpperCase() === 'GET';
 
-    // Deduplicate concurrent identical GET requests
+    // ---- Response cache (GET only) ----
+    if (isGet && useCache && !_isRetry) {
+        const cached = getCached<T>(url);
+        if (cached !== undefined) {
+            devLog('cache hit:', endpoint);
+            return cached;
+        }
+    }
+
+    // ---- Deduplicate concurrent identical GET requests ----
     const dedupeKey = getDedupeKey(url, method);
     cleanupInflight();
     if (dedupeKey && inflightRequests.has(dedupeKey) && !_isRetry) {
+        devLog('dedup hit:', endpoint);
         return inflightRequests.get(dedupeKey)!.promise as Promise<T>;
     }
 
@@ -227,9 +374,12 @@ export const apiFetch = async <T = any>(
     let lastError: unknown;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        if (attempt > 0) {
+            devWarn(`retry ${attempt}/${MAX_RETRIES} for ${endpoint}`);
+        }
         try {
             const res = await fetchWithTimeout(url, {
-                ...options,
+                ...fetchOptions,
                 headers,
             });
 
@@ -244,8 +394,9 @@ export const apiFetch = async <T = any>(
                         if (newToken) {
                             return apiFetch<T>(endpoint, options, true);
                         }
-                        // Refresh failed — clear token (caller/store should redirect to login)
+                        // Refresh failed — clear token and notify session expired
                         await removeToken();
+                        if (_onSessionExpired) _onSessionExpired();
                     }
 
                     const err: any = new Error(data?.error || `API error: ${res.status}`);
@@ -253,6 +404,12 @@ export const apiFetch = async <T = any>(
                     err.data = data;
                     throw err;
                 }
+
+                // Store successful GET responses in cache
+                if (isGet && useCache) {
+                    setCache(url, data, cacheTtl);
+                }
+
                 return data as T;
             }
 
@@ -263,6 +420,7 @@ export const apiFetch = async <T = any>(
                         return apiFetch<T>(endpoint, options, true);
                     }
                     await removeToken();
+                    if (_onSessionExpired) _onSessionExpired();
                 }
                 throw new Error(`API error: ${res.status}`);
             }
@@ -273,6 +431,7 @@ export const apiFetch = async <T = any>(
 
             // Only retry on network errors, not on API errors
             if (isRetryableError(error) && attempt < MAX_RETRIES) {
+                devWarn(`retryable error on attempt ${attempt}:`, (error as Error).message);
                 await sleep(RETRY_DELAYS[attempt]!);
                 continue;
             }
@@ -339,6 +498,85 @@ export const apiUpload = async (
     }
     return data;
 };
+
+// ============================================
+// Connection Quality Detection
+// ============================================
+
+export type ConnectionQuality = 'good' | 'slow' | 'offline';
+
+const PING_TIMEOUT_MS = 5_000;
+const SLOW_THRESHOLD_MS = 1_500;
+
+/**
+ * Ping the API server and return the round-trip time in ms.
+ * Returns `Infinity` if the server is unreachable.
+ */
+export async function pingApi(): Promise<number> {
+    const start = Date.now();
+    try {
+        await fetchWithTimeout(
+            `${API_URL}/api/v1/auth/me`,
+            { method: 'HEAD', headers: {} },
+            PING_TIMEOUT_MS,
+        );
+        return Date.now() - start;
+    } catch {
+        return Infinity;
+    }
+}
+
+/**
+ * Measure connection quality to the API server.
+ * - `'good'`    — response < 1 500 ms
+ * - `'slow'`    — response >= 1 500 ms
+ * - `'offline'` — no response / timeout
+ */
+export async function getConnectionQuality(): Promise<ConnectionQuality> {
+    const rtt = await pingApi();
+    if (rtt === Infinity) return 'offline';
+    if (rtt >= SLOW_THRESHOLD_MS) return 'slow';
+    return 'good';
+}
+
+// ============================================
+// Batch Request Support
+// ============================================
+
+export interface BatchResult<T = any> {
+    status: 'fulfilled' | 'rejected';
+    value?: T;
+    reason?: unknown;
+}
+
+/**
+ * Fetch multiple endpoints in parallel.
+ * Returns a record keyed by endpoint with the settled result for each.
+ *
+ * @example
+ * const results = await apiFetchBatch([API.feed, API.notifications]);
+ * if (results[API.feed].status === 'fulfilled') { ... }
+ */
+export async function apiFetchBatch<T = any>(
+    endpoints: string[],
+    options?: ApiFetchOptions,
+): Promise<Record<string, BatchResult<T>>> {
+    const settled = await Promise.allSettled(
+        endpoints.map((ep) => apiFetch<T>(ep, options)),
+    );
+
+    const results: Record<string, BatchResult<T>> = {};
+    endpoints.forEach((ep, i) => {
+        const outcome = settled[i]!;
+        if (outcome.status === 'fulfilled') {
+            results[ep] = { status: 'fulfilled', value: outcome.value };
+        } else {
+            results[ep] = { status: 'rejected', reason: outcome.reason };
+        }
+    });
+
+    return results;
+}
 
 // ============================================
 // API Endpoints

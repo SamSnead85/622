@@ -1,6 +1,14 @@
 import { Router, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
+
+const feedPreferencesSchema = z.object({
+    recencyWeight: z.number().min(0).max(100).optional(),
+    engagementWeight: z.number().min(0).max(100).optional(),
+    followingRatio: z.number().min(0).max(100).optional(),
+    contentTypes: z.record(z.string(), z.number().min(0).max(2)).optional(),
+});
 
 const router = Router();
 
@@ -31,29 +39,30 @@ router.get('/feed', authenticate, async (req: AuthRequest, res: Response, next: 
 // Update feed preferences
 router.put('/feed', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const { recencyWeight, engagementWeight, followingRatio, contentTypes } = req.body;
-
-        const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+        const data = feedPreferencesSchema.parse(req.body);
 
         const prefs = await prisma.userFeedPreferences.upsert({
             where: { userId: req.userId! },
             update: {
-                recencyWeight: clamp(recencyWeight ?? 50, 0, 100),
-                engagementWeight: clamp(engagementWeight ?? 50, 0, 100),
-                followingRatio: clamp(followingRatio ?? 70, 0, 100),
-                contentTypes: contentTypes ?? {},
+                recencyWeight: data.recencyWeight ?? 50,
+                engagementWeight: data.engagementWeight ?? 50,
+                followingRatio: data.followingRatio ?? 70,
+                contentTypes: data.contentTypes ?? {},
             },
             create: {
                 userId: req.userId!,
-                recencyWeight: clamp(recencyWeight ?? 50, 0, 100),
-                engagementWeight: clamp(engagementWeight ?? 50, 0, 100),
-                followingRatio: clamp(followingRatio ?? 70, 0, 100),
-                contentTypes: contentTypes ?? {},
+                recencyWeight: data.recencyWeight ?? 50,
+                engagementWeight: data.engagementWeight ?? 50,
+                followingRatio: data.followingRatio ?? 70,
+                contentTypes: data.contentTypes ?? {},
             },
         });
 
         res.json(prefs);
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: 'Invalid input', details: error.errors });
+        }
         next(error);
     }
 });

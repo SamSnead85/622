@@ -1,9 +1,11 @@
 // ============================================
 // Ramadan Hub — Flagship seasonal feature
-// Iftar countdown, Quran progress, daily verse
+// Iftar/Suhoor countdown, Quran progress,
+// Fasting tracker, Charity tracker, Taraweeh,
+// Daily verse & dua, Community integration
 // ============================================
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import {
     View,
     Text,
@@ -11,13 +13,17 @@ import {
     ScrollView,
     TouchableOpacity,
     Share,
+    ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import Animated, {
+    FadeInDown,
+    FadeIn,
+} from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing, shadows } from '@zerog/ui';
 import { ScreenHeader, GlassCard } from '../../components';
@@ -29,9 +35,11 @@ const TOTAL_DAYS = 30;
 const QURAN_STORAGE_KEY = '@ramadan-quran-progress';
 const PRAYER_CACHE_KEY = '@ramadan-prayer-cache';
 const FASTING_KEY = '@ramadan-fasting';
+const CHARITY_KEY = '@ramadan-charity';
+const TARAWEEH_KEY = '@ramadan-taraweeh';
 
 // ─── 30 Daily Duas for Ramadan ───────────────────────────────────
-const DAILY_DUAS = [
+const DAILY_DUAS: ReadonlyArray<{ arabic: string; english: string }> = [
     { arabic: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْهُدَى وَالتُّقَى وَالْعَفَافَ وَالْغِنَى', english: 'O Allah, I ask You for guidance, piety, chastity, and self-sufficiency.' },
     { arabic: 'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ', english: 'Our Lord, give us good in this world and good in the Hereafter, and save us from the Fire.' },
     { arabic: 'اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي', english: 'O Allah, You are the Pardoner and You love to pardon, so pardon me.' },
@@ -65,7 +73,7 @@ const DAILY_DUAS = [
 ];
 
 // ─── Curated Ramadan Verses ──────────────────────────────────────
-const RAMADAN_VERSES = [
+const RAMADAN_VERSES: ReadonlyArray<{ arabic: string; english: string; ref: string }> = [
     { arabic: 'شَهْرُ رَمَضَانَ الَّذِي أُنزِلَ فِيهِ الْقُرْآنُ هُدًى لِّلنَّاسِ', english: 'The month of Ramadan in which the Quran was revealed, a guidance for mankind.', ref: '2:185' },
     { arabic: 'يَا أَيُّهَا الَّذِينَ آمَنُوا كُتِبَ عَلَيْكُمُ الصِّيَامُ كَمَا كُتِبَ عَلَى الَّذِينَ مِن قَبْلِكُمْ لَعَلَّكُمْ تَتَّقُونَ', english: 'O you who believe, fasting is prescribed for you as it was prescribed for those before you, that you may become righteous.', ref: '2:183' },
     { arabic: 'وَإِذَا سَأَلَكَ عِبَادِي عَنِّي فَإِنِّي قَرِيبٌ أُجِيبُ دَعْوَةَ الدَّاعِ إِذَا دَعَانِ', english: 'And when My servants ask you about Me, indeed I am near. I respond to the call of the caller when he calls upon Me.', ref: '2:186' },
@@ -98,6 +106,53 @@ const RAMADAN_VERSES = [
     { arabic: 'رَبَّنَا لَا تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا وَهَبْ لَنَا مِن لَّدُنكَ رَحْمَةً', english: 'Our Lord, let not our hearts deviate after You have guided us and grant us from Yourself mercy.', ref: '3:8' },
 ];
 
+// ─── Daily Quran Reading Plan (1 juz per day) ────────────────────
+const QURAN_READING_PLAN: ReadonlyArray<{ juz: number; surah: string; pages: string }> = [
+    { juz: 1, surah: 'Al-Fatiha 1 — Al-Baqarah 141', pages: '1-21' },
+    { juz: 2, surah: 'Al-Baqarah 142 — Al-Baqarah 252', pages: '22-41' },
+    { juz: 3, surah: 'Al-Baqarah 253 — Ali Imran 92', pages: '42-61' },
+    { juz: 4, surah: 'Ali Imran 93 — An-Nisa 23', pages: '62-81' },
+    { juz: 5, surah: 'An-Nisa 24 — An-Nisa 147', pages: '82-101' },
+    { juz: 6, surah: 'An-Nisa 148 — Al-Ma\'idah 81', pages: '102-121' },
+    { juz: 7, surah: 'Al-Ma\'idah 82 — Al-An\'am 110', pages: '122-141' },
+    { juz: 8, surah: 'Al-An\'am 111 — Al-A\'raf 87', pages: '142-161' },
+    { juz: 9, surah: 'Al-A\'raf 88 — Al-Anfal 40', pages: '162-181' },
+    { juz: 10, surah: 'Al-Anfal 41 — At-Tawbah 92', pages: '182-201' },
+    { juz: 11, surah: 'At-Tawbah 93 — Hud 5', pages: '202-221' },
+    { juz: 12, surah: 'Hud 6 — Yusuf 52', pages: '222-241' },
+    { juz: 13, surah: 'Yusuf 53 — Ibrahim 52', pages: '242-261' },
+    { juz: 14, surah: 'Al-Hijr 1 — An-Nahl 128', pages: '262-281' },
+    { juz: 15, surah: 'Al-Isra 1 — Al-Kahf 74', pages: '282-301' },
+    { juz: 16, surah: 'Al-Kahf 75 — Ta-Ha 135', pages: '302-321' },
+    { juz: 17, surah: 'Al-Anbiya 1 — Al-Hajj 78', pages: '322-341' },
+    { juz: 18, surah: 'Al-Mu\'minun 1 — Al-Furqan 20', pages: '342-361' },
+    { juz: 19, surah: 'Al-Furqan 21 — An-Naml 55', pages: '362-381' },
+    { juz: 20, surah: 'An-Naml 56 — Al-Ankabut 45', pages: '382-401' },
+    { juz: 21, surah: 'Al-Ankabut 46 — Al-Ahzab 30', pages: '402-421' },
+    { juz: 22, surah: 'Al-Ahzab 31 — Ya-Sin 27', pages: '422-441' },
+    { juz: 23, surah: 'Ya-Sin 28 — Az-Zumar 31', pages: '442-461' },
+    { juz: 24, surah: 'Az-Zumar 32 — Fussilat 46', pages: '462-481' },
+    { juz: 25, surah: 'Fussilat 47 — Al-Jathiyah 37', pages: '482-501' },
+    { juz: 26, surah: 'Al-Ahqaf 1 — Adh-Dhariyat 30', pages: '502-521' },
+    { juz: 27, surah: 'Adh-Dhariyat 31 — Al-Hadid 29', pages: '522-541' },
+    { juz: 28, surah: 'Al-Mujadila 1 — At-Tahrim 12', pages: '542-561' },
+    { juz: 29, surah: 'Al-Mulk 1 — Al-Mursalat 50', pages: '562-581' },
+    { juz: 30, surah: 'An-Naba 1 — An-Nas 6', pages: '582-604' },
+];
+
+// ─── Types ────────────────────────────────────────────────────────
+interface PrayerTimesData {
+    fajr: string;
+    maghrib: string;
+    date: string;
+}
+
+interface CountdownState {
+    hours: number;
+    minutes: number;
+    seconds: number;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────
 function getRamadanDay(): number {
     const now = new Date();
@@ -113,15 +168,17 @@ function isDuringRamadan(): boolean {
 
 function getDailyVerseIndex(): number {
     const now = new Date();
-    // Seed based on day of year for consistent daily verse
     const start = new Date(now.getFullYear(), 0, 0);
     const diff = now.getTime() - start.getTime();
     const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
     return dayOfYear % RAMADAN_VERSES.length;
 }
 
-function formatTime12h(time: string): string {
-    const [h, m] = time.split(':').map(Number);
+function formatTime12h(time: string | null | undefined): string {
+    if (!time) return '--:--';
+    const parts = time.split(':').map(Number);
+    const h = parts[0] ?? 0;
+    const m = parts[1] ?? 0;
     const period = h >= 12 ? 'PM' : 'AM';
     const hour12 = h % 12 || 12;
     return `${hour12}:${m.toString().padStart(2, '0')} ${period}`;
@@ -131,44 +188,278 @@ function padZero(n: number): string {
     return n.toString().padStart(2, '0');
 }
 
+function getTimeUntil(targetTime: string | null): CountdownState & { isPast: boolean } {
+    if (!targetTime) return { hours: 0, minutes: 0, seconds: 0, isPast: false };
+    const now = new Date();
+    const parts = targetTime.split(':').map(Number);
+    const h = parts[0] ?? 0;
+    const m = parts[1] ?? 0;
+    const targetSec = h * 3600 + m * 60;
+    const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    const diff = targetSec - nowSec;
+
+    if (diff <= 0) {
+        return { hours: 0, minutes: 0, seconds: 0, isPast: true };
+    }
+    return {
+        hours: Math.floor(diff / 3600),
+        minutes: Math.floor((diff % 3600) / 60),
+        seconds: diff % 60,
+        isPast: false,
+    };
+}
+
+function getRamadanThird(day: number): 'first' | 'second' | 'last' {
+    if (day <= 10) return 'first';
+    if (day <= 20) return 'second';
+    return 'last';
+}
+
+function getThirdLabel(third: 'first' | 'second' | 'last'): string {
+    switch (third) {
+        case 'first': return 'Mercy (Days 1-10)';
+        case 'second': return 'Forgiveness (Days 11-20)';
+        case 'last': return 'Salvation (Days 21-30)';
+    }
+}
+
+// ─── Memoized Sub-Components ──────────────────────────────────────
+
+/** Countdown digit display — memoized to prevent re-render cascades */
+const CountdownDigit = memo(function CountdownDigit({
+    value,
+    label,
+    isSeconds,
+}: {
+    value: number;
+    label: string;
+    isSeconds?: boolean;
+}) {
+    return (
+        <View style={s.countdownUnit}>
+            <Text style={[s.countdownNumber, isSeconds && s.countdownSeconds]}>
+                {padZero(value)}
+            </Text>
+            <Text style={s.countdownUnitLabel}>{label}</Text>
+        </View>
+    );
+});
+
+/** Calendar day cell — memoized (30 of these render) */
+const CalendarDayCell = memo(function CalendarDayCell({
+    day,
+    fasted,
+    isToday,
+    isFuture,
+}: {
+    day: number;
+    fasted: boolean;
+    isToday: boolean;
+    isFuture: boolean;
+}) {
+    return (
+        <View
+            style={[
+                s.calendarDay,
+                isToday && s.calendarDayToday,
+                fasted && s.calendarDayFasted,
+                isFuture && s.calendarDayFuture,
+            ]}
+        >
+            {fasted ? (
+                <Ionicons name="checkmark" size={12} color={colors.obsidian[900]} />
+            ) : (
+                <Text
+                    style={[
+                        s.calendarDayText,
+                        isToday && s.calendarDayTextToday,
+                        isFuture && s.calendarDayTextFuture,
+                    ]}
+                >
+                    {day}
+                </Text>
+            )}
+        </View>
+    );
+});
+
+/** Tracker row — reused for charity and taraweeh */
+const TrackerRow = memo(function TrackerRow({
+    icon,
+    title,
+    count,
+    total,
+    isActive,
+    onToggle,
+    activeLabel,
+    inactiveLabel,
+    accentColor,
+}: {
+    icon: keyof typeof Ionicons.glyphMap;
+    title: string;
+    count: number;
+    total: number;
+    isActive: boolean;
+    onToggle: () => void;
+    activeLabel: string;
+    inactiveLabel: string;
+    accentColor: string;
+}) {
+    return (
+        <View style={s.trackerSection}>
+            <View style={s.trackerHeader}>
+                <View style={s.trackerTitleRow}>
+                    <Ionicons name={icon} size={18} color={accentColor} />
+                    <Text style={s.trackerTitle}>{title}</Text>
+                </View>
+                <Text style={[s.trackerCount, { color: accentColor }]}>
+                    {count}<Text style={s.trackerCountMuted}>/{total}</Text>
+                </Text>
+            </View>
+
+            <TouchableOpacity
+                style={[
+                    s.trackerToggle,
+                    isActive && { borderColor: accentColor + '30', backgroundColor: accentColor + '08' },
+                ]}
+                onPress={onToggle}
+                activeOpacity={0.7}
+                accessibilityRole="switch"
+                accessibilityLabel={`${title}, ${isActive ? 'done' : 'not done'}`}
+            >
+                <Ionicons
+                    name={isActive ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={22}
+                    color={isActive ? accentColor : colors.text.muted}
+                />
+                <Text style={[s.trackerToggleText, isActive && { color: accentColor }]}>
+                    {isActive ? activeLabel : inactiveLabel}
+                </Text>
+            </TouchableOpacity>
+
+            {/* Mini progress bar */}
+            <View style={s.trackerProgressOuter}>
+                <View
+                    style={[
+                        s.trackerProgressInner,
+                        {
+                            width: `${Math.max((count / total) * 100, 1)}%` as `${number}%`,
+                            backgroundColor: accentColor,
+                        },
+                    ]}
+                />
+            </View>
+        </View>
+    );
+});
+
+/** Community action card */
+const CommunityCard = memo(function CommunityCard({
+    icon,
+    title,
+    subtitle,
+    onPress,
+    gradientColors,
+}: {
+    icon: keyof typeof Ionicons.glyphMap;
+    title: string;
+    subtitle: string;
+    onPress: () => void;
+    gradientColors: [string, string];
+}) {
+    return (
+        <TouchableOpacity
+            style={s.communityCard}
+            onPress={onPress}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={title}
+        >
+            <LinearGradient
+                colors={gradientColors}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+            />
+            <View style={s.communityCardIcon}>
+                <Ionicons name={icon} size={22} color={colors.gold[400]} />
+            </View>
+            <Text style={s.communityCardTitle}>{title}</Text>
+            <Text style={s.communityCardSub}>{subtitle}</Text>
+        </TouchableOpacity>
+    );
+});
+
+
 // ─── Main Screen ──────────────────────────────────────────────────
 export default function RamadanHub() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
-    // State
-    const [maghribTime, setMaghribTime] = useState<string | null>(null);
-    const [countdown, setCountdown] = useState({ hours: 0, minutes: 0, seconds: 0 });
+    // ─── State ────────────────────────────────────────────────────
+    const [prayerTimes, setPrayerTimes] = useState<PrayerTimesData | null>(null);
+    const [iftarCountdown, setIftarCountdown] = useState<CountdownState>({ hours: 0, minutes: 0, seconds: 0 });
+    const [suhoorCountdown, setSuhoorCountdown] = useState<CountdownState>({ hours: 0, minutes: 0, seconds: 0 });
     const [isPastMaghrib, setIsPastMaghrib] = useState(false);
+    const [isPastFajr, setIsPastFajr] = useState(false);
     const [juzCount, setJuzCount] = useState(0);
     const [isLoadingPrayer, setIsLoadingPrayer] = useState(true);
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [prayerError, setPrayerError] = useState<string | null>(null);
     const [fastingDays, setFastingDays] = useState<Set<number>>(new Set());
-    const isRamadan = isDuringRamadan();
-    const ramadanDay = getRamadanDay();
-    const daysLeft = Math.max(0, TOTAL_DAYS - ramadanDay);
-    const verseIndex = getDailyVerseIndex();
-    const dailyVerse = RAMADAN_VERSES[verseIndex];
-    const dailyDua = DAILY_DUAS[(ramadanDay - 1) % DAILY_DUAS.length];
+    const [charityDays, setCharityDays] = useState<Set<number>>(new Set());
+    const [taraweehDays, setTaraweehDays] = useState<Set<number>>(new Set());
 
-    // ─── Load Quran progress ──────────────────────────────────────
-    useEffect(() => {
-        (async () => {
-            try {
-                const stored = await AsyncStorage.getItem(QURAN_STORAGE_KEY);
-                if (stored) setJuzCount(parseInt(stored, 10) || 0);
-            } catch { /* AsyncStorage read failure — use default 0 */ }
-        })();
-    }, []);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // ─── Load fasting data ───────────────────────────────────────
+    // ─── Derived values (memoized) ────────────────────────────────
+    const isRamadan = useMemo(() => isDuringRamadan(), []);
+    const ramadanDay = useMemo(() => getRamadanDay(), []);
+    const daysLeft = useMemo(() => Math.max(0, TOTAL_DAYS - ramadanDay), [ramadanDay]);
+    const verseIndex = useMemo(() => getDailyVerseIndex(), []);
+    const dailyVerse = RAMADAN_VERSES[verseIndex] ?? RAMADAN_VERSES[0]!;
+    const dailyDua = DAILY_DUAS[(ramadanDay - 1) % DAILY_DUAS.length] ?? DAILY_DUAS[0]!;
+    const ramadanThird = useMemo(() => getRamadanThird(ramadanDay), [ramadanDay]);
+    const thirdLabel = useMemo(() => getThirdLabel(ramadanThird), [ramadanThird]);
+    const todaysReading = QURAN_READING_PLAN[(ramadanDay - 1) % QURAN_READING_PLAN.length] ?? QURAN_READING_PLAN[0]!;
+    const progressPercent = useMemo(() => (juzCount / 30) * 100, [juzCount]);
+    const juzRemaining = 30 - juzCount;
+    const isFastingToday = fastingDays.has(ramadanDay);
+    const fastingCount = fastingDays.size;
+    const isCharityToday = charityDays.has(ramadanDay);
+    const charityCount = charityDays.size;
+    const isTaraweehToday = taraweehDays.has(ramadanDay);
+    const taraweehCount = taraweehDays.size;
+    const ramadanProgress = useMemo(() => (ramadanDay / TOTAL_DAYS) * 100, [ramadanDay]);
+
+    // ─── Load persisted data ──────────────────────────────────────
     useEffect(() => {
-        (async () => {
+        const loadAll = async () => {
             try {
-                const stored = await AsyncStorage.getItem(FASTING_KEY);
-                if (stored) setFastingDays(new Set(JSON.parse(stored)));
-            } catch { /* ignore */ }
-        })();
+                const [quranStored, fastingStored, charityStored, taraweehStored] = await Promise.all([
+                    AsyncStorage.getItem(QURAN_STORAGE_KEY).catch(() => null),
+                    AsyncStorage.getItem(FASTING_KEY).catch(() => null),
+                    AsyncStorage.getItem(CHARITY_KEY).catch(() => null),
+                    AsyncStorage.getItem(TARAWEEH_KEY).catch(() => null),
+                ]);
+
+                if (quranStored) {
+                    const parsed = parseInt(quranStored, 10);
+                    if (!isNaN(parsed)) setJuzCount(parsed);
+                }
+                if (fastingStored) {
+                    try { setFastingDays(new Set(JSON.parse(fastingStored))); } catch { /* corrupted data */ }
+                }
+                if (charityStored) {
+                    try { setCharityDays(new Set(JSON.parse(charityStored))); } catch { /* corrupted data */ }
+                }
+                if (taraweehStored) {
+                    try { setTaraweehDays(new Set(JSON.parse(taraweehStored))); } catch { /* corrupted data */ }
+                }
+            } catch {
+                // AsyncStorage bulk read failure — use defaults
+            }
+        };
+        loadAll();
     }, []);
 
     // ─── Save Quran progress ──────────────────────────────────────
@@ -181,47 +472,76 @@ export default function RamadanHub() {
         });
     }, []);
 
-    // ─── Toggle fasting for today ──────────────────────────────────
-    const toggleFasting = useCallback(async () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setFastingDays((prev) => {
-            const next = new Set(prev);
-            if (next.has(ramadanDay)) {
-                next.delete(ramadanDay);
-            } else {
-                next.add(ramadanDay);
-            }
-            AsyncStorage.setItem(FASTING_KEY, JSON.stringify([...next])).catch(() => {});
-            return next;
-        });
-    }, [ramadanDay]);
+    // ─── Toggle helpers ───────────────────────────────────────────
+    const toggleSetDay = useCallback(
+        (
+            setter: React.Dispatch<React.SetStateAction<Set<number>>>,
+            storageKey: string,
+            day: number,
+        ) => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setter((prev) => {
+                const next = new Set(prev);
+                if (next.has(day)) {
+                    next.delete(day);
+                } else {
+                    next.add(day);
+                }
+                AsyncStorage.setItem(storageKey, JSON.stringify([...next])).catch(() => {});
+                return next;
+            });
+        },
+        [],
+    );
 
-    const isFastingToday = fastingDays.has(ramadanDay);
-    const fastingCount = fastingDays.size;
+    const toggleFasting = useCallback(
+        () => toggleSetDay(setFastingDays, FASTING_KEY, ramadanDay),
+        [ramadanDay, toggleSetDay],
+    );
+    const toggleCharity = useCallback(
+        () => toggleSetDay(setCharityDays, CHARITY_KEY, ramadanDay),
+        [ramadanDay, toggleSetDay],
+    );
+    const toggleTaraweeh = useCallback(
+        () => toggleSetDay(setTaraweehDays, TARAWEEH_KEY, ramadanDay),
+        [ramadanDay, toggleSetDay],
+    );
 
-    // ─── Share dua ───────────────────────────────────────────────
-    const shareDua = async () => {
+    // ─── Share dua ────────────────────────────────────────────────
+    const shareDua = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         try {
             await Share.share({
                 message: `${dailyDua.arabic}\n\n"${dailyDua.english}"\n\nDay ${ramadanDay} of Ramadan — Shared from 0G`,
             });
         } catch { /* user cancelled */ }
-    };
+    }, [dailyDua, ramadanDay]);
+
+    // ─── Share verse ──────────────────────────────────────────────
+    const shareVerse = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        try {
+            await Share.share({
+                message: `${dailyVerse.arabic}\n\n"${dailyVerse.english}"\n— Quran ${dailyVerse.ref}\n\nShared from 0G`,
+            });
+        } catch { /* user cancelled share sheet */ }
+    }, [dailyVerse]);
 
     // ─── Fetch prayer times from Aladhan ──────────────────────────
     useEffect(() => {
+        let cancelled = false;
         (async () => {
             try {
                 // Check cache first
-                const cached = await AsyncStorage.getItem(PRAYER_CACHE_KEY);
+                const cached = await AsyncStorage.getItem(PRAYER_CACHE_KEY).catch(() => null);
                 if (cached) {
-                    let parsed: any = {};
-                    try { parsed = JSON.parse(cached); } catch { /* corrupted cache */ }
-                    const { maghrib, date } = parsed;
-                    if (date === new Date().toDateString()) {
-                        setMaghribTime(maghrib);
-                        setIsLoadingPrayer(false);
+                    let parsed: PrayerTimesData | null = null;
+                    try { parsed = JSON.parse(cached) as PrayerTimesData; } catch { /* corrupted cache */ }
+                    if (parsed?.maghrib && parsed?.fajr && parsed.date === new Date().toDateString()) {
+                        if (!cancelled) {
+                            setPrayerTimes(parsed);
+                            setIsLoadingPrayer(false);
+                        }
                         return;
                     }
                 }
@@ -230,124 +550,163 @@ export default function RamadanHub() {
                     'https://api.aladhan.com/v1/timingsByCity?city=NewYork&country=US&method=2'
                 );
                 const json = await res.json();
-                if (json.code === 200 && json.data?.timings?.Maghrib) {
-                    const maghrib = json.data.timings.Maghrib.replace(/\s*\(.*\)/, ''); // strip timezone annotation
-                    setMaghribTime(maghrib);
-                    await AsyncStorage.setItem(
-                        PRAYER_CACHE_KEY,
-                        JSON.stringify({ maghrib, date: new Date().toDateString() })
-                    );
+                if (!cancelled && json.code === 200 && json.data?.timings) {
+                    const timings = json.data.timings;
+                    const stripTz = (t: string) => t?.replace(/\s*\(.*\)/, '') ?? '';
+                    const data: PrayerTimesData = {
+                        fajr: stripTz(timings.Fajr),
+                        maghrib: stripTz(timings.Maghrib),
+                        date: new Date().toDateString(),
+                    };
+                    setPrayerTimes(data);
+                    await AsyncStorage.setItem(PRAYER_CACHE_KEY, JSON.stringify(data)).catch(() => {});
+                } else if (!cancelled && !json.data?.timings) {
+                    setPrayerError('Could not load prayer times');
                 }
             } catch (err) {
-                console.error('Failed to fetch prayer times:', err);
+                if (!cancelled) {
+                    console.error('Failed to fetch prayer times:', err);
+                    setPrayerError('Offline — using cached data if available');
+                }
             } finally {
-                setIsLoadingPrayer(false);
+                if (!cancelled) setIsLoadingPrayer(false);
             }
         })();
+
+        return () => { cancelled = true; };
     }, []);
 
-    // ─── Live countdown to Maghrib ────────────────────────────────
+    // ─── Live countdown — single interval for both iftar & suhoor ─
     useEffect(() => {
-        if (!maghribTime) return;
+        if (!prayerTimes) return;
 
-        const updateCountdown = () => {
-            const now = new Date();
-            const [h, m] = maghribTime.split(':').map(Number);
-            const maghribSec = h * 3600 + m * 60;
-            const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-            const diff = maghribSec - nowSec;
+        const updateCountdowns = () => {
+            const iftarResult = getTimeUntil(prayerTimes.maghrib);
+            setIftarCountdown({ hours: iftarResult.hours, minutes: iftarResult.minutes, seconds: iftarResult.seconds });
+            setIsPastMaghrib(iftarResult.isPast);
 
-            if (diff <= 0) {
-                setIsPastMaghrib(true);
-                setCountdown({ hours: 0, minutes: 0, seconds: 0 });
-                return;
-            }
-
-            setIsPastMaghrib(false);
-            setCountdown({
-                hours: Math.floor(diff / 3600),
-                minutes: Math.floor((diff % 3600) / 60),
-                seconds: diff % 60,
-            });
+            const suhoorResult = getTimeUntil(prayerTimes.fajr);
+            setSuhoorCountdown({ hours: suhoorResult.hours, minutes: suhoorResult.minutes, seconds: suhoorResult.seconds });
+            setIsPastFajr(suhoorResult.isPast);
         };
 
-        updateCountdown();
-        intervalRef.current = setInterval(updateCountdown, 1000);
+        updateCountdowns();
+        intervalRef.current = setInterval(updateCountdowns, 1000);
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
-    }, [maghribTime]);
+    }, [prayerTimes]);
 
-    // ─── Share verse ──────────────────────────────────────────────
-    const shareVerse = async () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        try {
-            await Share.share({
-                message: `${dailyVerse.arabic}\n\n"${dailyVerse.english}"\n— Quran ${dailyVerse.ref}\n\nShared from 0G`,
-            });
-        } catch { /* user cancelled share sheet */ }
-    };
-
-    const navigate = (route: string) => {
+    const navigate = useCallback((route: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         router.push(route as any);
-    };
+    }, [router]);
 
-    const juzRemaining = 30 - juzCount;
-    const progressPercent = (juzCount / 30) * 100;
+    // ─── Calendar grid — memoized to avoid re-creating 30 elements each second
+    const calendarGrid = useMemo(() => (
+        <View style={s.calendarGrid}>
+            {Array.from({ length: TOTAL_DAYS }, (_, i) => {
+                const day = i + 1;
+                return (
+                    <CalendarDayCell
+                        key={day}
+                        day={day}
+                        fasted={fastingDays.has(day)}
+                        isToday={day === ramadanDay}
+                        isFuture={day > ramadanDay}
+                    />
+                );
+            })}
+        </View>
+    ), [fastingDays, ramadanDay]);
 
     return (
-        <View style={styles.container}>
+        <View style={s.container}>
             {/* Deep gradient background */}
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[900], colors.obsidian[900]]}
+                colors={[colors.obsidian[900], '#0D0B15', colors.obsidian[900]]}
                 style={StyleSheet.absoluteFill}
             />
 
-            {/* Subtle gold ambient glow at top */}
+            {/* Warm ambient gold glow at top */}
             <LinearGradient
-                colors={[colors.gold[700] + '0A', 'transparent']}
-                style={styles.ambientGlow}
+                colors={[colors.gold[700] + '12', colors.gold[500] + '06', 'transparent']}
+                style={s.ambientGlow}
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}
+            />
+
+            {/* Subtle secondary glow bottom-right for depth */}
+            <LinearGradient
+                colors={['transparent', colors.gold[700] + '04']}
+                style={s.ambientGlowBottom}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
             />
 
             <ScreenHeader title="Ramadan" showBack />
 
             <ScrollView
-                style={styles.scrollView}
+                style={s.scrollView}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
                 showsVerticalScrollIndicator={false}
             >
-                {/* ════════════════════════════════════════════════
-                    1. HEADER — Ramadan Mubarak + Day Counter
-                   ════════════════════════════════════════════════ */}
-                <Animated.View entering={FadeInDown.duration(600)} style={styles.heroSection}>
-                    <View style={styles.crescentContainer}>
+                {/* ════════════════════════════════════════════════════
+                    1. HERO HEADER — Crescent + Bismillah + Day Counter
+                   ════════════════════════════════════════════════════ */}
+                <Animated.View entering={FadeInDown.duration(700)} style={s.heroSection}>
+                    {/* Crescent moon with glow ring */}
+                    <View style={s.crescentContainer}>
                         <LinearGradient
-                            colors={[colors.gold[500] + '20', colors.gold[700] + '08']}
-                            style={styles.crescentGlow}
+                            colors={[colors.gold[500] + '25', colors.gold[700] + '0A']}
+                            style={s.crescentGlow}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                         />
-                        <Text style={styles.crescentIcon}>☪️</Text>
+                        <View style={s.crescentRing} />
+                        <Text style={s.crescentIcon}>☪️</Text>
                     </View>
-                    <Text style={styles.heroTitle}>Ramadan Mubarak</Text>
-                    <View style={styles.dayBadge}>
+
+                    <Text style={s.heroTitle}>Ramadan Mubarak</Text>
+
+                    {/* Decorative bismillah */}
+                    <Text style={s.bismillah}>بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</Text>
+
+                    {/* Day badge + third indicator */}
+                    <View style={s.dayBadge}>
                         <Ionicons name="calendar-outline" size={14} color={colors.gold[400]} />
-                        <Text style={styles.dayBadgeText}>
+                        <Text style={s.dayBadgeText}>
                             {isRamadan ? `Day ${ramadanDay} of ${TOTAL_DAYS}` : 'Ramadan 2026'}
                         </Text>
                     </View>
-                    {/* Decorative bismillah */}
-                    <Text style={styles.bismillah}>بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</Text>
+
+                    {isRamadan && (
+                        <Text style={s.thirdLabel}>{thirdLabel}</Text>
+                    )}
+
+                    {/* Ramadan overall progress bar */}
+                    {isRamadan && (
+                        <View style={s.ramadanProgressContainer}>
+                            <View style={s.ramadanProgressOuter}>
+                                <LinearGradient
+                                    colors={[colors.gold[600], colors.gold[400]]}
+                                    style={[s.ramadanProgressInner, { width: `${ramadanProgress}%` as `${number}%` }]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                />
+                            </View>
+                            <Text style={s.ramadanProgressText}>
+                                {daysLeft > 0 ? `${daysLeft} days remaining` : 'Last day of Ramadan'}
+                            </Text>
+                        </View>
+                    )}
                 </Animated.View>
 
-                {/* ════════════════════════════════════════════════
-                    2. IFTAR COUNTDOWN
-                   ════════════════════════════════════════════════ */}
+                {/* ════════════════════════════════════════════════════
+                    2. IFTAR & SUHOOR COUNTDOWNS
+                   ════════════════════════════════════════════════════ */}
                 <Animated.View entering={FadeInDown.duration(500).delay(100)}>
-                    <View style={styles.countdownCard}>
+                    <View style={s.countdownCard}>
                         <LinearGradient
                             colors={[colors.gold[700] + '18', colors.gold[500] + '06', 'transparent']}
                             style={StyleSheet.absoluteFill}
@@ -355,82 +714,116 @@ export default function RamadanHub() {
                             end={{ x: 1, y: 1 }}
                         />
 
-                        <View style={styles.countdownHeader}>
-                            <Ionicons name="time-outline" size={18} color={colors.gold[400]} />
-                            <Text style={styles.countdownLabel}>
-                                {isPastMaghrib ? 'Iftar Time' : 'Time Until Iftar'}
-                            </Text>
-                        </View>
-
                         {isLoadingPrayer ? (
-                            <Text style={styles.countdownLoading}>Loading prayer times...</Text>
-                        ) : isPastMaghrib ? (
-                            <View style={styles.iftarReached}>
-                                <Text style={styles.iftarReachedEmoji}>🌙</Text>
-                                <Text style={styles.iftarReachedText}>Alhamdulillah!</Text>
-                                <Text style={styles.iftarReachedSub}>
-                                    May your fast be accepted
-                                </Text>
+                            <View style={s.countdownLoadingContainer}>
+                                <ActivityIndicator size="small" color={colors.gold[400]} />
+                                <Text style={s.countdownLoading}>Loading prayer times...</Text>
+                            </View>
+                        ) : prayerError && !prayerTimes ? (
+                            <View style={s.errorContainer}>
+                                <Ionicons name="cloud-offline-outline" size={28} color={colors.text.muted} />
+                                <Text style={s.errorText}>{prayerError}</Text>
+                                <Text style={s.errorHint}>Prayer times will load when online</Text>
                             </View>
                         ) : (
-                            <View style={styles.countdownTimerRow}>
-                                <View style={styles.countdownUnit}>
-                                    <Text style={styles.countdownNumber}>
-                                        {padZero(countdown.hours)}
+                            <>
+                                {/* Iftar Countdown */}
+                                <View style={s.countdownHeader}>
+                                    <Ionicons name="moon-outline" size={18} color={colors.gold[400]} />
+                                    <Text style={s.countdownLabel}>
+                                        {isPastMaghrib ? 'Iftar Time' : 'Time Until Iftar'}
                                     </Text>
-                                    <Text style={styles.countdownUnitLabel}>hours</Text>
                                 </View>
-                                <Text style={styles.countdownSeparator}>:</Text>
-                                <View style={styles.countdownUnit}>
-                                    <Text style={styles.countdownNumber}>
-                                        {padZero(countdown.minutes)}
-                                    </Text>
-                                    <Text style={styles.countdownUnitLabel}>min</Text>
-                                </View>
-                                <Text style={styles.countdownSeparator}>:</Text>
-                                <View style={styles.countdownUnit}>
-                                    <Text style={[styles.countdownNumber, styles.countdownSeconds]}>
-                                        {padZero(countdown.seconds)}
-                                    </Text>
-                                    <Text style={styles.countdownUnitLabel}>sec</Text>
-                                </View>
-                            </View>
-                        )}
 
-                        {maghribTime && (
-                            <Text style={styles.maghribTimeText}>
-                                Maghrib at {formatTime12h(maghribTime)}
-                            </Text>
+                                {isPastMaghrib ? (
+                                    <View style={s.iftarReached}>
+                                        <Text style={s.iftarReachedEmoji}>🌙</Text>
+                                        <Text style={s.iftarReachedText}>Alhamdulillah!</Text>
+                                        <Text style={s.iftarReachedSub}>
+                                            May your fast be accepted
+                                        </Text>
+                                    </View>
+                                ) : (
+                                    <View style={s.countdownTimerRow}>
+                                        <CountdownDigit value={iftarCountdown.hours} label="hours" />
+                                        <Text style={s.countdownSeparator}>:</Text>
+                                        <CountdownDigit value={iftarCountdown.minutes} label="min" />
+                                        <Text style={s.countdownSeparator}>:</Text>
+                                        <CountdownDigit value={iftarCountdown.seconds} label="sec" isSeconds />
+                                    </View>
+                                )}
+
+                                {prayerTimes?.maghrib && (
+                                    <Text style={s.prayerTimeText}>
+                                        Maghrib at {formatTime12h(prayerTimes.maghrib)}
+                                    </Text>
+                                )}
+
+                                {/* Divider between countdowns */}
+                                <View style={s.countdownDivider}>
+                                    <View style={s.countdownDividerLine} />
+                                    <Ionicons name="star" size={8} color={colors.gold[500] + '40'} />
+                                    <View style={s.countdownDividerLine} />
+                                </View>
+
+                                {/* Suhoor Countdown */}
+                                <View style={s.countdownHeader}>
+                                    <Ionicons name="sunny-outline" size={18} color={colors.amber[400]} />
+                                    <Text style={s.countdownLabel}>
+                                        {isPastFajr ? 'Suhoor Has Passed' : 'Time Until Suhoor Ends'}
+                                    </Text>
+                                </View>
+
+                                {isPastFajr ? (
+                                    <Text style={s.suhoorPastText}>
+                                        Fajr has entered — may your fast be blessed
+                                    </Text>
+                                ) : (
+                                    <View style={[s.countdownTimerRow, s.suhoorTimerRow]}>
+                                        <CountdownDigit value={suhoorCountdown.hours} label="hours" />
+                                        <Text style={s.countdownSeparator}>:</Text>
+                                        <CountdownDigit value={suhoorCountdown.minutes} label="min" />
+                                        <Text style={s.countdownSeparator}>:</Text>
+                                        <CountdownDigit value={suhoorCountdown.seconds} label="sec" isSeconds />
+                                    </View>
+                                )}
+
+                                {prayerTimes?.fajr && (
+                                    <Text style={s.prayerTimeText}>
+                                        Fajr at {formatTime12h(prayerTimes.fajr)}
+                                    </Text>
+                                )}
+                            </>
                         )}
 
                         {/* Gold accent line */}
                         <LinearGradient
                             colors={[colors.gold[600], colors.gold[400], colors.gold[600]]}
-                            style={styles.countdownAccent}
+                            style={s.countdownAccent}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                         />
                     </View>
                 </Animated.View>
 
-                {/* ════════════════════════════════════════════════
-                    2b. FASTING TRACKER
-                   ════════════════════════════════════════════════ */}
+                {/* ════════════════════════════════════════════════════
+                    3. FASTING TRACKER
+                   ════════════════════════════════════════════════════ */}
                 <Animated.View entering={FadeInDown.duration(500).delay(150)}>
-                    <GlassCard style={styles.fastingCard}>
-                        <View style={styles.fastingHeader}>
-                            <View style={styles.fastingTitleRow}>
+                    <GlassCard style={s.fastingCard}>
+                        <View style={s.fastingHeader}>
+                            <View style={s.fastingTitleRow}>
                                 <Ionicons name="restaurant-outline" size={18} color={colors.gold[400]} />
-                                <Text style={styles.fastingTitle}>Fasting Tracker</Text>
+                                <Text style={s.fastingTitle}>Fasting Tracker</Text>
                             </View>
-                            <Text style={styles.fastingCount}>
-                                {fastingCount}<Text style={styles.fastingCountMuted}>/{TOTAL_DAYS}</Text>
+                            <Text style={s.fastingCount}>
+                                {fastingCount}<Text style={s.fastingCountMuted}>/{TOTAL_DAYS}</Text>
                             </Text>
                         </View>
 
                         {/* Today toggle */}
                         <TouchableOpacity
-                            style={[styles.fastingToggle, isFastingToday && styles.fastingToggleActive]}
+                            style={[s.fastingToggle, isFastingToday && s.fastingToggleActive]}
                             onPress={toggleFasting}
                             activeOpacity={0.7}
                             accessibilityRole="switch"
@@ -441,134 +834,174 @@ export default function RamadanHub() {
                                 size={22}
                                 color={isFastingToday ? colors.emerald[400] : colors.text.muted}
                             />
-                            <Text style={[styles.fastingToggleText, isFastingToday && styles.fastingToggleTextActive]}>
+                            <Text style={[s.fastingToggleText, isFastingToday && s.fastingToggleTextActive]}>
                                 {isFastingToday ? 'Fasting today — MashaAllah!' : 'Fasting today?'}
                             </Text>
                         </TouchableOpacity>
 
                         {/* Calendar grid */}
-                        <View style={styles.calendarGrid}>
-                            {Array.from({ length: TOTAL_DAYS }, (_, i) => {
-                                const day = i + 1;
-                                const fasted = fastingDays.has(day);
-                                const isToday = day === ramadanDay;
-                                const isFuture = day > ramadanDay;
-                                return (
-                                    <View
-                                        key={day}
-                                        style={[
-                                            styles.calendarDay,
-                                            isToday && styles.calendarDayToday,
-                                            fasted && styles.calendarDayFasted,
-                                            isFuture && styles.calendarDayFuture,
-                                        ]}
-                                    >
-                                        {fasted ? (
-                                            <Ionicons name="checkmark" size={12} color={colors.obsidian[900]} />
-                                        ) : (
-                                            <Text style={[
-                                                styles.calendarDayText,
-                                                isToday && styles.calendarDayTextToday,
-                                                isFuture && styles.calendarDayTextFuture,
-                                            ]}>
-                                                {day}
-                                            </Text>
-                                        )}
-                                    </View>
-                                );
-                            })}
-                        </View>
+                        {calendarGrid}
                     </GlassCard>
                 </Animated.View>
 
-                {/* ════════════════════════════════════════════════
-                    2c. DAILY DUA
-                   ════════════════════════════════════════════════ */}
+                {/* ════════════════════════════════════════════════════
+                    4. CHARITY & TARAWEEH TRACKERS
+                   ════════════════════════════════════════════════════ */}
                 <Animated.View entering={FadeInDown.duration(500).delay(180)}>
-                    <GlassCard style={styles.duaCard} gold>
-                        <View style={styles.duaLabelRow}>
+                    <GlassCard style={s.trackersCard}>
+                        <TrackerRow
+                            icon="heart-outline"
+                            title="Sadaqah / Charity"
+                            count={charityCount}
+                            total={TOTAL_DAYS}
+                            isActive={isCharityToday}
+                            onToggle={toggleCharity}
+                            activeLabel="Gave today — JazakAllah Khair!"
+                            inactiveLabel="Give sadaqah today?"
+                            accentColor={colors.coral[400]}
+                        />
+
+                        <View style={s.trackerDivider} />
+
+                        <TrackerRow
+                            icon="moon-outline"
+                            title="Taraweeh Prayers"
+                            count={taraweehCount}
+                            total={TOTAL_DAYS}
+                            isActive={isTaraweehToday}
+                            onToggle={toggleTaraweeh}
+                            activeLabel="Prayed Taraweeh — MashaAllah!"
+                            inactiveLabel="Prayed Taraweeh tonight?"
+                            accentColor={colors.azure[400]}
+                        />
+                    </GlassCard>
+                </Animated.View>
+
+                {/* ════════════════════════════════════════════════════
+                    5. DAILY DUA
+                   ════════════════════════════════════════════════════ */}
+                <Animated.View entering={FadeInDown.duration(500).delay(210)}>
+                    <GlassCard style={s.duaCard} gold>
+                        <View style={s.duaLabelRow}>
                             <Ionicons name="hand-left-outline" size={15} color={colors.gold[400]} />
-                            <Text style={styles.duaLabel}>Daily Dua — Day {ramadanDay}</Text>
+                            <Text style={s.duaLabel}>Daily Dua — Day {ramadanDay}</Text>
                         </View>
-                        <Text style={styles.duaArabic}>{dailyDua.arabic}</Text>
-                        <Text style={styles.duaEnglish}>"{dailyDua.english}"</Text>
+                        <Text style={s.duaArabic}>{dailyDua.arabic}</Text>
+                        <Text style={s.duaEnglish}>"{dailyDua.english}"</Text>
                         <TouchableOpacity
-                            style={styles.shareButton}
+                            style={s.shareButton}
                             onPress={shareDua}
                             activeOpacity={0.7}
                             accessibilityRole="button"
                             accessibilityLabel="Share this dua"
                         >
                             <Ionicons name="share-outline" size={16} color={colors.gold[400]} />
-                            <Text style={styles.shareButtonText}>Share</Text>
+                            <Text style={s.shareButtonText}>Share</Text>
                         </TouchableOpacity>
                     </GlassCard>
                 </Animated.View>
 
-                {/* ════════════════════════════════════════════════
-                    3. VERSE OF THE DAY
-                   ════════════════════════════════════════════════ */}
-                <Animated.View entering={FadeInDown.duration(500).delay(200)}>
-                    <GlassCard style={styles.verseCard} gold>
-                        <View style={styles.verseLabelRow}>
+                {/* ════════════════════════════════════════════════════
+                    6. VERSE OF THE DAY
+                   ════════════════════════════════════════════════════ */}
+                <Animated.View entering={FadeInDown.duration(500).delay(240)}>
+                    <GlassCard style={s.verseCard} gold>
+                        <View style={s.verseLabelRow}>
                             <Ionicons name="book-outline" size={15} color={colors.gold[400]} />
-                            <Text style={styles.verseLabel}>Verse of the Day</Text>
+                            <Text style={s.verseLabel}>Verse of the Day</Text>
                         </View>
 
                         {/* Decorative ornament */}
-                        <View style={styles.verseOrnament}>
-                            <View style={styles.ornamentLine} />
+                        <View style={s.verseOrnament}>
+                            <View style={s.ornamentLine} />
                             <Ionicons name="star" size={10} color={colors.gold[500] + '60'} />
-                            <View style={styles.ornamentLine} />
+                            <View style={s.ornamentLine} />
                         </View>
 
-                        <Text style={styles.verseArabic}>{dailyVerse.arabic}</Text>
+                        <Text style={s.verseArabic}>{dailyVerse.arabic}</Text>
 
-                        <View style={styles.verseDivider} />
+                        <View style={s.verseDivider} />
 
-                        <Text style={styles.verseEnglish}>"{dailyVerse.english}"</Text>
-                        <Text style={styles.verseRef}>— Quran {dailyVerse.ref}</Text>
+                        <Text style={s.verseEnglish}>"{dailyVerse.english}"</Text>
+                        <Text style={s.verseRef}>— Quran {dailyVerse.ref}</Text>
 
                         <TouchableOpacity
-                            style={styles.shareButton}
+                            style={s.shareButton}
                             onPress={shareVerse}
                             activeOpacity={0.7}
                             accessibilityRole="button"
                             accessibilityLabel="Share this verse"
                         >
                             <Ionicons name="share-outline" size={16} color={colors.gold[400]} />
-                            <Text style={styles.shareButtonText}>Share</Text>
+                            <Text style={s.shareButtonText}>Share</Text>
                         </TouchableOpacity>
                     </GlassCard>
                 </Animated.View>
 
-                {/* ════════════════════════════════════════════════
-                    4. QURAN PROGRESS TRACKER
-                   ════════════════════════════════════════════════ */}
-                <Animated.View entering={FadeInDown.duration(500).delay(300)}>
-                    <GlassCard style={styles.progressCard}>
-                        <View style={styles.progressHeader}>
-                            <View style={styles.progressTitleRow}>
-                                <Ionicons name="book" size={18} color={colors.gold[400]} />
-                                <Text style={styles.progressTitle}>Quran Progress</Text>
+                {/* ════════════════════════════════════════════════════
+                    7. DAILY QURAN READING SUGGESTION
+                   ════════════════════════════════════════════════════ */}
+                <Animated.View entering={FadeInDown.duration(500).delay(270)}>
+                    <GlassCard style={s.readingCard}>
+                        <View style={s.readingHeader}>
+                            <View style={s.readingTitleRow}>
+                                <Ionicons name="reader-outline" size={18} color={colors.gold[400]} />
+                                <Text style={s.readingTitle}>Today's Reading</Text>
                             </View>
-                            <Text style={styles.progressFraction}>
-                                {juzCount}<Text style={styles.progressFractionMuted}>/30 juz</Text>
+                            <View style={s.readingJuzBadge}>
+                                <Text style={s.readingJuzText}>Juz {todaysReading.juz}</Text>
+                            </View>
+                        </View>
+
+                        <Text style={s.readingSurah}>{todaysReading.surah}</Text>
+                        <Text style={s.readingPages}>Pages {todaysReading.pages}</Text>
+
+                        <TouchableOpacity
+                            style={s.readingButton}
+                            onPress={() => navigate('/tools/quran')}
+                            activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel="Open Quran reader"
+                        >
+                            <LinearGradient
+                                colors={[colors.gold[600], colors.gold[500]]}
+                                style={StyleSheet.absoluteFill}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                            />
+                            <Ionicons name="book-outline" size={16} color={colors.obsidian[900]} />
+                            <Text style={s.readingButtonText}>Open Quran</Text>
+                        </TouchableOpacity>
+                    </GlassCard>
+                </Animated.View>
+
+                {/* ════════════════════════════════════════════════════
+                    8. QURAN PROGRESS TRACKER
+                   ════════════════════════════════════════════════════ */}
+                <Animated.View entering={FadeInDown.duration(500).delay(300)}>
+                    <GlassCard style={s.progressCard}>
+                        <View style={s.progressHeader}>
+                            <View style={s.progressTitleRow}>
+                                <Ionicons name="book" size={18} color={colors.gold[400]} />
+                                <Text style={s.progressTitle}>Quran Progress</Text>
+                            </View>
+                            <Text style={s.progressFraction}>
+                                {juzCount}<Text style={s.progressFractionMuted}>/30 juz</Text>
                             </Text>
                         </View>
 
                         {/* Progress bar */}
-                        <View style={styles.progressBarOuter}>
+                        <View style={s.progressBarOuter}>
                             <LinearGradient
                                 colors={[colors.gold[600], colors.gold[400]]}
-                                style={[styles.progressBarInner, { width: `${Math.max(progressPercent, 1)}%` as any }]}
+                                style={[s.progressBarInner, { width: `${Math.max(progressPercent, 1)}%` as `${number}%` }]}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                             />
                         </View>
 
                         {/* Status message */}
-                        <Text style={styles.progressMessage}>
+                        <Text style={s.progressMessage}>
                             {juzCount === 30
                                 ? 'MashaAllah! You completed the Quran this Ramadan!'
                                 : juzCount === 0
@@ -577,9 +1010,9 @@ export default function RamadanHub() {
                         </Text>
 
                         {/* +/- Buttons */}
-                        <View style={styles.progressButtons}>
+                        <View style={s.progressButtons}>
                             <TouchableOpacity
-                                style={[styles.juzButton, juzCount <= 0 && styles.juzButtonDisabled]}
+                                style={[s.juzButton, juzCount <= 0 && s.juzButtonDisabled]}
                                 onPress={() => updateJuzCount(-1)}
                                 disabled={juzCount <= 0}
                                 activeOpacity={0.7}
@@ -593,13 +1026,13 @@ export default function RamadanHub() {
                                 />
                             </TouchableOpacity>
 
-                            <View style={styles.juzCountDisplay}>
-                                <Text style={styles.juzCountText}>{juzCount}</Text>
-                                <Text style={styles.juzCountSub}>juz read</Text>
+                            <View style={s.juzCountDisplay}>
+                                <Text style={s.juzCountText}>{juzCount}</Text>
+                                <Text style={s.juzCountSub}>juz read</Text>
                             </View>
 
                             <TouchableOpacity
-                                style={[styles.juzButton, styles.juzButtonAdd, juzCount >= 30 && styles.juzButtonDisabled]}
+                                style={[s.juzButton, s.juzButtonAdd, juzCount >= 30 && s.juzButtonDisabled]}
                                 onPress={() => updateJuzCount(1)}
                                 disabled={juzCount >= 30}
                                 activeOpacity={0.7}
@@ -616,19 +1049,59 @@ export default function RamadanHub() {
                     </GlassCard>
                 </Animated.View>
 
-                {/* ════════════════════════════════════════════════
-                    5. QUICK ACTIONS
-                   ════════════════════════════════════════════════ */}
-                <Animated.View entering={FadeInDown.duration(500).delay(400)}>
-                    <View style={styles.quickActionsLabel}>
-                        <Ionicons name="flash-outline" size={14} color={colors.gold[400]} />
-                        <Text style={styles.quickActionsText}>Quick Actions</Text>
-                        <View style={styles.quickActionsDivider} />
+                {/* ════════════════════════════════════════════════════
+                    9. COMMUNITY INTEGRATION
+                   ════════════════════════════════════════════════════ */}
+                <Animated.View entering={FadeInDown.duration(500).delay(350)}>
+                    <View style={s.sectionLabel}>
+                        <Ionicons name="people-outline" size={14} color={colors.gold[400]} />
+                        <Text style={s.sectionLabelText}>Community</Text>
+                        <View style={s.sectionLabelDivider} />
                     </View>
 
-                    <View style={styles.quickActionsRow}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={s.communityScrollContent}
+                        style={s.communityScroll}
+                    >
+                        <CommunityCard
+                            icon="chatbubbles-outline"
+                            title="Ramadan Discussions"
+                            subtitle="Join the conversation"
+                            onPress={() => navigate('/(tabs)/communities')}
+                            gradientColors={[colors.gold[500] + '15', colors.gold[700] + '05']}
+                        />
+                        <CommunityCard
+                            icon="restaurant-outline"
+                            title="Iftar Sharing"
+                            subtitle="Share & coordinate"
+                            onPress={() => navigate('/(tabs)/create')}
+                            gradientColors={[colors.amber[500] + '12', colors.amber[700] + '04']}
+                        />
+                        <CommunityCard
+                            icon="notifications-outline"
+                            title="Prayer Reminders"
+                            subtitle="Group notifications"
+                            onPress={() => navigate('/settings/notifications')}
+                            gradientColors={[colors.azure[500] + '12', colors.azure[500] + '04']}
+                        />
+                    </ScrollView>
+                </Animated.View>
+
+                {/* ════════════════════════════════════════════════════
+                    10. QUICK ACTIONS
+                   ════════════════════════════════════════════════════ */}
+                <Animated.View entering={FadeInDown.duration(500).delay(400)}>
+                    <View style={s.sectionLabel}>
+                        <Ionicons name="flash-outline" size={14} color={colors.gold[400]} />
+                        <Text style={s.sectionLabelText}>Quick Actions</Text>
+                        <View style={s.sectionLabelDivider} />
+                    </View>
+
+                    <View style={s.quickActionsRow}>
                         <TouchableOpacity
-                            style={styles.quickActionCard}
+                            style={s.quickActionCard}
                             onPress={() => navigate('/tools/prayer-times')}
                             activeOpacity={0.7}
                             accessibilityRole="button"
@@ -640,14 +1113,14 @@ export default function RamadanHub() {
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 1 }}
                             />
-                            <View style={styles.quickActionIcon}>
+                            <View style={s.quickActionIcon}>
                                 <Ionicons name="time-outline" size={24} color={colors.gold[400]} />
                             </View>
-                            <Text style={styles.quickActionTitle}>Prayer Times</Text>
+                            <Text style={s.quickActionTitle}>Prayer Times</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={styles.quickActionCard}
+                            style={s.quickActionCard}
                             onPress={() => navigate('/tools/qibla')}
                             activeOpacity={0.7}
                             accessibilityRole="button"
@@ -659,14 +1132,14 @@ export default function RamadanHub() {
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 1 }}
                             />
-                            <View style={styles.quickActionIcon}>
+                            <View style={s.quickActionIcon}>
                                 <Ionicons name="compass-outline" size={24} color={colors.emerald[400]} />
                             </View>
-                            <Text style={styles.quickActionTitle}>Qibla</Text>
+                            <Text style={s.quickActionTitle}>Qibla</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={styles.quickActionCard}
+                            style={s.quickActionCard}
                             onPress={() => navigate('/tools/quran')}
                             activeOpacity={0.7}
                             accessibilityRole="button"
@@ -678,21 +1151,21 @@ export default function RamadanHub() {
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 1 }}
                             />
-                            <View style={styles.quickActionIcon}>
+                            <View style={s.quickActionIcon}>
                                 <Ionicons name="book-outline" size={24} color={colors.azure[400]} />
                             </View>
-                            <Text style={styles.quickActionTitle}>Quran</Text>
+                            <Text style={s.quickActionTitle}>Quran</Text>
                         </TouchableOpacity>
                     </View>
                 </Animated.View>
 
-                {/* ════════════════════════════════════════════════
-                    6. IFTAR MOMENT PROMPT (shows at/after Maghrib)
-                   ════════════════════════════════════════════════ */}
+                {/* ════════════════════════════════════════════════════
+                    11. IFTAR MOMENT PROMPT (shows at/after Maghrib)
+                   ════════════════════════════════════════════════════ */}
                 {isPastMaghrib && (
                     <Animated.View entering={FadeIn.duration(600)}>
                         <TouchableOpacity
-                            style={styles.iftarPrompt}
+                            style={s.iftarPrompt}
                             onPress={() => navigate('/(tabs)/create')}
                             activeOpacity={0.8}
                             accessibilityRole="button"
@@ -704,12 +1177,12 @@ export default function RamadanHub() {
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 1 }}
                             />
-                            <View style={styles.iftarPromptIcon}>
+                            <View style={s.iftarPromptIcon}>
                                 <Ionicons name="camera-outline" size={28} color={colors.gold[400]} />
                             </View>
-                            <View style={styles.iftarPromptContent}>
-                                <Text style={styles.iftarPromptTitle}>Share Your Iftar Moment</Text>
-                                <Text style={styles.iftarPromptSub}>
+                            <View style={s.iftarPromptContent}>
+                                <Text style={s.iftarPromptTitle}>Share Your Iftar Moment</Text>
+                                <Text style={s.iftarPromptSub}>
                                     Capture and share the blessings of tonight's iftar
                                 </Text>
                             </View>
@@ -719,10 +1192,12 @@ export default function RamadanHub() {
                 )}
 
                 {/* Footer */}
-                <Animated.View entering={FadeIn.duration(400).delay(600)} style={styles.footer}>
-                    <Text style={styles.footerText}>
-                        رمضان كريم
-                    </Text>
+                <Animated.View entering={FadeIn.duration(400).delay(600)} style={s.footer}>
+                    <View style={s.footerOrnament}>
+                        <View style={s.footerOrnamentLine} />
+                        <Text style={s.footerText}>رمضان كريم</Text>
+                        <View style={s.footerOrnamentLine} />
+                    </View>
                 </Animated.View>
             </ScrollView>
         </View>
@@ -730,7 +1205,7 @@ export default function RamadanHub() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.obsidian[900],
@@ -743,7 +1218,14 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         right: 0,
-        height: 300,
+        height: 350,
+    },
+    ambientGlowBottom: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 200,
+        height: 200,
     },
 
     // ── Hero Section ──────────────────────────────────────────────
@@ -754,9 +1236,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.lg,
     },
     crescentContainer: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
+        width: 80,
+        height: 80,
+        borderRadius: 40,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: spacing.md,
@@ -764,10 +1246,16 @@ const styles = StyleSheet.create({
     },
     crescentGlow: {
         ...StyleSheet.absoluteFillObject,
-        borderRadius: 36,
+        borderRadius: 40,
+    },
+    crescentRing: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 40,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '25',
     },
     crescentIcon: {
-        fontSize: 36,
+        fontSize: 38,
     },
     heroTitle: {
         fontSize: typography.fontSize['3xl'],
@@ -776,6 +1264,13 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Bold',
         letterSpacing: -0.5,
         marginBottom: spacing.sm,
+    },
+    bismillah: {
+        fontSize: 18,
+        color: colors.gold[500] + '50',
+        fontFamily: 'System',
+        textAlign: 'center',
+        marginBottom: spacing.md,
     },
     dayBadge: {
         flexDirection: 'row',
@@ -787,21 +1282,44 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         borderWidth: 1,
         borderColor: colors.gold[500] + '15',
-        marginBottom: spacing.lg,
+        marginBottom: spacing.sm,
     },
     dayBadgeText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '600',
         color: colors.gold[300],
     },
-    bismillah: {
-        fontSize: 18,
-        color: colors.gold[500] + '50',
-        fontFamily: 'System',
+    thirdLabel: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '500',
+        color: colors.gold[500] + '90',
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
+        marginBottom: spacing.md,
+    },
+    ramadanProgressContainer: {
+        width: '100%',
+        paddingHorizontal: spacing.xl,
+        marginTop: spacing.xs,
+    },
+    ramadanProgressOuter: {
+        height: 4,
+        backgroundColor: colors.surface.glass,
+        borderRadius: 2,
+        overflow: 'hidden',
+        marginBottom: spacing.xs,
+    },
+    ramadanProgressInner: {
+        height: '100%',
+        borderRadius: 2,
+    },
+    ramadanProgressText: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
         textAlign: 'center',
     },
 
-    // ── Iftar Countdown ───────────────────────────────────────────
+    // ── Countdowns ────────────────────────────────────────────────
     countdownCard: {
         marginHorizontal: spacing.lg,
         marginBottom: spacing.lg,
@@ -812,11 +1330,17 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         ...shadows.md,
     },
+    countdownLoadingContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: spacing['2xl'],
+        gap: spacing.md,
+    },
     countdownHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,
-        marginBottom: spacing.lg,
+        marginBottom: spacing.md,
     },
     countdownLabel: {
         fontSize: typography.fontSize.sm,
@@ -829,14 +1353,16 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.sm,
         color: colors.text.muted,
         textAlign: 'center',
-        paddingVertical: spacing.xl,
     },
     countdownTimerRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.sm,
-        marginBottom: spacing.lg,
+        marginBottom: spacing.md,
+    },
+    suhoorTimerRow: {
+        opacity: 0.85,
     },
     countdownUnit: {
         alignItems: 'center',
@@ -863,13 +1389,25 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize['4xl'],
         fontWeight: '300',
         color: colors.gold[500] + '50',
-        marginBottom: 18, // align with numbers, not labels
+        marginBottom: 18,
     },
-    maghribTimeText: {
+    prayerTimeText: {
         fontSize: typography.fontSize.xs,
         color: colors.text.muted,
         textAlign: 'center',
         marginBottom: spacing.sm,
+    },
+    countdownDivider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        marginVertical: spacing.lg,
+    },
+    countdownDividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: colors.gold[500] + '15',
     },
     countdownAccent: {
         position: 'absolute',
@@ -878,6 +1416,32 @@ const styles = StyleSheet.create({
         right: 0,
         height: 2,
         opacity: 0.5,
+    },
+    suhoorPastText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        fontStyle: 'italic',
+        paddingVertical: spacing.md,
+        marginBottom: spacing.sm,
+    },
+
+    // Error states
+    errorContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: spacing['2xl'],
+        gap: spacing.sm,
+    },
+    errorText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        textAlign: 'center',
+    },
+    errorHint: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        textAlign: 'center',
     },
 
     // Iftar reached state
@@ -979,7 +1543,7 @@ const styles = StyleSheet.create({
     },
     calendarDayFasted: {
         backgroundColor: colors.emerald[500],
-        borderColor: colors.emerald[600],
+        borderColor: colors.emerald[500],
     },
     calendarDayFuture: {
         opacity: 0.35,
@@ -995,6 +1559,73 @@ const styles = StyleSheet.create({
     },
     calendarDayTextFuture: {
         color: colors.text.muted,
+    },
+
+    // ── Charity & Taraweeh Trackers ─────────────────────────────
+    trackersCard: {
+        marginHorizontal: spacing.lg,
+        marginBottom: spacing.lg,
+        padding: spacing.xl,
+    },
+    trackerSection: {
+        // no extra style needed; container only
+    },
+    trackerHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md,
+    },
+    trackerTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    trackerTitle: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.text.primary,
+    },
+    trackerCount: {
+        fontSize: typography.fontSize.xl,
+        fontWeight: '700',
+    },
+    trackerCountMuted: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '500',
+        color: colors.text.muted,
+    },
+    trackerToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.md,
+        borderRadius: 14,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        marginBottom: spacing.md,
+    },
+    trackerToggleText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.secondary,
+    },
+    trackerProgressOuter: {
+        height: 4,
+        backgroundColor: colors.surface.glass,
+        borderRadius: 2,
+        overflow: 'hidden',
+    },
+    trackerProgressInner: {
+        height: '100%',
+        borderRadius: 2,
+    },
+    trackerDivider: {
+        height: 1,
+        backgroundColor: colors.border.subtle,
+        marginVertical: spacing.lg,
     },
 
     // ── Daily Dua ────────────────────────────────────────────────
@@ -1111,6 +1742,67 @@ const styles = StyleSheet.create({
         color: colors.gold[400],
     },
 
+    // ── Daily Reading Suggestion ──────────────────────────────────
+    readingCard: {
+        marginHorizontal: spacing.lg,
+        marginBottom: spacing.lg,
+        padding: spacing.xl,
+    },
+    readingHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md,
+    },
+    readingTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    readingTitle: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.text.primary,
+    },
+    readingJuzBadge: {
+        backgroundColor: colors.surface.goldSubtle,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '20',
+    },
+    readingJuzText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '700',
+        color: colors.gold[400],
+    },
+    readingSurah: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.secondary,
+        marginBottom: spacing.xs,
+    },
+    readingPages: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        marginBottom: spacing.lg,
+    },
+    readingButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        paddingVertical: spacing.md,
+        borderRadius: 14,
+        overflow: 'hidden',
+    },
+    readingButtonText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '700',
+        color: colors.obsidian[900],
+    },
+
     // ── Quran Progress ────────────────────────────────────────────
     progressCard: {
         marginHorizontal: spacing.lg,
@@ -1200,27 +1892,70 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
 
-    // ── Quick Actions ─────────────────────────────────────────────
-    quickActionsLabel: {
+    // ── Section Labels ────────────────────────────────────────────
+    sectionLabel: {
         flexDirection: 'row',
         alignItems: 'center',
         marginHorizontal: spacing.lg,
         marginBottom: spacing.md,
         gap: spacing.sm,
     },
-    quickActionsText: {
+    sectionLabelText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
         color: colors.text.secondary,
         textTransform: 'uppercase',
         letterSpacing: 1,
     },
-    quickActionsDivider: {
+    sectionLabelDivider: {
         flex: 1,
         height: 1,
         backgroundColor: colors.border.subtle,
         marginStart: spacing.sm,
     },
+
+    // ── Community Section ─────────────────────────────────────────
+    communityScroll: {
+        marginBottom: spacing.lg,
+    },
+    communityScrollContent: {
+        paddingHorizontal: spacing.lg,
+        gap: spacing.md,
+    },
+    communityCard: {
+        width: 160,
+        paddingVertical: spacing.lg,
+        paddingHorizontal: spacing.md,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        backgroundColor: colors.surface.glass,
+        overflow: 'hidden',
+        alignItems: 'center',
+    },
+    communityCardIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        backgroundColor: colors.surface.goldSubtle,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.sm,
+    },
+    communityCardTitle: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '700',
+        color: colors.text.primary,
+        textAlign: 'center',
+        marginBottom: 2,
+    },
+    communityCardSub: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        textAlign: 'center',
+    },
+
+    // ── Quick Actions ─────────────────────────────────────────────
     quickActionsRow: {
         flexDirection: 'row',
         paddingHorizontal: spacing.lg,
@@ -1293,6 +2028,17 @@ const styles = StyleSheet.create({
     footer: {
         alignItems: 'center',
         paddingVertical: spacing['2xl'],
+    },
+    footerOrnament: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        paddingHorizontal: spacing['2xl'],
+    },
+    footerOrnamentLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: colors.gold[500] + '15',
     },
     footerText: {
         fontSize: 20,

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ============================================================================
-// THE CARAVAN - ELITE SECTION
+// THE INNER CIRCLE - ELITE SECTION (0G Founder Network)
 // Phases 751-1000: Elite founder network with exclusive features
 // "No more minimum viable Muslims. We're the elite who carry the heavy load."
 // ============================================================================

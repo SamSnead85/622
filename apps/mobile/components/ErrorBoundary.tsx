@@ -45,12 +45,23 @@ export class ErrorBoundary extends Component<Props, State> {
                 });
             }
         } catch {
-            // Sentry not available
+            // Sentry not available — fall through to console logging
         }
-        console.error(`[ErrorBoundary${this.props.screenName ? ` - ${this.props.screenName}` : ''}]`, error, errorInfo.componentStack);
+
+        // Always log to console for debugging (dev & prod)
+        console.error(
+            `[ErrorBoundary${this.props.screenName ? ` - ${this.props.screenName}` : ''}]`,
+            error,
+            errorInfo.componentStack
+        );
+
+        // In dev, also log the full stack for quick debugging
+        if (__DEV__) {
+            console.error('[ErrorBoundary] Full error stack:', error.stack);
+        }
     }
 
-    handleRetry = () => {
+    handleRestart = () => {
         this.setState({ hasError: false, error: null });
     };
 
@@ -65,16 +76,20 @@ export class ErrorBoundary extends Component<Props, State> {
                     </View>
                     <Text style={styles.title}>Something went wrong</Text>
                     <Text style={styles.message}>
-                        We hit an unexpected error. Tap below to try again.
+                        We hit an unexpected error. Tap below to restart this screen.
                     </Text>
                     {__DEV__ && this.state.error && (
                         <ScrollView style={styles.devDetails} horizontal={false}>
-                            <Text style={styles.devText}>{this.state.error.message}</Text>
+                            <Text style={styles.devText}>
+                                {this.state.error.message}
+                                {'\n\n'}
+                                {this.state.error.stack?.split('\n').slice(0, 5).join('\n')}
+                            </Text>
                         </ScrollView>
                     )}
-                    <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Retry">
+                    <TouchableOpacity style={styles.retryButton} onPress={this.handleRestart} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Restart">
                         <Ionicons name="refresh" size={18} color={colors.obsidian[900]} />
-                        <Text style={styles.retryText}>Try Again</Text>
+                        <Text style={styles.retryText}>Restart</Text>
                     </TouchableOpacity>
                 </View>
             );

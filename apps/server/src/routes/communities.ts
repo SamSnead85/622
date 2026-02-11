@@ -3,9 +3,13 @@ import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 import { logger } from '../utils/logger.js';
 
 const router = Router();
+
+// Apply general rate limiting to all community endpoints
+router.use(rateLimiters.general);
 
 // GET /api/v1/communities
 router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {

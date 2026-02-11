@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -6,6 +6,7 @@ import {
     ScrollView,
     TouchableOpacity,
     Alert,
+    ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +25,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore } from '../../stores';
 import { ScreenHeader, GlassCard } from '../../components';
 import { apiFetch, API } from '../../lib/api';
+import { showError } from '../../stores/toastStore';
 
 // ─── Animated Circle for Score Ring ──────────────────────────────────
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -125,11 +127,15 @@ function VisibilityRow({
     icon,
     label,
     value,
+    statusIcon,
+    statusColor,
     onPress,
 }: {
     icon: keyof typeof Ionicons.glyphMap;
     label: string;
     value: string;
+    statusIcon?: keyof typeof Ionicons.glyphMap;
+    statusColor?: string;
     onPress?: () => void;
 }) {
     return (
@@ -143,13 +149,20 @@ function VisibilityRow({
             }}
             activeOpacity={onPress ? 0.7 : 1}
             disabled={!onPress}
+            accessibilityRole={onPress ? 'button' : 'text'}
+            accessibilityLabel={`${label}: ${value}`}
         >
             <View style={styles.visibilityIcon}>
                 <Ionicons name={icon} size={18} color={colors.gold[400]} />
             </View>
             <View style={styles.visibilityContent}>
                 <Text style={styles.visibilityLabel}>{label}</Text>
-                <Text style={styles.visibilityValue}>{value}</Text>
+                <View style={styles.visibilityValueRow}>
+                    {statusIcon && (
+                        <Ionicons name={statusIcon} size={13} color={statusColor || colors.text.muted} />
+                    )}
+                    <Text style={[styles.visibilityValue, statusColor ? { color: statusColor } : undefined]}>{value}</Text>
+                </View>
             </View>
             {onPress && (
                 <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
@@ -159,21 +172,26 @@ function VisibilityRow({
 }
 
 // ─── Encryption Check Row ────────────────────────────────────────────
-function EncryptionRow({ label }: { label: string }) {
+function EncryptionRow({ icon, label, status }: { icon: keyof typeof Ionicons.glyphMap; label: string; status?: string }) {
     return (
         <View style={styles.encryptionRow}>
             <View style={styles.encryptionBadge}>
                 <Ionicons name="checkmark-circle" size={18} color={colors.emerald[500]} />
             </View>
-            <Text style={styles.encryptionLabel}>{label}</Text>
+            <View style={styles.encryptionContent}>
+                <Text style={styles.encryptionLabel}>{label}</Text>
+                {status && <Text style={styles.encryptionStatus}>{status}</Text>}
+            </View>
+            <Ionicons name={icon} size={16} color={colors.emerald[400]} />
         </View>
     );
 }
 
 // ─── Data Stat ───────────────────────────────────────────────────────
-function DataStat({ value, label }: { value: string; label: string }) {
+function DataStat({ value, label, icon }: { value: string; label: string; icon: keyof typeof Ionicons.glyphMap }) {
     return (
         <View style={styles.dataStat}>
+            <Ionicons name={icon} size={16} color={colors.gold[400]} style={{ marginBottom: 4 }} />
             <Text style={styles.dataStatValue}>{value}</Text>
             <Text style={styles.dataStatLabel}>{label}</Text>
         </View>
@@ -185,6 +203,7 @@ export default function PrivacyDashboardScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
+    const [isExporting, setIsExporting] = useState(false);
 
     // ─── Calculate privacy score ─────────────────────
     const privacyScore = useMemo(() => {
@@ -194,7 +213,6 @@ export default function PrivacyDashboardScreen() {
         // Encryption is always on (platform feature) = +20
         score += 20;
         // 2FA: we treat it as enabled if user has gone through security setup
-        // For now, assume not enabled (server should expose this)
         // We give +20 if the user has a verified account as a proxy
         if (user?.isVerified) score += 20;
         // Public profile OFF = +20
@@ -205,13 +223,38 @@ export default function PrivacyDashboardScreen() {
         return score;
     }, [user]);
 
+    // ─── Score improvement tips ──────────────────────
+    const tips = useMemo(() => {
+        const result: Array<{ icon: keyof typeof Ionicons.glyphMap; text: string; action?: () => void }> = [];
+        if (!user?.isPrivate && user?.communityOptIn) {
+            result.push({
+                icon: 'eye-off-outline',
+                text: 'Switch to private mode for +20 points',
+                action: () => router.push('/settings' as any),
+            });
+        }
+        if (!user?.isVerified) {
+            result.push({
+                icon: 'shield-checkmark-outline',
+                text: 'Enable 2FA for +20 points',
+                action: () => router.push('/settings/security' as any),
+            });
+        }
+        result.push({
+            icon: 'download-outline',
+            text: 'Export your data to reach 100',
+            action: handleExportData,
+        });
+        return result;
+    }, [user]);
+
     const memberSince = useMemo(() => {
         if (!user?.createdAt) return 'Unknown';
         const date = new Date(user.createdAt);
         return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     }, [user?.createdAt]);
 
-    const handleExportData = () => {
+    function handleExportData() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         Alert.alert(
             'Export All My Data',
@@ -221,6 +264,7 @@ export default function PrivacyDashboardScreen() {
                 {
                     text: 'Request Export',
                     onPress: async () => {
+                        setIsExporting(true);
                         try {
                             await apiFetch(API.accountExport, { method: 'POST' });
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -230,12 +274,15 @@ export default function PrivacyDashboardScreen() {
                             );
                         } catch {
                             Alert.alert('Error', 'Failed to request data export. Please try again.');
+                            showError('Could not request data export');
+                        } finally {
+                            setIsExporting(false);
                         }
                     },
                 },
             ]
         );
-    };
+    }
 
     const handleDeleteAccount = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -295,12 +342,40 @@ export default function PrivacyDashboardScreen() {
                         <Text style={styles.scoreHint}>
                             Enable 2FA, go private, and export your data to reach 100.
                         </Text>
+
+                        {/* Improvement Tips */}
+                        {tips.length > 0 && (
+                            <View style={styles.tipsContainer}>
+                                {tips.map((tip, i) => (
+                                    <TouchableOpacity
+                                        key={i}
+                                        style={styles.tipRow}
+                                        onPress={tip.action}
+                                        activeOpacity={tip.action ? 0.7 : 1}
+                                        disabled={!tip.action}
+                                        accessibilityRole={tip.action ? 'button' : 'text'}
+                                        accessibilityLabel={tip.text}
+                                    >
+                                        <View style={styles.tipIcon}>
+                                            <Ionicons name={tip.icon} size={14} color={colors.gold[400]} />
+                                        </View>
+                                        <Text style={styles.tipText}>{tip.text}</Text>
+                                        {tip.action && (
+                                            <Ionicons name="chevron-forward" size={12} color={colors.text.muted} />
+                                        )}
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
                     </GlassCard>
                 </Animated.View>
 
                 {/* ─── 2. Who Can See You ────────────────────────── */}
                 <Animated.View entering={stagger(1)}>
-                    <Text style={styles.sectionTitle}>Your Visibility</Text>
+                    <View style={styles.sectionTitleRow}>
+                        <Ionicons name="eye-outline" size={14} color={colors.gold[500]} />
+                        <Text style={styles.sectionTitle}>Your Visibility</Text>
+                    </View>
                     <GlassCard padding="none">
                         <VisibilityRow
                             icon="eye-outline"
@@ -310,18 +385,24 @@ export default function PrivacyDashboardScreen() {
                                     ? 'Everyone in the community'
                                     : `${user?.followersCount ?? 0} followers`
                             }
+                            statusIcon={user?.communityOptIn ? 'lock-open-outline' : 'lock-closed-outline'}
+                            statusColor={user?.communityOptIn ? colors.amber[500] : colors.emerald[500]}
                             onPress={() => router.push('/settings' as any)}
                         />
                         <VisibilityRow
                             icon="search-outline"
                             label="You appear in community search"
                             value={user?.communityOptIn ? 'Yes' : 'No'}
+                            statusIcon={user?.communityOptIn ? 'lock-open-outline' : 'lock-closed-outline'}
+                            statusColor={user?.communityOptIn ? colors.amber[500] : colors.emerald[500]}
                             onPress={() => router.push('/settings' as any)}
                         />
                         <VisibilityRow
                             icon="globe-outline"
                             label="Public profile"
                             value={user?.communityOptIn ? 'Enabled' : 'Disabled'}
+                            statusIcon={user?.communityOptIn ? 'lock-open-outline' : 'lock-closed-outline'}
+                            statusColor={user?.communityOptIn ? colors.amber[500] : colors.emerald[500]}
                             onPress={() => router.push('/settings' as any)}
                         />
                     </GlassCard>
@@ -329,29 +410,42 @@ export default function PrivacyDashboardScreen() {
 
                 {/* ─── 3. Encryption Status ──────────────────────── */}
                 <Animated.View entering={stagger(2)}>
-                    <Text style={styles.sectionTitle}>Encryption Status</Text>
+                    <View style={styles.sectionTitleRow}>
+                        <Ionicons name="lock-closed-outline" size={14} color={colors.emerald[500]} />
+                        <Text style={styles.sectionTitle}>Encryption Status</Text>
+                    </View>
                     <GlassCard style={styles.encryptionCard} padding="lg">
                         <View style={styles.encryptionHeader}>
                             <View style={styles.encryptionIconWrap}>
                                 <Ionicons name="lock-closed" size={22} color={colors.emerald[400]} />
                             </View>
-                            <Text style={styles.encryptionTitle}>Fully Protected</Text>
+                            <View style={styles.encryptionHeaderText}>
+                                <Text style={styles.encryptionTitle}>Fully Protected</Text>
+                                <Text style={styles.encryptionSubtitle}>All systems operational</Text>
+                            </View>
+                            <View style={styles.encryptionActiveBadge}>
+                                <View style={styles.encryptionActiveDot} />
+                                <Text style={styles.encryptionActiveText}>Active</Text>
+                            </View>
                         </View>
-                        <EncryptionRow label="Your messages are end-to-end encrypted" />
-                        <EncryptionRow label="Your media is stored with AES-256 encryption" />
-                        <EncryptionRow label="All API traffic uses TLS 1.3" />
+                        <EncryptionRow icon="chatbubble-ellipses-outline" label="End-to-end encrypted messages" status="E2EE" />
+                        <EncryptionRow icon="server-outline" label="AES-256 encrypted media storage" status="AES-256" />
+                        <EncryptionRow icon="globe-outline" label="TLS 1.3 secured API traffic" status="TLS 1.3" />
                     </GlassCard>
                 </Animated.View>
 
                 {/* ─── 4. Your Data ──────────────────────────────── */}
                 <Animated.View entering={stagger(3)}>
-                    <Text style={styles.sectionTitle}>Your Data</Text>
+                    <View style={styles.sectionTitleRow}>
+                        <Ionicons name="bar-chart-outline" size={14} color={colors.gold[500]} />
+                        <Text style={styles.sectionTitle}>Your Data</Text>
+                    </View>
                     <GlassCard padding="lg">
                         <View style={styles.dataGrid}>
-                            <DataStat value={String(user?.postsCount ?? 0)} label="Posts" />
-                            <DataStat value={String(user?.followersCount ?? 0)} label="Followers" />
-                            <DataStat value={String(user?.followingCount ?? 0)} label="Following" />
-                            <DataStat value={memberSince} label="Member since" />
+                            <DataStat value={String(user?.postsCount ?? 0)} label="Posts" icon="create-outline" />
+                            <DataStat value={String(user?.followersCount ?? 0)} label="Followers" icon="people-outline" />
+                            <DataStat value={String(user?.followingCount ?? 0)} label="Following" icon="person-add-outline" />
+                            <DataStat value={memberSince} label="Member since" icon="calendar-outline" />
                         </View>
 
                         {/* Export Button */}
@@ -359,6 +453,7 @@ export default function PrivacyDashboardScreen() {
                             style={styles.exportBtn}
                             onPress={handleExportData}
                             activeOpacity={0.9}
+                            disabled={isExporting}
                             accessibilityRole="button"
                             accessibilityLabel="Export all my data"
                         >
@@ -368,12 +463,18 @@ export default function PrivacyDashboardScreen() {
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 1 }}
                             >
-                                <Ionicons
-                                    name="download-outline"
-                                    size={18}
-                                    color={colors.obsidian[900]}
-                                />
-                                <Text style={styles.exportBtnText}>Export All My Data</Text>
+                                {isExporting ? (
+                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                ) : (
+                                    <>
+                                        <Ionicons
+                                            name="download-outline"
+                                            size={18}
+                                            color={colors.obsidian[900]}
+                                        />
+                                        <Text style={styles.exportBtnText}>Export All My Data</Text>
+                                    </>
+                                )}
                             </LinearGradient>
                         </TouchableOpacity>
 
@@ -384,6 +485,7 @@ export default function PrivacyDashboardScreen() {
                             accessibilityRole="button"
                             accessibilityLabel="Delete my account"
                         >
+                            <Ionicons name="trash-outline" size={14} color={colors.coral[500]} />
                             <Text style={styles.deleteLinkText}>Delete My Account</Text>
                         </TouchableOpacity>
                     </GlassCard>
@@ -437,15 +539,20 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: spacing.lg,
     },
+    sectionTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginTop: spacing.xl,
+        marginBottom: spacing.sm,
+        marginStart: spacing.xs,
+    },
     sectionTitle: {
         fontSize: typography.fontSize.xs,
         fontWeight: '700',
         color: colors.text.muted,
         textTransform: 'uppercase',
         letterSpacing: 1.2,
-        marginTop: spacing.xl,
-        marginBottom: spacing.sm,
-        marginStart: spacing.xs,
     },
 
     // ─── Score Card ─────────────────────────────────
@@ -465,6 +572,36 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: spacing.xs,
         lineHeight: 18,
+    },
+
+    // ─── Tips ────────────────────────────────────────
+    tipsContainer: {
+        marginTop: spacing.lg,
+        width: '100%',
+        gap: spacing.xs,
+    },
+    tipRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface.glassHover,
+        borderRadius: 10,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.md,
+        gap: spacing.sm,
+    },
+    tipIcon: {
+        width: 24,
+        height: 24,
+        borderRadius: 6,
+        backgroundColor: colors.surface.goldSubtle,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tipText: {
+        flex: 1,
+        fontSize: typography.fontSize.xs,
+        color: colors.text.secondary,
+        lineHeight: 16,
     },
 
     // ─── Visibility Rows ────────────────────────────
@@ -491,11 +628,16 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.sm,
         color: colors.text.muted,
     },
+    visibilityValueRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 1,
+    },
     visibilityValue: {
         fontSize: typography.fontSize.base,
         fontWeight: '600',
         color: colors.text.primary,
-        marginTop: 1,
     },
 
     // ─── Encryption ─────────────────────────────────
@@ -515,11 +657,39 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    encryptionHeaderText: {
+        flex: 1,
+        marginStart: spacing.md,
+    },
     encryptionTitle: {
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
         color: colors.text.primary,
-        marginStart: spacing.md,
+    },
+    encryptionSubtitle: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        marginTop: 1,
+    },
+    encryptionActiveBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: colors.emerald[500] + '14',
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 3,
+        borderRadius: 8,
+    },
+    encryptionActiveDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: colors.emerald[500],
+    },
+    encryptionActiveText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.emerald[500],
     },
     encryptionRow: {
         flexDirection: 'row',
@@ -533,11 +703,21 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    encryptionContent: {
+        flex: 1,
+    },
     encryptionLabel: {
         fontSize: typography.fontSize.sm,
         color: colors.text.secondary,
-        flex: 1,
         lineHeight: 18,
+    },
+    encryptionStatus: {
+        fontSize: 9,
+        fontWeight: '700',
+        color: colors.emerald[400],
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginTop: 1,
     },
 
     // ─── Data Section ───────────────────────────────
@@ -592,9 +772,12 @@ const styles = StyleSheet.create({
 
     // ─── Delete Link ────────────────────────────────
     deleteLink: {
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         marginTop: spacing.md,
         paddingVertical: spacing.sm,
+        gap: spacing.xs,
     },
     deleteLinkText: {
         fontSize: typography.fontSize.sm,

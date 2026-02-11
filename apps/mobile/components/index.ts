@@ -13,6 +13,7 @@ export { Input } from './Input';
 export { LoadingView } from './LoadingView';
 export { EmptyState } from './EmptyState';
 export { ErrorBoundary } from './ErrorBoundary';
+export { OfflineBanner } from './OfflineBanner';
 export { RetryView } from './RetryView';
 export { default as SkeletonPost, SkeletonFeed, SkeletonGrid, SkeletonToContent } from './SkeletonPost';
 export { default as SkeletonList } from './SkeletonList';

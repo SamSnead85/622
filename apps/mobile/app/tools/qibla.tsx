@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -9,11 +8,10 @@ import Animated, {
     useAnimatedStyle,
     withSpring,
     FadeIn,
-    FadeInDown,
     FadeInUp,
 } from 'react-native-reanimated';
 import { colors, typography, spacing, shadows } from '@zerog/ui';
-import { ScreenHeader, LoadingView } from '../../components';
+import { ScreenHeader, LoadingView, RetryView } from '../../components';
 
 // ─── Constants ────────────────────────────────────────────────────
 const KAABA_LAT = 21.4225;
@@ -81,52 +79,62 @@ function CompassTick({ index, total }: { index: number; total: number }) {
 
 // ─── Main Screen ──────────────────────────────────────────────────
 export default function QiblaScreen() {
-    const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isRetrying, setIsRetrying] = useState(false);
     const [qiblaAngle, setQiblaAngle] = useState(0);
     const [distance, setDistance] = useState(0);
     const [locationName, setLocationName] = useState('');
     const rotation = useSharedValue(0);
 
-    useEffect(() => {
-        (async () => {
-            try {
-                const { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== 'granted') {
-                    Alert.alert('Location Required', 'Qibla direction requires location access.');
-                    setIsLoading(false);
-                    return;
-                }
+    const loadQibla = useCallback(async (isRetry = false) => {
+        try {
+            if (isRetry) setIsRetrying(true);
+            setError(null);
 
-                const loc = await Location.getCurrentPositionAsync({
-                    accuracy: Location.Accuracy.High,
-                });
-                const { latitude, longitude } = loc.coords;
-
-                const angle = calculateQiblaDirection(latitude, longitude);
-                setQiblaAngle(Math.round(angle));
-                setDistance(calculateDistance(latitude, longitude));
-
-                rotation.value = withSpring(angle, {
-                    damping: 18,
-                    stiffness: 70,
-                    mass: 1.2,
-                });
-
-                try {
-                    const geoResults = await Location.reverseGeocodeAsync({ latitude, longitude });
-                    const geo = geoResults?.[0];
-                    if (geo) setLocationName(geo.city || geo.subregion || 'Your Location');
-                } catch {
-                    setLocationName('Your Location');
-                }
-            } catch (err) {
-                console.error('Qibla error:', err);
-            } finally {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                setError('Location access is required to determine the Qibla direction. Please enable it in Settings.');
                 setIsLoading(false);
+                setIsRetrying(false);
+                return;
             }
-        })();
-    }, []);
+
+            const loc = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.High,
+            });
+            const { latitude, longitude } = loc.coords;
+
+            const angle = calculateQiblaDirection(latitude, longitude);
+            setQiblaAngle(Math.round(angle));
+            setDistance(calculateDistance(latitude, longitude));
+
+            rotation.value = withSpring(angle, {
+                damping: 18,
+                stiffness: 70,
+                mass: 1.2,
+            });
+
+            try {
+                const geoResults = await Location.reverseGeocodeAsync({ latitude, longitude });
+                const geo = geoResults?.[0];
+                if (geo) setLocationName(geo.city || geo.subregion || 'Your Location');
+                else setLocationName('Your Location');
+            } catch {
+                setLocationName('Your Location');
+            }
+        } catch (err) {
+            console.error('Qibla error:', err);
+            setError('Could not determine your location. Please check your GPS and try again.');
+        } finally {
+            setIsLoading(false);
+            setIsRetrying(false);
+        }
+    }, [rotation]);
+
+    useEffect(() => {
+        loadQibla();
+    }, [loadQibla]);
 
     const needleStyle = useAnimatedStyle(() => ({
         transform: [{ rotate: `${rotation.value}deg` }],
@@ -146,6 +154,13 @@ export default function QiblaScreen() {
             <View style={styles.content}>
                 {isLoading ? (
                     <LoadingView message="Finding Qibla direction..." />
+                ) : error ? (
+                    <RetryView
+                        message={error}
+                        onRetry={() => loadQibla(true)}
+                        isRetrying={isRetrying}
+                        icon="location-outline"
+                    />
                 ) : (
                     <Animated.View entering={FadeIn.duration(700)} style={styles.compassContainer}>
                         {/* Outer glow ring */}

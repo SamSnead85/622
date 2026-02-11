@@ -16,6 +16,7 @@ import {
     ScrollView,
     Alert,
     ActivityIndicator,
+    Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,6 +49,37 @@ const BIOMETRIC_ENABLED_KEY = '@biometric-enabled';
 const LAST_EMAIL_KEY = '@last-login-email';
 
 // ============================================
+// User-friendly error message mapping
+// ============================================
+
+function friendlyError(raw: string): string {
+    const lower = raw.toLowerCase();
+    if (lower.includes('invalid') || lower.includes('credentials') || lower.includes('unauthorized')) {
+        return 'Incorrect email or password. Please try again.';
+    }
+    if (lower.includes('not found') || lower.includes('no user') || lower.includes('no account')) {
+        return 'No account found with this email. Would you like to sign up?';
+    }
+    if (lower.includes('too many') || lower.includes('rate limit') || lower.includes('throttl')) {
+        return 'Too many attempts. Please wait a moment and try again.';
+    }
+    if (lower.includes('network') || lower.includes('fetch') || lower.includes('timeout')) {
+        return 'Connection issue. Please check your internet and try again.';
+    }
+    if (lower.includes('locked') || lower.includes('disabled') || lower.includes('suspended')) {
+        return 'This account has been temporarily locked. Please try again later or contact support.';
+    }
+    if (lower.includes('server') || lower.includes('500') || lower.includes('internal')) {
+        return 'Something went wrong on our end. Please try again in a moment.';
+    }
+    // Return the original if it's already user-friendly (short, no stack trace)
+    if (raw.length < 100 && !raw.includes('Error:') && !raw.includes('at ')) {
+        return raw;
+    }
+    return 'Sign in failed. Please try again.';
+}
+
+// ============================================
 // Animated Input Field Component
 // ============================================
 
@@ -77,6 +109,20 @@ function AnimatedField({
 }: AnimatedFieldProps) {
     const [isSecure, setIsSecure] = useState(secureTextEntry ?? false);
     const isFocused = useSharedValue(0);
+    const shakeX = useSharedValue(0);
+
+    // Shake animation when error appears
+    useEffect(() => {
+        if (error) {
+            shakeX.value = withSequence(
+                withTiming(-8, { duration: 50 }),
+                withTiming(8, { duration: 50 }),
+                withTiming(-6, { duration: 50 }),
+                withTiming(6, { duration: 50 }),
+                withTiming(0, { duration: 50 }),
+            );
+        }
+    }, [error, shakeX]);
 
     const handleFocus = useCallback(() => {
         isFocused.value = withTiming(1, { duration: 200 });
@@ -93,16 +139,20 @@ function AnimatedField({
             : interpolateColor(isFocused.value, [0, 1], [colors.border.subtle, colors.gold[500] + '60']),
     }));
 
+    const animatedShakeStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: shakeX.value }],
+    }));
+
     return (
         <Animated.View
             entering={FadeInDown.delay(delay).duration(400).springify()}
-            style={styles.fieldGroup}
+            style={[styles.fieldGroup, animatedShakeStyle]}
         >
             <Text style={styles.fieldLabel}>{label}</Text>
             <Animated.View style={[styles.fieldInput, animatedBorderStyle]}>
                 {icon && (
                     <View style={styles.fieldIconContainer}>
-                        <Ionicons name={icon} size={18} color={colors.text.muted} />
+                        <Ionicons name={icon} size={18} color={error ? colors.coral[400] : colors.text.muted} />
                     </View>
                 )}
                 <TextInput
@@ -123,6 +173,7 @@ function AnimatedField({
                     onChangeText={onChangeText}
                     selectionColor={colors.gold[500]}
                     accessibilityLabel={label}
+                    accessibilityHint={error ? `Error: ${error}` : undefined}
                 />
                 {secureTextEntry && (
                     <TouchableOpacity
@@ -133,6 +184,7 @@ function AnimatedField({
                         }}
                         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                         accessibilityLabel={isSecure ? 'Show password' : 'Hide password'}
+                        accessibilityRole="button"
                     >
                         <Ionicons
                             name={isSecure ? 'eye-off-outline' : 'eye-outline'}
@@ -143,7 +195,11 @@ function AnimatedField({
                 )}
             </Animated.View>
             {error && (
-                <Animated.Text entering={FadeIn.duration(200)} style={styles.fieldError}>
+                <Animated.Text
+                    entering={FadeIn.duration(200)}
+                    style={styles.fieldError}
+                    accessibilityLiveRegion="assertive"
+                >
                     {error}
                 </Animated.Text>
             )}
@@ -171,11 +227,15 @@ function SocialButton({
         <Animated.View entering={FadeInDown.delay(delay).duration(400).springify()}>
             <TouchableOpacity
                 style={[styles.socialButton, { backgroundColor: bgColor, borderColor }]}
-                onPress={onPress}
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onPress();
+                }}
                 activeOpacity={0.7}
                 disabled={loading}
                 accessibilityRole="button"
                 accessibilityLabel={label}
+                accessibilityState={{ busy: loading }}
             >
                 {loading ? (
                     <ActivityIndicator size="small" color={color} />
@@ -183,6 +243,27 @@ function SocialButton({
                     <Ionicons name={icon} size={20} color={color} />
                 )}
                 <Text style={[styles.socialButtonText, { color }]}>{label}</Text>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// General Error Banner
+// ============================================
+
+function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+    return (
+        <Animated.View entering={FadeInDown.duration(300).springify()} style={styles.errorBanner}>
+            <Ionicons name="alert-circle" size={18} color={colors.coral[400]} />
+            <Text style={styles.errorBannerText}>{message}</Text>
+            <TouchableOpacity
+                onPress={onDismiss}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityLabel="Dismiss error"
+                accessibilityRole="button"
+            >
+                <Ionicons name="close" size={16} color={colors.coral[400]} />
             </TouchableOpacity>
         </Animated.View>
     );
@@ -203,13 +284,21 @@ export default function LoginScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+    const [generalError, setGeneralError] = useState<string | null>(null);
     const [biometricAvailable, setBiometricAvailable] = useState(false);
     const [biometricType, setBiometricType] = useState<string>('Biometrics');
     const [showBiometric, setShowBiometric] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
 
     const passwordRef = useRef<TextInput>(null);
+    const scrollRef = useRef<ScrollView>(null);
     const biometricTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Button scale animation
+    const buttonScale = useSharedValue(1);
+    const animatedButtonStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: buttonScale.value }],
+    }));
 
     // ---- Check biometric availability ----
     useEffect(() => {
@@ -238,7 +327,7 @@ export default function LoginScreen() {
                     }
                 }
             } catch {
-                // Biometric not available
+                // Biometric not available on this device
             }
         };
         checkBiometric();
@@ -257,7 +346,6 @@ export default function LoginScreen() {
             if (result.success) {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 // Biometric success — the existing token from SecureStore handles auth
-                // Re-initialize to use the stored token
                 const { initialize } = useAuthStore.getState();
                 await initialize();
                 const isAuth = useAuthStore.getState().isAuthenticated;
@@ -266,7 +354,7 @@ export default function LoginScreen() {
                 } else {
                     // Token expired, need password
                     setShowBiometric(false);
-                    Alert.alert('Session Expired', 'Please sign in with your password.');
+                    setGeneralError('Your session has expired. Please sign in with your password.');
                 }
             }
         } catch {
@@ -277,7 +365,6 @@ export default function LoginScreen() {
     // ---- Auto-prompt biometric on mount ----
     useEffect(() => {
         if (showBiometric) {
-            // Small delay for screen to render
             biometricTimerRef.current = setTimeout(handleBiometricAuth, 600);
             return () => {
                 if (biometricTimerRef.current) clearTimeout(biometricTimerRef.current);
@@ -288,7 +375,7 @@ export default function LoginScreen() {
     // ---- Email validation ----
     const validateEmail = (text: string) => {
         if (!text.trim()) return 'Email is required';
-        if (!/\S+@\S+\.\S+/.test(text)) return 'Please enter a valid email';
+        if (!/\S+@\S+\.\S+/.test(text)) return 'Please enter a valid email address';
         return undefined;
     };
 
@@ -296,6 +383,7 @@ export default function LoginScreen() {
     const handleAppleLogin = useCallback(async () => {
         try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setGeneralError(null);
             const credential = await AppleAuthentication.signInAsync({
                 requestedScopes: [
                     AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -311,7 +399,7 @@ export default function LoginScreen() {
         } catch (error: any) {
             if (error.code !== 'ERR_REQUEST_CANCELED') {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                Alert.alert('Apple Sign In', 'Sign in with Apple failed. Please try again.');
+                setGeneralError('Apple Sign In failed. Please try again.');
             }
         }
     }, [appleLogin, router]);
@@ -320,14 +408,14 @@ export default function LoginScreen() {
     const handleGoogleLogin = useCallback(async () => {
         try {
             setGoogleLoading(true);
+            setGeneralError(null);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-            // Use expo-auth-session with Google's OAuth
             const redirectUri = AuthSession.makeRedirectUri({ preferLocalhost: false });
             const clientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 
             if (!clientId) {
-                Alert.alert('Google Sign In', 'Google Sign In is being configured. Please use email or Apple Sign In for now.');
+                setGeneralError('Google Sign In is being set up. Please use email or Apple Sign In for now.');
                 setGoogleLoading(false);
                 return;
             }
@@ -354,9 +442,9 @@ export default function LoginScreen() {
         } catch (error: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             if (error?.message?.includes('configured')) {
-                Alert.alert('Google Sign In', 'Google Sign In is being configured. Please use email or Apple Sign In for now.');
+                setGeneralError('Google Sign In is being set up. Please use email or Apple Sign In for now.');
             } else {
-                Alert.alert('Google Sign In', 'Sign in with Google failed. Please try again.');
+                setGeneralError('Google Sign In failed. Please try again.');
             }
         } finally {
             setGoogleLoading(false);
@@ -365,10 +453,14 @@ export default function LoginScreen() {
 
     // ---- Email/Password Login ----
     const handleLogin = useCallback(async () => {
+        Keyboard.dismiss();
+        setGeneralError(null);
+
         const emailError = validateEmail(email);
         const newErrors: { email?: string; password?: string } = {};
         if (emailError) newErrors.email = emailError;
         if (!password) newErrors.password = 'Password is required';
+        else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -377,6 +469,11 @@ export default function LoginScreen() {
         }
 
         try {
+            // Animate button press
+            buttonScale.value = withSequence(
+                withSpring(0.96, { damping: 15 }),
+                withSpring(1, { damping: 15 }),
+            );
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             await login(email.trim(), password);
 
@@ -408,10 +505,10 @@ export default function LoginScreen() {
             router.replace('/(tabs)');
         } catch (error: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            const message = error?.data?.error || error?.message || 'Invalid email or password';
-            setErrors({ email: message });
+            const rawMessage = error?.data?.error || error?.message || 'Invalid email or password';
+            setGeneralError(friendlyError(rawMessage));
         }
-    }, [email, password, login, router, biometricAvailable, biometricType]);
+    }, [email, password, login, router, biometricAvailable, biometricType, buttonScale]);
 
     return (
         <LinearGradient
@@ -421,21 +518,25 @@ export default function LoginScreen() {
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
                 <ScrollView
+                    ref={scrollRef}
                     contentContainerStyle={[
                         styles.scrollContent,
-                        { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 },
+                        { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 40 },
                     ]}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="interactive"
+                    bounces={false}
                 >
                     {/* Back button */}
                     <BackButton style={{ alignSelf: 'flex-start', marginBottom: spacing.lg }} />
 
                     {/* 0G Branding */}
                     <Animated.View entering={FadeInDown.delay(30).duration(500).springify()} style={styles.brandingContainer}>
-                        <Text style={styles.brandingText}>0G</Text>
+                        <Text style={styles.brandingText} accessibilityLabel="Zero G">0G</Text>
                         <Text style={styles.brandingTagline}>Zero Gravity</Text>
                     </Animated.View>
 
@@ -448,6 +549,14 @@ export default function LoginScreen() {
                             </Text>
                         </View>
                     </Animated.View>
+
+                    {/* General Error Banner */}
+                    {generalError && (
+                        <ErrorBanner
+                            message={generalError}
+                            onDismiss={() => setGeneralError(null)}
+                        />
+                    )}
 
                     {/* Social Sign In — Placed first for frictionless access */}
                     <Animated.View entering={FadeInDown.delay(100).duration(400)}>
@@ -483,6 +592,8 @@ export default function LoginScreen() {
                                 style={styles.biometricButton}
                                 onPress={handleBiometricAuth}
                                 activeOpacity={0.7}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Sign in with ${biometricType}`}
                             >
                                 <LinearGradient
                                     colors={[colors.gold[500] + '15', colors.gold[500] + '05']}
@@ -517,6 +628,7 @@ export default function LoginScreen() {
                             onChangeText={(text) => {
                                 setEmail(text);
                                 if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+                                if (generalError) setGeneralError(null);
                             }}
                             error={errors.email}
                             keyboardType="email-address"
@@ -534,6 +646,7 @@ export default function LoginScreen() {
                             onChangeText={(text) => {
                                 setPassword(text);
                                 if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
+                                if (generalError) setGeneralError(null);
                             }}
                             error={errors.password}
                             secureTextEntry
@@ -563,23 +676,29 @@ export default function LoginScreen() {
                             </TouchableOpacity>
                         </Animated.View>
 
-                        <Animated.View entering={FadeInDown.delay(380).duration(400)}>
+                        <Animated.View entering={FadeInDown.delay(380).duration(400)} style={animatedButtonStyle}>
                             <TouchableOpacity
                                 onPress={handleLogin}
                                 disabled={isLoading}
                                 activeOpacity={0.85}
-                                style={styles.submitButton}
+                                style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
                                 accessibilityRole="button"
-                                accessibilityLabel="Sign in"
+                                accessibilityLabel={isLoading ? 'Signing in' : 'Sign in'}
+                                accessibilityState={{ busy: isLoading, disabled: isLoading }}
                             >
                                 <LinearGradient
-                                    colors={[colors.gold[400], colors.gold[600]]}
+                                    colors={isLoading
+                                        ? [colors.gold[600], colors.gold[700]]
+                                        : [colors.gold[400], colors.gold[600]]}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
                                     style={styles.submitGradient}
                                 >
                                     {isLoading ? (
-                                        <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                        <View style={styles.loadingRow}>
+                                            <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                            <Text style={styles.submitTextLoading}>Signing in...</Text>
+                                        </View>
                                     ) : (
                                         <Text style={styles.submitText}>Sign In</Text>
                                     )}
@@ -628,6 +747,26 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         color: colors.text.secondary,
         marginTop: spacing.sm,
+    },
+
+    // ---- Error Banner ----
+    errorBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface.coralSubtle,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.coral[500] + '30',
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.md,
+        marginBottom: spacing.lg,
+        gap: spacing.sm,
+    },
+    errorBannerText: {
+        flex: 1,
+        fontSize: typography.fontSize.sm,
+        color: colors.coral[400],
+        lineHeight: 18,
     },
 
     // ---- Social Buttons ----
@@ -733,6 +872,7 @@ const styles = StyleSheet.create({
     },
     forgotText: { fontSize: typography.fontSize.sm, color: colors.gold[500], fontWeight: '500' },
     submitButton: { marginTop: spacing.xs },
+    submitButtonDisabled: { opacity: 0.9 },
     submitGradient: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -745,6 +885,17 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: colors.obsidian[900],
         fontFamily: 'Inter-Bold',
+    },
+    submitTextLoading: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.obsidian[900],
+        fontFamily: 'Inter-SemiBold',
+    },
+    loadingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
     },
     brandingContainer: {
         alignItems: 'center',

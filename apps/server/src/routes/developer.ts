@@ -486,7 +486,7 @@ router.get('/public/posts', authenticateApi, requireScope('read'), async (req: A
         const { communityId, limit = '20', cursor } = req.query;
 
         const posts = await prisma.post.findMany({
-            where: communityId ? { communityId: communityId as string } : {},
+            where: { deletedAt: null, ...(communityId ? { communityId: communityId as string } : {}) },
             take: parseInt(limit as string),
             ...(cursor ? { cursor: { id: cursor as string }, skip: 1 } : {}),
             orderBy: { createdAt: 'desc' },

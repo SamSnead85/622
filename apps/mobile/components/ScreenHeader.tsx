@@ -76,11 +76,11 @@ const styles = StyleSheet.create({
         borderBottomWidth: 0,
     },
     left: {
-        width: 40,
+        width: 44,
         alignItems: 'flex-start',
     },
     right: {
-        width: 40,
+        width: 44,
         alignItems: 'flex-end',
     },
     title: {
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     spacer: {
-        width: 40,
+        width: 44,
     },
 });
 

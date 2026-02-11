@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '@/lib/api';
 import Link from 'next/link';
@@ -29,7 +29,7 @@ interface ThreadedCommentsProps {
     className?: string;
 }
 
-export function ThreadedComments({
+function ThreadedCommentsInner({
     postId,
     currentUserId,
     isAdmin,
@@ -477,3 +477,11 @@ export function ThreadedComments({
         </div>
     );
 }
+
+// Memoize ThreadedComments — only re-render when postId or user context changes
+export const ThreadedComments = memo(ThreadedCommentsInner, (prev, next) => (
+    prev.postId === next.postId &&
+    prev.currentUserId === next.currentUserId &&
+    prev.isAdmin === next.isAdmin &&
+    prev.className === next.className
+));

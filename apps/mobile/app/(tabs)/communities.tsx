@@ -18,6 +18,7 @@ import {
     Pressable,
     Share,
     Linking,
+    AccessibilityInfo,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -43,6 +44,7 @@ import { RetryView } from '../../components/RetryView';
 import { showError } from '../../stores/toastStore';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { useDebounce } from '../../hooks/useDebounce';
+import { formatCount } from '../../lib/utils';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -166,40 +168,32 @@ const FEATURED_GROUPS: FeaturedGroup[] = [
         gradient: [colors.emerald[600], colors.emerald[400]],
         nextEvent: { title: 'Weekly Market Review', date: 'Every Friday' },
     },
-    {
-        id: 'seed-tampa-ai-builders',
-        name: 'Tampa AI Builders',
-        icon: 'hardware-chip-outline',
-        color: colors.azure[500],
-        description: 'Tampa Bay\'s AI & ML community. Monthly meetups, hackathons, demos, and knowledge sharing. Build the future together.',
-        memberCount: 0,
-        tags: ['AI', 'Machine Learning', 'Tampa'],
-        gradient: [colors.azure[600], colors.azure[400]],
-        nextEvent: { title: 'Monthly Meetup', date: 'First Saturday' },
-    },
-    {
-        id: 'seed-tampa-muslim-ai',
-        name: 'Tampa Muslim AI Builders',
-        icon: 'code-slash-outline',
-        color: colors.coral[500],
-        description: 'Muslim technologists in Tampa Bay building with AI. Monthly meetups, hackathons with cash prizes, and speaker events.',
-        memberCount: 0,
-        tags: ['AI', 'Muslim Tech', 'Hackathons'],
-        gradient: [colors.coral[500], colors.gold[500]],
-        nextEvent: { title: 'Hackathon — $500 Prize', date: 'Coming Soon' },
-    },
+    // Dev-only seed groups — not shown in production builds
+    ...(__DEV__ ? [
+        {
+            id: 'seed-tampa-ai-builders',
+            name: 'Tampa AI Builders',
+            icon: 'hardware-chip-outline' as keyof typeof Ionicons.glyphMap,
+            color: colors.azure[500],
+            description: 'Tampa Bay\'s AI & ML community. Monthly meetups, hackathons, demos, and knowledge sharing. Build the future together.',
+            memberCount: 0,
+            tags: ['AI', 'Machine Learning', 'Tampa'],
+            gradient: [colors.azure[600], colors.azure[400]] as [string, string],
+            nextEvent: { title: 'Monthly Meetup', date: 'First Saturday' },
+        },
+        {
+            id: 'seed-tampa-muslim-ai',
+            name: 'Tampa Muslim AI Builders',
+            icon: 'code-slash-outline' as keyof typeof Ionicons.glyphMap,
+            color: colors.coral[500],
+            description: 'Muslim technologists in Tampa Bay building with AI. Monthly meetups, hackathons with cash prizes, and speaker events.',
+            memberCount: 0,
+            tags: ['AI', 'Muslim Tech', 'Hackathons'],
+            gradient: [colors.coral[500], colors.gold[500]] as [string, string],
+            nextEvent: { title: 'Hackathon — $500 Prize', date: 'Coming Soon' },
+        },
+    ] : []),
 ];
-
-// ============================================
-// Utilities
-// ============================================
-
-const formatCount = (num: number) => {
-    if (!num) return '0';
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
-};
 
 // ============================================
 // Skeleton Shimmer (for loading states)
@@ -266,7 +260,8 @@ const YourCommunityChip = memo(({ community, index }: { community: Community; in
                 }}
                 style={styles.yourCommunityChip}
                 accessibilityRole="button"
-                accessibilityLabel={`${community.name}, ${formatCount(community.membersCount)} members`}
+                accessibilityLabel={`${community.name}, ${formatCount(community.membersCount)} members${community.role === 'admin' ? ', you are admin' : ''}`}
+                accessibilityHint="Double tap to open this community"
             >
                 {community.coverUrl ? (
                     <Image
@@ -319,13 +314,34 @@ const YourCommunityChip = memo(({ community, index }: { community: Community; in
 // Discovery Community Card — Full Featured
 // ============================================
 
-const DiscoveryCommunityCard = memo(({ community, index, onJoin }: {
+const DiscoveryCommunityCard = memo(({ community, index, onJoin, isFeatured = false }: {
     community: Community;
     index: number;
     onJoin: (id: string) => void;
+    isFeatured?: boolean;
 }) => {
     const router = useRouter();
     const [isJoining, setIsJoining] = useState(false);
+
+    // Subtle glow animation for featured communities
+    const glowAnim = useSharedValue(0);
+    useEffect(() => {
+        if (isFeatured) {
+            glowAnim.value = withRepeat(
+                withTiming(1, { duration: 2400 }),
+                -1,
+                true
+            );
+        }
+    }, [isFeatured]);
+
+    const featuredGlowStyle = useAnimatedStyle(() => {
+        if (!isFeatured) return {};
+        return {
+            borderColor: `rgba(212, 175, 55, ${interpolate(glowAnim.value, [0, 1], [0.15, 0.45])})`,
+            shadowOpacity: interpolate(glowAnim.value, [0, 1], [0.1, 0.35]),
+        };
+    });
 
     const handleJoin = async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -342,137 +358,149 @@ const DiscoveryCommunityCard = memo(({ community, index, onJoin }: {
 
     return (
         <Animated.View entering={FadeInDown.duration(350).delay(80 + index * 70)}>
-            <TouchableOpacity
-                style={styles.discoveryCard}
-                activeOpacity={0.92}
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    router.push(`/community/${community.id}`);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={`${community.name}, ${formatCount(community.membersCount)} members`}
-                accessibilityHint="Double tap to open community"
-            >
-                {/* Cover Image */}
-                <View style={styles.discoveryCover}>
-                    {community.coverUrl ? (
-                        <Image
-                            source={{ uri: community.coverUrl }}
-                            style={StyleSheet.absoluteFill}
-                            contentFit="cover"
-                            placeholder={IMAGE_PLACEHOLDER.blurhash}
-                            transition={IMAGE_PLACEHOLDER.transition}
-                            cachePolicy="memory-disk"
-                        />
-                    ) : (
-                        <LinearGradient
-                            colors={[colors.obsidian[600], colors.obsidian[700]]}
-                            style={StyleSheet.absoluteFill}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                        />
-                    )}
-                    <LinearGradient
-                        colors={['transparent', colors.surface.overlayHeavy]}
-                        style={StyleSheet.absoluteFill}
-                    />
-                    {/* Privacy badge */}
-                    <View style={styles.privacyBadge}>
-                        <Ionicons
-                            name={community.isPublic ? 'globe-outline' : 'lock-closed'}
-                            size={10}
-                            color={colors.text.secondary}
-                        />
-                        <Text style={styles.privacyBadgeText}>
-                            {community.isPublic ? 'Public' : 'Private'}
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Card Body */}
-                <View style={styles.discoveryBody}>
-                    {/* Avatar overlapping cover */}
-                    <View style={styles.discoveryAvatarRow}>
-                        <View style={styles.discoveryAvatarWrap}>
-                            <Avatar
-                                uri={community.avatarUrl}
-                                name={community.name}
-                                customSize={52}
-                                borderColor={colors.obsidian[900]}
-                                borderWidth={3}
+            <Animated.View style={[styles.discoveryCardShadow, isFeatured && featuredGlowStyle]}>
+                <TouchableOpacity
+                    style={styles.discoveryCard}
+                    activeOpacity={0.92}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        router.push(`/community/${community.id}`);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${community.name}, ${formatCount(community.membersCount)} members`}
+                    accessibilityHint="Double tap to open community"
+                >
+                    {/* Cover Image with enhanced gradient overlay */}
+                    <View style={styles.discoveryCover}>
+                        {community.coverUrl ? (
+                            <Image
+                                source={{ uri: community.coverUrl }}
+                                style={StyleSheet.absoluteFill}
+                                contentFit="cover"
+                                placeholder={IMAGE_PLACEHOLDER.blurhash}
+                                transition={IMAGE_PLACEHOLDER.transition}
+                                cachePolicy="memory-disk"
                             />
-                        </View>
-
-                        {/* Join button or role badge */}
-                        {community.role ? (
-                            <View style={styles.memberBadge}>
-                                <Ionicons
-                                    name={community.role === 'admin' ? 'shield-checkmark' : community.role === 'moderator' ? 'shield-half' : 'checkmark-circle'}
-                                    size={14}
-                                    color={colors.gold[500]}
-                                />
-                                <Text style={styles.memberBadgeText}>
-                                    {community.role.charAt(0).toUpperCase() + community.role.slice(1)}
-                                </Text>
-                            </View>
                         ) : (
-                            <TouchableOpacity
-                                style={styles.joinBtn}
-                                onPress={handleJoin}
-                                disabled={isJoining}
-                                activeOpacity={0.8}
-                                accessibilityRole="button"
-                                accessibilityLabel={`Join ${community.name}`}
-                            >
-                                <LinearGradient
-                                    colors={[colors.gold[400], colors.gold[600]]}
-                                    style={styles.joinBtnGradient}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                >
-                                    {isJoining ? (
-                                        <ActivityIndicator size="small" color={colors.obsidian[900]} />
-                                    ) : (
-                                        <>
-                                            <Ionicons name="add" size={16} color={colors.obsidian[900]} />
-                                            <Text style={styles.joinBtnText}>Join</Text>
-                                        </>
-                                    )}
-                                </LinearGradient>
-                            </TouchableOpacity>
+                            <LinearGradient
+                                colors={[colors.obsidian[600], colors.obsidian[700]]}
+                                style={StyleSheet.absoluteFill}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            />
                         )}
-                    </View>
-
-                    {/* Name & Description */}
-                    <Text style={styles.discoveryName} numberOfLines={1}>
-                        {community.name}
-                    </Text>
-                    {community.description ? (
-                        <Text style={styles.discoveryDescription} numberOfLines={2}>
-                            {community.description}
-                        </Text>
-                    ) : null}
-
-                    {/* Stats Row */}
-                    <View style={styles.discoveryStats}>
-                        <View style={styles.discoveryStat}>
-                            <Ionicons name="people" size={14} color={colors.gold[500]} />
-                            <Text style={styles.discoveryStatValue}>
+                        {/* Multi-stop gradient for depth */}
+                        <LinearGradient
+                            colors={['transparent', 'rgba(0,0,0,0.25)', colors.surface.overlayHeavy]}
+                            locations={[0, 0.5, 1]}
+                            style={StyleSheet.absoluteFill}
+                        />
+                        {/* Privacy badge */}
+                        <View style={styles.privacyBadge}>
+                            <Ionicons
+                                name={community.isPublic ? 'globe-outline' : 'lock-closed'}
+                                size={10}
+                                color={colors.text.secondary}
+                            />
+                            <Text style={styles.privacyBadgeText}>
+                                {community.isPublic ? 'Public' : 'Private'}
+                            </Text>
+                        </View>
+                        {/* Member count badge on cover */}
+                        <View style={styles.coverMemberBadge}>
+                            <Ionicons name="people" size={11} color={colors.text.primary} />
+                            <Text style={styles.coverMemberText}>
                                 {formatCount(community.membersCount)}
                             </Text>
-                            <Text style={styles.discoveryStatLabel}>members</Text>
-                        </View>
-                        <View style={styles.discoveryStatDot} />
-                        <View style={styles.discoveryStat}>
-                            <Ionicons name="chatbubbles-outline" size={14} color={colors.text.muted} />
-                            <Text style={styles.discoveryStatValue}>
-                                {formatCount(community.postsCount)}
-                            </Text>
-                            <Text style={styles.discoveryStatLabel}>posts</Text>
                         </View>
                     </View>
-                </View>
-            </TouchableOpacity>
+
+                    {/* Card Body */}
+                    <View style={styles.discoveryBody}>
+                        {/* Avatar overlapping cover */}
+                        <View style={styles.discoveryAvatarRow}>
+                            <View style={styles.discoveryAvatarWrap}>
+                                <Avatar
+                                    uri={community.avatarUrl}
+                                    name={community.name}
+                                    customSize={52}
+                                    borderColor={colors.obsidian[900]}
+                                    borderWidth={3}
+                                />
+                            </View>
+
+                            {/* Join button or role badge */}
+                            {community.role ? (
+                                <View style={styles.memberBadge}>
+                                    <Ionicons
+                                        name={community.role === 'admin' ? 'shield-checkmark' : community.role === 'moderator' ? 'shield-half' : 'checkmark-circle'}
+                                        size={14}
+                                        color={colors.gold[500]}
+                                    />
+                                    <Text style={styles.memberBadgeText}>
+                                        {community.role.charAt(0).toUpperCase() + community.role.slice(1)}
+                                    </Text>
+                                </View>
+                            ) : (
+                                <TouchableOpacity
+                                    style={styles.joinBtn}
+                                    onPress={handleJoin}
+                                    disabled={isJoining}
+                                    activeOpacity={0.8}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Join ${community.name}`}
+                                    accessibilityHint="Double tap to join this community"
+                                    accessibilityState={{ disabled: isJoining }}
+                                >
+                                    <LinearGradient
+                                        colors={[colors.gold[400], colors.gold[600]]}
+                                        style={styles.joinBtnGradient}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                    >
+                                        {isJoining ? (
+                                            <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                        ) : (
+                                            <>
+                                                <Ionicons name="add" size={16} color={colors.obsidian[900]} />
+                                                <Text style={styles.joinBtnText}>Join</Text>
+                                            </>
+                                        )}
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
+                        {/* Name & Description */}
+                        <Text style={styles.discoveryName} numberOfLines={1}>
+                            {community.name}
+                        </Text>
+                        {community.description ? (
+                            <Text style={styles.discoveryDescription} numberOfLines={2}>
+                                {community.description}
+                            </Text>
+                        ) : null}
+
+                        {/* Stats Row */}
+                        <View style={styles.discoveryStats}>
+                            <View style={styles.discoveryStatPill}>
+                                <Ionicons name="people" size={13} color={colors.gold[500]} />
+                                <Text style={styles.discoveryStatValue}>
+                                    {formatCount(community.membersCount)}
+                                </Text>
+                                <Text style={styles.discoveryStatLabel}>members</Text>
+                            </View>
+                            <View style={styles.discoveryStatPill}>
+                                <Ionicons name="chatbubbles-outline" size={13} color={colors.text.muted} />
+                                <Text style={styles.discoveryStatValue}>
+                                    {formatCount(community.postsCount)}
+                                </Text>
+                                <Text style={styles.discoveryStatLabel}>posts</Text>
+                            </View>
+                        </View>
+                    </View>
+                </TouchableOpacity>
+            </Animated.View>
         </Animated.View>
     );
 });
@@ -560,16 +588,28 @@ function EmptyYourCommunities({ onCreatePress }: { onCreatePress: () => void }) 
 function EmptyDiscovery() {
     return (
         <Animated.View entering={FadeInDown.duration(350).delay(100)} style={styles.emptyDiscovery}>
-            <View style={styles.emptyDiscoveryIconWrap}>
-                <LinearGradient
-                    colors={[colors.surface.goldSubtle, colors.surface.goldMedium]}
-                    style={StyleSheet.absoluteFill}
-                />
-                <Ionicons name="compass-outline" size={36} color={colors.gold[500]} />
+            {/* Decorative stacked icon illustration */}
+            <View style={styles.emptyDiscoveryIllustration}>
+                <Animated.View entering={FadeIn.duration(500).delay(200)} style={styles.emptyDiscoveryOrbitIcon1}>
+                    <Ionicons name="people-outline" size={18} color={colors.gold[400]} />
+                </Animated.View>
+                <Animated.View entering={FadeIn.duration(500).delay(350)} style={styles.emptyDiscoveryOrbitIcon2}>
+                    <Ionicons name="chatbubbles-outline" size={16} color={colors.azure[400]} />
+                </Animated.View>
+                <Animated.View entering={FadeIn.duration(500).delay(500)} style={styles.emptyDiscoveryOrbitIcon3}>
+                    <Ionicons name="heart-outline" size={16} color={colors.coral[400]} />
+                </Animated.View>
+                <View style={styles.emptyDiscoveryIconWrap}>
+                    <LinearGradient
+                        colors={[colors.surface.goldSubtle, colors.surface.goldMedium]}
+                        style={StyleSheet.absoluteFill}
+                    />
+                    <Ionicons name="compass-outline" size={40} color={colors.gold[500]} />
+                </View>
             </View>
-            <Text style={styles.emptyDiscoveryTitle}>Nothing here yet</Text>
+            <Text style={styles.emptyDiscoveryTitle}>No communities yet</Text>
             <Text style={styles.emptyDiscoverySubtitle}>
-                New communities are being created every day.{'\n'}Check back soon or create your own!
+                Create or join one!{'\n'}New communities are being created every day.
             </Text>
         </Animated.View>
     );
@@ -678,6 +718,8 @@ const FeaturedGroupCard = memo(({ group, index, onJoin, onShare }: {
                             activeOpacity={0.8}
                             accessibilityRole="button"
                             accessibilityLabel={`Join ${group.name}`}
+                            accessibilityHint="Double tap to join this group"
+                            accessibilityState={{ disabled: isJoining }}
                         >
                             <LinearGradient
                                 colors={[colors.gold[400], colors.gold[600]]}
@@ -705,6 +747,7 @@ const FeaturedGroupCard = memo(({ group, index, onJoin, onShare }: {
                             activeOpacity={0.7}
                             accessibilityRole="button"
                             accessibilityLabel={`Share ${group.name}`}
+                            accessibilityHint="Double tap to share via text or social media"
                         >
                             <Ionicons name="share-outline" size={18} color={colors.gold[500]} />
                         </TouchableOpacity>
@@ -1063,6 +1106,10 @@ function CreateCommunityModal({ visible, onClose, onCreate, initialName = '' }: 
                             onValueChange={setIsPrivate}
                             trackColor={{ false: colors.surface.glassHover, true: colors.gold[500] }}
                             thumbColor={colors.text.primary}
+                            accessibilityLabel="Private community"
+                            accessibilityHint="Toggle to make this community private or public"
+                            accessibilityRole="switch"
+                            accessibilityState={{ checked: isPrivate }}
                         />
                     </View>
                 </View>
@@ -1093,6 +1140,7 @@ function CreateFAB({ onPress }: { onPress: () => void }) {
                 activeOpacity={0.85}
                 accessibilityRole="button"
                 accessibilityLabel="Create community"
+                accessibilityHint="Double tap to start creating a new community"
                 style={styles.fabTouchable}
             >
                 <LinearGradient
@@ -1134,6 +1182,7 @@ export default function CommunitiesScreen() {
     const [discoverCommunities, setDiscoverCommunities] = useState<Community[]>([]);
     const [isLoadingDiscover, setIsLoadingDiscover] = useState(false);
     const [joinedFeatured, setJoinedFeatured] = useState<Set<string>>(new Set());
+    const [isRetrying, setIsRetrying] = useState(false);
 
     const searchInputRef = useRef<TextInput>(null);
     const searchBarScale = useSharedValue(1);
@@ -1165,6 +1214,15 @@ export default function CommunitiesScreen() {
         setIsRefreshing(true);
         await Promise.all([fetchCommunities(), fetchDiscover()]);
         setIsRefreshing(false);
+    };
+
+    const handleFullRetry = async () => {
+        setIsRetrying(true);
+        try {
+            await Promise.all([fetchCommunities(), fetchDiscover()]);
+        } finally {
+            setIsRetrying(false);
+        }
     };
 
     const handleTemplateSelect = useCallback((template: CommunityTemplate) => {
@@ -1460,7 +1518,7 @@ export default function CommunitiesScreen() {
     // ============================================
 
     return (
-        <View style={styles.container}>
+        <View style={styles.container} accessible={false}>
             <LinearGradient
                 colors={[colors.obsidian[900], colors.obsidian[800]]}
                 style={StyleSheet.absoluteFill}
@@ -1471,7 +1529,7 @@ export default function CommunitiesScreen() {
                 <Animated.View entering={FadeInDown.duration(400)}>
                     <View style={styles.headerRow}>
                         <View style={styles.flex1}>
-                            <Text style={styles.headerTitle} accessibilityRole="header">
+                            <Text style={styles.headerTitle} accessibilityRole="header" accessibilityLabel={`Communities. ${filteredYourCommunities.length} joined, ${filteredDiscover.length} to discover`}>
                                 Communities
                             </Text>
                             <Text style={styles.headerSubtitle}>
@@ -1518,6 +1576,9 @@ export default function CommunitiesScreen() {
                                 onPress={clearSearch}
                                 style={styles.clearBtn}
                                 hitSlop={8}
+                                accessibilityRole="button"
+                                accessibilityLabel="Clear search"
+                                accessibilityHint="Double tap to clear the search field"
                             >
                                 <Ionicons name="close-circle" size={18} color={colors.text.muted} />
                             </TouchableOpacity>
@@ -1531,7 +1592,50 @@ export default function CommunitiesScreen() {
                 </Animated.View>
             </View>
 
-            {/* Main Scrollable Content */}
+            {/* Full-screen error state when initial load fails */}
+            {commError && !isLoading && communities.length === 0 && discoverCommunities.length === 0 ? (
+                <View style={styles.fullErrorContainer}>
+                    <Animated.View entering={FadeInDown.duration(400)} style={styles.fullErrorContent}>
+                        <View style={styles.fullErrorIconWrap}>
+                            <LinearGradient
+                                colors={[colors.coral[500] + '20', colors.coral[500] + '08']}
+                                style={StyleSheet.absoluteFill}
+                            />
+                            <Ionicons name="cloud-offline-outline" size={48} color={colors.coral[400]} />
+                        </View>
+                        <Text style={styles.fullErrorTitle}>Couldn't load communities</Text>
+                        <Text style={styles.fullErrorSubtitle}>
+                            Check your connection and try again.{'\n'}Your communities will appear here.
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.fullErrorRetryBtn}
+                            onPress={handleFullRetry}
+                            disabled={isRetrying}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Retry loading communities"
+                        >
+                            <LinearGradient
+                                colors={[colors.gold[400], colors.gold[600]]}
+                                style={styles.fullErrorRetryGradient}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            >
+                                {isRetrying ? (
+                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                ) : (
+                                    <>
+                                        <Ionicons name="refresh" size={18} color={colors.obsidian[900]} />
+                                        <Text style={styles.fullErrorRetryText}>Try Again</Text>
+                                    </>
+                                )}
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </Animated.View>
+                </View>
+            ) : (
+
+            /* Main Scrollable Content */
             <FlatList
                 data={filteredDiscover}
                 renderItem={renderDiscoverItem}
@@ -1543,6 +1647,8 @@ export default function CommunitiesScreen() {
                     { paddingBottom: 100 },
                 ]}
                 showsVerticalScrollIndicator={false}
+                accessibilityRole="list"
+                accessibilityLabel="Communities list"
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}
@@ -1556,6 +1662,7 @@ export default function CommunitiesScreen() {
                 windowSize={7}
                 initialNumToRender={4}
             />
+            )}
 
             {/* Floating Action Button */}
             <CreateFAB onPress={() => setShowTemplateModal(true)} />
@@ -1649,6 +1756,10 @@ const styles = StyleSheet.create({
     },
     clearBtn: {
         padding: 4,
+        minWidth: 44,
+        minHeight: 44,
+        alignItems: 'center' as const,
+        justifyContent: 'center' as const,
     },
 
     // Category Pills
@@ -1795,17 +1906,25 @@ const styles = StyleSheet.create({
         marginTop: spacing.sm,
     },
 
-    // Discovery Card
+    // Discovery Card — shadow wrapper for elevation
+    discoveryCardShadow: {
+        marginBottom: spacing.lg,
+        borderRadius: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.18,
+        shadowRadius: 14,
+        elevation: 6,
+        borderWidth: 1.5,
+        borderColor: colors.border.subtle,
+    },
     discoveryCard: {
         backgroundColor: colors.surface.glass,
         borderRadius: 20,
-        marginBottom: spacing.lg,
         overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
     },
     discoveryCover: {
-        height: 110,
+        height: 120,
         position: 'relative',
         overflow: 'hidden',
     },
@@ -1894,16 +2013,40 @@ const styles = StyleSheet.create({
         marginTop: spacing.xs,
         lineHeight: 20,
     },
+    // Cover member badge (overlaid on image)
+    coverMemberBadge: {
+        position: 'absolute',
+        bottom: spacing.sm,
+        right: spacing.sm,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: 'rgba(0,0,0,0.55)',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 10,
+    },
+    coverMemberText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: colors.text.primary,
+    },
     discoveryStats: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: spacing.lg,
-        gap: spacing.md,
+        marginTop: spacing.md,
+        gap: spacing.sm,
     },
-    discoveryStat: {
+    discoveryStatPill: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 5,
+        gap: 4,
+        backgroundColor: colors.surface.glass,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
     },
     discoveryStatValue: {
         fontSize: typography.fontSize.sm,
@@ -1913,12 +2056,6 @@ const styles = StyleSheet.create({
     discoveryStatLabel: {
         fontSize: typography.fontSize.xs,
         color: colors.text.muted,
-    },
-    discoveryStatDot: {
-        width: 3,
-        height: 3,
-        borderRadius: 1.5,
-        backgroundColor: colors.obsidian[400],
     },
 
     // Empty states
@@ -1970,14 +2107,53 @@ const styles = StyleSheet.create({
         paddingTop: 40,
         paddingHorizontal: spacing.xl,
     },
+    emptyDiscoveryIllustration: {
+        width: 140,
+        height: 140,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.lg,
+    },
+    emptyDiscoveryOrbitIcon1: {
+        position: 'absolute',
+        top: 8,
+        right: 12,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: colors.gold[500] + '15',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyDiscoveryOrbitIcon2: {
+        position: 'absolute',
+        bottom: 12,
+        left: 8,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.azure[500] + '15',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyDiscoveryOrbitIcon3: {
+        position: 'absolute',
+        top: 20,
+        left: 16,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: colors.coral[500] + '15',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     emptyDiscoveryIconWrap: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
+        width: 80,
+        height: 80,
+        borderRadius: 40,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        marginBottom: spacing.lg,
     },
     emptyDiscoveryTitle: {
         fontSize: typography.fontSize.xl,
@@ -1991,6 +2167,65 @@ const styles = StyleSheet.create({
         color: colors.text.secondary,
         textAlign: 'center',
         lineHeight: 22,
+    },
+
+    // Full-screen error state
+    fullErrorContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: spacing.xl,
+    },
+    fullErrorContent: {
+        alignItems: 'center',
+        maxWidth: 320,
+    },
+    fullErrorIconWrap: {
+        width: 96,
+        height: 96,
+        borderRadius: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        marginBottom: spacing.xl,
+    },
+    fullErrorTitle: {
+        fontSize: typography.fontSize.xl,
+        fontWeight: '700',
+        color: colors.text.primary,
+        fontFamily: 'Inter-Bold',
+        marginBottom: spacing.sm,
+        textAlign: 'center',
+    },
+    fullErrorSubtitle: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: spacing.xl,
+    },
+    fullErrorRetryBtn: {
+        borderRadius: 14,
+        overflow: 'hidden',
+        shadowColor: colors.gold[500],
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    fullErrorRetryGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: spacing.xl + spacing.md,
+        paddingVertical: spacing.md,
+        gap: spacing.xs,
+    },
+    fullErrorRetryText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        color: colors.obsidian[900],
+        fontFamily: 'Inter-Bold',
     },
 
     // No results

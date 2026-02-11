@@ -471,13 +471,4 @@ export function ImpactSection() {
     );
 }
 
-export default {
-    VERIFIED_CAUSES,
-    VerifiedBadge,
-    OrganizationCard,
-    ImpactCounter,
-    HowItWorks,
-    MissionBanner,
-    CausesGrid,
-    ImpactSection,
-};
+// All components are individually named-exported above.

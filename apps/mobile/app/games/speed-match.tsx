@@ -28,8 +28,6 @@ import Animated, {
     withDelay,
     withRepeat,
     Easing,
-    runOnJS,
-    cancelAnimation,
 } from 'react-native-reanimated';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -499,6 +497,17 @@ function PatternMemoryGame({
     const [activeTile, setActiveTile] = useState<number | null>(null);
     const [score, setScore] = useState(0);
     const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const nextRoundTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const tileFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Cleanup all timeouts on unmount
+    useEffect(() => {
+        return () => {
+            if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
+            if (nextRoundTimeoutRef.current) clearTimeout(nextRoundTimeoutRef.current);
+            if (tileFlashTimeoutRef.current) clearTimeout(tileFlashTimeoutRef.current);
+        };
+    }, []);
 
     // Show pattern sequence
     useEffect(() => {
@@ -536,7 +545,7 @@ function PatternMemoryGame({
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
             setActiveTile(tileIdx);
-            setTimeout(() => setActiveTile(null), 200);
+            tileFlashTimeoutRef.current = setTimeout(() => setActiveTile(null), 200);
 
             if (tileIdx === pattern[inputIndex]) {
                 // Correct tap
@@ -548,7 +557,7 @@ function PatternMemoryGame({
                     setPhase('success');
 
                     // Next round — longer pattern
-                    setTimeout(() => {
+                    nextRoundTimeoutRef.current = setTimeout(() => {
                         const newLen = patternLength + 1;
                         setPatternLength(newLen);
                         setPattern(generatePattern(newLen));
@@ -927,16 +936,38 @@ export default function SpeedMatchScreen() {
         loadScores();
     }, []);
 
-    // Timer for Color Rush and Math Blitz
+    // Cleanup all timers on unmount
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+            if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+        };
+    }, []);
+
+    // Countdown state for game start
+    const [countdown, setCountdown] = useState<number | null>(null);
+
+    // Timer for Color Rush and Math Blitz — with 3-2-1 countdown
     useEffect(() => {
         if (phase !== 'playing' || gameMode === 'pattern') return;
 
-        // Start game after brief delay
-        const startDelay = setTimeout(() => {
-            setIsActive(true);
-        }, 500);
+        // Start 3-2-1 countdown
+        setCountdown(3);
+        let count = 3;
+        const countdownInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                setCountdown(count);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            } else {
+                setCountdown(null);
+                setIsActive(true);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                clearInterval(countdownInterval);
+            }
+        }, 800);
 
-        return () => clearTimeout(startDelay);
+        return () => clearInterval(countdownInterval);
     }, [phase, gameMode]);
 
     useEffect(() => {
@@ -1182,6 +1213,24 @@ export default function SpeedMatchScreen() {
                 <CountdownBar timeLeft={timeLeft} total={ROUND_DURATION} accentColor={config.accentColor} />
             )}
 
+            {/* Start Countdown Overlay */}
+            {countdown !== null && (
+                <Animated.View
+                    entering={FadeIn.duration(150)}
+                    exiting={FadeOut.duration(150)}
+                    style={styles.startCountdownOverlay}
+                >
+                    <Animated.Text
+                        key={countdown}
+                        entering={ZoomIn.duration(300).springify()}
+                        style={[styles.startCountdownText, { color: config.accentColor }]}
+                    >
+                        {countdown}
+                    </Animated.Text>
+                    <Text style={styles.startCountdownLabel}>Get Ready!</Text>
+                </Animated.View>
+            )}
+
             {/* Score Popup */}
             <ScorePopup points={lastPoints} visible={showPopup} />
 
@@ -1376,6 +1425,26 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
         color: colors.text.primary,
+    },
+
+    // ---- Start Countdown ----
+    startCountdownOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: colors.surface.overlayHeavy,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+    },
+    startCountdownText: {
+        fontSize: 96,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+    },
+    startCountdownLabel: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '600',
+        color: colors.text.secondary,
+        marginTop: spacing.md,
     },
 
     // ---- Game Area ----

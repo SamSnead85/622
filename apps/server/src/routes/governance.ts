@@ -168,6 +168,16 @@ router.post('/proposals/:proposalId/vote', authenticate, async (req: AuthRequest
 router.get('/:communityId/moderation-log', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { communityId } = req.params;
+
+        // Verify the user is a member of the community
+        const membership = await prisma.communityMember.findFirst({
+            where: { communityId, userId: req.userId! },
+        });
+        if (!membership) {
+            res.status(403).json({ error: 'Must be a community member to view moderation log' });
+            return;
+        }
+
         const { page = '1', limit = '50' } = req.query;
 
         const skip = (parseInt(page as string) - 1) * parseInt(limit as string);

@@ -26,7 +26,6 @@ import Animated, {
     withSpring,
     withDelay,
     Easing,
-    runOnJS,
     interpolate,
 } from 'react-native-reanimated';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -710,6 +709,8 @@ export default function WordBlitzScreen() {
     const [opponentSolved, setOpponentSolved] = useState(false);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const statsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const isRaceMode = mode === 'race' && !!code;
 
@@ -771,7 +772,7 @@ export default function WordBlitzScreen() {
                         setElapsedMs(completion.timeMs);
 
                         // Show stats after a brief delay
-                        setTimeout(() => setShowStats(true), 500);
+                        statsTimeoutRef.current = setTimeout(() => setShowStats(true), 500);
                     }
                 } catch {
                     // Fresh game
@@ -781,6 +782,18 @@ export default function WordBlitzScreen() {
 
         initGame();
     }, [isRaceMode]);
+
+    // ============================================
+    // Cleanup all timers on unmount
+    // ============================================
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+            if (statsTimeoutRef.current) clearTimeout(statsTimeoutRef.current);
+            if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
+        };
+    }, []);
 
     // ============================================
     // Timer
@@ -1007,7 +1020,11 @@ export default function WordBlitzScreen() {
                             socketManager.sendGameAction(code, 'solved', { attempts: currentRow + 1 });
                         }
 
-                        setTimeout(() => setShowStats(true), 1500);
+                        // Additional celebration haptics
+                        confettiTimeoutRef.current = setTimeout(() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                        }, 300);
+                        statsTimeoutRef.current = setTimeout(() => setShowStats(true), 1500);
                     } else if (isLastRow) {
                         setGameStatus('lost');
                         setElapsedMs(timeTaken);
@@ -1015,7 +1032,7 @@ export default function WordBlitzScreen() {
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                         saveGameResult(false, MAX_ATTEMPTS, timeTaken, allGuesses);
 
-                        setTimeout(() => setShowStats(true), 1000);
+                        statsTimeoutRef.current = setTimeout(() => setShowStats(true), 1000);
                     } else {
                         // Move to next row
                         setCurrentRow((prev) => prev + 1);
@@ -1080,6 +1097,30 @@ export default function WordBlitzScreen() {
     }));
 
     // ============================================
+    // Row Bounce on Successful Reveal
+    // ============================================
+
+    const revealBounce = useSharedValue(0);
+
+    useEffect(() => {
+        if (revealingRow !== null) {
+            // Bounce after flip completes
+            const flipComplete = FLIP_STAGGER * WORD_LENGTH + FLIP_DURATION;
+            const bounceTimeout = setTimeout(() => {
+                revealBounce.value = withSequence(
+                    withTiming(-3, { duration: 80 }),
+                    withSpring(0, { damping: 8, stiffness: 300 }),
+                );
+            }, flipComplete);
+            return () => clearTimeout(bounceTimeout);
+        }
+    }, [revealingRow, revealBounce]);
+
+    const revealBounceStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: revealBounce.value }],
+    }));
+
+    // ============================================
     // Render
     // ============================================
 
@@ -1132,12 +1173,15 @@ export default function WordBlitzScreen() {
             <View style={styles.gridContainer}>
                 {grid.map((row, rowIndex) => {
                     const isShaking = shakeRow === rowIndex;
-                    const RowWrapper = isShaking ? Animated.View : View;
+                    const isRevealing = revealingRow === rowIndex;
+                    const needsAnimation = isShaking || isRevealing;
+                    const RowWrapper = needsAnimation ? Animated.View : View;
+                    const rowAnimStyle = isShaking ? shakeStyle : isRevealing ? revealBounceStyle : undefined;
 
                     return (
                         <RowWrapper
                             key={rowIndex}
-                            style={[styles.row, isShaking ? shakeStyle : undefined]}
+                            style={[styles.row, rowAnimStyle]}
                         >
                             {row.map((tile, colIndex) => (
                                 <Tile

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ScreenHeader, LoadingView } from '../../components';
+import { ScreenHeader, LoadingView, RetryView } from '../../components';
 
 const BOYCOTT_DATA_URL = 'https://raw.githubusercontent.com/TechForPalestine/boycott-israeli-consumer-goods-dataset/main/dataset/brands.json';
 const BOYCOTT_CACHE_KEY = 'boycott_brands_cache';
@@ -28,68 +28,87 @@ export default function BoycottScannerScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [brands, setBrands] = useState<BoycottBrand[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isRetrying, setIsRetrying] = useState(false);
     const [result, setResult] = useState<{ found: boolean; brand?: BoycottBrand } | null>(null);
 
     // Load boycott dataset
-    useEffect(() => {
-        (async () => {
+    const loadBrands = useCallback(async (isRetry = false) => {
+        try {
+            if (isRetry) setIsRetrying(true);
+            setError(null);
+
+            // Check cache first
+            const cached = await AsyncStorage.getItem(BOYCOTT_CACHE_KEY);
+            if (cached) {
+                try {
+                    const { data, timestamp } = JSON.parse(cached);
+                    // Refresh weekly
+                    if (Array.isArray(data) && data.length > 0 && Date.now() - timestamp < 7 * 24 * 60 * 60 * 1000) {
+                        setBrands(data);
+                        setIsLoading(false);
+                        setIsRetrying(false);
+                        return;
+                    }
+                } catch { /* corrupted cache, ignore */ }
+            }
+
+            const res = await fetch(BOYCOTT_DATA_URL);
+            if (!res.ok) throw new Error(`Network error: ${res.status}`);
+            const json = await res.json();
+            const brandList = Array.isArray(json) ? json : json.brands || json.data || [];
+
+            if (brandList.length === 0) {
+                throw new Error('Empty dataset received');
+            }
+
+            setBrands(brandList);
+
+            // Cache
+            await AsyncStorage.setItem(BOYCOTT_CACHE_KEY, JSON.stringify({
+                data: brandList,
+                timestamp: Date.now(),
+            }));
+        } catch (err) {
+            console.error('Boycott data load error:', err);
+            // Try to use cached data even if expired
             try {
-                // Check cache first
                 const cached = await AsyncStorage.getItem(BOYCOTT_CACHE_KEY);
                 if (cached) {
-                    try {
-                        const { data, timestamp } = JSON.parse(cached);
-                        // Refresh weekly
-                        if (Date.now() - timestamp < 7 * 24 * 60 * 60 * 1000) {
-                            setBrands(data);
-                            setIsLoading(false);
-                            return;
-                        }
-                    } catch { /* corrupted cache, ignore */ }
-                }
-
-                const res = await fetch(BOYCOTT_DATA_URL);
-                const json = await res.json();
-                const brandList = Array.isArray(json) ? json : json.brands || json.data || [];
-                setBrands(brandList);
-
-                // Cache
-                await AsyncStorage.setItem(BOYCOTT_CACHE_KEY, JSON.stringify({
-                    data: brandList,
-                    timestamp: Date.now(),
-                }));
-            } catch (err) {
-                console.error('Boycott data load error:', err);
-                // Try to use cached data even if expired
-                try {
-                    const cached = await AsyncStorage.getItem(BOYCOTT_CACHE_KEY);
-                    if (cached) {
-                        try {
-                            const { data } = JSON.parse(cached);
-                            setBrands(data);
-                        } catch { /* corrupted cache, ignore */ }
+                    const { data } = JSON.parse(cached);
+                    if (Array.isArray(data) && data.length > 0) {
+                        setBrands(data);
+                        // Don't show error — we have stale data
+                        return;
                     }
-                } catch { /* fetch failure handled by finally block loading state */ }
-            } finally {
-                setIsLoading(false);
-            }
-        })();
+                }
+            } catch { /* stale cache also failed */ }
+            setError('Could not load the boycott database. Check your connection and try again.');
+        } finally {
+            setIsLoading(false);
+            setIsRetrying(false);
+        }
     }, []);
 
-    const handleSearch = () => {
+    useEffect(() => {
+        loadBrands();
+    }, [loadBrands]);
+
+    const handleSearch = useCallback(() => {
         if (!searchQuery.trim()) return;
 
         const query = searchQuery.trim().toLowerCase();
         const found = brands.find(b =>
             (b.name || '').toLowerCase().includes(query) ||
-            (b.description || '').toLowerCase().includes(query)
+            (b.description || '').toLowerCase().includes(query) ||
+            (b.categories || []).some(c => (c || '').toLowerCase().includes(query))
         );
 
         setResult(found ? { found: true, brand: found } : { found: false });
         Haptics.notificationAsync(
             found ? Haptics.NotificationFeedbackType.Warning : Haptics.NotificationFeedbackType.Success
         );
-    };
+    }, [searchQuery, brands]);
 
     return (
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -101,6 +120,12 @@ export default function BoycottScannerScreen() {
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}>
                 {isLoading ? (
                     <LoadingView message="Loading boycott database..." />
+                ) : error && brands.length === 0 ? (
+                    <RetryView
+                        message={error}
+                        onRetry={() => loadBrands(true)}
+                        isRetrying={isRetrying}
+                    />
                 ) : (
                     <>
                         {/* Search input */}

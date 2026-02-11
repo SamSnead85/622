@@ -61,11 +61,9 @@ const maskedUrl = dbUrl.replace(/:[^:@]+@/, ':****@');
 logger.info(`Database configured: ${maskedUrl.split('?')[0]}`);
 
 // Graceful disconnect on app shutdown
+// Note: SIGINT / SIGTERM are handled by the main server process (index.ts)
+// which calls prisma.$disconnect() as part of its shutdown sequence.
+// beforeExit fires when the event loop empties — safe as a final cleanup net.
 process.on('beforeExit', async () => {
     await prisma.$disconnect();
-});
-
-process.on('SIGINT', async () => {
-    await prisma.$disconnect();
-    process.exit(0);
 });

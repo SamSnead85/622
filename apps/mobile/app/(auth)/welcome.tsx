@@ -1,9 +1,15 @@
+// ============================================
+// Welcome / Onboarding Screen — 0G Branding
+// Premium dark glassmorphism with smooth animations
+// ============================================
+
 import { View, Text, StyleSheet, Dimensions, Pressable, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useRef, useCallback, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -11,11 +17,12 @@ import Animated, {
     interpolate,
     withSpring,
     FadeInUp,
+    FadeInDown,
     FadeIn,
 } from 'react-native-reanimated';
 import { Button, colors, typography, spacing } from '@zerog/ui';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Slide {
     icon: keyof typeof Ionicons.glyphMap;
@@ -109,7 +116,7 @@ function SlideItem({
     });
 
     return (
-        <View style={[styles.slide, { width: SCREEN_WIDTH }]}>
+        <View style={[styles.slide, { width: SCREEN_WIDTH }]} accessibilityLabel={`${slide.tag}. ${slide.title}. ${slide.subtitle}`}>
             <Animated.View style={[styles.iconContainer, animatedIconStyle]}>
                 {/* Outer glow ring */}
                 <View style={[styles.iconGlowOuter, { borderColor: `${slide.accentColor}15` }]}>
@@ -146,7 +153,7 @@ function PaginationDots({
     scrollX: Animated.SharedValue<number>;
 }) {
     return (
-        <View style={styles.dotsContainer}>
+        <View style={styles.dotsContainer} accessibilityRole="tablist">
             {Array.from({ length: count }).map((_, i) => {
                 const dotStyle = useAnimatedStyle(() => {
                     const inputRange = [
@@ -163,6 +170,8 @@ function PaginationDots({
                     <Animated.View
                         key={i}
                         style={[styles.dot, dotStyle]}
+                        accessibilityRole="tab"
+                        accessibilityLabel={`Slide ${i + 1} of ${count}`}
                     />
                 );
             })}
@@ -186,7 +195,10 @@ export default function WelcomeScreen() {
     const onViewableItemsChanged = useCallback(
         ({ viewableItems }: { viewableItems: any[] }) => {
             if (viewableItems.length > 0) {
-                setCurrentIndex(viewableItems[0].index ?? 0);
+                const newIndex = viewableItems[0].index ?? 0;
+                setCurrentIndex(newIndex);
+                // Light haptic on slide change
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
         },
         []
@@ -198,14 +210,46 @@ export default function WelcomeScreen() {
 
     const isLastSlide = currentIndex === SLIDES.length - 1;
 
+    const handleNext = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (isLastSlide) {
+            router.push('/(auth)/signup');
+        } else {
+            flatListRef.current?.scrollToIndex({
+                index: currentIndex + 1,
+                animated: true,
+            });
+        }
+    }, [isLastSlide, currentIndex, router]);
+
+    const handleLogin = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push('/(auth)/login');
+    }, [router]);
+
+    const handleSkip = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push('/(auth)/login');
+    }, [router]);
+
     return (
         <LinearGradient
             colors={[colors.obsidian[900], colors.obsidian[900], colors.obsidian[900]]}
             style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
         >
-            {/* Skip button */}
-            <Animated.View entering={FadeInUp.delay(800).duration(400)} style={styles.skipContainer}>
-                <Pressable onPress={() => router.push('/(auth)/login')} style={styles.skipButton} accessibilityLabel="Skip onboarding" accessibilityRole="button">
+            {/* Top bar: Brand + Skip */}
+            <Animated.View entering={FadeInDown.delay(200).duration(500)} style={styles.topBar}>
+                <View style={styles.brandMark}>
+                    <Text style={styles.brandText} accessibilityLabel="Zero G">0G</Text>
+                    <View style={styles.brandDivider} />
+                    <Text style={styles.brandSubtext}>Zero Gravity</Text>
+                </View>
+                <Pressable
+                    onPress={handleSkip}
+                    style={styles.skipButton}
+                    accessibilityLabel="Skip onboarding"
+                    accessibilityRole="button"
+                >
                     <Text style={styles.skipText}>Skip</Text>
                 </Pressable>
             </Animated.View>
@@ -237,16 +281,9 @@ export default function WelcomeScreen() {
                     variant="primary"
                     size="lg"
                     fullWidth
-                    onPress={() => {
-                        if (isLastSlide) {
-                            router.push('/(auth)/signup');
-                        } else {
-                            flatListRef.current?.scrollToIndex({
-                                index: currentIndex + 1,
-                                animated: true,
-                            });
-                        }
-                    }}
+                    onPress={handleNext}
+                    accessibilityRole="button"
+                    accessibilityLabel={isLastSlide ? 'Join the Movement' : 'Next slide'}
                 >
                     {isLastSlide ? 'Join the Movement' : 'Next'}
                 </Button>
@@ -255,13 +292,23 @@ export default function WelcomeScreen() {
                     variant="ghost"
                     size="lg"
                     fullWidth
-                    onPress={() => router.push('/(auth)/login')}
+                    onPress={handleLogin}
                     style={styles.loginButton}
+                    accessibilityRole="button"
+                    accessibilityLabel="Log in to existing account"
                 >
                     Already have an account? Log in
                 </Button>
 
-                <TouchableOpacity onPress={() => router.push('/tools' as any)} style={styles.toolsButton}>
+                <TouchableOpacity
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        router.push('/tools' as any);
+                    }}
+                    style={styles.toolsButton}
+                    accessibilityRole="button"
+                    accessibilityLabel="Explore Prayer Times, Qibla, and more tools"
+                >
                     <Ionicons name="compass-outline" size={18} color={colors.gold[400]} />
                     <Text style={styles.toolsText}>Explore Prayer Times, Qibla & More</Text>
                 </TouchableOpacity>
@@ -284,10 +331,39 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    skipContainer: {
-        alignItems: 'flex-end',
+
+    // ---- Top Bar ----
+    topBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         paddingHorizontal: spacing.xl,
         paddingTop: spacing.md,
+        paddingBottom: spacing.sm,
+    },
+    brandMark: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    brandText: {
+        fontSize: 28,
+        fontWeight: '800',
+        color: colors.gold[500],
+        letterSpacing: -1,
+        fontFamily: 'Inter-Bold',
+    },
+    brandDivider: {
+        width: 1,
+        height: 18,
+        backgroundColor: colors.border.subtle,
+    },
+    brandSubtext: {
+        fontSize: typography.fontSize.xs,
+        color: colors.gold[400],
+        letterSpacing: 2,
+        textTransform: 'uppercase',
+        fontFamily: 'Inter-Medium',
     },
     skipButton: {
         paddingVertical: spacing.sm,
@@ -298,6 +374,8 @@ const styles = StyleSheet.create({
         color: colors.text.muted,
         fontFamily: 'Inter-Medium',
     },
+
+    // ---- Slides ----
     slideList: {
         flex: 1,
     },
@@ -377,6 +455,8 @@ const styles = StyleSheet.create({
         maxWidth: 320,
         fontFamily: 'Inter',
     },
+
+    // ---- Pagination ----
     dotsContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -389,6 +469,8 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         backgroundColor: colors.gold[500],
     },
+
+    // ---- Actions ----
     actionsSection: {
         paddingHorizontal: spacing.xl,
         paddingBottom: spacing.md,
@@ -410,6 +492,8 @@ const styles = StyleSheet.create({
         color: colors.gold[400],
         fontFamily: 'Inter-Medium',
     },
+
+    // ---- Footer ----
     manifesto: {
         fontSize: typography.fontSize.xs,
         color: colors.gold[500],

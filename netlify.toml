@@ -23,5 +23,12 @@
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
+# Apple App Site Association — must be served as application/json
+[[headers]]
+  for = "/.well-known/apple-app-site-association"
+  [headers.values]
+    Content-Type = "application/json"
+    Cache-Control = "public, max-age=3600"
+
 # Note: Next.js routing is handled by the @netlify/plugin-nextjs plugin
 # No custom redirects needed - the plugin manages all server-side routing

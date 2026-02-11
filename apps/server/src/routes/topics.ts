@@ -2,9 +2,13 @@ import { Router } from 'express';
 import { prisma } from '../db/client.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 import { z } from 'zod';
 
 const router = Router();
+
+// Apply general rate limiting to all topic endpoints
+router.use(rateLimiters.general);
 
 // GET /api/v1/topics - List all topics
 router.get('/', async (req, res, next) => {

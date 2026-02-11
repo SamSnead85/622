@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { prisma } from '../db/client.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // ============================================
 // MIDDLEWARE: Require ADMIN or SUPERADMIN role
@@ -280,15 +279,27 @@ router.delete('/strikes/:id', authenticate, requireAdmin, async (req: AuthReques
 // GET /api/v1/admin/strikes — List all active strikes
 router.get('/strikes', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const strikes = await prisma.userStrike.findMany({
-            where: { isActive: true },
-            orderBy: { createdAt: 'desc' },
-            include: {
-                user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
-                issuedBy: { select: { id: true, username: true, displayName: true } },
-            },
-        });
-        res.json(strikes);
+        const page = Math.max(1, parseInt(req.query.page as string) || 1);
+        const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const skip = (page - 1) * limit;
+
+        const where = { isActive: true };
+
+        const [strikes, total] = await Promise.all([
+            prisma.userStrike.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip,
+                include: {
+                    user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+                    issuedBy: { select: { id: true, username: true, displayName: true } },
+                },
+            }),
+            prisma.userStrike.count({ where }),
+        ]);
+
+        res.json({ data: strikes, meta: { page, limit, total } });
     } catch (error) {
         next(error);
     }
@@ -337,15 +348,27 @@ router.delete('/posts/:id', authenticate, requireAdmin, async (req: AuthRequest,
 // GET /api/v1/admin/reports — List pending reports
 router.get('/reports', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
+        const page = Math.max(1, parseInt(req.query.page as string) || 1);
+        const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const skip = (page - 1) * limit;
+
         const status = (req.query.status as string) || 'PENDING';
-        const reports = await prisma.report.findMany({
-            where: { status: status as any },
-            orderBy: { createdAt: 'desc' },
-            include: {
-                reporter: { select: { id: true, username: true, displayName: true } },
-            },
-        });
-        res.json(reports);
+        const where = { status: status as any };
+
+        const [reports, total] = await Promise.all([
+            prisma.report.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip,
+                include: {
+                    reporter: { select: { id: true, username: true, displayName: true } },
+                },
+            }),
+            prisma.report.count({ where }),
+        ]);
+
+        res.json({ data: reports, meta: { page, limit, total } });
     } catch (error) {
         next(error);
     }

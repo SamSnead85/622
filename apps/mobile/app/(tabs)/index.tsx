@@ -14,6 +14,7 @@ import {
     ViewToken,
     ActivityIndicator,
     ScrollView,
+    AccessibilityInfo,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -45,27 +46,7 @@ import { apiFetch, API } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { toHijri } from '../../lib/hijri';
 import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
-
-
-// ============================================
-// Time formatting
-// ============================================
-function timeAgo(dateStr: string) {
-    const now = Date.now();
-    const d = new Date(dateStr).getTime();
-    const seconds = Math.floor((now - d) / 1000);
-    if (seconds < 60) return 'now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
-    return `${Math.floor(seconds / 604800)}w`;
-}
-
-function formatCount(num: number) {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
-}
+import { timeAgo, formatCount } from '../../lib/utils';
 
 // ============================================
 // Avatar Glow Ring — premium animated ring
@@ -151,9 +132,16 @@ function ActiveContactBubble({
     index: number;
 }) {
     const scale = useSharedValue(1);
+    const bounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const animStyle = useAnimatedStyle(() => ({
         transform: [{ scale: scale.value }],
     }));
+
+    useEffect(() => {
+        return () => {
+            if (bounceTimeoutRef.current) clearTimeout(bounceTimeoutRef.current);
+        };
+    }, []);
 
     return (
         <Animated.View
@@ -164,7 +152,8 @@ function ActiveContactBubble({
                 onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     scale.value = withSpring(0.9, { damping: 15 });
-                    setTimeout(() => { scale.value = withSpring(1); }, 100);
+                    if (bounceTimeoutRef.current) clearTimeout(bounceTimeoutRef.current);
+                    bounceTimeoutRef.current = setTimeout(() => { scale.value = withSpring(1); }, 100);
                     onPress();
                 }}
                 onLongPress={onLongPress}
@@ -272,11 +261,12 @@ function ActiveContactsStrip({ onCreatePress }: { onCreatePress: () => void }) {
     }, [posts, user?.id, storyUsers]);
 
     return (
-        <View style={styles.contactsStrip}>
+        <View style={styles.contactsStrip} accessibilityLabel="Active contacts and stories" accessibilityRole="list">
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.contactsScroll}
+                accessibilityRole="list"
             >
                 {/* User's own avatar — tap to create moment or go to create */}
                 <ActiveContactBubble
@@ -335,12 +325,13 @@ function FeedTabs({
     onTabChange: (tab: 'foryou' | 'following') => void;
 }) {
     return (
-        <View style={styles.feedTabs}>
+        <View style={styles.feedTabs} accessibilityRole="tablist" accessibilityLabel="Feed filter">
             <TouchableOpacity
                 style={[styles.feedTab, activeTab === 'foryou' && styles.feedTabActive]}
                 onPress={() => onTabChange('foryou')}
                 accessibilityRole="tab"
-                accessibilityLabel="For You"
+                accessibilityLabel="For You feed"
+                accessibilityHint="Double tap to show For You posts"
                 accessibilityState={{ selected: activeTab === 'foryou' }}
             >
                 <Text
@@ -357,7 +348,8 @@ function FeedTabs({
                 style={[styles.feedTab, activeTab === 'following' && styles.feedTabActive]}
                 onPress={() => onTabChange('following')}
                 accessibilityRole="tab"
-                accessibilityLabel="Following"
+                accessibilityLabel="Following feed"
+                accessibilityHint="Double tap to show posts from people you follow"
                 accessibilityState={{ selected: activeTab === 'following' }}
             >
                 <Text
@@ -527,6 +519,15 @@ const FeedPostCard = memo(
         const router = useRouter();
         const lastTapRef = useRef(0);
         const [showHeart, setShowHeart] = useState(false);
+        const heartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+        const singleTapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+        useEffect(() => {
+            return () => {
+                if (heartTimeoutRef.current) clearTimeout(heartTimeoutRef.current);
+                if (singleTapTimeoutRef.current) clearTimeout(singleTapTimeoutRef.current);
+            };
+        }, []);
 
         const handleTap = () => {
             const now = Date.now();
@@ -536,11 +537,14 @@ const FeedPostCard = memo(
                     onLike(post.id);
                 }
                 setShowHeart(true);
-                setTimeout(() => setShowHeart(false), 1100);
+                if (heartTimeoutRef.current) clearTimeout(heartTimeoutRef.current);
+                heartTimeoutRef.current = setTimeout(() => setShowHeart(false), 1100);
+                if (singleTapTimeoutRef.current) clearTimeout(singleTapTimeoutRef.current);
                 lastTapRef.current = 0;
             } else {
                 lastTapRef.current = now;
-                setTimeout(() => {
+                if (singleTapTimeoutRef.current) clearTimeout(singleTapTimeoutRef.current);
+                singleTapTimeoutRef.current = setTimeout(() => {
                     if (lastTapRef.current === now) {
                         onPress(post.id);
                     }
@@ -582,6 +586,12 @@ const FeedPostCard = memo(
             }
         };
 
+        const authorName = post.author?.displayName || post.author?.username || 'Anonymous';
+        const contentSummary = post.content
+            ? post.content.length > 80 ? post.content.slice(0, 80) + '...' : post.content
+            : '';
+        const postLabel = `Post by ${authorName}${contentSummary ? `. ${contentSummary}` : ''}${post.mediaUrl ? '. Has media' : ''}. ${formatCount(post.likesCount)} likes, ${formatCount(post.commentsCount)} comments`;
+
         return (
             <Animated.View entering={FadeInDown.duration(300).delay(50)}>
                 <Pressable
@@ -589,6 +599,10 @@ const FeedPostCard = memo(
                     onPress={handleTap}
                     onLongPress={handleLongPress}
                     delayLongPress={500}
+                    accessible={true}
+                    accessibilityLabel={postLabel}
+                    accessibilityHint="Double tap to view post details. Double tap and hold for more options"
+                    accessibilityRole="button"
                 >
                     <LikeHeartOverlay show={showHeart} />
 
@@ -803,7 +817,12 @@ const FeedPostCard = memo(
 
                     {/* Author's Note — pinned highlight from the post author */}
                     {post.authorNote && (
-                        <View style={styles.authorNoteContainer}>
+                        <View
+                            style={styles.authorNoteContainer}
+                            accessible={true}
+                            accessibilityLabel={`Author's note from ${post.author?.displayName || 'the author'}: ${post.authorNote}`}
+                            accessibilityRole="text"
+                        >
                             <View style={styles.authorNoteAccent} />
                             <View style={styles.authorNoteContent}>
                                 <View style={styles.authorNoteHeader}>
@@ -814,6 +833,7 @@ const FeedPostCard = memo(
                                             placeholder={AVATAR_PLACEHOLDER.blurhash}
                                             transition={AVATAR_PLACEHOLDER.transition}
                                             cachePolicy="memory-disk"
+                                            accessibilityIgnoresInvertColors
                                         />
                                     ) : (
                                         <View style={[styles.authorNoteAvatar, styles.contactAvatarPlaceholder]}>
@@ -895,7 +915,12 @@ function SeedContentSection({ onDismiss }: { onDismiss: () => void }) {
                             key={post.id}
                             entering={FadeInDown.duration(300).delay(300 + index * 80)}
                         >
-                            <View style={seedStyles.card}>
+                            <View
+                                style={seedStyles.card}
+                                accessible={true}
+                                accessibilityLabel={`${post.tag}: ${post.content}`}
+                                accessibilityRole="text"
+                            >
                                 <View style={[seedStyles.tagPill, { backgroundColor: (SEED_TAG_COLORS[post.tag] || colors.gold[500]) + '20' }]}>
                                     <Text style={[seedStyles.tagText, { color: SEED_TAG_COLORS[post.tag] || colors.gold[500] }]}>
                                         {post.tag}
@@ -1245,6 +1270,14 @@ export default function FeedScreen() {
     const flatListRef = useRef<FlatList>(null);
     const { shouldReduceData, isOffline } = useNetworkQuality();
 
+    // Reduced motion support — respect system preference
+    const [reduceMotion, setReduceMotion] = useState(false);
+    useEffect(() => {
+        AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+        const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+        return () => sub.remove();
+    }, []);
+
     const posts = useFeedStore((s) => s.posts);
     const isLoading = useFeedStore((s) => s.isLoading);
     const isRefreshing = useFeedStore((s) => s.isRefreshing);
@@ -1262,6 +1295,7 @@ export default function FeedScreen() {
         user?.communityOptIn && user?.activeFeedView === 'community' ? 'community' : 'private'
     );
     const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+    const activeVideoIdRef = useRef<string | null>(null);
     const [unreadMessages, setUnreadMessages] = useState(0);
 
     // Seed content & checklist state
@@ -1333,7 +1367,11 @@ export default function FeedScreen() {
             const videoPost = viewableItems.find(
                 (item) => item.isViewable && item.item?.mediaType === 'VIDEO'
             );
-            setActiveVideoId(videoPost?.item?.id || null);
+            const newId = videoPost?.item?.id || null;
+            if (newId !== activeVideoIdRef.current) {
+                activeVideoIdRef.current = newId;
+                setActiveVideoId(newId);
+            }
         }
     ).current;
 
@@ -1343,9 +1381,10 @@ export default function FeedScreen() {
 
     // Set the first video as active when posts load
     useEffect(() => {
-        if (posts.length > 0 && !activeVideoId) {
+        if (posts.length > 0 && !activeVideoIdRef.current) {
             const firstVideoPost = posts.find((p) => p.mediaType === 'VIDEO');
             if (firstVideoPost) {
+                activeVideoIdRef.current = firstVideoPost.id;
                 setActiveVideoId(firstVideoPost.id);
             }
         }
@@ -1720,9 +1759,9 @@ export default function FeedScreen() {
                     />
                     <Ionicons name="sparkles" size={32} color={colors.gold[500]} />
                 </View>
-                <Text style={styles.emptyTitle}>Your feed is waiting</Text>
+                <Text style={styles.emptyTitle}>No posts yet</Text>
                 <Text style={styles.emptyText}>
-                    Follow people and join communities to see posts here. The more you connect, the richer your feed becomes.
+                    Follow people or join communities to see posts here. The more you connect, the richer your feed becomes.
                 </Text>
 
                 {/* Action cards */}
@@ -1798,14 +1837,19 @@ export default function FeedScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={styles.container} accessible={false} accessibilityLabel="Home feed">
             <LinearGradient
                 colors={[colors.obsidian[900], colors.obsidian[800]]}
                 style={StyleSheet.absoluteFill}
             />
 
             {/* Compact Header — Avatar + Greeting + Actions */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
+            <View
+                style={[styles.header, { paddingTop: insets.top + spacing.xs }]}
+                accessible={true}
+                accessibilityRole="header"
+                accessibilityLabel={`${getGreeting()}, ${user?.displayName?.split(' ')[0] || 'there'}. ${hijri.day} ${hijri.monthName} ${hijri.year} AH`}
+            >
                 <View style={styles.headerLeft}>
                     <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Your profile" accessibilityHint="Double tap to view your profile">
                         <Avatar uri={user?.avatarUrl} name={user?.displayName || 'U'} customSize={34} borderColor={colors.gold[500]} />
@@ -1870,6 +1914,7 @@ export default function FeedScreen() {
                         onPress={() => router.push('/notifications')}
                         accessibilityRole="button"
                         accessibilityLabel="Notifications"
+                        accessibilityHint="Double tap to view notifications"
                     >
                         <Ionicons name="notifications-outline" size={22} color={colors.text.primary} />
                     </TouchableOpacity>
@@ -1877,7 +1922,8 @@ export default function FeedScreen() {
                         style={styles.headerBtn}
                         onPress={() => router.push('/messages' as any)}
                         accessibilityRole="button"
-                        accessibilityLabel="Messages"
+                        accessibilityLabel={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : 'Messages'}
+                        accessibilityHint="Double tap to open messages"
                     >
                         <View>
                             <Ionicons name="chatbubble-outline" size={22} color={colors.gold[400]} />
@@ -1893,7 +1939,13 @@ export default function FeedScreen() {
 
             {/* Slow connection indicator */}
             {(isOffline || shouldReduceData) && (
-                <View style={styles.connectionBanner}>
+                <View
+                    style={styles.connectionBanner}
+                    accessible={true}
+                    accessibilityRole="alert"
+                    accessibilityLabel={isOffline ? 'No connection. Showing cached content' : 'Slow connection. Videos paused'}
+                    accessibilityLiveRegion="polite"
+                >
                     <Ionicons
                         name={isOffline ? 'cloud-offline-outline' : 'cellular-outline'}
                         size={14}
@@ -1917,13 +1969,15 @@ export default function FeedScreen() {
                     paddingBottom: 100,
                 }}
                 showsVerticalScrollIndicator={false}
+                accessibilityRole="list"
+                accessibilityLabel={`${feedType === 'foryou' ? 'For You' : 'Following'} feed, ${posts.length} posts`}
                 onScroll={scrollHandler}
                 scrollEventThrottle={16}
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}
                         onRefresh={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             fetchFeed(true, feedType, feedView);
                         }}
                         tintColor={colors.gold[500]}
@@ -1937,10 +1991,10 @@ export default function FeedScreen() {
                 ListFooterComponent={renderFooter}
                 // Performance optimizations
                 removeClippedSubviews={true}
-                maxToRenderPerBatch={4}
-                windowSize={5}
+                maxToRenderPerBatch={5}
+                windowSize={7}
                 initialNumToRender={3}
-                updateCellsBatchingPeriod={100}
+                updateCellsBatchingPeriod={50}
                 getItemLayout={undefined} // Variable height — use estimatedItemSize instead
                 maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
             />
@@ -2029,9 +2083,9 @@ const styles = StyleSheet.create({
     },
     headerActions: { flexDirection: 'row', gap: spacing.xs },
     headerBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         backgroundColor: colors.surface.glassHover,
         alignItems: 'center',
         justifyContent: 'center',
@@ -2300,6 +2354,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginEnd: spacing.lg,
+        minHeight: 44,
+        minWidth: 44,
+        paddingVertical: 4,
     },
     actionCount: {
         fontSize: typography.fontSize.sm,

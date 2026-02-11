@@ -1,14 +1,14 @@
-import { useState, useEffect, memo, useCallback } from 'react';
+import { useState, useEffect, memo, useCallback, useRef, useMemo } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
     Dimensions,
-    Alert,
     FlatList,
     Platform,
     RefreshControl,
+    Share,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -23,7 +23,11 @@ import Animated, {
     useAnimatedStyle,
     withTiming,
     withRepeat,
+    withSpring,
     Easing,
+    interpolate,
+    useAnimatedScrollHandler,
+    Extrapolation,
 } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { Avatar, LoadingView, EmptyState, SkeletonGrid } from '../../components';
@@ -31,21 +35,47 @@ import { useAuthStore, Post, mapApiPost } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { showError } from '../../stores/toastStore';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
+import { formatCount } from '../../lib/utils';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const COVER_HEIGHT = 200;
+const COVER_HEIGHT = 220;
 const AVATAR_SIZE = 108;
 const AVATAR_RING_SIZE = AVATAR_SIZE + 8;
 const POST_GAP = 2;
 const POST_SIZE = (SCREEN_WIDTH - POST_GAP * 2) / 3;
 
-// ─── Helpers ─────────────────────────────────────────────
-const formatCount = (num: number) => {
-    if (!num) return '0';
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-    if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
-    return num.toString();
-};
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<Post>);
+
+// ─── Animated Stat Counter ──────────────────────────────
+const AnimatedStatValue = memo(({ value }: { value: number }) => {
+    const animatedValue = useSharedValue(0);
+    const prevValue = useRef(0);
+
+    useEffect(() => {
+        if (value !== prevValue.current) {
+            animatedValue.value = 0;
+            animatedValue.value = withSpring(1, {
+                damping: 14,
+                stiffness: 120,
+                mass: 0.8,
+            });
+            prevValue.current = value;
+        }
+    }, [value]);
+
+    const animStyle = useAnimatedStyle(() => ({
+        transform: [
+            { scale: interpolate(animatedValue.value, [0, 0.5, 1], [0.85, 1.08, 1], Extrapolation.CLAMP) },
+        ],
+        opacity: interpolate(animatedValue.value, [0, 0.3, 1], [0.5, 1, 1], Extrapolation.CLAMP),
+    }));
+
+    return (
+        <Animated.Text style={[styles.statValue, animStyle]}>
+            {formatCount(value)}
+        </Animated.Text>
+    );
+});
 
 // ─── Post Grid Item ──────────────────────────────────────
 const PostGridItem = memo(({ post, index }: { post: Post; index: number }) => {
@@ -129,7 +159,7 @@ const StatItem = memo(({
         accessibilityRole="button"
         accessibilityLabel={`${formatCount(value)} ${label}`}
     >
-        <Text style={styles.statValue}>{formatCount(value)}</Text>
+        <AnimatedStatValue value={value} />
         <Text style={styles.statLabel}>{label}</Text>
     </TouchableOpacity>
 ));
@@ -142,6 +172,27 @@ const TABS: { key: ProfileTab; icon: keyof typeof Ionicons.glyphMap; iconActive:
     { key: 'likes', icon: 'heart-outline', iconActive: 'heart', label: 'Likes' },
     { key: 'saved', icon: 'bookmark-outline', iconActive: 'bookmark', label: 'Saved' },
 ];
+
+// ─── Error State Component ──────────────────────────────
+const ProfileError = memo(({ message, onRetry }: { message: string; onRetry: () => void }) => (
+    <View style={styles.errorContainer}>
+        <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
+        <Ionicons name="cloud-offline-outline" size={56} color={colors.text.muted} />
+        <Text style={styles.errorTitle}>Something went wrong</Text>
+        <Text style={styles.errorMessage}>{message}</Text>
+        <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onRetry();
+            }}
+            activeOpacity={0.8}
+        >
+            <Ionicons name="refresh" size={18} color={colors.obsidian[900]} />
+            <Text style={styles.retryButtonText}>Try Again</Text>
+        </TouchableOpacity>
+    </View>
+));
 
 // ─── Main Screen ─────────────────────────────────────────
 export default function ProfileScreen() {
@@ -157,6 +208,7 @@ export default function ProfileScreen() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
     const [loadedTabs, setLoadedTabs] = useState<Set<ProfileTab>>(new Set(['posts']));
+    const [loadError, setLoadError] = useState<string | null>(null);
     const flatListRef = useRef<FlatList>(null);
 
     // Animated tab indicator
@@ -167,6 +219,42 @@ export default function ProfileScreen() {
         transform: [{ translateX: tabIndicatorX.value }],
         width: TAB_WIDTH,
     }));
+
+    // ── Parallax scroll ──────────────────────────────────
+    const scrollY = useSharedValue(0);
+    const scrollHandler = useAnimatedScrollHandler({
+        onScroll: (event) => {
+            scrollY.value = event.contentOffset.y;
+        },
+    });
+
+    const coverAnimStyle = useAnimatedStyle(() => {
+        const translateY = interpolate(
+            scrollY.value,
+            [-COVER_HEIGHT, 0, COVER_HEIGHT],
+            [-COVER_HEIGHT / 2, 0, COVER_HEIGHT * 0.4],
+            Extrapolation.CLAMP,
+        );
+        const scale = interpolate(
+            scrollY.value,
+            [-COVER_HEIGHT, 0, COVER_HEIGHT],
+            [1.6, 1, 1],
+            Extrapolation.CLAMP,
+        );
+        return {
+            transform: [{ translateY }, { scale }],
+        };
+    });
+
+    const coverOverlayStyle = useAnimatedStyle(() => {
+        const opacity = interpolate(
+            scrollY.value,
+            [0, COVER_HEIGHT * 0.6],
+            [0.3, 0.85],
+            Extrapolation.CLAMP,
+        );
+        return { opacity };
+    });
 
     // Verified name shimmer
     const shimmerX = useSharedValue(-1);
@@ -193,63 +281,101 @@ export default function ProfileScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }, [TAB_WIDTH]);
 
+    // ── Share Profile ────────────────────────────────────
+    const handleShareProfile = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        try {
+            const displayName = user?.displayName || user?.username || 'User';
+            const username = user?.username || '';
+            await Share.share({
+                message: `Check out ${displayName}'s profile on Caravan!\nhttps://caravan.social/@${username}`,
+                title: `${displayName} on Caravan`,
+            });
+        } catch {
+            // User cancelled share — no action needed
+        }
+    }, [user?.displayName, user?.username]);
+
     // ── Data Loading ─────────────────────────────────────
-    const loadUserPosts = async () => {
+    const loadUserPosts = useCallback(async () => {
         if (!user?.id) { setIsLoading(false); return; }
+        setLoadError(null);
         try {
             const data = await apiFetch<any>(`${API.userPosts(user.id)}?limit=50`);
             const rawPosts = data.posts || data.data || [];
             setUserPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
         } catch (e: any) {
-            Alert.alert('Error', e.message || 'Failed to load posts');
+            const msg = e?.message || 'Failed to load posts';
+            setLoadError(msg);
+            showError(msg);
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
         }
-    };
+    }, [user?.id]);
 
-    const loadLikedPosts = async () => {
+    const loadLikedPosts = useCallback(async () => {
         if (!user?.id) return;
         try {
             const data = await apiFetch<any>(API.likedPosts(user.id));
             const rawPosts = data.posts || data.data || [];
             setLikedPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
         } catch { showError("Couldn't load liked posts"); }
-    };
+    }, [user?.id]);
 
-    const loadSavedPosts = async () => {
+    const loadSavedPosts = useCallback(async () => {
         try {
             const data = await apiFetch<any>(API.savedPosts);
             const rawPosts = data.posts || data.data || [];
             setSavedPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
         } catch { showError("Couldn't load saved posts"); }
-    };
+    }, []);
 
     useEffect(() => {
         if (user?.id) loadUserPosts();
-    }, [user?.id]);
+    }, [user?.id, loadUserPosts]);
 
     useEffect(() => {
         if (loadedTabs.has(activeTab)) return;
         setLoadedTabs((prev) => new Set(prev).add(activeTab));
         if (activeTab === 'likes') loadLikedPosts();
         if (activeTab === 'saved') loadSavedPosts();
-    }, [activeTab]);
+    }, [activeTab, loadedTabs, loadLikedPosts, loadSavedPosts]);
 
-    const handleRefresh = async () => {
+    const handleRefresh = useCallback(async () => {
         setIsRefreshing(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         await refreshUser();
         await loadUserPosts();
         if (loadedTabs.has('likes')) loadLikedPosts();
         if (loadedTabs.has('saved')) loadSavedPosts();
-    };
+    }, [refreshUser, loadUserPosts, loadLikedPosts, loadSavedPosts, loadedTabs]);
+
+    const handleRetry = useCallback(() => {
+        setIsLoading(true);
+        setLoadError(null);
+        loadUserPosts();
+    }, [loadUserPosts]);
 
     // Refresh profile data when screen gains focus
     useFocusEffect(
         useCallback(() => {
             if (user?.id) refreshUser();
-        }, [user?.id])
+        }, [user?.id, refreshUser])
+    );
+
+    // ── Data ─────────────────────────────────────────────
+    const postsData = useMemo(() => {
+        if (activeTab === 'posts') return userPosts;
+        if (activeTab === 'likes') return likedPosts;
+        return savedPosts;
+    }, [activeTab, userPosts, likedPosts, savedPosts]);
+
+    const renderPost = useCallback(
+        ({ item, index }: { item: Post; index: number }) => (
+            <PostGridItem post={item} index={index} />
+        ),
+        [],
     );
 
     // ── Loading State ────────────────────────────────────
@@ -262,36 +388,53 @@ export default function ProfileScreen() {
         );
     }
 
+    // ── Error State ──────────────────────────────────────
+    if (loadError && userPosts.length === 0 && !isLoading) {
+        return <ProfileError message={loadError} onRetry={handleRetry} />;
+    }
+
     // ── Header ───────────────────────────────────────────
     const renderHeader = () => (
         <View>
-            {/* Cover Photo */}
-            <Animated.View entering={FadeIn.duration(500)} style={styles.coverArea}>
-                {user.coverUrl ? (
-                    <Image
-                        source={{ uri: user.coverUrl }}
-                        style={styles.coverImage}
-                        placeholder={IMAGE_PLACEHOLDER.blurhash}
-                        transition={400}
-                        cachePolicy="memory-disk"
-                        contentFit="cover"
-                    />
-                ) : (
+            {/* Cover Photo with Parallax */}
+            <Animated.View style={styles.coverArea}>
+                <Animated.View style={[styles.coverImageWrap, coverAnimStyle]}>
+                    {user.coverUrl ? (
+                        <Image
+                            source={{ uri: user.coverUrl }}
+                            style={styles.coverImage}
+                            placeholder={IMAGE_PLACEHOLDER.blurhash}
+                            transition={400}
+                            cachePolicy="memory-disk"
+                            contentFit="cover"
+                        />
+                    ) : (
+                        <LinearGradient
+                            colors={[colors.gold[700], colors.gold[600], colors.gold[500]]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.coverImage}
+                        >
+                            {/* Decorative pattern overlay */}
+                            <View style={styles.coverPattern}>
+                                <LinearGradient
+                                    colors={[colors.surface.overlayLight, 'transparent', colors.surface.overlayLight]}
+                                    style={StyleSheet.absoluteFill}
+                                />
+                            </View>
+                        </LinearGradient>
+                    )}
+                </Animated.View>
+
+                {/* Gradient overlay for text readability */}
+                <Animated.View style={[styles.coverGradientOverlay, coverOverlayStyle]}>
                     <LinearGradient
-                        colors={[colors.gold[700], colors.gold[600], colors.gold[500]]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.coverImage}
-                    >
-                        {/* Decorative pattern overlay */}
-                        <View style={styles.coverPattern}>
-                            <LinearGradient
-                                colors={[colors.surface.overlayLight, 'transparent', colors.surface.overlayLight]}
-                                style={StyleSheet.absoluteFill}
-                            />
-                        </View>
-                    </LinearGradient>
-                )}
+                        colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.6)', colors.obsidian[900]]}
+                        locations={[0, 0.3, 0.65, 1]}
+                        style={StyleSheet.absoluteFill}
+                    />
+                </Animated.View>
+
                 {/* Bottom fade into background — smooth multi-stop */}
                 <LinearGradient
                     colors={['transparent', colors.surface.overlayLight, colors.surface.overlayMedium, colors.obsidian[900]]}
@@ -333,15 +476,15 @@ export default function ProfileScreen() {
                     style={styles.userInfo}
                 >
                     <View style={styles.nameRow}>
-                        <View style={{ position: 'relative' }}>
+                        <View style={styles.nameShimmerWrap}>
                             <Text style={styles.displayName} accessibilityRole="header">
-                                {user.displayName}
+                                {user.displayName || user.username || 'User'}
                             </Text>
                             {user.isVerified && (
                                 <Animated.View
                                     style={[
                                         StyleSheet.absoluteFill,
-                                        { backgroundColor: colors.gold[400], borderRadius: 4 },
+                                        styles.shimmerOverlay,
                                         shimmerStyle,
                                     ]}
                                     pointerEvents="none"
@@ -353,11 +496,11 @@ export default function ProfileScreen() {
                                 name="checkmark-circle"
                                 size={20}
                                 color={colors.gold[500]}
-                                style={{ marginStart: 6 }}
+                                style={styles.verifiedIcon}
                             />
                         )}
                     </View>
-                    <Text style={styles.username}>@{user.username}</Text>
+                    <Text style={styles.username}>@{user.username || 'unknown'}</Text>
                 </Animated.View>
 
                 {/* Bio */}
@@ -420,11 +563,11 @@ export default function ProfileScreen() {
                         colors={[colors.surface.glassHover, colors.surface.glass]}
                         style={styles.statsContainer}
                     >
-                        <StatItem value={user.postsCount} label="Posts" />
+                        <StatItem value={user.postsCount ?? 0} label="Posts" />
                         <View style={styles.statDivider} />
-                        <StatItem value={user.followersCount} label="Followers" />
+                        <StatItem value={user.followersCount ?? 0} label="Followers" />
                         <View style={styles.statDivider} />
-                        <StatItem value={user.followingCount} label="Following" />
+                        <StatItem value={user.followingCount ?? 0} label="Following" />
                     </LinearGradient>
                 </Animated.View>
 
@@ -465,9 +608,7 @@ export default function ProfileScreen() {
                     <TouchableOpacity
                         style={styles.shareButton}
                         activeOpacity={0.8}
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        }}
+                        onPress={handleShareProfile}
                         accessibilityRole="button"
                         accessibilityLabel="Share profile"
                     >
@@ -521,19 +662,29 @@ export default function ProfileScreen() {
         </View>
     );
 
-    // ── Data ─────────────────────────────────────────────
-    const postsData =
-        activeTab === 'posts' ? userPosts : activeTab === 'likes' ? likedPosts : savedPosts;
-
-    const renderPost = useCallback(
-        ({ item, index }: { item: Post; index: number }) => (
-            <PostGridItem post={item} index={index} />
-        ),
-        [],
-    );
-
     // ── Empty & Loading States ───────────────────────────
-    const renderEmpty = () => {
+    const emptyConfig = useMemo(() => ({
+        posts: {
+            icon: 'camera-outline' as const,
+            title: 'No Posts Yet',
+            message: 'Share your first moment with the world.',
+            actionLabel: 'Create Post',
+        },
+        likes: {
+            icon: 'heart-outline' as const,
+            title: 'No Liked Posts',
+            message: "Posts you've liked will appear here.",
+            actionLabel: undefined,
+        },
+        saved: {
+            icon: 'bookmark-outline' as const,
+            title: 'Nothing saved yet',
+            message: 'Save posts to revisit them later.',
+            actionLabel: undefined,
+        },
+    }), []);
+
+    const renderEmpty = useCallback(() => {
         if (isLoading) {
             return (
                 <View style={styles.skeletonWrap}>
@@ -542,31 +693,7 @@ export default function ProfileScreen() {
             );
         }
 
-        const config = {
-            posts: {
-                icon: 'camera-outline' as const,
-                title: 'No Posts Yet',
-                message: 'Share your first moment with the world.',
-                actionLabel: 'Create Post',
-                onAction: () => router.push('/(tabs)/create' as any),
-            },
-            likes: {
-                icon: 'heart-outline' as const,
-                title: 'No Liked Posts',
-                message: "Posts you've liked will appear here.",
-                actionLabel: undefined,
-                onAction: undefined,
-            },
-            saved: {
-                icon: 'bookmark-outline' as const,
-                title: 'No Saved Posts',
-                message: 'Save posts to revisit them later.',
-                actionLabel: undefined,
-                onAction: undefined,
-            },
-        };
-
-        const c = config[activeTab];
+        const c = emptyConfig[activeTab];
 
         return (
             <EmptyState
@@ -574,11 +701,11 @@ export default function ProfileScreen() {
                 title={c.title}
                 message={c.message}
                 actionLabel={c.actionLabel}
-                onAction={c.onAction}
+                onAction={c.actionLabel ? () => router.push('/(tabs)/create' as any) : undefined}
                 compact
             />
         );
-    };
+    }, [isLoading, activeTab, emptyConfig, router]);
 
     // ── Render ────────────────────────────────────────────
     return (
@@ -606,17 +733,19 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
             </View>
 
-            <FlatList
+            <AnimatedFlatList
                 ref={flatListRef}
                 data={postsData}
                 renderItem={renderPost}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item: Post) => item.id}
                 numColumns={3}
                 ListHeaderComponent={renderHeader}
                 ListEmptyComponent={renderEmpty}
                 columnWrapperStyle={styles.postsRow}
-                contentContainerStyle={{ paddingBottom: 100 }}
+                contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
+                onScroll={scrollHandler}
+                scrollEventThrottle={16}
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}
@@ -640,6 +769,46 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.obsidian[900],
+    },
+    listContent: {
+        paddingBottom: 100,
+    },
+
+    // ── Error State ──────────────────────────────────────
+    errorContainer: {
+        flex: 1,
+        backgroundColor: colors.obsidian[900],
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: spacing.xl,
+    },
+    errorTitle: {
+        fontSize: typography.fontSize.xl,
+        fontWeight: '700',
+        color: colors.text.primary,
+        marginTop: spacing.lg,
+        marginBottom: spacing.sm,
+    },
+    errorMessage: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.muted,
+        textAlign: 'center',
+        marginBottom: spacing.xl,
+        lineHeight: 22,
+    },
+    retryButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingHorizontal: spacing.xl,
+        paddingVertical: spacing.md,
+        borderRadius: 14,
+        backgroundColor: colors.gold[500],
+    },
+    retryButtonText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        color: colors.obsidian[900],
     },
 
     // ── Floating Header ──────────────────────────────────
@@ -673,6 +842,10 @@ const styles = StyleSheet.create({
         position: 'relative',
         overflow: 'hidden',
     },
+    coverImageWrap: {
+        ...StyleSheet.absoluteFillObject,
+        overflow: 'hidden',
+    },
     coverImage: {
         width: '100%',
         height: '100%',
@@ -680,12 +853,17 @@ const styles = StyleSheet.create({
     coverPattern: {
         ...StyleSheet.absoluteFillObject,
     },
+    coverGradientOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 1,
+    },
     coverFade: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
         height: COVER_HEIGHT * 0.75,
+        zIndex: 2,
     },
 
     // ── Profile Content ──────────────────────────────────
@@ -754,6 +932,16 @@ const styles = StyleSheet.create({
     nameRow: {
         flexDirection: 'row',
         alignItems: 'center',
+    },
+    nameShimmerWrap: {
+        position: 'relative',
+    },
+    shimmerOverlay: {
+        backgroundColor: colors.gold[400],
+        borderRadius: 4,
+    },
+    verifiedIcon: {
+        marginStart: 6,
     },
     displayName: {
         fontSize: typography.fontSize['3xl'],

@@ -28,6 +28,7 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
                 type: 'VIDEO',
                 mediaUrl: { not: null },
                 isPublic: true,
+                deletedAt: null,
             },
             take: parseInt(limit as string) + 1,
             cursor: cursor ? { id: cursor as string } : undefined,
@@ -84,6 +85,7 @@ router.get('/feed', optionalAuth, async (req: AuthRequest, res, next) => {
             where: {
                 type: 'VIDEO', // Journeys are video posts
                 mediaUrl: { not: null },
+                deletedAt: null,
             },
             take: parseInt(limit as string) + 1,
             cursor: cursor ? { id: cursor as string } : undefined,

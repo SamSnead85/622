@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ============================================
@@ -191,6 +191,68 @@ interface NotificationCenterProps {
     loading?: boolean;
 }
 
+// Memoized notification item — avoids re-rendering every item when one changes
+const getIcon = (type: Notification['type']) => {
+    switch (type) {
+        case 'like': return '❤️';
+        case 'comment': return '💬';
+        case 'follow': return '👤';
+        case 'mention': return '@';
+        case 'message': return '✉️';
+        case 'system': return '🔔';
+        case 'WAVE': return '👋';
+    }
+};
+
+const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (minutes < 1) return 'now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString();
+};
+
+interface NotificationItemProps {
+    notification: Notification;
+    onClick: (notification: Notification) => void;
+}
+
+const NotificationItem = memo(function NotificationItem({ notification, onClick }: NotificationItemProps) {
+    return (
+        <button
+            onClick={() => onClick(notification)}
+            className={`w-full flex items-start gap-3 p-4 hover:bg-white/5 transition-colors text-left ${!notification.isRead ? 'bg-[#D4AF37]/5' : ''
+                }`}
+        >
+            <div className="relative flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                    <span className="text-lg">{getIcon(notification.type)}</span>
+                </div>
+                {!notification.isRead && (
+                    <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#D4AF37]" />
+                )}
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-sm text-white font-medium">{notification.title}</p>
+                <p className="text-sm text-white/60 line-clamp-2">{notification.body}</p>
+                <span className="text-xs text-white/40">{formatTime(notification.createdAt)}</span>
+            </div>
+        </button>
+    );
+}, (prev, next) => (
+    prev.notification.id === next.notification.id &&
+    prev.notification.isRead === next.notification.isRead &&
+    prev.notification.title === next.notification.title &&
+    prev.notification.body === next.notification.body
+));
+
 export function NotificationCenter({
     isOpen,
     onClose,
@@ -200,33 +262,6 @@ export function NotificationCenter({
     loading = false,
 }: NotificationCenterProps) {
     const unreadCount = notifications.filter(n => !n.isRead).length;
-
-    const getIcon = (type: Notification['type']) => {
-        switch (type) {
-            case 'like': return '❤️';
-            case 'comment': return '💬';
-            case 'follow': return '👤';
-            case 'mention': return '@';
-            case 'message': return '✉️';
-            case 'system': return '🔔';
-            case 'WAVE': return '👋';
-        }
-    };
-
-    const formatTime = (dateString: string) => {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diff = now.getTime() - date.getTime();
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
-
-        if (minutes < 1) return 'now';
-        if (minutes < 60) return `${minutes}m ago`;
-        if (hours < 24) return `${hours}h ago`;
-        if (days < 7) return `${days}d ago`;
-        return date.toLocaleDateString();
-    };
 
     return (
         <AnimatePresence>
@@ -292,26 +327,11 @@ export function NotificationCenter({
                             ) : (
                                 <div className="divide-y divide-white/5">
                                     {notifications.map((notification) => (
-                                        <button
+                                        <NotificationItem
                                             key={notification.id}
-                                            onClick={() => onNotificationClick(notification)}
-                                            className={`w-full flex items-start gap-3 p-4 hover:bg-white/5 transition-colors text-left ${!notification.isRead ? 'bg-[#D4AF37]/5' : ''
-                                                }`}
-                                        >
-                                            <div className="relative flex-shrink-0">
-                                                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-                                                    <span className="text-lg">{getIcon(notification.type)}</span>
-                                                </div>
-                                                {!notification.isRead && (
-                                                    <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#D4AF37]" />
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm text-white font-medium">{notification.title}</p>
-                                                <p className="text-sm text-white/60 line-clamp-2">{notification.body}</p>
-                                                <span className="text-xs text-white/40">{formatTime(notification.createdAt)}</span>
-                                            </div>
-                                        </button>
+                                            notification={notification}
+                                            onClick={onNotificationClick}
+                                        />
                                     ))}
                                 </div>
                             )}

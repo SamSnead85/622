@@ -319,17 +319,5 @@ export function useIsDesktop(): boolean {
     return useMediaQuery('(min-width: 1025px)');
 }
 
-export default {
-    useAsync,
-    useFetch,
-    useDebounce,
-    useLocalStorage,
-    useOnlineStatus,
-    useIntersectionObserver,
-    useClickOutside,
-    usePrevious,
-    useMediaQuery,
-    useIsMobile,
-    useIsTablet,
-    useIsDesktop,
-};
+// All hooks are individually named-exported above.
+// No default export — avoids ESLint import/no-anonymous-default-export.

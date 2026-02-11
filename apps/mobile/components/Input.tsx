@@ -58,6 +58,8 @@ export const Input = forwardRef<TextInput, InputProps>(
                         placeholderTextColor={colors.text.muted}
                         selectionColor={colors.gold[500]}
                         accessibilityLabel={label || props.placeholder}
+                        accessibilityHint={error ? `Error: ${error}` : undefined}
+                        accessibilityState={{ disabled: props.editable === false }}
                         {...props}
                     />
                 </View>
@@ -91,6 +93,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border.subtle,
         paddingHorizontal: spacing.lg,
+        minHeight: 48,
     },
     inputError: {
         borderColor: colors.coral[500] + '60',

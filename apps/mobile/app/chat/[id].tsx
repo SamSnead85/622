@@ -16,10 +16,10 @@ import {
     KeyboardAvoidingView,
     Platform,
     Pressable,
-    Dimensions,
     ActivityIndicator,
     Alert,
     ActionSheetIOS,
+    Keyboard,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -31,7 +31,6 @@ import * as ImagePicker from 'expo-image-picker';
 import Animated, {
     FadeIn,
     FadeInDown,
-    FadeInUp,
     SlideInRight,
     SlideInLeft,
     useSharedValue,
@@ -53,8 +52,6 @@ import { Avatar } from '../../components';
 import { showError } from '../../stores/toastStore';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 // ============================================
 // Types
 // ============================================
@@ -65,7 +62,7 @@ interface Message {
     senderId: string;
     createdAt: string;
     isRead?: boolean;
-    status?: 'sending' | 'sent' | 'delivered' | 'read';
+    status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
     mediaUrl?: string;
     mediaType?: string;
     replyToId?: string;
@@ -206,6 +203,14 @@ function ReadReceipt({ status }: { status?: string }) {
                     color={colors.gold[400]}
                 />
             );
+        case 'failed':
+            return (
+                <Ionicons
+                    name="alert-circle"
+                    size={13}
+                    color="#EF4444"
+                />
+            );
         default:
             return null;
     }
@@ -224,6 +229,7 @@ const MessageBubble = memo(function MessageBubble({
     participant,
     formatTime,
     onLongPress,
+    onRetry,
     currentUserId,
 }: {
     item: Message;
@@ -232,11 +238,13 @@ const MessageBubble = memo(function MessageBubble({
     participant: ChatParticipant | null;
     formatTime: (ts: string) => string;
     onLongPress?: (msg: Message) => void;
+    onRetry?: (msg: Message) => void;
     currentUserId?: string;
 }) {
     const hasMedia = !!item.mediaUrl;
     const isImage = item.mediaType === 'IMAGE' || item.mediaType === 'image';
     const replyTo = item.replyTo;
+    const isFailed = item.status === 'failed';
 
     const ReplyQuote = replyTo ? (
         <View style={styles.replyQuote}>
@@ -270,7 +278,7 @@ const MessageBubble = memo(function MessageBubble({
 
             {isOwn ? (
                 <Pressable
-                    style={styles.ownBubbleWrap}
+                    style={[styles.ownBubbleWrap, isFailed && styles.failedBubbleWrap]}
                     onLongPress={() => onLongPress?.(item)}
                     delayLongPress={400}
                 >
@@ -278,7 +286,7 @@ const MessageBubble = memo(function MessageBubble({
 
                     {/* Media */}
                     {hasMedia && isImage && (
-                        <View style={styles.mediaBubble}>
+                        <View style={[styles.mediaBubble, isFailed && styles.failedMediaBubble]}>
                             <Image
                                 source={{ uri: item.mediaUrl }}
                                 style={styles.mediaImage}
@@ -292,28 +300,61 @@ const MessageBubble = memo(function MessageBubble({
 
                     {/* Text bubble */}
                     {item.content ? (
-                        <LinearGradient
-                            colors={[colors.gold[500], colors.gold[600]]}
-                            style={[
-                                styles.msgBubble,
-                                styles.ownBubble,
-                                showTail && styles.ownBubbleTail,
-                            ]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                        >
-                            <Text style={[styles.msgText, styles.ownText]} selectable>
-                                {item.content}
-                            </Text>
-                        </LinearGradient>
+                        isFailed ? (
+                            <View
+                                style={[
+                                    styles.msgBubble,
+                                    styles.ownBubble,
+                                    styles.failedBubble,
+                                    showTail && styles.ownBubbleTail,
+                                ]}
+                            >
+                                <Text style={[styles.msgText, styles.ownText, styles.failedText]} selectable>
+                                    {item.content}
+                                </Text>
+                            </View>
+                        ) : (
+                            <LinearGradient
+                                colors={[colors.gold[500], colors.gold[600]]}
+                                style={[
+                                    styles.msgBubble,
+                                    styles.ownBubble,
+                                    showTail && styles.ownBubbleTail,
+                                ]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            >
+                                <Text style={[styles.msgText, styles.ownText]} selectable>
+                                    {item.content}
+                                </Text>
+                            </LinearGradient>
+                        )
                     ) : null}
 
-                    {/* Meta row: time + read receipt */}
+                    {/* Meta row: time + read receipt + retry */}
                     <View style={styles.ownMeta}>
-                        <Text style={[styles.msgTime, styles.ownTime]}>
-                            {formatTime(item.createdAt)}
-                        </Text>
-                        <ReadReceipt status={item.status} />
+                        {isFailed ? (
+                            <TouchableOpacity
+                                style={styles.retryButton}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    onRetry?.(item);
+                                }}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                accessibilityRole="button"
+                                accessibilityLabel="Retry sending message"
+                            >
+                                <Ionicons name="refresh-outline" size={12} color="#EF4444" />
+                                <Text style={styles.retryText}>Tap to retry</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <>
+                                <Text style={[styles.msgTime, styles.ownTime]}>
+                                    {formatTime(item.createdAt)}
+                                </Text>
+                                <ReadReceipt status={item.status} />
+                            </>
+                        )}
                     </View>
                 </Pressable>
             ) : (
@@ -437,6 +478,7 @@ export default function ChatScreen() {
     const [imageAttachment, setImageAttachment] = useState<ImageAttachment | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [replyTo, setReplyTo] = useState<Message | null>(null);
+    const isMountedRef = useRef(true);
 
     // Animated send button glow
     const sendGlow = useSharedValue(0);
@@ -457,11 +499,36 @@ export default function ChatScreen() {
     // Refs
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isTypingRef = useRef(false);
+    const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Clean up typing timeout on unmount
+    // Clean up all timers and refs on unmount
     useEffect(() => {
+        isMountedRef.current = true;
         return () => {
+            isMountedRef.current = false;
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+            // Stop typing if we were typing when unmounting
+            if (isTypingRef.current && conversationId) {
+                socketManager.stopTyping(conversationId);
+                isTypingRef.current = false;
+            }
+        };
+    }, [conversationId]);
+
+    // Keyboard handling — scroll to bottom when keyboard appears
+    useEffect(() => {
+        const showSub = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            () => {
+                scrollTimerRef.current = setTimeout(
+                    () => flatListRef.current?.scrollToEnd({ animated: true }),
+                    150
+                );
+            }
+        );
+        return () => {
+            showSub.remove();
         };
     }, []);
 
@@ -477,7 +544,7 @@ export default function ChatScreen() {
 
         // Listen for new messages
         const unsubMessage = socketManager.on('message:new', (msg: SocketMessage) => {
-            if (msg.conversationId !== conversationId) return;
+            if (msg.conversationId !== conversationId || !isMountedRef.current) return;
 
             setMessages((prev) => {
                 if (prev.some((m) => m.id === msg.id)) return prev;
@@ -502,7 +569,10 @@ export default function ChatScreen() {
             }
 
             // Scroll to bottom
-            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+            scrollTimerRef.current = setTimeout(
+                () => flatListRef.current?.scrollToEnd({ animated: true }),
+                100
+            );
         });
 
         // Typing indicators
@@ -510,12 +580,12 @@ export default function ChatScreen() {
             'typing:start',
             (data: TypingEvent) => {
                 if (
-                    data.conversationId === conversationId &&
-                    data.userId !== user?.id
-                ) {
-                    setTypingUser(data.username);
-                    setIsTyping(true);
-                }
+                    !isMountedRef.current ||
+                    data.conversationId !== conversationId ||
+                    data.userId === user?.id
+                ) return;
+                setTypingUser(data.username);
+                setIsTyping(true);
             }
         );
 
@@ -523,12 +593,12 @@ export default function ChatScreen() {
             'typing:stop',
             (data: TypingEvent) => {
                 if (
-                    data.conversationId === conversationId &&
-                    data.userId !== user?.id
-                ) {
-                    setIsTyping(false);
-                    setTypingUser(null);
-                }
+                    !isMountedRef.current ||
+                    data.conversationId !== conversationId ||
+                    data.userId === user?.id
+                ) return;
+                setIsTyping(false);
+                setTypingUser(null);
             }
         );
 
@@ -537,18 +607,18 @@ export default function ChatScreen() {
             'message:read',
             (data: { userId: string; conversationId: string; messageId: string }) => {
                 if (
-                    data.conversationId === conversationId &&
-                    data.userId !== user?.id
-                ) {
-                    setMessages((prev) =>
-                        prev.map((m) => {
-                            if (m.senderId === user?.id && !m.isRead) {
-                                return { ...m, isRead: true, status: 'read' as const };
-                            }
-                            return m;
-                        })
-                    );
-                }
+                    !isMountedRef.current ||
+                    data.conversationId !== conversationId ||
+                    data.userId === user?.id
+                ) return;
+                setMessages((prev) =>
+                    prev.map((m) => {
+                        if (m.senderId === user?.id && !m.isRead) {
+                            return { ...m, isRead: true, status: 'read' as const };
+                        }
+                        return m;
+                    })
+                );
             }
         );
 
@@ -556,14 +626,14 @@ export default function ChatScreen() {
         const unsubOnline = socketManager.on(
             'user:online',
             (data: { userId: string }) => {
-                if (data.userId === participant?.id) setIsOnline(true);
+                if (isMountedRef.current && data.userId === participant?.id) setIsOnline(true);
             }
         );
 
         const unsubOffline = socketManager.on(
             'user:offline',
             (data: { userId: string }) => {
-                if (data.userId === participant?.id) setIsOnline(false);
+                if (isMountedRef.current && data.userId === participant?.id) setIsOnline(false);
             }
         );
 
@@ -588,6 +658,8 @@ export default function ChatScreen() {
         const loadMessages = async () => {
             try {
                 const data = await apiFetch<any>(API.messages(conversationId));
+                if (!isMountedRef.current) return;
+
                 const msgs = data.messages || data.data || [];
                 setMessages(
                     Array.isArray(msgs)
@@ -611,10 +683,9 @@ export default function ChatScreen() {
                     }
                 }
             } catch {
-                // Silently handle — retry available via pull
-                showError('Could not load messages');
+                if (isMountedRef.current) showError('Could not load messages');
             } finally {
-                setIsLoading(false);
+                if (isMountedRef.current) setIsLoading(false);
             }
         };
 
@@ -713,8 +784,8 @@ export default function ChatScreen() {
         };
         setMessages((prev) => [...prev, optimisticMsg]);
 
-        // Scroll to bottom
-        setTimeout(
+        // Scroll to bottom (tracked via ref for cleanup)
+        scrollTimerRef.current = setTimeout(
             () => flatListRef.current?.scrollToEnd({ animated: true }),
             50
         );
@@ -761,7 +832,7 @@ export default function ChatScreen() {
             setMessages((prev) =>
                 prev.map((m) =>
                     m.id === optimisticId
-                        ? { ...m, status: 'sending' as const }
+                        ? { ...m, status: 'failed' as const }
                         : m
                 )
             );
@@ -770,6 +841,70 @@ export default function ChatScreen() {
             setIsSending(false);
         }
     }, [inputText, isSending, user?.id, conversationId, imageAttachment, replyTo]);
+
+    // ============================================
+    // Retry Failed Message
+    // ============================================
+
+    const handleRetry = useCallback(async (failedMsg: Message) => {
+        if (!conversationId) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+        // Mark as sending again
+        setMessages((prev) =>
+            prev.map((m) =>
+                m.id === failedMsg.id ? { ...m, status: 'sending' as const } : m
+            )
+        );
+
+        // Re-send via socket
+        socketManager.sendMessage({
+            conversationId,
+            content: failedMsg.content,
+            mediaUrl: failedMsg.mediaUrl,
+            mediaType: failedMsg.mediaType,
+        });
+
+        // Re-send via REST
+        try {
+            const body: Record<string, any> = { content: failedMsg.content };
+            if (failedMsg.mediaUrl) {
+                body.mediaUrl = failedMsg.mediaUrl;
+                body.mediaType = failedMsg.mediaType || 'image';
+            }
+            if (failedMsg.replyToId) {
+                body.replyToId = failedMsg.replyToId;
+            }
+
+            const data = await apiFetch<any>(API.messages(conversationId), {
+                method: 'POST',
+                body: JSON.stringify(body),
+            });
+
+            const realMsg = data.message || data.data || data;
+            setMessages((prev) =>
+                prev.map((m) =>
+                    m.id === failedMsg.id
+                        ? {
+                              ...realMsg,
+                              id: realMsg.id || failedMsg.id,
+                              status: 'sent' as const,
+                              replyTo: failedMsg.replyTo,
+                          }
+                        : m
+                )
+            );
+        } catch {
+            setMessages((prev) =>
+                prev.map((m) =>
+                    m.id === failedMsg.id
+                        ? { ...m, status: 'failed' as const }
+                        : m
+                )
+            );
+            showError('Retry failed. Tap to try again.');
+        }
+    }, [conversationId]);
 
     // ============================================
     // Image Picker
@@ -968,11 +1103,12 @@ export default function ChatScreen() {
                     participant={participant}
                     formatTime={formatTime}
                     onLongPress={handleMessageLongPress}
+                    onRetry={handleRetry}
                     currentUserId={user?.id}
                 />
             );
         },
-        [user?.id, participant, formatTime, shouldShowTail, handleMessageLongPress]
+        [user?.id, participant, formatTime, shouldShowTail, handleMessageLongPress, handleRetry]
     );
 
     // ============================================
@@ -1369,6 +1505,27 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     ownTime: { color: colors.text.muted },
+
+    // Failed message styles
+    failedBubbleWrap: { opacity: 0.85 },
+    failedBubble: {
+        backgroundColor: `${'#EF4444'}20`,
+        borderWidth: 1,
+        borderColor: `${'#EF4444'}40`,
+    },
+    failedText: { color: colors.text.primary },
+    failedMediaBubble: { opacity: 0.6 },
+    retryButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingVertical: 2,
+    },
+    retryText: {
+        fontSize: 11,
+        color: '#EF4444',
+        fontWeight: '600',
+    },
 
     // Media in bubbles
     mediaBubble: {

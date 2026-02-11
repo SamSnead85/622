@@ -131,6 +131,7 @@ export function AnimatedLikeButton({
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityRole="button"
             accessibilityLabel={accessibilityLabel}
+            accessibilityHint={isLiked ? 'Double tap to unlike this post' : 'Double tap to like this post'}
             accessibilityState={{ selected: isLiked }}
             style={styles.container}
         >
@@ -175,6 +176,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
+        minHeight: 44,
+        minWidth: 44,
+        paddingVertical: 4,
     },
     particleContainer: {
         ...StyleSheet.absoluteFillObject,

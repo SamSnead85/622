@@ -362,15 +362,42 @@ startServer().catch((err) => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', async () => {
-    logger.info('SIGTERM received. Shutting down gracefully...');
+const gracefulShutdown = async (signal: string) => {
+    logger.info(`${signal} received. Shutting down gracefully...`);
     await shutdownNotificationQueue();
     await shutdownScheduleWorker();
     await shutdownGrowthQualificationWorker();
-    httpServer.close(() => {
+
+    // Give in-flight requests 10 seconds to complete
+    const forceExit = setTimeout(() => {
+        logger.error('Forced shutdown — in-flight requests did not complete in time');
+        process.exit(1);
+    }, 10_000);
+
+    httpServer.close(async () => {
+        clearTimeout(forceExit);
+        const { prisma } = await import('./db/client.js');
+        await prisma.$disconnect();
         logger.info('Server closed');
         process.exit(0);
     });
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Catch unhandled promise rejections — log and keep running
+process.on('unhandledRejection', (reason: unknown) => {
+    logger.error('Unhandled Promise Rejection:', reason);
+    // In production, Sentry will capture this via its integration.
+    // Do NOT exit — let the error handler / health check surface issues.
+});
+
+// Catch truly unexpected errors — log and exit (state may be corrupt)
+process.on('uncaughtException', (error: Error) => {
+    logger.error('Uncaught Exception — shutting down:', error);
+    // Attempt graceful shutdown, but force-exit quickly
+    gracefulShutdown('uncaughtException').catch(() => process.exit(1));
 });
 
 export { app, io };

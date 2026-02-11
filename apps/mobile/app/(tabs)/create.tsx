@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
@@ -11,6 +11,8 @@ import {
     ScrollView,
     Alert,
     Keyboard,
+    Dimensions,
+    FlatList,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -21,16 +23,24 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 import Animated, {
     FadeIn,
+    FadeOut,
     FadeInDown,
+    FadeInUp,
     BounceIn,
+    SlideInDown,
     useSharedValue,
     useAnimatedStyle,
     withSpring,
     withDelay,
     withTiming,
+    withSequence,
+    runOnJS,
+    Layout,
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { colors, typography, spacing, borderRadius } from '@zerog/ui';
 import { Avatar } from '../../components';
 import { useAuthStore, useFeedStore, useCommunitiesStore, mapApiPost } from '../../stores';
@@ -40,31 +50,43 @@ import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholde
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDebounce } from '../../hooks/useDebounce';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAX_LENGTH = 2000;
 const WARN_THRESHOLD = 1800;
 const DANGER_THRESHOLD = 1950;
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_POLL_OPTIONS = 6;
+const MIN_POLL_OPTIONS = 2;
 
 // ============================================
-// Image Compression Utility
+// Types
 // ============================================
 
-async function compressImage(uri: string): Promise<string> {
-    try {
-        const result = await ImageManipulator.manipulateAsync(
-            uri,
-            [{ resize: { width: 1920 } }],
-            { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-        );
-        return result.uri;
-    } catch {
-        return uri; // Fallback to original if compression fails
-    }
+interface MediaItem {
+    uri: string;
+    type: 'image' | 'video';
+    originalSize: number;
+    compressedSize: number | null;
+    width?: number;
+    height?: number;
+    fileName: string;
+    uploadProgress: number;
+    uploadError: string | null;
+    isUploading: boolean;
+    compressedUri: string | null;
 }
 
-// ============================================
-// Visibility & Audience Types
-// ============================================
+interface PollOption {
+    id: string;
+    text: string;
+}
+
+interface SuggestionItem {
+    id: string;
+    label: string;
+    subtitle?: string;
+    avatarUrl?: string;
+}
 
 type PostVisibility = 'private' | 'community' | 'public';
 
@@ -82,7 +104,41 @@ const VISIBILITY_OPTIONS: VisibilityOption[] = [
 ];
 
 // ============================================
-// Media Attachment Bar Items
+// Image Compression Utility
+// ============================================
+
+async function compressImage(uri: string): Promise<{ uri: string; size: number }> {
+    try {
+        const result = await ImageManipulator.manipulateAsync(
+            uri,
+            [{ resize: { width: 1920 } }],
+            { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        const info = await FileSystem.getInfoAsync(result.uri);
+        return { uri: result.uri, size: info.exists && info.size ? info.size : 0 };
+    } catch {
+        return { uri, size: 0 }; // Fallback to original if compression fails
+    }
+}
+
+function formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getMimeType(asset: ImagePicker.ImagePickerAsset): string {
+    if (asset.type === 'video') return 'video/mp4';
+    const ext = asset.uri.split('.').pop()?.toLowerCase();
+    if (ext === 'png') return 'image/png';
+    if (ext === 'gif') return 'image/gif';
+    if (ext === 'webp') return 'image/webp';
+    return 'image/jpeg';
+}
+
+// ============================================
+// Media Bar Items
 // ============================================
 
 interface MediaBarItem {
@@ -97,7 +153,18 @@ const MEDIA_BAR_ITEMS: MediaBarItem[] = [
     { key: 'video', icon: 'videocam-outline', label: 'Video', color: colors.azure[400] },
     { key: 'camera', icon: 'camera-outline', label: 'Camera', color: colors.gold[400] },
     { key: 'poll', icon: 'stats-chart-outline', label: 'Poll', color: colors.coral[400] },
-    { key: 'link', icon: 'link-outline', label: 'Link', color: colors.amber[400] },
+    { key: 'location', icon: 'location-outline', label: 'Location', color: colors.amber[400] },
+];
+
+// ============================================
+// Hashtag Suggestions (common trending tags)
+// ============================================
+
+const COMMON_HASHTAGS = [
+    'community', 'faith', 'inspiration', 'daily', 'blessed',
+    'gratitude', 'prayer', 'quran', 'sunnah', 'reminder',
+    'halal', 'muslim', 'islam', 'dua', 'jummah',
+    'ramadan', 'eid', 'charity', 'dawah', 'knowledge',
 ];
 
 // ============================================
@@ -147,18 +214,31 @@ function SuccessAnimation() {
         delay: i * 30,
     }));
 
+    const checkScale = useSharedValue(0);
+
+    useEffect(() => {
+        checkScale.value = withDelay(200, withSpring(1, { damping: 6, stiffness: 120 }));
+    }, []);
+
+    const checkStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: checkScale.value }],
+    }));
+
     return (
         <View style={styles.successContainer}>
             {particles.map((p, i) => (
                 <SuccessParticle key={i} delay={p.delay} angle={p.angle} distance={p.distance} />
             ))}
-            <Animated.View entering={BounceIn.duration(500)}>
+            <Animated.View entering={BounceIn.duration(500)} style={checkStyle}>
                 <View style={styles.successCircle}>
                     <Ionicons name="checkmark" size={48} color={colors.obsidian[900]} />
                 </View>
             </Animated.View>
             <Animated.Text entering={FadeIn.delay(400).duration(300)} style={styles.successText}>
                 Posted!
+            </Animated.Text>
+            <Animated.Text entering={FadeIn.delay(600).duration(300)} style={styles.successSubtext}>
+                Your post is now live
             </Animated.Text>
         </View>
     );
@@ -324,11 +404,12 @@ function VisibilitySelector({
 }
 
 // ============================================
-// Character Counter
+// Character Counter with Ring
 // ============================================
 
 function CharacterCounter({ current, max }: { current: number; max: number }) {
     const remaining = max - current;
+    const progress = current / max;
     const color =
         remaining <= max - DANGER_THRESHOLD
             ? colors.coral[500]
@@ -340,15 +421,426 @@ function CharacterCounter({ current, max }: { current: number; max: number }) {
 
     return (
         <View style={styles.charCountRow}>
-            {isNearLimit && (
-                <View style={[styles.charCountRing, { borderColor: color }]}>
+            {isNearLimit ? (
+                <Animated.View
+                    entering={FadeIn.duration(200)}
+                    style={[styles.charCountRing, { borderColor: color }]}
+                >
                     <Text style={[styles.charCountRingText, { color }]}>{remaining}</Text>
-                </View>
-            )}
-            {!isNearLimit && (
-                <Text style={[styles.charCountText, { color }]}>{remaining}</Text>
+                </Animated.View>
+            ) : (
+                <Text style={[styles.charCountText, { color }]}>
+                    {current > 0 ? `${current}/${max}` : ''}
+                </Text>
             )}
         </View>
+    );
+}
+
+// ============================================
+// Formatting Toolbar
+// ============================================
+
+function FormattingToolbar({
+    onBold,
+    onItalic,
+    onStrikethrough,
+}: {
+    onBold: () => void;
+    onItalic: () => void;
+    onStrikethrough: () => void;
+}) {
+    return (
+        <Animated.View entering={FadeIn.duration(200)} style={styles.formattingBar}>
+            <TouchableOpacity
+                style={styles.formatBtn}
+                onPress={() => {
+                    Haptics.selectionAsync();
+                    onBold();
+                }}
+                activeOpacity={0.6}
+            >
+                <Text style={styles.formatBtnTextBold}>B</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.formatBtn}
+                onPress={() => {
+                    Haptics.selectionAsync();
+                    onItalic();
+                }}
+                activeOpacity={0.6}
+            >
+                <Text style={styles.formatBtnTextItalic}>I</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.formatBtn}
+                onPress={() => {
+                    Haptics.selectionAsync();
+                    onStrikethrough();
+                }}
+                activeOpacity={0.6}
+            >
+                <Text style={styles.formatBtnTextStrike}>S</Text>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Suggestion Dropdown (Hashtags / Mentions)
+// ============================================
+
+function SuggestionDropdown({
+    items,
+    onSelect,
+    type,
+}: {
+    items: SuggestionItem[];
+    onSelect: (item: SuggestionItem) => void;
+    type: 'hashtag' | 'mention';
+}) {
+    if (items.length === 0) return null;
+
+    return (
+        <Animated.View entering={FadeInDown.duration(150)} exiting={FadeOut.duration(100)} style={styles.suggestionsContainer}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.suggestionsContent}
+                keyboardShouldPersistTaps="always"
+            >
+                {items.map((item) => (
+                    <TouchableOpacity
+                        key={item.id}
+                        style={styles.suggestionChip}
+                        onPress={() => {
+                            Haptics.selectionAsync();
+                            onSelect(item);
+                        }}
+                        activeOpacity={0.7}
+                    >
+                        {type === 'mention' && item.avatarUrl ? (
+                            <Image
+                                source={{ uri: item.avatarUrl }}
+                                style={styles.suggestionAvatar}
+                                placeholder={AVATAR_PLACEHOLDER.blurhash}
+                                transition={AVATAR_PLACEHOLDER.transition}
+                                cachePolicy="memory-disk"
+                            />
+                        ) : (
+                            <Ionicons
+                                name={type === 'hashtag' ? 'pricetag' : 'person'}
+                                size={12}
+                                color={colors.gold[500]}
+                            />
+                        )}
+                        <Text style={styles.suggestionText} numberOfLines={1}>
+                            {type === 'hashtag' ? `#${item.label}` : `@${item.label}`}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Poll Creator
+// ============================================
+
+function PollCreator({
+    options,
+    onUpdateOption,
+    onAddOption,
+    onRemoveOption,
+    onClose,
+}: {
+    options: PollOption[];
+    onUpdateOption: (id: string, text: string) => void;
+    onAddOption: () => void;
+    onRemoveOption: (id: string) => void;
+    onClose: () => void;
+}) {
+    return (
+        <Animated.View entering={FadeInDown.springify()} style={styles.pollContainer}>
+            <View style={styles.pollHeader}>
+                <View style={styles.pollHeaderLeft}>
+                    <Ionicons name="stats-chart" size={16} color={colors.coral[400]} />
+                    <Text style={styles.pollTitle}>Create Poll</Text>
+                </View>
+                <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Ionicons name="close-circle" size={22} color={colors.text.muted} />
+                </TouchableOpacity>
+            </View>
+
+            {options.map((option, index) => (
+                <Animated.View
+                    key={option.id}
+                    entering={FadeInDown.delay(index * 50).duration(200)}
+                    layout={Layout.springify()}
+                    style={styles.pollOptionRow}
+                >
+                    <View style={styles.pollOptionNumber}>
+                        <Text style={styles.pollOptionNumberText}>{index + 1}</Text>
+                    </View>
+                    <TextInput
+                        style={styles.pollOptionInput}
+                        placeholder={`Option ${index + 1}`}
+                        placeholderTextColor={colors.text.muted}
+                        value={option.text}
+                        onChangeText={(text) => onUpdateOption(option.id, text)}
+                        maxLength={80}
+                    />
+                    {options.length > MIN_POLL_OPTIONS && (
+                        <TouchableOpacity
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                onRemoveOption(option.id);
+                            }}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                            <Ionicons name="remove-circle-outline" size={20} color={colors.coral[400]} />
+                        </TouchableOpacity>
+                    )}
+                </Animated.View>
+            ))}
+
+            {options.length < MAX_POLL_OPTIONS && (
+                <TouchableOpacity
+                    style={styles.pollAddBtn}
+                    onPress={() => {
+                        Haptics.selectionAsync();
+                        onAddOption();
+                    }}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="add-circle-outline" size={18} color={colors.gold[500]} />
+                    <Text style={styles.pollAddText}>Add option</Text>
+                </TouchableOpacity>
+            )}
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Location Tag
+// ============================================
+
+function LocationTag({
+    location,
+    onRemove,
+}: {
+    location: string;
+    onRemove: () => void;
+}) {
+    return (
+        <Animated.View entering={FadeIn.duration(200)} style={styles.locationTag}>
+            <Ionicons name="location" size={14} color={colors.amber[400]} />
+            <Text style={styles.locationTagText} numberOfLines={1}>{location}</Text>
+            <TouchableOpacity onPress={onRemove} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close" size={14} color={colors.text.muted} />
+            </TouchableOpacity>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Draggable Media Item with Gesture Reordering
+// ============================================
+
+function DraggableMediaItem({
+    item,
+    index,
+    onRemove,
+    onRetry,
+    onMoveLeft,
+    onMoveRight,
+    isFirst,
+    isLast,
+    totalCount,
+}: {
+    item: MediaItem;
+    index: number;
+    onRemove: () => void;
+    onRetry: () => void;
+    onMoveLeft: () => void;
+    onMoveRight: () => void;
+    isFirst: boolean;
+    isLast: boolean;
+    totalCount: number;
+}) {
+    const dragX = useSharedValue(0);
+    const dragScale = useSharedValue(1);
+    const isDragging = useSharedValue(false);
+
+    const panGesture = Gesture.Pan()
+        .activateAfterLongPress(250)
+        .onStart(() => {
+            isDragging.value = true;
+            dragScale.value = withSpring(1.08, { damping: 10 });
+            runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Medium);
+        })
+        .onUpdate((e) => {
+            dragX.value = e.translationX;
+        })
+        .onEnd((e) => {
+            const THRESHOLD = 50;
+            if (e.translationX < -THRESHOLD && !isLast) {
+                runOnJS(onMoveRight)();
+                runOnJS(Haptics.selectionAsync)();
+            } else if (e.translationX > THRESHOLD && !isFirst) {
+                runOnJS(onMoveLeft)();
+                runOnJS(Haptics.selectionAsync)();
+            }
+            dragX.value = withSpring(0, { damping: 15 });
+            dragScale.value = withSpring(1, { damping: 10 });
+            isDragging.value = false;
+        });
+
+    const dragAnimStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: dragX.value },
+            { scale: dragScale.value },
+        ],
+        zIndex: isDragging.value ? 100 : 1,
+        opacity: isDragging.value ? 0.92 : 1,
+    }));
+
+    // Upload progress ring value
+    const progressWidth = item.isUploading ? `${Math.round(item.uploadProgress * 100)}%` : '0%';
+
+    return (
+        <GestureDetector gesture={panGesture}>
+            <Animated.View
+                entering={FadeInDown.delay(index * 60).springify()}
+                layout={Layout.springify()}
+                style={[styles.mediaStripItem, dragAnimStyle]}
+            >
+                <Image
+                    source={{ uri: item.compressedUri || item.uri }}
+                    style={styles.mediaStripThumb}
+                    contentFit="cover"
+                    placeholder={IMAGE_PLACEHOLDER.blurhash}
+                    transition={200}
+                    cachePolicy="memory-disk"
+                />
+
+                {/* Upload progress overlay */}
+                {item.isUploading && (
+                    <View style={styles.mediaUploadOverlay}>
+                        <ActivityIndicator size="small" color={colors.gold[500]} />
+                        <Text style={styles.mediaUploadProgressText}>
+                            {Math.round(item.uploadProgress * 100)}%
+                        </Text>
+                        {/* Progress bar at bottom of thumbnail */}
+                        <View style={styles.mediaProgressBarBg}>
+                            <View style={[styles.mediaProgressBarFill, { width: progressWidth }]} />
+                        </View>
+                    </View>
+                )}
+
+                {/* Error overlay with retry */}
+                {item.uploadError && !item.isUploading && (
+                    <View style={[styles.mediaUploadOverlay, styles.mediaErrorOverlay]}>
+                        <Ionicons name="alert-circle" size={20} color={colors.coral[400]} />
+                        <Text style={styles.mediaErrorText}>{item.uploadError}</Text>
+                        <TouchableOpacity
+                            style={styles.mediaRetryBtn}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                onRetry();
+                            }}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="refresh" size={12} color={colors.text.primary} />
+                            <Text style={styles.mediaRetryText}>Retry</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* Video badge */}
+                {item.type === 'video' && (
+                    <View style={styles.mediaStripVideoTag}>
+                        <Ionicons name="videocam" size={10} color={colors.text.primary} />
+                        <Text style={styles.mediaStripVideoLabel}>Video</Text>
+                    </View>
+                )}
+
+                {/* File info: size + type */}
+                <View style={styles.mediaInfoOverlay}>
+                    <Text style={styles.mediaInfoText}>
+                        {item.compressedSize !== null && item.compressedSize > 0
+                            ? formatFileSize(item.compressedSize)
+                            : formatFileSize(item.originalSize)}
+                    </Text>
+                    <Text style={styles.mediaInfoTypeText}>
+                        {item.type === 'video' ? 'MP4' : (item.fileName.split('.').pop()?.toUpperCase() || 'IMG')}
+                    </Text>
+                </View>
+
+                {/* Compression savings badge with original→compressed */}
+                {item.compressedSize !== null && item.compressedSize > 0 && item.originalSize > 0 && (
+                    <View style={styles.compressionBadge}>
+                        <Ionicons name="arrow-down" size={8} color={colors.emerald[400]} />
+                        <Text style={styles.compressionText}>
+                            {Math.round((1 - item.compressedSize / item.originalSize) * 100)}%
+                        </Text>
+                        <Text style={styles.compressionDetailText}>
+                            {formatFileSize(item.originalSize)}→{formatFileSize(item.compressedSize)}
+                        </Text>
+                    </View>
+                )}
+
+                {/* Remove button */}
+                <TouchableOpacity
+                    style={styles.mediaStripRemoveBtn}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        onRemove();
+                    }}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="close" size={12} color={colors.text.primary} />
+                </TouchableOpacity>
+
+                {/* Drag handle indicator (visible when multiple items) */}
+                {totalCount > 1 && (
+                    <View style={styles.dragHandleIndicator}>
+                        <View style={styles.dragHandleDot} />
+                        <View style={styles.dragHandleDot} />
+                        <View style={styles.dragHandleDot} />
+                    </View>
+                )}
+
+                {/* Reorder arrows (tap fallback) */}
+                {totalCount > 1 && (
+                    <View style={styles.reorderControls}>
+                        {!isFirst && (
+                            <TouchableOpacity
+                                style={styles.reorderBtn}
+                                onPress={() => {
+                                    Haptics.selectionAsync();
+                                    onMoveLeft();
+                                }}
+                            >
+                                <Ionicons name="chevron-back" size={12} color={colors.text.primary} />
+                            </TouchableOpacity>
+                        )}
+                        {!isLast && (
+                            <TouchableOpacity
+                                style={styles.reorderBtn}
+                                onPress={() => {
+                                    Haptics.selectionAsync();
+                                    onMoveRight();
+                                }}
+                            >
+                                <Ionicons name="chevron-forward" size={12} color={colors.text.primary} />
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
+            </Animated.View>
+        </GestureDetector>
     );
 }
 
@@ -365,12 +857,11 @@ export default function CreateScreen() {
     const fetchCommunities = useCommunitiesStore((s) => s.fetchCommunities);
 
     const textInputRef = useRef<TextInput>(null);
+    const scrollRef = useRef<ScrollView>(null);
 
-    // --- State ---
+    // --- Core State ---
     const [content, setContent] = useState('');
-    const [mediaUri, setMediaUri] = useState<string | null>(null);
-    const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
-    const [selectedMedia, setSelectedMedia] = useState<ImagePicker.ImagePickerAsset[]>([]);
+    const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
     const [visibility, setVisibility] = useState<PostVisibility>('public');
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
     const [isPublishing, setIsPublishing] = useState(false);
@@ -379,6 +870,47 @@ export default function CreateScreen() {
     const [linkUrl, setLinkUrl] = useState('');
     const [showLinkInput, setShowLinkInput] = useState(false);
     const [draftSavedVisible, setDraftSavedVisible] = useState(false);
+
+    // --- Poll State ---
+    const [showPoll, setShowPoll] = useState(false);
+    const [pollOptions, setPollOptions] = useState<PollOption[]>([
+        { id: '1', text: '' },
+        { id: '2', text: '' },
+    ]);
+
+    // --- Location State ---
+    const [locationName, setLocationName] = useState<string | null>(null);
+    const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+
+    // --- Suggestion State ---
+    const [hashtagSuggestions, setHashtagSuggestions] = useState<SuggestionItem[]>([]);
+    const [mentionSuggestions, setMentionSuggestions] = useState<SuggestionItem[]>([]);
+    const [activeSuggestionType, setActiveSuggestionType] = useState<'hashtag' | 'mention' | null>(null);
+    const [cursorPosition, setCursorPosition] = useState(0);
+
+    // --- Publish button animation with idle pulse ---
+    const publishScale = useSharedValue(1);
+    const publishGlow = useSharedValue(1);
+
+    // Subtle scale pulse when content is ready to post
+    const hasPublishableContent = content.trim().length > 0 || mediaItems.length > 0 || showPoll;
+    useEffect(() => {
+        if (hasPublishableContent && !isPublishing) {
+            publishGlow.value = withDelay(
+                400,
+                withSequence(
+                    withSpring(1.04, { damping: 8, stiffness: 120 }),
+                    withSpring(1, { damping: 10, stiffness: 100 }),
+                ),
+            );
+        } else {
+            publishGlow.value = withTiming(1, { duration: 200 });
+        }
+    }, [hasPublishableContent, isPublishing]);
+
+    const publishAnimStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: publishScale.value * publishGlow.value }],
+    }));
 
     // --- Draft auto-save ---
     const DRAFT_KEY = '@post-draft';
@@ -391,7 +923,6 @@ export default function CreateScreen() {
             if (!raw) return;
             try {
                 const draft = JSON.parse(raw) as { content: string; communityId?: string; timestamp: number };
-                // Only restore drafts less than 24 hours old
                 if (Date.now() - draft.timestamp < 24 * 60 * 60 * 1000 && draft.content) {
                     setContent(draft.content);
                 }
@@ -411,7 +942,8 @@ export default function CreateScreen() {
         };
         AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)).then(() => {
             setDraftSavedVisible(true);
-            setTimeout(() => setDraftSavedVisible(false), 2000);
+            const timer = setTimeout(() => setDraftSavedVisible(false), 2000);
+            return () => clearTimeout(timer);
         });
     }, [debouncedContent, debouncedCommunityId]);
 
@@ -433,25 +965,151 @@ export default function CreateScreen() {
     }, []);
 
     // ============================================
+    // Text Analysis for Suggestions
+    // ============================================
+
+    const handleTextChange = useCallback((text: string) => {
+        setContent(text);
+
+        // Find the word being typed at cursor position
+        const beforeCursor = text.slice(0, cursorPosition + (text.length - content.length));
+        const words = beforeCursor.split(/\s/);
+        const currentWord = words[words.length - 1] || '';
+
+        if (currentWord.startsWith('#') && currentWord.length > 1) {
+            const query = currentWord.slice(1).toLowerCase();
+            const matches = COMMON_HASHTAGS
+                .filter(tag => tag.startsWith(query))
+                .slice(0, 8)
+                .map(tag => ({ id: tag, label: tag }));
+            setHashtagSuggestions(matches);
+            setMentionSuggestions([]);
+            setActiveSuggestionType(matches.length > 0 ? 'hashtag' : null);
+        } else if (currentWord.startsWith('@') && currentWord.length > 1) {
+            const query = currentWord.slice(1).toLowerCase();
+            // Search for users via API
+            fetchMentionSuggestions(query);
+            setHashtagSuggestions([]);
+            setActiveSuggestionType('mention');
+        } else {
+            setHashtagSuggestions([]);
+            setMentionSuggestions([]);
+            setActiveSuggestionType(null);
+        }
+    }, [content, cursorPosition]);
+
+    const fetchMentionSuggestions = useCallback(async (query: string) => {
+        if (query.length < 2) {
+            setMentionSuggestions([]);
+            return;
+        }
+        try {
+            const data = await apiFetch<any>(`${API.search}?q=${encodeURIComponent(query)}&type=users&limit=6`, { cache: true, cacheTtl: 10000 });
+            const users = data.users || data.results || [];
+            setMentionSuggestions(
+                users.map((u: any) => ({
+                    id: u.id || u.username,
+                    label: u.username || u.displayName,
+                    subtitle: u.displayName,
+                    avatarUrl: u.avatarUrl,
+                }))
+            );
+        } catch {
+            setMentionSuggestions([]);
+        }
+    }, []);
+
+    const handleSuggestionSelect = useCallback((item: SuggestionItem) => {
+        const beforeCursor = content.slice(0, cursorPosition);
+        const afterCursor = content.slice(cursorPosition);
+        const words = beforeCursor.split(/\s/);
+        const currentWord = words[words.length - 1] || '';
+
+        const prefix = activeSuggestionType === 'hashtag' ? '#' : '@';
+        const replacement = `${prefix}${item.label} `;
+        const newBefore = beforeCursor.slice(0, beforeCursor.length - currentWord.length) + replacement;
+
+        setContent(newBefore + afterCursor);
+        setHashtagSuggestions([]);
+        setMentionSuggestions([]);
+        setActiveSuggestionType(null);
+    }, [content, cursorPosition, activeSuggestionType]);
+
+    // ============================================
+    // Rich Text Formatting
+    // ============================================
+
+    const insertFormatting = useCallback((wrapper: string) => {
+        const before = content.slice(0, cursorPosition);
+        const after = content.slice(cursorPosition);
+        const insertion = `${wrapper}text${wrapper}`;
+        setContent(before + insertion + after);
+    }, [content, cursorPosition]);
+
+    const handleBold = useCallback(() => insertFormatting('**'), [insertFormatting]);
+    const handleItalic = useCallback(() => insertFormatting('_'), [insertFormatting]);
+    const handleStrikethrough = useCallback(() => insertFormatting('~~'), [insertFormatting]);
+
+    // ============================================
     // Media Handlers
     // ============================================
+
+    const processAssets = useCallback(async (assets: ImagePicker.ImagePickerAsset[]) => {
+        const newItems: MediaItem[] = [];
+
+        for (const asset of assets) {
+            const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+            const originalSize = fileInfo.exists && fileInfo.size ? fileInfo.size : 0;
+
+            if (originalSize > MAX_FILE_SIZE) {
+                Alert.alert('File Too Large', `${asset.uri.split('/').pop()} exceeds the 50MB limit.`);
+                continue;
+            }
+
+            const item: MediaItem = {
+                uri: asset.uri,
+                type: asset.type === 'video' ? 'video' : 'image',
+                originalSize,
+                compressedSize: null,
+                width: asset.width,
+                height: asset.height,
+                fileName: asset.uri.split('/').pop() || 'media',
+                uploadProgress: 0,
+                uploadError: null,
+                isUploading: false,
+                compressedUri: null,
+            };
+
+            // Compress images in background
+            if (item.type === 'image') {
+                const compressed = await compressImage(asset.uri);
+                item.compressedUri = compressed.uri;
+                item.compressedSize = compressed.size;
+            }
+
+            newItems.push(item);
+        }
+
+        setMediaItems(prev => {
+            const combined = [...prev, ...newItems].slice(0, 4);
+            return combined;
+        });
+    }, []);
 
     const handlePickPhoto = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
             allowsMultipleSelection: true,
-            selectionLimit: 4,
+            selectionLimit: 4 - mediaItems.length,
             quality: 0.8,
             allowsEditing: false,
             videoMaxDuration: 120,
         });
         if (!result.canceled && result.assets.length > 0) {
-            setSelectedMedia(result.assets);
-            setMediaUri(result.assets[0].uri);
-            setMediaType(result.assets[0].type === 'video' ? 'video' : 'image');
+            processAssets(result.assets);
         }
-    }, []);
+    }, [mediaItems.length, processAssets]);
 
     const handlePickVideo = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -462,10 +1120,9 @@ export default function CreateScreen() {
             videoMaxDuration: 120,
         });
         if (!result.canceled && result.assets[0]) {
-            setMediaUri(result.assets[0].uri);
-            setMediaType('video');
+            processAssets(result.assets);
         }
-    }, []);
+    }, [processAssets]);
 
     const handleTakePhoto = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -476,111 +1133,254 @@ export default function CreateScreen() {
         }
         const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.8 });
         if (!result.canceled && result.assets[0]) {
-            const asset = result.assets[0];
-            setMediaUri(asset.uri);
-            setMediaType(asset.type === 'video' ? 'video' : 'image');
+            processAssets(result.assets);
         }
+    }, [processAssets]);
+
+    const handleRemoveMedia = useCallback((index: number) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setMediaItems(prev => prev.filter((_, i) => i !== index));
     }, []);
 
-    const handlePoll = useCallback(() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Alert.alert('Coming Soon', 'Poll creation will be available in a future update.');
+    const handleRetryMedia = useCallback((index: number) => {
+        // Clear the error state so the item can be retried during publish
+        setMediaItems(prev => prev.map((m, i) =>
+            i === index ? { ...m, uploadError: null, uploadProgress: 0 } : m
+        ));
     }, []);
 
-    const handleLink = useCallback(() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setShowLinkInput(!showLinkInput);
-    }, [showLinkInput]);
+    const handleMoveMedia = useCallback((fromIndex: number, toIndex: number) => {
+        if (toIndex < 0 || toIndex >= mediaItems.length) return;
+        setMediaItems(prev => {
+            const updated = [...prev];
+            const [moved] = updated.splice(fromIndex, 1);
+            updated.splice(toIndex, 0, moved);
+            return updated;
+        });
+    }, [mediaItems.length]);
 
-    const handleRemoveMedia = useCallback((index?: number) => {
+    // ============================================
+    // Poll Handlers
+    // ============================================
+
+    const handleTogglePoll = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        if (index !== undefined && selectedMedia.length > 1) {
-            const updated = selectedMedia.filter((_, i) => i !== index);
-            setSelectedMedia(updated);
-            setMediaUri(updated[0]?.uri || null);
-            setMediaType(updated[0]?.type === 'video' ? 'video' : updated[0] ? 'image' : null);
+        if (showPoll) {
+            setShowPoll(false);
+            setPollOptions([{ id: '1', text: '' }, { id: '2', text: '' }]);
         } else {
-            setMediaUri(null);
-            setMediaType(null);
-            setSelectedMedia([]);
+            setShowPoll(true);
         }
-    }, [selectedMedia]);
+    }, [showPoll]);
+
+    const handleUpdatePollOption = useCallback((id: string, text: string) => {
+        setPollOptions(prev => prev.map(o => o.id === id ? { ...o, text } : o));
+    }, []);
+
+    const handleAddPollOption = useCallback(() => {
+        if (pollOptions.length >= MAX_POLL_OPTIONS) return;
+        setPollOptions(prev => [...prev, { id: String(Date.now()), text: '' }]);
+    }, [pollOptions.length]);
+
+    const handleRemovePollOption = useCallback((id: string) => {
+        if (pollOptions.length <= MIN_POLL_OPTIONS) return;
+        setPollOptions(prev => prev.filter(o => o.id !== id));
+    }, [pollOptions.length]);
+
+    // ============================================
+    // Location Handler
+    // ============================================
+
+    const handleLocation = useCallback(async () => {
+        if (locationName) {
+            setLocationName(null);
+            Haptics.selectionAsync();
+            return;
+        }
+
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setIsLoadingLocation(true);
+
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission Required', 'Location access is needed to tag your location.');
+                setIsLoadingLocation(false);
+                return;
+            }
+
+            const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            const [place] = await Location.reverseGeocodeAsync({
+                latitude: loc.coords.latitude,
+                longitude: loc.coords.longitude,
+            });
+
+            if (place) {
+                const parts = [place.name, place.city, place.region].filter(Boolean);
+                setLocationName(parts.join(', ') || 'Current Location');
+            } else {
+                setLocationName('Current Location');
+            }
+        } catch {
+            Alert.alert('Location Error', 'Could not determine your location. Please try again.');
+        } finally {
+            setIsLoadingLocation(false);
+        }
+    }, [locationName]);
 
     const handleMediaBarPress = useCallback((key: string) => {
         switch (key) {
             case 'photo': return handlePickPhoto();
             case 'video': return handlePickVideo();
             case 'camera': return handleTakePhoto();
-            case 'poll': return handlePoll();
-            case 'link': return handleLink();
+            case 'poll': return handleTogglePoll();
+            case 'location': return handleLocation();
         }
-    }, [handlePickPhoto, handlePickVideo, handleTakePhoto, handlePoll, handleLink]);
+    }, [handlePickPhoto, handlePickVideo, handleTakePhoto, handleTogglePoll, handleLocation]);
 
     // ============================================
     // Discard / Cancel
     // ============================================
 
     const handleCancel = useCallback(() => {
-        if (content.trim() || mediaUri || selectedMedia.length > 0) {
+        const hasContent = content.trim() || mediaItems.length > 0 || showPoll;
+        if (hasContent) {
             Alert.alert(
                 'Discard Post?',
-                'You have unsaved changes. Are you sure you want to discard this post?',
+                'Your draft will be saved automatically.',
                 [
                     { text: 'Keep Editing', style: 'cancel' },
                     {
                         text: 'Discard',
                         style: 'destructive',
-                        onPress: () => router.back(),
+                        onPress: () => {
+                            // Save draft before leaving
+                            if (content.trim()) {
+                                const draft = { content, communityId: selectedCommunity?.id, timestamp: Date.now() };
+                                AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+                            }
+                            router.back();
+                        },
                     },
                 ],
             );
         } else {
             router.back();
         }
-    }, [content, mediaUri, selectedMedia, router]);
+    }, [content, mediaItems, showPoll, selectedCommunity, router]);
+
+    // ============================================
+    // Upload Single Media with Retry
+    // ============================================
+
+    const uploadSingleMedia = useCallback(async (
+        item: MediaItem,
+        index: number,
+        onProgress: (progress: number) => void,
+    ): Promise<{ url: string; type: string } | null> => {
+        const maxRetries = 2;
+        let lastError: string | null = null;
+
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                setMediaItems(prev => prev.map((m, i) =>
+                    i === index ? { ...m, isUploading: true, uploadError: null } : m
+                ));
+
+                const uriToUpload = item.compressedUri || item.uri;
+                const mimeType = getMimeType({ uri: uriToUpload, type: item.type } as any);
+                const result = await apiUpload(
+                    API.uploadPost,
+                    uriToUpload,
+                    mimeType,
+                    item.fileName,
+                    (progress) => {
+                        onProgress(progress);
+                        setMediaItems(prev => prev.map((m, i) =>
+                            i === index ? { ...m, uploadProgress: progress } : m
+                        ));
+                    },
+                );
+
+                setMediaItems(prev => prev.map((m, i) =>
+                    i === index ? { ...m, isUploading: false, uploadProgress: 1 } : m
+                ));
+
+                return {
+                    url: result.url,
+                    type: result.type || (item.type === 'video' ? 'VIDEO' : 'IMAGE'),
+                };
+            } catch (error: any) {
+                lastError = error.message || 'Upload failed';
+                if (attempt < maxRetries) {
+                    // Wait before retry
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+                }
+            }
+        }
+
+        setMediaItems(prev => prev.map((m, i) =>
+            i === index ? { ...m, isUploading: false, uploadError: lastError } : m
+        ));
+        return null;
+    }, []);
 
     // ============================================
     // Publish
     // ============================================
 
     const handlePublish = useCallback(async () => {
-        if (!content.trim() && !mediaUri) return;
+        if (!content.trim() && mediaItems.length === 0 && !showPoll) return;
+
+        // Validate poll
+        if (showPoll) {
+            const filledOptions = pollOptions.filter(o => o.text.trim());
+            if (filledOptions.length < MIN_POLL_OPTIONS) {
+                Alert.alert('Incomplete Poll', `Please fill in at least ${MIN_POLL_OPTIONS} poll options.`);
+                return;
+            }
+        }
 
         Keyboard.dismiss();
         setIsPublishing(true);
+
+        // Animate publish button
+        publishScale.value = withSequence(
+            withTiming(0.9, { duration: 100 }),
+            withTiming(1, { duration: 100 }),
+        );
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         try {
             let uploadedMediaUrl: string | undefined;
             let uploadedMediaType: string | undefined;
-            let processedMediaUri = mediaUri;
 
-            if (processedMediaUri) {
-                // File size validation
-                const fileInfo = await FileSystem.getInfoAsync(processedMediaUri);
-                if (fileInfo.exists && fileInfo.size && fileInfo.size > MAX_FILE_SIZE) {
-                    Alert.alert('File Too Large', 'Maximum file size is 50MB.');
-                    setIsPublishing(false);
-                    return;
-                }
-
-                // Compress images before upload
-                if (mediaType === 'image') {
-                    processedMediaUri = await compressImage(processedMediaUri);
-                }
-
+            // Upload first media item (primary)
+            if (mediaItems.length > 0) {
                 setUploadProgress(10);
-                const fileName = processedMediaUri.split('/').pop() || 'media';
-                const mimeType = mediaType === 'video' ? 'video/mp4' : 'image/jpeg';
-                const uploadResult = await apiUpload(
-                    API.uploadPost,
-                    processedMediaUri,
-                    mimeType,
-                    fileName,
-                    (progress) => setUploadProgress(progress * 0.8),
+                const result = await uploadSingleMedia(
+                    mediaItems[0],
+                    0,
+                    (progress) => setUploadProgress(10 + progress * 70),
                 );
-                uploadedMediaUrl = uploadResult.url;
-                uploadedMediaType = uploadResult.type || (mediaType === 'video' ? 'VIDEO' : 'IMAGE');
+
+                if (!result) {
+                    const hasErrors = mediaItems.some(m => m.uploadError);
+                    if (hasErrors) {
+                        Alert.alert(
+                            'Upload Failed',
+                            'Some media failed to upload. Would you like to retry?',
+                            [
+                                { text: 'Cancel', style: 'cancel', onPress: () => setIsPublishing(false) },
+                                { text: 'Retry', onPress: () => handlePublish() },
+                            ]
+                        );
+                        return;
+                    }
+                } else {
+                    uploadedMediaUrl = result.url;
+                    uploadedMediaType = result.type;
+                }
                 setUploadProgress(80);
             }
 
@@ -590,12 +1390,21 @@ export default function CreateScreen() {
                     ? 'VIDEO'
                     : uploadedMediaType === 'IMAGE'
                         ? 'IMAGE'
-                        : 'TEXT',
+                        : showPoll
+                            ? 'POLL'
+                            : 'TEXT',
                 visibility,
             };
             if (uploadedMediaUrl) postData.mediaUrl = uploadedMediaUrl;
             if (selectedCommunity) postData.communityId = selectedCommunity.id;
             if (linkUrl.trim()) postData.linkUrl = linkUrl.trim();
+            if (locationName) postData.location = locationName;
+
+            // Add poll data
+            if (showPoll) {
+                const filledOptions = pollOptions.filter(o => o.text.trim());
+                postData.pollOptions = filledOptions.map(o => o.text.trim());
+            }
 
             const result = await apiFetch<any>(API.posts, {
                 method: 'POST',
@@ -613,31 +1422,43 @@ export default function CreateScreen() {
 
             // Show success animation
             setShowSuccess(true);
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 setContent('');
-                setMediaUri(null);
-                setMediaType(null);
-                setSelectedMedia([]);
+                setMediaItems([]);
                 setUploadProgress(0);
                 setShowSuccess(false);
                 setLinkUrl('');
                 setShowLinkInput(false);
                 setSelectedCommunity(null);
+                setShowPoll(false);
+                setPollOptions([{ id: '1', text: '' }, { id: '2', text: '' }]);
+                setLocationName(null);
                 router.push('/(tabs)');
-            }, 800);
+            }, 1200);
+            return () => clearTimeout(timer);
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to publish post. Please try again.');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            Alert.alert(
+                'Publishing Failed',
+                error.message || 'Failed to publish post. Please try again.',
+                [
+                    { text: 'OK', style: 'cancel' },
+                    { text: 'Retry', onPress: () => handlePublish() },
+                ]
+            );
         } finally {
             setIsPublishing(false);
             setUploadProgress(0);
         }
-    }, [content, mediaUri, mediaType, visibility, selectedCommunity, linkUrl, selectedMedia, addPost, router, clearDraft]);
+    }, [content, mediaItems, visibility, selectedCommunity, linkUrl, showPoll, pollOptions, locationName, addPost, router, clearDraft, publishScale, uploadSingleMedia]);
 
     // ============================================
     // Derived State
     // ============================================
 
-    const canPublish = (content.trim().length > 0 || !!mediaUri) && !isPublishing;
+    const canPublish = (content.trim().length > 0 || mediaItems.length > 0 || (showPoll && pollOptions.filter(o => o.text.trim()).length >= MIN_POLL_OPTIONS)) && !isPublishing;
+
+    const suggestions = activeSuggestionType === 'hashtag' ? hashtagSuggestions : mentionSuggestions;
 
     // ============================================
     // Success Screen
@@ -672,7 +1493,10 @@ export default function CreateScreen() {
                 keyboardVerticalOffset={0}
             >
                 {/* ======== Header ======== */}
-                <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+                <Animated.View
+                    entering={FadeIn.duration(200)}
+                    style={[styles.header, { paddingTop: insets.top + spacing.sm }]}
+                >
                     <TouchableOpacity
                         onPress={handleCancel}
                         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -680,41 +1504,51 @@ export default function CreateScreen() {
                         <Text style={styles.cancelText}>Cancel</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={[
-                            styles.publishBtn,
-                            canPublish ? styles.publishBtnActive : styles.publishBtnDisabled,
-                        ]}
-                        onPress={handlePublish}
-                        disabled={!canPublish}
-                        activeOpacity={0.8}
-                    >
-                        {canPublish && (
-                            <LinearGradient
-                                colors={[colors.gold[400], colors.gold[600]]}
-                                style={StyleSheet.absoluteFill}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                            />
-                        )}
-                        {isPublishing ? (
-                            <ActivityIndicator size="small" color={colors.obsidian[900]} />
-                        ) : (
-                            <Text
-                                style={[
-                                    styles.publishText,
-                                    !canPublish && styles.publishTextDisabled,
-                                ]}
-                            >
-                                Post
-                            </Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
+                    <Animated.View style={publishAnimStyle}>
+                        <TouchableOpacity
+                            style={[
+                                styles.publishBtn,
+                                canPublish ? styles.publishBtnActive : styles.publishBtnDisabled,
+                            ]}
+                            onPress={handlePublish}
+                            disabled={!canPublish}
+                            activeOpacity={0.8}
+                        >
+                            {canPublish && (
+                                <LinearGradient
+                                    colors={[colors.gold[400], colors.gold[600]]}
+                                    style={StyleSheet.absoluteFill}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                />
+                            )}
+                            {isPublishing ? (
+                                <View style={styles.publishingRow}>
+                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                    <Text style={styles.publishingText}>
+                                        {uploadProgress > 0 ? `${Math.round(uploadProgress)}%` : ''}
+                                    </Text>
+                                </View>
+                            ) : (
+                                <View style={styles.publishContentRow}>
+                                    <Ionicons name="send" size={14} color={canPublish ? colors.obsidian[900] : colors.text.muted} />
+                                    <Text
+                                        style={[
+                                            styles.publishText,
+                                            !canPublish && styles.publishTextDisabled,
+                                        ]}
+                                    >
+                                        Post
+                                    </Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </Animated.View>
+                </Animated.View>
 
                 {/* ======== Upload Progress ======== */}
                 {isPublishing && uploadProgress > 0 && (
-                    <Animated.View entering={FadeIn.duration(150)} style={styles.progressBar}>
+                    <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(150)} style={styles.progressBar}>
                         <Animated.View
                             style={[styles.progressFill, { width: `${uploadProgress}%` }]}
                         />
@@ -723,13 +1557,14 @@ export default function CreateScreen() {
 
                 {/* ======== Scrollable Composer Body ======== */}
                 <ScrollView
+                    ref={scrollRef}
                     style={styles.flex}
                     contentContainerStyle={styles.scrollContent}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Audience & Visibility Selectors */}
-                    <View style={styles.metaRow}>
+                    <Animated.View entering={FadeInDown.delay(50).duration(200)} style={styles.metaRow}>
                         <AudienceSelector
                             selectedCommunity={selectedCommunity}
                             communities={communities}
@@ -737,7 +1572,12 @@ export default function CreateScreen() {
                             onSelectCommunity={setSelectedCommunity}
                         />
                         <VisibilitySelector visibility={visibility} onSelect={setVisibility} />
-                    </View>
+                    </Animated.View>
+
+                    {/* Location Tag */}
+                    {locationName && (
+                        <LocationTag location={locationName} onRemove={() => setLocationName(null)} />
+                    )}
 
                     {/* Composer Area */}
                     <View style={styles.composerRow}>
@@ -759,24 +1599,38 @@ export default function CreateScreen() {
                                 multiline
                                 maxLength={MAX_LENGTH}
                                 value={content}
-                                onChangeText={setContent}
+                                onChangeText={handleTextChange}
+                                onSelectionChange={(e) => setCursorPosition(e.nativeEvent.selection.end)}
                                 textAlignVertical="top"
                                 scrollEnabled={false}
                             />
                         </View>
                     </View>
 
-                    {/* Character Counter */}
+                    {/* Suggestions */}
+                    {activeSuggestionType && suggestions.length > 0 && (
+                        <SuggestionDropdown
+                            items={suggestions}
+                            onSelect={handleSuggestionSelect}
+                            type={activeSuggestionType}
+                        />
+                    )}
+
+                    {/* Formatting Toolbar + Character Counter */}
                     <View style={styles.counterDraftRow}>
-                        <CharacterCounter current={content.length} max={MAX_LENGTH} />
-                        {draftSavedVisible && (
-                            <Animated.Text
-                                entering={FadeIn.duration(200)}
-                                style={styles.draftSavedText}
-                            >
-                                Draft saved
-                            </Animated.Text>
-                        )}
+                        <FormattingToolbar onBold={handleBold} onItalic={handleItalic} onStrikethrough={handleStrikethrough} />
+                        <View style={styles.counterDraftRight}>
+                            <CharacterCounter current={content.length} max={MAX_LENGTH} />
+                            {draftSavedVisible && (
+                                <Animated.Text
+                                    entering={FadeIn.duration(200)}
+                                    exiting={FadeOut.duration(200)}
+                                    style={styles.draftSavedText}
+                                >
+                                    Draft saved
+                                </Animated.Text>
+                            )}
+                        </View>
                     </View>
 
                     {/* Link URL Input */}
@@ -801,91 +1655,98 @@ export default function CreateScreen() {
                         </Animated.View>
                     )}
 
-                    {/* Media Preview Strip (multiple) */}
-                    {selectedMedia.length > 1 && (
+                    {/* Poll Creator */}
+                    {showPoll && (
+                        <PollCreator
+                            options={pollOptions}
+                            onUpdateOption={handleUpdatePollOption}
+                            onAddOption={handleAddPollOption}
+                            onRemoveOption={handleRemovePollOption}
+                            onClose={handleTogglePoll}
+                        />
+                    )}
+
+                    {/* Media Preview Strip */}
+                    {mediaItems.length > 0 && (
                         <Animated.View entering={FadeInDown.springify()} style={styles.mediaStripContainer}>
+                            <View style={styles.mediaStripHeader}>
+                                <Text style={styles.mediaStripTitle}>
+                                    {mediaItems.length} {mediaItems.length === 1 ? 'item' : 'items'}
+                                </Text>
+                                {mediaItems.length < 4 && (
+                                    <TouchableOpacity
+                                        style={styles.mediaAddMoreBtn}
+                                        onPress={handlePickPhoto}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Ionicons name="add" size={16} color={colors.gold[500]} />
+                                        <Text style={styles.mediaAddMoreText}>Add more</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
                             <ScrollView
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
                                 contentContainerStyle={styles.mediaStripContent}
                             >
-                                {selectedMedia.map((asset, index) => (
-                                    <View key={asset.uri} style={styles.mediaStripItem}>
-                                        <Image
-                                            source={{ uri: asset.uri }}
-                                            style={styles.mediaStripThumb}
-                                            contentFit="cover"
-                                            transition={200}
-                                        />
-                                        {asset.type === 'video' && (
-                                            <View style={styles.mediaStripVideoTag}>
-                                                <Ionicons name="videocam" size={8} color={colors.text.primary} />
-                                            </View>
-                                        )}
-                                        <TouchableOpacity
-                                            style={styles.mediaStripRemoveBtn}
-                                            onPress={() => handleRemoveMedia(index)}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Ionicons name="close" size={12} color={colors.text.primary} />
-                                        </TouchableOpacity>
-                                    </View>
+                                {mediaItems.map((item, index) => (
+                                    <DraggableMediaItem
+                                        key={`${item.uri}-${index}`}
+                                        item={item}
+                                        index={index}
+                                        onRemove={() => handleRemoveMedia(index)}
+                                        onRetry={() => handleRetryMedia(index)}
+                                        onMoveLeft={() => handleMoveMedia(index, index - 1)}
+                                        onMoveRight={() => handleMoveMedia(index, index + 1)}
+                                        isFirst={index === 0}
+                                        isLast={index === mediaItems.length - 1}
+                                        totalCount={mediaItems.length}
+                                    />
                                 ))}
                             </ScrollView>
-                        </Animated.View>
-                    )}
-
-                    {/* Single Media Preview */}
-                    {mediaUri && selectedMedia.length <= 1 && (
-                        <Animated.View entering={FadeInDown.springify()} style={styles.mediaPreview}>
-                            <Image
-                                source={{ uri: mediaUri }}
-                                style={styles.mediaPreviewImage}
-                                contentFit="cover"
-                                placeholder={IMAGE_PLACEHOLDER.blurhash}
-                                transition={IMAGE_PLACEHOLDER.transition}
-                            />
-                            {mediaType === 'video' && (
-                                <View style={styles.videoTag}>
-                                    <Ionicons name="videocam" size={10} color={colors.text.primary} />
-                                    <Text style={styles.videoTagText}>VIDEO</Text>
-                                </View>
-                            )}
-                            <TouchableOpacity
-                                style={styles.removeMediaBtn}
-                                onPress={() => handleRemoveMedia()}
-                                activeOpacity={0.7}
-                            >
-                                <Ionicons name="close" size={16} color={colors.text.primary} />
-                            </TouchableOpacity>
                         </Animated.View>
                     )}
                 </ScrollView>
 
                 {/* ======== Bottom Media Bar ======== */}
-                <View style={[styles.mediaBar, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
+                <Animated.View
+                    entering={FadeInUp.duration(200)}
+                    style={[styles.mediaBar, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}
+                >
                     <View style={styles.mediaBarDivider} />
                     <View style={styles.mediaBarRow}>
-                        {MEDIA_BAR_ITEMS.map((item) => (
-                            <TouchableOpacity
-                                key={item.key}
-                                style={styles.mediaBarItem}
-                                onPress={() => handleMediaBarPress(item.key)}
-                                activeOpacity={0.6}
-                                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                            >
-                                <Ionicons
-                                    name={item.icon}
-                                    size={22}
-                                    color={item.color || colors.text.secondary}
-                                />
-                                <Text style={[styles.mediaBarLabel, { color: item.color || colors.text.muted }]}>
-                                    {item.label}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
+                        {MEDIA_BAR_ITEMS.map((item) => {
+                            const isActive =
+                                (item.key === 'poll' && showPoll) ||
+                                (item.key === 'location' && !!locationName);
+                            return (
+                                <TouchableOpacity
+                                    key={item.key}
+                                    style={[styles.mediaBarItem, isActive && styles.mediaBarItemActive]}
+                                    onPress={() => handleMediaBarPress(item.key)}
+                                    activeOpacity={0.6}
+                                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                                >
+                                    {item.key === 'location' && isLoadingLocation ? (
+                                        <ActivityIndicator size="small" color={item.color} />
+                                    ) : (
+                                        <Ionicons
+                                            name={item.icon}
+                                            size={22}
+                                            color={isActive ? colors.gold[500] : (item.color || colors.text.secondary)}
+                                        />
+                                    )}
+                                    <Text style={[
+                                        styles.mediaBarLabel,
+                                        { color: isActive ? colors.gold[500] : (item.color || colors.text.muted) },
+                                    ]}>
+                                        {item.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
-                </View>
+                </Animated.View>
             </KeyboardAvoidingView>
         </View>
     );
@@ -928,7 +1789,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.xl,
         paddingVertical: spacing.sm + 2,
         borderRadius: borderRadius.full,
-        minWidth: 72,
+        minWidth: 88,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
@@ -943,6 +1804,11 @@ const styles = StyleSheet.create({
     publishBtnDisabled: {
         backgroundColor: colors.surface.goldStrong,
     },
+    publishContentRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
     publishText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
@@ -951,6 +1817,16 @@ const styles = StyleSheet.create({
     },
     publishTextDisabled: {
         opacity: 0.4,
+    },
+    publishingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    publishingText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.obsidian[900],
     },
 
     // Progress Bar
@@ -1123,6 +1999,11 @@ const styles = StyleSheet.create({
         marginTop: spacing.sm,
         marginBottom: spacing.md,
     },
+    counterDraftRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+    },
     draftSavedText: {
         fontSize: typography.fontSize.xs,
         color: colors.text.muted,
@@ -1151,6 +2032,65 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Bold',
     },
 
+    // Formatting Toolbar
+    formattingBar: {
+        flexDirection: 'row',
+        gap: spacing.xs,
+    },
+    formatBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    formatBtnTextBold: {
+        fontSize: 14,
+        fontWeight: '800',
+        color: colors.text.secondary,
+        fontFamily: 'Inter-Bold',
+    },
+    formatBtnTextItalic: {
+        fontSize: 14,
+        fontStyle: 'italic',
+        color: colors.text.secondary,
+        fontFamily: 'Inter',
+    },
+
+    // Suggestions
+    suggestionsContainer: {
+        marginBottom: spacing.sm,
+    },
+    suggestionsContent: {
+        gap: spacing.xs,
+        paddingVertical: spacing.xs,
+    },
+    suggestionChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface.glass,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: borderRadius.full,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        gap: spacing.xs,
+    },
+    suggestionAvatar: {
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+    },
+    suggestionText: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.primary,
+        fontWeight: '500',
+        maxWidth: 120,
+    },
+
     // Link Input
     linkInputWrap: {
         flexDirection: 'row',
@@ -1171,67 +2111,136 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
     },
 
-    // Media Preview
-    mediaPreview: {
+    // Poll
+    pollContainer: {
+        backgroundColor: colors.surface.glass,
         borderRadius: borderRadius.xl,
-        overflow: 'hidden',
-        position: 'relative',
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        padding: spacing.lg,
         marginBottom: spacing.md,
     },
-    mediaPreviewImage: {
-        width: '100%',
-        aspectRatio: 16 / 10,
-        backgroundColor: colors.obsidian[700],
-        borderRadius: borderRadius.xl,
+    pollHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md,
     },
-    videoTag: {
-        position: 'absolute',
-        bottom: spacing.md,
-        left: spacing.md,
-        backgroundColor: colors.surface.overlay,
-        paddingHorizontal: spacing.sm + 2,
-        paddingVertical: spacing.xxs + 1,
-        borderRadius: borderRadius.sm,
+    pollHeaderLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    pollTitle: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.primary,
+        fontFamily: 'Inter-SemiBold',
+    },
+    pollOptionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.sm,
+    },
+    pollOptionNumber: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: colors.surface.goldSubtle,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pollOptionNumberText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: colors.gold[500],
+    },
+    pollOptionInput: {
+        flex: 1,
+        backgroundColor: colors.obsidian[700],
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm + 2,
+        borderRadius: borderRadius.lg,
+        fontSize: typography.fontSize.sm,
+        color: colors.text.primary,
+        fontFamily: 'Inter',
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    pollAddBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingVertical: spacing.sm,
+        marginTop: spacing.xs,
+    },
+    pollAddText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.gold[500],
+        fontWeight: '500',
+    },
+
+    // Location Tag
+    locationTag: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface.glass,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: borderRadius.full,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        gap: spacing.xs,
+        alignSelf: 'flex-start',
+        marginBottom: spacing.md,
+    },
+    locationTagText: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.secondary,
+        fontWeight: '500',
+        maxWidth: 200,
+    },
+
+    // Media Preview Strip
+    mediaStripContainer: {
+        marginBottom: spacing.md,
+    },
+    mediaStripHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: spacing.sm,
+    },
+    mediaStripTitle: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        fontWeight: '500',
+    },
+    mediaAddMoreBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
     },
-    videoTagText: {
-        fontSize: 10,
-        fontWeight: '700',
-        color: colors.text.primary,
-        letterSpacing: 1,
-    },
-    removeMediaBtn: {
-        position: 'absolute',
-        top: spacing.md,
-        right: spacing.md,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: colors.surface.overlay,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-
-    // Media Strip (multi-select)
-    mediaStripContainer: {
-        marginBottom: spacing.md,
+    mediaAddMoreText: {
+        fontSize: typography.fontSize.xs,
+        color: colors.gold[500],
+        fontWeight: '500',
     },
     mediaStripContent: {
         gap: spacing.sm,
     },
     mediaStripItem: {
-        width: 100,
-        height: 100,
-        borderRadius: 12,
+        width: 120,
+        height: 120,
+        borderRadius: 14,
         overflow: 'hidden',
         position: 'relative',
     },
     mediaStripThumb: {
         width: '100%',
         height: '100%',
-        borderRadius: 12,
+        borderRadius: 14,
         backgroundColor: colors.obsidian[700],
     },
     mediaStripVideoTag: {
@@ -1239,13 +2248,155 @@ const styles = StyleSheet.create({
         bottom: spacing.xs,
         left: spacing.xs,
         backgroundColor: colors.surface.overlay,
-        padding: 3,
+        paddingHorizontal: 5,
+        paddingVertical: 3,
         borderRadius: borderRadius.sm,
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     mediaStripRemoveBtn: {
         position: 'absolute',
         top: spacing.xs,
         right: spacing.xs,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: colors.surface.overlay,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    mediaUploadOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 14,
+        gap: 4,
+    },
+    mediaErrorOverlay: {
+        backgroundColor: 'rgba(255,80,80,0.15)',
+    },
+    mediaUploadProgressText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: colors.text.primary,
+    },
+    mediaErrorText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: colors.coral[400],
+    },
+    mediaInfoOverlay: {
+        position: 'absolute',
+        bottom: spacing.xs,
+        right: spacing.xs,
+        backgroundColor: colors.surface.overlay,
+        paddingHorizontal: 5,
+        paddingVertical: 2,
+        borderRadius: borderRadius.sm,
+    },
+    mediaInfoText: {
+        fontSize: 9,
+        fontWeight: '600',
+        color: colors.text.primary,
+        letterSpacing: 0.2,
+    },
+    compressionBadge: {
+        position: 'absolute',
+        top: spacing.xs,
+        left: spacing.xs,
+        backgroundColor: 'rgba(16,185,129,0.2)',
+        paddingHorizontal: 5,
+        paddingVertical: 2,
+        borderRadius: borderRadius.sm,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+    },
+    compressionText: {
+        fontSize: 9,
+        fontWeight: '700',
+        color: colors.emerald[400],
+    },
+    compressionDetailText: {
+        fontSize: 7,
+        fontWeight: '500',
+        color: colors.emerald[300],
+        opacity: 0.8,
+    },
+    mediaInfoTypeText: {
+        fontSize: 8,
+        fontWeight: '500',
+        color: colors.text.muted,
+        marginTop: 1,
+    },
+    mediaProgressBarBg: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 3,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        borderRadius: 1.5,
+    },
+    mediaProgressBarFill: {
+        height: '100%',
+        backgroundColor: colors.gold[500],
+        borderRadius: 1.5,
+    },
+    mediaRetryBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 10,
+        gap: 4,
+        marginTop: 2,
+    },
+    mediaRetryText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: colors.text.primary,
+    },
+    mediaStripVideoLabel: {
+        fontSize: 8,
+        fontWeight: '600',
+        color: colors.text.primary,
+        marginLeft: 2,
+    },
+    dragHandleIndicator: {
+        position: 'absolute',
+        top: 4,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 3,
+    },
+    dragHandleDot: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: 'rgba(255,255,255,0.4)',
+    },
+    formatBtnTextStrike: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: colors.text.secondary,
+        fontFamily: 'Inter',
+        textDecorationLine: 'line-through',
+    },
+    reorderControls: {
+        position: 'absolute',
+        bottom: spacing.xs,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 4,
+    },
+    reorderBtn: {
         width: 22,
         height: 22,
         borderRadius: 11,
@@ -1275,6 +2426,10 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
         paddingHorizontal: spacing.sm,
         gap: 3,
+        borderRadius: borderRadius.lg,
+    },
+    mediaBarItemActive: {
+        backgroundColor: colors.surface.goldSubtle,
     },
     mediaBarLabel: {
         fontSize: 10,
@@ -1306,6 +2461,12 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
         fontFamily: 'Inter-Bold',
         marginTop: spacing.lg,
+    },
+    successSubtext: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        fontFamily: 'Inter',
+        marginTop: spacing.xs,
     },
     particle: {
         position: 'absolute',

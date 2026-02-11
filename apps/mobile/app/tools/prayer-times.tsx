@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Platform, TouchableOpacity } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,10 +7,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
-import Animated, { FadeInDown, FadeIn, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing, shadows } from '@zerog/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ScreenHeader, LoadingView, GlassCard } from '../../components';
+import { ScreenHeader, LoadingView, RetryView } from '../../components';
 
 // ─── Types ────────────────────────────────────────────────────────
 interface PrayerTime {
@@ -37,6 +37,8 @@ export default function PrayerTimesScreen() {
     const insets = useSafeAreaInsets();
     const [prayers, setPrayers] = useState<PrayerTime[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isRetrying, setIsRetrying] = useState(false);
     const [nextPrayer, setNextPrayer] = useState<string | null>(null);
     const [countdown, setCountdown] = useState('');
     const [countdownSeconds, setCountdownSeconds] = useState('');
@@ -150,20 +152,24 @@ export default function PrayerTimesScreen() {
     const allNotifOn = prayers.filter((p) => p.name !== 'Sunrise').length > 0 &&
         prayers.filter((p) => p.name !== 'Sunrise').every((p) => notifEnabled[p.name]);
 
-    const fetchPrayerTimes = useCallback(async () => {
+    const fetchPrayerTimes = useCallback(async (isRetry = false) => {
         try {
+            if (isRetry) setIsRetrying(true);
+            setError(null);
+
             // Check cache first
             const cached = await AsyncStorage.getItem(CACHE_KEY);
             if (cached) {
                 try {
                     const { data, date, location, sunrise, sunset } = JSON.parse(cached);
                     const today = new Date().toDateString();
-                    if (date === today) {
+                    if (date === today && Array.isArray(data) && data.length > 0) {
                         setPrayers(data);
-                        setLocationName(location);
+                        setLocationName(location || 'Your Location');
                         if (sunrise) setSunriseTime(sunrise);
                         if (sunset) setSunsetTime(sunset);
                         setIsLoading(false);
+                        setIsRetrying(false);
                         return;
                     }
                 } catch { /* corrupted cache, ignore */ }
@@ -172,8 +178,9 @@ export default function PrayerTimesScreen() {
             // Get location
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Location Required', 'Prayer times require your location to calculate accurately.');
+                setError('Location access is required to calculate prayer times for your area.');
                 setIsLoading(false);
+                setIsRetrying(false);
                 return;
             }
 
@@ -198,10 +205,13 @@ export default function PrayerTimesScreen() {
             const res = await fetch(
                 `https://api.aladhan.com/v1/timings/${dd}-${mm}-${yyyy}?latitude=${latitude}&longitude=${longitude}&method=2`
             );
+            if (!res.ok) throw new Error(`API returned status ${res.status}`);
             const json = await res.json();
 
             if (json.code === 200 && json.data) {
                 const t = json.data.timings;
+                if (!t) throw new Error('No timings data in API response');
+
                 const prayerData: PrayerTime[] = [
                     { name: 'Fajr', time: t.Fajr, icon: 'moon-outline', arabicName: 'الفجر' },
                     { name: 'Sunrise', time: t.Sunrise, icon: 'sunny-outline', arabicName: 'الشروق' },
@@ -229,17 +239,34 @@ export default function PrayerTimesScreen() {
                 // Set Hijri date
                 if (json.data.date?.hijri) {
                     const h = json.data.date.hijri;
-                    setHijriDate(`${h.day} ${h.month.en} ${h.year} AH`);
+                    setHijriDate(`${h.day} ${h.month?.en ?? ''} ${h.year} AH`);
                 }
                 if (json.data.date?.gregorian) {
                     const g = json.data.date.gregorian;
-                    setGregorianDate(`${g.weekday.en}, ${g.day} ${g.month.en} ${g.year}`);
+                    setGregorianDate(`${g.weekday?.en ?? ''}, ${g.day} ${g.month?.en ?? ''} ${g.year}`);
                 }
+            } else {
+                throw new Error('Unexpected API response format');
             }
         } catch (err) {
             console.error('Prayer times fetch error:', err);
+            // Try to use stale cache as fallback
+            try {
+                const cached = await AsyncStorage.getItem(CACHE_KEY);
+                if (cached) {
+                    const { data, location } = JSON.parse(cached);
+                    if (Array.isArray(data) && data.length > 0) {
+                        setPrayers(data);
+                        setLocationName(location || 'Your Location');
+                        // Don't set error — we have stale data to show
+                        return;
+                    }
+                }
+            } catch { /* stale cache also failed */ }
+            setError('Could not load prayer times. Check your connection and try again.');
         } finally {
             setIsLoading(false);
+            setIsRetrying(false);
         }
     }, []);
 
@@ -314,6 +341,13 @@ export default function PrayerTimesScreen() {
             >
                 {isLoading ? (
                     <LoadingView message="Getting your prayer times..." />
+                ) : error && prayers.length === 0 ? (
+                    <RetryView
+                        message={error}
+                        onRetry={() => fetchPrayerTimes(true)}
+                        isRetrying={isRetrying}
+                        icon="cloud-offline-outline"
+                    />
                 ) : (
                     <>
                         {/* ── Hero: Next Prayer Card ── */}

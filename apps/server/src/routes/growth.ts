@@ -1,7 +1,22 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
 import { v4 as uuid } from 'uuid';
+
+// Validation schemas
+const paymentUpdateSchema = z.object({
+    paymentEmail: z.string().email('Invalid email format').optional(),
+    paymentMethod: z.enum(['paypal', 'wise', 'bank_transfer', 'crypto']).optional(),
+    legalName: z.string().min(1).max(200).optional(),
+    country: z.string().min(2).max(3).optional(),
+});
+
+const enrollSchema = z.object({
+    paymentEmail: z.string().email('Invalid email format').optional(),
+    legalName: z.string().min(1).max(200).optional(),
+    country: z.string().min(2).max(3).optional(),
+});
 
 // Require ADMIN or SUPERADMIN role
 const requireAdmin = (req: AuthRequest, res: any, next: any) => {
@@ -39,14 +54,14 @@ router.post('/enroll', authenticate, async (req: AuthRequest, res, next) => {
         }
 
         // Activate the invitation with provided details
-        const { paymentEmail, legalName, country } = req.body;
+        const data = enrollSchema.parse(req.body);
 
         const partner = await prisma.growthPartner.update({
             where: { userId },
             data: {
-                paymentEmail: paymentEmail || null,
-                legalName: legalName || null,
-                country: country || null,
+                paymentEmail: data.paymentEmail || null,
+                legalName: data.legalName || null,
+                country: data.country || null,
                 status: 'active',
                 enrolledAt: new Date(),
             },
@@ -62,6 +77,9 @@ router.post('/enroll', authenticate, async (req: AuthRequest, res, next) => {
             },
         });
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: 'Invalid input', details: error.errors });
+        }
         next(error);
     }
 });
@@ -167,7 +185,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
 router.put('/me/payment', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const userId = req.user!.id;
-        const { paymentEmail, paymentMethod, legalName, country } = req.body;
+        const data = paymentUpdateSchema.parse(req.body);
 
         const partner = await prisma.growthPartner.findUnique({ where: { userId } });
         if (!partner) {
@@ -178,15 +196,18 @@ router.put('/me/payment', authenticate, async (req: AuthRequest, res, next) => {
         const updated = await prisma.growthPartner.update({
             where: { userId },
             data: {
-                ...(paymentEmail !== undefined && { paymentEmail }),
-                ...(paymentMethod !== undefined && { paymentMethod }),
-                ...(legalName !== undefined && { legalName }),
-                ...(country !== undefined && { country }),
+                ...(data.paymentEmail !== undefined && { paymentEmail: data.paymentEmail }),
+                ...(data.paymentMethod !== undefined && { paymentMethod: data.paymentMethod }),
+                ...(data.legalName !== undefined && { legalName: data.legalName }),
+                ...(data.country !== undefined && { country: data.country }),
             },
         });
 
         res.json({ success: true, paymentEmail: updated.paymentEmail, paymentMethod: updated.paymentMethod });
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: 'Invalid input', details: error.errors });
+        }
         next(error);
     }
 });

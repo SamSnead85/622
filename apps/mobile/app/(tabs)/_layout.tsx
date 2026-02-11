@@ -122,7 +122,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    tabBarAccessibilityLabel: t('nav.home'),
+                    tabBarAccessibilityLabel: `${t('nav.home')} tab${unreadCount ? `, ${unreadCount} notifications` : ''}`,
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
                             label={t('nav.home')}
@@ -137,7 +137,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="search"
                 options={{
-                    tabBarAccessibilityLabel: t('nav.explore'),
+                    tabBarAccessibilityLabel: `${t('nav.explore')} tab`,
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
                             label={t('nav.explore')}
@@ -151,7 +151,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="create"
                 options={{
-                    tabBarAccessibilityLabel: t('nav.create'),
+                    tabBarAccessibilityLabel: `${t('nav.create')} tab`,
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
                             label={t('nav.create')}
@@ -166,7 +166,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="communities"
                 options={{
-                    tabBarAccessibilityLabel: t('nav.groups'),
+                    tabBarAccessibilityLabel: `${t('nav.groups')} tab`,
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
                             label={t('nav.groups')}
@@ -180,7 +180,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="profile"
                 options={{
-                    tabBarAccessibilityLabel: t('nav.you'),
+                    tabBarAccessibilityLabel: `${t('nav.you')} tab`,
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
                             label={t('nav.you')}
@@ -225,12 +225,13 @@ const styles = StyleSheet.create({
         backgroundColor: colors.border.subtle,
     },
 
-    // Tab icon — uniform across all tabs
+    // Tab icon — uniform across all tabs (min 44x44 touch target)
     tabIconContainer: {
         alignItems: 'center',
         justifyContent: 'center',
         paddingTop: 8,
         minWidth: 56,
+        minHeight: 48,
     },
     tabLabel: {
         fontSize: 10,

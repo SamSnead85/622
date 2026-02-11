@@ -408,6 +408,18 @@ interface GameCardProps {
 
 function GameCard({ game, index, onPlay }: GameCardProps) {
     const scale = useSharedValue(1);
+    const glowOpacity = useSharedValue(0);
+
+    useEffect(() => {
+        glowOpacity.value = withRepeat(
+            withSequence(
+                withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+                withTiming(0, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+            ),
+            -1,
+            false,
+        );
+    }, [glowOpacity]);
 
     const handlePressIn = useCallback(() => {
         scale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
@@ -426,9 +438,18 @@ function GameCard({ game, index, onPlay }: GameCardProps) {
         transform: [{ scale: scale.value }],
     }));
 
+    const glowStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(glowOpacity.value, [0, 1], [0.05, 0.15]),
+    }));
+
+    // Stagger columns: left column gets base delay, right column gets extra offset
+    const column = index % 2;
+    const row = Math.floor(index / 2);
+    const staggerDelay = 200 + row * 120 + column * 60;
+
     return (
         <Animated.View
-            entering={FadeInDown.delay(200 + index * 100).duration(500).springify()}
+            entering={FadeInDown.delay(staggerDelay).duration(500).springify()}
             style={styles.cardWrapper}
         >
             <AnimatedPressable
@@ -437,7 +458,7 @@ function GameCard({ game, index, onPlay }: GameCardProps) {
                 onPress={handlePlay}
                 style={animatedCardStyle}
                 accessibilityRole="button"
-                accessibilityLabel={`Play ${game.name}`}
+                accessibilityLabel={`Play ${game.name}. ${game.players} players.`}
             >
                 <GlassCard style={styles.gameCard} padding="md">
                     {/* Gradient accent strip */}
@@ -448,8 +469,8 @@ function GameCard({ game, index, onPlay }: GameCardProps) {
                         style={styles.cardAccentStrip}
                     />
 
-                    {/* Corner glow */}
-                    <View style={[styles.cardCornerGlow, { backgroundColor: game.color + '10' }]} />
+                    {/* Animated corner glow */}
+                    <Animated.View style={[styles.cardCornerGlow, { backgroundColor: game.color }, glowStyle]} />
 
                     {/* NEW badge */}
                     {game.isNew && <NewBadge />}
@@ -606,6 +627,7 @@ function QuickPlayButton({ onPress }: { onPress: () => void }) {
 
 function HeroSection() {
     const float = useSharedValue(0);
+    const livePulse = useSharedValue(0);
 
     useEffect(() => {
         float.value = withRepeat(
@@ -616,10 +638,23 @@ function HeroSection() {
             -1,
             false,
         );
-    }, [float]);
+        livePulse.value = withRepeat(
+            withSequence(
+                withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+                withTiming(0, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+            ),
+            -1,
+            false,
+        );
+    }, [float, livePulse]);
 
     const animatedFloat = useAnimatedStyle(() => ({
         transform: [{ translateY: interpolate(float.value, [0, 1], [0, -6]) }],
+    }));
+
+    const liveDotStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(livePulse.value, [0, 1], [0.4, 1]),
+        transform: [{ scale: interpolate(livePulse.value, [0, 1], [1, 1.3]) }],
     }));
 
     return (
@@ -656,7 +691,7 @@ function HeroSection() {
                         <Ionicons name="game-controller" size={20} color={colors.obsidian[900]} />
                     </LinearGradient>
                     <View style={styles.heroLiveBadge}>
-                        <View style={styles.heroLiveDot} />
+                        <Animated.View style={[styles.heroLiveDot, liveDotStyle]} />
                         <Text style={styles.heroLiveText}>LIVE</Text>
                     </View>
                 </View>
@@ -827,9 +862,12 @@ export default function GamesHubScreen() {
                     </GlassCard>
                 </Animated.View>
 
-                {/* ---- Section Header ---- */}
+                {/* ---- Create Game Section Header ---- */}
                 <Animated.View entering={FadeInDown.delay(180).duration(500)} style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Choose Your Game</Text>
+                    <View style={styles.sectionTitleRow}>
+                        <Ionicons name="add-circle-outline" size={20} color={colors.gold[500]} />
+                        <Text style={styles.sectionTitle}>Create a Game</Text>
+                    </View>
                     <Text style={styles.sectionBadge}>{games.length} Games</Text>
                 </Animated.View>
 
@@ -1328,6 +1366,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: spacing.md,
+    },
+    sectionTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
     },
     sectionTitle: {
         fontSize: typography.fontSize.xl,

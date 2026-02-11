@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
     View,
     Text,
@@ -12,11 +12,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withTiming, runOnJS } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTranslation } from 'react-i18next';
 import { useNotificationsStore, Notification } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
+import { timeAgo } from '../../lib/utils';
 import { ScreenHeader, EmptyState } from '../../components';
 import SkeletonList from '../../components/SkeletonList';
 
@@ -44,20 +46,10 @@ const FILTER_TABS: { key: FilterTab; label: string; icon: keyof typeof Ionicons.
 ];
 
 // ============================================
-// Relative time formatting
+// Swipe-to-dismiss threshold (px)
 // ============================================
 
-function timeAgo(dateStr: string): string {
-    const now = Date.now();
-    const d = new Date(dateStr).getTime();
-    const seconds = Math.floor((now - d) / 1000);
-
-    if (seconds < 60) return 'just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-    return `${Math.floor(seconds / 604800)}w ago`;
-}
+const SWIPE_THRESHOLD = -80;
 
 // ============================================
 // Date section grouping
@@ -142,59 +134,111 @@ const SectionHeader = memo(({ title }: { title: string }) => (
 // Notification item component
 // ============================================
 
-const NotificationItem = memo(({ item, index, onPress, onReply, onFollowBack }: {
+const NotificationItem = memo(({ item, index, onPress, onReply, onFollowBack, onSwipeDismiss }: {
     item: Notification;
     index: number;
     onPress: (n: Notification) => void;
     onReply: (n: Notification) => void;
     onFollowBack: (n: Notification) => void;
+    onSwipeDismiss: (n: Notification) => void;
 }) => {
     const iconInfo = getNotificationIcon(item.type);
+    const translateX = useSharedValue(0);
+    const dismissed = useSharedValue(false);
+
+    const triggerDismiss = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        onSwipeDismiss(item);
+    }, [item, onSwipeDismiss]);
+
+    const panGesture = Gesture.Pan()
+        .activeOffsetX([-10, 10])
+        .failOffsetY([-5, 5])
+        .onUpdate((e) => {
+            // Only allow swiping left
+            if (e.translationX < 0) {
+                translateX.value = e.translationX;
+            }
+        })
+        .onEnd((e) => {
+            if (e.translationX < SWIPE_THRESHOLD && !dismissed.value) {
+                dismissed.value = true;
+                translateX.value = withTiming(-400, { duration: 200 }, () => {
+                    runOnJS(triggerDismiss)();
+                });
+            } else {
+                translateX.value = withTiming(0, { duration: 200 });
+            }
+        });
+
+    const swipeStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: translateX.value }],
+    }));
+
+    const behindStyle = useAnimatedStyle(() => ({
+        opacity: translateX.value < -20 ? 1 : 0,
+    }));
 
     return (
         <Animated.View entering={FadeInDown.delay(index * 50).duration(300).springify()}>
-            <TouchableOpacity
-                style={[styles.notifRow, !item.isRead && styles.notifUnread]}
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    onPress(item);
-                }}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel={`${!item.isRead ? 'Unread: ' : ''}${item.message || item.content || 'New notification'}, ${timeAgo(item.createdAt)}`}
-            >
-                <View style={[styles.notifIconContainer, !item.isRead && styles.notifIconUnread]}>
-                    <Ionicons name={iconInfo.name} size={20} color={iconInfo.color} />
-                </View>
-                <View style={styles.notifContent}>
-                    <Text
-                        style={[styles.notifMessage, !item.isRead && styles.notifMessageUnread]}
-                        numberOfLines={2}
+            {/* Background revealed on swipe */}
+            <Animated.View style={[styles.swipeBackground, behindStyle]}>
+                <Ionicons name="checkmark-circle" size={22} color={colors.emerald[500]} />
+                <Text style={styles.swipeLabel}>Mark read</Text>
+            </Animated.View>
+
+            <GestureDetector gesture={panGesture}>
+                <Animated.View style={swipeStyle}>
+                    <TouchableOpacity
+                        style={[styles.notifRow, !item.isRead && styles.notifUnread]}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            onPress(item);
+                        }}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${!item.isRead ? 'Unread: ' : ''}${item.message || item.content || 'New notification'}, ${timeAgo(item.createdAt)}`}
+                        accessibilityActions={[{ name: 'markRead', label: 'Mark as read' }]}
+                        onAccessibilityAction={(event) => {
+                            if (event.nativeEvent.actionName === 'markRead') {
+                                onSwipeDismiss(item);
+                            }
+                        }}
                     >
-                        {item.message || item.content || 'New notification'}
-                    </Text>
-                    <View style={styles.notifMeta}>
-                        <Text style={styles.notifTime}>{timeAgo(item.createdAt)}</Text>
-                        {item.type === 'COMMENT' && item.postId && (
-                            <TouchableOpacity
-                                style={styles.actionPill}
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    onReply(item);
-                                }}
-                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        <View style={[styles.notifIconContainer, !item.isRead && styles.notifIconUnread]}>
+                            <Ionicons name={iconInfo.name} size={20} color={iconInfo.color} />
+                        </View>
+                        <View style={styles.notifContent}>
+                            <Text
+                                style={[styles.notifMessage, !item.isRead && styles.notifMessageUnread]}
+                                numberOfLines={2}
                             >
-                                <Ionicons name="arrow-undo-outline" size={12} color={colors.azure[400]} />
-                                <Text style={styles.actionPillText}>Reply</Text>
-                            </TouchableOpacity>
-                        )}
-                        {item.type === 'FOLLOW' && item.actorId && (
-                            <FollowBackButton actorId={item.actorId} onFollowBack={() => onFollowBack(item)} />
-                        )}
-                    </View>
-                </View>
-                {!item.isRead && <View style={styles.unreadDot} />}
-            </TouchableOpacity>
+                                {item.message || item.content || 'New notification'}
+                            </Text>
+                            <View style={styles.notifMeta}>
+                                <Text style={styles.notifTime}>{timeAgo(item.createdAt)}</Text>
+                                {item.type === 'COMMENT' && item.postId && (
+                                    <TouchableOpacity
+                                        style={styles.actionPill}
+                                        onPress={() => {
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            onReply(item);
+                                        }}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    >
+                                        <Ionicons name="arrow-undo-outline" size={12} color={colors.azure[400]} />
+                                        <Text style={styles.actionPillText}>Reply</Text>
+                                    </TouchableOpacity>
+                                )}
+                                {item.type === 'FOLLOW' && item.actorId && (
+                                    <FollowBackButton actorId={item.actorId} onFollowBack={() => onFollowBack(item)} />
+                                )}
+                            </View>
+                        </View>
+                        {!item.isRead && <View style={styles.unreadDot} />}
+                    </TouchableOpacity>
+                </Animated.View>
+            </GestureDetector>
         </Animated.View>
     );
 });
@@ -283,7 +327,7 @@ export default function NotificationsScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
-    const { notifications, isLoading, fetchNotifications, markAsRead, markAllAsRead } =
+    const { notifications, isLoading, error, fetchNotifications, markAsRead, markAllAsRead } =
         useNotificationsStore();
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
@@ -337,6 +381,18 @@ export default function NotificationsScreen() {
         [markAsRead],
     );
 
+    const handleSwipeDismiss = useCallback(
+        (notif: Notification) => {
+            if (!notif.isRead) markAsRead(notif.id);
+        },
+        [markAsRead],
+    );
+
+    const handleRetry = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        fetchNotifications();
+    }, [fetchNotifications]);
+
     // Track flat index across sections for stagger offset
     const renderItem = useCallback(
         ({ item, index, section }: { item: Notification; index: number; section: DateSection }) => {
@@ -353,10 +409,11 @@ export default function NotificationsScreen() {
                     onPress={handlePress}
                     onReply={handleReply}
                     onFollowBack={handleFollowBack}
+                    onSwipeDismiss={handleSwipeDismiss}
                 />
             );
         },
-        [sections, handlePress, handleReply, handleFollowBack],
+        [sections, handlePress, handleReply, handleFollowBack, handleSwipeDismiss],
     );
 
     const renderSectionHeader = useCallback(
@@ -397,6 +454,15 @@ export default function NotificationsScreen() {
             {/* List */}
             {isLoading && notifications.length === 0 ? (
                 <SkeletonList variant="notification" count={8} />
+            ) : error && notifications.length === 0 ? (
+                <EmptyState
+                    icon="cloud-offline-outline"
+                    title="Something went wrong"
+                    message={error}
+                    actionLabel="Retry"
+                    onAction={handleRetry}
+                    iconColor={colors.coral[500]}
+                />
             ) : (
                 <SectionList
                     sections={sections}
@@ -424,8 +490,8 @@ export default function NotificationsScreen() {
                     ListEmptyComponent={
                         <EmptyState
                             icon="notifications-off-outline"
-                            title="All caught up"
-                            message="You'll see new notifications here when someone interacts with your content"
+                            title="All caught up!"
+                            message="No new notifications. We'll let you know when someone interacts with your content."
                             iconColor={colors.text.muted}
                         />
                     }
@@ -584,5 +650,21 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         backgroundColor: colors.gold[500],
         marginStart: spacing.sm,
+    },
+
+    // Swipe-to-dismiss
+    swipeBackground: {
+        ...StyleSheet.absoluteFillObject,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        paddingRight: spacing.lg,
+        backgroundColor: colors.surface.glass,
+        gap: spacing.xs,
+    },
+    swipeLabel: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.emerald[500],
     },
 });

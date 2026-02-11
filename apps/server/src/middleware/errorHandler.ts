@@ -21,12 +21,20 @@ export const errorHandler = (
     res: Response,
     _next: NextFunction
 ): void => {
+    // Always log full details server-side
     logger.error({
         message: err.message,
         stack: err.stack,
         path: req.path,
         method: req.method,
     });
+
+    // Guard: if headers already sent, delegate to Express default handler
+    if (res.headersSent) {
+        return;
+    }
+
+    const isProduction = process.env.NODE_ENV === 'production';
 
     // Zod validation errors
     if (err instanceof ZodError) {
@@ -40,7 +48,7 @@ export const errorHandler = (
         return;
     }
 
-    // Custom app errors
+    // Custom app errors (operational — safe to expose message)
     if (err instanceof AppError) {
         res.status(err.statusCode).json({
             error: err.message,
@@ -67,6 +75,17 @@ export const errorHandler = (
         }
     }
 
+    // Prisma connection / initialization errors → 503
+    if (
+        err.name === 'PrismaClientInitializationError' ||
+        err.name === 'PrismaClientRustPanicError'
+    ) {
+        res.status(503).json({
+            error: 'Service temporarily unavailable',
+        });
+        return;
+    }
+
     // Multer errors
     if (err.name === 'MulterError') {
         res.status(400).json({
@@ -75,8 +94,17 @@ export const errorHandler = (
         return;
     }
 
-    // Default error
+    // JSON syntax errors (malformed request body)
+    if (err instanceof SyntaxError && 'body' in err) {
+        res.status(400).json({
+            error: 'Invalid JSON in request body',
+        });
+        return;
+    }
+
+    // Default error — NEVER leak internal message/stack in production
     res.status(500).json({
-        error: err.message || 'Internal server error',
+        error: 'Internal server error',
+        ...(isProduction ? {} : { message: err.message }),
     });
 };

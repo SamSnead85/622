@@ -41,6 +41,7 @@ export function BackButton({
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel={label}
+            accessibilityHint="Double tap to navigate back"
         >
             <Ionicons name={icon} size={size} color={color} />
         </TouchableOpacity>
@@ -49,9 +50,9 @@ export function BackButton({
 
 const styles = StyleSheet.create({
     button: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         backgroundColor: colors.surface.glassHover,
         alignItems: 'center',
         justifyContent: 'center',

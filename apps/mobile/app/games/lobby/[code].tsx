@@ -26,14 +26,14 @@ import Animated, {
     useSharedValue,
     useAnimatedStyle,
     withTiming,
-    withDelay,
     withSequence,
-    runOnJS,
+    withRepeat,
+    interpolate,
     Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// Clipboard via Share API (no extra dependency)
 import { colors, typography, spacing } from '@zerog/ui';
 import { ScreenHeader, GlassCard, Avatar, LoadingView, GameInviteSheet } from '../../../components';
 import { useGameStore, useAuthStore } from '../../../stores';
@@ -57,6 +57,7 @@ const ROUND_OPTIONS = [3, 5, 7, 10];
 
 function CountdownOverlay({ onComplete }: { onComplete: () => void }) {
     const [count, setCount] = useState(3);
+    const ringProgress = useSharedValue(0);
 
     useEffect(() => {
         if (count <= 0) {
@@ -66,12 +67,21 @@ function CountdownOverlay({ onComplete }: { onComplete: () => void }) {
 
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
+        // Animate ring from 0 to 1 over 1 second for each count
+        ringProgress.value = 0;
+        ringProgress.value = withTiming(1, { duration: 900, easing: Easing.linear });
+
         const timer = setTimeout(() => {
             setCount((prev) => prev - 1);
         }, 1000);
 
         return () => clearTimeout(timer);
-    }, [count, onComplete]);
+    }, [count, onComplete, ringProgress]);
+
+    const ringStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: interpolate(ringProgress.value, [0, 1], [0.8, 1.2]) }],
+        opacity: interpolate(ringProgress.value, [0, 0.8, 1], [0.8, 0.6, 0]),
+    }));
 
     if (count <= 0) return null;
 
@@ -81,6 +91,9 @@ function CountdownOverlay({ onComplete }: { onComplete: () => void }) {
             exiting={FadeOut.duration(200)}
             style={styles.countdownOverlay}
         >
+            {/* Expanding ring */}
+            <Animated.View style={[styles.countdownRing, ringStyle]} />
+
             <Animated.Text
                 key={count}
                 entering={ZoomIn.duration(400).springify()}
@@ -276,6 +289,40 @@ function LobbyChat({ players, roomCode }: { players: { id: string; name: string 
 }
 
 // ============================================
+// Waiting for Players (pulsing animation)
+// ============================================
+
+function WaitingForPlayers() {
+    const pulse = useSharedValue(0);
+
+    useEffect(() => {
+        pulse.value = withRepeat(
+            withSequence(
+                withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+                withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+            ),
+            -1,
+            false,
+        );
+    }, [pulse]);
+
+    const pulseStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(pulse.value, [0, 1], [0.4, 1]),
+        transform: [{ scale: interpolate(pulse.value, [0, 1], [0.95, 1.05]) }],
+    }));
+
+    return (
+        <Animated.View entering={FadeIn.delay(300).duration(400)} style={styles.waitingContainer}>
+            <Animated.View style={pulseStyle}>
+                <Ionicons name="hourglass-outline" size={32} color={colors.text.muted} />
+            </Animated.View>
+            <Text style={styles.waitingText}>Waiting for players to join...</Text>
+            <Text style={styles.waitingHint}>Share the room code with friends</Text>
+        </Animated.View>
+    );
+}
+
+// ============================================
 // Lobby Screen
 // ============================================
 
@@ -368,12 +415,30 @@ export default function LobbyScreen() {
         navigateToGame();
     }, [navigateToGame]);
 
-    // ---- Copy room code ----
-    const handleCopyCode = useCallback(async () => {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        await Share.share({ message: `Join my game on 0G! Room code: ${roomCode}\nhttps://0gravity.ai/game/${roomCode}` });
+    // ---- Copy room code to clipboard ----
+    const [codeCopied, setCodeCopied] = useState(false);
+    const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    const handleCopyCode = useCallback(async () => {
+        try {
+            await Clipboard.setStringAsync(roomCode);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setCodeCopied(true);
+            if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+            copyTimeoutRef.current = setTimeout(() => setCodeCopied(false), 2000);
+        } catch {
+            // Fallback to Share API if clipboard fails
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            await Share.share({ message: `Join my game on 0G! Room code: ${roomCode}\nhttps://0gravity.ai/game/${roomCode}` });
+        }
     }, [roomCode]);
+
+    // Cleanup copy timeout
+    useEffect(() => {
+        return () => {
+            if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+        };
+    }, []);
 
     // ---- Open invite sheet ----
     const handleShare = useCallback(() => {
@@ -485,11 +550,17 @@ export default function LobbyScreen() {
                             </View>
                             <View style={styles.codeRow}>
                                 <Text style={styles.codeText}>{roomCode}</Text>
-                                <View style={styles.copyIcon}>
-                                    <Ionicons name="copy-outline" size={18} color={colors.gold[500]} />
+                                <View style={[styles.copyIcon, codeCopied && styles.copyIconActive]}>
+                                    <Ionicons
+                                        name={codeCopied ? 'checkmark' : 'copy-outline'}
+                                        size={18}
+                                        color={codeCopied ? colors.emerald[500] : colors.gold[500]}
+                                    />
                                 </View>
                             </View>
-                            <Text style={styles.codeTapHint}>Tap to copy</Text>
+                            <Text style={[styles.codeTapHint, codeCopied && { color: colors.emerald[400] }]}>
+                                {codeCopied ? 'Copied to clipboard!' : 'Tap to copy'}
+                            </Text>
                         </GlassCard>
                     </TouchableOpacity>
                 </Animated.View>
@@ -510,11 +581,41 @@ export default function LobbyScreen() {
                     ))}
                 </View>
 
-                {players.length === 0 && (
-                    <Animated.View entering={FadeIn.delay(300).duration(400)} style={styles.waitingContainer}>
-                        <Ionicons name="hourglass-outline" size={32} color={colors.text.muted} />
-                        <Text style={styles.waitingText}>Waiting for players to join...</Text>
+                {/* ---- Player Avatar Grid (visual summary) ---- */}
+                {players.length > 0 && (
+                    <Animated.View entering={FadeInDown.delay(120).duration(400)} style={styles.avatarGrid}>
+                        {players.map((player, i) => (
+                            <Animated.View
+                                key={player.id}
+                                entering={ZoomIn.delay(80 + i * 60).duration(300).springify()}
+                                style={styles.avatarGridItem}
+                            >
+                                <Avatar
+                                    uri={player.avatarUrl}
+                                    name={player.name}
+                                    size="lg"
+                                    glow={player.isHost}
+                                />
+                                <Text style={styles.avatarGridName} numberOfLines={1}>
+                                    {player.name.split(' ')[0]}
+                                </Text>
+                                {player.isHost && (
+                                    <View style={styles.avatarHostStar}>
+                                        <Ionicons name="star" size={10} color={colors.gold[500]} />
+                                    </View>
+                                )}
+                                {!player.isConnected && (
+                                    <View style={styles.avatarDisconnected}>
+                                        <Ionicons name="cloud-offline" size={10} color={colors.coral[400]} />
+                                    </View>
+                                )}
+                            </Animated.View>
+                        ))}
                     </Animated.View>
+                )}
+
+                {players.length === 0 && (
+                    <WaitingForPlayers />
                 )}
 
                 {/* ---- Host Settings ---- */}
@@ -790,6 +891,57 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
 
+    // ---- Avatar Grid ----
+    avatarGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: spacing.lg,
+        marginBottom: spacing.xl,
+        paddingVertical: spacing.md,
+    },
+    avatarGridItem: {
+        alignItems: 'center',
+        gap: spacing.xs,
+        position: 'relative',
+    },
+    avatarGridName: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.text.secondary,
+        maxWidth: 64,
+        textAlign: 'center',
+    },
+    avatarHostStar: {
+        position: 'absolute',
+        top: -2,
+        right: -2,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: colors.gold[500] + '25',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '40',
+    },
+    avatarDisconnected: {
+        position: 'absolute',
+        top: -2,
+        right: -2,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: colors.coral[500] + '25',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    // ---- Copy Icon Active ----
+    copyIconActive: {
+        backgroundColor: colors.emerald[500] + '15',
+    },
+
     // ---- Waiting ----
     waitingContainer: {
         alignItems: 'center',
@@ -801,6 +953,12 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         color: colors.text.muted,
         textAlign: 'center',
+    },
+    waitingHint: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        textAlign: 'center',
+        opacity: 0.7,
     },
 
     // ---- Settings ----
@@ -959,6 +1117,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 100,
+    },
+    countdownRing: {
+        position: 'absolute',
+        width: 160,
+        height: 160,
+        borderRadius: 80,
+        borderWidth: 3,
+        borderColor: colors.gold[500] + '40',
     },
     countdownNumber: {
         fontSize: 120,

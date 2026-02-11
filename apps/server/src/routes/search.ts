@@ -1,16 +1,25 @@
 import { Router, Response, NextFunction } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
 
+// Apply general rate limiting to all search endpoints
+router.use(rateLimiters.general);
+
+import { Prisma } from '@prisma/client';
+
+// Allowed tables for FTS — whitelist to prevent injection via table name
+const FTS_TABLES = new Set(['User', 'Post', 'Community']);
+
 // Helper: Try FTS query with fallback to LIKE
 async function ftsSearch(table: string, query: string, limit: number, offset: number): Promise<any[] | null> {
+    if (!FTS_TABLES.has(table)) return null;
     try {
-        const tsQuery = query.split(/\s+/).filter(Boolean).join(' & ');
-        const results = await prisma.$queryRawUnsafe(
-            `SELECT id FROM "${table}" WHERE search_vector @@ plainto_tsquery('english', $1) ORDER BY ts_rank(search_vector, plainto_tsquery('english', $1)) DESC LIMIT $2 OFFSET $3`,
-            query, limit, offset
+        // Use Prisma.sql tagged template for safe parameterized queries
+        const results = await prisma.$queryRaw(
+            Prisma.sql`SELECT id FROM ${Prisma.raw(`"${table}"`)} WHERE search_vector @@ plainto_tsquery('english', ${query}) ORDER BY ts_rank(search_vector, plainto_tsquery('english', ${query})) DESC LIMIT ${limit} OFFSET ${offset}`
         );
         return results as any[];
     } catch {

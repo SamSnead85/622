@@ -75,20 +75,19 @@ export function FeedViewProvider({ children }: { children: React.ReactNode }) {
 
     // Only sync if the server-side value changes AFTER initial mount (e.g. user switches tab)
     const initializedRef = useRef(false);
+    const activeFeedView = user?.activeFeedView;
     useEffect(() => {
         if (!user) return;
+        const serverView = (activeFeedView as FeedView) || 'private';
         if (!initializedRef.current) {
             // First time user data arrives — sync if different from default
             initializedRef.current = true;
-            const serverView = (user.activeFeedView as FeedView) || 'private';
-            if (serverView !== feedView) {
-                setFeedViewState(serverView);
-            }
+            setFeedViewState((prev) => prev !== serverView ? serverView : prev);
             return;
         }
         // Subsequent changes (e.g. updated from another tab)
-        setFeedViewState((user.activeFeedView as FeedView) || 'private');
-    }, [user?.activeFeedView]);
+        setFeedViewState(serverView);
+    }, [user, activeFeedView]);
 
     const communityOptIn = user?.communityOptIn ?? false;
     const usePublicProfile = user?.usePublicProfile ?? false;

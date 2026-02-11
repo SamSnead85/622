@@ -1,10 +1,12 @@
 // ============================================
 // Network Quality Hook
 // Detects connection type and quality to adapt
-// video autoplay and image quality behavior
+// video autoplay and image quality behavior.
+// Also exposes isInternetReachable for fine-grained
+// offline/no-internet-but-connected detection.
 // ============================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import NetInfo, { NetInfoState, NetInfoStateType } from '@react-native-community/netinfo';
 
 export type NetworkQuality = 'offline' | 'slow' | 'moderate' | 'fast';
@@ -12,6 +14,8 @@ export type NetworkQuality = 'offline' | 'slow' | 'moderate' | 'fast';
 interface NetworkQualityState {
     quality: NetworkQuality;
     isConnected: boolean;
+    /** Whether the internet is actually reachable (not just LAN-connected) */
+    isInternetReachable: boolean;
     connectionType: string | null;
     /** True for 2G/3G/slow connections — disable video autoplay */
     shouldReduceData: boolean;
@@ -39,10 +43,23 @@ function classifyQuality(state: NetInfoState): NetworkQuality {
     return 'moderate';
 }
 
+function buildState(netState: NetInfoState): NetworkQualityState {
+    const quality = classifyQuality(netState);
+    return {
+        quality,
+        isConnected: netState.isConnected ?? true,
+        isInternetReachable: netState.isInternetReachable ?? true,
+        connectionType: netState.type,
+        shouldReduceData: quality === 'slow' || quality === 'offline',
+        isOffline: quality === 'offline',
+    };
+}
+
 export function useNetworkQuality(): NetworkQualityState {
     const [state, setState] = useState<NetworkQualityState>({
         quality: 'fast',
         isConnected: true,
+        isInternetReachable: true,
         connectionType: null,
         shouldReduceData: false,
         isOffline: false,
@@ -50,26 +67,12 @@ export function useNetworkQuality(): NetworkQualityState {
 
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener((netState) => {
-            const quality = classifyQuality(netState);
-            setState({
-                quality,
-                isConnected: netState.isConnected ?? true,
-                connectionType: netState.type,
-                shouldReduceData: quality === 'slow' || quality === 'offline',
-                isOffline: quality === 'offline',
-            });
+            setState(buildState(netState));
         });
 
         // Get initial state
         NetInfo.fetch().then((netState) => {
-            const quality = classifyQuality(netState);
-            setState({
-                quality,
-                isConnected: netState.isConnected ?? true,
-                connectionType: netState.type,
-                shouldReduceData: quality === 'slow' || quality === 'offline',
-                isOffline: quality === 'offline',
-            });
+            setState(buildState(netState));
         });
 
         return () => unsubscribe();

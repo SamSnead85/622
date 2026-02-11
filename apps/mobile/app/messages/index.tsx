@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useCallback } from 'react';
+import { useState, useEffect, memo, useCallback, useRef, useMemo } from 'react';
 import {
     View,
     Text,
@@ -17,7 +17,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import Animated, {
+    FadeInDown,
+    FadeIn,
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useAuthStore } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
@@ -26,6 +34,7 @@ import { ScreenHeader, Avatar, EmptyState } from '../../components';
 import SkeletonList from '../../components/SkeletonList';
 import { useDebounce } from '../../hooks/useDebounce';
 import { showError } from '../../stores/toastStore';
+import { timeAgo } from '../../lib/utils';
 
 // ============================================
 // Types
@@ -46,6 +55,8 @@ interface Conversation {
         senderId: string;
     };
     unreadCount: number;
+    isPinned?: boolean;
+    isArchived?: boolean;
 }
 
 interface OnlineContact {
@@ -55,45 +66,45 @@ interface OnlineContact {
     avatarUrl?: string;
 }
 
+type FilterTab = 'all' | 'unread' | 'archived';
+
+const FILTER_TABS: { key: FilterTab; label: string; icon: string }[] = [
+    { key: 'all', label: 'All', icon: 'chatbubbles-outline' },
+    { key: 'unread', label: 'Unread', icon: 'mail-unread-outline' },
+    { key: 'archived', label: 'Archived', icon: 'archive-outline' },
+];
+
 // ============================================
-// Time formatting
+// Time formatting — delegates to shared util
 // ============================================
 
-const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-
-    if (diff < 60000) return 'now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`;
-
-    // Yesterday check
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (
-        date.getDate() === yesterday.getDate() &&
-        date.getMonth() === yesterday.getMonth() &&
-        date.getFullYear() === yesterday.getFullYear()
-    ) {
-        return 'Yesterday';
-    }
-
-    if (diff < 604800000) return `${Math.floor(diff / 86400000)}d`;
-    return date.toLocaleDateString();
+const formatTime = (timestamp: string): string => {
+    if (!timestamp) return '';
+    return timeAgo(timestamp);
 };
 
 // ============================================
 // Conversation Item with animation + long-press
 // ============================================
 
-const ConversationItem = memo(({
+// ============================================
+// Swipe Action Buttons (revealed behind the row)
+// ============================================
+
+const SWIPE_THRESHOLD = 70;
+const SWIPE_ACTION_WIDTH = 75;
+
+const SwipeableConversationItem = memo(({
     conversation,
     onPress,
     onLongPress,
     userId,
     index,
     isMuted,
+    isPinned,
+    onPin,
+    onArchive,
+    onDelete,
 }: {
     conversation: Conversation;
     onPress: () => void;
@@ -101,97 +112,205 @@ const ConversationItem = memo(({
     userId?: string;
     index: number;
     isMuted?: boolean;
+    isPinned?: boolean;
+    onPin: () => void;
+    onArchive: () => void;
+    onDelete: () => void;
 }) => {
     const p = conversation.participant;
     const hasUnread = conversation.unreadCount > 0;
+    const translateX = useSharedValue(0);
+    const contextStartX = useSharedValue(0);
+
+    const triggerPin = useCallback(() => { onPin(); }, [onPin]);
+    const triggerArchive = useCallback(() => { onArchive(); }, [onArchive]);
+    const triggerDelete = useCallback(() => { onDelete(); }, [onDelete]);
+
+    const panGesture = Gesture.Pan()
+        .activeOffsetX([-15, 15])
+        .failOffsetY([-10, 10])
+        .onStart(() => {
+            contextStartX.value = translateX.value;
+        })
+        .onUpdate((e) => {
+            const next = contextStartX.value + e.translationX;
+            // Allow swipe left (negative) to reveal right actions, and swipe right (positive) to reveal left action
+            translateX.value = Math.max(-SWIPE_ACTION_WIDTH * 2, Math.min(SWIPE_ACTION_WIDTH, next));
+        })
+        .onEnd((e) => {
+            // Swipe left far enough → reveal delete/archive actions
+            if (e.translationX < -SWIPE_THRESHOLD) {
+                translateX.value = withSpring(-SWIPE_ACTION_WIDTH * 2, { damping: 20, stiffness: 200 });
+            }
+            // Swipe right far enough → reveal pin action
+            else if (e.translationX > SWIPE_THRESHOLD) {
+                translateX.value = withSpring(SWIPE_ACTION_WIDTH, { damping: 20, stiffness: 200 });
+            }
+            // Snap back
+            else {
+                translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
+            }
+        });
+
+    const rowStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: translateX.value }],
+    }));
+
+    const leftActionStyle = useAnimatedStyle(() => ({
+        opacity: translateX.value > 10 ? withTiming(1, { duration: 150 }) : withTiming(0, { duration: 100 }),
+    }));
+
+    const rightActionStyle = useAnimatedStyle(() => ({
+        opacity: translateX.value < -10 ? withTiming(1, { duration: 150 }) : withTiming(0, { duration: 100 }),
+    }));
+
+    const handleSwipeAction = useCallback((action: 'pin' | 'archive' | 'delete') => {
+        translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (action === 'pin') triggerPin();
+        else if (action === 'archive') triggerArchive();
+        else if (action === 'delete') triggerDelete();
+    }, [triggerPin, triggerArchive, triggerDelete]);
 
     return (
-        <Animated.View entering={FadeInDown.duration(300).delay(index * 60).springify()}>
-            <TouchableOpacity
-                style={[
-                    styles.conversationItem,
-                    hasUnread && styles.unreadItem,
-                ]}
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    onPress();
-                }}
-                onLongPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    onLongPress();
-                }}
-                delayLongPress={400}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel={`Conversation with ${p.displayName || p.username}${conversation.lastMessage ? `, last message: ${conversation.lastMessage.content}` : ', no messages yet'}${hasUnread ? `, ${conversation.unreadCount} unread` : ''}${isMuted ? ', muted' : ''}`}
-                accessibilityHint="Double-tap to open, long press for options"
-            >
-                {/* Avatar with online indicator */}
-                <View style={styles.avatarContainer}>
-                    <Avatar uri={p.avatarUrl} name={p.displayName || p.username} customSize={54} />
-                    {p.isOnline && (
-                        <View style={styles.onlineIndicator}>
-                            <View style={styles.onlineIndicatorInner} />
-                        </View>
-                    )}
-                </View>
+        <Animated.View entering={FadeInDown.duration(300).delay(Math.min(index, 8) * 60).springify()}>
+            <View style={styles.swipeContainer}>
+                {/* Left action (pin) — revealed on swipe right */}
+                <Animated.View style={[styles.swipeActionLeft, leftActionStyle]}>
+                    <TouchableOpacity
+                        style={[styles.swipeActionBtn, styles.swipeActionPin]}
+                        onPress={() => handleSwipeAction('pin')}
+                        accessibilityLabel={isPinned ? 'Unpin conversation' : 'Pin conversation'}
+                    >
+                        <Ionicons name={isPinned ? 'pin-outline' : 'pin'} size={20} color="#fff" />
+                        <Text style={styles.swipeActionLabel}>{isPinned ? 'Unpin' : 'Pin'}</Text>
+                    </TouchableOpacity>
+                </Animated.View>
 
-                {/* Content */}
-                <View style={styles.conversationContent}>
-                    <View style={styles.conversationHeader}>
-                        <View style={styles.nameRow}>
-                            <Text style={[styles.displayName, hasUnread && styles.displayNameUnread]} numberOfLines={1}>
-                                {p.displayName || p.username}
-                            </Text>
-                            {isMuted && (
-                                <Ionicons
-                                    name="notifications-off"
-                                    size={13}
-                                    color={colors.text.muted}
-                                    style={styles.mutedIcon}
-                                />
-                            )}
-                        </View>
-                        {conversation.lastMessage && (
-                            <Text style={[
-                                styles.timestamp,
-                                hasUnread && styles.timestampUnread,
-                            ]}>
-                                {formatTime(conversation.lastMessage.createdAt)}
-                            </Text>
-                        )}
-                    </View>
+                {/* Right actions (archive + delete) — revealed on swipe left */}
+                <Animated.View style={[styles.swipeActionRight, rightActionStyle]}>
+                    <TouchableOpacity
+                        style={[styles.swipeActionBtn, styles.swipeActionArchive]}
+                        onPress={() => handleSwipeAction('archive')}
+                        accessibilityLabel="Archive conversation"
+                    >
+                        <Ionicons name="archive-outline" size={20} color="#fff" />
+                        <Text style={styles.swipeActionLabel}>Archive</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.swipeActionBtn, styles.swipeActionDelete]}
+                        onPress={() => handleSwipeAction('delete')}
+                        accessibilityLabel="Delete conversation"
+                    >
+                        <Ionicons name="trash-outline" size={20} color="#fff" />
+                        <Text style={styles.swipeActionLabel}>Delete</Text>
+                    </TouchableOpacity>
+                </Animated.View>
 
-                    <View style={styles.messagePreview}>
-                        <Text
+                {/* Main conversation row */}
+                <GestureDetector gesture={panGesture}>
+                    <Animated.View style={rowStyle}>
+                        <TouchableOpacity
                             style={[
-                                styles.lastMessage,
-                                hasUnread && styles.lastMessageUnread,
+                                styles.conversationItem,
+                                hasUnread && styles.unreadItem,
+                                isPinned && styles.pinnedItem,
                             ]}
-                            numberOfLines={1}
+                            onPress={() => {
+                                // If swiped open, close first
+                                if (Math.abs(translateX.value) > 10) {
+                                    translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
+                                    return;
+                                }
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                onPress();
+                            }}
+                            onLongPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                onLongPress();
+                            }}
+                            delayLongPress={400}
+                            activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Conversation with ${p?.displayName || p?.username || 'Unknown'}${conversation.lastMessage ? `, last message: ${conversation.lastMessage.content}` : ', no messages yet'}${hasUnread ? `, ${conversation.unreadCount} unread` : ''}${isMuted ? ', muted' : ''}${isPinned ? ', pinned' : ''}`}
+                            accessibilityHint="Double-tap to open, long press for options, swipe for quick actions"
                         >
-                            {conversation.lastMessage
-                                ? `${conversation.lastMessage.senderId === userId ? 'You: ' : ''}${conversation.lastMessage.content}`
-                                : 'No messages yet'}
-                        </Text>
-                        {hasUnread && (
-                            <View style={styles.unreadBadge}>
-                                <Text style={styles.unreadCount}>
-                                    {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
-                                </Text>
-                            </View>
-                        )}
-                    </View>
-                </View>
+                            {/* Pin indicator */}
+                            {isPinned && (
+                                <View style={styles.pinIndicator}>
+                                    <Ionicons name="pin" size={10} color={colors.gold[500]} />
+                                </View>
+                            )}
 
-                {/* Chevron */}
-                <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.text.muted}
-                    style={styles.chevron}
-                />
-            </TouchableOpacity>
+                            {/* Avatar with online indicator */}
+                            <View style={styles.avatarContainer}>
+                                <Avatar uri={p?.avatarUrl} name={p?.displayName || p?.username || '?'} customSize={54} />
+                                {p?.isOnline && (
+                                    <View style={styles.onlineIndicator}>
+                                        <View style={styles.onlineIndicatorInner} />
+                                    </View>
+                                )}
+                            </View>
+
+                            {/* Content */}
+                            <View style={styles.conversationContent}>
+                                <View style={styles.conversationHeader}>
+                                    <View style={styles.nameRow}>
+                                        <Text style={[styles.displayName, hasUnread && styles.displayNameUnread]} numberOfLines={1}>
+                                            {p?.displayName || p?.username || 'Unknown'}
+                                        </Text>
+                                        {isMuted && (
+                                            <Ionicons
+                                                name="notifications-off"
+                                                size={13}
+                                                color={colors.text.muted}
+                                                style={styles.mutedIcon}
+                                            />
+                                        )}
+                                    </View>
+                                    {conversation.lastMessage?.createdAt && (
+                                        <Text style={[
+                                            styles.timestamp,
+                                            hasUnread && styles.timestampUnread,
+                                        ]}>
+                                            {formatTime(conversation.lastMessage.createdAt)}
+                                        </Text>
+                                    )}
+                                </View>
+
+                                <View style={styles.messagePreview}>
+                                    <Text
+                                        style={[
+                                            styles.lastMessage,
+                                            hasUnread && styles.lastMessageUnread,
+                                        ]}
+                                        numberOfLines={1}
+                                    >
+                                        {conversation.lastMessage?.content
+                                            ? `${conversation.lastMessage.senderId === userId ? 'You: ' : ''}${conversation.lastMessage.content}`
+                                            : 'No messages yet'}
+                                    </Text>
+                                    {hasUnread && (
+                                        <View style={styles.unreadBadge}>
+                                            <Text style={styles.unreadCount}>
+                                                {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+                            </View>
+
+                            {/* Chevron */}
+                            <Ionicons
+                                name="chevron-forward"
+                                size={16}
+                                color={colors.text.muted}
+                                style={styles.chevron}
+                            />
+                        </TouchableOpacity>
+                    </Animated.View>
+                </GestureDetector>
+            </View>
         </Animated.View>
     );
 });
@@ -269,8 +388,18 @@ export default function MessagesScreen() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchFocused, setSearchFocused] = useState(false);
+    const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
     const [mutedIds, setMutedIds] = useState<Set<string>>(new Set());
+    const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
+    const [archivedIds, setArchivedIds] = useState<Set<string>>(new Set());
     const debouncedSearch = useDebounce(searchQuery, 300);
+    const isMountedRef = useRef(true);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     // ---- Data fetching ----
 
@@ -278,13 +407,17 @@ export default function MessagesScreen() {
         try {
             const data = await apiFetch<any>(API.conversations);
             const convos = data.conversations || data.data || [];
-            setConversations(Array.isArray(convos) ? convos : []);
-            setLoadError(false);
+            if (isMountedRef.current) {
+                setConversations(Array.isArray(convos) ? convos : []);
+                setLoadError(false);
+            }
         } catch {
-            setLoadError(true);
+            if (isMountedRef.current) setLoadError(true);
         } finally {
-            setIsLoading(false);
-            setIsRefreshing(false);
+            if (isMountedRef.current) {
+                setIsLoading(false);
+                setIsRefreshing(false);
+            }
         }
     };
 
@@ -302,7 +435,7 @@ export default function MessagesScreen() {
                     displayName: f.displayName,
                     avatarUrl: f.avatarUrl,
                 }));
-            setOnlineContacts(online);
+            if (isMountedRef.current) setOnlineContacts(online);
         } catch {
             // Non-critical — strip just won't show
         }
@@ -320,23 +453,55 @@ export default function MessagesScreen() {
         loadOnlineContacts();
     }, []);
 
-    // ---- Filtering (debounced) ----
+    // ---- Unread count for the tab badge ----
 
-    const filteredConversations = debouncedSearch.trim()
-        ? conversations.filter((conv) => {
+    const unreadTotal = useMemo(
+        () => conversations.filter((c) => c.unreadCount > 0 && !archivedIds.has(c.id)).length,
+        [conversations, archivedIds],
+    );
+
+    // ---- Filtering (debounced + tab), sorting (pinned first) ----
+
+    const filteredConversations = useMemo(() => {
+        let result = [...conversations];
+
+        // Apply tab filter first
+        if (activeFilter === 'archived') {
+            result = result.filter((c) => archivedIds.has(c.id));
+        } else if (activeFilter === 'unread') {
+            result = result.filter((c) => c.unreadCount > 0 && !archivedIds.has(c.id));
+        } else {
+            // 'all' — exclude archived (unless searching)
+            if (!debouncedSearch.trim()) {
+                result = result.filter((c) => !archivedIds.has(c.id));
+            }
+        }
+
+        // Apply search filter
+        if (debouncedSearch.trim()) {
             const q = debouncedSearch.toLowerCase();
-            return (
+            result = result.filter((conv) =>
                 conv?.participant?.displayName?.toLowerCase().includes(q) ||
                 conv?.participant?.username?.toLowerCase().includes(q) ||
                 conv?.lastMessage?.content?.toLowerCase().includes(q)
             );
-        })
-        : conversations;
+        }
+
+        // Sort: pinned conversations first, then by last message time
+        return result.sort((a, b) => {
+            const aPinned = pinnedIds.has(a.id) ? 1 : 0;
+            const bPinned = pinnedIds.has(b.id) ? 1 : 0;
+            if (aPinned !== bPinned) return bPinned - aPinned;
+            const aTime = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+            const bTime = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+            return bTime - aTime;
+        });
+    }, [conversations, activeFilter, archivedIds, pinnedIds, debouncedSearch]);
 
     // ---- Long-press context menu ----
 
     const confirmDelete = useCallback((conversation: Conversation) => {
-        const name = conversation.participant.displayName || conversation.participant.username;
+        const name = conversation.participant?.displayName || conversation.participant?.username || 'this user';
         Alert.alert(
             'Delete Conversation',
             `Are you sure you want to delete your conversation with ${name}? This can't be undone.`,
@@ -370,24 +535,43 @@ export default function MessagesScreen() {
         const isMuted = mutedIds.has(conversation.id);
         setMutedIds((prev) => {
             const next = new Set(prev);
-            if (isMuted) {
-                next.delete(conversation.id);
-            } else {
-                next.add(conversation.id);
-            }
+            if (isMuted) next.delete(conversation.id);
+            else next.add(conversation.id);
             return next;
         });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }, [mutedIds]);
 
+    const togglePin = useCallback((conversation: Conversation) => {
+        setPinnedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(conversation.id)) next.delete(conversation.id);
+            else next.add(conversation.id);
+            return next;
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }, []);
+
+    const handleArchive = useCallback((conversation: Conversation) => {
+        setArchivedIds((prev) => {
+            const next = new Set(prev);
+            next.add(conversation.id);
+            return next;
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }, []);
+
     const handleLongPress = useCallback((conversation: Conversation) => {
         const p = conversation.participant;
-        const name = p.displayName || p.username;
+        const name = p?.displayName || p?.username || 'Unknown';
         const isMuted = mutedIds.has(conversation.id);
+        const isPinned = pinnedIds.has(conversation.id);
 
         if (Platform.OS === 'ios') {
             const options = [
+                isPinned ? 'Unpin' : 'Pin',
                 isMuted ? 'Unmute' : 'Mute',
+                'Archive',
                 'Delete',
                 'Cancel',
             ];
@@ -395,15 +579,14 @@ export default function MessagesScreen() {
                 {
                     title: name,
                     options,
-                    destructiveButtonIndex: 1,
-                    cancelButtonIndex: 2,
+                    destructiveButtonIndex: 3,
+                    cancelButtonIndex: 4,
                 },
                 (buttonIndex) => {
-                    if (buttonIndex === 0) {
-                        toggleMute(conversation);
-                    } else if (buttonIndex === 1) {
-                        confirmDelete(conversation);
-                    }
+                    if (buttonIndex === 0) togglePin(conversation);
+                    else if (buttonIndex === 1) toggleMute(conversation);
+                    else if (buttonIndex === 2) handleArchive(conversation);
+                    else if (buttonIndex === 3) confirmDelete(conversation);
                 }
             );
         } else {
@@ -412,8 +595,16 @@ export default function MessagesScreen() {
                 undefined,
                 [
                     {
+                        text: isPinned ? 'Unpin' : 'Pin',
+                        onPress: () => togglePin(conversation),
+                    },
+                    {
                         text: isMuted ? 'Unmute' : 'Mute',
                         onPress: () => toggleMute(conversation),
+                    },
+                    {
+                        text: 'Archive',
+                        onPress: () => handleArchive(conversation),
                     },
                     {
                         text: 'Delete',
@@ -425,17 +616,13 @@ export default function MessagesScreen() {
                 { cancelable: true }
             );
         }
-    }, [mutedIds, toggleMute, confirmDelete]);
+    }, [mutedIds, pinnedIds, toggleMute, togglePin, handleArchive, confirmDelete]);
 
     // ---- Navigate to conversation ----
 
     const handleConversationPress = useCallback((conversationId: string) => {
         router.push(`/chat/${conversationId}` as any);
     }, [router]);
-
-    const handleConversationLongPress = useCallback((conversation: any) => {
-        handleLongPress(conversation);
-    }, [handleLongPress]);
 
     const handleContactPress = useCallback((contact: OnlineContact) => {
         const existing = conversations.find((conv) => conv?.participant?.id === contact.id);
@@ -510,11 +697,51 @@ export default function MessagesScreen() {
                 </View>
             </Animated.View>
 
+            {/* Filter Tabs */}
+            <Animated.View entering={FadeInDown.duration(300).delay(80)} style={styles.filterTabsRow}>
+                {FILTER_TABS.map((tab) => {
+                    const isActive = activeFilter === tab.key;
+                    const showBadge = tab.key === 'unread' && unreadTotal > 0;
+                    return (
+                        <TouchableOpacity
+                            key={tab.key}
+                            style={[styles.filterTab, isActive && styles.filterTabActive]}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setActiveFilter(tab.key);
+                            }}
+                            activeOpacity={0.7}
+                            accessibilityRole="tab"
+                            accessibilityState={{ selected: isActive }}
+                            accessibilityLabel={`${tab.label}${showBadge ? `, ${unreadTotal} unread` : ''}`}
+                        >
+                            <Ionicons
+                                name={tab.icon as any}
+                                size={14}
+                                color={isActive ? colors.gold[500] : colors.text.muted}
+                            />
+                            <Text style={[styles.filterTabText, isActive && styles.filterTabTextActive]}>
+                                {tab.label}
+                            </Text>
+                            {showBadge && (
+                                <View style={styles.filterTabBadge}>
+                                    <Text style={styles.filterTabBadgeText}>
+                                        {unreadTotal > 99 ? '99+' : unreadTotal}
+                                    </Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    );
+                })}
+            </Animated.View>
+
             {/* Online Now contacts */}
-            <OnlineNowStrip
-                contacts={onlineContacts}
-                onContactPress={handleContactPress}
-            />
+            {activeFilter !== 'archived' && (
+                <OnlineNowStrip
+                    contacts={onlineContacts}
+                    onContactPress={handleContactPress}
+                />
+            )}
 
             {/* Conversations list */}
             {isLoading ? (
@@ -532,13 +759,17 @@ export default function MessagesScreen() {
                 <FlatList
                     data={filteredConversations}
                     renderItem={({ item, index }) => (
-                        <ConversationItem
+                        <SwipeableConversationItem
                             conversation={item}
                             onPress={() => handleConversationPress(item.id)}
-                            onLongPress={() => handleConversationLongPress(item)}
+                            onLongPress={() => handleLongPress(item)}
                             userId={user?.id}
                             index={index}
                             isMuted={mutedIds.has(item.id)}
+                            isPinned={pinnedIds.has(item.id)}
+                            onPin={() => togglePin(item)}
+                            onArchive={() => handleArchive(item)}
+                            onDelete={() => confirmDelete(item)}
                         />
                     )}
                     keyExtractor={(item) => item.id}
@@ -566,6 +797,18 @@ export default function MessagesScreen() {
                                 title="No conversations found"
                                 message={`No conversations match "${debouncedSearch}"`}
                             />
+                        ) : activeFilter === 'unread' ? (
+                            <EmptyState
+                                icon="checkmark-done-outline"
+                                title="All caught up"
+                                message="You have no unread messages"
+                            />
+                        ) : activeFilter === 'archived' ? (
+                            <EmptyState
+                                icon="archive-outline"
+                                title="No archived conversations"
+                                message="Swipe left on a conversation to archive it"
+                            />
                         ) : (
                             <View style={styles.elegantEmpty}>
                                 <LinearGradient
@@ -575,9 +818,9 @@ export default function MessagesScreen() {
                                 <View style={styles.elegantEmptyIcon}>
                                     <Ionicons name="chatbubbles" size={40} color={colors.gold[500]} />
                                 </View>
-                                <Text style={styles.elegantEmptyTitle}>Your inbox is empty</Text>
+                                <Text style={styles.elegantEmptyTitle}>No conversations yet</Text>
                                 <Text style={styles.elegantEmptyMessage}>
-                                    Start a conversation with someone{'\n'}in your community
+                                    Start chatting with someone{'\n'}in your community
                                 </Text>
                                 <TouchableOpacity
                                     style={styles.elegantEmptyButton}
@@ -671,6 +914,51 @@ const styles = StyleSheet.create({
         paddingVertical: 0,
     },
 
+    // Filter tabs
+    filterTabsRow: {
+        flexDirection: 'row',
+        paddingHorizontal: spacing.xl,
+        paddingBottom: spacing.md,
+        gap: spacing.sm,
+    },
+    filterTab: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs + 2,
+        borderRadius: 20,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        gap: 5,
+    },
+    filterTabActive: {
+        backgroundColor: `${colors.gold[500]}15`,
+        borderColor: `${colors.gold[500]}40`,
+    },
+    filterTabText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.text.muted,
+    },
+    filterTabTextActive: {
+        color: colors.gold[500],
+    },
+    filterTabBadge: {
+        backgroundColor: colors.gold[500],
+        borderRadius: 8,
+        minWidth: 16,
+        height: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 4,
+    },
+    filterTabBadgeText: {
+        fontSize: 9,
+        fontWeight: '700',
+        color: colors.obsidian[900],
+    },
+
     // Online Now strip
     onlineStrip: {
         paddingTop: spacing.xs,
@@ -733,6 +1021,56 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
+    // Swipe actions
+    swipeContainer: {
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    swipeActionLeft: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: SWIPE_ACTION_WIDTH,
+        flexDirection: 'row',
+    },
+    swipeActionRight: {
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: SWIPE_ACTION_WIDTH * 2,
+        flexDirection: 'row',
+    },
+    swipeActionBtn: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+    },
+    swipeActionPin: {
+        backgroundColor: colors.gold[600],
+    },
+    swipeActionArchive: {
+        backgroundColor: '#6366F1',
+    },
+    swipeActionDelete: {
+        backgroundColor: '#EF4444',
+    },
+    swipeActionLabel: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: '#fff',
+    },
+
+    // Pin indicator
+    pinIndicator: {
+        position: 'absolute',
+        top: spacing.sm,
+        right: spacing.md,
+        zIndex: 1,
+    },
+
     // Conversation list
     listContent: {
         paddingTop: spacing.sm,
@@ -744,9 +1082,13 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.md,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: `${colors.border.subtle}40`,
+        backgroundColor: colors.obsidian[900],
     },
     unreadItem: {
         backgroundColor: `${colors.gold[500]}0D`,
+    },
+    pinnedItem: {
+        backgroundColor: `${colors.gold[500]}08`,
     },
 
     // Avatar + online dot

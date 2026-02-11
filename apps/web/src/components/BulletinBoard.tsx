@@ -610,6 +610,7 @@ export function BulletinBoard({ communityId, showComposer = true, onCreatePost }
             setIsLoading(false);
         };
         fetchBulletins();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [communityId]);
 
     const handleInterested = (id: string) => {
