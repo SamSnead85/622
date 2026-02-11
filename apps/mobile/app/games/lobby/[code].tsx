@@ -165,6 +165,7 @@ export default function LobbyScreen() {
     const [isJoining, setIsJoining] = useState(false);
     const [showInvite, setShowInvite] = useState(false);
     const [socketConnected, setSocketConnected] = useState(socketManager.isConnected);
+    const socketCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const roomCode = (code || '').toUpperCase();
     const { players, isHost, status, gameType, error } = gameStore;
@@ -195,10 +196,12 @@ export default function LobbyScreen() {
 
     // ---- Socket connection status ----
     useEffect(() => {
-        const interval = setInterval(() => {
+        socketCheckRef.current = setInterval(() => {
             setSocketConnected(socketManager.isConnected);
         }, 3000);
-        return () => clearInterval(interval);
+        return () => {
+            if (socketCheckRef.current) clearInterval(socketCheckRef.current);
+        };
     }, []);
 
     // ---- Socket event listeners ----

@@ -16,7 +16,8 @@ import {
     ScrollView,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -1808,32 +1809,36 @@ export default function FeedScreen() {
                     </View>
                 </View>
                 <View style={styles.headerActions}>
-                    {/* Algorithm mixer shortcut */}
+                    {/* Quick actions menu (algorithm, games, tools) */}
                     <TouchableOpacity
                         style={styles.headerBtn}
-                        onPress={() => router.push('/settings/algorithm' as any)}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            if (Platform.OS === 'ios') {
+                                ActionSheetIOS.showActionSheetWithOptions(
+                                    {
+                                        options: ['Feed Settings', 'Games', 'Deen Tools', 'Cancel'],
+                                        cancelButtonIndex: 3,
+                                    },
+                                    (index) => {
+                                        if (index === 0) router.push('/settings/algorithm' as any);
+                                        else if (index === 1) router.push('/games' as any);
+                                        else if (index === 2) router.push('/tools' as any);
+                                    }
+                                );
+                            } else {
+                                Alert.alert('Quick Actions', '', [
+                                    { text: 'Feed Settings', onPress: () => router.push('/settings/algorithm' as any) },
+                                    { text: 'Games', onPress: () => router.push('/games' as any) },
+                                    { text: 'Deen Tools', onPress: () => router.push('/tools' as any) },
+                                    { text: 'Cancel', style: 'cancel' },
+                                ]);
+                            }
+                        }}
                         accessibilityRole="button"
-                        accessibilityLabel="Algorithm settings"
+                        accessibilityLabel="Quick actions menu"
                     >
-                        <Ionicons name="options-outline" size={22} color={colors.gold[400]} />
-                    </TouchableOpacity>
-                    {/* Games shortcut */}
-                    <TouchableOpacity
-                        style={styles.headerBtn}
-                        onPress={() => router.push('/games' as any)}
-                        accessibilityRole="button"
-                        accessibilityLabel="Games"
-                    >
-                        <Ionicons name="game-controller-outline" size={22} color={colors.gold[400]} />
-                    </TouchableOpacity>
-                    {/* Tools shortcut — accessible to all users */}
-                    <TouchableOpacity
-                        style={styles.headerBtn}
-                        onPress={() => router.push('/tools' as any)}
-                        accessibilityRole="button"
-                        accessibilityLabel="Tools"
-                    >
-                        <Ionicons name="compass-outline" size={22} color={colors.gold[400]} />
+                        <Ionicons name="ellipsis-horizontal" size={22} color={colors.text.secondary} />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.headerBtn}
@@ -2150,7 +2155,7 @@ const styles = StyleSheet.create({
     postCard: {
         backgroundColor: colors.surface.glass,
         borderRadius: 16,
-        marginBottom: spacing.md,
+        marginBottom: spacing.lg,
         borderWidth: 1,
         borderColor: colors.border.subtle,
         overflow: 'hidden',
@@ -2277,7 +2282,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginEnd: spacing.sm,
-        backgroundColor: colors.surface.elevated,
+        backgroundColor: colors.surface.glassActive,
         borderRadius: 12,
         paddingHorizontal: 2,
     },

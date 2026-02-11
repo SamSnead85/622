@@ -644,6 +644,14 @@ export default function CreateScreen() {
                         disabled={!canPublish}
                         activeOpacity={0.8}
                     >
+                        {canPublish && (
+                            <LinearGradient
+                                colors={[colors.gold[400], colors.gold[600]]}
+                                style={StyleSheet.absoluteFill}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            />
+                        )}
                         {isPublishing ? (
                             <ActivityIndicator size="small" color={colors.obsidian[900]} />
                         ) : (
@@ -869,13 +877,13 @@ const styles = StyleSheet.create({
         minWidth: 72,
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
     },
     publishBtnActive: {
-        backgroundColor: colors.gold[500],
         shadowColor: colors.gold[500],
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.35,
-        shadowRadius: 8,
+        shadowOpacity: 0.4,
+        shadowRadius: 10,
         elevation: 4,
     },
     publishBtnDisabled: {
@@ -1149,13 +1157,14 @@ const styles = StyleSheet.create({
     mediaStripItem: {
         width: 100,
         height: 100,
-        borderRadius: borderRadius.lg,
+        borderRadius: 12,
         overflow: 'hidden',
         position: 'relative',
     },
     mediaStripThumb: {
         width: '100%',
         height: '100%',
+        borderRadius: 12,
         backgroundColor: colors.obsidian[700],
     },
     mediaStripVideoTag: {

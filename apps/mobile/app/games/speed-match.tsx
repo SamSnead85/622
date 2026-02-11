@@ -60,10 +60,10 @@ type Phase = 'menu' | 'playing' | 'results';
 // ============================================
 
 const COLOR_OPTIONS = [
-    { name: 'Red', color: '#FF4444' },
-    { name: 'Blue', color: '#4488FF' },
-    { name: 'Green', color: '#44CC44' },
-    { name: 'Yellow', color: '#FFCC00' },
+    { name: 'Red', color: colors.coral[500] },
+    { name: 'Blue', color: colors.azure[500] },
+    { name: 'Green', color: colors.emerald[500] },
+    { name: 'Yellow', color: colors.amber[500] },
 ] as const;
 
 type ColorName = (typeof COLOR_OPTIONS)[number]['name'];
@@ -173,21 +173,21 @@ const MODE_CONFIG = {
         icon: '🎨',
         description: "Don't trust your eyes!",
         accentColor: colors.coral[500],
-        accentGradient: ['#FF6B6B', '#FF8888'] as [string, string],
+        accentGradient: [colors.coral[500], colors.coral[400]] as [string, string],
     },
     pattern: {
         title: 'Pattern Memory',
         icon: '🧠',
         description: 'How far can you go?',
         accentColor: colors.azure[500],
-        accentGradient: ['#3B82F6', '#60A5FA'] as [string, string],
+        accentGradient: [colors.azure[500], colors.azure[400]] as [string, string],
     },
     math: {
         title: 'Math Blitz',
         icon: '⚡',
         description: 'Think fast!',
         accentColor: colors.emerald[500],
-        accentGradient: ['#10B981', '#34D399'] as [string, string],
+        accentGradient: [colors.emerald[500], colors.emerald[400]] as [string, string],
     },
 } as const;
 
@@ -367,7 +367,7 @@ function ModeCard({
                                 colors={config.accentGradient}
                                 style={styles.playButtonGradient}
                             >
-                                <Ionicons name="play" size={20} color="#FFF" />
+                                <Ionicons name="play" size={20} color={colors.text.primary} />
                             </LinearGradient>
                         </View>
                     </View>
@@ -849,7 +849,7 @@ function ResultsView({
                         end={{ x: 1, y: 0 }}
                         style={styles.actionButton}
                     >
-                        <Ionicons name="reload" size={20} color="#FFF" />
+                        <Ionicons name="reload" size={20} color={colors.text.primary} />
                         <Text style={styles.actionButtonText}>Play Again</Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -1375,7 +1375,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize['2xl'],
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFF',
+        color: colors.text.primary,
     },
 
     // ---- Game Area ----
@@ -1417,7 +1417,7 @@ const styles = StyleSheet.create({
         borderRadius: 36,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
+        shadowColor: colors.obsidian[900],
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
@@ -1426,7 +1426,7 @@ const styles = StyleSheet.create({
     colorCircleLabel: {
         fontSize: typography.fontSize.xs,
         fontWeight: '700',
-        color: '#FFF',
+        color: colors.text.primary,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
@@ -1632,7 +1632,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFF',
+        color: colors.text.primary,
     },
     secondaryActionButton: {
         flexDirection: 'row',

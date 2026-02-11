@@ -38,7 +38,7 @@ import Animated, {
     withSequence,
     interpolateColor,
 } from 'react-native-reanimated';
-import { Button, colors, typography, spacing } from '@zerog/ui';
+import { colors, typography, spacing } from '@zerog/ui';
 import { BackButton } from '../../components';
 import { useAuthStore } from '../../stores';
 
@@ -209,6 +209,7 @@ export default function LoginScreen() {
     const [googleLoading, setGoogleLoading] = useState(false);
 
     const passwordRef = useRef<TextInput>(null);
+    const biometricTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // ---- Check biometric availability ----
     useEffect(() => {
@@ -277,8 +278,10 @@ export default function LoginScreen() {
     useEffect(() => {
         if (showBiometric) {
             // Small delay for screen to render
-            const timer = setTimeout(handleBiometricAuth, 600);
-            return () => clearTimeout(timer);
+            biometricTimerRef.current = setTimeout(handleBiometricAuth, 600);
+            return () => {
+                if (biometricTimerRef.current) clearTimeout(biometricTimerRef.current);
+            };
         }
     }, [showBiometric, handleBiometricAuth]);
 
@@ -430,6 +433,12 @@ export default function LoginScreen() {
                     {/* Back button */}
                     <BackButton style={{ alignSelf: 'flex-start', marginBottom: spacing.lg }} />
 
+                    {/* 0G Branding */}
+                    <Animated.View entering={FadeInDown.delay(30).duration(500).springify()} style={styles.brandingContainer}>
+                        <Text style={styles.brandingText}>0G</Text>
+                        <Text style={styles.brandingTagline}>Zero Gravity</Text>
+                    </Animated.View>
+
                     {/* Header */}
                     <Animated.View entering={FadeInDown.delay(50).duration(500).springify()}>
                         <View style={styles.header}>
@@ -555,18 +564,27 @@ export default function LoginScreen() {
                         </Animated.View>
 
                         <Animated.View entering={FadeInDown.delay(380).duration(400)}>
-                            <Button
-                                variant="primary"
-                                size="lg"
-                                fullWidth
-                                loading={isLoading}
+                            <TouchableOpacity
                                 onPress={handleLogin}
+                                disabled={isLoading}
+                                activeOpacity={0.85}
                                 style={styles.submitButton}
                                 accessibilityRole="button"
                                 accessibilityLabel="Sign in"
                             >
-                                Sign In
-                            </Button>
+                                <LinearGradient
+                                    colors={[colors.gold[400], colors.gold[600]]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.submitGradient}
+                                >
+                                    {isLoading ? (
+                                        <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                    ) : (
+                                        <Text style={styles.submitText}>Sign In</Text>
+                                    )}
+                                </LinearGradient>
+                            </TouchableOpacity>
                         </Animated.View>
                     </View>
 
@@ -715,6 +733,38 @@ const styles = StyleSheet.create({
     },
     forgotText: { fontSize: typography.fontSize.sm, color: colors.gold[500], fontWeight: '500' },
     submitButton: { marginTop: spacing.xs },
+    submitGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: spacing.md + 2,
+        borderRadius: 14,
+    },
+    submitText: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.obsidian[900],
+        fontFamily: 'Inter-Bold',
+    },
+    brandingContainer: {
+        alignItems: 'center',
+        marginBottom: spacing.xl,
+    },
+    brandingText: {
+        fontSize: 52,
+        fontWeight: '800',
+        color: colors.gold[500],
+        letterSpacing: -2,
+        fontFamily: 'Inter-Bold',
+    },
+    brandingTagline: {
+        fontSize: typography.fontSize.sm,
+        color: colors.gold[400],
+        marginTop: -4,
+        letterSpacing: 4,
+        textTransform: 'uppercase',
+        fontFamily: 'Inter-Medium',
+    },
 
     // ---- Sign Up Link ----
     signupContainer: {

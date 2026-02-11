@@ -120,7 +120,11 @@ function nestComments(flat: Comment[]): Comment[] {
 
     map.forEach((c) => {
         if (c.parentId && map.has(c.parentId)) {
-            map.get(c.parentId)!.replies!.push(c);
+            const parent = map.get(c.parentId);
+            if (parent) {
+                if (!parent.replies) parent.replies = [];
+                parent.replies.push(c);
+            }
         } else {
             roots.push(c);
         }

@@ -157,6 +157,8 @@ const NotificationItem = memo(({ item, index, onPress }: {
                     onPress(item);
                 }}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`${!item.isRead ? 'Unread: ' : ''}${item.message || item.content || 'New notification'}, ${timeAgo(item.createdAt)}`}
             >
                 <View style={[styles.notifIconContainer, !item.isRead && styles.notifIconUnread]}>
                     <Ionicons name={iconInfo.name} size={20} color={iconInfo.color} />

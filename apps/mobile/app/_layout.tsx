@@ -34,6 +34,16 @@ LogBox.ignoreLogs([
     'No native splash screen',
     'The \'NO_COLOR\' env',
     'Require cycle:',
+    'expo-image',
+    'new NativeEventEmitter',
+    'EventEmitter.removeListener',
+    'Each child in a list',
+    'VirtualizedLists should never be nested',
+    'AsyncStorage has been extracted',
+    'Cannot update a component',
+    'Sending `onAnimatedValueUpdate`',
+    'Failed to get',
+    'Bridgeless mode',
 ]);
 
 // ============================================

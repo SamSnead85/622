@@ -1322,7 +1322,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Bold',
     },
     tileTextRevealed: {
-        color: '#FFFFFF',
+        color: colors.text.primary,
     },
 
     // Keyboard
@@ -1349,7 +1349,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Bold',
     },
     keyTextActive: {
-        color: '#FFFFFF',
+        color: colors.text.primary,
     },
 
     // Modal

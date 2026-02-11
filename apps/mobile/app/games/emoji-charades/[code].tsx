@@ -563,6 +563,7 @@ export default function EmojiCharadesScreen() {
     const shuffledPhrases = useRef<Phrase[]>(shuffleArray(PHRASES));
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const handleRoundEndRef = useRef<(() => void) | null>(null);
 
     // ---- Animation Values ----
     const correctFlashOpacity = useSharedValue(0);
@@ -680,7 +681,7 @@ export default function EmojiCharadesScreen() {
                 if (newTime <= 0) {
                     clearTimer();
                     // Time's up — auto-advance to reveal
-                    handleRoundEnd();
+                    handleRoundEndRef.current?.();
                     return { ...prev, timeLeft: 0 };
                 }
                 // Haptic tick when urgent
@@ -913,6 +914,9 @@ export default function EmojiCharadesScreen() {
             }, 4000);
         }
     }, [isDescriber, roundState.correctGuesses, players.length, myUserId, gameStore, round, totalRounds, leaderboard, code, router, clearTimer, startNextRound]);
+
+    // Keep ref in sync so the interval always calls the latest version
+    handleRoundEndRef.current = handleRoundEnd;
 
     // ---- Handle "Done" from describer (early end) ----
     const handleDescriberDone = useCallback(() => {
@@ -1413,7 +1417,7 @@ const styles = StyleSheet.create({
         marginBottom: spacing.sm,
     },
     phraseCategoryBadge: {
-        backgroundColor: 'rgba(0,0,0,0.3)',
+        backgroundColor: colors.surface.overlayLight,
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xxs,
         borderRadius: 8,
@@ -1421,7 +1425,7 @@ const styles = StyleSheet.create({
     phraseCategoryText: {
         fontSize: typography.fontSize.xs,
         fontWeight: '700',
-        color: '#FAFAFA',
+        color: colors.text.primary,
         textTransform: 'uppercase',
         letterSpacing: 1,
     },
@@ -1442,14 +1446,14 @@ const styles = StyleSheet.create({
     phraseDifficultyText: {
         fontSize: typography.fontSize.xs,
         fontWeight: '700',
-        color: '#FAFAFA',
+        color: colors.text.primary,
         letterSpacing: 1,
     },
     phraseText: {
         fontSize: typography.fontSize['3xl'],
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FAFAFA',
+        color: colors.text.primary,
         textAlign: 'center',
         marginBottom: spacing.sm,
     },

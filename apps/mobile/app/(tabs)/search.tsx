@@ -190,7 +190,6 @@ function SearchSkeletonList() {
 
 export default function SearchScreen() {
     const router = useRouter();
-    const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
     const user = useAuthStore((s) => s.user);
@@ -624,7 +623,7 @@ export default function SearchScreen() {
                         entering={FadeInDown.duration(300).delay(150 + i * 60)}
                     >
                         <TouchableOpacity
-                            style={styles.trendingCard}
+                            style={[styles.trendingCard, { borderLeftWidth: 3, borderLeftColor: topic.color }]}
                             onPress={() => handleTrendingPress(topic)}
                             activeOpacity={0.8}
                         >
@@ -635,9 +634,12 @@ export default function SearchScreen() {
                                 <Text style={styles.trendingName} numberOfLines={1}>
                                     {topic.name}
                                 </Text>
-                                <Text style={styles.trendingCount}>
-                                    {topic.postsCount} posts
-                                </Text>
+                                <View style={styles.trendingCountRow}>
+                                    <Ionicons name="trending-up" size={11} color={topic.color} />
+                                    <Text style={[styles.trendingCount, { color: topic.color }]}>
+                                        {topic.postsCount} posts
+                                    </Text>
+                                </View>
                             </View>
                         </TouchableOpacity>
                     </Animated.View>
@@ -758,6 +760,12 @@ export default function SearchScreen() {
             showsVerticalScrollIndicator={false}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.gold[500]} />}
         >
+            {/* Discover Header */}
+            <Animated.View entering={FadeInDown.duration(350)} style={styles.discoverHeader}>
+                <Text style={styles.discoverTitle}>Discover</Text>
+                <Text style={styles.discoverSubtitle}>Find people, communities, and content</Text>
+            </Animated.View>
+
             {renderRecentSearches()}
             {renderTrending()}
             {renderDiscoverGrid()}
@@ -821,7 +829,7 @@ export default function SearchScreen() {
                         <TextInput
                             ref={inputRef}
                             style={styles.searchInput}
-                            placeholder="Search people, posts, communities..."
+                            placeholder="Search people, communities, topics..."
                             placeholderTextColor={colors.text.muted}
                             value={query}
                             onChangeText={handleSearch}
@@ -951,7 +959,7 @@ const styles = StyleSheet.create({
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 16,
+        borderRadius: 24,
         paddingHorizontal: spacing.md,
         borderWidth: 1,
         borderColor: colors.border.subtle,
@@ -1117,10 +1125,15 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
         fontFamily: 'Inter-SemiBold',
     },
+    trendingCountRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+        marginTop: 2,
+    },
     trendingCount: {
         fontSize: typography.fontSize.xs,
         color: colors.text.muted,
-        marginTop: 1,
     },
 
     // Discover / Category Grid
@@ -1318,6 +1331,26 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.sm,
         color: colors.text.muted,
         textAlign: 'center',
+        lineHeight: 20,
+    },
+
+    // Discover Header
+    discoverHeader: {
+        paddingHorizontal: spacing.xl,
+        paddingTop: spacing.lg,
+        paddingBottom: spacing.xs,
+    },
+    discoverTitle: {
+        fontSize: 28,
+        fontWeight: '700',
+        color: colors.text.primary,
+        letterSpacing: -0.6,
+        fontFamily: 'Inter-Bold',
+    },
+    discoverSubtitle: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.muted,
+        marginTop: spacing.xs,
         lineHeight: 20,
     },
 });

@@ -3,7 +3,7 @@
 // Import from WhatsApp, Instagram, TikTok
 // ============================================
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -99,6 +99,14 @@ export default function ImportScreen() {
     const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
     const [importResult, setImportResult] = useState<ImportResult | null>(null);
     const [progress, setProgress] = useState(0);
+    const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Cleanup poll timer on unmount
+    useEffect(() => {
+        return () => {
+            if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+        };
+    }, []);
 
     // ============================================
     // File Selection & Upload
@@ -186,14 +194,14 @@ export default function ImportScreen() {
                 setProgress(Math.min(95, (attempts / maxAttempts) * 100));
 
                 if (attempts < maxAttempts) {
-                    setTimeout(poll, 5000); // Check every 5 seconds
+                    pollTimerRef.current = setTimeout(poll, 5000);
                 } else {
                     setImportStatus('failed');
                 }
             } catch {
                 attempts++;
                 if (attempts < maxAttempts) {
-                    setTimeout(poll, 5000);
+                    pollTimerRef.current = setTimeout(poll, 5000);
                 } else {
                     setImportStatus('failed');
                 }

@@ -20,7 +20,8 @@ import {
     Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -695,7 +696,7 @@ const featuredStyles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: 'rgba(0,0,0,0.2)',
+        backgroundColor: colors.surface.overlayLight,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -712,7 +713,7 @@ const featuredStyles = StyleSheet.create({
         flexWrap: 'wrap',
     },
     tag: {
-        backgroundColor: 'rgba(0,0,0,0.15)',
+        backgroundColor: colors.surface.overlayLight,
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 6,

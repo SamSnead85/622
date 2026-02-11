@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import {
     View,
     Text,
@@ -140,8 +140,13 @@ export default function UserProfileScreen() {
         );
     }
 
+    useEffect(() => {
+        if (profile?.isOwnProfile) {
+            router.replace('/(tabs)/profile');
+        }
+    }, [profile?.isOwnProfile]);
+
     if (profile.isOwnProfile) {
-        router.replace('/(tabs)/profile');
         return null;
     }
 

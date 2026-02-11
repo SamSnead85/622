@@ -125,6 +125,7 @@ export default function JoinGroupScreen() {
     const [communityInfo, setCommunityInfo] = useState<CommunityInfo | null>(null);
     const [error, setError] = useState<string | null>(null);
     const inputRef = useRef<TextInput>(null);
+    const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Resolve the community ID from the code param
     const communityId = UUID_REGEX.test(code || '') ? code! : null;
@@ -211,10 +212,12 @@ export default function JoinGroupScreen() {
     // ---- Focus input for guests after animation ----
     useEffect(() => {
         if (!isAuthenticated && !isFetchingInfo && communityInfo) {
-            const timer = setTimeout(() => {
+            focusTimerRef.current = setTimeout(() => {
                 inputRef.current?.focus();
             }, 800);
-            return () => clearTimeout(timer);
+            return () => {
+                if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
+            };
         }
     }, [isAuthenticated, isFetchingInfo, communityInfo]);
 

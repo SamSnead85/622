@@ -278,6 +278,7 @@ export default function TriviaScreen() {
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const previousScore = useRef(0);
+    const hasAnsweredRef = useRef(false);
 
     // Derived data
     const { gameData, players, round, totalRounds } = gameStore;
@@ -295,6 +296,9 @@ export default function TriviaScreen() {
     // Timer Logic
     // ============================================
 
+    // Keep hasAnsweredRef in sync so the interval reads fresh state without restarting
+    useEffect(() => { hasAnsweredRef.current = hasAnswered; }, [hasAnswered]);
+
     useEffect(() => {
         if (showResult || !currentQuestion) return;
 
@@ -303,7 +307,7 @@ export default function TriviaScreen() {
                 if (prev <= 1) {
                     if (timerRef.current) clearInterval(timerRef.current);
                     // Auto-submit no answer when timer runs out
-                    if (!hasAnswered) {
+                    if (!hasAnsweredRef.current) {
                         setHasAnswered(true);
                         gameStore.sendAction('answer', { answer: -1 });
                     }
@@ -317,7 +321,8 @@ export default function TriviaScreen() {
             if (timerRef.current) clearInterval(timerRef.current);
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
-    }, [currentQuestion, showResult, hasAnswered, gameStore]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentQuestion, showResult]);
 
     // ============================================
     // Score Popup Detection

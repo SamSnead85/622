@@ -205,7 +205,7 @@ export default function WelcomeScreen() {
         >
             {/* Skip button */}
             <Animated.View entering={FadeInUp.delay(800).duration(400)} style={styles.skipContainer}>
-                <Pressable onPress={() => router.push('/(auth)/login')} style={styles.skipButton}>
+                <Pressable onPress={() => router.push('/(auth)/login')} style={styles.skipButton} accessibilityLabel="Skip onboarding" accessibilityRole="button">
                     <Text style={styles.skipText}>Skip</Text>
                 </Pressable>
             </Animated.View>

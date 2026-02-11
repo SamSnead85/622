@@ -48,6 +48,8 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - CARD_GAP) / 2;
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
+const RECENTLY_PLAYED_KEY = '@recently-played-games';
+
 // ============================================
 // Game Definitions
 // ============================================
@@ -92,6 +94,89 @@ const games: GameDef[] = [
     { type: 'daily', name: 'Daily Challenge', icon: 'calendar' as const, desc: '7 trivia questions, new every day', players: '1', color: colors.gold[500], isNew: false, category: 'solo', isSolo: true },
     { type: 'practice', name: 'Solo Practice', icon: 'school' as const, desc: 'Unlimited trivia by topic', players: '1', color: colors.azure[500], isNew: false, category: 'solo', isSolo: true },
 ];
+
+// ============================================
+// Recently Played Helper
+// ============================================
+
+async function getRecentlyPlayed(): Promise<string[]> {
+    try {
+        const data = await AsyncStorage.getItem(RECENTLY_PLAYED_KEY);
+        if (data) return JSON.parse(data);
+    } catch { /* non-critical */ }
+    return [];
+}
+
+async function trackRecentlyPlayed(gameType: string): Promise<void> {
+    try {
+        const existing = await getRecentlyPlayed();
+        const updated = [gameType, ...existing.filter(t => t !== gameType)].slice(0, 5);
+        await AsyncStorage.setItem(RECENTLY_PLAYED_KEY, JSON.stringify(updated));
+    } catch { /* non-critical */ }
+}
+
+// ============================================
+// Recently Played Section
+// ============================================
+
+function RecentlyPlayedSection({ onPlay }: { onPlay: (type: string) => void }) {
+    const [recentTypes, setRecentTypes] = useState<string[]>([]);
+
+    useEffect(() => {
+        getRecentlyPlayed().then(setRecentTypes).catch(() => {});
+    }, []);
+
+    const recentGames = useMemo(
+        () => recentTypes.map(t => games.find(g => g.type === t)).filter(Boolean) as GameDef[],
+        [recentTypes],
+    );
+
+    if (recentGames.length === 0) return null;
+
+    return (
+        <Animated.View entering={FadeInDown.delay(90).duration(500)} style={styles.recentSection}>
+            <View style={styles.recentHeader}>
+                <Ionicons name="time-outline" size={16} color={colors.gold[400]} />
+                <Text style={styles.recentTitle}>Recently Played</Text>
+            </View>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.recentScroll}
+            >
+                {recentGames.map((game, index) => (
+                    <Animated.View
+                        key={game.type}
+                        entering={FadeInDown.delay(100 + index * 60).duration(400).springify()}
+                    >
+                        <TouchableOpacity
+                            style={styles.recentCard}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                onPlay(game.type);
+                            }}
+                            activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Play ${game.name} again`}
+                        >
+                            <LinearGradient
+                                colors={[game.color + '20', game.color + '08']}
+                                style={styles.recentCardBg}
+                            />
+                            <View style={[styles.recentIconBg, { backgroundColor: game.color + '20' }]}>
+                                <Ionicons name={game.icon} size={20} color={game.color} />
+                            </View>
+                            <Text style={styles.recentCardName} numberOfLines={1}>{game.name}</Text>
+                            <View style={styles.recentPlayBadge}>
+                                <Ionicons name="play" size={10} color={colors.gold[500]} />
+                            </View>
+                        </TouchableOpacity>
+                    </Animated.View>
+                ))}
+            </ScrollView>
+        </Animated.View>
+    );
+}
 
 // ============================================
 // Animated NEW Badge
@@ -517,6 +602,9 @@ export default function GamesHubScreen() {
 
     // ---- Create & Play a Game ----
     const handlePlay = useCallback(async (type: string) => {
+        // Track recently played
+        trackRecentlyPlayed(type);
+
         // Solo games navigate directly
         if (type === 'daily') { router.push('/games/daily'); return; }
         if (type === 'practice') { router.push('/games/practice'); return; }
@@ -581,6 +669,9 @@ export default function GamesHubScreen() {
             >
                 {/* ---- Hero Section ---- */}
                 <HeroSection />
+
+                {/* ---- Recently Played ---- */}
+                <RecentlyPlayedSection onPlay={handlePlay} />
 
                 {/* ---- Quick Play ---- */}
                 <QuickPlayButton onPress={handleQuickPlay} />
@@ -787,6 +878,68 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.sm,
+    },
+
+    // ---- Recently Played ----
+    recentSection: {
+        marginBottom: spacing.lg,
+    },
+    recentHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.md,
+    },
+    recentTitle: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.secondary,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
+    recentScroll: {
+        gap: spacing.sm,
+    },
+    recentCard: {
+        width: 100,
+        backgroundColor: colors.surface.glass,
+        borderRadius: 14,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.sm,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    recentCardBg: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 14,
+    },
+    recentIconBg: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.xs,
+    },
+    recentCardName: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.text.primary,
+        textAlign: 'center',
+    },
+    recentPlayBadge: {
+        position: 'absolute',
+        top: spacing.xs,
+        right: spacing.xs,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: colors.gold[500] + '20',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     // ---- Hero Section ----

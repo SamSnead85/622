@@ -11,7 +11,8 @@ import {
     RefreshControl,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +23,7 @@ import Animated, {
     useSharedValue,
     useAnimatedStyle,
     withTiming,
+    withRepeat,
     Easing,
 } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
@@ -168,6 +170,21 @@ export default function ProfileScreen() {
         width: TAB_WIDTH,
     }));
 
+    // Verified name shimmer
+    const shimmerX = useSharedValue(-1);
+    useEffect(() => {
+        if (user?.isVerified) {
+            shimmerX.value = withRepeat(
+                withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+                -1,
+                true
+            );
+        }
+    }, [user?.isVerified]);
+    const shimmerStyle = useAnimatedStyle(() => ({
+        opacity: 0.15 + 0.15 * shimmerX.value,
+    }));
+
     const switchTab = useCallback((tab: ProfileTab) => {
         const idx = TABS.findIndex((t) => t.key === tab);
         tabIndicatorX.value = withTiming(idx * TAB_WIDTH, {
@@ -180,8 +197,9 @@ export default function ProfileScreen() {
 
     // ── Data Loading ─────────────────────────────────────
     const loadUserPosts = async () => {
+        if (!user?.id) { setIsLoading(false); return; }
         try {
-            const data = await apiFetch<any>(`${API.userPosts(user!.id)}?limit=50`);
+            const data = await apiFetch<any>(`${API.userPosts(user.id)}?limit=50`);
             const rawPosts = data.posts || data.data || [];
             setUserPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
         } catch (e: any) {
@@ -277,10 +295,10 @@ export default function ProfileScreen() {
                         </View>
                     </LinearGradient>
                 )}
-                {/* Bottom fade into background */}
+                {/* Bottom fade into background — smooth multi-stop */}
                 <LinearGradient
-                    colors={['transparent', colors.surface.overlayMedium, colors.obsidian[900]]}
-                    locations={[0, 0.6, 1]}
+                    colors={['transparent', colors.surface.overlayLight, colors.surface.overlayMedium, colors.obsidian[900]]}
+                    locations={[0, 0.35, 0.7, 1]}
                     style={styles.coverFade}
                 />
             </Animated.View>
@@ -318,9 +336,21 @@ export default function ProfileScreen() {
                     style={styles.userInfo}
                 >
                     <View style={styles.nameRow}>
-                        <Text style={styles.displayName} accessibilityRole="header">
-                            {user.displayName}
-                        </Text>
+                        <View style={{ position: 'relative' }}>
+                            <Text style={styles.displayName} accessibilityRole="header">
+                                {user.displayName}
+                            </Text>
+                            {user.isVerified && (
+                                <Animated.View
+                                    style={[
+                                        StyleSheet.absoluteFill,
+                                        { backgroundColor: colors.gold[400], borderRadius: 4 },
+                                        shimmerStyle,
+                                    ]}
+                                    pointerEvents="none"
+                                />
+                            )}
+                        </View>
                         {user.isVerified && (
                             <Ionicons
                                 name="checkmark-circle"
@@ -658,7 +688,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        height: COVER_HEIGHT * 0.6,
+        height: COVER_HEIGHT * 0.75,
     },
 
     // ── Profile Content ──────────────────────────────────
@@ -818,18 +848,19 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
     },
     statValue: {
-        fontSize: typography.fontSize['2xl'],
-        fontWeight: '700',
-        color: colors.text.primary,
+        fontSize: typography.fontSize['3xl'],
+        fontWeight: '800',
+        color: colors.gold[400],
         fontFamily: 'Inter-Bold',
+        letterSpacing: typography.letterSpacing.tight,
     },
     statLabel: {
         fontSize: typography.fontSize.xs,
         color: colors.text.muted,
-        marginTop: 2,
-        fontWeight: '500',
+        marginTop: 4,
+        fontWeight: '600',
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        letterSpacing: 1,
     },
     statDivider: {
         width: 1,

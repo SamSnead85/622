@@ -64,6 +64,7 @@ export default function MomentViewerScreen() {
     const [progress, setProgress] = useState(0);
     const [paused, setPaused] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const pausedRef = useRef(false);
 
     useEffect(() => {
         loadMoments();
@@ -86,8 +87,11 @@ export default function MomentViewerScreen() {
         apiFetch(API.momentView(momentId), { method: 'POST' }).catch(() => {});
     }, []);
 
+    // Keep pausedRef in sync so the interval reads fresh state without restarting
+    useEffect(() => { pausedRef.current = paused; }, [paused]);
+
     useEffect(() => {
-        if (moments.length === 0) return;
+        if (moments.length === 0 || activeIndex < 0 || activeIndex >= moments.length) return;
 
         const moment = moments[activeIndex];
         if (moment) markViewed(moment.id);
@@ -97,7 +101,7 @@ export default function MomentViewerScreen() {
 
         const start = Date.now();
         timerRef.current = setInterval(() => {
-            if (paused) return;
+            if (pausedRef.current) return;
             const elapsed = Date.now() - start;
             const pct = Math.min(1, elapsed / MOMENT_DURATION);
             setProgress(pct);
@@ -108,7 +112,8 @@ export default function MomentViewerScreen() {
         }, 50);
 
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [activeIndex, moments, paused]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeIndex, moments]);
 
     const goNext = () => {
         if (activeIndex < moments.length - 1) {

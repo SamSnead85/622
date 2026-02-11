@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
         borderBottomColor: `${colors.border.subtle}40`,
     },
     unreadItem: {
-        backgroundColor: `${colors.surface.glass}`,
+        backgroundColor: `${colors.gold[500]}0D`,
     },
 
     // Avatar + online dot
