@@ -326,14 +326,39 @@ async function startServer() {
     for (const dir of ['logs', 'uploads']) {
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     }
-    // Initialize notification queue (BullMQ)
-    initNotificationQueue();
 
-    // Initialize scheduled post worker (async — must await before accepting requests)
-    await initScheduleWorker();
+    // START LISTENING FIRST — Railway health check must respond before background
+    // services finish initializing, otherwise the deployment fails.
+    const PORT = parseInt(process.env.PORT || '5180');
+    const HOST = '0.0.0.0';
 
-    // Initialize growth partner qualification worker (daily job)
-    await initGrowthQualificationWorker();
+    await new Promise<void>((resolve) => {
+        httpServer.listen(PORT, HOST, () => {
+            logger.info(`🚀 0G Server running on http://${HOST}:${PORT}`);
+            logger.info(`📡 WebSocket server ready for real-time connections`);
+            logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+            resolve();
+        });
+    });
+
+    // Now initialize background services (non-blocking — server is already accepting requests)
+    try {
+        initNotificationQueue();
+    } catch (err) {
+        logger.warn('Notification queue init failed (non-fatal):', err);
+    }
+
+    try {
+        await initScheduleWorker();
+    } catch (err) {
+        logger.warn('Schedule worker init failed (non-fatal):', err);
+    }
+
+    try {
+        await initGrowthQualificationWorker();
+    } catch (err) {
+        logger.warn('Growth qualification worker init failed (non-fatal):', err);
+    }
 
     // Start session cleanup job (runs every 6 hours)
     const { prisma } = await import('./db/client.js');
@@ -350,15 +375,7 @@ async function startServer() {
         }
     }, 6 * 60 * 60 * 1000); // Every 6 hours
 
-    // Start server
-    const PORT = parseInt(process.env.PORT || '5180');
-    const HOST = '0.0.0.0';
-
-    httpServer.listen(PORT, HOST, () => {
-        logger.info(`🚀 0G Server running on http://${HOST}:${PORT}`);
-        logger.info(`📡 WebSocket server ready for real-time connections`);
-        logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
+    logger.info('✅ All background services initialized');
 }
 
 startServer().catch((err) => {

@@ -6,6 +6,8 @@
     },
     "deploy": {
         "healthcheckPath": "/health",
-        "restartPolicyType": "ON_FAILURE"
+        "healthcheckTimeout": 300,
+        "restartPolicyType": "ON_FAILURE",
+        "numReplicas": 1
     }
 }
