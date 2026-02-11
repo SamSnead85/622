@@ -148,13 +148,19 @@ export function usePushNotifications(): PushNotificationState {
                     const postId = data.postId as string | undefined;
                     const username = data.actorUsername as string | undefined;
                     const communityId = data.communityId as string | undefined;
+                    const gameCode = data.gameCode as string | undefined;
 
-                    if (type === 'LIKE' || type === 'COMMENT' || type === 'MENTION') {
+                    if (type === 'GAME_INVITE') {
+                        if (gameCode) router.push(`/games/lobby/${gameCode}` as any);
+                    } else if (type === 'LIKE' || type === 'COMMENT' || type === 'MENTION') {
                         if (postId) router.push(`/post/${postId}`);
                     } else if (type === 'FOLLOW') {
                         if (username) router.push(`/profile/${username}`);
                     } else if (type === 'COMMUNITY_INVITE' || type === 'COMMUNITY_POST') {
                         if (communityId) router.push(`/community/${communityId}`);
+                    } else if (gameCode) {
+                        // Fallback: any notification with a gameCode navigates to the lobby
+                        router.push(`/games/lobby/${gameCode}` as any);
                     } else if (postId) {
                         router.push(`/post/${postId}`);
                     }

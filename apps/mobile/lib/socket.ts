@@ -242,6 +242,7 @@ class SocketManager {
             'game:round-end',
             'game:ended',
             'game:error',
+            'game:invite',
         ];
 
         forwardEvents.forEach((event) => {
@@ -404,6 +405,10 @@ class SocketManager {
 
     leaveGame(code: string): void {
         this.socket?.emit('game:leave', { code });
+    }
+
+    sendGameInvite(code: string, targetUserId: string, gameType?: string): void {
+        this.socket?.emit('game:invite', { code, targetUserId, gameType });
     }
 
     // ============================================

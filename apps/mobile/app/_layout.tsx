@@ -154,8 +154,27 @@ function RootLayout() {
                 );
             });
 
+            // Listen for game invites from other users
+            const unsubGameInvite = socketManager.on('game:invite', (data: { code: string; gameType: string; hostName: string }) => {
+                Alert.alert(
+                    'Game Invite',
+                    `${data.hostName || 'Someone'} invited you to play ${data.gameType || 'a game'}!`,
+                    [
+                        { text: 'Not Now', style: 'cancel' },
+                        {
+                            text: 'Join',
+                            onPress: () => {
+                                router.push(`/games/lobby/${data.code}` as any);
+                            },
+                        },
+                    ],
+                    { cancelable: true }
+                );
+            });
+
             return () => {
                 unsubCall();
+                unsubGameInvite();
                 socketManager.disconnect();
             };
         }

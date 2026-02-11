@@ -87,6 +87,27 @@ export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedS
         }
     });
 
+    // Invite a user to a game (sends real-time notification)
+    socket.on('game:invite', (data: { code: string; targetUserId: string; gameType?: string }, callback?: (result: any) => void) => {
+        try {
+            const game = getGame(data.code);
+            if (!game) {
+                if (typeof callback === 'function') callback({ success: false, error: 'Game not found' });
+                return;
+            }
+            // Send invite to the target user's personal room
+            io.to(`user:${data.targetUserId}`).emit('game:invite', {
+                code: data.code,
+                gameType: game.type || data.gameType || 'game',
+                hostName: username || 'Someone',
+            });
+            if (typeof callback === 'function') callback({ success: true });
+        } catch (error: any) {
+            logger.error('game:invite error:', error);
+            if (typeof callback === 'function') callback({ success: false, error: error.message });
+        }
+    });
+
     // Join an existing game
     socket.on('game:join', (data: { code: string; playerName?: string }, callback?: (result: any) => void) => {
         try {
