@@ -43,6 +43,7 @@ import { apiFetch, API } from '../../lib/api';
 import { RetryView } from '../../components/RetryView';
 import { showError } from '../../stores/toastStore';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
+import { useDebounce } from '../../hooks/useDebounce';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -1051,7 +1052,7 @@ export default function CommunitiesScreen() {
 
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedQuery, setDebouncedQuery] = useState('');
+    const debouncedQuery = useDebounce(searchQuery, 300);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showTemplateModal, setShowTemplateModal] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState<CommunityTemplate | null>(null);
@@ -1060,7 +1061,6 @@ export default function CommunitiesScreen() {
     const [isLoadingDiscover, setIsLoadingDiscover] = useState(false);
     const [joinedFeatured, setJoinedFeatured] = useState<Set<string>>(new Set());
 
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const searchInputRef = useRef<TextInput>(null);
     const searchBarScale = useSharedValue(1);
 
@@ -1087,7 +1087,7 @@ export default function CommunitiesScreen() {
     };
 
     const handleRefresh = async () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setIsRefreshing(true);
         await Promise.all([fetchCommunities(), fetchDiscover()]);
         setIsRefreshing(false);
@@ -1155,27 +1155,16 @@ export default function CommunitiesScreen() {
     }, []);
 
     // ============================================
-    // Search with debounce (300ms)
+    // Search with useDebounce hook (300ms)
     // ============================================
 
     const handleSearchChange = useCallback((text: string) => {
         setSearchQuery(text);
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => {
-            setDebouncedQuery(text.trim());
-        }, 300);
-    }, []);
-
-    useEffect(() => {
-        return () => {
-            if (debounceRef.current) clearTimeout(debounceRef.current);
-        };
     }, []);
 
     const clearSearch = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setSearchQuery('');
-        setDebouncedQuery('');
         searchInputRef.current?.blur();
     }, []);
 
@@ -1218,8 +1207,8 @@ export default function CommunitiesScreen() {
         });
 
         // Apply search
-        if (debouncedQuery) {
-            const q = debouncedQuery.toLowerCase();
+        if (debouncedQuery.trim()) {
+            const q = debouncedQuery.trim().toLowerCase();
             pool = pool.filter(
                 (c) =>
                     c.name.toLowerCase().includes(q) ||
@@ -1251,8 +1240,8 @@ export default function CommunitiesScreen() {
 
     // Also filter "Your Communities" by search
     const filteredYourCommunities = useMemo(() => {
-        if (!debouncedQuery) return yourCommunities;
-        const q = debouncedQuery.toLowerCase();
+        if (!debouncedQuery.trim()) return yourCommunities;
+        const q = debouncedQuery.trim().toLowerCase();
         return yourCommunities.filter((c) =>
             c.name.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q)
         );
@@ -1373,6 +1362,20 @@ export default function CommunitiesScreen() {
                     message="Couldn't load communities. Tap to try again."
                     onRetry={() => { fetchCommunities(); fetchDiscover(); }}
                 />
+            );
+        }
+        // Show "No groups found" when search is active
+        if (debouncedQuery.trim() && filteredYourCommunities.length === 0) {
+            return (
+                <Animated.View entering={FadeInDown.duration(300)} style={styles.noResultsContainer}>
+                    <View style={styles.noResultsIconWrap}>
+                        <Ionicons name="search-outline" size={32} color={colors.text.muted} />
+                    </View>
+                    <Text style={styles.noResultsTitle}>No groups found</Text>
+                    <Text style={styles.noResultsSubtitle}>
+                        Try a different search term or create a new community
+                    </Text>
+                </Animated.View>
             );
         }
         return <EmptyDiscovery />;
@@ -1912,6 +1915,36 @@ const styles = StyleSheet.create({
     emptyDiscoverySubtitle: {
         fontSize: typography.fontSize.base,
         color: colors.text.secondary,
+        textAlign: 'center',
+        lineHeight: 22,
+    },
+
+    // No results
+    noResultsContainer: {
+        alignItems: 'center',
+        paddingTop: 40,
+        paddingHorizontal: spacing.xl,
+    },
+    noResultsIconWrap: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: colors.surface.glass,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    noResultsTitle: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.text.primary,
+        marginBottom: spacing.xs,
+    },
+    noResultsSubtitle: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.muted,
         textAlign: 'center',
         lineHeight: 22,
     },

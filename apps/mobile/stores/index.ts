@@ -432,6 +432,9 @@ export function mapApiPost(raw: any): Post {
     };
 }
 
+// Race condition guard: only the latest fetchFeed request applies its results
+let _feedRequestId = 0;
+
 export const useFeedStore = create<FeedState>()(
     persist(
         (set, get) => ({
@@ -449,6 +452,9 @@ export const useFeedStore = create<FeedState>()(
         if (state.isLoading || state.isRefreshing) {
             if (!refresh) return; // Allow refresh to override, but not load-more
         }
+
+        // Increment and capture request ID to detect stale responses
+        const requestId = ++_feedRequestId;
 
         if (refresh) {
             if (silent) {
@@ -473,6 +479,9 @@ export const useFeedStore = create<FeedState>()(
             const data = await apiFetch<any>(
                 `${API.feed}?type=${feedType}&feedView=${feedView}&limit=20${cursorParam}`
             );
+
+            // Discard stale response — a newer request has been started
+            if (requestId !== _feedRequestId) return;
 
             const rawPosts = data.posts || data.data || [];
             const posts = rawPosts.map(mapApiPost);
@@ -503,6 +512,8 @@ export const useFeedStore = create<FeedState>()(
                 });
             }
         } catch (error: any) {
+            // Discard stale error — a newer request has been started
+            if (requestId !== _feedRequestId) return;
             // SWR: on error, keep existing cached posts visible
             set({
                 error: error.message || 'Failed to load feed',
@@ -732,31 +743,39 @@ export const useCommunitiesStore = create<CommunitiesState>()(
     },
 
     joinCommunity: async (communityId) => {
+        // Optimistic update — no refetch needed
+        const prev = get().communities;
+        set((state) => ({
+            communities: state.communities.map((c) =>
+                c.id === communityId
+                    ? { ...c, role: 'member' as const, membersCount: c.membersCount + 1 }
+                    : c
+            ),
+        }));
         try {
             await apiFetch(API.joinCommunity(communityId), { method: 'POST' });
-            set((state) => ({
-                communities: state.communities.map((c) =>
-                    c.id === communityId ? { ...c, role: 'member' as const } : c
-                ),
-            }));
-            // Refresh communities list to sync with server
-            get().fetchCommunities();
         } catch (error: any) {
+            // Revert on failure
+            set({ communities: prev });
             console.error('Failed to join community:', error);
         }
     },
 
     leaveCommunity: async (communityId) => {
+        // Optimistic update — no refetch needed
+        const prev = get().communities;
+        set((state) => ({
+            communities: state.communities.map((c) =>
+                c.id === communityId
+                    ? { ...c, role: null, membersCount: Math.max(0, c.membersCount - 1) }
+                    : c
+            ),
+        }));
         try {
             await apiFetch(API.leaveCommunity(communityId), { method: 'POST' });
-            set((state) => ({
-                communities: state.communities.map((c) =>
-                    c.id === communityId ? { ...c, role: null } : c
-                ),
-            }));
-            // Refresh communities list to sync with server
-            get().fetchCommunities();
         } catch (error: any) {
+            // Revert on failure
+            set({ communities: prev });
             console.error('Failed to leave community:', error);
         }
     },
@@ -816,7 +835,9 @@ interface NotificationsState {
     reset: () => void;
 }
 
-export const useNotificationsStore = create<NotificationsState>((set, get) => ({
+export const useNotificationsStore = create<NotificationsState>()(
+    persist(
+        (set, get) => ({
     notifications: [],
     unreadCount: 0,
     isLoading: false,
@@ -884,7 +905,17 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     },
 
     reset: () => set({ notifications: [], unreadCount: 0, isLoading: false, isFetching: false, error: null }),
-}));
+}),
+        {
+            name: 'notifications-storage',
+            storage: zustandStorage,
+            partialize: (state) => ({
+                notifications: state.notifications.slice(0, 50), // Persist only last 50
+                unreadCount: state.unreadCount,
+            }),
+        }
+    )
+);
 
 // ============================================
 // Moments Store — caches story feed

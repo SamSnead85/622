@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +7,26 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScreenHeader, GlassCard } from '../../../components';
+
+// ─── Storage keys ─────────────────────────────────────────────────
+const BOOKMARKS_KEY = '@quran-bookmarks';
+const PROGRESS_KEY = '@quran-progress';
+const LAST_READ_KEY = '@quran-last-read';
+
+interface QuranBookmark {
+    surahNumber: number;
+    ayahNumber: number;
+    timestamp: number;
+    note?: string;
+}
+
+interface LastRead {
+    surahNumber: number;
+    ayahNumber: number;
+    timestamp: number;
+}
 
 // ─── Juz → Surah mapping (start surah of each juz) ───────────────
 const JUZ_STARTS: Record<number, number> = {
@@ -178,6 +197,28 @@ export default function QuranSurahList() {
     const [selectedJuz, setSelectedJuz] = useState(0);
     const [searchFocused, setSearchFocused] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [bookmarks, setBookmarks] = useState<QuranBookmark[]>([]);
+    const [readSurahs, setReadSurahs] = useState<Set<number>>(new Set());
+    const [lastRead, setLastRead] = useState<LastRead | null>(null);
+    const [showBookmarks, setShowBookmarks] = useState(false);
+
+    // ─── Load bookmarks, progress, last read ─────────────────────
+    useEffect(() => {
+        (async () => {
+            try {
+                const [bm, prog, lr] = await Promise.all([
+                    AsyncStorage.getItem(BOOKMARKS_KEY),
+                    AsyncStorage.getItem(PROGRESS_KEY),
+                    AsyncStorage.getItem(LAST_READ_KEY),
+                ]);
+                if (bm) setBookmarks(JSON.parse(bm));
+                if (prog) setReadSurahs(new Set(JSON.parse(prog)));
+                if (lr) setLastRead(JSON.parse(lr));
+            } catch { /* ignore read failure */ }
+        })();
+    }, []);
+
+    const readCount = readSurahs.size;
 
     const filteredSurahs = useMemo(() => {
         let list = SURAHS;
@@ -203,8 +244,22 @@ export default function QuranSurahList() {
     }, [searchQuery, selectedJuz]);
 
     const handleSurahPress = useCallback(
-        (surahNumber: number) => {
+        async (surahNumber: number) => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+            // Track reading progress
+            setReadSurahs((prev) => {
+                const next = new Set(prev);
+                next.add(surahNumber);
+                AsyncStorage.setItem(PROGRESS_KEY, JSON.stringify([...next])).catch(() => {});
+                return next;
+            });
+
+            // Update last read
+            const lr: LastRead = { surahNumber, ayahNumber: 1, timestamp: Date.now() };
+            setLastRead(lr);
+            AsyncStorage.setItem(LAST_READ_KEY, JSON.stringify(lr)).catch(() => {});
+
             router.push(`/tools/quran/${surahNumber}` as any);
         },
         [router]
@@ -235,7 +290,14 @@ export default function QuranSurahList() {
                     accessibilityLabel={`Surah ${item.number}, ${item.name}, ${item.englishName}, ${item.versesCount} verses, ${item.revelationType}`}
                 >
                     {/* Number diamond */}
-                    <SurahDiamond number={item.number} />
+                    <View>
+                        <SurahDiamond number={item.number} />
+                        {readSurahs.has(item.number) && (
+                            <View style={styles.readCheck}>
+                                <Ionicons name="checkmark-circle" size={14} color={colors.emerald[400]} />
+                            </View>
+                        )}
+                    </View>
 
                     {/* Info */}
                     <View style={styles.surahInfo}>
@@ -269,9 +331,125 @@ export default function QuranSurahList() {
         );
     };
 
+    const lastReadSurah = lastRead ? SURAHS.find((s) => s.number === lastRead.surahNumber) : null;
+
+    const handleDeleteBookmark = useCallback(async (index: number) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        const updated = bookmarks.filter((_, i) => i !== index);
+        setBookmarks(updated);
+        await AsyncStorage.setItem(BOOKMARKS_KEY, JSON.stringify(updated));
+    }, [bookmarks]);
+
     const ListHeader = useMemo(
         () => (
             <>
+                {/* Continue Reading Card */}
+                {lastReadSurah && (
+                    <Animated.View entering={FadeIn.duration(400)}>
+                        <TouchableOpacity
+                            style={styles.continueCard}
+                            onPress={() => handleSurahPress(lastReadSurah.number)}
+                            activeOpacity={0.7}
+                        >
+                            <LinearGradient
+                                colors={[colors.gold[500] + '15', colors.gold[700] + '05']}
+                                style={StyleSheet.absoluteFill}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            />
+                            <View style={styles.continueIcon}>
+                                <Ionicons name="play-circle" size={28} color={colors.gold[400]} />
+                            </View>
+                            <View style={styles.continueInfo}>
+                                <Text style={styles.continueLabel}>Continue Reading</Text>
+                                <Text style={styles.continueSurah}>
+                                    Surah {lastReadSurah.name}, Ayah {lastRead?.ayahNumber || 1}
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+                        </TouchableOpacity>
+                    </Animated.View>
+                )}
+
+                {/* Reading Progress Bar */}
+                <Animated.View entering={FadeIn.duration(400).delay(50)} style={styles.progressSection}>
+                    <View style={styles.progressRow}>
+                        <Ionicons name="book" size={14} color={colors.emerald[400]} />
+                        <Text style={styles.progressLabel}>{readCount}/114 Surahs explored</Text>
+                    </View>
+                    <View style={styles.progressBarOuter}>
+                        <LinearGradient
+                            colors={[colors.emerald[500], colors.emerald[400]]}
+                            style={[styles.progressBarInner, { width: `${Math.max((readCount / 114) * 100, 1)}%` as any }]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                        />
+                    </View>
+                </Animated.View>
+
+                {/* Bookmarks Toggle */}
+                <Animated.View entering={FadeIn.duration(300).delay(80)} style={styles.bookmarksToggleRow}>
+                    <TouchableOpacity
+                        style={[styles.bookmarksToggle, showBookmarks && styles.bookmarksToggleActive]}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setShowBookmarks((v) => !v);
+                        }}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons
+                            name={showBookmarks ? 'bookmark' : 'bookmark-outline'}
+                            size={14}
+                            color={showBookmarks ? colors.gold[400] : colors.text.muted}
+                        />
+                        <Text style={[styles.bookmarksToggleText, showBookmarks && styles.bookmarksToggleTextActive]}>
+                            Bookmarks{bookmarks.length > 0 ? ` (${bookmarks.length})` : ''}
+                        </Text>
+                    </TouchableOpacity>
+                </Animated.View>
+
+                {/* Bookmarks List */}
+                {showBookmarks && bookmarks.length > 0 && (
+                    <Animated.View entering={FadeInDown.duration(300)} style={styles.bookmarksList}>
+                        {bookmarks.map((bm, idx) => {
+                            const surah = SURAHS.find((s) => s.number === bm.surahNumber);
+                            return (
+                                <TouchableOpacity
+                                    key={`${bm.surahNumber}-${bm.ayahNumber}-${bm.timestamp}`}
+                                    style={styles.bookmarkItem}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        handleSurahPress(bm.surahNumber);
+                                    }}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name="bookmark" size={16} color={colors.gold[400]} />
+                                    <View style={styles.bookmarkInfo}>
+                                        <Text style={styles.bookmarkTitle}>
+                                            {surah?.name || `Surah ${bm.surahNumber}`} — Ayah {bm.ayahNumber}
+                                        </Text>
+                                        <Text style={styles.bookmarkDate}>
+                                            {new Date(bm.timestamp).toLocaleDateString()}
+                                        </Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        onPress={() => handleDeleteBookmark(idx)}
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <Ionicons name="close-circle-outline" size={18} color={colors.text.muted} />
+                                    </TouchableOpacity>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </Animated.View>
+                )}
+                {showBookmarks && bookmarks.length === 0 && (
+                    <Animated.View entering={FadeIn.duration(200)} style={styles.bookmarksEmpty}>
+                        <Ionicons name="bookmark-outline" size={24} color={colors.text.muted} />
+                        <Text style={styles.bookmarksEmptyText}>No bookmarks yet</Text>
+                    </Animated.View>
+                )}
+
                 {/* Bismillah */}
                 <Animated.View entering={FadeIn.duration(500)} style={styles.header}>
                     <Text style={styles.headerArabic}>القرآن الكريم</Text>
@@ -333,7 +511,7 @@ export default function QuranSurahList() {
                 </Animated.View>
             </>
         ),
-        [selectedJuz, handleJuzPress]
+        [selectedJuz, handleJuzPress, lastReadSurah, lastRead, readCount, showBookmarks, bookmarks, handleSurahPress, handleDeleteBookmark]
     );
 
     return (
@@ -454,6 +632,135 @@ const styles = StyleSheet.create({
         height: 24,
         backgroundColor: colors.border.subtle,
         marginHorizontal: spacing.md,
+    },
+
+    // ── Continue Reading ──
+    continueCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: spacing.lg,
+        marginTop: spacing.md,
+        padding: spacing.md,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '20',
+        overflow: 'hidden',
+    },
+    continueIcon: { marginRight: spacing.md },
+    continueInfo: { flex: 1 },
+    continueLabel: {
+        fontSize: 10,
+        color: colors.text.muted,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    continueSurah: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.gold[400],
+        marginTop: 2,
+    },
+
+    // ── Progress ──
+    progressSection: {
+        marginHorizontal: spacing.lg,
+        marginTop: spacing.md,
+    },
+    progressRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: spacing.xs,
+    },
+    progressLabel: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.secondary,
+        fontWeight: '600',
+    },
+    progressBarOuter: {
+        height: 4,
+        backgroundColor: colors.surface.glass,
+        borderRadius: 2,
+        overflow: 'hidden',
+    },
+    progressBarInner: {
+        height: '100%',
+        borderRadius: 2,
+    },
+
+    // ── Bookmarks ──
+    bookmarksToggleRow: {
+        paddingHorizontal: spacing.lg,
+        marginTop: spacing.md,
+    },
+    bookmarksToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        gap: 6,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: 20,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    bookmarksToggleActive: {
+        borderColor: colors.gold[500] + '30',
+    },
+    bookmarksToggleText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.text.muted,
+    },
+    bookmarksToggleTextActive: {
+        color: colors.gold[400],
+    },
+    bookmarksList: {
+        marginHorizontal: spacing.lg,
+        marginTop: spacing.sm,
+    },
+    bookmarkItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingVertical: spacing.sm + 2,
+        paddingHorizontal: spacing.md,
+        borderRadius: 12,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        marginBottom: spacing.xs,
+    },
+    bookmarkInfo: { flex: 1 },
+    bookmarkTitle: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.primary,
+    },
+    bookmarkDate: {
+        fontSize: 10,
+        color: colors.text.muted,
+        marginTop: 1,
+    },
+    bookmarksEmpty: {
+        alignItems: 'center',
+        paddingVertical: spacing.lg,
+        marginHorizontal: spacing.lg,
+    },
+    bookmarksEmptyText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        marginTop: spacing.xs,
+    },
+
+    // ── Read check ──
+    readCheck: {
+        position: 'absolute',
+        bottom: -2,
+        right: -2,
+        backgroundColor: colors.obsidian[900],
+        borderRadius: 7,
     },
 
     // ── Search ──

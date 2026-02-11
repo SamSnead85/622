@@ -4,7 +4,8 @@
 // ============================================
 
 import React, { ReactNode } from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, Pressable, StyleSheet, ViewStyle } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { colors, spacing, borderRadius as br } from '@zerog/ui';
 
 interface GlassCardProps {
@@ -46,20 +47,34 @@ export function GlassCard({
     gold = false,
     onPress,
 }: GlassCardProps) {
+    const cardStyle = [
+        styles.card,
+        {
+            padding: PADDING_MAP[padding],
+            borderRadius: RADIUS_MAP[radius],
+        },
+        border && styles.border,
+        gold && styles.gold,
+        style,
+    ];
+
+    if (onPress) {
+        return (
+            <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onPress();
+                }}
+                style={cardStyle}
+            >
+                {children}
+            </Pressable>
+        );
+    }
+
     return (
-        <View
-            accessibilityRole={onPress ? 'button' : undefined}
-            style={[
-                styles.card,
-                {
-                    padding: PADDING_MAP[padding],
-                    borderRadius: RADIUS_MAP[radius],
-                },
-                border && styles.border,
-                gold && styles.gold,
-                style,
-            ]}
-        >
+        <View style={cardStyle}>
             {children}
         </View>
     );

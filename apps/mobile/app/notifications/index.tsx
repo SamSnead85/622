@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import {
     View,
     Text,
@@ -16,6 +16,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTranslation } from 'react-i18next';
 import { useNotificationsStore, Notification } from '../../stores';
+import { apiFetch, API } from '../../lib/api';
 import { ScreenHeader, EmptyState } from '../../components';
 import SkeletonList from '../../components/SkeletonList';
 
@@ -141,10 +142,12 @@ const SectionHeader = memo(({ title }: { title: string }) => (
 // Notification item component
 // ============================================
 
-const NotificationItem = memo(({ item, index, onPress }: {
+const NotificationItem = memo(({ item, index, onPress, onReply, onFollowBack }: {
     item: Notification;
     index: number;
     onPress: (n: Notification) => void;
+    onReply: (n: Notification) => void;
+    onFollowBack: (n: Notification) => void;
 }) => {
     const iconInfo = getNotificationIcon(item.type);
 
@@ -170,11 +173,69 @@ const NotificationItem = memo(({ item, index, onPress }: {
                     >
                         {item.message || item.content || 'New notification'}
                     </Text>
-                    <Text style={styles.notifTime}>{timeAgo(item.createdAt)}</Text>
+                    <View style={styles.notifMeta}>
+                        <Text style={styles.notifTime}>{timeAgo(item.createdAt)}</Text>
+                        {item.type === 'COMMENT' && item.postId && (
+                            <TouchableOpacity
+                                style={styles.actionPill}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    onReply(item);
+                                }}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                                <Ionicons name="arrow-undo-outline" size={12} color={colors.azure[400]} />
+                                <Text style={styles.actionPillText}>Reply</Text>
+                            </TouchableOpacity>
+                        )}
+                        {item.type === 'FOLLOW' && item.actorId && (
+                            <FollowBackButton actorId={item.actorId} onFollowBack={() => onFollowBack(item)} />
+                        )}
+                    </View>
                 </View>
                 {!item.isRead && <View style={styles.unreadDot} />}
             </TouchableOpacity>
         </Animated.View>
+    );
+});
+
+const FollowBackButton = memo(({ actorId, onFollowBack }: { actorId: string; onFollowBack: () => void }) => {
+    const [followed, setFollowed] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const handleFollowBack = async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setFollowed(true); // optimistic
+        setLoading(true);
+        try {
+            await apiFetch(API.follow(actorId), { method: 'POST' });
+            onFollowBack();
+        } catch {
+            setFollowed(false); // revert
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (followed) {
+        return (
+            <View style={[styles.actionPill, styles.actionPillDone]}>
+                <Ionicons name="checkmark" size={12} color={colors.emerald[500]} />
+                <Text style={[styles.actionPillText, { color: colors.emerald[500] }]}>Following</Text>
+            </View>
+        );
+    }
+
+    return (
+        <TouchableOpacity
+            style={styles.actionPill}
+            onPress={handleFollowBack}
+            disabled={loading}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+            <Ionicons name="person-add-outline" size={12} color={colors.gold[400]} />
+            <Text style={[styles.actionPillText, { color: colors.gold[400] }]}>Follow back</Text>
+        </TouchableOpacity>
     );
 });
 
@@ -232,8 +293,8 @@ export default function NotificationsScreen() {
     }, []);
 
     const handleRefresh = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setIsRefreshing(true);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         await fetchNotifications();
         setIsRefreshing(false);
     }, [fetchNotifications]);
@@ -258,6 +319,24 @@ export default function NotificationsScreen() {
 
     const unreadCount = notifications.filter((n) => !n.isRead).length;
 
+    const handleReply = useCallback(
+        (notif: Notification) => {
+            if (!notif.isRead) markAsRead(notif.id);
+            if (notif.postId) {
+                router.push(`/post/${notif.postId}?focusComment=true`);
+            }
+        },
+        [markAsRead, router],
+    );
+
+    const handleFollowBack = useCallback(
+        (notif: Notification) => {
+            // Follow-back is handled optimistically inside FollowBackButton
+            if (!notif.isRead) markAsRead(notif.id);
+        },
+        [markAsRead],
+    );
+
     // Track flat index across sections for stagger offset
     const renderItem = useCallback(
         ({ item, index, section }: { item: Notification; index: number; section: DateSection }) => {
@@ -267,9 +346,17 @@ export default function NotificationsScreen() {
                 if (sec.title === section.title) break;
                 globalIndex += sec.data.length;
             }
-            return <NotificationItem item={item} index={globalIndex} onPress={handlePress} />;
+            return (
+                <NotificationItem
+                    item={item}
+                    index={globalIndex}
+                    onPress={handlePress}
+                    onReply={handleReply}
+                    onFollowBack={handleFollowBack}
+                />
+            );
         },
-        [sections, handlePress],
+        [sections, handlePress, handleReply, handleFollowBack],
     );
 
     const renderSectionHeader = useCallback(
@@ -464,10 +551,32 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
         fontWeight: '500',
     },
+    notifMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 4,
+        gap: spacing.sm,
+    },
     notifTime: {
         fontSize: typography.fontSize.xs,
         color: colors.text.muted,
-        marginTop: 4,
+    },
+    actionPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 3,
+        borderRadius: 12,
+        backgroundColor: colors.surface.glass,
+    },
+    actionPillDone: {
+        backgroundColor: colors.surface.glass,
+    },
+    actionPillText: {
+        fontSize: typography.fontSize.xs,
+        color: colors.azure[400],
+        fontWeight: '600',
     },
     unreadDot: {
         width: 8,

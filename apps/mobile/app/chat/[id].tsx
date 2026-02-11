@@ -19,6 +19,7 @@ import {
     Dimensions,
     ActivityIndicator,
     Alert,
+    ActionSheetIOS,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -26,6 +27,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import Animated, {
     FadeIn,
     FadeInDown,
@@ -44,7 +46,7 @@ import Animated, {
     Easing,
 } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
-import { apiFetch, API } from '../../lib/api';
+import { apiFetch, apiUpload, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
 import { socketManager, SocketMessage, TypingEvent } from '../../lib/socket';
 import { Avatar } from '../../components';
@@ -66,6 +68,18 @@ interface Message {
     status?: 'sending' | 'sent' | 'delivered' | 'read';
     mediaUrl?: string;
     mediaType?: string;
+    replyToId?: string;
+    replyTo?: {
+        id: string;
+        content: string;
+        senderId: string;
+    };
+}
+
+interface ImageAttachment {
+    uri: string;
+    mimeType: string;
+    fileName: string;
 }
 
 interface ChatParticipant {
@@ -209,15 +223,34 @@ const MessageBubble = memo(function MessageBubble({
     showTail,
     participant,
     formatTime,
+    onLongPress,
+    currentUserId,
 }: {
     item: Message;
     isOwn: boolean;
     showTail: boolean;
     participant: ChatParticipant | null;
     formatTime: (ts: string) => string;
+    onLongPress?: (msg: Message) => void;
+    currentUserId?: string;
 }) {
     const hasMedia = !!item.mediaUrl;
     const isImage = item.mediaType === 'IMAGE' || item.mediaType === 'image';
+    const replyTo = item.replyTo;
+
+    const ReplyQuote = replyTo ? (
+        <View style={styles.replyQuote}>
+            <View style={styles.replyQuoteLine} />
+            <View style={styles.replyQuoteContent}>
+                <Text style={styles.replyQuoteAuthor} numberOfLines={1}>
+                    {replyTo.senderId === currentUserId ? 'You' : (participant?.displayName || 'User')}
+                </Text>
+                <Text style={styles.replyQuoteText} numberOfLines={1}>
+                    {replyTo.content || 'Photo'}
+                </Text>
+            </View>
+        </View>
+    ) : null;
 
     return (
         <Animated.View
@@ -236,7 +269,13 @@ const MessageBubble = memo(function MessageBubble({
             {!isOwn && !showTail && <View style={styles.avatarSpacer} />}
 
             {isOwn ? (
-                <View style={styles.ownBubbleWrap}>
+                <Pressable
+                    style={styles.ownBubbleWrap}
+                    onLongPress={() => onLongPress?.(item)}
+                    delayLongPress={400}
+                >
+                    {ReplyQuote}
+
                     {/* Media */}
                     {hasMedia && isImage && (
                         <View style={styles.mediaBubble}>
@@ -276,9 +315,15 @@ const MessageBubble = memo(function MessageBubble({
                         </Text>
                         <ReadReceipt status={item.status} />
                     </View>
-                </View>
+                </Pressable>
             ) : (
-                <View style={styles.otherBubbleWrap}>
+                <Pressable
+                    style={styles.otherBubbleWrap}
+                    onLongPress={() => onLongPress?.(item)}
+                    delayLongPress={400}
+                >
+                    {ReplyQuote}
+
                     {/* Media */}
                     {hasMedia && isImage && (
                         <View style={styles.mediaBubble}>
@@ -309,7 +354,7 @@ const MessageBubble = memo(function MessageBubble({
                     ) : null}
 
                     <Text style={styles.msgTime}>{formatTime(item.createdAt)}</Text>
-                </View>
+                </Pressable>
             )}
         </Animated.View>
     );
@@ -389,17 +434,20 @@ export default function ChatScreen() {
     const [isTyping, setIsTyping] = useState(false);
     const [typingUser, setTypingUser] = useState<string | null>(null);
     const [isOnline, setIsOnline] = useState(false);
+    const [imageAttachment, setImageAttachment] = useState<ImageAttachment | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [replyTo, setReplyTo] = useState<Message | null>(null);
 
     // Animated send button glow
     const sendGlow = useSharedValue(0);
 
     useEffect(() => {
-        if (inputText.trim().length > 0) {
+        if (inputText.trim().length > 0 || imageAttachment) {
             sendGlow.value = withSpring(1, { damping: 12, stiffness: 150 });
         } else {
             sendGlow.value = withTiming(0, { duration: 200 });
         }
-    }, [inputText]);
+    }, [inputText, imageAttachment]);
 
     const sendBtnAnimStyle = useAnimatedStyle(() => ({
         transform: [{ scale: interpolate(sendGlow.value, [0, 1], [0.85, 1], Extrapolation.CLAMP) }],
@@ -606,16 +654,44 @@ export default function ChatScreen() {
     // ============================================
 
     const handleSend = useCallback(async () => {
-        if (!inputText.trim() || isSending || !conversationId) return;
+        const hasText = inputText.trim().length > 0;
+        const hasImage = !!imageAttachment;
+        if ((!hasText && !hasImage) || isSending || !conversationId) return;
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         const text = inputText.trim();
         setInputText('');
+        const currentReplyTo = replyTo;
+        setReplyTo(null);
+        const currentImage = imageAttachment;
+        setImageAttachment(null);
 
         // Stop typing indicator
         if (isTypingRef.current) {
             isTypingRef.current = false;
             socketManager.stopTyping(conversationId);
+        }
+
+        // Upload image first if attached
+        let mediaUrl: string | undefined;
+        let mediaType: string | undefined;
+        if (currentImage) {
+            setIsUploading(true);
+            try {
+                const uploadResult = await apiUpload(
+                    API.uploadPost,
+                    currentImage.uri,
+                    currentImage.mimeType,
+                    currentImage.fileName
+                );
+                mediaUrl = uploadResult.url;
+                mediaType = 'image';
+            } catch {
+                showError('Could not upload image');
+                setIsUploading(false);
+                return;
+            }
+            setIsUploading(false);
         }
 
         // Optimistic message
@@ -626,6 +702,14 @@ export default function ChatScreen() {
             senderId: user?.id || 'me',
             createdAt: new Date().toISOString(),
             status: 'sending',
+            mediaUrl,
+            mediaType,
+            replyToId: currentReplyTo?.id,
+            replyTo: currentReplyTo ? {
+                id: currentReplyTo.id,
+                content: currentReplyTo.content,
+                senderId: currentReplyTo.senderId,
+            } : undefined,
         };
         setMessages((prev) => [...prev, optimisticMsg]);
 
@@ -636,14 +720,28 @@ export default function ChatScreen() {
         );
 
         // Send via Socket for real-time
-        socketManager.sendMessage({ conversationId, content: text });
+        socketManager.sendMessage({
+            conversationId,
+            content: text,
+            mediaUrl,
+            mediaType,
+        });
 
         // Also send via REST for persistence
         setIsSending(true);
         try {
+            const body: Record<string, any> = { content: text };
+            if (mediaUrl) {
+                body.mediaUrl = mediaUrl;
+                body.mediaType = 'image';
+            }
+            if (currentReplyTo?.id) {
+                body.replyToId = currentReplyTo.id;
+            }
+
             const data = await apiFetch<any>(API.messages(conversationId), {
                 method: 'POST',
-                body: JSON.stringify({ content: text }),
+                body: JSON.stringify(body),
             });
 
             const realMsg = data.message || data.data || data;
@@ -654,6 +752,7 @@ export default function ChatScreen() {
                               ...realMsg,
                               id: realMsg.id || optimisticId,
                               status: 'sent' as const,
+                              replyTo: optimisticMsg.replyTo,
                           }
                         : m
                 )
@@ -670,7 +769,86 @@ export default function ChatScreen() {
         } finally {
             setIsSending(false);
         }
-    }, [inputText, isSending, user?.id, conversationId]);
+    }, [inputText, isSending, user?.id, conversationId, imageAttachment, replyTo]);
+
+    // ============================================
+    // Image Picker
+    // ============================================
+
+    const handlePickImage = useCallback(async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets[0]) {
+                const asset = result.assets[0];
+                const fileName = asset.fileName || `chat-image-${Date.now()}.jpg`;
+                const mimeType = asset.mimeType || 'image/jpeg';
+                setImageAttachment({ uri: asset.uri, mimeType, fileName });
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+        } catch {
+            showError('Could not open image picker');
+        }
+    }, []);
+
+    // ============================================
+    // Message Long-Press (Reply / Copy)
+    // ============================================
+
+    const handleMessageLongPress = useCallback((msg: Message) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+        const options = ['Reply', 'Copy', 'Cancel'];
+        const cancelButtonIndex = 2;
+
+        if (Platform.OS === 'ios') {
+            ActionSheetIOS.showActionSheetWithOptions(
+                { options, cancelButtonIndex },
+                (buttonIndex) => {
+                    if (buttonIndex === 0) {
+                        setReplyTo(msg);
+                        inputRef.current?.focus();
+                    } else if (buttonIndex === 1 && msg.content) {
+                        import('expo-clipboard').then((Clipboard) => {
+                            Clipboard.setStringAsync(msg.content);
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        });
+                    }
+                }
+            );
+        } else {
+            Alert.alert(
+                'Message',
+                undefined,
+                [
+                    {
+                        text: 'Reply',
+                        onPress: () => {
+                            setReplyTo(msg);
+                            inputRef.current?.focus();
+                        },
+                    },
+                    {
+                        text: 'Copy',
+                        onPress: () => {
+                            if (msg.content) {
+                                import('expo-clipboard').then((Clipboard) => {
+                                    Clipboard.setStringAsync(msg.content);
+                                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                });
+                            }
+                        },
+                    },
+                    { text: 'Cancel', style: 'cancel' },
+                ],
+                { cancelable: true }
+            );
+        }
+    }, []);
 
     // ============================================
     // Format Helpers
@@ -789,10 +967,12 @@ export default function ChatScreen() {
                     showTail={showTail}
                     participant={participant}
                     formatTime={formatTime}
+                    onLongPress={handleMessageLongPress}
+                    currentUserId={user?.id}
                 />
             );
         },
-        [user?.id, participant, formatTime, shouldShowTail]
+        [user?.id, participant, formatTime, shouldShowTail, handleMessageLongPress]
     );
 
     // ============================================
@@ -945,16 +1125,63 @@ export default function ChatScreen() {
                     { paddingBottom: insets.bottom + spacing.sm },
                 ]}
             >
+                {/* Reply-to preview */}
+                {replyTo && (
+                    <Animated.View entering={FadeInDown.duration(200)} style={styles.replyBar}>
+                        <View style={styles.replyBarLine} />
+                        <View style={styles.replyBarContent}>
+                            <Text style={styles.replyBarAuthor} numberOfLines={1}>
+                                Replying to {replyTo.senderId === user?.id ? 'yourself' : (participant?.displayName || 'user')}
+                            </Text>
+                            <Text style={styles.replyBarText} numberOfLines={1}>
+                                {replyTo.content || 'Photo'}
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => setReplyTo(null)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            accessibilityLabel="Dismiss reply"
+                        >
+                            <Ionicons name="close-circle" size={20} color={colors.text.muted} />
+                        </TouchableOpacity>
+                    </Animated.View>
+                )}
+
+                {/* Image attachment preview */}
+                {imageAttachment && (
+                    <Animated.View entering={FadeInDown.duration(200)} style={styles.imagePreviewBar}>
+                        <Image
+                            source={{ uri: imageAttachment.uri }}
+                            style={styles.imagePreviewThumb}
+                            contentFit="cover"
+                            placeholder={IMAGE_PLACEHOLDER.blurhash}
+                            transition={IMAGE_PLACEHOLDER.transition}
+                            cachePolicy="memory-disk"
+                        />
+                        <Text style={styles.imagePreviewLabel} numberOfLines={1}>
+                            {imageAttachment.fileName}
+                        </Text>
+                        <TouchableOpacity
+                            onPress={() => setImageAttachment(null)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            accessibilityLabel="Remove image"
+                        >
+                            <Ionicons name="close-circle" size={20} color={colors.text.muted} />
+                        </TouchableOpacity>
+                    </Animated.View>
+                )}
+
                 <View style={styles.inputWrapper}>
                     <TouchableOpacity
                         style={styles.attachBtn}
                         activeOpacity={0.7}
+                        onPress={handlePickImage}
                         accessibilityRole="button"
-                        accessibilityLabel="Add attachment"
+                        accessibilityLabel="Attach image"
                     >
                         <Ionicons
-                            name="add-circle-outline"
-                            size={24}
+                            name="image-outline"
+                            size={22}
                             color={colors.text.muted}
                         />
                     </TouchableOpacity>
@@ -974,20 +1201,20 @@ export default function ChatScreen() {
                         accessibilityLabel="Type a message"
                     />
 
-                    {inputText.trim() ? (
+                    {(inputText.trim() || imageAttachment) ? (
                         <TouchableOpacity
                             onPress={handleSend}
                             activeOpacity={0.8}
                             accessibilityRole="button"
                             accessibilityLabel="Send message"
-                            disabled={isSending}
+                            disabled={isSending || isUploading}
                         >
                             <Animated.View style={sendBtnAnimStyle}>
                                 <LinearGradient
                                     colors={[colors.gold[400], colors.gold[600]]}
                                     style={styles.sendButton}
                                 >
-                                    {isSending ? (
+                                    {(isSending || isUploading) ? (
                                         <ActivityIndicator
                                             size="small"
                                             color={colors.obsidian[900]}
@@ -1275,4 +1502,92 @@ const styles = StyleSheet.create({
     // MessageBubble extracted styles
     receiverAvatar: { marginEnd: spacing.xs, marginBottom: 2 },
     avatarSpacer: { width: 28 + spacing.xs },
+
+    // Reply quote inside message bubble
+    replyQuote: {
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        backgroundColor: `${colors.obsidian[700]}80`,
+        borderRadius: 8,
+        marginBottom: spacing.xs,
+        overflow: 'hidden',
+    },
+    replyQuoteLine: {
+        width: 3,
+        backgroundColor: colors.gold[400],
+    },
+    replyQuoteContent: {
+        flex: 1,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 6,
+    },
+    replyQuoteAuthor: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: colors.gold[400],
+        marginBottom: 1,
+    },
+    replyQuoteText: {
+        fontSize: 12,
+        color: colors.text.muted,
+    },
+
+    // Reply bar above input
+    replyBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface.glass,
+        borderRadius: 12,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.sm,
+        marginBottom: spacing.xs,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    replyBarLine: {
+        width: 3,
+        height: '100%',
+        minHeight: 28,
+        backgroundColor: colors.gold[400],
+        borderRadius: 2,
+        marginEnd: spacing.sm,
+    },
+    replyBarContent: {
+        flex: 1,
+    },
+    replyBarAuthor: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: colors.gold[400],
+        marginBottom: 1,
+    },
+    replyBarText: {
+        fontSize: 13,
+        color: colors.text.muted,
+    },
+
+    // Image attachment preview above input
+    imagePreviewBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface.glass,
+        borderRadius: 12,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.sm,
+        marginBottom: spacing.xs,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    imagePreviewThumb: {
+        width: 40,
+        height: 40,
+        borderRadius: 8,
+        backgroundColor: colors.obsidian[700],
+    },
+    imagePreviewLabel: {
+        flex: 1,
+        fontSize: 13,
+        color: colors.text.secondary,
+        marginHorizontal: spacing.sm,
+    },
 });

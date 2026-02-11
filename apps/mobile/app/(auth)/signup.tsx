@@ -4,7 +4,7 @@
 // auto-advance fields, and polished UX
 // ============================================
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
     View,
     Text,
@@ -37,6 +37,8 @@ import Animated, {
 import { Button, colors, typography, spacing } from '@zerog/ui';
 import { BackButton } from '../../components';
 import { useAuthStore } from '../../stores';
+import { useDebounce } from '../../hooks/useDebounce';
+import { apiFetch, API } from '../../lib/api';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -216,15 +218,48 @@ export default function SignupScreen() {
     const isLoading = useAuthStore((s) => s.isLoading);
 
     const [displayName, setDisplayName] = useState('');
+    const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [googleLoading, setGoogleLoading] = useState(false);
+    const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
 
+    const debouncedUsername = useDebounce(username, 500);
+
+    const usernameRef = useRef<TextInput>(null);
     const emailRef = useRef<TextInput>(null);
     const passwordRef = useRef<TextInput>(null);
     const confirmRef = useRef<TextInput>(null);
+
+    // Username availability check
+    useEffect(() => {
+        if (!debouncedUsername || debouncedUsername.length < 3) {
+            setUsernameStatus('idle');
+            return;
+        }
+        if (!/^[a-zA-Z0-9_]{3,20}$/.test(debouncedUsername)) {
+            setUsernameStatus('invalid');
+            return;
+        }
+        setUsernameStatus('checking');
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await apiFetch<{ available: boolean }>(
+                    `${API.checkUsername}?username=${encodeURIComponent(debouncedUsername)}`
+                );
+                if (!cancelled) {
+                    setUsernameStatus(data.available ? 'available' : 'taken');
+                }
+            } catch {
+                // On error, don't block the user
+                if (!cancelled) setUsernameStatus('idle');
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [debouncedUsername]);
 
     const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
@@ -414,10 +449,58 @@ export default function SignupScreen() {
                             autoCapitalize="words"
                             autoComplete="name"
                             returnKeyType="next"
-                            onSubmitEditing={() => emailRef.current?.focus()}
+                            onSubmitEditing={() => usernameRef.current?.focus()}
                             icon="person-outline"
                             delay={240}
                         />
+
+                        <AnimatedField
+                            label="Username"
+                            placeholder="Choose a username"
+                            value={username}
+                            onChangeText={(text) => {
+                                setUsername(text.toLowerCase().replace(/[^a-z0-9_]/g, ''));
+                                if (errors.username) setErrors((e) => ({ ...e, username: '' }));
+                            }}
+                            error={errors.username}
+                            autoCapitalize="none"
+                            autoComplete="off"
+                            autoCorrect={false}
+                            returnKeyType="next"
+                            onSubmitEditing={() => emailRef.current?.focus()}
+                            inputRef={usernameRef}
+                            icon="at-outline"
+                            delay={260}
+                        />
+                        {/* Username availability status */}
+                        {username.length > 0 && (
+                            <Animated.View entering={FadeIn.duration(200)} style={styles.usernameStatus}>
+                                {usernameStatus === 'checking' && (
+                                    <View style={styles.usernameStatusRow}>
+                                        <ActivityIndicator size="small" color={colors.text.muted} style={{ transform: [{ scale: 0.7 }] }} />
+                                        <Text style={styles.usernameStatusChecking}>Checking...</Text>
+                                    </View>
+                                )}
+                                {usernameStatus === 'available' && (
+                                    <View style={styles.usernameStatusRow}>
+                                        <Ionicons name="checkmark-circle" size={14} color={colors.emerald[500]} />
+                                        <Text style={styles.usernameStatusAvailable}>Username available</Text>
+                                    </View>
+                                )}
+                                {usernameStatus === 'taken' && (
+                                    <View style={styles.usernameStatusRow}>
+                                        <Ionicons name="close-circle" size={14} color={colors.coral[500]} />
+                                        <Text style={styles.usernameStatusTaken}>Username already taken</Text>
+                                    </View>
+                                )}
+                                {usernameStatus === 'invalid' && (
+                                    <View style={styles.usernameStatusRow}>
+                                        <Ionicons name="close-circle" size={14} color={colors.coral[500]} />
+                                        <Text style={styles.usernameStatusTaken}>Username must be 3-20 characters, letters and numbers only</Text>
+                                    </View>
+                                )}
+                            </Animated.View>
+                        )}
 
                         <AnimatedField
                             label="Email"
@@ -676,6 +759,32 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.xs,
         fontWeight: '600',
         marginStart: spacing.sm,
+    },
+
+    // ---- Username Status ----
+    usernameStatus: {
+        marginTop: -spacing.xs,
+        marginBottom: spacing.sm,
+        paddingHorizontal: 2,
+    },
+    usernameStatusRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    usernameStatusChecking: {
+        fontSize: 11,
+        color: colors.text.muted,
+    },
+    usernameStatusAvailable: {
+        fontSize: 11,
+        color: colors.emerald[500],
+        fontWeight: '500',
+    },
+    usernameStatusTaken: {
+        fontSize: 11,
+        color: colors.coral[500],
+        fontWeight: '500',
     },
 
     submitButton: { marginTop: spacing.md },

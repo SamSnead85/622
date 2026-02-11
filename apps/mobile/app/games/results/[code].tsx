@@ -304,26 +304,26 @@ export default function ResultsScreen() {
         }
     }, [gameType, gameStore, router]);
 
-    // ---- New Game (back to hub) ----
-    const handleNewGame = useCallback(() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        gameStore.reset();
-        router.replace('/games' as any);
-    }, [gameStore, router]);
-
     // ---- Share Results ----
     const handleShareResults = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        const lines = sortedPlayers
-            .slice(0, 5)
-            .map((p, i) => `${i + 1}. ${p.name}: ${p.score} pts`);
-        const text = `0G Arena Results\n\n${lines.join('\n')}\n\nPlay on 0G!`;
+        const myPlayer = sortedPlayers.find(p => p.userId === currentUserId);
+        const myScore = myPlayer?.score ?? sortedPlayers[0]?.score ?? 0;
+        const displayType = gameType || 'a game';
+        const text = `I scored ${myScore} points in ${displayType} on 0G! Can you beat me? https://0gravity.ai/games`;
         try {
             await Share.share({ message: text });
         } catch {
             // User cancelled
         }
-    }, [sortedPlayers]);
+    }, [sortedPlayers, currentUserId, gameType]);
+
+    // ---- Back to Games ----
+    const handleBackToGames = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        gameStore.reset();
+        router.replace('/games' as any);
+    }, [gameStore, router]);
 
     // Podium layout: 2nd, 1st, 3rd
     const podiumOrder = useMemo(() => {
@@ -415,29 +415,27 @@ export default function ResultsScreen() {
                         </LinearGradient>
                     </TouchableOpacity>
 
-                    <View style={styles.secondaryActions}>
-                        <TouchableOpacity
-                            style={styles.secondaryButton}
-                            onPress={handleNewGame}
-                            activeOpacity={0.8}
-                            accessibilityRole="button"
-                            accessibilityLabel="New game"
-                        >
-                            <Ionicons name="game-controller-outline" size={18} color={colors.text.primary} />
-                            <Text style={styles.secondaryButtonText}>New Game</Text>
-                        </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.shareResultsButton}
+                        onPress={handleShareResults}
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Share results"
+                    >
+                        <Ionicons name="share-outline" size={18} color={colors.gold[400]} />
+                        <Text style={styles.shareResultsText}>Share Results</Text>
+                    </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={styles.secondaryButton}
-                            onPress={handleShareResults}
-                            activeOpacity={0.8}
-                            accessibilityRole="button"
-                            accessibilityLabel="Share results"
-                        >
-                            <Ionicons name="share-outline" size={18} color={colors.text.primary} />
-                            <Text style={styles.secondaryButtonText}>Share</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity
+                        onPress={handleBackToGames}
+                        activeOpacity={0.7}
+                        accessibilityRole="link"
+                        accessibilityLabel="Back to games"
+                        style={styles.backToGamesLink}
+                    >
+                        <Ionicons name="arrow-back" size={14} color={colors.text.muted} />
+                        <Text style={styles.backToGamesText}>Back to Games</Text>
+                    </TouchableOpacity>
                 </Animated.View>
 
                 <View style={{ height: spacing['3xl'] }} />
@@ -625,12 +623,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Bold',
         color: colors.obsidian[900],
     },
-    secondaryActions: {
-        flexDirection: 'row',
-        gap: spacing.md,
-    },
-    secondaryButton: {
-        flex: 1,
+    shareResultsButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -639,11 +632,23 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface.glass,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: colors.border.subtle,
+        borderColor: colors.gold[500] + '25',
     },
-    secondaryButtonText: {
+    shareResultsText: {
         fontSize: typography.fontSize.base,
         fontWeight: '600',
-        color: colors.text.primary,
+        color: colors.gold[400],
+    },
+    backToGamesLink: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.xs,
+        paddingVertical: spacing.sm,
+    },
+    backToGamesText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.muted,
     },
 });

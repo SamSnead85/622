@@ -28,6 +28,41 @@ const RAMADAN_END = new Date(2026, 2, 19);   // Mar 19, 2026 (30 days)
 const TOTAL_DAYS = 30;
 const QURAN_STORAGE_KEY = '@ramadan-quran-progress';
 const PRAYER_CACHE_KEY = '@ramadan-prayer-cache';
+const FASTING_KEY = '@ramadan-fasting';
+
+// ─── 30 Daily Duas for Ramadan ───────────────────────────────────
+const DAILY_DUAS = [
+    { arabic: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْهُدَى وَالتُّقَى وَالْعَفَافَ وَالْغِنَى', english: 'O Allah, I ask You for guidance, piety, chastity, and self-sufficiency.' },
+    { arabic: 'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ', english: 'Our Lord, give us good in this world and good in the Hereafter, and save us from the Fire.' },
+    { arabic: 'اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي', english: 'O Allah, You are the Pardoner and You love to pardon, so pardon me.' },
+    { arabic: 'رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي', english: 'My Lord, expand for me my chest and ease for me my task.' },
+    { arabic: 'اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ', english: 'O Allah, help me to remember You, thank You, and worship You well.' },
+    { arabic: 'رَبَّنَا لَا تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا', english: 'Our Lord, let not our hearts deviate after You have guided us.' },
+    { arabic: 'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ', english: 'O Allah, I seek refuge in You from worry and grief.' },
+    { arabic: 'رَبِّ زِدْنِي عِلْمًا', english: 'My Lord, increase me in knowledge.' },
+    { arabic: 'اللَّهُمَّ اغْفِرْ لِي وَارْحَمْنِي وَاهْدِنِي وَارْزُقْنِي', english: 'O Allah, forgive me, have mercy on me, guide me, and provide for me.' },
+    { arabic: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَافِيَةَ فِي الدُّنْيَا وَالْآخِرَةِ', english: 'O Allah, I ask You for well-being in this world and the Hereafter.' },
+    { arabic: 'رَبَّنَا تَقَبَّلْ مِنَّا إِنَّكَ أَنتَ السَّمِيعُ الْعَلِيمُ', english: 'Our Lord, accept from us. Indeed You are the Hearing, the Knowing.' },
+    { arabic: 'اللَّهُمَّ بَارِكْ لَنَا فِي رَمَضَانَ', english: 'O Allah, bless us in Ramadan.' },
+    { arabic: 'اللَّهُمَّ أَجِرْنِي مِنَ النَّارِ', english: 'O Allah, save me from the Fire.' },
+    { arabic: 'اللَّهُمَّ تَقَبَّلْ صِيَامَنَا وَقِيَامَنَا', english: 'O Allah, accept our fasting and our prayers.' },
+    { arabic: 'رَبِّ اجْعَلْنِي مُقِيمَ الصَّلَاةِ وَمِن ذُرِّيَّتِي', english: 'My Lord, make me an establisher of prayer, and from my descendants.' },
+    { arabic: 'اللَّهُمَّ اجْعَلْ الْقُرْآنَ رَبِيعَ قَلْبِي', english: 'O Allah, make the Quran the spring of my heart.' },
+    { arabic: 'اللَّهُمَّ ارْزُقْنِي حُسْنَ الْخَاتِمَةِ', english: 'O Allah, grant me a good ending.' },
+    { arabic: 'اللَّهُمَّ اهْدِنِي فِيمَنْ هَدَيْتَ', english: 'O Allah, guide me among those You have guided.' },
+    { arabic: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْجَنَّةَ وَمَا قَرَّبَ إِلَيْهَا', english: 'O Allah, I ask You for Paradise and whatever brings me closer to it.' },
+    { arabic: 'اللَّهُمَّ بَلِّغْنَا لَيْلَةَ الْقَدْرِ', english: 'O Allah, let us reach the Night of Decree.' },
+    { arabic: 'رَبَّنَا اغْفِرْ لَنَا ذُنُوبَنَا وَإِسْرَافَنَا فِي أَمْرِنَا', english: 'Our Lord, forgive us our sins and our excesses in our affairs.' },
+    { arabic: 'اللَّهُمَّ اجْعَلْنَا مِنْ عُتَقَائِكَ مِنَ النَّارِ', english: 'O Allah, make us among those You free from the Fire.' },
+    { arabic: 'اللَّهُمَّ ثَبِّتْنِي عَلَى دِينِكَ', english: 'O Allah, keep me steadfast on Your religion.' },
+    { arabic: 'اللَّهُمَّ اغْفِرْ لِي مَا قَدَّمْتُ وَمَا أَخَّرْتُ', english: 'O Allah, forgive me what I have done and what I have yet to do.' },
+    { arabic: 'رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا قُرَّةَ أَعْيُنٍ', english: 'Our Lord, grant us from our spouses and offspring comfort to our eyes.' },
+    { arabic: 'اللَّهُمَّ أَحْسِنْ عَاقِبَتَنَا فِي الْأُمُورِ كُلِّهَا', english: 'O Allah, make our end good in all matters.' },
+    { arabic: 'اللَّهُمَّ اجْعَلْنِي شَاكِرًا لَكَ ذَاكِرًا لَكَ', english: 'O Allah, make me grateful to You and remembering of You.' },
+    { arabic: 'اللَّهُمَّ لَا تَحْرِمْنِي خَيْرَ مَا عِنْدَكَ بِشَرِّ مَا عِنْدِي', english: 'O Allah, do not deprive me of the good You have because of the bad I have.' },
+    { arabic: 'اللَّهُمَّ أَعْتِقْ رَقَبَتِي مِنَ النَّارِ', english: 'O Allah, free my neck from the Fire.' },
+    { arabic: 'اللَّهُمَّ تَقَبَّلْ مِنَّا رَمَضَانَ وَبَلِّغْنَا رَمَضَانَ الْقَادِمَ', english: 'O Allah, accept our Ramadan and let us reach the next Ramadan.' },
+];
 
 // ─── Curated Ramadan Verses ──────────────────────────────────────
 const RAMADAN_VERSES = [
@@ -108,11 +143,13 @@ export default function RamadanHub() {
     const [juzCount, setJuzCount] = useState(0);
     const [isLoadingPrayer, setIsLoadingPrayer] = useState(true);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [fastingDays, setFastingDays] = useState<Set<number>>(new Set());
     const isRamadan = isDuringRamadan();
     const ramadanDay = getRamadanDay();
     const daysLeft = Math.max(0, TOTAL_DAYS - ramadanDay);
     const verseIndex = getDailyVerseIndex();
     const dailyVerse = RAMADAN_VERSES[verseIndex];
+    const dailyDua = DAILY_DUAS[(ramadanDay - 1) % DAILY_DUAS.length];
 
     // ─── Load Quran progress ──────────────────────────────────────
     useEffect(() => {
@@ -121,6 +158,16 @@ export default function RamadanHub() {
                 const stored = await AsyncStorage.getItem(QURAN_STORAGE_KEY);
                 if (stored) setJuzCount(parseInt(stored, 10) || 0);
             } catch { /* AsyncStorage read failure — use default 0 */ }
+        })();
+    }, []);
+
+    // ─── Load fasting data ───────────────────────────────────────
+    useEffect(() => {
+        (async () => {
+            try {
+                const stored = await AsyncStorage.getItem(FASTING_KEY);
+                if (stored) setFastingDays(new Set(JSON.parse(stored)));
+            } catch { /* ignore */ }
         })();
     }, []);
 
@@ -133,6 +180,34 @@ export default function RamadanHub() {
             return next;
         });
     }, []);
+
+    // ─── Toggle fasting for today ──────────────────────────────────
+    const toggleFasting = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setFastingDays((prev) => {
+            const next = new Set(prev);
+            if (next.has(ramadanDay)) {
+                next.delete(ramadanDay);
+            } else {
+                next.add(ramadanDay);
+            }
+            AsyncStorage.setItem(FASTING_KEY, JSON.stringify([...next])).catch(() => {});
+            return next;
+        });
+    }, [ramadanDay]);
+
+    const isFastingToday = fastingDays.has(ramadanDay);
+    const fastingCount = fastingDays.size;
+
+    // ─── Share dua ───────────────────────────────────────────────
+    const shareDua = async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        try {
+            await Share.share({
+                message: `${dailyDua.arabic}\n\n"${dailyDua.english}"\n\nDay ${ramadanDay} of Ramadan — Shared from 0G`,
+            });
+        } catch { /* user cancelled */ }
+    };
 
     // ─── Fetch prayer times from Aladhan ──────────────────────────
     useEffect(() => {
@@ -336,6 +411,98 @@ export default function RamadanHub() {
                             end={{ x: 1, y: 0 }}
                         />
                     </View>
+                </Animated.View>
+
+                {/* ════════════════════════════════════════════════
+                    2b. FASTING TRACKER
+                   ════════════════════════════════════════════════ */}
+                <Animated.View entering={FadeInDown.duration(500).delay(150)}>
+                    <GlassCard style={styles.fastingCard}>
+                        <View style={styles.fastingHeader}>
+                            <View style={styles.fastingTitleRow}>
+                                <Ionicons name="restaurant-outline" size={18} color={colors.gold[400]} />
+                                <Text style={styles.fastingTitle}>Fasting Tracker</Text>
+                            </View>
+                            <Text style={styles.fastingCount}>
+                                {fastingCount}<Text style={styles.fastingCountMuted}>/{TOTAL_DAYS}</Text>
+                            </Text>
+                        </View>
+
+                        {/* Today toggle */}
+                        <TouchableOpacity
+                            style={[styles.fastingToggle, isFastingToday && styles.fastingToggleActive]}
+                            onPress={toggleFasting}
+                            activeOpacity={0.7}
+                            accessibilityRole="switch"
+                            accessibilityLabel={`Fasting today, ${isFastingToday ? 'yes' : 'no'}`}
+                        >
+                            <Ionicons
+                                name={isFastingToday ? 'checkmark-circle' : 'ellipse-outline'}
+                                size={22}
+                                color={isFastingToday ? colors.emerald[400] : colors.text.muted}
+                            />
+                            <Text style={[styles.fastingToggleText, isFastingToday && styles.fastingToggleTextActive]}>
+                                {isFastingToday ? 'Fasting today — MashaAllah!' : 'Fasting today?'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* Calendar grid */}
+                        <View style={styles.calendarGrid}>
+                            {Array.from({ length: TOTAL_DAYS }, (_, i) => {
+                                const day = i + 1;
+                                const fasted = fastingDays.has(day);
+                                const isToday = day === ramadanDay;
+                                const isFuture = day > ramadanDay;
+                                return (
+                                    <View
+                                        key={day}
+                                        style={[
+                                            styles.calendarDay,
+                                            isToday && styles.calendarDayToday,
+                                            fasted && styles.calendarDayFasted,
+                                            isFuture && styles.calendarDayFuture,
+                                        ]}
+                                    >
+                                        {fasted ? (
+                                            <Ionicons name="checkmark" size={12} color={colors.obsidian[900]} />
+                                        ) : (
+                                            <Text style={[
+                                                styles.calendarDayText,
+                                                isToday && styles.calendarDayTextToday,
+                                                isFuture && styles.calendarDayTextFuture,
+                                            ]}>
+                                                {day}
+                                            </Text>
+                                        )}
+                                    </View>
+                                );
+                            })}
+                        </View>
+                    </GlassCard>
+                </Animated.View>
+
+                {/* ════════════════════════════════════════════════
+                    2c. DAILY DUA
+                   ════════════════════════════════════════════════ */}
+                <Animated.View entering={FadeInDown.duration(500).delay(180)}>
+                    <GlassCard style={styles.duaCard} gold>
+                        <View style={styles.duaLabelRow}>
+                            <Ionicons name="hand-left-outline" size={15} color={colors.gold[400]} />
+                            <Text style={styles.duaLabel}>Daily Dua — Day {ramadanDay}</Text>
+                        </View>
+                        <Text style={styles.duaArabic}>{dailyDua.arabic}</Text>
+                        <Text style={styles.duaEnglish}>"{dailyDua.english}"</Text>
+                        <TouchableOpacity
+                            style={styles.shareButton}
+                            onPress={shareDua}
+                            activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel="Share this dua"
+                        >
+                            <Ionicons name="share-outline" size={16} color={colors.gold[400]} />
+                            <Text style={styles.shareButtonText}>Share</Text>
+                        </TouchableOpacity>
+                    </GlassCard>
                 </Animated.View>
 
                 {/* ════════════════════════════════════════════════
@@ -732,6 +899,138 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.sm,
         color: colors.text.secondary,
         marginTop: spacing.xs,
+    },
+
+    // ── Fasting Tracker ────────────────────────────────────────────
+    fastingCard: {
+        marginHorizontal: spacing.lg,
+        marginBottom: spacing.lg,
+        padding: spacing.xl,
+    },
+    fastingHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md,
+    },
+    fastingTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    fastingTitle: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.text.primary,
+    },
+    fastingCount: {
+        fontSize: typography.fontSize.xl,
+        fontWeight: '700',
+        color: colors.emerald[400],
+    },
+    fastingCountMuted: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '500',
+        color: colors.text.muted,
+    },
+    fastingToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.md,
+        borderRadius: 14,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        marginBottom: spacing.lg,
+    },
+    fastingToggleActive: {
+        borderColor: colors.emerald[500] + '30',
+        backgroundColor: colors.emerald[500] + '08',
+    },
+    fastingToggleText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.secondary,
+    },
+    fastingToggleTextActive: {
+        color: colors.emerald[400],
+    },
+    calendarGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+        justifyContent: 'center',
+    },
+    calendarDay: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    calendarDayToday: {
+        borderColor: colors.gold[500] + '50',
+        borderWidth: 2,
+    },
+    calendarDayFasted: {
+        backgroundColor: colors.emerald[500],
+        borderColor: colors.emerald[600],
+    },
+    calendarDayFuture: {
+        opacity: 0.35,
+    },
+    calendarDayText: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: colors.text.secondary,
+    },
+    calendarDayTextToday: {
+        color: colors.gold[400],
+        fontWeight: '700',
+    },
+    calendarDayTextFuture: {
+        color: colors.text.muted,
+    },
+
+    // ── Daily Dua ────────────────────────────────────────────────
+    duaCard: {
+        marginHorizontal: spacing.lg,
+        marginBottom: spacing.lg,
+        padding: spacing.xl,
+    },
+    duaLabelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.md,
+    },
+    duaLabel: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.gold[400],
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+    },
+    duaArabic: {
+        fontSize: 20,
+        color: colors.gold[300],
+        fontFamily: 'System',
+        textAlign: 'center',
+        lineHeight: 34,
+        marginBottom: spacing.md,
+    },
+    duaEnglish: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        lineHeight: 22,
+        fontStyle: 'italic',
+        marginBottom: spacing.lg,
     },
 
     // ── Verse of the Day ──────────────────────────────────────────

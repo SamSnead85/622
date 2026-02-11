@@ -10,6 +10,7 @@ import {
     ScrollView,
     Alert,
     Platform,
+    ActionSheetIOS,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +24,8 @@ import { apiFetch, API } from '../../lib/api';
 import { RetryView } from '../../components/RetryView';
 import { ScreenHeader, Avatar, EmptyState } from '../../components';
 import SkeletonList from '../../components/SkeletonList';
+import { useDebounce } from '../../hooks/useDebounce';
+import { showError } from '../../stores/toastStore';
 
 // ============================================
 // Types
@@ -90,12 +93,14 @@ const ConversationItem = memo(({
     onLongPress,
     userId,
     index,
+    isMuted,
 }: {
     conversation: Conversation;
     onPress: () => void;
     onLongPress: () => void;
     userId?: string;
     index: number;
+    isMuted?: boolean;
 }) => {
     const p = conversation.participant;
     const hasUnread = conversation.unreadCount > 0;
@@ -118,7 +123,7 @@ const ConversationItem = memo(({
                 delayLongPress={400}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={`Conversation with ${p.displayName || p.username}${conversation.lastMessage ? `, last message: ${conversation.lastMessage.content}` : ', no messages yet'}${hasUnread ? `, ${conversation.unreadCount} unread` : ''}`}
+                accessibilityLabel={`Conversation with ${p.displayName || p.username}${conversation.lastMessage ? `, last message: ${conversation.lastMessage.content}` : ', no messages yet'}${hasUnread ? `, ${conversation.unreadCount} unread` : ''}${isMuted ? ', muted' : ''}`}
                 accessibilityHint="Double-tap to open, long press for options"
             >
                 {/* Avatar with online indicator */}
@@ -134,9 +139,19 @@ const ConversationItem = memo(({
                 {/* Content */}
                 <View style={styles.conversationContent}>
                     <View style={styles.conversationHeader}>
-                        <Text style={[styles.displayName, hasUnread && styles.displayNameUnread]} numberOfLines={1}>
-                            {p.displayName || p.username}
-                        </Text>
+                        <View style={styles.nameRow}>
+                            <Text style={[styles.displayName, hasUnread && styles.displayNameUnread]} numberOfLines={1}>
+                                {p.displayName || p.username}
+                            </Text>
+                            {isMuted && (
+                                <Ionicons
+                                    name="notifications-off"
+                                    size={13}
+                                    color={colors.text.muted}
+                                    style={styles.mutedIcon}
+                                />
+                            )}
+                        </View>
                         {conversation.lastMessage && (
                             <Text style={[
                                 styles.timestamp,
@@ -169,7 +184,7 @@ const ConversationItem = memo(({
                     </View>
                 </View>
 
-                {/* Swipe hint chevron */}
+                {/* Chevron */}
                 <Ionicons
                     name="chevron-forward"
                     size={16}
@@ -254,6 +269,8 @@ export default function MessagesScreen() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchFocused, setSearchFocused] = useState(false);
+    const [mutedIds, setMutedIds] = useState<Set<string>>(new Set());
+    const debouncedSearch = useDebounce(searchQuery, 300);
 
     // ---- Data fetching ----
 
@@ -297,16 +314,17 @@ export default function MessagesScreen() {
     }, []);
 
     const handleRefresh = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setIsRefreshing(true);
         loadConversations();
         loadOnlineContacts();
     }, []);
 
-    // ---- Filtering ----
+    // ---- Filtering (debounced) ----
 
-    const filteredConversations = searchQuery.trim()
+    const filteredConversations = debouncedSearch.trim()
         ? conversations.filter((conv) => {
-            const q = searchQuery.toLowerCase();
+            const q = debouncedSearch.toLowerCase();
             return (
                 conv?.participant?.displayName?.toLowerCase().includes(q) ||
                 conv?.participant?.username?.toLowerCase().includes(q) ||
@@ -317,63 +335,97 @@ export default function MessagesScreen() {
 
     // ---- Long-press context menu ----
 
-    const handleLongPress = useCallback((conversation: Conversation) => {
-        const p = conversation.participant;
-        const name = p.displayName || p.username;
-
+    const confirmDelete = useCallback((conversation: Conversation) => {
+        const name = conversation.participant.displayName || conversation.participant.username;
         Alert.alert(
-            name,
-            undefined,
+            'Delete Conversation',
+            `Are you sure you want to delete your conversation with ${name}? This can't be undone.`,
             [
-                {
-                    text: conversation.unreadCount > 0 ? 'Mark as Read' : 'Mark as Unread',
-                    onPress: () => {
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    },
-                },
-                {
-                    text: 'Mute Notifications',
-                    onPress: () => {
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    },
-                },
-                {
-                    text: 'Archive',
-                    onPress: () => {
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        setConversations((prev) =>
-                            prev.filter((c) => c.id !== conversation.id)
-                        );
-                    },
-                },
+                { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Delete',
                     style: 'destructive',
-                    onPress: () => {
-                        Alert.alert(
-                            'Delete Conversation',
-                            `Are you sure you want to delete your conversation with ${name}? This can't be undone.`,
-                            [
-                                { text: 'Cancel', style: 'cancel' },
-                                {
-                                    text: 'Delete',
-                                    style: 'destructive',
-                                    onPress: () => {
-                                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                                        setConversations((prev) =>
-                                            prev.filter((c) => c.id !== conversation.id)
-                                        );
-                                    },
-                                },
-                            ]
+                    onPress: async () => {
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                        // Optimistic removal
+                        setConversations((prev) =>
+                            prev.filter((c) => c.id !== conversation.id)
                         );
+                        try {
+                            await apiFetch(API.messages(conversation.id), {
+                                method: 'DELETE',
+                            });
+                        } catch {
+                            // Restore on failure
+                            showError('Could not delete conversation');
+                            loadConversations();
+                        }
                     },
                 },
-                { text: 'Cancel', style: 'cancel' },
-            ],
-            { cancelable: true }
+            ]
         );
     }, []);
+
+    const toggleMute = useCallback((conversation: Conversation) => {
+        const isMuted = mutedIds.has(conversation.id);
+        setMutedIds((prev) => {
+            const next = new Set(prev);
+            if (isMuted) {
+                next.delete(conversation.id);
+            } else {
+                next.add(conversation.id);
+            }
+            return next;
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }, [mutedIds]);
+
+    const handleLongPress = useCallback((conversation: Conversation) => {
+        const p = conversation.participant;
+        const name = p.displayName || p.username;
+        const isMuted = mutedIds.has(conversation.id);
+
+        if (Platform.OS === 'ios') {
+            const options = [
+                isMuted ? 'Unmute' : 'Mute',
+                'Delete',
+                'Cancel',
+            ];
+            ActionSheetIOS.showActionSheetWithOptions(
+                {
+                    title: name,
+                    options,
+                    destructiveButtonIndex: 1,
+                    cancelButtonIndex: 2,
+                },
+                (buttonIndex) => {
+                    if (buttonIndex === 0) {
+                        toggleMute(conversation);
+                    } else if (buttonIndex === 1) {
+                        confirmDelete(conversation);
+                    }
+                }
+            );
+        } else {
+            Alert.alert(
+                name,
+                undefined,
+                [
+                    {
+                        text: isMuted ? 'Unmute' : 'Mute',
+                        onPress: () => toggleMute(conversation),
+                    },
+                    {
+                        text: 'Delete',
+                        style: 'destructive',
+                        onPress: () => confirmDelete(conversation),
+                    },
+                    { text: 'Cancel', style: 'cancel' },
+                ],
+                { cancelable: true }
+            );
+        }
+    }, [mutedIds, toggleMute, confirmDelete]);
 
     // ---- Navigate to conversation ----
 
@@ -486,6 +538,7 @@ export default function MessagesScreen() {
                             onLongPress={() => handleConversationLongPress(item)}
                             userId={user?.id}
                             index={index}
+                            isMuted={mutedIds.has(item.id)}
                         />
                     )}
                     keyExtractor={(item) => item.id}
@@ -507,11 +560,11 @@ export default function MessagesScreen() {
                         />
                     }
                     ListEmptyComponent={
-                        searchQuery.trim() ? (
+                        debouncedSearch.trim() ? (
                             <EmptyState
                                 icon="search-outline"
-                                title="No results"
-                                message={`No conversations match "${searchQuery}"`}
+                                title="No conversations found"
+                                message={`No conversations match "${debouncedSearch}"`}
                             />
                         ) : (
                             <View style={styles.elegantEmpty}>
@@ -731,15 +784,24 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginBottom: 4,
     },
+    nameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        marginEnd: spacing.sm,
+    },
     displayName: {
         fontSize: typography.fontSize.base,
         fontWeight: '600',
         color: colors.text.primary,
-        flex: 1,
-        marginEnd: spacing.sm,
+        flexShrink: 1,
     },
     displayNameUnread: {
         fontWeight: '700',
+    },
+    mutedIcon: {
+        marginStart: 4,
+        opacity: 0.6,
     },
     timestamp: {
         fontSize: typography.fontSize.xs,

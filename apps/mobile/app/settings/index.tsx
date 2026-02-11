@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
@@ -30,6 +30,7 @@ import { SUPPORTED_LANGUAGES, changeLanguage } from '../../lib/i18n';
 import i18next from 'i18next';
 import { showError } from '../../stores/toastStore';
 import { AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
+import { useDebounce } from '../../hooks/useDebounce';
 
 // ─── Setting Row Component ───────────────────────────────────────────
 interface SettingRowProps {
@@ -106,6 +107,39 @@ export default function SettingsScreen() {
     const [showLanguagePicker, setShowLanguagePicker] = useState(false);
     const [currentLang, setCurrentLang] = useState(i18next.language || 'en');
     const currentLanguageName = SUPPORTED_LANGUAGES.find((l) => l.code === currentLang)?.nativeName || 'English';
+    const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearch = useDebounce(searchQuery, 200);
+
+    // Searchable settings metadata for filtering
+    const settingsSections = useMemo(() => [
+        { key: 'profile', keywords: ['profile', 'name', 'bio', 'avatar', 'photo', 'picture'] },
+        { key: 'account', keywords: ['edit profile', 'name', 'bio', 'avatar', 'password', 'security', '2fa', 'email', 'account'] },
+        { key: 'cultural', keywords: ['cultural', 'greeting', 'muslim', 'standard', 'custom', 'deen', 'prayer', 'qibla', 'quran'] },
+        { key: 'privacy', keywords: ['privacy', 'private', 'public', 'community', 'visible', 'invisible', 'mode'] },
+        { key: 'language', keywords: ['language', 'data', 'import', 'whatsapp', 'instagram', 'tiktok', 'export'] },
+        { key: 'feed', keywords: ['feed', 'algorithm', 'personalization', 'mixer', 'dna', 'insights', 'interests', 'topics'] },
+        { key: 'notifications', keywords: ['notifications', 'push', 'alerts'] },
+        { key: 'privacydata', keywords: ['privacy', 'data', 'dashboard', 'export', 'encrypted', 'download'] },
+        { key: 'about', keywords: ['about', 'version', 'terms', 'privacy policy', 'service'] },
+        { key: 'danger', keywords: ['logout', 'log out', 'delete', 'account', 'danger'] },
+    ], []);
+
+    const visibleSections = useMemo(() => {
+        if (!debouncedSearch.trim()) return null; // null = show all
+        const q = debouncedSearch.toLowerCase();
+        const visible = new Set<string>();
+        settingsSections.forEach((section) => {
+            if (section.keywords.some((kw) => kw.includes(q))) {
+                visible.add(section.key);
+            }
+        });
+        return visible;
+    }, [debouncedSearch, settingsSections]);
+
+    const isSectionVisible = useCallback((key: string) => {
+        if (!visibleSections) return true;
+        return visibleSections.has(key);
+    }, [visibleSections]);
 
     const handleSaveProfile = useCallback(async () => {
         setIsSavingProfile(true);
@@ -275,8 +309,41 @@ export default function SettingsScreen() {
 
             <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: insets.bottom + 80 }} showsVerticalScrollIndicator={false}>
 
+                {/* ─── Search Bar ─────────────────────────────────── */}
+                <View style={styles.searchContainer}>
+                    <View style={styles.searchBar}>
+                        <Ionicons name="search-outline" size={18} color={colors.text.muted} />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Search settings..."
+                            placeholderTextColor={colors.text.muted}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            autoCorrect={false}
+                            autoCapitalize="none"
+                            selectionColor={colors.gold[500]}
+                        />
+                        {searchQuery.length > 0 && (
+                            <TouchableOpacity
+                                onPress={() => setSearchQuery('')}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="close-circle" size={18} color={colors.text.muted} />
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                </View>
+
+                {/* No results message */}
+                {visibleSections && visibleSections.size === 0 && (
+                    <View style={styles.noResults}>
+                        <Ionicons name="search-outline" size={32} color={colors.text.muted} />
+                        <Text style={styles.noResultsText}>No settings found</Text>
+                    </View>
+                )}
+
                 {/* ─── Profile Summary Card ───────────────────────── */}
-                <Animated.View entering={stagger(0)} style={styles.section}>
+                {isSectionVisible('profile') && <Animated.View entering={stagger(0)} style={styles.section}>
                     <TouchableOpacity
                         style={styles.profileCard}
                         activeOpacity={0.8}
@@ -313,10 +380,10 @@ export default function SettingsScreen() {
                             </View>
                         </View>
                     </TouchableOpacity>
-                </Animated.View>
+                </Animated.View>}
 
                 {/* ─── Account ────────────────────────────────────── */}
-                <Animated.View entering={stagger(1)} style={styles.section}>
+                {isSectionVisible('account') && <Animated.View entering={stagger(1)} style={styles.section}>
                     <SectionHeader title="Account" icon="person-circle-outline" />
                     <View style={styles.card}>
                         <SettingRow
@@ -409,10 +476,10 @@ export default function SettingsScreen() {
                             onPress={() => router.push('/settings/email' as any)}
                         />
                     </View>
-                </Animated.View>
+                </Animated.View>}
 
                 {/* ─── Cultural Experience ────────────────────────── */}
-                <Animated.View entering={stagger(2)} style={styles.section}>
+                {isSectionVisible('cultural') && <Animated.View entering={stagger(2)} style={styles.section}>
                     <SectionHeader title="Cultural Experience" icon="globe-outline" />
                     <View style={styles.card}>
                         <View style={styles.settingRowFlat}>
@@ -451,10 +518,10 @@ export default function SettingsScreen() {
                             />
                         )}
                     </View>
-                </Animated.View>
+                </Animated.View>}
 
                 {/* ─── Privacy ────────────────────────────────────── */}
-                <Animated.View entering={stagger(3)} style={styles.section}>
+                {isSectionVisible('privacy') && <Animated.View entering={stagger(3)} style={styles.section}>
                     <SectionHeader title="Privacy" icon="shield-half-outline" />
                     <View style={styles.card}>
                         <SettingRow
@@ -484,10 +551,10 @@ export default function SettingsScreen() {
                             />
                         )}
                     </View>
-                </Animated.View>
+                </Animated.View>}
 
                 {/* ─── Language & Data ────────────────────────────── */}
-                <Animated.View entering={stagger(4)} style={styles.section}>
+                {isSectionVisible('language') && <Animated.View entering={stagger(4)} style={styles.section}>
                     <SectionHeader title="Language & Data" icon="language-outline" />
                     <View style={styles.card}>
                         <SettingRow
@@ -533,10 +600,10 @@ export default function SettingsScreen() {
                             onPress={() => router.push('/settings/import' as any)}
                         />
                     </View>
-                </Animated.View>
+                </Animated.View>}
 
                 {/* ─── Feed & Personalization ─────────────────────── */}
-                <Animated.View entering={stagger(5)} style={styles.section}>
+                {isSectionVisible('feed') && <Animated.View entering={stagger(5)} style={styles.section}>
                     <SectionHeader title="Feed & Personalization" icon="color-wand-outline" />
                     <View style={styles.card}>
                         <SettingRow
@@ -558,10 +625,10 @@ export default function SettingsScreen() {
                             onPress={() => router.push('/interests' as any)}
                         />
                     </View>
-                </Animated.View>
+                </Animated.View>}
 
                 {/* ─── Notifications ──────────────────────────────── */}
-                <Animated.View entering={stagger(6)} style={styles.section}>
+                {isSectionVisible('notifications') && <Animated.View entering={stagger(6)} style={styles.section}>
                     <SectionHeader title="Notifications" icon="notifications-outline" />
                     <View style={styles.card}>
                         <SettingRow
@@ -571,10 +638,10 @@ export default function SettingsScreen() {
                             onPress={() => router.push('/settings/notifications' as any)}
                         />
                     </View>
-                </Animated.View>
+                </Animated.View>}
 
                 {/* ─── Privacy & Data ─────────────────────────────── */}
-                <Animated.View entering={stagger(7)} style={styles.section}>
+                {isSectionVisible('privacydata') && <Animated.View entering={stagger(7)} style={styles.section}>
                     <SectionHeader title="Privacy & Data" icon="lock-closed-outline" />
                     <View style={styles.card}>
                         <SettingRow
@@ -614,10 +681,10 @@ export default function SettingsScreen() {
                             description="We don't monetize your personal data"
                         />
                     </View>
-                </Animated.View>
+                </Animated.View>}
 
                 {/* ─── About ──────────────────────────────────────── */}
-                <Animated.View entering={stagger(8)} style={styles.section}>
+                {isSectionVisible('about') && <Animated.View entering={stagger(8)} style={styles.section}>
                     <SectionHeader title="About" icon="information-circle-outline" />
                     <View style={styles.card}>
                         <SettingRow icon="phone-portrait-outline" label="App Version" description={appVersion} />
@@ -632,10 +699,10 @@ export default function SettingsScreen() {
                             onPress={() => Linking.openURL('https://0gravity.ai/privacy')}
                         />
                     </View>
-                </Animated.View>
+                </Animated.View>}
 
                 {/* ─── Danger Zone ─────────────────────────────────── */}
-                <Animated.View entering={stagger(9)} style={styles.section}>
+                {isSectionVisible('danger') && <Animated.View entering={stagger(9)} style={styles.section}>
                     <View style={styles.dangerHeader}>
                         <Ionicons name="warning-outline" size={14} color={colors.coral[500]} style={{ marginRight: 6 }} />
                         <Text style={styles.dangerTitle}>Danger Zone</Text>
@@ -657,7 +724,7 @@ export default function SettingsScreen() {
                             danger
                         />
                     </View>
-                </Animated.View>
+                </Animated.View>}
 
                 {/* Footer */}
                 <Animated.View entering={stagger(10)} style={styles.footer}>
@@ -679,6 +746,40 @@ const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
     },
+
+    // ─── Search Bar ─────────────────────────────
+    searchContainer: {
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.xs,
+    },
+    searchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface.glass,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        paddingHorizontal: spacing.md,
+        paddingVertical: Platform.OS === 'ios' ? spacing.sm : 0,
+        gap: spacing.sm,
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: typography.fontSize.base,
+        color: colors.text.primary,
+        paddingVertical: spacing.xs,
+    },
+    noResults: {
+        alignItems: 'center',
+        paddingTop: 60,
+        gap: spacing.sm,
+    },
+    noResultsText: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.muted,
+    },
+
     section: {
         marginTop: spacing.lg,
         paddingHorizontal: spacing.lg,

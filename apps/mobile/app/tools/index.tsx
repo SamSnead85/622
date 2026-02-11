@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,8 +7,19 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn, FadeInRight } from 'react-native-reanimated';
 import { colors, typography, spacing, shadows } from '@zerog/ui';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../../stores';
 import { ScreenHeader, GlassCard } from '../../components';
+
+const RECENT_TOOLS_KEY = '@recent-tools';
+
+interface RecentTool {
+    route: string;
+    title: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    iconColor: string;
+    timestamp: number;
+}
 
 // ─── Types ────────────────────────────────────────────────────────
 interface ToolCardProps {
@@ -117,6 +129,25 @@ export default function ToolsHub() {
     const user = useAuthStore((s) => s.user);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const isMuslim = user?.culturalProfile === 'muslim';
+    const [recentTools, setRecentTools] = useState<RecentTool[]>([]);
+
+    // ─── Load recent tools ───────────────────────────────────────
+    useEffect(() => {
+        (async () => {
+            try {
+                const stored = await AsyncStorage.getItem(RECENT_TOOLS_KEY);
+                if (stored) setRecentTools(JSON.parse(stored));
+            } catch { /* ignore */ }
+        })();
+    }, []);
+
+    // ─── Record tool usage ───────────────────────────────────────
+    const recordToolUsage = useCallback(async (tool: { route: string; title: string; icon: keyof typeof Ionicons.glyphMap; iconColor: string }) => {
+        const entry: RecentTool = { ...tool, timestamp: Date.now() };
+        const updated = [entry, ...recentTools.filter((t) => t.route !== tool.route)].slice(0, 5);
+        setRecentTools(updated);
+        await AsyncStorage.setItem(RECENT_TOOLS_KEY, JSON.stringify(updated));
+    }, [recentTools]);
 
     // Ramadan detection
     const now = new Date();
@@ -126,7 +157,12 @@ export default function ToolsHub() {
     const isRamadanSeason = daysUntil <= 30 && now <= ramadanEnd;
     const isDuringRamadan = now >= ramadanStart && now <= ramadanEnd;
 
-    const navigate = (route: string) => router.push(route as any);
+    const navigate = (route: string, toolMeta?: { title: string; icon: keyof typeof Ionicons.glyphMap; iconColor: string }) => {
+        if (toolMeta) {
+            recordToolUsage({ route, ...toolMeta });
+        }
+        router.push(route as any);
+    };
 
     // ─── Deen Tools ──────────────────────
     const deenTools = [
@@ -260,6 +296,38 @@ export default function ToolsHub() {
                     </Animated.View>
                 )}
 
+                {/* ── Recently Used Section ── */}
+                {recentTools.length > 0 && (
+                    <>
+                        <SectionHeader title="Recently Used" icon="time-outline" delay={baseDelay - 80} />
+                        <Animated.View entering={FadeInDown.duration(350).delay(baseDelay - 40)}>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.recentRow}
+                                style={styles.recentScroll}
+                            >
+                                {recentTools.slice(0, 3).map((tool) => (
+                                    <TouchableOpacity
+                                        key={tool.route}
+                                        style={styles.recentCard}
+                                        onPress={() => {
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            navigate(tool.route, { title: tool.title, icon: tool.icon, iconColor: tool.iconColor });
+                                        }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={styles.recentIconWrap}>
+                                            <Ionicons name={tool.icon} size={20} color={tool.iconColor} />
+                                        </View>
+                                        <Text style={styles.recentTitle} numberOfLines={1}>{tool.title}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </Animated.View>
+                    </>
+                )}
+
                 {/* ── Deen Tools Section ── */}
                 <SectionHeader title="Deen Tools" icon="moon-outline" delay={baseDelay} />
                 <View style={styles.gridFeatured}>
@@ -273,7 +341,7 @@ export default function ToolsHub() {
                             iconColor={tool.iconColor}
                             badge={tool.badge}
                             badgeColor={tool.badgeColor}
-                            onPress={() => navigate(tool.route)}
+                            onPress={() => navigate(tool.route, { title: tool.title, icon: tool.icon, iconColor: tool.iconColor })}
                             delay={baseDelay + 80 + i * 90}
                             featured={tool.featured}
                         />
@@ -291,7 +359,7 @@ export default function ToolsHub() {
                             description={tool.description}
                             gradient={tool.gradient}
                             iconColor={tool.iconColor}
-                            onPress={() => navigate(tool.route)}
+                            onPress={() => navigate(tool.route, { title: tool.title, icon: tool.icon, iconColor: tool.iconColor })}
                             delay={baseDelay + 480 + i * 90}
                         />
                     ))}
@@ -310,7 +378,7 @@ export default function ToolsHub() {
                             iconColor={tool.iconColor}
                             badge={tool.badge}
                             badgeColor={tool.badgeColor}
-                            onPress={() => navigate(tool.route)}
+                            onPress={() => navigate(tool.route, { title: tool.title, icon: tool.icon, iconColor: tool.iconColor })}
                             delay={baseDelay + 730 + i * 90}
                         />
                     ))}
@@ -402,6 +470,35 @@ const styles = StyleSheet.create({
         color: colors.text.secondary,
         marginTop: 4,
         lineHeight: 18,
+    },
+
+    // Recently Used
+    recentScroll: { marginBottom: spacing.sm },
+    recentRow: { gap: spacing.md },
+    recentCard: {
+        alignItems: 'center',
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.lg,
+        borderRadius: 14,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        minWidth: 90,
+    },
+    recentIconWrap: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: colors.surface.glassActive,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.xs,
+    },
+    recentTitle: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.text.primary,
+        textAlign: 'center',
     },
 
     // Section Headers

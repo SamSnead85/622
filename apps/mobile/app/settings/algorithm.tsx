@@ -7,6 +7,7 @@ import {
     ScrollView,
     ActivityIndicator,
     Switch,
+    Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -58,6 +59,21 @@ function getSliderLabel(value: number, type: 'recency' | 'engagement' | 'followi
     return '';
 }
 
+const SLIDER_HELP: Record<string, { title: string; message: string }> = {
+    recency: {
+        title: 'Recency',
+        message: 'Shows posts in the order they were created, newest first. Higher values mean your feed is more chronological; lower values let older but popular posts surface.',
+    },
+    engagement: {
+        title: 'Engagement',
+        message: 'Prioritizes posts with more likes and comments. Higher values boost viral content; lower values surface hidden gems with fewer interactions.',
+    },
+    following: {
+        title: 'Following',
+        message: 'Boosts posts from people you interact with most. Higher values keep your feed focused on people you follow; lower values introduce more discovery.',
+    },
+};
+
 function SliderControl({
     label,
     description,
@@ -77,11 +93,24 @@ function SliderControl({
     const activeIndex = steps.reduce((closest, step, i) =>
         Math.abs(step - value) < Math.abs(steps[closest]! - value) ? i : closest, 0);
 
+    const helpInfo = SLIDER_HELP[type];
+
     return (
         <View style={styles.sliderCard}>
             <View style={styles.sliderHeader}>
                 <Ionicons name={icon} size={18} color={colors.gold[400]} />
                 <Text style={styles.sliderLabel}>{label}</Text>
+                {helpInfo && (
+                    <TouchableOpacity
+                        onPress={() => Alert.alert(helpInfo.title, helpInfo.message)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        accessibilityLabel={`Learn more about ${label}`}
+                        accessibilityRole="button"
+                        style={styles.helpIcon}
+                    >
+                        <Ionicons name="help-circle-outline" size={16} color={colors.text.muted} />
+                    </TouchableOpacity>
+                )}
             </View>
             <Text style={styles.sliderDescription}>{description}</Text>
             <View style={styles.sliderTrack}>
@@ -176,10 +205,10 @@ export default function AlgorithmMixerScreen() {
     };
 
     const contentTypes = [
-        { key: 'VIDEO', icon: 'videocam' as const, label: 'Videos' },
-        { key: 'IMAGE', icon: 'image' as const, label: 'Images' },
-        { key: 'TEXT', icon: 'document-text' as const, label: 'Text Posts' },
-        { key: 'AUDIO', icon: 'musical-note' as const, label: 'Audio' },
+        { key: 'VIDEO', icon: 'videocam' as const, label: 'Videos', help: 'Controls whether video posts appear in your feed. Disable to hide all video content.' },
+        { key: 'IMAGE', icon: 'image' as const, label: 'Images', help: 'Controls whether image posts appear in your feed. Disable to hide photo-based content.' },
+        { key: 'TEXT', icon: 'document-text' as const, label: 'Text Posts', help: 'Controls whether text-only posts appear in your feed. Disable to focus on media content.' },
+        { key: 'AUDIO', icon: 'musical-note' as const, label: 'Audio', help: 'Controls whether audio posts appear in your feed. Disable to hide audio-based content.' },
     ];
 
     if (loading) {
@@ -282,6 +311,14 @@ export default function AlgorithmMixerScreen() {
                                     <Text style={[styles.contentTypeLabel, isActive && styles.contentTypeLabelActive]}>
                                         {ct.label}
                                     </Text>
+                                    <TouchableOpacity
+                                        onPress={() => Alert.alert(ct.label, ct.help)}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                        accessibilityLabel={`Learn more about ${ct.label}`}
+                                        accessibilityRole="button"
+                                    >
+                                        <Ionicons name="help-circle-outline" size={16} color={colors.text.muted} />
+                                    </TouchableOpacity>
                                     <View style={[styles.contentTypeToggle, isActive && styles.contentTypeToggleActive]}>
                                         <View style={[styles.contentTypeToggleDot, isActive && styles.contentTypeToggleDotActive]} />
                                     </View>
@@ -366,7 +403,11 @@ const styles = StyleSheet.create({
     },
     sliderLabel: {
         fontSize: typography.fontSize.base, fontWeight: '600',
-        color: colors.text.primary,
+        color: colors.text.primary, flex: 1,
+    },
+    helpIcon: {
+        width: 24, height: 24, borderRadius: 12,
+        alignItems: 'center' as const, justifyContent: 'center' as const,
     },
     sliderDescription: {
         fontSize: typography.fontSize.xs, color: colors.text.muted,

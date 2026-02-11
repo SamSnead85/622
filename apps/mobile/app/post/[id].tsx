@@ -4,7 +4,7 @@
 // staggered animations, haptic feedback, share sheet
 // ============================================
 
-import { useState, useEffect, useCallback, useRef, memo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import {
     View,
     Text,
@@ -730,7 +730,7 @@ export default function PostDetailScreen() {
     // Post Header Content
     // ============================================
 
-    const renderHeader = () => (
+    const renderHeader = useCallback(() => (
         <View>
             {/* Author Section */}
             <Animated.View entering={FadeInDown.duration(350).springify()}>
@@ -899,7 +899,7 @@ export default function PostDetailScreen() {
                 </View>
             </Animated.View>
         </View>
-    );
+    ), [post, comments, handleLike, handleSave, handleShare, router]);
 
     // ============================================
     // Render

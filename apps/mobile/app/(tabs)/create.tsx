@@ -37,6 +37,8 @@ import { useAuthStore, useFeedStore, useCommunitiesStore, mapApiPost } from '../
 import { apiFetch, apiUpload, API } from '../../lib/api';
 import type { Community } from '../../stores';
 import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDebounce } from '../../hooks/useDebounce';
 
 const MAX_LENGTH = 2000;
 const WARN_THRESHOLD = 1800;
@@ -376,6 +378,46 @@ export default function CreateScreen() {
     const [showSuccess, setShowSuccess] = useState(false);
     const [linkUrl, setLinkUrl] = useState('');
     const [showLinkInput, setShowLinkInput] = useState(false);
+    const [draftSavedVisible, setDraftSavedVisible] = useState(false);
+
+    // --- Draft auto-save ---
+    const DRAFT_KEY = '@post-draft';
+    const debouncedContent = useDebounce(content, 5000);
+    const debouncedCommunityId = useDebounce(selectedCommunity?.id, 5000);
+
+    // Restore draft on mount
+    useEffect(() => {
+        AsyncStorage.getItem(DRAFT_KEY).then((raw) => {
+            if (!raw) return;
+            try {
+                const draft = JSON.parse(raw) as { content: string; communityId?: string; timestamp: number };
+                // Only restore drafts less than 24 hours old
+                if (Date.now() - draft.timestamp < 24 * 60 * 60 * 1000 && draft.content) {
+                    setContent(draft.content);
+                }
+            } catch {
+                // Ignore corrupt draft
+            }
+        });
+    }, []);
+
+    // Auto-save draft when debounced content changes
+    useEffect(() => {
+        if (!debouncedContent.trim()) return;
+        const draft = {
+            content: debouncedContent,
+            communityId: debouncedCommunityId || undefined,
+            timestamp: Date.now(),
+        };
+        AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)).then(() => {
+            setDraftSavedVisible(true);
+            setTimeout(() => setDraftSavedVisible(false), 2000);
+        });
+    }, [debouncedContent, debouncedCommunityId]);
+
+    const clearDraft = useCallback(() => {
+        AsyncStorage.removeItem(DRAFT_KEY);
+    }, []);
 
     // --- Load communities on mount ---
     useEffect(() => {
@@ -566,6 +608,9 @@ export default function CreateScreen() {
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
+            // Clear saved draft on successful publish
+            clearDraft();
+
             // Show success animation
             setShowSuccess(true);
             setTimeout(() => {
@@ -586,7 +631,7 @@ export default function CreateScreen() {
             setIsPublishing(false);
             setUploadProgress(0);
         }
-    }, [content, mediaUri, mediaType, visibility, selectedCommunity, linkUrl, selectedMedia, addPost, router]);
+    }, [content, mediaUri, mediaType, visibility, selectedCommunity, linkUrl, selectedMedia, addPost, router, clearDraft]);
 
     // ============================================
     // Derived State
@@ -669,12 +714,11 @@ export default function CreateScreen() {
 
                 {/* ======== Upload Progress ======== */}
                 {isPublishing && uploadProgress > 0 && (
-                    <View style={styles.progressBar}>
+                    <Animated.View entering={FadeIn.duration(150)} style={styles.progressBar}>
                         <Animated.View
-                            entering={FadeIn.duration(150)}
                             style={[styles.progressFill, { width: `${uploadProgress}%` }]}
                         />
-                    </View>
+                    </Animated.View>
                 )}
 
                 {/* ======== Scrollable Composer Body ======== */}
@@ -723,7 +767,17 @@ export default function CreateScreen() {
                     </View>
 
                     {/* Character Counter */}
-                    <CharacterCounter current={content.length} max={MAX_LENGTH} />
+                    <View style={styles.counterDraftRow}>
+                        <CharacterCounter current={content.length} max={MAX_LENGTH} />
+                        {draftSavedVisible && (
+                            <Animated.Text
+                                entering={FadeIn.duration(200)}
+                                style={styles.draftSavedText}
+                            >
+                                Draft saved
+                            </Animated.Text>
+                        )}
+                    </View>
 
                     {/* Link URL Input */}
                     {showLinkInput && (
@@ -901,13 +955,14 @@ const styles = StyleSheet.create({
 
     // Progress Bar
     progressBar: {
-        height: 2,
+        height: 3,
         backgroundColor: colors.border.subtle,
+        overflow: 'hidden',
     },
     progressFill: {
         height: '100%',
         backgroundColor: colors.gold[500],
-        borderRadius: 1,
+        borderRadius: 1.5,
     },
 
     // Scroll content
@@ -1060,11 +1115,23 @@ const styles = StyleSheet.create({
         paddingBottom: 0,
     },
 
+    // Counter + Draft Row
+    counterDraftRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: spacing.sm,
+        marginBottom: spacing.md,
+    },
+    draftSavedText: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        fontFamily: 'Inter-Medium',
+    },
+
     // Character Counter
     charCountRow: {
         alignItems: 'flex-end',
-        marginTop: spacing.sm,
-        marginBottom: spacing.md,
     },
     charCountText: {
         fontSize: typography.fontSize.xs,

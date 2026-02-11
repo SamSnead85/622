@@ -426,8 +426,12 @@ export const API = {
     moments: '/api/v1/moments',
     momentsFeed: '/api/v1/moments/feed',
     momentView: (id: string) => `/api/v1/moments/${id}/view`,
+    momentReact: (id: string) => `/api/v1/moments/${id}/react`,
     momentViewers: (id: string) => `/api/v1/moments/${id}/viewers`,
     uploadMoment: '/api/v1/upload/moment',
+
+    // Users — social graph
+    mutualFriends: (userId: string) => `/api/v1/users/${userId}/mutual-friends`,
 
     // Analytics
     analyticsOverview: '/api/v1/analytics/overview',

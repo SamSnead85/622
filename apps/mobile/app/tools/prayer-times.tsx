@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Platform, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
+import * as Notifications from 'expo-notifications';
 import Animated, { FadeInDown, FadeIn, FadeInUp } from 'react-native-reanimated';
 import { colors, typography, spacing, shadows } from '@zerog/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +21,7 @@ interface PrayerTime {
 }
 
 const CACHE_KEY = 'prayer_times_cache';
+const NOTIF_KEY = '@prayer-notifications';
 
 // ─── Helper: format time to 12hr ──────────────────────────────────
 function formatTime12h(time: string): string {
@@ -44,6 +46,109 @@ export default function PrayerTimesScreen() {
     const [sunriseTime, setSunriseTime] = useState('');
     const [sunsetTime, setSunsetTime] = useState('');
     const [progressPct, setProgressPct] = useState(0);
+    const [notifEnabled, setNotifEnabled] = useState<Record<string, boolean>>({});
+
+    // ─── Load saved notification preferences ─────────────────────
+    useEffect(() => {
+        (async () => {
+            try {
+                const stored = await AsyncStorage.getItem(NOTIF_KEY);
+                if (stored) setNotifEnabled(JSON.parse(stored));
+            } catch { /* ignore read failure */ }
+        })();
+    }, []);
+
+    // ─── Schedule / cancel a prayer notification ─────────────────
+    const togglePrayerNotif = useCallback(async (prayer: PrayerTime) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Notifications', 'Please enable notifications in your device settings.');
+            return;
+        }
+
+        const key = prayer.name;
+        const isCurrentlyOn = !!notifEnabled[key];
+
+        if (isCurrentlyOn) {
+            // Cancel existing notification for this prayer
+            const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+            for (const n of allScheduled) {
+                if (n.content.data?.prayerName === key) {
+                    await Notifications.cancelScheduledNotificationAsync(n.identifier);
+                }
+            }
+        } else {
+            // Schedule daily repeating notification
+            const [h, m] = prayer.time.split(':').map(Number);
+            await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: 'Prayer Time',
+                    body: `It is time for ${prayer.name} prayer`,
+                    sound: true,
+                    data: { prayerName: key },
+                },
+                trigger: { hour: h, minute: m, repeats: true },
+            });
+        }
+
+        const updated = { ...notifEnabled, [key]: !isCurrentlyOn };
+        setNotifEnabled(updated);
+        await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(updated));
+    }, [notifEnabled]);
+
+    // ─── Notify All toggle ───────────────────────────────────────
+    const toggleNotifyAll = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (prayers.length === 0) return;
+
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Notifications', 'Please enable notifications in your device settings.');
+            return;
+        }
+
+        const activePrayers = prayers.filter((p) => p.name !== 'Sunrise');
+        const allOn = activePrayers.every((p) => notifEnabled[p.name]);
+
+        if (allOn) {
+            // Cancel all prayer notifications
+            const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+            for (const n of allScheduled) {
+                if (n.content.data?.prayerName) {
+                    await Notifications.cancelScheduledNotificationAsync(n.identifier);
+                }
+            }
+            const updated: Record<string, boolean> = {};
+            activePrayers.forEach((p) => { updated[p.name] = false; });
+            setNotifEnabled(updated);
+            await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(updated));
+        } else {
+            // Enable all
+            const updated: Record<string, boolean> = { ...notifEnabled };
+            for (const p of activePrayers) {
+                if (!updated[p.name]) {
+                    const [h, m] = p.time.split(':').map(Number);
+                    await Notifications.scheduleNotificationAsync({
+                        content: {
+                            title: 'Prayer Time',
+                            body: `It is time for ${p.name} prayer`,
+                            sound: true,
+                            data: { prayerName: p.name },
+                        },
+                        trigger: { hour: h, minute: m, repeats: true },
+                    });
+                    updated[p.name] = true;
+                }
+            }
+            setNotifEnabled(updated);
+            await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(updated));
+        }
+    }, [prayers, notifEnabled]);
+
+    const allNotifOn = prayers.filter((p) => p.name !== 'Sunrise').length > 0 &&
+        prayers.filter((p) => p.name !== 'Sunrise').every((p) => notifEnabled[p.name]);
 
     const fetchPrayerTimes = useCallback(async () => {
         try {
@@ -310,6 +415,26 @@ export default function PrayerTimesScreen() {
                             </Animated.View>
                         )}
 
+                        {/* ── Notify All Toggle ── */}
+                        <Animated.View entering={FadeIn.duration(300).delay(200)} style={styles.notifyAllRow}>
+                            <TouchableOpacity
+                                style={styles.notifyAllButton}
+                                onPress={toggleNotifyAll}
+                                activeOpacity={0.7}
+                                accessibilityRole="switch"
+                                accessibilityLabel={`Notify all prayers, ${allNotifOn ? 'enabled' : 'disabled'}`}
+                            >
+                                <Ionicons
+                                    name={allNotifOn ? 'notifications' : 'notifications-outline'}
+                                    size={16}
+                                    color={allNotifOn ? colors.gold[400] : colors.text.muted}
+                                />
+                                <Text style={[styles.notifyAllText, allNotifOn && styles.notifyAllTextActive]}>
+                                    {allNotifOn ? 'All Notifications On' : 'Notify All'}
+                                </Text>
+                            </TouchableOpacity>
+                        </Animated.View>
+
                         {/* ── Prayer Times List ── */}
                         <View style={styles.prayersList}>
                             {prayers.map((prayer, i) => {
@@ -379,6 +504,23 @@ export default function PrayerTimesScreen() {
                                         >
                                             {formatTime12h(prayer.time)}
                                         </Text>
+
+                                        {/* Notification bell toggle (skip for Sunrise) */}
+                                        {!isSunrise && (
+                                            <TouchableOpacity
+                                                onPress={() => togglePrayerNotif(prayer)}
+                                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                                style={styles.bellButton}
+                                                accessibilityRole="switch"
+                                                accessibilityLabel={`${prayer.name} notification ${notifEnabled[prayer.name] ? 'enabled' : 'disabled'}`}
+                                            >
+                                                <Ionicons
+                                                    name={notifEnabled[prayer.name] ? 'notifications' : 'notifications-outline'}
+                                                    size={18}
+                                                    color={notifEnabled[prayer.name] ? colors.gold[400] : colors.text.muted + '60'}
+                                                />
+                                            </TouchableOpacity>
+                                        )}
 
                                         {/* Active indicator */}
                                         {isNext && <View style={styles.nextDot} />}
@@ -589,6 +731,36 @@ const styles = StyleSheet.create({
         backgroundColor: colors.gold[500],
         marginStart: spacing.sm,
         ...shadows.glow,
+    },
+
+    // ── Notify All ──
+    notifyAllRow: {
+        paddingHorizontal: spacing.lg,
+        marginBottom: spacing.sm,
+        alignItems: 'flex-end',
+    },
+    notifyAllButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: 20,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    notifyAllText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.text.muted,
+    },
+    notifyAllTextActive: {
+        color: colors.gold[400],
+    },
+    bellButton: {
+        marginStart: spacing.sm,
+        padding: 4,
     },
 
     // ── Footer ──

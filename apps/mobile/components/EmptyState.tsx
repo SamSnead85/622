@@ -30,7 +30,7 @@ interface EmptyStateProps {
     compact?: boolean;
 }
 
-export function EmptyState({
+function EmptyStateComponent({
     icon = 'albums-outline',
     title,
     message,
@@ -68,6 +68,8 @@ export function EmptyState({
         </View>
     );
 }
+
+export const EmptyState = React.memo(EmptyStateComponent);
 
 const styles = StyleSheet.create({
     container: {
@@ -109,3 +111,4 @@ const styles = StyleSheet.create({
 });
 
 export default EmptyState;
+

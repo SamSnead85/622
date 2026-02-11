@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Alert,
+    Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -99,7 +100,13 @@ export default function ImportScreen() {
     const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
     const [importResult, setImportResult] = useState<ImportResult | null>(null);
     const [progress, setProgress] = useState(0);
+    const [progressDetail, setProgressDetail] = useState('');
     const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Selective import toggles
+    const [importPosts, setImportPosts] = useState(true);
+    const [importFollowers, setImportFollowers] = useState(true);
+    const [importFollowing, setImportFollowing] = useState(true);
 
     // Cleanup poll timer on unmount
     useEffect(() => {
@@ -136,6 +143,9 @@ export default function ImportScreen() {
                 name: file.name || 'export.zip',
             } as any);
             formData.append('platform', selectedPlatform.toUpperCase());
+            formData.append('importPosts', String(importPosts));
+            formData.append('importFollowers', String(importFollowers));
+            formData.append('importFollowing', String(importFollowing));
 
             const response = await fetch(`${API_URL}/api/v1/migration/upload`, {
                 method: 'POST',
@@ -174,6 +184,7 @@ export default function ImportScreen() {
 
                 if (data.status === 'COMPLETED') {
                     setImportStatus('complete');
+                    setProgressDetail('');
                     setImportResult({
                         migrationId,
                         status: data.status,
@@ -185,13 +196,32 @@ export default function ImportScreen() {
 
                 if (data.status === 'FAILED') {
                     setImportStatus('failed');
+                    setProgressDetail('');
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                     return;
                 }
 
-                // Still processing
+                // Still processing — update progress detail
                 attempts++;
                 setProgress(Math.min(95, (attempts / maxAttempts) * 100));
+
+                // Show progress details from server if available
+                if (data.currentStep) {
+                    setProgressDetail(data.currentStep);
+                } else if (data.stats) {
+                    const s = data.stats;
+                    if (s.postsImported !== undefined && s.postsTotal) {
+                        setProgressDetail(`Importing posts... (${s.postsImported}/${s.postsTotal})`);
+                    } else if (s.connectionsImported !== undefined && s.connectionsTotal) {
+                        setProgressDetail(`Importing connections... (${s.connectionsImported}/${s.connectionsTotal})`);
+                    }
+                } else {
+                    // Simulated progress stages
+                    if (attempts <= 3) setProgressDetail('Analyzing export file...');
+                    else if (attempts <= 8) setProgressDetail('Importing posts...');
+                    else if (attempts <= 15) setProgressDetail('Importing followers...');
+                    else setProgressDetail('Importing following...');
+                }
 
                 if (attempts < maxAttempts) {
                     pollTimerRef.current = setTimeout(poll, 5000);
@@ -303,10 +333,65 @@ export default function ImportScreen() {
                                     </View>
                                 ))}
 
+                                {/* Import Preview */}
+                                <View style={styles.previewCard}>
+                                    <Text style={styles.previewTitle}>What will be imported:</Text>
+                                    <View style={styles.previewEstimates}>
+                                        {importPosts && <Text style={styles.previewItem}>Posts & media from your export</Text>}
+                                        {importFollowers && <Text style={styles.previewItem}>Followers (matched to existing 0G users)</Text>}
+                                        {importFollowing && <Text style={styles.previewItem}>Following list</Text>}
+                                        {!importPosts && !importFollowers && !importFollowing && (
+                                            <Text style={styles.previewItemMuted}>Select at least one category to import</Text>
+                                        )}
+                                    </View>
+                                </View>
+
+                                {/* Selective Import Toggles */}
+                                <View style={styles.toggleSection}>
+                                    <Text style={styles.toggleSectionTitle}>Choose what to import</Text>
+                                    <View style={styles.toggleRow}>
+                                        <View style={styles.toggleInfo}>
+                                            <Ionicons name="document-text-outline" size={18} color={colors.text.secondary} />
+                                            <Text style={styles.toggleLabel}>Import Posts</Text>
+                                        </View>
+                                        <Switch
+                                            value={importPosts}
+                                            onValueChange={setImportPosts}
+                                            trackColor={{ false: colors.obsidian[600], true: colors.gold[500] }}
+                                            thumbColor={colors.text.primary}
+                                        />
+                                    </View>
+                                    <View style={styles.toggleRow}>
+                                        <View style={styles.toggleInfo}>
+                                            <Ionicons name="people-outline" size={18} color={colors.text.secondary} />
+                                            <Text style={styles.toggleLabel}>Import Followers</Text>
+                                        </View>
+                                        <Switch
+                                            value={importFollowers}
+                                            onValueChange={setImportFollowers}
+                                            trackColor={{ false: colors.obsidian[600], true: colors.gold[500] }}
+                                            thumbColor={colors.text.primary}
+                                        />
+                                    </View>
+                                    <View style={styles.toggleRow}>
+                                        <View style={styles.toggleInfo}>
+                                            <Ionicons name="person-add-outline" size={18} color={colors.text.secondary} />
+                                            <Text style={styles.toggleLabel}>Import Following</Text>
+                                        </View>
+                                        <Switch
+                                            value={importFollowing}
+                                            onValueChange={setImportFollowing}
+                                            trackColor={{ false: colors.obsidian[600], true: colors.gold[500] }}
+                                            thumbColor={colors.text.primary}
+                                        />
+                                    </View>
+                                </View>
+
                                 <TouchableOpacity
-                                    style={styles.uploadBtn}
+                                    style={[styles.uploadBtn, (!importPosts && !importFollowers && !importFollowing) && { opacity: 0.5 }]}
                                     onPress={handleSelectFile}
                                     activeOpacity={0.8}
+                                    disabled={!importPosts && !importFollowers && !importFollowing}
                                 >
                                     <LinearGradient
                                         colors={[colors.gold[400], colors.gold[600]]}
@@ -329,9 +414,14 @@ export default function ImportScreen() {
                                     This may take a few minutes depending on file size
                                 </Text>
                                 {importStatus === 'processing' && (
-                                    <View style={styles.progressBar}>
-                                        <View style={[styles.progressFill, { width: `${progress}%` }]} />
-                                    </View>
+                                    <>
+                                        <View style={styles.progressBar}>
+                                            <View style={[styles.progressFill, { width: `${progress}%` }]} />
+                                        </View>
+                                        {progressDetail ? (
+                                            <Text style={styles.progressDetailText}>{progressDetail}</Text>
+                                        ) : null}
+                                    </>
                                 )}
                             </View>
                         )}
@@ -483,6 +573,67 @@ const styles = StyleSheet.create({
     stepNumberText: { fontSize: 13, fontWeight: '700', color: colors.obsidian[900] },
     stepText: { flex: 1, fontSize: typography.fontSize.base, color: colors.text.secondary, lineHeight: 22, paddingTop: 3 },
 
+    // Import preview
+    previewCard: {
+        backgroundColor: colors.surface.glass,
+        borderRadius: 12,
+        padding: spacing.md,
+        marginTop: spacing.xl,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    previewTitle: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.primary,
+        marginBottom: spacing.sm,
+    },
+    previewEstimates: {
+        gap: 4,
+    },
+    previewItem: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        paddingLeft: spacing.sm,
+    },
+    previewItemMuted: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        fontStyle: 'italic',
+    },
+
+    // Selective import toggles
+    toggleSection: {
+        marginTop: spacing.lg,
+        gap: spacing.xs,
+    },
+    toggleSectionTitle: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.primary,
+        marginBottom: spacing.sm,
+    },
+    toggleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: colors.surface.glass,
+        borderRadius: 12,
+        padding: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    toggleInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    toggleLabel: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.primary,
+        fontWeight: '500',
+    },
+
     uploadBtn: { marginTop: spacing.xl },
     uploadBtnGradient: {
         flexDirection: 'row',
@@ -517,6 +668,12 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     progressFill: { height: '100%', backgroundColor: colors.gold[500], borderRadius: 2 },
+    progressDetailText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.gold[400],
+        marginTop: spacing.sm,
+        fontWeight: '500',
+    },
 
     // Results
     resultSection: { alignItems: 'center', paddingTop: 40 },

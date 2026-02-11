@@ -10,6 +10,7 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
+    TextInput,
     Alert,
     Share,
     Dimensions,
@@ -145,6 +146,130 @@ function PlayerRow({ player, index }: PlayerRowProps) {
                 {!player.isConnected && (
                     <Ionicons name="cloud-offline-outline" size={18} color={colors.text.muted} />
                 )}
+            </GlassCard>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// Lobby Chat
+// ============================================
+
+interface ChatMessage {
+    id: string;
+    playerName: string;
+    text: string;
+    color: string;
+}
+
+const CHAT_COLORS = [
+    colors.gold[400],
+    colors.azure[400],
+    colors.emerald[400],
+    colors.coral[400],
+    colors.amber[400],
+];
+
+function LobbyChat({ players, roomCode }: { players: { id: string; name: string }[]; roomCode: string }) {
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [inputText, setInputText] = useState('');
+    const chatScrollRef = useRef<ScrollView>(null);
+    const playerColorMap = useRef<Record<string, string>>({});
+
+    const getPlayerColor = useCallback((playerId: string) => {
+        if (!playerColorMap.current[playerId]) {
+            const idx = Object.keys(playerColorMap.current).length % CHAT_COLORS.length;
+            playerColorMap.current[playerId] = CHAT_COLORS[idx];
+        }
+        return playerColorMap.current[playerId];
+    }, []);
+
+    // Listen for chat messages from socket
+    useEffect(() => {
+        const unsub = socketManager.on('game:update' as any, (data: any) => {
+            if (data?.type === 'lobby-chat' && data.message) {
+                setMessages(prev => {
+                    const next = [...prev, data.message as ChatMessage].slice(-20);
+                    return next;
+                });
+            }
+        });
+        return () => unsub();
+    }, []);
+
+    // Auto-scroll on new messages
+    useEffect(() => {
+        if (messages.length > 0) {
+            const timer = setTimeout(() => chatScrollRef.current?.scrollToEnd({ animated: true }), 50);
+            return () => clearTimeout(timer);
+        }
+    }, [messages.length]);
+
+    const handleSend = useCallback(() => {
+        const text = inputText.trim();
+        if (!text) return;
+
+        const currentPlayer = players[0]; // local player is typically first
+        const msg: ChatMessage = {
+            id: Date.now().toString(),
+            playerName: currentPlayer?.name || 'You',
+            text,
+            color: getPlayerColor(currentPlayer?.id || 'self'),
+        };
+
+        setMessages(prev => [...prev, msg].slice(-20));
+        setInputText('');
+
+        // Try to broadcast via socket (best-effort)
+        try {
+            socketManager.sendGameAction(roomCode, 'lobby-chat', { message: msg });
+        } catch { /* local-only fallback */ }
+    }, [inputText, players, getPlayerColor, roomCode]);
+
+    return (
+        <Animated.View entering={FadeInDown.delay(300).duration(400)} style={styles.chatSection}>
+            <GlassCard style={styles.chatCard} padding="sm">
+                <View style={styles.chatHeader}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={14} color={colors.text.muted} />
+                    <Text style={styles.chatHeaderText}>Lobby Chat</Text>
+                </View>
+                <ScrollView
+                    ref={chatScrollRef}
+                    style={styles.chatMessages}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {messages.length === 0 && (
+                        <Text style={styles.chatEmpty}>Say hi while you wait...</Text>
+                    )}
+                    {messages.map(msg => (
+                        <View key={msg.id} style={styles.chatMsg}>
+                            <Text style={[styles.chatMsgName, { color: msg.color }]}>{msg.playerName}</Text>
+                            <Text style={styles.chatMsgText}>{msg.text}</Text>
+                        </View>
+                    ))}
+                </ScrollView>
+                <View style={styles.chatInputRow}>
+                    <TextInput
+                        style={styles.chatInput}
+                        placeholder="Type a message..."
+                        placeholderTextColor={colors.text.muted}
+                        value={inputText}
+                        onChangeText={setInputText}
+                        maxLength={100}
+                        returnKeyType="send"
+                        onSubmitEditing={handleSend}
+                        blurOnSubmit={false}
+                    />
+                    <TouchableOpacity
+                        onPress={handleSend}
+                        disabled={!inputText.trim()}
+                        style={[styles.chatSendBtn, !inputText.trim() && { opacity: 0.4 }]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Send message"
+                    >
+                        <Ionicons name="send" size={16} color={colors.gold[400]} />
+                    </TouchableOpacity>
+                </View>
             </GlassCard>
         </Animated.View>
     );
@@ -432,6 +557,9 @@ export default function LobbyScreen() {
                     </Animated.View>
                 )}
 
+                {/* ---- Lobby Chat ---- */}
+                <LobbyChat players={players} roomCode={roomCode} />
+
                 <View style={{ height: 120 }} />
             </ScrollView>
 
@@ -709,6 +837,80 @@ const styles = StyleSheet.create({
     },
     roundOptionTextActive: {
         color: colors.gold[400],
+    },
+
+    // ---- Lobby Chat ----
+    chatSection: {
+        marginBottom: spacing.md,
+    },
+    chatCard: {
+        gap: spacing.xs,
+    },
+    chatHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+        marginBottom: spacing.xs,
+    },
+    chatHeaderText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.text.muted,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    chatMessages: {
+        maxHeight: 140,
+        marginBottom: spacing.xs,
+    },
+    chatEmpty: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        fontStyle: 'italic',
+        textAlign: 'center',
+        paddingVertical: spacing.md,
+    },
+    chatMsg: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: spacing.xs,
+        paddingVertical: 2,
+    },
+    chatMsgName: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '700',
+    },
+    chatMsgText: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.secondary,
+        flex: 1,
+    },
+    chatInputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+        borderTopWidth: 1,
+        borderTopColor: colors.border.subtle,
+        paddingTop: spacing.xs,
+    },
+    chatInput: {
+        flex: 1,
+        fontSize: typography.fontSize.sm,
+        color: colors.text.primary,
+        paddingVertical: spacing.xs,
+        paddingHorizontal: spacing.sm,
+        backgroundColor: colors.obsidian[800],
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    chatSendBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        backgroundColor: colors.gold[500] + '15',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     // ---- Bottom Bar ----

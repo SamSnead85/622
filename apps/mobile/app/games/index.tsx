@@ -49,6 +49,112 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 const RECENTLY_PLAYED_KEY = '@recently-played-games';
+const ACHIEVEMENTS_KEY = '@game-achievements';
+
+// ============================================
+// Achievements
+// ============================================
+
+interface Achievement {
+    id: string;
+    title: string;
+    description: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    color: string;
+    requirement: number;
+}
+
+const ACHIEVEMENTS: Achievement[] = [
+    { id: 'first-win', title: 'First Victory', description: 'Win your first game', icon: 'trophy', color: colors.gold[500], requirement: 1 },
+    { id: 'streak-3', title: 'On Fire', description: '3 game win streak', icon: 'flame', color: colors.coral[500], requirement: 3 },
+    { id: 'games-10', title: 'Dedicated Player', description: 'Play 10 games', icon: 'game-controller', color: colors.azure[500], requirement: 10 },
+    { id: 'perfect-score', title: 'Perfectionist', description: 'Get a perfect score', icon: 'star', color: colors.amber[500], requirement: 1 },
+    { id: 'social-5', title: 'Social Gamer', description: 'Play 5 multiplayer games', icon: 'people', color: colors.emerald[500], requirement: 5 },
+    { id: 'daily-7', title: 'Week Warrior', description: '7-day daily challenge streak', icon: 'calendar', color: colors.gold[400], requirement: 7 },
+];
+
+type AchievementProgress = Record<string, number>;
+
+async function getAchievementProgress(): Promise<AchievementProgress> {
+    try {
+        const data = await AsyncStorage.getItem(ACHIEVEMENTS_KEY);
+        if (data) return JSON.parse(data);
+    } catch { /* non-critical */ }
+    return {};
+}
+
+// ============================================
+// Achievements Section
+// ============================================
+
+function AchievementsSection() {
+    const [progress, setProgress] = useState<AchievementProgress>({});
+
+    useEffect(() => {
+        getAchievementProgress().then(setProgress).catch(() => {});
+    }, []);
+
+    return (
+        <Animated.View entering={FadeInDown.delay(95).duration(500)} style={styles.achievementsSection}>
+            <View style={styles.achievementsHeader}>
+                <Ionicons name="ribbon-outline" size={16} color={colors.gold[400]} />
+                <Text style={styles.achievementsTitle}>Achievements</Text>
+            </View>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.achievementsScroll}
+            >
+                {ACHIEVEMENTS.map((ach, index) => {
+                    const current = progress[ach.id] || 0;
+                    const unlocked = current >= ach.requirement;
+                    return (
+                        <Animated.View
+                            key={ach.id}
+                            entering={FadeInDown.delay(110 + index * 60).duration(400).springify()}
+                        >
+                            <GlassCard
+                                style={[
+                                    styles.achievementCard,
+                                    unlocked && { borderColor: ach.color + '40', shadowColor: ach.color, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 0 } },
+                                ]}
+                                padding="sm"
+                            >
+                                <View
+                                    style={[
+                                        styles.achievementIconCircle,
+                                        {
+                                            backgroundColor: unlocked ? ach.color + '20' : colors.obsidian[700],
+                                            borderColor: unlocked ? ach.color + '40' : colors.border.subtle,
+                                        },
+                                    ]}
+                                >
+                                    <Ionicons
+                                        name={ach.icon}
+                                        size={22}
+                                        color={unlocked ? ach.color : colors.text.muted}
+                                    />
+                                </View>
+                                <Text
+                                    style={[
+                                        styles.achievementName,
+                                        unlocked && { color: ach.color },
+                                    ]}
+                                    numberOfLines={1}
+                                >
+                                    {ach.title}
+                                </Text>
+                                <Text style={styles.achievementProgress}>
+                                    {Math.min(current, ach.requirement)}/{ach.requirement}
+                                </Text>
+                            </GlassCard>
+                        </Animated.View>
+                    );
+                })}
+            </ScrollView>
+        </Animated.View>
+    );
+}
 
 // ============================================
 // Game Definitions
@@ -670,6 +776,9 @@ export default function GamesHubScreen() {
                 {/* ---- Hero Section ---- */}
                 <HeroSection />
 
+                {/* ---- Achievements ---- */}
+                <AchievementsSection />
+
                 {/* ---- Recently Played ---- */}
                 <RecentlyPlayedSection onPlay={handlePlay} />
 
@@ -878,6 +987,51 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.sm,
+    },
+
+    // ---- Achievements ----
+    achievementsSection: {
+        marginBottom: spacing.lg,
+    },
+    achievementsHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.md,
+    },
+    achievementsTitle: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.secondary,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
+    achievementsScroll: {
+        gap: spacing.sm,
+    },
+    achievementCard: {
+        width: 100,
+        alignItems: 'center',
+        gap: spacing.xs,
+    },
+    achievementIconCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
+    },
+    achievementName: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.text.primary,
+        textAlign: 'center',
+    },
+    achievementProgress: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: colors.text.muted,
     },
 
     // ---- Recently Played ----

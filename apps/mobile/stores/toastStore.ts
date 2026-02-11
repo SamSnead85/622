@@ -16,7 +16,19 @@ interface ToastState {
   dismissAll: () => void;
 }
 
+const MAX_TOASTS = 20;
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+/** Evict oldest entries when the Map exceeds MAX_TOASTS */
+function pruneTimeouts() {
+  while (toastTimeouts.size > MAX_TOASTS) {
+    const oldestKey = toastTimeouts.keys().next().value;
+    if (oldestKey === undefined) break;
+    const oldTimeout = toastTimeouts.get(oldestKey);
+    if (oldTimeout) clearTimeout(oldTimeout);
+    toastTimeouts.delete(oldestKey);
+  }
+}
 
 export const useToastStore = create<ToastState>((set, get) => ({
   toasts: [],
@@ -26,6 +38,7 @@ export const useToastStore = create<ToastState>((set, get) => ({
     if (duration > 0) {
       const timeoutId = setTimeout(() => get().dismiss(id), duration);
       toastTimeouts.set(id, timeoutId);
+      pruneTimeouts();
     }
   },
   dismiss: (id) => {

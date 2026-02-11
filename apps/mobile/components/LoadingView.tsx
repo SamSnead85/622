@@ -20,7 +20,7 @@ interface LoadingViewProps {
     color?: string;
 }
 
-export function LoadingView({
+function LoadingViewComponent({
     message,
     size = 'large',
     fullScreen = true,
@@ -43,6 +43,8 @@ export function LoadingView({
     );
 }
 
+export const LoadingView = React.memo(LoadingViewComponent);
+
 const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
@@ -61,3 +63,4 @@ const styles = StyleSheet.create({
 });
 
 export default LoadingView;
+

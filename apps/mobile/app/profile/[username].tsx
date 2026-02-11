@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo } from 'react';
+import { useState, useEffect, useRef, memo, useCallback } from 'react';
 import {
     View,
     Text,
@@ -88,6 +88,23 @@ export default function UserProfileScreen() {
     const [isFollowLoading, setIsFollowLoading] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
+    // Mutual friends
+    const [mutualFriends, setMutualFriends] = useState<{ id: string; displayName: string; avatarUrl?: string }[]>([]);
+    const [mutualTotal, setMutualTotal] = useState(0);
+
+    const loadMutualFriends = useCallback(async (userId: string) => {
+        try {
+            const data = await apiFetch<any>(API.mutualFriends(userId));
+            const friends = data.users || data.mutualFriends || data.data || [];
+            setMutualFriends(Array.isArray(friends) ? friends.slice(0, 3) : []);
+            setMutualTotal(data.total ?? data.count ?? (Array.isArray(friends) ? friends.length : 0));
+        } catch {
+            // Silently hide if API fails
+            setMutualFriends([]);
+            setMutualTotal(0);
+        }
+    }, []);
+
     const loadProfile = async () => {
         if (!username) return;
         try {
@@ -97,6 +114,9 @@ export default function UserProfileScreen() {
                 const postsData = await apiFetch<any>(`${API.userPosts(data.id)}?limit=50`);
                 const rawPosts = postsData.posts || postsData.data || [];
                 setPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
+                if (!data.isOwnProfile) {
+                    loadMutualFriends(data.id);
+                }
             }
         } catch (e: any) {
             if (!isRefreshing) Alert.alert('Error', e.message || 'Failed to load profile');
@@ -179,6 +199,28 @@ export default function UserProfileScreen() {
                             {profile.website && <Text style={styles.website}>{profile.website}</Text>}
                         </View>
 
+                        {/* Mutual friends */}
+                        {mutualTotal > 0 && (
+                            <TouchableOpacity
+                                style={styles.mutualRow}
+                                onPress={() => Alert.alert('Mutual Friends', `You have ${mutualTotal} mutual friend${mutualTotal !== 1 ? 's' : ''} with ${profile.displayName}.`)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.mutualAvatars}>
+                                    {mutualFriends.map((f, i) => (
+                                        <View key={f.id} style={[styles.mutualAvatarWrap, { marginLeft: i > 0 ? -8 : 0, zIndex: 3 - i }]}>
+                                            <Avatar uri={f.avatarUrl} name={f.displayName} customSize={24} />
+                                        </View>
+                                    ))}
+                                </View>
+                                <Text style={styles.mutualText}>
+                                    {mutualTotal <= 3
+                                        ? `${mutualTotal} mutual friend${mutualTotal !== 1 ? 's' : ''}`
+                                        : `You and ${mutualTotal} others follow this person`}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+
                         <View style={styles.statsContainer}>
                             <View style={styles.stat}><Text style={styles.statValue}>{formatCount(profile.postsCount)}</Text><Text style={styles.statLabel}>Posts</Text></View>
                             <View style={styles.statDivider} />
@@ -239,6 +281,29 @@ const styles = StyleSheet.create({
     username: { fontSize: typography.fontSize.base, color: colors.text.muted, marginTop: spacing.xs },
     bio: { fontSize: typography.fontSize.base, color: colors.text.secondary, textAlign: 'center', marginTop: spacing.md, lineHeight: 22 },
     website: { fontSize: typography.fontSize.sm, color: colors.gold[500], marginTop: spacing.sm },
+
+    // Mutual friends
+    mutualRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.md,
+        alignSelf: 'center',
+    },
+    mutualAvatars: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    mutualAvatarWrap: {
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: colors.obsidian[900],
+        overflow: 'hidden',
+    },
+    mutualText: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+    },
 
     statsContainer: {
         flexDirection: 'row', justifyContent: 'center', alignItems: 'center',

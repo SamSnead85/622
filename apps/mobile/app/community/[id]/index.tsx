@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
@@ -20,7 +20,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { Post, mapApiPost, useCommunitiesStore } from '../../../stores';
 import { apiFetch, API } from '../../../lib/api';
-import { ScreenHeader, LoadingView, CommunityInviteSheet } from '../../../components';
+import { ScreenHeader, LoadingView, CommunityInviteSheet, Avatar } from '../../../components';
 import { showError, showSuccess } from '../../../stores/toastStore';
 
 const formatCount = (num: number) => {
@@ -68,6 +68,8 @@ export default function CommunityDetailScreen() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isJoinLoading, setIsJoinLoading] = useState(false);
     const [showInviteSheet, setShowInviteSheet] = useState(false);
+    const [memberPreviews, setMemberPreviews] = useState<Array<{ id: string; avatarUrl?: string; displayName: string }>>([]);
+    const [activePostFilter, setActivePostFilter] = useState<'all' | 'text' | 'images' | 'videos'>('all');
 
     const loadCommunity = async () => {
         if (!communityId) return;
@@ -80,12 +82,40 @@ export default function CommunityDetailScreen() {
                 const rawPosts = postsData.posts || postsData.data || [];
                 setPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
             } catch { showError("Couldn't load community posts"); }
+            // Fetch member previews (first 5)
+            try {
+                const membersData = await apiFetch<any>(API.communityMembers(communityId));
+                const membersList = membersData.members || membersData || [];
+                const previews = (Array.isArray(membersList) ? membersList : []).slice(0, 5).map((m: any) => ({
+                    id: m.userId || m.id,
+                    avatarUrl: m.user?.avatarUrl,
+                    displayName: m.user?.displayName || 'Member',
+                }));
+                setMemberPreviews(previews);
+            } catch { /* silent — member preview is non-critical */ }
         } catch (e: any) {
             if (!isRefreshing) Alert.alert('Error', e.message || 'Failed to load community');
         } finally { setIsLoading(false); setIsRefreshing(false); }
     };
 
     useEffect(() => { loadCommunity(); }, [communityId]);
+
+    const POST_TYPE_FILTERS = [
+        { key: 'all' as const, label: 'All', icon: 'apps-outline' as const },
+        { key: 'text' as const, label: 'Text', icon: 'document-text-outline' as const },
+        { key: 'images' as const, label: 'Images', icon: 'image-outline' as const },
+        { key: 'videos' as const, label: 'Videos', icon: 'videocam-outline' as const },
+    ];
+
+    const filteredPosts = useMemo(() => {
+        if (activePostFilter === 'all') return posts;
+        return posts.filter((post) => {
+            if (activePostFilter === 'text') return !post.mediaUrl;
+            if (activePostFilter === 'images') return post.mediaUrl && post.mediaType === 'image';
+            if (activePostFilter === 'videos') return post.mediaUrl && post.mediaType === 'video';
+            return true;
+        });
+    }, [posts, activePostFilter]);
 
     const handleJoinLeave = async () => {
         if (!community) return;
@@ -269,18 +299,78 @@ export default function CommunityDetailScreen() {
                             </View>
                         )}
 
+                        {/* Members Preview Row */}
+                        {memberPreviews.length > 0 && (
+                            <TouchableOpacity
+                                style={styles.membersPreviewRow}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    if (community.role === 'admin' || community.role === 'moderator') {
+                                        router.push(`/community/${communityId}/manage` as any);
+                                    }
+                                }}
+                                activeOpacity={0.85}
+                            >
+                                <View style={styles.membersAvatarStack}>
+                                    {memberPreviews.map((member, i) => (
+                                        <View key={member.id} style={[styles.membersAvatarWrap, { marginStart: i === 0 ? 0 : -10, zIndex: 5 - i }]}>
+                                            <Avatar uri={member.avatarUrl} name={member.displayName} customSize={30} borderColor={colors.obsidian[800]} borderWidth={2} />
+                                        </View>
+                                    ))}
+                                </View>
+                                <Text style={styles.membersPreviewText}>
+                                    {formatCount(community.membersCount)} member{community.membersCount !== 1 ? 's' : ''}
+                                </Text>
+                                <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+                            </TouchableOpacity>
+                        )}
+
+                        {/* Post Type Filter Pills */}
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.postFilterScroll}
+                            style={styles.postFilterContainer}
+                        >
+                            {POST_TYPE_FILTERS.map((filter) => {
+                                const isActive = activePostFilter === filter.key;
+                                return (
+                                    <TouchableOpacity
+                                        key={filter.key}
+                                        style={[styles.postFilterPill, isActive && styles.postFilterPillActive]}
+                                        onPress={() => {
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            setActivePostFilter(filter.key);
+                                        }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Ionicons
+                                            name={filter.icon}
+                                            size={14}
+                                            color={isActive ? colors.gold[500] : colors.text.muted}
+                                        />
+                                        <Text style={[styles.postFilterText, isActive && styles.postFilterTextActive]}>
+                                            {filter.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+
                         <View style={styles.sectionHeader}>
                             <Ionicons name="document-text-outline" size={16} color={colors.text.primary} />
                             <Text style={styles.sectionTitle}>Recent Posts</Text>
                         </View>
 
-                        {posts.length === 0 ? (
+                        {filteredPosts.length === 0 ? (
                             <View style={styles.emptyPosts}>
                                 <Ionicons name="document-text-outline" size={40} color={colors.text.muted} />
-                                <Text style={styles.emptyText}>No posts in this community yet</Text>
+                                <Text style={styles.emptyText}>
+                                    {activePostFilter === 'all' ? 'No posts in this community yet' : `No ${activePostFilter} posts yet`}
+                                </Text>
                             </View>
                         ) : (
-                            posts.map((post) => (
+                            filteredPosts.map((post) => (
                                 <TouchableOpacity key={post.id} style={styles.postCard} onPress={() => router.push(`/post/${post.id}`)} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={`Post by ${post.author?.displayName || 'Anonymous'}`}>
                                     <View style={styles.postHeader}>
                                         <Text style={styles.postAuthor}>{post.author?.displayName || 'Anonymous'}</Text>
@@ -418,4 +508,46 @@ const styles = StyleSheet.create({
     postStats: { flexDirection: 'row', gap: spacing.lg },
     postStatItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     postStat: { fontSize: typography.fontSize.sm, color: colors.text.muted },
+
+    // Members Preview
+    membersPreviewRow: {
+        flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+        backgroundColor: colors.surface.glass, borderRadius: 14,
+        padding: spacing.md, marginBottom: spacing.md,
+        borderWidth: 1, borderColor: colors.border.subtle,
+    },
+    membersAvatarStack: {
+        flexDirection: 'row', alignItems: 'center',
+    },
+    membersAvatarWrap: {
+        borderRadius: 15,
+    },
+    membersPreviewText: {
+        flex: 1, fontSize: typography.fontSize.base, fontWeight: '600',
+        color: colors.text.secondary,
+    },
+
+    // Post Type Filter Pills
+    postFilterContainer: {
+        marginBottom: spacing.md,
+    },
+    postFilterScroll: {
+        gap: spacing.xs,
+    },
+    postFilterPill: {
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+        paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+        borderRadius: 20, backgroundColor: colors.surface.glass,
+        borderWidth: 1, borderColor: colors.border.subtle,
+    },
+    postFilterPillActive: {
+        backgroundColor: colors.surface.goldSubtle,
+        borderColor: colors.gold[500] + '40',
+    },
+    postFilterText: {
+        fontSize: typography.fontSize.sm, color: colors.text.muted, fontWeight: '500',
+    },
+    postFilterTextActive: {
+        color: colors.gold[500], fontWeight: '600',
+    },
 });

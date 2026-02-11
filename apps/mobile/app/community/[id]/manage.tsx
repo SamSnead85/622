@@ -8,6 +8,8 @@ import {
     TextInput,
     Alert,
     RefreshControl,
+    Platform,
+    ActionSheetIOS,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -113,9 +115,52 @@ export default function CommunityManageScreen() {
         return matchesSearch && matchesRole;
     });
 
+    const showMemberActions = useCallback((member: Member) => {
+        if (member.role === 'admin') return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+        const isMod = member.role === 'moderator';
+        const toggleModLabel = isMod ? 'Remove Moderator' : 'Make Moderator';
+        const toggleModAction = isMod ? 'demote' as const : 'promote' as const;
+
+        if (Platform.OS === 'ios') {
+            const options = [toggleModLabel, 'Remove from Group', 'Cancel'];
+            const destructiveButtonIndex = 1;
+            const cancelButtonIndex = 2;
+            ActionSheetIOS.showActionSheetWithOptions(
+                {
+                    options,
+                    destructiveButtonIndex,
+                    cancelButtonIndex,
+                    title: member.user?.displayName || 'Member',
+                    message: `@${member.user?.username || 'unknown'}`,
+                },
+                (buttonIndex) => {
+                    if (buttonIndex === 0) handleAction(member, toggleModAction);
+                    if (buttonIndex === 1) handleAction(member, 'remove');
+                },
+            );
+        } else {
+            Alert.alert(
+                member.user?.displayName || 'Member',
+                `@${member.user?.username || 'unknown'}`,
+                [
+                    { text: toggleModLabel, onPress: () => handleAction(member, toggleModAction) },
+                    { text: 'Remove from Group', style: 'destructive', onPress: () => handleAction(member, 'remove') },
+                    { text: 'Cancel', style: 'cancel' },
+                ],
+            );
+        }
+    }, [communityId]);
+
     const renderMember = useCallback(({ item, index }: { item: Member; index: number }) => (
         <Animated.View entering={FadeInDown.duration(300).delay(index * 30)}>
-            <View style={styles.memberCard}>
+            <TouchableOpacity
+                style={styles.memberCard}
+                activeOpacity={0.85}
+                onLongPress={() => showMemberActions(item)}
+                delayLongPress={400}
+            >
                 <View style={styles.memberLeft}>
                     <Avatar uri={item.user?.avatarUrl} name={item.user?.displayName || 'Member'} size="md" />
                     <View style={styles.memberInfo}>
@@ -132,28 +177,15 @@ export default function CommunityManageScreen() {
                     {item.role !== 'admin' && (
                         <TouchableOpacity
                             style={styles.moreBtn}
-                            onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                const actions: Array<{ text: string; onPress: () => void; style?: 'destructive' | 'cancel' }> = [];
-                                if (item.role === 'member') {
-                                    actions.push({ text: 'Promote to Moderator', onPress: () => handleAction(item, 'promote') });
-                                }
-                                if (item.role === 'moderator') {
-                                    actions.push({ text: 'Remove Moderator Role', onPress: () => handleAction(item, 'demote') });
-                                }
-                                actions.push({ text: 'Mute User', onPress: () => handleAction(item, 'mute') });
-                                actions.push({ text: 'Ban User', onPress: () => handleAction(item, 'ban'), style: 'destructive' });
-                                actions.push({ text: 'Cancel', onPress: () => {}, style: 'cancel' });
-                                Alert.alert(item.user?.displayName || 'Member', `@${item.user?.username || 'unknown'}`, actions);
-                            }}
+                            onPress={() => showMemberActions(item)}
                         >
                             <Ionicons name="ellipsis-horizontal" size={18} color={colors.text.muted} />
                         </TouchableOpacity>
                     )}
                 </View>
-            </View>
+            </TouchableOpacity>
         </Animated.View>
-    ), [communityId]);
+    ), [communityId, showMemberActions]);
 
     return (
         <View style={styles.container}>
@@ -216,6 +248,26 @@ export default function CommunityManageScreen() {
                                 {searchQuery ? 'No members match your search' : 'No members yet'}
                             </Text>
                         </View>
+                    }
+                    ListFooterComponent={
+                        filteredMembers.length > 0 ? (
+                            <TouchableOpacity
+                                style={styles.viewAllBtn}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    Alert.alert(
+                                        'All Members',
+                                        `This community has ${members.length} member${members.length !== 1 ? 's' : ''}.`,
+                                        [{ text: 'OK' }],
+                                    );
+                                }}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="people-outline" size={16} color={colors.gold[400]} />
+                                <Text style={styles.viewAllText}>View All Members ({members.length})</Text>
+                                <Ionicons name="chevron-forward" size={16} color={colors.gold[400]} />
+                            </TouchableOpacity>
+                        ) : null
                     }
                 />
             )}
@@ -285,5 +337,14 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: typography.fontSize.base, color: colors.text.muted,
         marginTop: spacing.lg, textAlign: 'center',
+    },
+    viewAllBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: spacing.sm, backgroundColor: colors.surface.glass,
+        borderRadius: 14, paddingVertical: spacing.md, marginTop: spacing.md,
+        borderWidth: 1, borderColor: colors.gold[500] + '30',
+    },
+    viewAllText: {
+        fontSize: typography.fontSize.base, fontWeight: '600', color: colors.gold[400],
     },
 });

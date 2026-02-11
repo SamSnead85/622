@@ -13,7 +13,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated, {
+    FadeIn,
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+    withSequence,
+    withDelay,
+    runOnJS,
+} from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
@@ -23,6 +31,8 @@ import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MOMENT_DURATION = 5000; // 5 seconds per moment
+
+const REACTION_EMOJIS = ['❤️', '🔥', '😂', '😮', '😢', '👏'] as const;
 
 interface Moment {
     id: string;
@@ -49,6 +59,80 @@ function ProgressBar({ segments, activeIndex, progress }: { segments: number; ac
                     />
                 </View>
             ))}
+        </View>
+    );
+}
+
+function FloatingEmoji({ emoji, onDone }: { emoji: string; onDone: () => void }) {
+    const scale = useSharedValue(0);
+    const translateY = useSharedValue(0);
+    const opacity = useSharedValue(1);
+
+    useEffect(() => {
+        scale.value = withSequence(
+            withTiming(1.2, { duration: 200 }),
+            withTiming(1, { duration: 100 }),
+        );
+        translateY.value = withTiming(-100, { duration: 800 });
+        opacity.value = withDelay(500, withTiming(0, { duration: 300 }, () => {
+            runOnJS(onDone)();
+        }));
+    }, []);
+
+    const animStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }, { translateY: translateY.value }],
+        opacity: opacity.value,
+    }));
+
+    return (
+        <Animated.Text style={[styles.floatingEmoji, animStyle]}>
+            {emoji}
+        </Animated.Text>
+    );
+}
+
+function ReactionBar({ momentId, onPause, onResume }: { momentId: string; onPause: () => void; onResume: () => void }) {
+    const [floating, setFloating] = useState<{ id: number; emoji: string } | null>(null);
+    const idRef = useRef(0);
+
+    const handleReact = async (emoji: string) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        onPause();
+        const fid = ++idRef.current;
+        setFloating({ id: fid, emoji });
+        try {
+            await apiFetch(API.momentReact(momentId), {
+                method: 'POST',
+                body: JSON.stringify({ emoji }),
+            });
+        } catch {
+            // Silently ignore reaction failures
+        }
+    };
+
+    return (
+        <View style={styles.reactionBar}>
+            {REACTION_EMOJIS.map((emoji) => (
+                <TouchableOpacity
+                    key={emoji}
+                    style={styles.reactionBtn}
+                    onPress={() => handleReact(emoji)}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={`React with ${emoji}`}
+                >
+                    <Text style={styles.reactionEmoji}>{emoji}</Text>
+                </TouchableOpacity>
+            ))}
+            {floating && (
+                <View style={styles.floatingContainer} pointerEvents="none">
+                    <FloatingEmoji
+                        key={floating.id}
+                        emoji={floating.emoji}
+                        onDone={() => { setFloating(null); onResume(); }}
+                    />
+                </View>
+            )}
         </View>
     );
 }
@@ -214,6 +298,13 @@ export default function MomentViewerScreen() {
                         <Text style={styles.viewCountText}>{currentMoment.viewCount || 0}</Text>
                     </View>
                 )}
+                {!isOwn && (
+                    <ReactionBar
+                        momentId={currentMoment.id}
+                        onPause={() => setPaused(true)}
+                        onResume={() => setPaused(false)}
+                    />
+                )}
             </View>
         </View>
     );
@@ -286,5 +377,34 @@ const styles = StyleSheet.create({
     },
     viewCountText: {
         fontSize: typography.fontSize.sm, color: colors.text.primary, fontWeight: '600',
+    },
+
+    // Reaction bar
+    reactionBar: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: spacing.md,
+        marginTop: spacing.md,
+    },
+    reactionBtn: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: colors.surface.overlayLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    reactionEmoji: {
+        fontSize: 20,
+    },
+    floatingContainer: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 50,
+        alignItems: 'center',
+    },
+    floatingEmoji: {
+        fontSize: 40,
     },
 });

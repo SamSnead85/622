@@ -1366,6 +1366,7 @@ export default function FeedScreen() {
 
     // Prefetch next page images when user is near the bottom of the current feed
     const prefetchedPageRef = useRef<number>(0);
+    const prefetchedVideoUrls = useRef<Set<string>>(new Set());
     const onViewableForPrefetch = useCallback(
         ({ viewableItems }: { viewableItems: ViewToken[] }) => {
             if (viewableItems.length === 0 || posts.length === 0) return;
@@ -1380,8 +1381,28 @@ export default function FeedScreen() {
                     fetchFeed(false, feedType, feedView);
                 }
             }
+
+            // Prefetch upcoming video posts (3 positions ahead) with a lightweight range request
+            const lookAhead = lastViewableIndex + 3;
+            if (lookAhead < posts.length) {
+                const upcoming = posts[lookAhead];
+                if (
+                    upcoming?.mediaType === 'VIDEO' &&
+                    upcoming.mediaUrl &&
+                    !prefetchedVideoUrls.current.has(upcoming.mediaUrl)
+                ) {
+                    prefetchedVideoUrls.current.add(upcoming.mediaUrl);
+                    // Fetch only the first 64KB to warm the CDN cache and DNS
+                    fetch(upcoming.mediaUrl, {
+                        method: 'GET',
+                        headers: { Range: 'bytes=0-65535' },
+                    }).catch(() => {
+                        // Non-critical — silently ignore prefetch failures
+                    });
+                }
+            }
         },
-        [posts.length, hasMore, isLoading, fetchFeed, feedType, feedView]
+        [posts.length, hasMore, isLoading, fetchFeed, feedType, feedView, posts]
     );
 
     // Extracted so it can be used in parallel fetch and periodic refresh
@@ -1897,7 +1918,10 @@ export default function FeedScreen() {
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}
-                        onRefresh={() => fetchFeed(true, feedType, feedView)}
+                        onRefresh={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            fetchFeed(true, feedType, feedView);
+                        }}
                         tintColor={colors.gold[500]}
                     />
                 }

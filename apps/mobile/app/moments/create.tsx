@@ -10,6 +10,7 @@ import {
     KeyboardAvoidingView,
     Platform,
     Dimensions,
+    Modal,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -25,12 +26,26 @@ import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+type FontStyle = 'normal' | 'bold' | 'italic';
+
+interface TextOverlay {
+    text: string;
+    fontStyle: FontStyle;
+    position: { x: number; y: number };
+}
+
 export default function MomentCreateScreen() {
     const router = useRouter();
     const [mediaUri, setMediaUri] = useState<string | null>(null);
     const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
     const [caption, setCaption] = useState('');
     const [posting, setPosting] = useState(false);
+
+    // Text overlay state
+    const [textOverlay, setTextOverlay] = useState<TextOverlay | null>(null);
+    const [showTextInput, setShowTextInput] = useState(false);
+    const [draftText, setDraftText] = useState('');
+    const [draftFontStyle, setDraftFontStyle] = useState<FontStyle>('normal');
 
     const pickMedia = async (source: 'camera' | 'gallery') => {
         try {
@@ -82,6 +97,7 @@ export default function MomentCreateScreen() {
                     mediaUrl: upload.url,
                     mediaType: mediaType.toUpperCase(),
                     caption: caption.trim() || undefined,
+                    textOverlay: textOverlay || undefined,
                 }),
             });
 
@@ -148,6 +164,44 @@ export default function MomentCreateScreen() {
                             transition={IMAGE_PLACEHOLDER.transition}
                             cachePolicy="memory-disk"
                         />
+
+                        {/* Text overlay on preview */}
+                        {textOverlay && (
+                            <View style={styles.textOverlayContainer} pointerEvents="none">
+                                <Text
+                                    style={[
+                                        styles.textOverlayText,
+                                        textOverlay.fontStyle === 'bold' && styles.textOverlayBold,
+                                        textOverlay.fontStyle === 'italic' && styles.textOverlayItalic,
+                                    ]}
+                                >
+                                    {textOverlay.text}
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* Toolbar */}
+                        <View style={styles.toolbar}>
+                            <TouchableOpacity
+                                style={[styles.toolbarBtn, textOverlay && styles.toolbarBtnActive]}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    if (textOverlay) {
+                                        setDraftText(textOverlay.text);
+                                        setDraftFontStyle(textOverlay.fontStyle);
+                                    } else {
+                                        setDraftText('');
+                                        setDraftFontStyle('normal');
+                                    }
+                                    setShowTextInput(true);
+                                }}
+                                accessibilityRole="button"
+                                accessibilityLabel="Add text overlay"
+                            >
+                                <Text style={styles.toolbarBtnLabel}>Aa</Text>
+                            </TouchableOpacity>
+                        </View>
+
                         <LinearGradient
                             colors={['transparent', colors.obsidian[900] + 'CC', colors.obsidian[900]]}
                             style={styles.previewGradient}
@@ -170,6 +224,7 @@ export default function MomentCreateScreen() {
                                     onPress={() => {
                                         setMediaUri(null);
                                         setCaption('');
+                                        setTextOverlay(null);
                                     }}
                                     accessibilityRole="button"
                                     accessibilityLabel="Retake photo or video"
@@ -205,6 +260,80 @@ export default function MomentCreateScreen() {
                     </View>
                 )}
             </KeyboardAvoidingView>
+
+            {/* Text overlay input modal */}
+            <Modal visible={showTextInput} transparent animationType="fade">
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.textModalContainer}>
+                    <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setShowTextInput(false)} />
+                    <View style={styles.textModalContent}>
+                        <TextInput
+                            style={[
+                                styles.textModalInput,
+                                draftFontStyle === 'bold' && { fontWeight: '700' },
+                                draftFontStyle === 'italic' && { fontStyle: 'italic' },
+                            ]}
+                            placeholder="Type your text..."
+                            placeholderTextColor={colors.text.muted}
+                            value={draftText}
+                            onChangeText={setDraftText}
+                            multiline
+                            maxLength={100}
+                            autoFocus
+                        />
+                        <View style={styles.fontStyleRow}>
+                            {(['normal', 'bold', 'italic'] as FontStyle[]).map((fs) => (
+                                <TouchableOpacity
+                                    key={fs}
+                                    style={[styles.fontStyleBtn, draftFontStyle === fs && styles.fontStyleBtnActive]}
+                                    onPress={() => setDraftFontStyle(fs)}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.fontStyleLabel,
+                                            fs === 'bold' && { fontWeight: '700' },
+                                            fs === 'italic' && { fontStyle: 'italic' },
+                                            draftFontStyle === fs && styles.fontStyleLabelActive,
+                                        ]}
+                                    >
+                                        {fs.charAt(0).toUpperCase() + fs.slice(1)}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        <View style={styles.textModalActions}>
+                            {textOverlay && (
+                                <TouchableOpacity
+                                    style={styles.textModalRemoveBtn}
+                                    onPress={() => {
+                                        setTextOverlay(null);
+                                        setShowTextInput(false);
+                                    }}
+                                >
+                                    <Text style={styles.textModalRemoveText}>Remove</Text>
+                                </TouchableOpacity>
+                            )}
+                            <View style={{ flex: 1 }} />
+                            <TouchableOpacity
+                                style={styles.textModalDoneBtn}
+                                onPress={() => {
+                                    const trimmed = draftText.trim();
+                                    if (trimmed) {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setTextOverlay({
+                                            text: trimmed,
+                                            fontStyle: draftFontStyle,
+                                            position: { x: 0.5, y: 0.5 },
+                                        });
+                                    }
+                                    setShowTextInput(false);
+                                }}
+                            >
+                                <Text style={styles.textModalDoneText}>Done</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
         </View>
     );
 }
@@ -290,6 +419,122 @@ const styles = StyleSheet.create({
     },
     postBtnText: {
         fontSize: typography.fontSize.base, fontWeight: '700',
+        color: colors.obsidian[900],
+    },
+
+    // Toolbar
+    toolbar: {
+        position: 'absolute',
+        top: spacing.lg,
+        right: spacing.lg,
+        zIndex: 10,
+        gap: spacing.sm,
+    },
+    toolbarBtn: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: colors.surface.overlayLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    toolbarBtnActive: {
+        backgroundColor: colors.gold[500] + '40',
+    },
+    toolbarBtnLabel: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: colors.text.primary,
+    },
+
+    // Text overlay on preview
+    textOverlayContainer: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 5,
+    },
+    textOverlayText: {
+        fontSize: 28,
+        color: '#FFFFFF',
+        textAlign: 'center',
+        paddingHorizontal: spacing.xl,
+        textShadowColor: 'rgba(0,0,0,0.75)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 6,
+    },
+    textOverlayBold: {
+        fontWeight: '700',
+    },
+    textOverlayItalic: {
+        fontStyle: 'italic',
+    },
+
+    // Text input modal
+    textModalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        paddingHorizontal: spacing.xl,
+    },
+    textModalContent: {
+        backgroundColor: colors.obsidian[800],
+        borderRadius: 20,
+        padding: spacing.lg,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    textModalInput: {
+        fontSize: 22,
+        color: colors.text.primary,
+        textAlign: 'center',
+        minHeight: 80,
+        marginBottom: spacing.md,
+    },
+    fontStyleRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.lg,
+    },
+    fontStyleBtn: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: 12,
+        backgroundColor: colors.surface.glass,
+    },
+    fontStyleBtnActive: {
+        backgroundColor: colors.surface.goldMedium,
+    },
+    fontStyleLabel: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+    },
+    fontStyleLabelActive: {
+        color: colors.gold[500],
+    },
+    textModalActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    textModalRemoveBtn: {
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.md,
+    },
+    textModalRemoveText: {
+        fontSize: typography.fontSize.base,
+        color: colors.coral[500],
+        fontWeight: '600',
+    },
+    textModalDoneBtn: {
+        backgroundColor: colors.gold[500],
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.xl,
+        borderRadius: 12,
+    },
+    textModalDoneText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
         color: colors.obsidian[900],
     },
 });

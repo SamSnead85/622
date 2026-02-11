@@ -56,7 +56,7 @@ const SIZE_CONFIG = {
     lg: { paddingH: spacing['2xl'], paddingV: spacing.lg, fontSize: typography.fontSize.lg, iconSize: 20 },
 };
 
-export function Button({
+function ButtonComponent({
     title,
     onPress,
     variant = 'primary',
@@ -135,6 +135,8 @@ export function Button({
     );
 }
 
+export const Button = React.memo(ButtonComponent);
+
 /** Convenience alias */
 export function PrimaryButton(props: Omit<ButtonProps, 'variant'>) {
     return <Button variant="primary" {...props} />;
@@ -212,3 +214,4 @@ const styles = StyleSheet.create({
 });
 
 export default Button;
+

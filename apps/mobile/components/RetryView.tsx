@@ -22,7 +22,7 @@ interface RetryViewProps {
     icon?: keyof typeof Ionicons.glyphMap;
 }
 
-export function RetryView({
+function RetryViewComponent({
     message = 'Something went wrong. Please try again.',
     onRetry,
     isRetrying = false,
@@ -66,6 +66,8 @@ export function RetryView({
         </View>
     );
 }
+
+export const RetryView = React.memo(RetryViewComponent);
 
 const styles = StyleSheet.create({
     container: {
@@ -137,3 +139,4 @@ const styles = StyleSheet.create({
 });
 
 export default RetryView;
+

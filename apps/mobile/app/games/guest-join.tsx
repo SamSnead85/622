@@ -35,6 +35,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { ScreenHeader, GlassCard } from '../../components';
 
 const GUEST_NAME_KEY = '@guest-name';
+const SIGNUP_CTA_DISMISSED_KEY = '@guest-signup-cta-dismissed';
 
 // Game type display map
 const GAME_NAMES: Record<string, { name: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
@@ -96,6 +97,7 @@ export default function GuestJoinScreen() {
     const { code, gameType } = useLocalSearchParams<{ code: string; gameType?: string }>();
     const [guestName, setGuestName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [showSignupCta, setShowSignupCta] = useState(false);
     const inputRef = useRef<TextInput>(null);
 
     const roomCode = (code || '').toUpperCase();
@@ -118,6 +120,11 @@ export default function GuestJoinScreen() {
         return () => clearTimeout(timer);
     }, []);
 
+    // ---- Proceed to lobby ----
+    const proceedToLobby = useCallback(() => {
+        router.replace(`/games/lobby/${roomCode}` as any);
+    }, [roomCode, router]);
+
     // ---- Join Game as Guest ----
     const handleJoinGame = useCallback(async () => {
         const trimmedName = guestName.trim();
@@ -134,14 +141,40 @@ export default function GuestJoinScreen() {
             // Save guest name for future sessions
             await AsyncStorage.setItem(GUEST_NAME_KEY, trimmedName);
 
-            // Navigate to the game lobby with the code
-            router.replace(`/games/lobby/${roomCode}` as any);
+            // Check if signup CTA was dismissed within last 24 hours
+            const dismissed = await AsyncStorage.getItem(SIGNUP_CTA_DISMISSED_KEY);
+            if (dismissed) {
+                const dismissedAt = parseInt(dismissed, 10);
+                const twentyFourHours = 24 * 60 * 60 * 1000;
+                if (Date.now() - dismissedAt < twentyFourHours) {
+                    proceedToLobby();
+                    return;
+                }
+            }
+
+            // Show signup CTA briefly before navigating
+            setShowSignupCta(true);
         } catch {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         } finally {
             setIsLoading(false);
         }
-    }, [guestName, roomCode, router]);
+    }, [guestName, proceedToLobby]);
+
+    // ---- Dismiss signup CTA ----
+    const handleDismissCta = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        try {
+            await AsyncStorage.setItem(SIGNUP_CTA_DISMISSED_KEY, Date.now().toString());
+        } catch { /* non-critical */ }
+        proceedToLobby();
+    }, [proceedToLobby]);
+
+    // ---- Sign up from CTA ----
+    const handleSignUpFromCta = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        router.push('/(auth)/register' as any);
+    }, [router]);
 
     // ---- Navigate to Sign In ----
     const handleSignIn = useCallback(() => {
@@ -296,6 +329,53 @@ export default function GuestJoinScreen() {
                     </GlassCard>
                 </Animated.View>
             </KeyboardAvoidingView>
+
+            {/* ---- Signup CTA Banner ---- */}
+            {showSignupCta && (
+                <Animated.View
+                    entering={FadeInDown.duration(400).springify()}
+                    style={styles.signupCtaOverlay}
+                >
+                    <GlassCard style={styles.signupCtaCard} padding="lg">
+                        <View style={styles.signupCtaIconRow}>
+                            <LinearGradient
+                                colors={[colors.gold[500] + '20', colors.gold[500] + '08']}
+                                style={styles.signupCtaIconBg}
+                            >
+                                <Ionicons name="sparkles" size={24} color={colors.gold[400]} />
+                            </LinearGradient>
+                        </View>
+                        <Text style={styles.signupCtaTitle}>Enjoying 0G?</Text>
+                        <Text style={styles.signupCtaDesc}>
+                            Create an account to save your scores and play with friends
+                        </Text>
+                        <TouchableOpacity
+                            onPress={handleSignUpFromCta}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Sign up"
+                        >
+                            <LinearGradient
+                                colors={[colors.gold[600], colors.gold[500], colors.gold[400]]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.signupCtaButton}
+                            >
+                                <Text style={styles.signupCtaButtonText}>Sign Up</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={handleDismissCta}
+                            activeOpacity={0.7}
+                            style={styles.signupCtaDismiss}
+                            accessibilityRole="button"
+                            accessibilityLabel="Maybe later"
+                        >
+                            <Text style={styles.signupCtaDismissText}>Maybe Later</Text>
+                        </TouchableOpacity>
+                    </GlassCard>
+                </Animated.View>
+            )}
         </View>
     );
 }
@@ -477,6 +557,67 @@ const styles = StyleSheet.create({
     signInLink: {
         color: colors.gold[400],
         fontWeight: '600',
+    },
+
+    // ---- Signup CTA Banner ----
+    signupCtaOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing['3xl'],
+    },
+    signupCtaCard: {
+        alignItems: 'center',
+        borderColor: colors.gold[500] + '20',
+    },
+    signupCtaIconRow: {
+        marginBottom: spacing.md,
+    },
+    signupCtaIconBg: {
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    signupCtaTitle: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+        color: colors.text.primary,
+        marginBottom: spacing.xs,
+    },
+    signupCtaDesc: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        lineHeight: 20,
+        marginBottom: spacing.lg,
+    },
+    signupCtaButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing['3xl'],
+        borderRadius: 14,
+    },
+    signupCtaButtonText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+        color: colors.obsidian[900],
+    },
+    signupCtaDismiss: {
+        paddingVertical: spacing.sm,
+        marginTop: spacing.xs,
+    },
+    signupCtaDismissText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.muted,
     },
 
     // ---- Bottom CTA ----

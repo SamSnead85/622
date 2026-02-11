@@ -26,7 +26,7 @@ interface ScreenHeaderProps {
     style?: ViewStyle;
 }
 
-export function ScreenHeader({
+function ScreenHeaderComponent({
     title,
     showBack = true,
     onBack,
@@ -59,6 +59,8 @@ export function ScreenHeader({
         </View>
     );
 }
+
+export const ScreenHeader = React.memo(ScreenHeaderComponent);
 
 const styles = StyleSheet.create({
     header: {
@@ -95,3 +97,4 @@ const styles = StyleSheet.create({
 });
 
 export default ScreenHeader;
+
