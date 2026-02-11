@@ -8,6 +8,7 @@ import {
     RefreshControl,
     Alert,
     Share,
+    Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../../lib/imagePlaceholder';
@@ -53,6 +54,12 @@ interface CommunityDetail {
     isPublic: boolean;
     role: 'member' | 'admin' | 'moderator' | null;
     createdAt: string;
+    welcomeMessage?: string;
+    websiteUrl?: string;
+    brandColor?: string;
+    logoUrl?: string;
+    tagline?: string;
+    isDemo?: boolean;
 }
 
 export default function CommunityDetailScreen() {
@@ -155,6 +162,9 @@ export default function CommunityDetailScreen() {
         );
     }
 
+    const isDemo = community?.welcomeMessage?.toLowerCase().includes('demo group') ||
+        community?.slug === 'miraj-collective';
+
     return (
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
@@ -172,6 +182,63 @@ export default function CommunityDetailScreen() {
                             <Image source={{ uri: community.coverUrl }} placeholder={IMAGE_PLACEHOLDER.blurhash} transition={IMAGE_PLACEHOLDER.transition} cachePolicy="memory-disk" style={styles.coverImage} contentFit="cover" />
                             <LinearGradient colors={['transparent', colors.obsidian[900]]} style={styles.coverGradient} />
                         </View>
+                    )}
+
+                    {isDemo && (
+                        <Animated.View entering={FadeInDown.duration(400).delay(200)}>
+                            <View style={styles.demoBanner}>
+                                <LinearGradient
+                                    colors={[community.brandColor || colors.gold[500], (community.brandColor || colors.gold[500]) + '80']}
+                                    style={StyleSheet.absoluteFill}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                />
+                                <View style={styles.demoBannerContent}>
+                                    <Ionicons name="sparkles" size={20} color={colors.text.primary} />
+                                    <View style={styles.demoBannerText}>
+                                        <Text style={styles.demoBannerTitle}>This is your demo group</Text>
+                                        <Text style={styles.demoBannerSubtitle}>
+                                            Take ownership of this space — free of charge. Your branding, your rules, your community.
+                                        </Text>
+                                    </View>
+                                </View>
+                                <View style={styles.demoBannerActions}>
+                                    <TouchableOpacity
+                                        style={styles.claimBtn}
+                                        onPress={() => {
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                            if (community.websiteUrl) {
+                                                Linking.openURL(community.websiteUrl);
+                                            } else {
+                                                Alert.alert(
+                                                    'Claim This Group',
+                                                    'Contact us to take full ownership of this branded community space. It\'s free!',
+                                                    [
+                                                        { text: 'Maybe Later', style: 'cancel' },
+                                                        { text: 'Contact Us', onPress: () => Linking.openURL('https://0gravity.ai/contact') },
+                                                    ]
+                                                );
+                                            }
+                                        }}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Claim this group"
+                                    >
+                                        <Text style={styles.claimBtnText}>Claim This Group</Text>
+                                        <Ionicons name="arrow-forward" size={14} color={colors.obsidian[900]} />
+                                    </TouchableOpacity>
+                                    {community.websiteUrl && (
+                                        <TouchableOpacity
+                                            style={styles.visitWebsiteBtn}
+                                            onPress={() => Linking.openURL(community.websiteUrl!)}
+                                            accessibilityRole="link"
+                                        >
+                                            <Ionicons name="globe-outline" size={14} color={colors.text.primary} />
+                                            <Text style={styles.visitWebsiteText}>Visit Website</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            </View>
+                        </Animated.View>
                     )}
 
                     <View style={styles.content}>
@@ -549,5 +616,72 @@ const styles = StyleSheet.create({
     },
     postFilterTextActive: {
         color: colors.gold[500], fontWeight: '600',
+    },
+
+    // Demo Banner
+    demoBanner: {
+        marginHorizontal: spacing.md,
+        marginBottom: spacing.lg,
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '30',
+    },
+    demoBannerContent: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        padding: spacing.lg,
+        gap: spacing.sm,
+    },
+    demoBannerText: {
+        flex: 1,
+    },
+    demoBannerTitle: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        color: colors.text.primary,
+        fontFamily: 'Inter-Bold',
+        marginBottom: 4,
+    },
+    demoBannerSubtitle: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        lineHeight: 20,
+    },
+    demoBannerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.lg,
+    },
+    claimBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: colors.gold[500],
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.sm,
+        borderRadius: 20,
+    },
+    claimBtnText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '700',
+        color: colors.obsidian[900],
+        fontFamily: 'Inter-Bold',
+    },
+    visitWebsiteBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: 20,
+        backgroundColor: colors.surface.glassActive,
+    },
+    visitWebsiteText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.primary,
+        fontFamily: 'Inter-Medium',
     },
 });

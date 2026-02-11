@@ -126,9 +126,26 @@ type FeaturedGroup = {
     tags: string[];
     gradient: [string, string];
     nextEvent?: { title: string; date: string };
+    logoUrl?: string;
+    isDemo?: boolean;
+    websiteUrl?: string;
 };
 
 const FEATURED_GROUPS: FeaturedGroup[] = [
+    {
+        id: 'seed-miraj-collective',
+        name: 'Miraj Collective',
+        icon: 'diamond-outline',
+        color: '#B8A44C',
+        description: 'A premier coaching program for professional Muslim men uniting faith, leadership, and success. Coaching, community, and clarity.',
+        memberCount: 0,
+        tags: ['Coaching', 'Leadership', 'Faith'],
+        gradient: ['#8A7A3A', '#B8A44C'],
+        nextEvent: { title: 'Group Coaching Session', date: 'Weekly' },
+        logoUrl: 'https://res.cloudinary.com/drsxgxzhb/image/upload/v1770826468/0g-communities/miraj-collective-logo.jpg',
+        isDemo: true,
+        websiteUrl: 'https://www.mirajcollective.com/',
+    },
     {
         id: 'seed-muslim-entrepreneurs',
         name: 'Muslim Entrepreneurs',
@@ -595,11 +612,27 @@ const FeaturedGroupCard = memo(({ group, index, onJoin, onShare }: {
                     end={{ x: 1, y: 1 }}
                 >
                     <View style={featuredStyles.headerContent}>
-                        <View style={featuredStyles.iconCircle}>
-                            <Ionicons name={group.icon} size={22} color={colors.obsidian[900]} />
-                        </View>
+                        {group.logoUrl ? (
+                            <Image
+                                source={{ uri: group.logoUrl }}
+                                style={featuredStyles.logoImage}
+                                contentFit="contain"
+                                cachePolicy="memory-disk"
+                            />
+                        ) : (
+                            <View style={featuredStyles.iconCircle}>
+                                <Ionicons name={group.icon} size={22} color={colors.obsidian[900]} />
+                            </View>
+                        )}
                         <View style={{ flex: 1 }}>
-                            <Text style={featuredStyles.groupName}>{group.name}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={featuredStyles.groupName}>{group.name}</Text>
+                                {group.isDemo && (
+                                    <View style={featuredStyles.demoBadge}>
+                                        <Text style={featuredStyles.demoBadgeText}>DEMO</Text>
+                                    </View>
+                                )}
+                            </View>
                             <View style={featuredStyles.tagsRow}>
                                 {group.tags.map((tag) => (
                                     <View key={tag} style={featuredStyles.tag}>
@@ -616,6 +649,17 @@ const FeaturedGroupCard = memo(({ group, index, onJoin, onShare }: {
                     <Text style={featuredStyles.description} numberOfLines={2}>
                         {group.description}
                     </Text>
+
+                    {group.websiteUrl && (
+                        <TouchableOpacity
+                            onPress={() => Linking.openURL(group.websiteUrl!)}
+                            style={featuredStyles.websiteLink}
+                            accessibilityRole="link"
+                        >
+                            <Ionicons name="globe-outline" size={13} color={colors.azure[400]} />
+                            <Text style={featuredStyles.websiteLinkText}>{group.websiteUrl.replace('https://', '').replace('www.', '').replace(/\/$/, '')}</Text>
+                        </TouchableOpacity>
+                    )}
 
                     {/* Next Event */}
                     {group.nextEvent && (
@@ -784,6 +828,38 @@ const featuredStyles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: colors.border.subtle,
+    },
+    logoImage: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        marginEnd: spacing.sm,
+        backgroundColor: colors.obsidian[900],
+    },
+    demoBadge: {
+        backgroundColor: colors.gold[500] + '25',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        marginStart: 6,
+        alignSelf: 'center',
+    },
+    demoBadgeText: {
+        fontSize: 9,
+        fontWeight: '800',
+        color: colors.gold[400],
+        letterSpacing: 0.8,
+    },
+    websiteLink: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: spacing.xs,
+    },
+    websiteLinkText: {
+        fontSize: typography.fontSize.xs,
+        color: colors.azure[400],
+        fontFamily: 'Inter-Medium',
     },
 });
 

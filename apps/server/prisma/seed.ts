@@ -45,6 +45,80 @@ async function main() {
         console.log('✅ Superadmin created:', superadminEmail);
     }
 
+    // ============================================
+    // Seed: Miraj Collective Demo Community
+    // ============================================
+    const superadmin = await prisma.user.findUnique({ where: { email: superadminEmail } });
+    
+    if (superadmin) {
+        const mirajCommunity = await prisma.community.upsert({
+            where: { slug: 'miraj-collective' },
+            update: {
+                description: 'Miraj is a coaching and learning platform for professional Muslim men, designed to provide guidance for spiritual, emotional, and career development. Through tailored programs, expert coaches, and a community of like-minded and like-hearted individuals, it helps you navigate life with focus and purpose.',
+                brandColor: '#B8A44C',
+                tagline: 'A premier coaching program for professional Muslim men uniting faith, leadership, and success.',
+                logoUrl: 'https://res.cloudinary.com/drsxgxzhb/image/upload/v1770826468/0g-communities/miraj-collective-logo.jpg',
+                avatarUrl: 'https://res.cloudinary.com/drsxgxzhb/image/upload/v1770826468/0g-communities/miraj-collective-logo.jpg',
+                websiteUrl: 'https://www.mirajcollective.com/',
+                category: 'faith',
+                welcomeMessage: 'Welcome to the Miraj Collective on 0G! This is a demo group showcasing what your own branded private community looks like on our platform. You can take full ownership of this space — free of charge. Invite your members, customize the rules, and experience a private, secure home for your community.',
+            },
+            create: {
+                name: 'Miraj Collective',
+                slug: 'miraj-collective',
+                description: 'Miraj is a coaching and learning platform for professional Muslim men, designed to provide guidance for spiritual, emotional, and career development. Through tailored programs, expert coaches, and a community of like-minded and like-hearted individuals, it helps you navigate life with focus and purpose.',
+                isPublic: false,
+                brandColor: '#B8A44C',
+                tagline: 'A premier coaching program for professional Muslim men uniting faith, leadership, and success.',
+                logoUrl: 'https://res.cloudinary.com/drsxgxzhb/image/upload/v1770826468/0g-communities/miraj-collective-logo.jpg',
+                avatarUrl: 'https://res.cloudinary.com/drsxgxzhb/image/upload/v1770826468/0g-communities/miraj-collective-logo.jpg',
+                websiteUrl: 'https://www.mirajcollective.com/',
+                category: 'faith',
+                welcomeMessage: 'Welcome to the Miraj Collective on 0G! This is a demo group showcasing what your own branded private community looks like on our platform. You can take full ownership of this space — free of charge. Invite your members, customize the rules, and experience a private, secure home for your community.',
+                approvalRequired: false,
+                postingPermission: 'all',
+                invitePermission: 'all',
+                moderationLevel: 'standard',
+                algorithmPreference: 'balanced',
+                memberCount: 1,
+                creatorId: superadmin.id,
+            },
+        });
+
+        // Add superadmin as ADMIN member (upsert to avoid duplicates)
+        await prisma.communityMember.upsert({
+            where: {
+                userId_communityId: {
+                    userId: superadmin.id,
+                    communityId: mirajCommunity.id,
+                },
+            },
+            update: { role: 'ADMIN' },
+            create: {
+                userId: superadmin.id,
+                communityId: mirajCommunity.id,
+                role: 'ADMIN',
+            },
+        });
+
+        // Add community rules
+        const existingRules = await prisma.communityRule.findMany({
+            where: { communityId: mirajCommunity.id },
+        });
+        
+        if (existingRules.length === 0) {
+            await prisma.communityRule.createMany({
+                data: [
+                    { communityId: mirajCommunity.id, title: 'Respect & Adab', description: 'Treat every member with the respect and dignity befitting our shared values. Disagreements are welcome; disrespect is not.', order: 0 },
+                    { communityId: mirajCommunity.id, title: 'Confidentiality', description: 'What is shared in this group stays in this group. Coaching conversations, personal stories, and member details are private.', order: 1 },
+                    { communityId: mirajCommunity.id, title: 'Purposeful Engagement', description: 'Keep discussions aligned with faith, leadership, and professional development. Off-topic content should go to the appropriate channel.', order: 2 },
+                ],
+            });
+        }
+
+        console.log('✅ Miraj Collective community seeded:', mirajCommunity.slug);
+    }
+
     console.log('\n🎉 Seed completed!\n');
 }
 
