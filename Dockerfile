@@ -23,6 +23,9 @@ COPY apps/server/ ./
 # Build
 RUN npm run build
 
+# Create required directories
+RUN mkdir -p logs uploads
+
 # Expose port (Railway will override with $PORT)
 EXPOSE 8080
 

@@ -316,6 +316,11 @@ setupSocketHandlers(io);
 
 // Initialize background services and start server
 async function startServer() {
+    // Ensure required directories exist
+    const fs = await import('fs');
+    for (const dir of ['logs', 'uploads']) {
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    }
     // Initialize notification queue (BullMQ)
     initNotificationQueue();
 

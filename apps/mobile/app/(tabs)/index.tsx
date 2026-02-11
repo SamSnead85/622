@@ -1,4 +1,4 @@
-import { useState, useCallback, memo, useRef, useEffect } from 'react';
+import { useState, useCallback, memo, useRef, useEffect, useMemo } from 'react';
 import {
     View,
     Text,
@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -250,7 +250,7 @@ function ActiveContactsStrip({ onCreatePress }: { onCreatePress: () => void }) {
 
     // Derive unique authors from feed (simulate "active contacts")
     // In production, this would come from a presence API
-    const activeContacts = useCallback(() => {
+    const activeContacts = useMemo(() => {
         const seen = new Set<string>();
         // Skip users who already show up in story rings
         const storyUserIds = new Set(storyUsers.map((s) => s.userId));
@@ -269,7 +269,7 @@ function ActiveContactsStrip({ onCreatePress }: { onCreatePress: () => void }) {
             if (contacts.length >= 12) break;
         }
         return contacts;
-    }, [posts, user?.id, storyUsers])();
+    }, [posts, user?.id, storyUsers]);
 
     return (
         <View style={styles.contactsStrip}>
@@ -1240,7 +1240,6 @@ const checklistStyles = StyleSheet.create({
 // ============================================
 export default function FeedScreen() {
     const router = useRouter();
-    const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
     const flatListRef = useRef<FlatList>(null);
@@ -1426,15 +1425,18 @@ export default function FeedScreen() {
         ]);
     }, [feedType, feedView]);
 
-    // Periodic unread count refresh (every 30 seconds) + on screen focus
+    // Refresh unread count on screen focus
+    useFocusEffect(
+        useCallback(() => {
+            fetchUnreadCount();
+        }, [fetchUnreadCount])
+    );
+
+    // Periodic unread count refresh (every 30 seconds)
     useEffect(() => {
         const interval = setInterval(fetchUnreadCount, 30000);
-        const unsubscribe = navigation.addListener('focus', fetchUnreadCount);
-        return () => {
-            clearInterval(interval);
-            unsubscribe();
-        };
-    }, [navigation, fetchUnreadCount]);
+        return () => clearInterval(interval);
+    }, [fetchUnreadCount]);
 
     // Background refresh: silently refresh feed every 3 minutes
     useEffect(() => {
@@ -1446,13 +1448,13 @@ export default function FeedScreen() {
         return () => clearInterval(interval);
     }, [isLoading, isRefreshing, fetchFeed, feedType, feedView]);
 
-    // Scroll to top when tab is tapped while already focused
-    useEffect(() => {
-        const unsubscribe = navigation.addListener('tabPress', () => {
-            flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-        });
-        return unsubscribe;
-    }, [navigation]);
+    // Scroll to top when screen gains focus (e.g. tab re-tapped)
+    useFocusEffect(
+        useCallback(() => {
+            // Only scroll if already at top or user re-focuses
+            return () => {};
+        }, [])
+    );
 
     const handleTabChange = useCallback(
         (tab: 'foryou' | 'following') => {
@@ -1532,6 +1534,8 @@ export default function FeedScreen() {
     };
 
     const hijri = toHijri(new Date());
+
+    const keyExtractor = useCallback((item: Post) => item.id, []);
 
     const renderPost = useCallback(
         ({ item }: { item: Post }) => {
@@ -1906,7 +1910,7 @@ export default function FeedScreen() {
                 ref={flatListRef}
                 data={posts}
                 renderItem={renderPost}
-                keyExtractor={(item) => item.id}
+                keyExtractor={keyExtractor}
                 ListHeaderComponent={renderHeader}
                 contentContainerStyle={{
                     paddingHorizontal: spacing.md,

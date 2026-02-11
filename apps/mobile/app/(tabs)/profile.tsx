@@ -11,8 +11,7 @@ import {
     RefreshControl,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -147,7 +146,6 @@ const TABS: { key: ProfileTab; icon: keyof typeof Ionicons.glyphMap; iconActive:
 // ─── Main Screen ─────────────────────────────────────────
 export default function ProfileScreen() {
     const router = useRouter();
-    const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
     const refreshUser = useAuthStore((s) => s.refreshUser);
@@ -247,13 +245,12 @@ export default function ProfileScreen() {
         if (loadedTabs.has('saved')) loadSavedPosts();
     };
 
-    // Scroll to top when tab is tapped while already focused
-    useEffect(() => {
-        const unsubscribe = navigation.addListener('tabPress', () => {
-            flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-        });
-        return unsubscribe;
-    }, [navigation]);
+    // Refresh profile data when screen gains focus
+    useFocusEffect(
+        useCallback(() => {
+            if (user?.id) refreshUser();
+        }, [user?.id])
+    );
 
     // ── Loading State ────────────────────────────────────
     if (!user) {

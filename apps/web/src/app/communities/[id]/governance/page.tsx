@@ -32,8 +32,8 @@ export default function GovernancePage() {
                 ? `/api/v1/governance/${communityId}/proposals?status=${filter}`
                 : `/api/v1/governance/${communityId}/proposals`;
             const data = await apiFetch(url);
-            const parsed = data.data ?? data;
-            setProposals((parsed as Record<string, unknown>).proposals as Proposal[] || []);
+            const parsed: any = data.data ?? data;
+            setProposals(parsed?.proposals || []);
         } catch {
             // Handle silently
         }

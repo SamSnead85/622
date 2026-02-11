@@ -42,7 +42,7 @@ function getDedupeKey(url: string, method: string): string | null {
 // API URL configuration
 // Set EXPO_PUBLIC_API_URL in .env for local dev (e.g., http://192.168.1.100:5180)
 // Production builds MUST have this set at build time.
-const PRODUCTION_API = 'https://0g-server.up.railway.app';
+const PRODUCTION_API = 'https://caravanserver-production-d7da.up.railway.app';
 export const API_URL = process.env.EXPO_PUBLIC_API_URL
     || (__DEV__ ? 'http://localhost:5180' : PRODUCTION_API);
 
@@ -327,9 +327,15 @@ export const apiUpload = async (
         body: formData,
     }, 60_000); // 60s timeout for uploads
 
-    const data = await res.json();
+    let data: any;
+    try {
+        data = await res.json();
+    } catch {
+        if (!res.ok) throw new Error(`Upload failed (HTTP ${res.status})`);
+        throw new Error('Invalid server response');
+    }
     if (!res.ok) {
-        throw new Error(data?.error || 'Upload failed');
+        throw new Error(data?.error || `Upload failed (HTTP ${res.status})`);
     }
     return data;
 };

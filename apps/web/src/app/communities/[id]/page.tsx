@@ -180,7 +180,8 @@ export default function CommunityDetailPage() {
         setChatLoading(true);
         try {
             const data = await apiFetch(`${API_URL}/api/v1/communities/${communityId}/chat/messages`);
-            setChatMessages(data.messages || []);
+            const parsed: any = data.data ?? data;
+            setChatMessages(parsed?.messages || []);
         } catch (err) {
             console.error('Failed to load chat:', err);
         } finally {
@@ -196,8 +197,8 @@ export default function CommunityDetailPage() {
                 method: 'POST',
                 body: JSON.stringify({ content: chatInput.trim() }),
             });
-            const msg: ChatMessage = res.data as ChatMessage;
-            setChatMessages(prev => [...prev, msg]);
+            const msg: ChatMessage = (res.data ?? res) as ChatMessage;
+            if (msg?.id) setChatMessages(prev => [...prev, msg]);
             setChatInput('');
             setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
         } catch (err) {

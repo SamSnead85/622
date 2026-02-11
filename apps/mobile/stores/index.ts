@@ -10,6 +10,39 @@ import { apiFetch, apiUpload, saveToken, removeToken, getToken, API } from '../l
 import { socketManager } from '../lib/socket';
 
 // ============================================
+// Shared User Normalization
+// Ensures consistent user shape across all auth paths
+// ============================================
+
+function normalizeUser(rawUser: any): User {
+    return {
+        id: rawUser.id,
+        username: rawUser.username || '',
+        displayName: rawUser.displayName || rawUser.username || 'User',
+        email: rawUser.email || '',
+        avatarUrl: rawUser.avatarUrl,
+        coverUrl: rawUser.coverUrl,
+        bio: rawUser.bio,
+        website: rawUser.website,
+        followersCount: rawUser.followersCount ?? rawUser._count?.followers ?? 0,
+        followingCount: rawUser.followingCount ?? rawUser._count?.following ?? 0,
+        postsCount: rawUser.postsCount ?? rawUser._count?.posts ?? 0,
+        isVerified: rawUser.isVerified ?? false,
+        isPrivate: rawUser.isPrivate ?? true,
+        createdAt: rawUser.createdAt || new Date().toISOString(),
+        communityOptIn: rawUser.communityOptIn ?? false,
+        activeFeedView: rawUser.activeFeedView,
+        usePublicProfile: rawUser.usePublicProfile,
+        publicDisplayName: rawUser.publicDisplayName,
+        publicUsername: rawUser.publicUsername,
+        publicAvatarUrl: rawUser.publicAvatarUrl,
+        publicBio: rawUser.publicBio,
+        culturalProfile: rawUser.culturalProfile || 'standard',
+        customGreeting: rawUser.customGreeting,
+    };
+}
+
+// ============================================
 // Zustand Persistence Storage Adapter
 // ============================================
 
@@ -146,33 +179,7 @@ export const useAuthStore = create<AuthState>()(
 
             const data = await apiFetch<any>(API.me);
             if (data.user || data.id) {
-                const rawUser = data.user || data;
-                // Normalize user object with safe defaults
-                const user: User = {
-                    id: rawUser.id,
-                    username: rawUser.username || '',
-                    displayName: rawUser.displayName || rawUser.username || 'User',
-                    email: rawUser.email || '',
-                    avatarUrl: rawUser.avatarUrl,
-                    coverUrl: rawUser.coverUrl,
-                    bio: rawUser.bio,
-                    website: rawUser.website,
-                    followersCount: rawUser.followersCount ?? rawUser._count?.followers ?? 0,
-                    followingCount: rawUser.followingCount ?? rawUser._count?.following ?? 0,
-                    postsCount: rawUser.postsCount ?? rawUser._count?.posts ?? 0,
-                    isVerified: rawUser.isVerified ?? false,
-                    isPrivate: rawUser.isPrivate ?? true,
-                    createdAt: rawUser.createdAt || new Date().toISOString(),
-                    communityOptIn: rawUser.communityOptIn ?? false,
-                    activeFeedView: rawUser.activeFeedView,
-                    usePublicProfile: rawUser.usePublicProfile,
-                    publicDisplayName: rawUser.publicDisplayName,
-                    publicUsername: rawUser.publicUsername,
-                    publicAvatarUrl: rawUser.publicAvatarUrl,
-                    publicBio: rawUser.publicBio,
-                    culturalProfile: rawUser.culturalProfile || 'standard',
-                    customGreeting: rawUser.customGreeting,
-                };
+                const user = normalizeUser(data.user || data);
                 set({
                     user,
                     isAuthenticated: true,
@@ -205,7 +212,7 @@ export const useAuthStore = create<AuthState>()(
                 await saveToken(data.token);
             }
 
-            const user = data.user || data;
+            const user = normalizeUser(data.user || data);
             set({
                 user,
                 isAuthenticated: true,
@@ -243,7 +250,7 @@ export const useAuthStore = create<AuthState>()(
                 await saveToken(data.token);
             }
 
-            const user = data.user || data;
+            const user = normalizeUser(data.user || data);
             set({
                 user,
                 isAuthenticated: true,
@@ -274,7 +281,7 @@ export const useAuthStore = create<AuthState>()(
                 await saveToken(data.token);
             }
 
-            const user = data.user || data;
+            const user = normalizeUser(data.user || data);
             set({
                 user,
                 isAuthenticated: true,
@@ -301,7 +308,7 @@ export const useAuthStore = create<AuthState>()(
                 await saveToken(data.token);
             }
 
-            const user = data.user || data;
+            const user = normalizeUser(data.user || data);
             set({
                 user,
                 isAuthenticated: true,
@@ -347,15 +354,13 @@ export const useAuthStore = create<AuthState>()(
             const rawUser = data.user || data;
             if (rawUser?.id) {
                 const currentUser = get().user;
-                // Merge with current user to preserve local state
+                const normalized = normalizeUser(rawUser);
+                // Merge with current user to preserve any local-only state
                 set({
                     user: {
                         ...currentUser,
-                        ...rawUser,
-                        followersCount: rawUser.followersCount ?? rawUser._count?.followers ?? currentUser?.followersCount ?? 0,
-                        followingCount: rawUser.followingCount ?? rawUser._count?.following ?? currentUser?.followingCount ?? 0,
-                        postsCount: rawUser.postsCount ?? rawUser._count?.posts ?? currentUser?.postsCount ?? 0,
-                    } as User,
+                        ...normalized,
+                    },
                 });
             }
         } catch (error) {

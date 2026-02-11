@@ -77,6 +77,7 @@ interface PostDetail {
     id: string;
     content: string;
     mediaUrl?: string;
+    fullMediaUrl?: string;
     mediaType?: string;
     mediaAspectRatio?: string;
     createdAt: string;
