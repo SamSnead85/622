@@ -345,25 +345,61 @@ export default function LobbyScreen() {
     const canStart = players.filter((p) => p.isConnected).length >= minPlayers;
 
     // ---- Join game on mount (supports guest players) ----
-    useEffect(() => {
-        if (!roomCode) return;
+    // Waits for socket to connect before attempting to join.
+    // Retries up to 3 times with 2s delay if socket isn't ready.
+    const joinAttemptRef = useRef(0);
+    const joinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-        // If we're already in this game (host), don't re-join
+    const attemptJoin = useCallback(async () => {
+        if (!roomCode) return;
         if (gameStore.gameCode === roomCode && isHost) return;
 
-        const joinWithName = async () => {
-            setIsJoining(true);
-            try {
-                // Resolve player name: authenticated user > guest name > fallback
-                const guestName = await AsyncStorage.getItem('@guest-name');
-                const playerName = authStore.user?.displayName || guestName || 'Player';
-                await gameStore.joinGame(roomCode, playerName);
-            } finally {
-                setIsJoining(false);
-            }
-        };
+        setIsJoining(true);
+        gameStore.setError(null);
 
-        joinWithName();
+        // Ensure socket is connected first
+        if (!socketManager.isConnected) {
+            try {
+                await socketManager.connect();
+            } catch {
+                // Will retry below
+            }
+            // Give socket a moment to establish
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        if (!socketManager.isConnected) {
+            joinAttemptRef.current += 1;
+            if (joinAttemptRef.current < 4) {
+                // Retry after 2s
+                joinTimerRef.current = setTimeout(() => attemptJoin(), 2000);
+                return;
+            }
+            setIsJoining(false);
+            gameStore.setError('Unable to connect to game server. Please check your connection and try again.');
+            return;
+        }
+
+        try {
+            const guestName = await AsyncStorage.getItem('@guest-name');
+            const playerName = authStore.user?.displayName || guestName || 'Player';
+            const success = await gameStore.joinGame(roomCode, playerName);
+            if (!success && !gameStore.error) {
+                gameStore.setError('Could not join this game. The room may no longer exist.');
+            }
+        } catch {
+            gameStore.setError('Failed to join game. Please try again.');
+        } finally {
+            setIsJoining(false);
+        }
+    }, [roomCode, gameStore, authStore, isHost]);
+
+    useEffect(() => {
+        joinAttemptRef.current = 0;
+        attemptJoin();
+        return () => {
+            if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
+        };
     }, [roomCode]);
 
     // ---- Socket connection status ----
@@ -486,14 +522,27 @@ export default function LobbyScreen() {
                 <View style={styles.errorContainer}>
                     <Ionicons name="alert-circle-outline" size={48} color={colors.coral[500]} />
                     <Text style={styles.errorText}>{error}</Text>
-                    <TouchableOpacity
-                        style={styles.errorButton}
-                        onPress={handleLeave}
-                        accessibilityRole="button"
-                        accessibilityLabel="Go back"
-                    >
-                        <Text style={styles.errorButtonText}>Go Back</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                        <TouchableOpacity
+                            style={[styles.errorButton, { backgroundColor: colors.gold[500] + '15', borderColor: colors.gold[500] + '30' }]}
+                            onPress={() => {
+                                joinAttemptRef.current = 0;
+                                attemptJoin();
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel="Retry joining"
+                        >
+                            <Text style={[styles.errorButtonText, { color: colors.gold[400] }]}>Retry</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.errorButton}
+                            onPress={handleLeave}
+                            accessibilityRole="button"
+                            accessibilityLabel="Go back"
+                        >
+                            <Text style={styles.errorButtonText}>Go Back</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
         );
