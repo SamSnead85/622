@@ -259,16 +259,20 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
 
                     // 2. Auto-follow the new user from admin accounts (so they appear in admin feeds)
                     //    AND make the new user follow admin accounts (so they see content immediately)
-                    for (const admin of admins) {
-                        // Admin follows the new user
-                        await prisma.follow.create({
-                            data: { followerId: admin.id, followingId: user.id },
-                        }).catch(() => {}); // Ignore if already following
+                    try {
+                        for (const admin of admins) {
+                            // Admin follows the new user
+                            await prisma.follow.create({
+                                data: { followerId: admin.id, followingId: user.id },
+                            }).catch(() => {}); // Ignore if already following
 
-                        // New user follows admin (so their feed isn't empty)
-                        await prisma.follow.create({
-                            data: { followerId: user.id, followingId: admin.id },
-                        }).catch(() => {});
+                            // New user follows admin (so their feed isn't empty)
+                            await prisma.follow.create({
+                                data: { followerId: user.id, followingId: admin.id },
+                            }).catch(() => {});
+                        }
+                    } catch (followErr) {
+                        logger.error('[Auth] Auto-follow error (non-blocking):', followErr);
                     }
                 }
 

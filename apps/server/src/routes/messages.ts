@@ -3,8 +3,12 @@ import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
+
+// Apply general rate limiting to all message endpoints
+router.use(rateLimiters.general);
 
 // GET /api/v1/messages - Alias for /conversations
 router.get('/', authenticate, async (req: AuthRequest, res, next) => {
@@ -86,8 +90,13 @@ router.get('/', authenticate, async (req: AuthRequest, res, next) => {
 // GET /api/v1/messages/conversations
 router.get('/conversations', authenticate, async (req: AuthRequest, res, next) => {
     try {
+        const take = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const skip = parseInt(req.query.offset as string) || 0;
+
         const conversations = await prisma.conversationParticipant.findMany({
             where: { userId: req.userId },
+            take,
+            skip,
             include: {
                 conversation: {
                     include: {

@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { API_URL } from '@/lib/api';
 
-export default function EarlyAccessPage() {
+function EarlyAccessPageContent() {
     const searchParams = useSearchParams();
     const [form, setForm] = useState({ name: '', email: '', reason: '', role: '', socialUrl: '' });
     const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
@@ -260,5 +260,13 @@ export default function EarlyAccessPage() {
                 </div>
             </main>
         </div>
+    );
+}
+
+export default function EarlyAccessPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-black" />}>
+            <EarlyAccessPageContent />
+        </Suspense>
     );
 }

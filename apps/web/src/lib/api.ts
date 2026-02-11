@@ -101,7 +101,82 @@ export interface ApiResponse<T = any> {
     [key: string]: any; // Dynamic properties spread via Object.assign for backward compat
 }
 
-// API fetch helper with auth
+// Default timeout for API requests (30 seconds)
+const API_TIMEOUT_MS = 30_000;
+
+// Delay helper for retry logic
+const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
+// Core fetch logic (single attempt)
+async function _doFetch(
+    url: string,
+    options: RequestInit,
+    headers: HeadersInit,
+): Promise<ApiResponse> {
+    // AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+    // If the caller already provided a signal, chain them so either can abort
+    const callerSignal = options.signal;
+    if (callerSignal) {
+        callerSignal.addEventListener('abort', () => controller.abort());
+    }
+
+    try {
+        const res = await fetch(url, {
+            ...options,
+            headers,
+            credentials: 'include',
+            signal: controller.signal,
+        });
+
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            const data = await res.json();
+
+            if (!res.ok) {
+                const err = new Error(data?.error || `API error: ${res.status}`);
+                (err as any).status = res.status;
+                (err as any).data = data;
+                throw err;
+            }
+
+            // Return a clean wrapper — never mutate the parsed data object
+            const wrapper: ApiResponse = {
+                ok: res.ok,
+                status: res.status,
+                data,
+                json: () => Promise.resolve(data),
+            };
+
+            // Spread data properties onto wrapper for backward compatibility
+            // (many callers access response.posts, response.users, etc. directly)
+            return Object.assign(wrapper, data);
+        }
+
+        if (!res.ok) {
+            throw new Error(`API error: ${res.status}`);
+        }
+
+        return {
+            ok: res.ok,
+            status: res.status,
+            data: res,
+            json: () => res.json(),
+        } as ApiResponse;
+    } catch (err: unknown) {
+        // Convert AbortError from timeout into a friendlier message
+        if (err instanceof DOMException && err.name === 'AbortError') {
+            throw new Error(`Request timed out after ${API_TIMEOUT_MS / 1000}s`);
+        }
+        throw err;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+// API fetch helper with auth, 30s timeout, and single retry on 5xx
 export const apiFetch = async (
     url: string,
     options: RequestInit = {}
@@ -119,46 +194,17 @@ export const apiFetch = async (
         (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
 
-    const res = await fetch(url, {
-        ...options,
-        headers,
-        credentials: 'include',
-    });
-
-    const contentType = res.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-        const data = await res.json();
-
-        if (!res.ok) {
-            const err = new Error(data?.error || `API error: ${res.status}`);
-            (err as any).status = res.status;
-            (err as any).data = data;
-            throw err;
+    try {
+        return await _doFetch(url, options, headers);
+    } catch (err: unknown) {
+        // Retry once on 5xx server errors (with 1s delay)
+        const status = (err as any)?.status;
+        if (typeof status === 'number' && status >= 500 && status < 600) {
+            await delay(1000);
+            return _doFetch(url, options, headers);
         }
-
-        // Return a clean wrapper — never mutate the parsed data object
-        const wrapper: ApiResponse = {
-            ok: res.ok,
-            status: res.status,
-            data,
-            json: () => Promise.resolve(data),
-        };
-
-        // Spread data properties onto wrapper for backward compatibility
-        // (many callers access response.posts, response.users, etc. directly)
-        return Object.assign(wrapper, data);
+        throw err;
     }
-
-    if (!res.ok) {
-        throw new Error(`API error: ${res.status}`);
-    }
-
-    return {
-        ok: res.ok,
-        status: res.status,
-        data: res,
-        json: () => res.json(),
-    } as ApiResponse;
 };
 
 // Typed API helpers

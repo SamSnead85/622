@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_URL, apiFetch } from '@/lib/api';
 
-export default function SignupPage() {
+function SignupPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { signup, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -29,10 +29,13 @@ export default function SignupPage() {
 
     // Load referral code from URL or localStorage
     useEffect(() => {
-        const ref = searchParams.get('ref') || localStorage.getItem('0g_referral_code');
+        const storedRef = typeof window !== 'undefined' ? localStorage.getItem('0g_referral_code') : null;
+        const ref = searchParams.get('ref') || storedRef;
         if (ref) {
             setReferralCode(ref);
-            localStorage.setItem('0g_referral_code', ref);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('0g_referral_code', ref);
+            }
             // Validate & get referrer info
             fetch(`${API_URL}/api/v1/invite/validate/${ref}`, { method: 'POST' })
                 .then(r => r.ok ? r.json() : null)
@@ -69,13 +72,13 @@ export default function SignupPage() {
             const result = await signup(email, password, generatedUsername, name, { accessCode: accessCode || undefined });
             if (result.success) {
                 // Post-signup: complete referral and auto-join pending community
-                const ref = localStorage.getItem('0g_referral_code');
-                const pendingCommunity = localStorage.getItem('0g_pending_community');
+                const ref = typeof window !== 'undefined' ? localStorage.getItem('0g_referral_code') : null;
+                const pendingCommunity = typeof window !== 'undefined' ? localStorage.getItem('0g_pending_community') : null;
 
                 // Complete referral attribution (non-blocking)
                 if (ref) {
                     fetch(`${API_URL}/api/v1/invite/complete/${ref}`, { method: 'POST' }).catch(() => {});
-                    localStorage.removeItem('0g_referral_code');
+                    if (typeof window !== 'undefined') localStorage.removeItem('0g_referral_code');
                 }
 
                 // Auto-join pending community (non-blocking)
@@ -90,7 +93,7 @@ export default function SignupPage() {
                                 }
                             }
                         } catch { /* non-critical */ }
-                        localStorage.removeItem('0g_pending_community');
+                        if (typeof window !== 'undefined') localStorage.removeItem('0g_pending_community');
                     })();
                 }
 
@@ -406,5 +409,13 @@ export default function SignupPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-black" />}>
+            <SignupPageContent />
+        </Suspense>
     );
 }

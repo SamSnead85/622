@@ -319,6 +319,9 @@ app.use(errorHandler);
 // Socket.io handlers
 setupSocketHandlers(io);
 
+// Track interval for cleanup on shutdown
+let sessionCleanupInterval: ReturnType<typeof setInterval> | null = null;
+
 // Initialize background services and start server
 async function startServer() {
     // Ensure required directories exist
@@ -362,7 +365,7 @@ async function startServer() {
 
     // Start session cleanup job (runs every 6 hours)
     const { prisma } = await import('./db/client.js');
-    setInterval(async () => {
+    sessionCleanupInterval = setInterval(async () => {
         try {
             const result = await prisma.session.deleteMany({
                 where: { expiresAt: { lt: new Date() } }
@@ -386,6 +389,10 @@ startServer().catch((err) => {
 // Graceful shutdown
 const gracefulShutdown = async (signal: string) => {
     logger.info(`${signal} received. Shutting down gracefully...`);
+    if (sessionCleanupInterval) {
+        clearInterval(sessionCleanupInterval);
+        sessionCleanupInterval = null;
+    }
     await shutdownNotificationQueue();
     await shutdownScheduleWorker();
     await shutdownGrowthQualificationWorker();

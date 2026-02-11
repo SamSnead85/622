@@ -525,6 +525,7 @@ model CommunityMember {
 
   @@unique([userId, communityId])
   @@index([communityId])
+  @@index([userId, role])
 }
 
 model CommunityRule {

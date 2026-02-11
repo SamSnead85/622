@@ -65,8 +65,13 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
 // GET /api/v1/communities/my
 router.get('/my', authenticate, async (req: AuthRequest, res, next) => {
     try {
+        const take = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const skip = parseInt(req.query.offset as string) || 0;
+
         const memberships = await prisma.communityMember.findMany({
             where: { userId: req.userId },
+            take,
+            skip,
             include: {
                 community: {
                     include: {

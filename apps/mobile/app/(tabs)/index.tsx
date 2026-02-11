@@ -15,6 +15,7 @@ import {
     ActivityIndicator,
     ScrollView,
     AccessibilityInfo,
+    Image as RNImage,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -37,7 +38,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
-import { Avatar, GlassCard } from '../../components';
+import { Avatar, GlassCard, ErrorBoundary } from '../../components';
 import { useFeedStore, useAuthStore, Post } from '../../stores';
 import { SkeletonFeed } from '../../components/SkeletonPost';
 import { useNetworkQuality } from '../../hooks/useNetworkQuality';
@@ -1402,7 +1403,7 @@ export default function FeedScreen() {
             .map((p) => p.mediaUrl!)
             .slice(0, 20); // Prefetch first 20 images
         if (imageUrls.length > 0) {
-            Image.prefetch(imageUrls);
+            imageUrls.forEach((url) => RNImage.prefetch(url).catch(() => {}));
         }
     }, [posts]);
 
@@ -1961,46 +1962,48 @@ export default function FeedScreen() {
             )}
 
             {/* Feed with Intent Hub as Header */}
-            <Animated.FlatList
-                ref={flatListRef}
-                data={posts}
-                renderItem={renderPost}
-                keyExtractor={keyExtractor}
-                ListHeaderComponent={renderHeader}
-                contentContainerStyle={{
-                    paddingHorizontal: spacing.md,
-                    paddingBottom: 100,
-                }}
-                showsVerticalScrollIndicator={false}
-                accessibilityRole="list"
-                accessibilityLabel={`${feedType === 'foryou' ? 'For You' : 'Following'} feed, ${posts.length} posts`}
-                onScroll={scrollHandler}
-                scrollEventThrottle={16}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={isRefreshing}
-                        onRefresh={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            fetchFeed(true, feedType, feedView);
-                        }}
-                        tintColor={colors.gold[500]}
-                    />
-                }
-                onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
-                onViewableItemsChanged={onViewableItemsChanged}
-                viewabilityConfig={viewabilityConfig}
-                ListEmptyComponent={renderEmpty}
-                ListFooterComponent={renderFooter}
-                // Performance optimizations
-                removeClippedSubviews={true}
-                maxToRenderPerBatch={5}
-                windowSize={7}
-                initialNumToRender={3}
-                updateCellsBatchingPeriod={50}
-                getItemLayout={undefined} // Variable height — use estimatedItemSize instead
-                maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
-            />
+            <ErrorBoundary screenName="Feed">
+                <Animated.FlatList
+                    ref={flatListRef}
+                    data={posts}
+                    renderItem={renderPost}
+                    keyExtractor={keyExtractor}
+                    ListHeaderComponent={renderHeader}
+                    contentContainerStyle={{
+                        paddingHorizontal: spacing.md,
+                        paddingBottom: 100,
+                    }}
+                    showsVerticalScrollIndicator={false}
+                    accessibilityRole="list"
+                    accessibilityLabel={`${feedType === 'foryou' ? 'For You' : 'Following'} feed, ${posts.length} posts`}
+                    onScroll={scrollHandler}
+                    scrollEventThrottle={16}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isRefreshing}
+                            onRefresh={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                fetchFeed(true, feedType, feedView);
+                            }}
+                            tintColor={colors.gold[500]}
+                        />
+                    }
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    onViewableItemsChanged={onViewableItemsChanged}
+                    viewabilityConfig={viewabilityConfig}
+                    ListEmptyComponent={renderEmpty}
+                    ListFooterComponent={renderFooter}
+                    // Performance optimizations
+                    removeClippedSubviews={true}
+                    maxToRenderPerBatch={5}
+                    windowSize={7}
+                    initialNumToRender={5}
+                    updateCellsBatchingPeriod={50}
+                    getItemLayout={undefined} // Variable height — use estimatedItemSize instead
+                    maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+                />
+            </ErrorBoundary>
         </View>
     );
 }

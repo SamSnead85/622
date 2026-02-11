@@ -86,7 +86,7 @@ export default function PublicProfilePage() {
             router.push('/login');
             return;
         }
-        const token = localStorage.getItem('0g_token');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
         const wasFollowing = isFollowing;
         setIsFollowing(!wasFollowing);
         try {
@@ -103,7 +103,7 @@ export default function PublicProfilePage() {
     const handleReport = async () => {
         if (!isAuthenticated || !profile?.id || !reportReason.trim()) return;
         setIsReporting(true);
-        const token = localStorage.getItem('0g_token');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
         try {
             const res = await fetch(`${API_URL}/api/v1/reports`, {
                 method: 'POST',
@@ -135,7 +135,7 @@ export default function PublicProfilePage() {
     // Block user (uses follow endpoint DELETE + navigates away)
     const handleBlock = async () => {
         if (!isAuthenticated || !profile?.id) return;
-        const token = localStorage.getItem('0g_token');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('0g_token') : null;
         try {
             // Unfollow if following
             if (isFollowing) {
