@@ -450,7 +450,7 @@ export default function CommunityDetailPage() {
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
                                 {community.logoUrl ? (
-                                    <img src={community.logoUrl} alt="" className="w-12 h-12 rounded-xl object-cover border border-white/10" />
+                                    <img src={community.logoUrl} alt={`${community.name} logo`} className="w-12 h-12 rounded-xl object-cover border border-white/10" />
                                 ) : (
                                     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-white" style={{ backgroundColor: brandColor + '40' }}>
                                         {community.name[0]?.toUpperCase()}
@@ -488,7 +488,7 @@ export default function CommunityDetailPage() {
                                     <div key={s.userId} className="flex flex-col items-center gap-1 flex-shrink-0" title={`${s.user?.displayName}: ${s.text || ''}`}>
                                         <div className="relative">
                                             {s.user?.avatarUrl ? (
-                                                <img src={s.user.avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-500/50" />
+                                                <img src={s.user.avatarUrl} alt={s.user?.displayName || 'User avatar'} className="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-500/50" />
                                             ) : (
                                                 <div className="w-9 h-9 rounded-full bg-white/10 ring-2 ring-emerald-500/50 flex items-center justify-center text-xs font-bold">
                                                     {(s.user?.displayName || '?')[0]}
@@ -664,7 +664,7 @@ export default function CommunityDetailPage() {
                                                     <div key={msg.id} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
                                                         {showAvatar && !isMe ? (
                                                             msg.sender.avatarUrl ? (
-                                                                <img src={msg.sender.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1" />
+                                                                <img src={msg.sender.avatarUrl} alt={msg.sender.displayName || 'User avatar'} className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1" />
                                                             ) : (
                                                                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1">
                                                                     {(msg.sender.displayName || '?')[0]}
@@ -893,7 +893,7 @@ export default function CommunityDetailPage() {
                                             <div key={album.id} className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden group cursor-pointer hover:border-white/20 transition-all">
                                                 <div className="aspect-square relative bg-white/5">
                                                     {album.coverUrl || album.previewPhotos[0] ? (
-                                                        <img src={album.coverUrl || album.previewPhotos[0]} alt="" className="w-full h-full object-cover" />
+                                                        <img src={album.coverUrl || album.previewPhotos[0]} alt={album.title || 'Album cover'} className="w-full h-full object-cover" />
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center text-white/20">
                                                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>

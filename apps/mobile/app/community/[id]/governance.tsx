@@ -225,7 +225,7 @@ export default function GovernanceScreen() {
             setNewDesc('');
             loadProposals();
         } catch (e: any) {
-            Alert.alert('Error', e.message || 'Failed to create proposal');
+            Alert.alert('Proposal Creation Failed', e.message || 'Unable to create proposal');
         } finally {
             setCreating(false);
         }

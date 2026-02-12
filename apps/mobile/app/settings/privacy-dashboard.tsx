@@ -273,7 +273,7 @@ export default function PrivacyDashboardScreen() {
                                 "You'll receive an email when your data archive is ready to download."
                             );
                         } catch {
-                            Alert.alert('Error', 'Failed to request data export. Please try again.');
+                            Alert.alert('Export Request Failed', 'Unable to request data export. Please try again.');
                             showError('Could not request data export');
                         } finally {
                             setIsExporting(false);

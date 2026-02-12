@@ -23,7 +23,7 @@ interface RetryViewProps {
 }
 
 function RetryViewComponent({
-    message = 'Something went wrong. Please try again.',
+    message = 'Unable to load content. Please check your connection and try again.',
     onRetry,
     isRetrying = false,
     compact = false,

@@ -67,7 +67,7 @@ function friendlyError(raw: string): string {
         return 'Invalid access code. Please check your invitation and try again.';
     }
     if (lower.includes('server') || lower.includes('500') || lower.includes('internal')) {
-        return 'Something went wrong on our end. Please try again in a moment.';
+        return 'A server error occurred. Please try again in a moment.';
     }
     if (raw.length < 100 && !raw.includes('Error:') && !raw.includes('at ')) {
         return raw;
@@ -699,7 +699,7 @@ export default function SignupScreen() {
 
                         <AnimatedField
                             label="Email"
-                            placeholder="you@example.com"
+                            placeholder="Email address"
                             value={email}
                             onChangeText={(text) => {
                                 setEmail(text);

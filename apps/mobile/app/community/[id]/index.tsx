@@ -362,7 +362,7 @@ const ErrorTabState = memo(function ErrorTabState({
     return (
         <View style={styles.emptyTab}>
             <Ionicons name="alert-circle-outline" size={48} color={colors.coral[500]} />
-            <Text style={styles.emptyTabTitle}>Something went wrong</Text>
+            <Text style={styles.emptyTabTitle}>Unable to load content</Text>
             <Text style={styles.emptyTabSubtitle}>{message}</Text>
             <TouchableOpacity style={styles.emptyTabAction} onPress={onRetry}>
                 <Text style={styles.emptyTabActionText}>Try Again</Text>
@@ -521,7 +521,7 @@ export default function CommunityDetailScreen() {
             }
         } catch (e: any) {
             if (!isRefreshing)
-                Alert.alert('Error', e.message || 'Failed to load community');
+                Alert.alert('Load Failed', e.message || 'Failed to load community');
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
@@ -1232,7 +1232,7 @@ export default function CommunityDetailScreen() {
             setJoinRequests((prev) => prev.filter((r) => r.id !== requestId));
             loadAllMembers(); // Refresh members list
         } catch {
-            Alert.alert('Error', 'Failed to approve request.');
+            Alert.alert('Approval Failed', 'Failed to approve request.');
         }
     }, [communityId, loadAllMembers]);
 
@@ -1242,7 +1242,7 @@ export default function CommunityDetailScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             setJoinRequests((prev) => prev.filter((r) => r.id !== requestId));
         } catch {
-            Alert.alert('Error', 'Failed to reject request.');
+            Alert.alert('Rejection Failed', 'Failed to reject request.');
         }
     }, [communityId]);
 

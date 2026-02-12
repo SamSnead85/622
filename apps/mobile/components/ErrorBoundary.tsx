@@ -74,7 +74,7 @@ export class ErrorBoundary extends Component<Props, State> {
                     <View style={styles.iconCircle}>
                         <Ionicons name="warning-outline" size={40} color={colors.gold[500]} />
                     </View>
-                    <Text style={styles.title}>Something went wrong</Text>
+                    <Text style={styles.title}>An unexpected error occurred</Text>
                     <Text style={styles.message}>
                         We hit an unexpected error. Tap below to restart this screen.
                     </Text>

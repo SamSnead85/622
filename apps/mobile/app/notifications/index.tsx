@@ -457,7 +457,7 @@ export default function NotificationsScreen() {
             ) : error && notifications.length === 0 ? (
                 <EmptyState
                     icon="cloud-offline-outline"
-                    title="Something went wrong"
+                    title="Unable to load notifications"
                     message={error}
                     actionLabel="Retry"
                     onAction={handleRetry}

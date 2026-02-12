@@ -117,7 +117,7 @@ export default function JoinPage() {
                 setUsernameError(data.error || 'Could not create account.');
             }
         } catch {
-            setUsernameError('Something went wrong. Please try again.');
+            setUsernameError('Unable to create account. Please try again.');
         } finally {
             setSubmitting(false);
         }

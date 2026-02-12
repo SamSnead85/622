@@ -281,7 +281,7 @@ export default function ClassroomScreen() {
             setNewLevel(0);
             loadCourses();
         } catch (e: any) {
-            Alert.alert('Error', e.message || 'Failed to create course');
+            Alert.alert('Course Creation Failed', e.message || 'Unable to create course');
         } finally {
             setCreating(false);
         }
@@ -341,7 +341,7 @@ export default function ClassroomScreen() {
                 <View style={styles.errorContainer}>
                     <Ionicons name="cloud-offline-outline" size={48} color={themeColors.text.muted} />
                     <Text style={[styles.errorTitle, { color: themeColors.text.primary }]}>
-                        Something went wrong
+                        Unable to load classroom
                     </Text>
                     <Text style={[styles.errorText, { color: themeColors.text.muted }]}>
                         {error}

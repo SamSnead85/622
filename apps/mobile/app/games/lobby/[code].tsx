@@ -487,7 +487,7 @@ export default function LobbyScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         const success = await gameStore.startGame();
         if (!success) {
-            Alert.alert('Error', gameStore.error || 'Failed to start game.');
+            Alert.alert('Game Start Failed', gameStore.error || 'Unable to start game.');
         }
     }, [gameStore]);
 

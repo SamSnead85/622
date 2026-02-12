@@ -343,7 +343,7 @@ function CreateCommunityModal({ visible, onClose, onCreate }: {
             onClose();
             onCreate();
         } catch {
-            Alert.alert('Error', 'Failed to create community. Please try again.');
+            Alert.alert('Creation Failed', 'We couldn\'t create your community. Please check your connection and try again.');
         } finally {
             setIsCreating(false);
         }
@@ -531,7 +531,7 @@ export default function CommunitiesScreen() {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
         } catch {
-            Alert.alert('Error', 'Failed to join community.');
+            Alert.alert('Join Failed', 'Unable to join community. Please try again.');
         }
     }, [fetchCommunities]);
 

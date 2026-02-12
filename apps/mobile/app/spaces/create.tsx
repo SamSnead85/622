@@ -94,7 +94,7 @@ export default function CreateSpaceScreen() {
                 router.replace(`/spaces/${data.space.id}`);
             }
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'Failed to create space');
+            Alert.alert('Space Creation Failed', err.message || 'Unable to create space');
         } finally {
             setIsCreating(false);
         }

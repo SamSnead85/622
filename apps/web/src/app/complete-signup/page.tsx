@@ -64,7 +64,7 @@ export default function CompleteSignupPage() {
                 setError(data.error || data.message || 'Could not complete signup.');
             }
         } catch {
-            setError('Something went wrong. Please try again.');
+            setError('Unable to complete signup. Please try again.');
         } finally {
             setSubmitting(false);
         }

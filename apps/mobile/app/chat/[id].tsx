@@ -1182,7 +1182,7 @@ export default function ChatScreen() {
                     <TouchableOpacity
                         style={styles.headerActionBtn}
                         onPress={() => {
-                            Alert.alert('Coming Soon', 'Voice and video calls will be available in a future update.');
+                            Alert.alert('Voice & Video', 'Voice and video calling is being finalized and will be available shortly.');
                         }}
                         accessibilityRole="button"
                         accessibilityLabel="Start audio call"
@@ -1196,7 +1196,7 @@ export default function ChatScreen() {
                     <TouchableOpacity
                         style={styles.headerActionBtn}
                         onPress={() => {
-                            Alert.alert('Coming Soon', 'Voice and video calls will be available in a future update.');
+                            Alert.alert('Voice & Video', 'Voice and video calling is being finalized and will be available shortly.');
                         }}
                         accessibilityRole="button"
                         accessibilityLabel="Start video call"

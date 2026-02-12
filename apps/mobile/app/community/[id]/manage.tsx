@@ -100,7 +100,7 @@ export default function CommunityManageScreen() {
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                         loadMembers();
                     } catch (e: any) {
-                        Alert.alert('Error', e.message || 'Action failed');
+                        Alert.alert('Action Failed', e.message || 'Unable to complete action');
                     }
                 },
             },

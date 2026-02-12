@@ -138,7 +138,7 @@ export default function UsernameScreen() {
             await refreshUser();
             router.replace('/discover');
         } catch (err: any) {
-            setError(err?.data?.error || err?.message || 'Something went wrong.');
+            setError(err?.data?.error || err?.message || 'Unable to update username.');
         } finally { setLoading(false); }
     };
 

@@ -542,7 +542,7 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                             ))}
                         </div>
 
-                        {/* AI Coming Soon */}
+                        {/* AI feature is being finalized */}
                         <div className="mt-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
                             <div className="flex items-center gap-2">
                                 <div className="w-7 h-7 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center shrink-0">
@@ -552,7 +552,7 @@ export function ProfileEditor({ isOpen, onClose, onSave, currentProfile }: Profi
                                 </div>
                                 <div>
                                     <p className="text-xs text-white/50 font-medium">AI Backgrounds</p>
-                                    <p className="text-[10px] text-white/25">Upload your photo and place yourself in any location. Coming soon.</p>
+                                    <p className="text-[10px] text-white/25">Upload your photo and place yourself in any location. This feature is being finalized.</p>
                                 </div>
                             </div>
                         </div>

@@ -412,7 +412,7 @@ export default function CourseDetailScreen() {
                 <View style={styles.centered}>
                     <Ionicons name="cloud-offline-outline" size={48} color={themeColors.text.muted} />
                     <Text style={[styles.errorTitle, { color: themeColors.text.primary }]}>
-                        Something went wrong
+                        Unable to load course
                     </Text>
                     <Text style={[styles.errorText, { color: themeColors.text.muted }]}>
                         {error || 'Course not found'}

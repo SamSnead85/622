@@ -71,7 +71,7 @@ function friendlyError(raw: string): string {
         return 'This account has been temporarily locked. Please try again later or contact support.';
     }
     if (lower.includes('server') || lower.includes('500') || lower.includes('internal')) {
-        return 'Something went wrong on our end. Please try again in a moment.';
+        return 'A server error occurred. Please try again in a moment.';
     }
     // Return the original if it's already user-friendly (short, no stack trace)
     if (raw.length < 100 && !raw.includes('Error:') && !raw.includes('at ')) {
@@ -667,7 +667,7 @@ export default function LoginScreen() {
                     <View style={styles.form}>
                         <AnimatedField
                             label="Email"
-                            placeholder="you@example.com"
+                            placeholder="Email address"
                             value={email}
                             onChangeText={(text) => {
                                 setEmail(text);

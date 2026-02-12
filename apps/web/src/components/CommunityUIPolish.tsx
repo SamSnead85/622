@@ -543,7 +543,7 @@ export const ErrorDisplay = memo(function ErrorDisplay({ error, onRetry, onDismi
             <div className="flex items-start gap-3">
                 <span className="text-red-400 text-xl">⚠️</span>
                 <div className="flex-1">
-                    <h4 className="text-red-400 font-medium">Something went wrong</h4>
+                    <h4 className="text-red-400 font-medium">Unable to load content</h4>
                     <p className="text-white/60 text-sm mt-1">{message}</p>
                     <div className="flex gap-2 mt-3">
                         {onRetry && (

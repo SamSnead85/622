@@ -44,6 +44,18 @@ const checkUsernameSchema = z.object({
     username: z.string().min(3).max(30),
 });
 
+const unlockSchema = z.object({
+    email: z.string().email(),
+    password: z.string(),
+});
+
+const accessCodeSchema = z.object({
+    code: z.string().optional(),
+    type: z.string().optional(),
+    maxUses: z.number().int().positive().optional(),
+    expiresAt: z.string().nullable().optional(),
+});
+
 // Helper to generate tokens
 const generateTokens = async (
     userId: string,
@@ -1211,7 +1223,7 @@ router.post('/admin/early-access/:id/reject', authenticate, requireAdmin, async 
 // POST /api/v1/auth/admin/access-codes - Create manual access codes
 router.post('/admin/access-codes', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const { code, type, maxUses, expiresAt } = req.body;
+        const { code, type, maxUses, expiresAt } = accessCodeSchema.parse(req.body);
         const finalCode = (code || `MAN${Date.now().toString(36).toUpperCase().slice(-4)}${Math.random().toString(36).slice(2, 5).toUpperCase()}`).toUpperCase();
 
         const accessCode = await prisma.accessCode.create({
@@ -1618,14 +1630,9 @@ router.post('/panic', authenticate, async (req: AuthRequest, res, next) => {
 // ============================================
 // UNLOCK ACCOUNT (after panic)
 // ============================================
-router.post('/unlock', async (req, res, next) => {
+router.post('/unlock', rateLimiters.auth, async (req, res, next) => {
     try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            res.status(400).json({ error: 'Email and password required to unlock account.' });
-            return;
-        }
+        const { email, password } = unlockSchema.parse(req.body);
 
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user || !user.passwordHash) {

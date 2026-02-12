@@ -155,7 +155,7 @@ function SignupPageContent() {
                                 <span className="text-[#D4AF37]">0</span>
                                 <span className="text-white">G</span>
                             </div>
-                            <span className="font-semibold text-xl text-white/70">ZeroG</span>
+                            <span className="font-semibold text-xl text-white/70">0G</span>
                         </Link>
 
                         {/* Progress indicator */}

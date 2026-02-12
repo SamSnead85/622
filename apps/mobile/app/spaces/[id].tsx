@@ -341,7 +341,7 @@ export default function SpaceRoomScreen() {
                 if (me) setIsMuted(me.isMuted);
             }
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'Failed to load space');
+            Alert.alert('Space Unavailable', err.message || 'Unable to load space');
             router.back();
         } finally {
             setIsLoading(false);
@@ -471,7 +471,7 @@ export default function SpaceRoomScreen() {
             socketManager.requestSpeak(id);
             setHasRequestedSpeak(true);
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'Failed to request to speak');
+            Alert.alert('Request Failed', err.message || 'Unable to request to speak');
         }
     }, [id, hasRequestedSpeak]);
 
@@ -485,7 +485,7 @@ export default function SpaceRoomScreen() {
             socketManager.approveSpeaker(id, speakerId);
             fetchSpace();
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'Failed to approve speaker');
+            Alert.alert('Approval Failed', err.message || 'Unable to approve speaker');
         }
     }, [id, fetchSpace]);
 

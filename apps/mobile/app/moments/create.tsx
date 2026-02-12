@@ -77,7 +77,7 @@ export default function MomentCreateScreen() {
                 setMediaType(result.assets[0].type === 'video' ? 'video' : 'image');
             }
         } catch (e: any) {
-            Alert.alert('Error', e.message || 'Failed to pick media');
+            Alert.alert('Media Selection Failed', e.message || 'Unable to select media');
         }
     };
 
@@ -104,7 +104,7 @@ export default function MomentCreateScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             router.back();
         } catch (e: any) {
-            Alert.alert('Error', e.message || 'Failed to post moment');
+            Alert.alert('Post Failed', e.message || 'Unable to post moment');
         } finally {
             setPosting(false);
         }

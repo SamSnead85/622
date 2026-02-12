@@ -383,7 +383,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             return this.props.fallback || (
                 <div className="p-6 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
                     <span className="text-3xl mb-3 block">⚠️</span>
-                    <p className="text-white font-medium">Something went wrong</p>
+                    <p className="text-white font-medium">An error occurred</p>
                     <p className="text-sm text-white/50 mt-1">{this.state.error?.message}</p>
                     <button
                         onClick={() => this.setState({ hasError: false })}

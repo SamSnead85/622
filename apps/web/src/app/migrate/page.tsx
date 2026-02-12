@@ -229,7 +229,7 @@ function MigrateContent() {
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="font-semibold text-white">{platform.name}</h3>
                                             {!platform.ready && (
-                                                <span className="text-[10px] uppercase tracking-wider text-white/30 bg-white/5 px-2 py-0.5 rounded">Coming Soon</span>
+                                                <span className="text-[10px] uppercase tracking-wider text-white/30 bg-white/5 px-2 py-0.5 rounded">This feature is being finalized</span>
                                             )}
                                         </div>
                                         <p className="text-sm text-white/40 leading-relaxed">{platform.description}</p>

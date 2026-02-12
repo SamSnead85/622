@@ -241,7 +241,7 @@ const ProfileError = memo(({
     <View style={styles.errorContainer}>
         <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
         <Ionicons name="cloud-offline-outline" size={56} color={colors.text.muted} />
-        <Text style={styles.errorTitle}>Something went wrong</Text>
+        <Text style={styles.errorTitle}>Unable to load profile</Text>
         <Text style={styles.errorMessage}>{message}</Text>
         <View style={styles.errorActions}>
             <TouchableOpacity

@@ -762,11 +762,11 @@ export default function GamesHubScreen() {
                 router.push(`/games/lobby/${code}`);
             } else {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                Alert.alert('Error', gameStore.error || 'Failed to create game. Please try again.');
+                Alert.alert('Game Creation Failed', gameStore.error || 'Unable to create game. Please try again.');
             }
         } catch {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', 'Something went wrong. Please try again.');
+            Alert.alert('Game Unavailable', 'Unable to start the game right now. Please check your connection and try again.');
             showError('Could not start game');
         } finally {
             setIsCreating(false);

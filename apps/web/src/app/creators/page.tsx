@@ -102,7 +102,7 @@ export default function CreatorsPage() {
             if (data.success) {
                 setResult({ success: true, message: 'Application submitted! We\'ll review and get back to you within 48 hours.' });
             } else {
-                setResult({ success: false, message: data.error || 'Something went wrong.' });
+                setResult({ success: false, message: data.error || 'Unable to submit application.' });
             }
         } catch {
             setResult({ success: false, message: 'Unable to submit. Please try again.' });
@@ -389,7 +389,7 @@ export default function CreatorsPage() {
                             )}
                         </div>
                         <h2 className="text-xl font-semibold text-white mb-2">
-                            {result.success ? 'Application Submitted' : 'Something Went Wrong'}
+                            {result.success ? 'Application Submitted' : 'Submission Failed'}
                         </h2>
                         <p className="text-sm text-white/50 mb-8">{result.message}</p>
                         <Link href="/" className="text-sm text-[#D4AF37] hover:underline">Back to ZeroG</Link>

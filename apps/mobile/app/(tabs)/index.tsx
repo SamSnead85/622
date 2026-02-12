@@ -598,7 +598,7 @@ const FeedPostCard = memo(
                     }
                 );
             } else {
-                Alert.alert('Post Options', '', [
+                Alert.alert('Post Options', 'Choose an action', [
                     { text: 'Copy Link' },
                     {
                         text: 'Share',
@@ -1936,7 +1936,7 @@ export default function FeedScreen() {
                                     }
                                 );
                             } else {
-                                Alert.alert('Quick Actions', '', [
+                                Alert.alert('Quick Actions', 'Select an option', [
                                     { text: 'Feed Settings', onPress: () => router.push('/settings/algorithm' as any) },
                                     { text: 'Games', onPress: () => router.push('/games' as any) },
                                     { text: 'Deen Tools', onPress: () => router.push('/tools' as any) },

@@ -37,7 +37,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../../components';
 import { apiFetch, API, isNetworkError } from '../../lib/api';
-import { AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
+import { AVATAR_PLACEHOLDER, IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { useNetworkQuality } from '../../hooks/useNetworkQuality';
 import { formatCount } from '../../lib/utils';
 
@@ -1081,8 +1081,8 @@ export default function SearchScreen() {
                                         source={{ uri: post.mediaUrl }}
                                         style={styles.featuredMedia}
                                         contentFit="cover"
-                                        placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4"
-                                        transition={200}
+                                        placeholder={IMAGE_PLACEHOLDER.blurhash}
+                                        transition={IMAGE_PLACEHOLDER.transition}
                                         cachePolicy="memory-disk"
                                     />
                                 ) : null}
@@ -1278,7 +1278,7 @@ export default function SearchScreen() {
                 />
             </View>
             <Text style={styles.errorTitle}>
-                {isOffline ? 'You\'re offline' : 'Something went wrong'}
+                {isOffline ? 'You\'re offline' : 'Search unavailable'}
             </Text>
             <Text style={styles.errorSubtitle}>
                 {searchError}

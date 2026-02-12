@@ -51,7 +51,7 @@ function EarlyAccessPageContent() {
                 setMessage(data.message);
             } else {
                 setStatus('error');
-                setMessage(data.message || 'Something went wrong. Please try again.');
+                setMessage(data.message || 'Unable to process request. Please try again.');
             }
         } catch {
             setStatus('error');

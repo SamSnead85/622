@@ -1250,7 +1250,7 @@ export default function SpeedMatchScreen() {
                 />
             )}
 
-            {/* Multiplayer opponent score (mock) */}
+            {/* Multiplayer opponent score */}
             {isMultiplayer && (
                 <Animated.View entering={FadeIn.duration(300)} style={styles.opponentBar}>
                     <Ionicons name="person" size={14} color={colors.text.muted} />

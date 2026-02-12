@@ -291,9 +291,11 @@ export default function DashboardPage() {
                         <div className="space-y-4 py-4">
                             {/* Welcome card */}
                             <div className="bg-gradient-to-br from-[#D4AF37]/10 via-[#B8942D]/5 to-transparent rounded-2xl border border-[#D4AF37]/20 p-6 text-center">
-                                <h3 className="text-xl font-bold text-white mb-2">Welcome to 0G</h3>
+                                <h3 className="text-xl font-bold text-white mb-2">
+                                    {user?.displayName ? `Welcome to 0G, ${user.displayName}` : 'Welcome to 0G'}
+                                </h3>
                                 <p className="text-white/50 text-sm mb-5 max-w-md mx-auto">
-                                    Your feed is empty because you&apos;re early! Create your first post, explore communities, or invite friends to get started.
+                                    Your feed is ready for content. Follow people or join communities to see posts here.
                                 </p>
                                 <div className="flex flex-wrap justify-center gap-3">
                                     <Link

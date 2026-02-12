@@ -173,7 +173,7 @@ export default function SettingsScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setShowProfileEditor(false);
         } catch {
-            Alert.alert('Error', 'Failed to save profile. Please try again.');
+            Alert.alert('Profile Update Failed', 'Failed to save profile. Please try again.');
             showError('Could not load profile');
         } finally {
             setIsSavingProfile(false);
@@ -201,7 +201,7 @@ export default function SettingsScreen() {
             await refreshUser();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {
-            Alert.alert('Error', 'Failed to upload avatar. Please try again.');
+            Alert.alert('Upload Failed', 'Failed to upload avatar. Please try again.');
             showError('Could not upload photo');
         } finally {
             setIsUploadingAvatar(false);
@@ -219,7 +219,7 @@ export default function SettingsScreen() {
             await refreshUser();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {
-            Alert.alert('Error', 'Failed to update cultural profile.');
+            Alert.alert('Update Failed', 'Failed to update cultural profile.');
             setCulturalProfile(user?.culturalProfile || 'standard');
             showError('Could not update setting');
         }
@@ -279,7 +279,7 @@ export default function SettingsScreen() {
                             await refreshUser();
                             Alert.alert('Welcome!', 'You\'re now part of the larger community. You can switch back to private mode anytime from Settings.');
                         } catch {
-                            Alert.alert('Error', 'Failed to join community. Please try again.');
+                            Alert.alert('Join Failed', 'Failed to join community. Please try again.');
                             showError('Could not update profile');
                         }
                     },
@@ -303,9 +303,9 @@ export default function SettingsScreen() {
                         try {
                             await apiFetch(API.communityOptIn, { method: 'POST', body: JSON.stringify({ optIn: false }) });
                             await refreshUser();
-                            Alert.alert('Done', 'You\'re now in private-only mode.');
+                            Alert.alert('Privacy Updated', 'You\'re now in private-only mode. Only your groups will see your activity.');
                         } catch {
-                            Alert.alert('Error', 'Failed to leave community.');
+                            Alert.alert('Leave Failed', 'Failed to leave community.');
                             showError('Could not delete account');
                         } finally {
                             setIsLeavingCommunity(false);
@@ -732,7 +732,7 @@ export default function SettingsScreen() {
                                                     await apiFetch(API.accountExport, { method: 'POST' });
                                                     Alert.alert(t('settings.exportRequested'), 'You\'ll receive an email when your data export is ready.');
                                                 } catch {
-                                                    Alert.alert('Error', 'Failed to request data export. Please try again.');
+                                                    Alert.alert('Export Request Failed', 'Failed to request data export. Please try again.');
                                                     showError('Could not request data export');
                                                 }
                                             },

@@ -217,7 +217,7 @@ function HeroSection() {
                     <Image
                         key={img.id}
                         src={img.src}
-                        alt=""
+                        alt={`Cultural journey image ${index + 1}: ${img.id.replace('-', ' ')}`}
                         fill
                         className={`object-cover transition-opacity duration-[2000ms] ease-in-out ${index === activeHeroImage ? 'opacity-100' : 'opacity-0'
                             }`}

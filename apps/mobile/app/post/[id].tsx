@@ -719,7 +719,7 @@ export default function PostDetailScreen() {
                             color={colors.text.muted}
                         />
                     </View>
-                    <Text style={styles.errorText}>Something went wrong</Text>
+                    <Text style={styles.errorText}>Unable to load post</Text>
                     <Text style={styles.errorSubtext}>{error}</Text>
                     <TouchableOpacity
                         onPress={() => {

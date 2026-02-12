@@ -560,7 +560,7 @@ export function CaravanDashboard({ currentMember, members, meetings, deals }: Ca
                     {activeTab === 'resources' && (
                         <div className="text-center py-12 text-white/40">
                             <p className="text-5xl mb-4">📚</p>
-                            <p>Coming soon: Exclusive playbooks, templates, and recordings</p>
+                            <p>Exclusive playbooks, templates, and recordings — available to founding members.</p>
                         </div>
                     )}
                 </motion.div>
