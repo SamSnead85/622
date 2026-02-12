@@ -136,19 +136,11 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
     try {
         const { email, password, username, displayName, groupOnly, primaryCommunityId, accessCode } = signupSchema.parse(req.body);
 
-        // Validate access code (required for early access period)
-        if (!accessCode) {
-            throw new AppError('An access code is required to sign up during the early access period.', 403);
-        }
-        const codeRecord = await prisma.accessCode.findUnique({ where: { code: accessCode.trim().toUpperCase() } });
-        if (!codeRecord || !codeRecord.isActive) {
-            throw new AppError('Invalid access code.', 403);
-        }
-        if (codeRecord.expiresAt && codeRecord.expiresAt < new Date()) {
-            throw new AppError('This access code has expired.', 403);
-        }
-        if (codeRecord.maxUses > 0 && codeRecord.useCount >= codeRecord.maxUses) {
-            throw new AppError('This access code has reached its usage limit.', 403);
+        // Validate access code (optional — track usage if provided)
+        let codeRecord: any = null;
+        if (accessCode) {
+            codeRecord = await prisma.accessCode.findUnique({ where: { code: accessCode.trim().toUpperCase() } });
+            // If code is provided but invalid, just ignore it — don't block signup
         }
 
         // Check if email or username exists
@@ -183,11 +175,13 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
             },
         });
 
-        // Increment access code usage
-        await prisma.accessCode.update({
-            where: { id: codeRecord.id },
-            data: { useCount: { increment: 1 } },
-        });
+        // Increment access code usage (if a valid code was provided)
+        if (codeRecord?.id && codeRecord.isActive) {
+            await prisma.accessCode.update({
+                where: { id: codeRecord.id },
+                data: { useCount: { increment: 1 } },
+            }).catch(() => {}); // non-blocking
+        }
 
         // Generate auth token
         const { token, expiresAt } = await generateTokens(user.id, {
@@ -198,7 +192,7 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
 
         // === Growth Partner referral tracking (non-blocking) ===
         // Check if the access code was created by a Growth Partner
-        if (codeRecord.createdById) {
+        if (codeRecord?.createdById) {
             (async () => {
                 try {
                     const partnerRecord = await prisma.growthPartner.findUnique({
