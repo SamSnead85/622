@@ -14,7 +14,7 @@ const prisma = new PrismaClient();
 // TOTP configuration
 const TOTP_CONFIG = {
     issuer: '0G Platform',
-    algorithm: 'SHA1',
+    algorithm: 'SHA256',
     digits: 6,
     period: 30,
 };

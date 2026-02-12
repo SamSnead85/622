@@ -9,11 +9,13 @@ import { PrismaClient, ThreatLevel, SecurityPolicyType, Prisma } from '@prisma/c
 import { Request, Response, NextFunction } from 'express';
 import { getGeoFromIP, isPlatformGeoBlocked } from './geoblock.js';
 import { logger } from '../utils/logger.js';
+import { cache } from './cache/RedisCache.js';
 
 const prisma = new PrismaClient();
 
-// In-memory rate limit store (use Redis in production for multi-instance)
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+// Rate limit store — uses Redis via cache service for multi-instance support
+// Falls back to in-memory Map if Redis is unavailable
+const rateLimitStoreFallback = new Map<string, { count: number; resetTime: number }>();
 
 // ============================================
 // SECURITY AUDIT LOGGING
@@ -164,19 +166,37 @@ const DEFAULT_RATE_LIMITS: Record<string, RateLimitConfig> = {
 /**
  * Check and apply rate limit
  */
-export function checkRateLimit(
+export async function checkRateLimit(
     identifier: string,
     category: string = 'api'
-): { allowed: boolean; remaining: number; resetIn: number } {
+): Promise<{ allowed: boolean; remaining: number; resetIn: number }> {
     const config = DEFAULT_RATE_LIMITS[category] || DEFAULT_RATE_LIMITS.api;
-    const key = `${category}:${identifier}`;
-    const now = Date.now();
+    const key = `security:ratelimit:${category}:${identifier}`;
+    const ttlSeconds = Math.ceil(config.windowMs / 1000);
 
-    const record = rateLimitStore.get(key);
+    try {
+        // Try Redis first
+        const current = await cache.increment(key, ttlSeconds);
+        if (current > 0) {
+            // Redis is working
+            const allowed = current <= config.maxRequests;
+            return {
+                allowed,
+                remaining: Math.max(0, config.maxRequests - current),
+                resetIn: config.windowMs,
+            };
+        }
+    } catch {
+        // Redis unavailable — fall through to in-memory
+    }
+
+    // Fallback: in-memory store
+    const now = Date.now();
+    const fallbackKey = `${category}:${identifier}`;
+    const record = rateLimitStoreFallback.get(fallbackKey);
 
     if (!record || now > record.resetTime) {
-        // Start new window
-        rateLimitStore.set(key, { count: 1, resetTime: now + config.windowMs });
+        rateLimitStoreFallback.set(fallbackKey, { count: 1, resetTime: now + config.windowMs });
         return { allowed: true, remaining: config.maxRequests - 1, resetIn: config.windowMs };
     }
 
@@ -185,7 +205,7 @@ export function checkRateLimit(
     }
 
     record.count++;
-    rateLimitStore.set(key, record);
+    rateLimitStoreFallback.set(fallbackKey, record);
 
     return {
         allowed: true,
@@ -342,9 +362,9 @@ export function securityMiddleware() {
  * Rate limiting middleware
  */
 export function rateLimitMiddleware(category: string = 'api') {
-    return (req: Request, res: Response, next: NextFunction) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
         const ip = getClientIP(req);
-        const result = checkRateLimit(ip, category);
+        const result = await checkRateLimit(ip, category);
 
         res.setHeader('X-RateLimit-Remaining', result.remaining.toString());
         res.setHeader('X-RateLimit-Reset', Math.ceil(result.resetIn / 1000).toString());
@@ -352,7 +372,7 @@ export function rateLimitMiddleware(category: string = 'api') {
         if (!result.allowed) {
             const geo = getGeoFromIP(ip);
 
-            logSecurityEvent({
+            await logSecurityEvent({
                 action: SecurityEvents.RATE_LIMITED,
                 ipAddress: ip,
                 countryCode: geo.countryCode || undefined,

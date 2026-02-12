@@ -8,6 +8,7 @@ import { Server as SocketServer } from 'socket.io';
 import dotenv from 'dotenv';
 import * as Sentry from '@sentry/node';
 import { rateLimiters } from './middleware/rateLimit.js';
+import { securityHeaders, requestId, requestFirewall } from './middleware/securityHeaders.js';
 
 import { authRouter } from './routes/auth.js';
 import { usersRouter } from './routes/users.js';
@@ -41,8 +42,10 @@ import campaignsRouter from './routes/campaigns.js';
 import creatorsRouter from './routes/creators.js';
 import growthRouter from './routes/growth.js';
 import { spacesRouter } from './routes/spaces.js';
+import { webhooksRouter } from './routes/webhooks.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
+import { validateEnvironment } from './utils/validateEnv.js';
 import { setupSocketHandlers } from './socket/index.js';
 import { initNotificationQueue, shutdownNotificationQueue } from './services/notifications/NotificationQueue.js';
 import { initScheduleWorker, shutdownScheduleWorker } from './services/schedule/ScheduleWorker.js';
@@ -107,6 +110,10 @@ if (process.env.SENTRY_DSN) {
     });
     logger.info('✅ Sentry error monitoring initialized');
 }
+
+// Validate environment variables
+validateEnvironment();
+
 const httpServer = createServer(app);
 
 // Parse allowed origins from environment
@@ -150,13 +157,58 @@ const io = new SocketServer(httpServer, {
 });
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+    hsts: {
+        maxAge: 31536000, // 1 year
+        includeSubDomains: true,
+        preload: true,
+    },
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://*.supabase.co", "https://lh3.googleusercontent.com"],
+            connectSrc: ["'self'", "https://caravanserver-production-d7da.up.railway.app", "wss://caravanserver-production-d7da.up.railway.app", "https://accounts.google.com", "https://appleid.apple.com"],
+            fontSrc: ["'self'", "data:"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'", "https://res.cloudinary.com", "blob:"],
+            frameSrc: ["'none'"],
+            baseUri: ["'self'"],
+            formAction: ["'self'"],
+            frameAncestors: ["'none'"],
+            upgradeInsecureRequests: [],
+        },
+    },
+    crossOriginEmbedderPolicy: false, // Allow loading external images
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow CDN resources
+}));
+
+app.use(requestId());
+app.use(securityHeaders());
+app.use(requestFirewall());
+
+// HTTPS redirect in production
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        if (req.headers['x-forwarded-proto'] !== 'https') {
+            return res.redirect(301, `https://${req.headers.host}${req.url}`);
+        }
+        next();
+    });
+}
+
 app.use(cors({
     origin: corsOriginHandler,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
+
+// Stripe webhooks must receive raw body for signature verification
+// Register BEFORE express.json() middleware
+app.use('/api/v1/webhooks', express.raw({ type: 'application/json' }), webhooksRouter);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

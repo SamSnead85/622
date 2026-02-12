@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
 
@@ -127,8 +128,12 @@ router.get('/users/:id', authenticate, requireAdmin, async (req: AuthRequest, re
 // POST /api/v1/admin/users/:id/suspend — Suspend a user
 router.post('/users/:id/suspend', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const { duration, reason } = req.body; // duration in hours
-        const hours = parseInt(duration) || 24;
+        const suspendSchema = z.object({
+            duration: z.number().int().positive().max(8760).optional().default(24), // max 1 year in hours
+            reason: z.string().min(1).max(500).optional().default('Policy violation'),
+        });
+        const { duration, reason } = suspendSchema.parse(req.body);
+        const hours = duration;
         const suspendedUntil = new Date(Date.now() + hours * 60 * 60 * 1000);
 
         const user = await prisma.user.update({
@@ -210,11 +215,15 @@ router.post('/users/:id/role', authenticate, requireSuperAdmin, async (req: Auth
 // POST /api/v1/admin/users/:id/strike — Issue a strike
 router.post('/users/:id/strike', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const { reason, postId, expiresInDays } = req.body;
-        if (!reason) return res.status(400).json({ error: 'Reason is required' });
+        const strikeSchema = z.object({
+            reason: z.string().min(1).max(500),
+            postId: z.string().uuid().optional(),
+            expiresInDays: z.number().int().positive().max(365).optional(),
+        });
+        const { reason, postId, expiresInDays } = strikeSchema.parse(req.body);
 
         const expiresAt = expiresInDays
-            ? new Date(Date.now() + parseInt(expiresInDays) * 24 * 60 * 60 * 1000)
+            ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
             : null;
 
         const [strike] = await prisma.$transaction([

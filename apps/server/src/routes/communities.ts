@@ -2430,7 +2430,7 @@ router.get('/:communityId/courses/:courseId/lessons/:lessonId', authenticate, as
         });
         if (!lesson) throw new AppError('Lesson not found', 404);
 
-        let progress = null;
+        let progress: any = null;
         if (req.userId) {
             progress = await prisma.lessonProgress.findUnique({
                 where: { lessonId_userId: { lessonId, userId: req.userId } },

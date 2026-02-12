@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import { Request } from 'express';
 import { logSecurityEvent, SecurityEvents } from './security.js';
 import { logger } from '../utils/logger.js';
+import { cache } from './cache/RedisCache.js';
 
 const prisma = new PrismaClient();
 
@@ -169,8 +170,8 @@ export async function checkLoginLocation(
 // FAILED LOGIN TRACKING
 // ============================================
 
-// In-memory store for failed logins (use Redis in production)
-const failedLoginAttempts = new Map<string, { count: number; lastAttempt: Date; lockedUntil?: Date }>();
+// Redis-backed failed login tracking with in-memory fallback
+const failedLoginFallback = new Map<string, { count: number; lastAttempt: Date; lockedUntil?: Date }>();
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
@@ -179,82 +180,115 @@ const ATTEMPT_WINDOW = 15 * 60 * 1000; // 15 minutes
 /**
  * Record a failed login attempt
  */
-export function recordFailedLogin(identifier: string): { locked: boolean; remainingAttempts: number; lockoutEnds?: Date } {
-    const key = identifier.toLowerCase();
+export async function recordFailedLogin(identifier: string): Promise<{ locked: boolean; remainingAttempts: number; lockoutEnds?: Date }> {
+    const key = `failed_login:${identifier.toLowerCase()}`;
+    const lockKey = `login_locked:${identifier.toLowerCase()}`;
     const now = new Date();
 
-    let record = failedLoginAttempts.get(key);
+    try {
+        // Check if currently locked (Redis)
+        const lockData = await cache.get<string>(lockKey);
+        if (lockData) {
+            const lockoutEnds = new Date(lockData);
+            if (lockoutEnds > now) {
+                return { locked: true, remainingAttempts: 0, lockoutEnds };
+            }
+            // Lockout expired - clear it
+            await cache.delete(lockKey);
+        }
+
+        // Increment failed attempts in Redis
+        const ttlSeconds = Math.ceil(ATTEMPT_WINDOW / 1000);
+        const count = await cache.increment(key, ttlSeconds);
+
+        if (count > 0) {
+            // Redis is working
+            if (count >= MAX_FAILED_ATTEMPTS) {
+                const lockoutEnds = new Date(now.getTime() + LOCKOUT_DURATION);
+                const lockTtl = Math.ceil(LOCKOUT_DURATION / 1000);
+                await cache.set(lockKey, lockoutEnds.toISOString(), lockTtl);
+                return { locked: true, remainingAttempts: 0, lockoutEnds };
+            }
+            return { locked: false, remainingAttempts: MAX_FAILED_ATTEMPTS - count };
+        }
+    } catch {
+        // Redis unavailable — fall through to in-memory
+    }
+
+    // Fallback: in-memory
+    const fallbackKey = identifier.toLowerCase();
+    let record = failedLoginFallback.get(fallbackKey);
 
     if (!record) {
         record = { count: 0, lastAttempt: now };
     }
 
-    // Reset if outside attempt window
     if (now.getTime() - record.lastAttempt.getTime() > ATTEMPT_WINDOW) {
         record = { count: 0, lastAttempt: now };
     }
 
-    // Check if currently locked
     if (record.lockedUntil && record.lockedUntil > now) {
-        return {
-            locked: true,
-            remainingAttempts: 0,
-            lockoutEnds: record.lockedUntil,
-        };
+        return { locked: true, remainingAttempts: 0, lockoutEnds: record.lockedUntil };
     }
 
-    // Increment attempts
     record.count++;
     record.lastAttempt = now;
 
-    // Check if should lock
     if (record.count >= MAX_FAILED_ATTEMPTS) {
         record.lockedUntil = new Date(now.getTime() + LOCKOUT_DURATION);
-        failedLoginAttempts.set(key, record);
-
-        return {
-            locked: true,
-            remainingAttempts: 0,
-            lockoutEnds: record.lockedUntil,
-        };
+        failedLoginFallback.set(fallbackKey, record);
+        return { locked: true, remainingAttempts: 0, lockoutEnds: record.lockedUntil };
     }
 
-    failedLoginAttempts.set(key, record);
-
-    return {
-        locked: false,
-        remainingAttempts: MAX_FAILED_ATTEMPTS - record.count,
-    };
+    failedLoginFallback.set(fallbackKey, record);
+    return { locked: false, remainingAttempts: MAX_FAILED_ATTEMPTS - record.count };
 }
 
 /**
  * Check if an identifier is locked out
  */
-export function isLockedOut(identifier: string): { locked: boolean; lockoutEnds?: Date } {
-    const key = identifier.toLowerCase();
-    const record = failedLoginAttempts.get(key);
+export async function isLockedOut(identifier: string): Promise<{ locked: boolean; lockoutEnds?: Date }> {
+    const lockKey = `login_locked:${identifier.toLowerCase()}`;
 
-    if (!record || !record.lockedUntil) {
+    try {
+        const lockData = await cache.get<string>(lockKey);
+        if (lockData) {
+            const lockoutEnds = new Date(lockData);
+            const now = new Date();
+            if (lockoutEnds > now) {
+                return { locked: true, lockoutEnds };
+            }
+            // Lockout expired - clear it
+            await cache.delete(lockKey);
+        }
+    } catch {
+        // Redis unavailable — check fallback
+    }
+
+    const record = failedLoginFallback.get(identifier.toLowerCase());
+    if (!record || !record.lockedUntil) return { locked: false };
+    if (record.lockedUntil <= new Date()) {
+        failedLoginFallback.delete(identifier.toLowerCase());
         return { locked: false };
     }
-
-    if (record.lockedUntil > new Date()) {
-        return { locked: true, lockoutEnds: record.lockedUntil };
-    }
-
-    // Lockout expired - clear it
-    record.lockedUntil = undefined;
-    record.count = 0;
-    failedLoginAttempts.set(key, record);
-
-    return { locked: false };
+    return { locked: true, lockoutEnds: record.lockedUntil };
 }
 
 /**
  * Clear failed login record on successful login
  */
-export function clearFailedLogins(identifier: string): void {
-    failedLoginAttempts.delete(identifier.toLowerCase());
+export async function clearFailedLogins(identifier: string): Promise<void> {
+    const key = `failed_login:${identifier.toLowerCase()}`;
+    const lockKey = `login_locked:${identifier.toLowerCase()}`;
+
+    try {
+        await cache.delete(key);
+        await cache.delete(lockKey);
+    } catch {
+        // Redis unavailable
+    }
+
+    failedLoginFallback.delete(identifier.toLowerCase());
 }
 
 // ============================================

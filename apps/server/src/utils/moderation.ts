@@ -7,20 +7,56 @@
 // PROFANITY FILTER
 // ============================================
 
-// Basic list - in production, use a comprehensive library
+// Comprehensive profanity and abuse filter for production
 const profanityList = new Set([
-    // Add entries as needed - keeping this minimal for the example
-    'spam', 'scam', 'fake',
+    // Spam/fraud terms
+    'spam', 'scam', 'fake', 'phishing', 'ponzi',
+    // Hate speech / slurs (common English)
+    'nigger', 'nigga', 'faggot', 'fag', 'dyke', 'tranny', 'retard', 'retarded',
+    'spic', 'wetback', 'chink', 'gook', 'kike', 'beaner', 'coon', 'towelhead',
+    'raghead', 'camel jockey', 'sandnigger',
+    // Profanity
+    'fuck', 'fucking', 'fucker', 'fucked', 'motherfucker', 'motherfucking',
+    'shit', 'shitty', 'bullshit', 'horseshit', 'dipshit', 'shithead',
+    'ass', 'asshole', 'jackass', 'dumbass', 'badass', 'smartass',
+    'bitch', 'bitchy', 'sonofabitch',
+    'damn', 'goddamn', 'dammit',
+    'dick', 'dickhead', 'dickwad',
+    'cunt', 'twat', 'whore', 'slut', 'skank', 'hoe',
+    'bastard', 'prick', 'wanker', 'tosser', 'bellend',
+    'cock', 'cocksucker', 'blowjob',
+    'pussy', 'tits', 'boobs',
+    // Violence/threats
+    'kill yourself', 'kys', 'die', 'murder', 'rape', 'rapist',
+    // Drugs (contextual — may need refinement)
+    'cocaine', 'heroin', 'meth', 'crack',
 ]);
 
-// Patterns that indicate spam
+// Patterns that indicate spam or malicious content
 const spamPatterns = [
     /buy now/i,
     /click here/i,
     /free money/i,
     /\b100% free\b/i,
     /make \$\d+ fast/i,
-    /https?:\/\/[^\s]+\.(xyz|tk|ml)/i, // Suspicious TLDs
+    /https?:\/\/[^\s]+\.(xyz|tk|ml|ga|cf|gq)/i, // Suspicious TLDs
+    /earn \$?\d+ (per|a) (day|hour|week)/i,
+    /limited time offer/i,
+    /act now/i,
+    /congratulations.*won/i,
+    /you('ve| have) been selected/i,
+    /wire transfer/i,
+    /nigerian prince/i,
+    /crypto.*guaranteed/i,
+    /double your (money|bitcoin|crypto)/i,
+    /send.*btc.*address/i,
+    /onlyfans\.com/i,
+    /t\.me\/[a-z]/i, // Telegram invite links (often spam)
+    /wa\.me\/\d/i, // WhatsApp links (often spam)
+    /bit\.ly|tinyurl|shorturl/i, // URL shorteners (suspicious in posts)
+    /dm me for/i,
+    /check (my|the) (bio|link|profile)/i,
+    /follow (me|back|for follow)/i,
 ];
 
 /**

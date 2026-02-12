@@ -9,6 +9,10 @@ import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { rateLimiters } from '../middleware/rateLimit.js';
 import { logger } from '../utils/logger.js';
+import { validatePassword } from '../utils/security.js';
+import { encryptField } from '../services/encryption.js';
+import { hashValue } from '../services/encryption.js';
+import { trackSignup, trackFailedLogin, trackPasswordReset, checkGeoAnomaly } from '../services/securityMonitor.js';
 
 // Apple JWKS endpoint for verifying Apple Sign-In tokens
 const APPLE_JWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
@@ -82,7 +86,7 @@ const generateTokens = async (
     const token = jwt.sign(
         { userId, sessionId },
         process.env.JWT_SECRET!,
-        { expiresIn: rememberMe ? '30d' : '1d' }
+        { algorithm: 'HS256', expiresIn: rememberMe ? '7d' : '24h' }
     );
 
     return { token, expiresAt };
@@ -148,6 +152,12 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
     try {
         const { email, password, username, displayName, groupOnly, primaryCommunityId, accessCode } = signupSchema.parse(req.body);
 
+        // Security: check for bot signup patterns
+        const signupCheck = await trackSignup(req.ip || '0.0.0.0');
+        if (!signupCheck.allowed) {
+            throw new AppError('Too many signup attempts. Please try again later.', 429);
+        }
+
         // Validate access code (optional — track usage if provided)
         let codeRecord: any = null;
         if (accessCode) {
@@ -170,6 +180,12 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
                 throw new AppError('Email already registered', 409);
             }
             throw new AppError('Username already taken', 409);
+        }
+
+        // Enforce password complexity
+        const passwordCheck = validatePassword(password);
+        if (!passwordCheck.valid) {
+            throw new AppError(`Password too weak: ${passwordCheck.errors.join(', ')}`, 400);
         }
 
         // Hash password
@@ -319,7 +335,7 @@ router.post('/login', rateLimiters.auth, async (req, res, next) => {
 
         // Check if locked out due to failed attempts
         const { isLockedOut, recordFailedLogin, clearFailedLogins } = await import('../services/sessionSecurity.js');
-        const lockoutStatus = isLockedOut(email);
+        const lockoutStatus = await isLockedOut(email);
 
         if (lockoutStatus.locked) {
             const remainingMinutes = Math.ceil((lockoutStatus.lockoutEnds!.getTime() - Date.now()) / 60000);
@@ -332,7 +348,8 @@ router.post('/login', rateLimiters.auth, async (req, res, next) => {
         });
 
         if (!user) {
-            recordFailedLogin(email);
+            await recordFailedLogin(email);
+            await trackFailedLogin(req.ip || '0.0.0.0', email);
             throw new AppError('Invalid email or password', 401);
         }
 
@@ -354,7 +371,8 @@ router.post('/login', rateLimiters.auth, async (req, res, next) => {
         // Verify password
         const validPassword = await bcrypt.compare(password, user.passwordHash);
         if (!validPassword) {
-            const lockResult = recordFailedLogin(email);
+            const lockResult = await recordFailedLogin(email);
+            await trackFailedLogin(req.ip || '0.0.0.0', email);
             if (lockResult.locked) {
                 throw new AppError(`Account locked due to too many failed attempts. Try again in 15 minutes.`, 429);
             }
@@ -362,7 +380,7 @@ router.post('/login', rateLimiters.auth, async (req, res, next) => {
         }
 
         // Successful login - clear failed attempts
-        clearFailedLogins(email);
+        await clearFailedLogins(email);
 
         // Check if 2FA is enabled
         if (user.twoFactorEnabled) {
@@ -692,6 +710,8 @@ router.post('/google', async (req, res, next) => {
                         userId: user.id,
                         provider: 'google',
                         providerId: googleId,
+                        accessToken: accessToken ? encryptField(accessToken) : null,
+                        refreshToken: null, // Refresh token not available in this flow
                     },
                 });
             }
@@ -711,6 +731,8 @@ router.post('/google', async (req, res, next) => {
                         create: {
                             provider: 'google',
                             providerId: googleId,
+                            accessToken: accessToken ? encryptField(accessToken) : null,
+                            refreshToken: null, // Refresh token not available in this flow
                         },
                     },
                 },
@@ -805,6 +827,8 @@ router.post('/apple', rateLimiters.auth, async (req, res, next) => {
                         userId: user.id,
                         provider: 'apple',
                         providerId: appleId,
+                        accessToken: null, // Apple doesn't provide access tokens in this flow
+                        refreshToken: null,
                     },
                 });
             } else {
@@ -825,6 +849,8 @@ router.post('/apple', rateLimiters.auth, async (req, res, next) => {
                             create: {
                                 provider: 'apple',
                                 providerId: appleId,
+                                accessToken: null, // Apple doesn't provide access tokens in this flow
+                                refreshToken: null,
                             },
                         },
                     },
@@ -899,6 +925,11 @@ router.post('/forgot-password', rateLimiters.auth, async (req, res, next) => {
     try {
         const { email } = forgotPasswordSchema.parse(req.body);
 
+        const resetCheck = await trackPasswordReset(req.ip || '0.0.0.0');
+        if (!resetCheck.allowed) {
+            throw new AppError('Too many reset requests. Please try again later.', 429);
+        }
+
         // Find user by email
         const user = await prisma.user.findUnique({
             where: { email: email.toLowerCase() },
@@ -912,18 +943,19 @@ router.post('/forgot-password', rateLimiters.auth, async (req, res, next) => {
 
         // Generate reset token
         const resetToken = uuid();
+        const hashedToken = hashValue(resetToken);
         const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-        // Store reset token in database
+        // Store HASHED reset token in database
         await prisma.user.update({
             where: { id: user.id },
             data: {
-                resetToken,
+                resetToken: hashedToken,
                 resetTokenExpiry,
             },
         });
 
-        // Import and send email
+        // Import and send email with UNHASHED token
         const { sendPasswordResetEmail } = await import('../services/email.js');
         await sendPasswordResetEmail(user.email, resetToken);
 
@@ -938,10 +970,13 @@ router.post('/reset-password', rateLimiters.auth, async (req, res, next) => {
     try {
         const { token, password } = resetPasswordSchema.parse(req.body);
 
-        // Find user by reset token
+        // Hash the incoming token before comparing
+        const hashedToken = hashValue(token);
+
+        // Find user by hashed reset token
         const user = await prisma.user.findFirst({
             where: {
-                resetToken: token,
+                resetToken: hashedToken,
                 resetTokenExpiry: { gt: new Date() },
             },
         });
@@ -1663,6 +1698,91 @@ router.post('/unlock', rateLimiters.auth, async (req, res, next) => {
         res.json({
             success: true,
             message: 'Account unlocked. You can now log in normally.',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// ACCOUNT DELETION (App Store requirement)
+// ============================================
+
+// POST /api/v1/auth/delete-account — Schedule account for deletion
+router.post('/delete-account', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const userId = req.userId!;
+        
+        // Verify password for security
+        const { password } = req.body;
+        if (!password) {
+            throw new AppError('Password is required to delete your account', 400);
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, passwordHash: true, email: true, username: true },
+        });
+
+        if (!user || !user.passwordHash) {
+            throw new AppError('Account not found', 404);
+        }
+
+        const valid = await bcrypt.compare(password, user.passwordHash);
+        if (!valid) {
+            throw new AppError('Incorrect password', 401);
+        }
+
+        // Schedule deletion: set a 30-day grace period
+        const deletionDate = new Date();
+        deletionDate.setDate(deletionDate.getDate() + 30);
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                isLocked: true,
+                lockedAt: new Date(),
+                lockReason: 'deletion_scheduled',
+            },
+        });
+
+        // Delete all sessions immediately (force logout everywhere)
+        await prisma.session.deleteMany({ where: { userId } });
+
+        // Anonymize user data immediately for privacy
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                displayName: 'Deleted User',
+                bio: null,
+                avatarUrl: null,
+                coverUrl: null,
+                phone: null,
+                publicDisplayName: null,
+                publicUsername: null,
+                publicAvatarUrl: null,
+                publicBio: null,
+            },
+        });
+
+        // Delete related data in batches
+        await Promise.allSettled([
+            prisma.like.deleteMany({ where: { userId } }),
+            prisma.comment.deleteMany({ where: { userId } }),
+            prisma.share.deleteMany({ where: { userId } }),
+            prisma.save.deleteMany({ where: { userId } }),
+            prisma.follow.deleteMany({ where: { OR: [{ followerId: userId }, { followingId: userId }] } }),
+            prisma.communityMember.deleteMany({ where: { userId } }),
+            prisma.message.deleteMany({ where: { senderId: userId } }),
+            prisma.pushSubscription.deleteMany({ where: { userId } }),
+            prisma.notification.deleteMany({ where: { OR: [{ userId }, { actorId: userId }] } }),
+        ]);
+
+        logger.info(`Account deletion completed for user ${user.username} (${userId})`);
+
+        res.json({
+            success: true,
+            message: 'Your account has been deleted. Your posts will be anonymized.',
         });
     } catch (error) {
         next(error);

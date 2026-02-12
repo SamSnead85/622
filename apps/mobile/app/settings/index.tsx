@@ -11,6 +11,7 @@ import {
     ActivityIndicator,
     Platform,
     Switch,
+    Modal,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -126,6 +127,9 @@ export default function SettingsScreen() {
     const { mode: themeMode, setMode: setThemeMode, colors: c } = useTheme();
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 200);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [deletePassword, setDeletePassword] = useState('');
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
     // Searchable settings metadata for filtering
     const settingsSections = useMemo(() => [
@@ -253,15 +257,84 @@ export default function SettingsScreen() {
                     text: 'Delete My Account',
                     style: 'destructive',
                     onPress: () => {
-                        Alert.alert(
-                            'Confirm Deletion',
-                            'To delete your account, please contact us at support@0gravity.ai or use the web app.',
-                            [{ text: 'OK' }]
-                        );
+                        if (Platform.OS === 'ios') {
+                            Alert.prompt(
+                                'Confirm Deletion',
+                                'Enter your password to confirm account deletion:',
+                                [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    {
+                                        text: 'Delete',
+                                        style: 'destructive',
+                                        onPress: async (password) => {
+                                            if (!password) {
+                                                Alert.alert('Error', 'Password is required to delete your account.');
+                                                return;
+                                            }
+                                            try {
+                                                await apiFetch('/api/v1/auth/delete-account', {
+                                                    method: 'POST',
+                                                    body: JSON.stringify({ password }),
+                                                });
+                                                Alert.alert('Account Deleted', 'Your account has been successfully deleted.', [
+                                                    {
+                                                        text: 'OK',
+                                                        onPress: async () => {
+                                                            await logout();
+                                                            router.replace('/');
+                                                        },
+                                                    },
+                                                ]);
+                                            } catch (error: any) {
+                                                const errorMessage = error?.message || 'Failed to delete account. Please try again.';
+                                                Alert.alert('Deletion Failed', errorMessage);
+                                                showError('Could not delete account');
+                                            }
+                                        },
+                                    },
+                                ],
+                                'secure-text'
+                            );
+                        } else {
+                            // Android - show password modal
+                            setShowPasswordModal(true);
+                        }
                     },
                 },
             ]
         );
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deletePassword.trim()) {
+            Alert.alert('Error', 'Password is required to delete your account.');
+            return;
+        }
+        setIsDeletingAccount(true);
+        try {
+            await apiFetch('/api/v1/auth/delete-account', {
+                method: 'POST',
+                body: JSON.stringify({ password: deletePassword }),
+            });
+            setShowPasswordModal(false);
+            setDeletePassword('');
+            Alert.alert('Account Deleted', 'Your account has been successfully deleted.', [
+                {
+                    text: 'OK',
+                    onPress: async () => {
+                        await logout();
+                        router.replace('/');
+                    },
+                },
+            ]);
+        } catch (error: any) {
+            const errorMessage = error?.message || 'Failed to delete account. Please try again.';
+            Alert.alert('Deletion Failed', errorMessage);
+            showError('Could not delete account');
+            setDeletePassword('');
+        } finally {
+            setIsDeletingAccount(false);
+        }
     };
 
     const handleJoinCommunity = () => {
@@ -813,6 +886,59 @@ export default function SettingsScreen() {
                 </Animated.View>
 
             </ScrollView>
+
+            {/* Password Modal for Android */}
+            <Modal
+                visible={showPasswordModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => {
+                    setShowPasswordModal(false);
+                    setDeletePassword('');
+                }}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
+                        <Text style={[styles.modalTitle, { color: c.text.primary }]}>Confirm Deletion</Text>
+                        <Text style={[styles.modalMessage, { color: c.text.secondary }]}>
+                            Enter your password to confirm account deletion:
+                        </Text>
+                        <TextInput
+                            style={[styles.modalInput, { backgroundColor: c.surface.glassHover, borderColor: c.border.subtle, color: c.text.primary }]}
+                            placeholder="Password"
+                            placeholderTextColor={c.text.muted}
+                            secureTextEntry
+                            value={deletePassword}
+                            onChangeText={setDeletePassword}
+                            autoFocus
+                            onSubmitEditing={handleConfirmDelete}
+                        />
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.modalButtonCancel]}
+                                onPress={() => {
+                                    setShowPasswordModal(false);
+                                    setDeletePassword('');
+                                }}
+                                disabled={isDeletingAccount}
+                            >
+                                <Text style={styles.modalButtonCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.modalButtonDelete]}
+                                onPress={handleConfirmDelete}
+                                disabled={isDeletingAccount || !deletePassword.trim()}
+                            >
+                                {isDeletingAccount ? (
+                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                ) : (
+                                    <Text style={styles.modalButtonDeleteText}>Delete</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -1279,5 +1405,74 @@ const styles = StyleSheet.create({
         color: colors.text.muted,
         marginTop: spacing.xs,
         opacity: 0.6,
+    },
+
+    // ─── Password Modal ─────────────────────────────
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.lg,
+    },
+    modalContent: {
+        width: '100%',
+        maxWidth: 400,
+        backgroundColor: colors.surface.glass,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        padding: spacing.xl,
+        gap: spacing.md,
+    },
+    modalTitle: {
+        fontSize: typography.fontSize.xl,
+        fontWeight: '700',
+        color: colors.text.primary,
+        marginBottom: spacing.xs,
+    },
+    modalMessage: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.secondary,
+        lineHeight: 20,
+    },
+    modalInput: {
+        backgroundColor: colors.surface.glassHover,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        fontSize: typography.fontSize.base,
+        color: colors.text.primary,
+        marginTop: spacing.sm,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        gap: spacing.md,
+        marginTop: spacing.md,
+    },
+    modalButton: {
+        flex: 1,
+        paddingVertical: spacing.md,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalButtonCancel: {
+        backgroundColor: colors.surface.glassHover,
+    },
+    modalButtonCancelText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.secondary,
+    },
+    modalButtonDelete: {
+        backgroundColor: colors.coral[500],
+    },
+    modalButtonDeleteText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        color: colors.obsidian[900],
     },
 });

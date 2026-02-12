@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { AudioFocusProvider } from '@/contexts/AudioFocusContext';
 import { FeedViewProvider } from '@/contexts/FeedViewContext';
 import { I18nProvider } from '@/components/layout/RTLProvider';
+import { initSentry } from '@/lib/sentry';
 
 function useServiceWorkerRegistration() {
     useEffect(() => {
@@ -18,6 +19,10 @@ function useServiceWorkerRegistration() {
 
 export function Providers({ children }: { children: ReactNode }) {
     useServiceWorkerRegistration();
+
+    useEffect(() => {
+        initSentry();
+    }, []);
 
     return (
         <I18nProvider>

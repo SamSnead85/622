@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { captureException } from '@/lib/sentry';
 
 export default function Error({
     error,
@@ -12,6 +13,15 @@ export default function Error({
     useEffect(() => {
         // Log to error reporting service
         console.error('Application error:', error);
+        captureException(error, {
+            tags: {
+                errorBoundary: true,
+                digest: error.digest,
+            },
+            extra: {
+                digest: error.digest,
+            },
+        });
     }, [error]);
 
     return (

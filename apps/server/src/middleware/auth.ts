@@ -38,7 +38,9 @@ export const authenticate = async (
             return;
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!, {
+            algorithms: ['HS256'],
+        }) as {
             userId: string;
             sessionId: string;
         };
@@ -153,7 +155,9 @@ export const optionalAuth = async (
 
     try {
         const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!, {
+            algorithms: ['HS256'],
+        }) as {
             userId: string;
             sessionId: string;
         };

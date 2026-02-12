@@ -543,6 +543,12 @@ router.put('/:userId', authenticate, async (req: AuthRequest, res, next) => {
 
         const data = updateSchema.parse(req.body);
 
+        // Non-admins cannot set privileged fields
+        if (!isAdmin) {
+            delete (data as any).isVerified;
+            delete (data as any).role;
+        }
+
         if (data.role === 'SUPERADMIN' && userRole !== 'SUPERADMIN') {
             throw new AppError('Only Superadmins can promote users to Superadmin', 403);
         }
