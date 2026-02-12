@@ -19,11 +19,56 @@ const devLog = __DEV__ ? (...args: any[]) => console.log('[stores]', ...args) : 
 const devError = __DEV__ ? (...args: any[]) => console.error('[stores]', ...args) : () => {};
 
 // ============================================
+// Raw API Response Types
+// ============================================
+
+interface RawUserResponse {
+    id: string;
+    email?: string;
+    username?: string;
+    displayName?: string;
+    avatarUrl?: string;
+    coverUrl?: string;
+    bio?: string;
+    website?: string;
+    role?: string;
+    isVerified?: boolean;
+    isPrivate?: boolean;
+    culturalProfile?: string;
+    customGreeting?: string;
+    communityOptIn?: boolean;
+    onboardingComplete?: boolean;
+    followersCount?: number;
+    followingCount?: number;
+    postsCount?: number;
+    activeFeedView?: string;
+    usePublicProfile?: boolean;
+    publicDisplayName?: string;
+    publicUsername?: string;
+    publicAvatarUrl?: string;
+    publicBio?: string;
+    createdAt?: string;
+    _count?: {
+        followers?: number;
+        following?: number;
+        posts?: number;
+    };
+    [key: string]: unknown; // Allow extra fields from API
+}
+
+interface AuthApiResponse {
+    token?: string;
+    user?: RawUserResponse;
+    id?: string;
+    [key: string]: unknown;
+}
+
+// ============================================
 // Shared User Normalization
 // Ensures consistent user shape across all auth paths
 // ============================================
 
-function normalizeUser(rawUser: any): User {
+function normalizeUser(rawUser: RawUserResponse): User {
     return {
         id: rawUser.id,
         username: rawUser.username || '',
@@ -204,9 +249,9 @@ export const useAuthStore = create<AuthState>()(
                 return;
             }
 
-            const data = await apiFetch<any>(API.me);
+            const data = await apiFetch<AuthApiResponse>(API.me);
             if (data.user || data.id) {
-                const user = normalizeUser(data.user || data);
+                const user = normalizeUser((data.user || data) as RawUserResponse);
                 set({
                     user,
                     isAuthenticated: true,
@@ -231,7 +276,7 @@ export const useAuthStore = create<AuthState>()(
     login: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
-            const data = await apiFetch<any>(API.login, {
+            const data = await apiFetch<AuthApiResponse>(API.login, {
                 method: 'POST',
                 body: JSON.stringify({ email, password }),
             });
@@ -240,15 +285,16 @@ export const useAuthStore = create<AuthState>()(
                 await saveToken(data.token);
             }
 
-            const user = normalizeUser(data.user || data);
+            const user = normalizeUser((data.user || data) as RawUserResponse);
             set({
                 user,
                 isAuthenticated: true,
                 isLoading: false,
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Login failed. Please try again.';
             set({
-                error: error.message || 'Login failed. Please try again.',
+                error: message,
                 isLoading: false,
             });
             throw error;
@@ -263,7 +309,7 @@ export const useAuthStore = create<AuthState>()(
                 .toLowerCase()
                 .replace(/[^a-z0-9]/g, '')
                 .substring(0, 20) + Math.floor(Math.random() * 999);
-            const data = await apiFetch<any>(API.signup, {
+            const data = await apiFetch<AuthApiResponse>(API.signup, {
                 method: 'POST',
                 body: JSON.stringify({
                     email,
@@ -278,15 +324,16 @@ export const useAuthStore = create<AuthState>()(
                 await saveToken(data.token);
             }
 
-            const user = normalizeUser(data.user || data);
+            const user = normalizeUser((data.user || data) as RawUserResponse);
             set({
                 user,
                 isAuthenticated: true,
                 isLoading: false,
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Signup failed. Please try again.';
             set({
-                error: error.message || 'Signup failed. Please try again.',
+                error: message,
                 isLoading: false,
             });
             throw error;
@@ -300,7 +347,7 @@ export const useAuthStore = create<AuthState>()(
                 ? [fullName.givenName, fullName.familyName].filter(Boolean).join(' ')
                 : undefined;
 
-            const data = await apiFetch<any>(API.appleAuth, {
+            const data = await apiFetch<AuthApiResponse>(API.appleAuth, {
                 method: 'POST',
                 body: JSON.stringify({ identityToken, displayName }),
             });
@@ -309,15 +356,16 @@ export const useAuthStore = create<AuthState>()(
                 await saveToken(data.token);
             }
 
-            const user = normalizeUser(data.user || data);
+            const user = normalizeUser((data.user || data) as RawUserResponse);
             set({
                 user,
                 isAuthenticated: true,
                 isLoading: false,
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Apple sign-in failed. Please try again.';
             set({
-                error: error.message || 'Apple sign-in failed. Please try again.',
+                error: message,
                 isLoading: false,
             });
             throw error;
@@ -332,7 +380,7 @@ export const useAuthStore = create<AuthState>()(
                 ? { accessToken: tokenOrAccessToken, userInfo }
                 : { idToken: tokenOrAccessToken };
 
-            const data = await apiFetch<any>(API.googleAuth, {
+            const data = await apiFetch<AuthApiResponse>(API.googleAuth, {
                 method: 'POST',
                 body: JSON.stringify(body),
             });
@@ -341,15 +389,16 @@ export const useAuthStore = create<AuthState>()(
                 await saveToken(data.token);
             }
 
-            const user = normalizeUser(data.user || data);
+            const user = normalizeUser((data.user || data) as RawUserResponse);
             set({
                 user,
                 isAuthenticated: true,
                 isLoading: false,
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Google sign-in failed. Please try again.';
             set({
-                error: error.message || 'Google sign-in failed. Please try again.',
+                error: message,
                 isLoading: false,
             });
             throw error;
@@ -395,8 +444,8 @@ export const useAuthStore = create<AuthState>()(
         if (get().isRefreshing) return;
         set({ isRefreshing: true });
         try {
-            const data = await apiFetch<any>(API.me);
-            const rawUser = data.user || data;
+            const data = await apiFetch<AuthApiResponse>(API.me);
+            const rawUser = (data.user || data) as RawUserResponse;
             if (rawUser?.id) {
                 const currentUser = get().user;
                 const normalized = normalizeUser(rawUser);

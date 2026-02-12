@@ -5,13 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing } from '@zerog/ui';
-import { useTranslation } from 'react-i18next';
 import { useNotificationsStore } from '../../stores';
 import { useTheme } from '../../contexts/ThemeContext';
 
 // ============================================
-// Tab Icon — uniform for all tabs including Create
-// Clean, minimal, premium treatment
+// Tab Icon — clean, minimal, premium
 // ============================================
 
 interface TabIconProps {
@@ -19,11 +17,10 @@ interface TabIconProps {
     iconName: keyof typeof Ionicons.glyphMap;
     iconNameFocused: keyof typeof Ionicons.glyphMap;
     focused: boolean;
-    isCreate?: boolean;
     badge?: number;
 }
 
-function TabIcon({ label, iconName, iconNameFocused, focused, isCreate, badge }: TabIconProps) {
+function TabIcon({ label, iconName, iconNameFocused, focused, badge }: TabIconProps) {
     const { colors: c } = useTheme();
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const prevFocused = useRef(focused);
@@ -52,59 +49,43 @@ function TabIcon({ label, iconName, iconNameFocused, focused, isCreate, badge }:
             accessibilityLabel={label}
             accessibilityState={{ selected: focused }}
         >
-            {/* Create tab gets a subtle pill background */}
-            {isCreate ? (
-                <View style={[styles.createPill, { backgroundColor: c.surface.glassActive, borderColor: c.border.default }, focused && { backgroundColor: c.gold[500], borderColor: c.gold[500] }]}>
-                    <Ionicons
-                        name={focused ? iconNameFocused : iconName}
-                        size={20}
-                        color={focused ? c.gold[500] : c.text.primary}
-                    />
-                </View>
-            ) : (
-                <View>
-                    <Ionicons
-                        name={focused ? iconNameFocused : iconName}
-                        size={23}
-                        color={focused ? c.text.primary : c.text.muted}
-                    />
-                    {badge != null && badge > 0 && (
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
-                        </View>
-                    )}
-                </View>
-            )}
+            <View>
+                <Ionicons
+                    name={focused ? iconNameFocused : iconName}
+                    size={23}
+                    color={focused ? c.text.primary : c.text.muted}
+                />
+                {badge != null && badge > 0 && (
+                    <View style={styles.badge}>
+                        <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+                    </View>
+                )}
+            </View>
             <Text
                 style={[
                     styles.tabLabel,
-                    {
-                        color: isCreate
-                            ? (focused ? c.gold[500] : c.text.secondary)
-                            : (focused ? c.text.primary : c.text.muted),
-                    },
+                    { color: focused ? c.text.primary : c.text.muted },
                 ]}
             >
                 {label}
             </Text>
-            {focused && !isCreate && <View style={[styles.tabIndicator, { backgroundColor: c.text.primary }]} />}
+            {focused && <View style={[styles.tabIndicator, { backgroundColor: c.text.primary }]} />}
         </Animated.View>
     );
 }
 
 // ============================================
-// Tab Layout
+// Tab Layout — 4 tabs: Home, Messages, Discover, You
 // ============================================
 
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
-    const { t } = useTranslation();
     const { colors: c } = useTheme();
     const unreadCount = useNotificationsStore((s) => s.unreadCount);
 
     const tabBarBg = useMemo(() => ({
-        surface: { ...StyleSheet.absoluteFillObject, backgroundColor: c.obsidian[900], opacity: 0.98 } as const,
-        border: { position: 'absolute' as const, top: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: c.border.subtle },
+        surface: { ...StyleSheet.absoluteFillObject, backgroundColor: c.obsidian[900], opacity: 0.92 } as const,
+        border: { position: 'absolute' as const, top: 0, left: 0, right: 0, height: 1, backgroundColor: c.border.subtle },
     }), [c]);
 
     return (
@@ -130,10 +111,10 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    tabBarAccessibilityLabel: `${t('nav.home')} tab${unreadCount ? `, ${unreadCount} notifications` : ''}`,
+                    tabBarAccessibilityLabel: 'Home tab',
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label={t('nav.home')}
+                            label="Home"
                             iconName="home-outline"
                             iconNameFocused="home"
                             focused={focused}
@@ -143,12 +124,26 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="search"
+                name="messages"
                 options={{
-                    tabBarAccessibilityLabel: `${t('nav.explore')} tab`,
+                    tabBarAccessibilityLabel: 'Messages tab',
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label={t('nav.explore')}
+                            label="Messages"
+                            iconName="chatbubbles-outline"
+                            iconNameFocused="chatbubbles"
+                            focused={focused}
+                        />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="search"
+                options={{
+                    tabBarAccessibilityLabel: 'Discover tab',
+                    tabBarIcon: ({ focused }) => (
+                        <TabIcon
+                            label="Discover"
                             iconName="compass-outline"
                             iconNameFocused="compass"
                             focused={focused}
@@ -157,41 +152,12 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="create"
-                options={{
-                    tabBarAccessibilityLabel: `${t('nav.create')} tab`,
-                    tabBarIcon: ({ focused }) => (
-                        <TabIcon
-                            label={t('nav.create')}
-                            iconName="add-outline"
-                            iconNameFocused="add"
-                            focused={focused}
-                            isCreate
-                        />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="communities"
-                options={{
-                    tabBarAccessibilityLabel: `${t('nav.groups')} tab`,
-                    tabBarIcon: ({ focused }) => (
-                        <TabIcon
-                            label={t('nav.groups')}
-                            iconName="people-outline"
-                            iconNameFocused="people"
-                            focused={focused}
-                        />
-                    ),
-                }}
-            />
-            <Tabs.Screen
                 name="profile"
                 options={{
-                    tabBarAccessibilityLabel: `${t('nav.you')} tab`,
+                    tabBarAccessibilityLabel: 'You tab',
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label={t('nav.you')}
+                            label="You"
                             iconName="person-outline"
                             iconNameFocused="person"
                             focused={focused}
@@ -199,6 +165,9 @@ export default function TabLayout() {
                     ),
                 }}
             />
+            {/* Hidden tabs — still routable but not in tab bar */}
+            <Tabs.Screen name="create" options={{ href: null }} />
+            <Tabs.Screen name="communities" options={{ href: null }} />
         </Tabs>
     );
 }
@@ -212,28 +181,17 @@ const styles = StyleSheet.create({
         position: 'absolute',
         borderTopWidth: 0,
         backgroundColor: 'transparent',
-        height: 80,
+        height: 70,
         elevation: 0,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
     },
     tabBarBackground: {
         ...StyleSheet.absoluteFillObject,
         overflow: 'hidden',
     },
-    tabBarSurface: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: colors.obsidian[900],
-        opacity: 0.98,
-    },
-    tabBarBorder: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: StyleSheet.hairlineWidth,
-        backgroundColor: colors.border.subtle,
-    },
-
-    // Tab icon — uniform across all tabs (min 44x44 touch target)
     tabIconContainer: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -245,18 +203,14 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '500',
         marginTop: 4,
-        fontFamily: 'Inter-Medium',
         letterSpacing: 0.1,
     },
     tabIndicator: {
         width: 4,
         height: 4,
         borderRadius: 2,
-        backgroundColor: colors.text.primary,
         marginTop: 3,
     },
-
-    // Notification badge
     badge: {
         position: 'absolute',
         top: -4,
@@ -273,21 +227,5 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
         fontSize: 10,
         fontWeight: '700',
-    },
-
-    // Create tab — subtle pill shape instead of floating circle
-    createPill: {
-        width: 40,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: colors.surface.glassActive,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: colors.border.default,
-    },
-    createPillFocused: {
-        backgroundColor: colors.gold[500],
-        borderColor: colors.gold[500],
     },
 });

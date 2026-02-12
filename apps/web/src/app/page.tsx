@@ -13,57 +13,168 @@ import { GlobeIcon, VoteIcon, HeartIcon, VideoIcon, UnlockIcon, ShieldIcon, CpuI
 // ============================================
 
 // ============================================
-// ANIMATED GRADIENT ORB BACKGROUND
-// Cinematic, layered depth
+// LIQUID METAL AURORA BACKGROUND
+// Multi-layered, cinematic depth with fluid motion
 // ============================================
 function AmbientBackground() {
     return (
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-            {/* Base gradient */}
-            <div className="absolute inset-0 bg-[#030305]" />
+            {/* Deep space base — rich dark with subtle blue undertone */}
+            <div className="absolute inset-0 bg-[#020208]" />
 
-            {/* Animated gradient orbs */}
+            {/* Layer 1: Liquid metal mesh gradient — slow morphing aurora */}
             <motion.div
-                className="absolute -top-1/4 -left-1/4 w-[800px] h-[800px] rounded-full"
+                className="absolute inset-0"
                 style={{
-                    background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%)',
+                    background: `
+                        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(212,175,55,0.08) 0%, transparent 60%),
+                        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(120,119,198,0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse 70% 60% at 50% 80%, rgba(212,175,55,0.05) 0%, transparent 55%)
+                    `,
                 }}
                 animate={{
-                    x: [0, 100, 0],
-                    y: [0, 50, 0],
+                    opacity: [0.6, 1, 0.7, 1, 0.6],
                 }}
-                transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.div
-                className="absolute -bottom-1/4 -right-1/4 w-[900px] h-[900px] rounded-full"
-                style={{
-                    background: 'radial-gradient(circle, rgba(184,148,45,0.10) 0%, transparent 70%)',
-                }}
-                animate={{
-                    x: [0, -80, 0],
-                    y: [0, -60, 0],
-                }}
-                transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.div
-                className="absolute top-1/3 right-1/4 w-[600px] h-[600px] rounded-full"
-                style={{
-                    background: 'radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 70%)',
-                }}
-                animate={{
-                    x: [0, 60, 0],
-                    y: [0, -40, 0],
-                }}
-                transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+                transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
             />
 
-            {/* Subtle noise texture overlay */}
+            {/* Layer 2: Primary liquid metal blob — gold, top-left drift */}
+            <motion.div
+                className="absolute -top-[20%] -left-[10%] w-[900px] h-[900px]"
+                style={{
+                    background: 'radial-gradient(ellipse at center, rgba(212,175,55,0.14) 0%, rgba(212,175,55,0.04) 40%, transparent 70%)',
+                    filter: 'blur(80px)',
+                }}
+                animate={{
+                    x: [0, 120, 40, 0],
+                    y: [0, 80, 120, 0],
+                    scale: [1, 1.15, 0.95, 1],
+                    rotate: [0, 5, -3, 0],
+                }}
+                transition={{ duration: 30, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            {/* Layer 3: Secondary liquid metal blob — cool violet, bottom-right drift */}
+            <motion.div
+                className="absolute -bottom-[15%] -right-[10%] w-[1000px] h-[800px]"
+                style={{
+                    background: 'radial-gradient(ellipse at center, rgba(100,100,220,0.10) 0%, rgba(80,80,180,0.03) 45%, transparent 70%)',
+                    filter: 'blur(100px)',
+                }}
+                animate={{
+                    x: [0, -100, -30, 0],
+                    y: [0, -70, -100, 0],
+                    scale: [1, 1.1, 1.2, 1],
+                    rotate: [0, -4, 6, 0],
+                }}
+                transition={{ duration: 35, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            {/* Layer 4: Accent liquid blob — warm rose-gold, center drift */}
+            <motion.div
+                className="absolute top-[30%] left-[40%] w-[700px] h-[700px]"
+                style={{
+                    background: 'radial-gradient(ellipse at center, rgba(200,160,80,0.07) 0%, rgba(180,140,60,0.02) 40%, transparent 65%)',
+                    filter: 'blur(90px)',
+                }}
+                animate={{
+                    x: [0, 80, -60, 0],
+                    y: [0, -50, 70, 0],
+                    scale: [0.9, 1.1, 1, 0.9],
+                }}
+                transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            {/* Layer 5: Micro liquid highlight — sharp gold accent, fast */}
+            <motion.div
+                className="absolute top-[15%] right-[20%] w-[400px] h-[400px]"
+                style={{
+                    background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 50%)',
+                    filter: 'blur(40px)',
+                }}
+                animate={{
+                    x: [0, -40, 60, 0],
+                    y: [0, 60, -30, 0],
+                    opacity: [0.5, 1, 0.3, 0.5],
+                }}
+                transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            {/* Layer 6: Deep blue undertone — adds depth and dimension */}
+            <motion.div
+                className="absolute bottom-[10%] left-[15%] w-[600px] h-[500px]"
+                style={{
+                    background: 'radial-gradient(ellipse at center, rgba(40,60,120,0.08) 0%, transparent 60%)',
+                    filter: 'blur(70px)',
+                }}
+                animate={{
+                    x: [0, 50, -30, 0],
+                    y: [0, -40, 20, 0],
+                    scale: [1, 1.15, 0.9, 1],
+                }}
+                transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            {/* Layer 7: Horizontal light streak — liquid metal reflection */}
+            <motion.div
+                className="absolute top-[45%] left-0 right-0 h-[2px]"
+                style={{
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.06) 20%, rgba(212,175,55,0.12) 50%, rgba(212,175,55,0.06) 80%, transparent 100%)',
+                }}
+                animate={{
+                    opacity: [0, 0.6, 0],
+                    scaleX: [0.5, 1, 0.5],
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            {/* Layer 8: Fine grain noise texture — adds tactile quality */}
             <div
-                className="absolute inset-0 opacity-[0.015]"
+                className="absolute inset-0 opacity-[0.025]"
                 style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
                 }}
             />
+
+            {/* Layer 9: Vignette — draws focus to center */}
+            <div
+                className="absolute inset-0"
+                style={{
+                    background: 'radial-gradient(ellipse 70% 60% at 50% 50%, transparent 30%, rgba(2,2,8,0.5) 100%)',
+                }}
+            />
+
+            {/* Layer 10: Animated iridescent mesh — shifts across entire page */}
+            <div
+                className="absolute inset-0 opacity-[0.04]"
+                style={{
+                    background: `
+                        conic-gradient(from 0deg at 30% 20%, rgba(212,175,55,0.3), transparent 120deg),
+                        conic-gradient(from 180deg at 70% 80%, rgba(100,100,220,0.2), transparent 120deg),
+                        conic-gradient(from 90deg at 50% 50%, rgba(200,160,80,0.15), transparent 120deg)
+                    `,
+                    animation: 'meshShift 30s ease-in-out infinite',
+                }}
+            />
+
+            {/* Layer 11: Floating particle field — subtle dots drifting upward */}
+            <div className="absolute inset-0 overflow-hidden">
+                {Array.from({ length: 40 }).map((_, i) => (
+                    <div
+                        key={`particle-${i}`}
+                        className="absolute rounded-full bg-white/20"
+                        style={{
+                            width: `${1 + Math.random() * 2}px`,
+                            height: `${1 + Math.random() * 2}px`,
+                            left: `${Math.random() * 100}%`,
+                            top: `${100 + Math.random() * 20}%`,
+                            animation: `particleFloat ${15 + Math.random() * 25}s linear infinite`,
+                            animationDelay: `${Math.random() * 20}s`,
+                            opacity: 0.1 + Math.random() * 0.3,
+                        }}
+                    />
+                ))}
+            </div>
         </div>
     );
 }
@@ -101,7 +212,7 @@ function Navigation() {
     return (
         <motion.nav
             className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
-                ? 'bg-black/70 backdrop-blur-2xl border-b border-white/5 py-4'
+                ? 'bg-[#020208]/80 backdrop-blur-2xl border-b border-white/[0.06] py-4 shadow-[0_4px_30px_rgba(0,0,0,0.3)]'
                 : 'bg-transparent py-6'
                 }`}
             initial={{ y: -100, opacity: 0 }}
@@ -140,7 +251,7 @@ function Navigation() {
                     </Link>
                     <Link
                         href="/signup"
-                        className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-all hover:scale-[1.02]"
+                        className="relative px-5 py-2.5 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]"
                     >
                         Get Started Free
                     </Link>
@@ -207,10 +318,12 @@ function HeroSection() {
         <section ref={containerRef} className="relative h-screen overflow-hidden">
             {/* Background Image with Parallax */}
             <motion.div className="absolute inset-0" style={{ y, scale }}>
-                {/* Multi-layer gradient overlays for depth */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#030305] via-transparent to-[#030305] z-10" />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#030305]/90 via-transparent to-[#030305]/90 z-10" />
+                {/* Multi-layer gradient overlays for cinematic depth */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#020208] via-transparent to-[#020208] z-10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#020208]/90 via-transparent to-[#020208]/90 z-10" />
                 <div className="absolute inset-0 bg-black/30 z-10" />
+                {/* Liquid metal sheen across hero */}
+                <div className="absolute inset-0 z-10 bg-gradient-to-br from-[#D4AF37]/[0.03] via-transparent to-[#4040A0]/[0.03]" />
 
                 {/* Rotating Hero Images - Smooth 2s crossfade to eliminate black gaps */}
                 {heroImages.map((img, index) => (
@@ -282,7 +395,7 @@ function HeroSection() {
                     >
                         <Link
                             href="/signup"
-                            className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-white/10"
+                            className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/95 transition-all hover:scale-[1.03] shadow-[0_0_30px_rgba(212,175,55,0.2)] hover:shadow-[0_0_50px_rgba(212,175,55,0.35)]"
                         >
                             Get Started Free
                             <svg
@@ -342,18 +455,31 @@ function StatsSection() {
     ];
 
     return (
-        <section ref={ref} className="relative py-20 border-y border-white/5 bg-black/50 backdrop-blur-sm">
-            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <section ref={ref} className="relative py-24 overflow-hidden">
+            {/* Liquid glass divider effect */}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent" />
+            <div className="absolute top-0 left-0 right-0 h-px overflow-hidden">
+                <div className="h-full w-full bg-gradient-to-r from-transparent via-[#D4AF37]/30 to-transparent" style={{ animation: 'shimmerLine 4s ease-in-out infinite' }} />
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-px overflow-hidden">
+                <div className="h-full w-full bg-gradient-to-r from-transparent via-[#D4AF37]/30 to-transparent" style={{ animation: 'shimmerLine 4s ease-in-out infinite', animationDelay: '2s' }} />
+            </div>
+
+            <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
                     {stats.map((stat, i) => (
                         <motion.div
                             key={stat.label}
-                            className="text-center"
+                            className="text-center group"
                             initial={{ opacity: 0, y: 30 }}
                             animate={isInView ? { opacity: 1, y: 0 } : {}}
                             transition={{ duration: 0.6, delay: i * 0.1 }}
                         >
-                            <p className="text-4xl md:text-5xl font-light text-white mb-2">{stat.value}</p>
+                            <div className="relative inline-block">
+                                <p className="text-4xl md:text-5xl font-light text-white mb-2 relative z-10">{stat.value}</p>
+                                {/* Subtle glow behind stat value */}
+                                <div className="absolute inset-0 blur-2xl bg-[#D4AF37]/10 rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                            </div>
                             <p className="text-sm text-white/40 tracking-wide">{stat.label}</p>
                         </motion.div>
                     ))}
@@ -393,8 +519,12 @@ function WhySwitchSection() {
     ];
 
     return (
-        <section ref={ref} className="relative py-24 md:py-32 border-y border-white/5">
-            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <section ref={ref} className="relative py-24 md:py-32 overflow-hidden">
+            {/* Section liquid accent */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
+            <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
                 <motion.div
                     className="text-center mb-16"
                     initial={{ opacity: 0, y: 30 }}
@@ -415,27 +545,29 @@ function WhySwitchSection() {
                     {comparisons.map((item, i) => (
                         <motion.div
                             key={item.platform}
-                            className="rounded-2xl overflow-hidden border border-white/[0.06]"
+                            className="group rounded-2xl overflow-hidden border border-white/[0.06] backdrop-blur-sm bg-white/[0.01] hover:border-white/[0.12] transition-all duration-500 hover:shadow-[0_0_60px_-15px_rgba(212,175,55,0.1)]"
                             initial={{ opacity: 0, y: 30 }}
                             animate={isInView ? { opacity: 1, y: 0 } : {}}
                             transition={{ duration: 0.6, delay: i * 0.12 }}
                         >
                             {/* The problem */}
-                            <div className="p-6 bg-red-500/[0.03] border-b border-white/5">
-                                <div className="flex items-center gap-2 mb-3">
+                            <div className="p-6 bg-red-500/[0.03] border-b border-white/5 relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-br from-red-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <div className="flex items-center gap-2 mb-3 relative">
                                     <span className="text-red-400/60 text-xs font-medium uppercase tracking-wider">{item.platform}</span>
                                 </div>
-                                <p className="text-white/40 text-sm leading-relaxed">{item.problem}</p>
+                                <p className="text-white/40 text-sm leading-relaxed relative">{item.problem}</p>
                             </div>
                             {/* The solution */}
-                            <div className="p-6 bg-emerald-500/[0.02]">
-                                <div className="flex items-center gap-2 mb-3">
+                            <div className="p-6 bg-emerald-500/[0.02] relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <div className="flex items-center gap-2 mb-3 relative">
                                     <svg className="w-4 h-4 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                     </svg>
                                     <span className="text-[#D4AF37] text-xs font-medium uppercase tracking-wider">0G Instead</span>
                                 </div>
-                                <p className="text-white/60 text-sm leading-relaxed">{item.solution}</p>
+                                <p className="text-white/60 text-sm leading-relaxed relative">{item.solution}</p>
                             </div>
                         </motion.div>
                     ))}
@@ -475,8 +607,22 @@ function VisionSection() {
     const isInView = useInView(ref, { once: true, margin: '-100px' });
 
     return (
-        <section id="vision" ref={ref} className="relative py-32 md:py-48">
-            <div className="max-w-5xl mx-auto px-6 lg:px-8">
+        <section id="vision" ref={ref} className="relative py-32 md:py-48 overflow-hidden">
+            {/* Floating liquid accent for vision section */}
+            <motion.div
+                className="absolute top-[20%] right-[-5%] w-[500px] h-[500px] pointer-events-none"
+                style={{
+                    background: 'radial-gradient(ellipse at center, rgba(212,175,55,0.06) 0%, transparent 60%)',
+                    filter: 'blur(60px)',
+                }}
+                animate={{
+                    y: [0, -30, 0],
+                    x: [0, 20, 0],
+                    opacity: [0.4, 0.8, 0.4],
+                }}
+                transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <div className="max-w-5xl mx-auto px-6 lg:px-8 relative">
                 <motion.div
                     initial={{ opacity: 0, y: 50 }}
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -726,7 +872,7 @@ function FullCapabilitiesSection() {
                     {capabilities.map((cap, i) => (
                         <motion.div
                             key={cap.title}
-                            className="group bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 hover:border-white/15 transition-all duration-300 hover:bg-white/[0.04]"
+                            className="group relative bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 hover:border-[#D4AF37]/20 transition-all duration-500 hover:bg-white/[0.04] hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.15)]"
                             initial={{ opacity: 0, y: 30 }}
                             animate={isInView ? { opacity: 1, y: 0 } : {}}
                             transition={{ duration: 0.5, delay: i * 0.05 }}
@@ -1522,8 +1668,13 @@ function CTASection() {
     const isInView = useInView(ref, { once: true, margin: '-100px' });
 
     return (
-        <section id="community" ref={ref} className="relative py-32 md:py-48">
-            <div className="max-w-4xl mx-auto px-6 lg:px-8 text-center">
+        <section id="community" ref={ref} className="relative py-32 md:py-48 overflow-hidden">
+            {/* Dramatic radial glow */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-[#D4AF37]/[0.04] blur-[150px]" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-[#D4AF37]/[0.08] blur-[80px]" />
+            </div>
+            <div className="max-w-4xl mx-auto px-6 lg:px-8 text-center relative z-10">
                 <motion.div
                     initial={{ opacity: 0, y: 50 }}
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -1691,14 +1842,14 @@ export default function HomePage() {
 
     if (!mounted) {
         return (
-            <div className="min-h-screen bg-[#030305] flex items-center justify-center">
+            <div className="min-h-screen bg-[#020208] flex items-center justify-center">
                 <div className="w-10 h-10 border border-white/20 border-t-white/80 rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <main className="min-h-screen bg-[#030305] text-white overflow-x-hidden">
+        <main className="min-h-screen bg-[#020208] text-white overflow-x-hidden">
             <AmbientBackground />
             <Navigation />
             <HeroSection />

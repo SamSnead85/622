@@ -8,6 +8,12 @@ import { cache } from '../services/cache/RedisCache.js';
 
 const router = Router();
 
+// ── Pagination helper: clamp limit to prevent abuse ──
+const clampLimit = (val: string | undefined, max = 50, defaultVal = 20) => {
+    const n = parseInt(val as string) || defaultVal;
+    return Math.min(Math.max(1, n), max);
+};
+
 // ── Privacy helper: mask user identity if they use a public profile ──
 function maskUserForDiscovery(u: any) {
     if (u.usePublicProfile) {
@@ -28,7 +34,8 @@ function maskUserForDiscovery(u: any) {
 // GET /api/v1/users - List all users (only community-opted-in users are discoverable)
 router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
-        const { cursor, limit = '20', search } = req.query;
+        const { cursor, limit: rawLimit, search } = req.query;
+        const limit = clampLimit(rawLimit as string);
 
         const users = await prisma.user.findMany({
             where: {
@@ -44,7 +51,7 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
                     ]
                 } : {}),
             },
-            take: parseInt(limit as string) + 1,
+            take: limit + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: { createdAt: 'desc' },
             select: {
@@ -66,7 +73,7 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
             },
         });
 
-        const hasMore = users.length > parseInt(limit as string);
+        const hasMore = users.length > limit;
         const results = hasMore ? users.slice(0, -1) : users;
 
         let followingIds = new Set<string>();
@@ -99,7 +106,8 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
 // Privacy-first: only users who opted into the community are searchable
 router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
-        const { q, limit = '20' } = req.query;
+        const { q, limit: rawSearchLimit } = req.query;
+        const limit = clampLimit(rawSearchLimit as string);
 
         const privacySelect = {
             id: true,
@@ -123,7 +131,7 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
         if (!q || typeof q !== 'string' || q.trim() === '') {
             const users = await prisma.user.findMany({
                 where: { isGroupOnly: false, communityOptIn: true },
-                take: parseInt(limit as string),
+                take: limit,
                 orderBy: { createdAt: 'desc' },
                 select: privacySelect,
             });
@@ -162,7 +170,7 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
                     { publicDisplayName: { contains: searchTerm, mode: 'insensitive' } },
                 ],
             },
-            take: parseInt(limit as string),
+            take: limit,
             select: privacySelect,
         });
 
@@ -524,9 +532,9 @@ router.put('/:userId', authenticate, async (req: AuthRequest, res, next) => {
         const userRole = req.user?.role;
         const isAdmin = userRole === 'SUPERADMIN' || userRole === 'ADMIN';
 
-        // Allow update if Admin OR if updating self
+        // Explicit authorization: non-admin users can only update their own profile
         if (!isAdmin && userId !== req.userId) {
-            throw new AppError('Not authorized', 403);
+            return res.status(403).json({ error: 'You can only update your own profile' });
         }
 
         const updateSchema = z.object({
@@ -625,7 +633,7 @@ router.delete('/:userId/follow', authenticate, async (req: AuthRequest, res, nex
                     followingId: userId,
                 },
             },
-        }).catch(() => { });
+        }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
 
         res.json({ following: false });
     } catch (error) {
@@ -637,11 +645,12 @@ router.delete('/:userId/follow', authenticate, async (req: AuthRequest, res, nex
 router.get('/:userId/followers', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { userId } = req.params;
-        const { cursor, limit = '20' } = req.query;
+        const { cursor, limit: rawFollowersLimit } = req.query;
+        const limit = clampLimit(rawFollowersLimit as string);
 
         const followers = await prisma.follow.findMany({
             where: { followingId: userId },
-            take: parseInt(limit as string) + 1,
+            take: limit + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: { createdAt: 'desc' },
             include: {
@@ -657,7 +666,7 @@ router.get('/:userId/followers', optionalAuth, async (req: AuthRequest, res, nex
             },
         });
 
-        const hasMore = followers.length > parseInt(limit as string);
+        const hasMore = followers.length > limit;
         const results = hasMore ? followers.slice(0, -1) : followers;
 
         res.json({
@@ -673,11 +682,12 @@ router.get('/:userId/followers', optionalAuth, async (req: AuthRequest, res, nex
 router.get('/:userId/following', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { userId } = req.params;
-        const { cursor, limit = '20' } = req.query;
+        const { cursor, limit: rawFollowingLimit } = req.query;
+        const limit = clampLimit(rawFollowingLimit as string);
 
         const following = await prisma.follow.findMany({
             where: { followerId: userId },
-            take: parseInt(limit as string) + 1,
+            take: limit + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: { createdAt: 'desc' },
             include: {
@@ -693,7 +703,7 @@ router.get('/:userId/following', optionalAuth, async (req: AuthRequest, res, nex
             },
         });
 
-        const hasMore = following.length > parseInt(limit as string);
+        const hasMore = following.length > limit;
         const results = hasMore ? following.slice(0, -1) : following;
 
         res.json({
@@ -709,7 +719,8 @@ router.get('/:userId/following', optionalAuth, async (req: AuthRequest, res, nex
 router.get('/:userId/posts', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { userId } = req.params;
-        const { cursor, limit = '20' } = req.query;
+        const { cursor, limit: rawPostsLimit } = req.query;
+        const limit = clampLimit(rawPostsLimit as string);
 
         // Show all posts if viewing own profile, otherwise only public
         const isOwnProfile = req.userId === userId;
@@ -719,7 +730,7 @@ router.get('/:userId/posts', optionalAuth, async (req: AuthRequest, res, next) =
 
         const posts = await prisma.post.findMany({
             where: whereClause,
-            take: parseInt(limit as string) + 1,
+            take: limit + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: [{ sortOrder: 'desc' }, { createdAt: 'desc' }],
             include: {
@@ -742,7 +753,7 @@ router.get('/:userId/posts', optionalAuth, async (req: AuthRequest, res, next) =
             },
         });
 
-        const hasMore = posts.length > parseInt(limit as string);
+        const hasMore = posts.length > limit;
         const results = hasMore ? posts.slice(0, -1) : posts;
 
         // Check if current user liked/saved posts

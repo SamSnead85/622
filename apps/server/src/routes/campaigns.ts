@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
 import crypto from 'crypto';
@@ -163,6 +164,33 @@ router.get('/', authenticate, requireAdmin, async (req: AuthRequest, res, next) 
 // POST /api/v1/campaigns — Create campaign (admin)
 router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
+        const createCampaignSchema = z.object({
+            title: z.string().min(1).max(200),
+            description: z.string().min(1).max(2000),
+            type: z.enum(['event', 'referral', 'engagement', 'content', 'growth']).optional(),
+            slug: z.string().max(200).regex(/^[a-z0-9-]*$/, 'Slug must be lowercase alphanumeric with hyphens').optional(),
+            coverUrl: z.string().url().optional(),
+            logoUrl: z.string().url().optional(),
+            brandColor: z.string().max(20).optional(),
+            eventDate: z.string().datetime().optional(),
+            eventLocation: z.string().max(500).optional(),
+            eventCity: z.string().max(200).optional(),
+            incentiveType: z.string().max(100).optional(),
+            incentiveValue: z.string().max(500).optional(),
+            incentiveRules: z.string().max(2000).optional(),
+            raffleDrawDate: z.string().datetime().optional(),
+            signupGoal: z.number().int().positive().max(1_000_000).optional(),
+            partnerName: z.string().max(200).optional(),
+            partnerLogo: z.string().url().optional(),
+            partnerUrl: z.string().url().optional(),
+            expiresAt: z.string().datetime().optional(),
+        });
+
+        const parsed = createCampaignSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({ error: 'Invalid campaign data', details: parsed.error.flatten() });
+        }
+
         const {
             title, description, type, slug,
             coverUrl, logoUrl, brandColor,
@@ -171,11 +199,7 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res, next)
             signupGoal,
             partnerName, partnerLogo, partnerUrl,
             expiresAt,
-        } = req.body;
-
-        if (!title || !description) {
-            return res.status(400).json({ error: 'Title and description are required' });
-        }
+        } = parsed.data;
 
         const finalSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 

@@ -473,7 +473,7 @@ export default function LoginScreen() {
             // type === 'dismiss' — user cancelled, do nothing
         } catch (error: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            console.warn('Google login error:', error?.message);
+            if (__DEV__) console.warn('Google login error:', error?.message);
             if (error?.message?.includes('configured') || error?.message?.includes('redirect')) {
                 setGeneralError('Google Sign In is being configured. Please use email or Apple Sign In for now.');
             } else {

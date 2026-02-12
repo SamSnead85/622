@@ -10,16 +10,28 @@ router.use(rateLimiters.general);
 
 import { Prisma } from '@prisma/client';
 
-// Allowed tables for FTS — whitelist to prevent injection via table name
-const FTS_TABLES = new Set(['User', 'Post', 'Community']);
+// Strict whitelist for FTS — no string interpolation; prevents SQL injection
+const ALLOWED_TABLES = {
+    User: true,
+    Post: true,
+    Community: true,
+} as const;
+
+// Map validated scope to literal SQL identifier (never interpolate)
+const TABLE_IDENTIFIER: Record<keyof typeof ALLOWED_TABLES, Prisma.Sql> = {
+    User: Prisma.raw('"User"'),
+    Post: Prisma.raw('"Post"'),
+    Community: Prisma.raw('"Community"'),
+};
 
 // Helper: Try FTS query with fallback to LIKE
 async function ftsSearch(table: string, query: string, limit: number, offset: number): Promise<any[] | null> {
-    if (!FTS_TABLES.has(table)) return null;
+    if (!ALLOWED_TABLES[table as keyof typeof ALLOWED_TABLES]) return null;
+    const tableId = TABLE_IDENTIFIER[table as keyof typeof ALLOWED_TABLES];
     try {
-        // Use Prisma.sql tagged template for safe parameterized queries
+        // Prisma.sql parameterizes query, limit, offset; table comes from strict map only
         const results = await prisma.$queryRaw(
-            Prisma.sql`SELECT id FROM ${Prisma.raw(`"${table}"`)} WHERE search_vector @@ plainto_tsquery('english', ${query}) ORDER BY ts_rank(search_vector, plainto_tsquery('english', ${query})) DESC LIMIT ${limit} OFFSET ${offset}`
+            Prisma.sql`SELECT id FROM ${tableId} WHERE search_vector @@ plainto_tsquery('english', ${query}) ORDER BY ts_rank(search_vector, plainto_tsquery('english', ${query})) DESC LIMIT ${limit} OFFSET ${offset}`
         );
         return results as any[];
     } catch {

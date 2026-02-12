@@ -49,8 +49,21 @@ function CreateContent() {
         setCropY(50);
     }, []);
 
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+    const ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES];
+
     const acceptFile = useCallback((file: File) => {
-        if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) return;
+        if (file.size > MAX_FILE_SIZE) {
+            alert('File size must be under 10MB');
+            return;
+        }
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            alert('Unsupported file type. Please use JPEG, PNG, GIF, WebP, MP4, or WebM.');
+            return;
+        }
+        setError(null);
         setMediaFile(file);
         const url = URL.createObjectURL(file);
         setMediaPreview(url);

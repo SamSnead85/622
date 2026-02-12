@@ -390,7 +390,7 @@ export default function CommunityDetailPage() {
             <div className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
             {/* Cover Image */}
             <div className="relative h-44 md:h-56">
-                <Image src={coverImage} alt={community.name} fill className="object-cover" priority />
+                <Image src={coverImage} alt={`${community.name} banner`} fill className="object-cover" priority />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black" />
 
                 <Link href="/communities" className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-2 rounded-xl bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 transition-colors text-sm">
@@ -648,8 +648,8 @@ export default function CommunityDetailPage() {
                                     {/* Chat Messages */}
                                     <div className="flex-1 overflow-y-auto p-4 space-y-3">
                                         {chatLoading ? (
-                                            <div className="flex items-center justify-center py-12">
-                                                <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                            <div className="flex justify-center py-4">
+                                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#D4AF37]" />
                                             </div>
                                         ) : chatMessages.length === 0 ? (
                                             <div className="flex flex-col items-center justify-center py-12 text-white/30">

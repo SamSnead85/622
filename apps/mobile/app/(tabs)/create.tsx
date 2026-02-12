@@ -37,6 +37,7 @@ import Animated, {
     withDelay,
     withTiming,
     withSequence,
+    cancelAnimation,
     runOnJS,
     Layout,
 } from 'react-native-reanimated';
@@ -591,6 +592,7 @@ function PollCreator({
                         value={option.text}
                         onChangeText={(text) => onUpdateOption(option.id, text)}
                         maxLength={80}
+                        accessibilityLabel={`Poll option ${index + 1}`}
                     />
                     {options.length > MIN_POLL_OPTIONS && (
                         <TouchableOpacity
@@ -908,6 +910,9 @@ export default function CreateScreen() {
         } else {
             publishGlow.value = withTiming(1, { duration: 200 });
         }
+        return () => {
+            cancelAnimation(publishGlow);
+        };
     }, [hasPublishableContent, isPublishing]);
 
     const publishAnimStyle = useAnimatedStyle(() => ({
@@ -946,11 +951,11 @@ export default function CreateScreen() {
             setDraftSavedVisible(true);
             const timer = setTimeout(() => setDraftSavedVisible(false), 2000);
             return () => clearTimeout(timer);
-        });
+        }).catch(() => { /* non-critical: draft save failed */ });
     }, [debouncedContent, debouncedCommunityId]);
 
     const clearDraft = useCallback(() => {
-        AsyncStorage.removeItem(DRAFT_KEY);
+        AsyncStorage.removeItem(DRAFT_KEY).catch(() => { /* non-critical */ });
     }, []);
 
     // --- Load communities on mount ---
@@ -1259,7 +1264,7 @@ export default function CreateScreen() {
                             // Save draft before leaving
                             if (content.trim()) {
                                 const draft = { content, communityId: selectedCommunity?.id, timestamp: Date.now() };
-                                AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+                                AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)).catch(() => { /* non-critical */ });
                             }
                             router.back();
                         },
@@ -1605,6 +1610,7 @@ export default function CreateScreen() {
                                 onSelectionChange={(e) => setCursorPosition(e.nativeEvent.selection.end)}
                                 textAlignVertical="top"
                                 scrollEnabled={false}
+                                accessibilityLabel="Post content"
                             />
                         </View>
                     </View>
@@ -1648,6 +1654,7 @@ export default function CreateScreen() {
                                 autoCapitalize="none"
                                 autoCorrect={false}
                                 keyboardType="url"
+                                accessibilityLabel="Link URL"
                             />
                             {linkUrl.length > 0 && (
                                 <TouchableOpacity onPress={() => setLinkUrl('')}>

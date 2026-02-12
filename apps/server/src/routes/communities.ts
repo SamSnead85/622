@@ -337,6 +337,15 @@ router.post('/:communityId/join', authenticate, async (req: AuthRequest, res, ne
             }),
         ]);
 
+        // Reconcile member count to prevent drift
+        const actualJoinCount = await prisma.communityMember.count({ where: { communityId } });
+        if (actualJoinCount !== community.memberCount + 1) {
+            await prisma.community.update({
+                where: { id: communityId },
+                data: { memberCount: actualJoinCount },
+            });
+        }
+
         res.json({ joined: true, status: 'joined' });
     } catch (error) {
         next(error);
@@ -390,6 +399,16 @@ router.delete('/:communityId/leave', authenticate, async (req: AuthRequest, res,
                 data: { memberCount: { decrement: 1 } },
             }),
         ]);
+
+        // Reconcile member count to prevent drift
+        const actualLeaveCount = await prisma.communityMember.count({ where: { communityId } });
+        const communityAfterLeave = await prisma.community.findUnique({ where: { id: communityId }, select: { memberCount: true } });
+        if (communityAfterLeave && actualLeaveCount !== communityAfterLeave.memberCount) {
+            await prisma.community.update({
+                where: { id: communityId },
+                data: { memberCount: actualLeaveCount },
+            });
+        }
 
         res.json({ left: true });
     } catch (error) {
@@ -695,6 +714,16 @@ router.delete('/:communityId/members/:userId', authenticate, async (req: AuthReq
                 data: { memberCount: { decrement: 1 } },
             }),
         ]);
+
+        // Reconcile member count to prevent drift
+        const actualRemoveCount = await prisma.communityMember.count({ where: { communityId } });
+        const communityAfterRemove = await prisma.community.findUnique({ where: { id: communityId }, select: { memberCount: true } });
+        if (communityAfterRemove && actualRemoveCount !== communityAfterRemove.memberCount) {
+            await prisma.community.update({
+                where: { id: communityId },
+                data: { memberCount: actualRemoveCount },
+            });
+        }
 
         res.json({ removed: true });
     } catch (error) {
@@ -1928,6 +1957,16 @@ router.post('/:communityId/requests/:requestId/approve', authenticate, async (re
                 data: { memberCount: { increment: 1 } },
             }),
         ]);
+
+        // Reconcile member count to prevent drift
+        const actualApproveCount = await prisma.communityMember.count({ where: { communityId } });
+        const communityAfterApprove = await prisma.community.findUnique({ where: { id: communityId }, select: { memberCount: true } });
+        if (communityAfterApprove && actualApproveCount !== communityAfterApprove.memberCount) {
+            await prisma.community.update({
+                where: { id: communityId },
+                data: { memberCount: actualApproveCount },
+            });
+        }
 
         res.json({ success: true, message: 'Request approved.' });
     } catch (error) {

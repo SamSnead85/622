@@ -664,18 +664,24 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
         await cache.invalidate(`feed:${req.userId}:*`);
 
         // Invalidate followers' "foryou" feed caches so they see the new post
-        const followers = await prisma.follow.findMany({
-            where: { followingId: req.userId! },
-            select: { followerId: true },
-            take: 1000, // Cap to prevent excessive invalidation
-        });
-
-        // Batch invalidate follower caches (non-blocking)
-        if (followers.length > 0) {
-            Promise.all(
-                followers.map(f => cache.invalidate(`feed:${f.followerId}:foryou:initial:*`))
-            ).catch(err => logger.error('Feed cache invalidation error:', err));
-        }
+        // Batched invalidation to avoid unbounded memory usage for users with many followers
+        const BATCH_SIZE = 100;
+        let skip = 0;
+        let batch;
+        do {
+            batch = await prisma.follow.findMany({
+                where: { followingId: req.userId! },
+                select: { followerId: true },
+                take: BATCH_SIZE,
+                skip,
+            });
+            if (batch.length > 0) {
+                await Promise.all(
+                    batch.map(f => cache.invalidate(`feed:${f.followerId}:foryou:initial:*`))
+                ).catch(err => logger.error('Feed cache invalidation error:', err));
+            }
+            skip += BATCH_SIZE;
+        } while (batch.length === BATCH_SIZE);
 
         res.status(201).json(post);
     } catch (error) {

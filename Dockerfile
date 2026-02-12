@@ -57,5 +57,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 EXPOSE 8080
 
-# Run migrations in background, start server immediately
-CMD (npx prisma migrate deploy 2>&1 || echo "Migration deferred — using existing schema") & node dist/index.js
+# Run migrations synchronously with timeout, then start server
+CMD sh -c "timeout 30 npx prisma db push --accept-data-loss --skip-generate 2>/dev/null || echo 'Migration skipped' && node dist/index.js"

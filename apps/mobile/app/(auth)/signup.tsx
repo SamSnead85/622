@@ -484,7 +484,7 @@ export default function SignupScreen() {
             }
         } catch (error: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            console.warn('Google signup error:', error?.message);
+            if (__DEV__) console.warn('Google signup error:', error?.message);
             setGeneralError(error?.message || 'Google Sign Up failed. Please try again.');
         } finally {
             setGoogleLoading(false);

@@ -668,20 +668,20 @@ export default function ProfileScreen() {
     const emptyConfig = useMemo(() => ({
         posts: {
             icon: 'camera-outline' as const,
-            title: 'No Posts Yet',
-            message: 'Share your first moment with the world.',
+            title: 'Your story starts here',
+            message: 'Share your first photo, thought, or moment with your community.',
             actionLabel: 'Create Post',
         },
         likes: {
             icon: 'heart-outline' as const,
-            title: 'No Liked Posts',
-            message: "Posts you've liked will appear here.",
+            title: 'No likes yet',
+            message: "Explore the feed and double-tap posts you love — they'll show up here.",
             actionLabel: undefined,
         },
         saved: {
             icon: 'bookmark-outline' as const,
-            title: 'Nothing saved yet',
-            message: 'Save posts to revisit them later.',
+            title: 'Your collection is empty',
+            message: 'Bookmark posts you want to revisit — recipes, inspiration, reminders.',
             actionLabel: undefined,
         },
     }), []);
@@ -720,7 +720,7 @@ export default function ProfileScreen() {
 
             {/* Floating Header Buttons */}
             <View style={[styles.headerBar, { paddingTop: insets.top + spacing.xs }]}>
-                <View style={styles.headerLeft} />
+                <Text style={styles.headerTitle}>You</Text>
                 <TouchableOpacity
                     style={styles.headerIconBtn}
                     onPress={() => {
@@ -826,7 +826,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.lg,
         paddingBottom: spacing.sm,
     },
-    headerLeft: { width: 40 },
+    headerTitle: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: colors.text.primary,
+        letterSpacing: -0.3,
+    },
     headerIconBtn: {
         width: 40,
         height: 40,

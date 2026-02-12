@@ -131,8 +131,9 @@ export function usePosts(options?: UsePostsOptions) {
                 setError('Failed to load feed');
             }
         } catch (err) {
-            console.error('Error fetching feed:', err);
-            setError('Network error');
+            const message = err instanceof Error ? err.message : 'Failed to load posts';
+            setError(message);
+            console.error('Feed error:', err);
         } finally {
             if (reset) setIsLoading(false);
         }

@@ -71,6 +71,7 @@ export async function generateMetadata(
     const metadata: Metadata = {
         title,
         description,
+        alternates: { canonical: postUrl },
         openGraph: {
             title,
             description,

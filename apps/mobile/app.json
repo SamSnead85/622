@@ -113,7 +113,7 @@
       "expo-web-browser"
     ],
     "updates": {
-      "url": "https://u.expo.dev/your-project-id",
+      "url": "https://u.expo.dev/REPLACE_WITH_PROJECT_ID",
       "enabled": true,
       "fallbackToCacheTimeout": 0
     },

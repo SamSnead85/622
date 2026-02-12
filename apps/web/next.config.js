@@ -1,3 +1,7 @@
+if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_API_URL) {
+    console.warn('WARNING: NEXT_PUBLIC_API_URL is not set. API calls will fail in production.');
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     // Strip console.log/warn/error from production builds (via SWC compiler)
@@ -38,7 +42,11 @@ const nextConfig = {
         ignoreBuildErrors: false,
     },
     env: {
-        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5180',
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || (
+            process.env.NODE_ENV === 'production'
+                ? (() => { console.error('WARNING: NEXT_PUBLIC_API_URL not set'); return ''; })()
+                : 'http://localhost:5180'
+        ),
     },
     async headers() {
         return [

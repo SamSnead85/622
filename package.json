@@ -4,8 +4,7 @@
     "private": true,
     "workspaces": [
         "apps/*",
-        "packages/*",
-        "services/*"
+        "packages/*"
     ],
     "scripts": {
         "dev:mobile": "cd apps/mobile && npm run start",
@@ -14,7 +13,7 @@
         "build": "npm run build --workspaces --if-present",
         "test": "npm run test --workspaces --if-present",
         "lint": "npm run lint --workspaces --if-present",
-        "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules services/*/node_modules"
+        "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules"
     },
     "devDependencies": {
         "eslint": "^8.56.0",
@@ -26,10 +25,8 @@
         "node": ">=18.0.0"
     },
     "dependencies": {
-        "@expo-google-fonts/inter": "^0.4.2",
         "ajv": "^8.17.1",
         "ajv-keywords": "^5.1.0",
-        "expo-blur": "^15.0.8",
         "promise": "^8.3.0",
         "semver": "^7.7.4"
     }

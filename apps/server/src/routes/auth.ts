@@ -208,7 +208,7 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
             await prisma.accessCode.update({
                 where: { id: codeRecord.id },
                 data: { useCount: { increment: 1 } },
-            }).catch(() => {}); // non-blocking
+            }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err })); // non-blocking
         }
 
         // Generate auth token
@@ -286,12 +286,12 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
                             // Admin follows the new user
                             await prisma.follow.create({
                                 data: { followerId: admin.id, followingId: user.id },
-                            }).catch(() => {}); // Ignore if already following
+                            }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err })); // Ignore if already following
 
                             // New user follows admin (so their feed isn't empty)
                             await prisma.follow.create({
                                 data: { followerId: user.id, followingId: admin.id },
-                            }).catch(() => {});
+                            }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
                         }
                     } catch (followErr) {
                         logger.error('[Auth] Auto-follow error (non-blocking):', followErr);
@@ -436,7 +436,7 @@ router.post('/logout', authenticate, async (req: AuthRequest, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { sessionId: string };
             await prisma.session.delete({
                 where: { id: decoded.sessionId },
-            }).catch(() => { });
+            }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
         }
 
         res.json({ message: 'Logged out successfully' });
@@ -515,7 +515,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
             prisma.user.update({
                 where: { id: user.id },
                 data: { onboardingComplete: true },
-            }).catch(() => {});
+            }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
         }
 
         res.json({
@@ -574,7 +574,7 @@ router.post('/refresh', authenticate, async (req: AuthRequest, res, next) => {
             const decoded = jwt.verify(oldToken, process.env.JWT_SECRET!) as { sessionId: string };
             await prisma.session.delete({
                 where: { id: decoded.sessionId },
-            }).catch(() => { });
+            }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
         }
 
         // Generate new token
@@ -1367,8 +1367,8 @@ router.post('/provisional-signup', async (req, res, next) => {
                     where: { id: targetCommunityId },
                     data: { memberCount: { increment: 1 } },
                 });
-            } catch {
-                // Community may not exist or user is already a member
+            } catch (err) {
+                logger.warn('Non-critical operation failed:', { error: (err as Error)?.message || err });
             }
         }
 
@@ -1381,16 +1381,16 @@ router.post('/provisional-signup', async (req, res, next) => {
                     joinedAt: new Date(),
                     joinedUserId: user.id,
                 },
-            }).catch(() => {});
+            }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
 
             // Auto-follow the inviter
             if (inviterId) {
                 await prisma.follow.create({
                     data: { followerId: user.id, followingId: inviterId },
-                }).catch(() => {});
+                }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
                 await prisma.follow.create({
                     data: { followerId: inviterId, followingId: user.id },
-                }).catch(() => {});
+                }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
             }
         }
 
@@ -1617,7 +1617,7 @@ router.post('/validate-invite', async (req, res, next) => {
             await prisma.invite.update({
                 where: { id: invite.id },
                 data: { status: 'OPENED', openedAt: new Date() },
-            }).catch(() => {});
+            }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
         }
 
         res.json({

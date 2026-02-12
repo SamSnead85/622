@@ -1,20 +1,15 @@
 // API Configuration
 // This file handles the API URL based on environment
 
-const PRODUCTION_API = 'https://0g-server.up.railway.app';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || (
+    process.env.NODE_ENV === 'development' ? 'http://localhost:5180' : ''
+);
 
-const getApiUrl = () => {
-    const envUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (envUrl) return envUrl;
+if (!API_BASE && process.env.NODE_ENV === 'production') {
+    console.error('CRITICAL: NEXT_PUBLIC_API_URL is not set in production');
+}
 
-    // In production, always use the production API — never fall back to localhost
-    if (process.env.NODE_ENV === 'production') return PRODUCTION_API;
-
-    // Development fallback
-    return 'http://localhost:5180';
-};
-
-export const API_URL = getApiUrl();
+export const API_URL = API_BASE;
 
 export const API_ENDPOINTS = {
     // Auth

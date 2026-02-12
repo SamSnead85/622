@@ -37,7 +37,7 @@ jobs:
         working-directory: apps/server
 
       - name: Lint server
-        run: npx eslint src/ --ext .ts --max-warnings 0 || true
+        run: npx eslint src/ --ext .ts --max-warnings 0
         working-directory: apps/server
 
   # ============================================
@@ -144,5 +144,4 @@ jobs:
           cache: 'npm'
 
       - name: Audit dependencies
-        run: npm audit --audit-level=high || true
-        continue-on-error: true
+        run: npm audit --audit-level=high

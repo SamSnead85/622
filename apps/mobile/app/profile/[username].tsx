@@ -482,8 +482,8 @@ export default function UserProfileScreen() {
         return (
             <EmptyState
                 icon={isPostsTab ? 'camera-outline' : 'heart-outline'}
-                title={isPostsTab ? 'No Posts Yet' : 'No Liked Posts'}
-                message={isPostsTab ? 'This user hasn\'t posted yet.' : 'This user hasn\'t liked any posts yet.'}
+                title={isPostsTab ? 'No posts to show' : 'No liked posts yet'}
+                message={isPostsTab ? 'When this person shares something, it will appear here.' : 'Posts this person has liked will show up here.'}
                 compact
             />
         );

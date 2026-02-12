@@ -40,7 +40,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar, GlassCard, ErrorBoundary } from '../../components';
-import { useFeedStore, useAuthStore, Post } from '../../stores';
+import { useFeedStore, useAuthStore, useNotificationsStore, Post } from '../../stores';
 import { SkeletonFeed } from '../../components/SkeletonPost';
 import { useNetworkQuality } from '../../hooks/useNetworkQuality';
 import { RetryView } from '../../components/RetryView';
@@ -48,6 +48,7 @@ import { apiFetch, API } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { toHijri } from '../../lib/hijri';
 import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
+import FloatingCreateButton from '../../components/FloatingCreateButton';
 import { timeAgo, formatCount } from '../../lib/utils';
 
 // ============================================
@@ -110,7 +111,7 @@ function AvatarGlow({ type, size }: { type: 'online' | 'active' | 'verified' | '
 // Active Contacts Strip — replaces Intent Hub
 // Horizontal scroll of online/active people
 // ============================================
-const CONTACT_AVATAR_SIZE = 52;
+const CONTACT_AVATAR_SIZE = 44;
 
 function ActiveContactBubble({
     avatarUrl,
@@ -200,7 +201,7 @@ function ActiveContactBubble({
                     )}
                 </View>
                 <Text style={styles.contactName} numberOfLines={1}>
-                    {isUser ? 'You' : name.split(' ')[0]?.slice(0, 8) || name.slice(0, 8)}
+                    {isUser ? 'You' : (name.split(' ')[0] || name || 'U').slice(0, 8)}
                 </Text>
             </Pressable>
         </Animated.View>
@@ -235,7 +236,7 @@ function ActiveContactsStrip({ onCreatePress }: { onCreatePress: () => void }) {
                 setStoryUsers(users);
             }
         }).catch((error) => {
-            console.warn('Failed to fetch moments feed:', error);
+            if (__DEV__) console.warn('Failed to fetch moments feed:', error);
         });
     }, []);
 
@@ -683,7 +684,7 @@ const FeedPostCard = memo(
                                             name="checkmark-circle"
                                             size={14}
                                             color={colors.gold[500]}
-                                            style={{ marginStart: 4 }}
+                                            style={styles.verifiedBadge}
                                         />
                                     )}
                                 </View>
@@ -792,7 +793,7 @@ const FeedPostCard = memo(
                             </Text>
                         </TouchableOpacity>
 
-                        <View style={{ flex: 1 }} />
+                        <View style={styles.actionsSpacer} />
 
                         {/* Reorder arrows — only visible on own posts */}
                         {isOwnPost && onReorder && (
@@ -865,7 +866,7 @@ const FeedPostCard = memo(
                                         />
                                     ) : (
                                         <View style={[styles.authorNoteAvatar, styles.contactAvatarPlaceholder]}>
-                                            <Text style={{ fontSize: 8, color: colors.text.primary, fontWeight: '700' }}>
+                                            <Text style={styles.authorNoteInitial}>
                                                 {(post.author?.displayName || '?')[0].toUpperCase()}
                                             </Text>
                                         </View>
@@ -1298,6 +1299,7 @@ export default function FeedScreen() {
     const user = useAuthStore((s) => s.user);
     const flatListRef = useRef<FlatList>(null);
     const { shouldReduceData, isOffline } = useNetworkQuality();
+    const notifUnreadCount = useNotificationsStore((s) => s.unreadCount);
 
     // Reduced motion support — respect system preference
     const [reduceMotion, setReduceMotion] = useState(false);
@@ -1330,12 +1332,14 @@ export default function FeedScreen() {
     // Seed content & checklist state
     const [seedDismissed, setSeedDismissed] = useState(true); // hidden until loaded
     const [checklistCompleted, setChecklistCompleted] = useState<Set<string>>(new Set(['account']));
+    const [smartCardDismissed, setSmartCardDismissed] = useState(false);
 
     // Load seed dismissed state and checklist completion from AsyncStorage
     useEffect(() => {
         AsyncStorage.getItem('@seed-dismissed').then((val) => {
             setSeedDismissed(val === 'true');
         }).catch(() => { /* non-critical */ });
+        AsyncStorage.getItem('smartCardDismissed').then(v => { if (v === 'true') setSmartCardDismissed(true); }).catch(() => {});
         // Load checklist completion
         Promise.all(
             CHECKLIST_ITEMS.map(async (item) => {
@@ -1490,7 +1494,7 @@ export default function FeedScreen() {
             const totalUnread = (data?.conversations || []).reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
             setUnreadMessages(totalUnread);
         } catch (error) {
-            console.warn('Failed to fetch unread messages count:', error);
+            if (__DEV__) console.warn('Failed to fetch unread messages count:', error);
         }
     }, []);
 
@@ -1554,7 +1558,7 @@ export default function FeedScreen() {
             method: 'PUT',
             body: JSON.stringify({ feedView: next }),
         }).catch((error) => {
-            console.warn('Failed to update feed view preference:', error);
+            if (__DEV__) console.warn('Failed to update feed view preference:', error);
         });
     }, [feedView]);
 
@@ -1602,6 +1606,11 @@ export default function FeedScreen() {
         [reorderPost]
     );
 
+    const handleRefresh = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        fetchFeed(true, feedType, feedView);
+    }, [fetchFeed, feedType, feedView]);
+
     const getGreeting = () => {
         const profile = user?.culturalProfile || 'standard';
         if (profile === 'muslim') return 'Assalamu Alaikum';
@@ -1616,6 +1625,11 @@ export default function FeedScreen() {
 
     const keyExtractor = useCallback((item: Post) => item.id, []);
 
+    const flatListContentStyle = useMemo(() => ({
+        paddingHorizontal: spacing.md,
+        paddingBottom: 100,
+    }), []);
+
     const renderPost = useCallback(
         ({ item }: { item: Post }) => {
             return (
@@ -1624,15 +1638,13 @@ export default function FeedScreen() {
                     onLike={handleLike}
                     onSave={handleSave}
                     onPress={handlePostPress}
-                    onReorder={handleReorder}
                     isVideoActive={item.mediaType === 'VIDEO' && activeVideoId === item.id}
                     isFirstVideo={item.mediaType === 'VIDEO' && activeVideoId === item.id}
-                    isOwnPost={item.author?.id === user?.id}
                     shouldReduceData={shouldReduceData}
                 />
             );
         },
-        [handleLike, handleSave, handlePostPress, handleReorder, activeVideoId, shouldReduceData, user?.id]
+        [handleLike, handleSave, handlePostPress, activeVideoId, shouldReduceData]
     );
 
     // ============================================
@@ -1672,111 +1684,74 @@ export default function FeedScreen() {
     };
 
     const profileCompletion = getProfileCompletion();
-    const showProfileNudge = profileCompletion.percent < 100;
 
-    const renderHeader = () => (
-        <View>
-            {/* Ramadan Banner */}
-            {ramadan && (
-                <Animated.View entering={FadeInDown.duration(400)}>
-                    <TouchableOpacity
-                        style={styles.ramadanBanner}
-                        onPress={() => router.push('/tools' as any)}
-                        activeOpacity={0.8}
-                        accessibilityRole="button"
-                        accessibilityLabel="Ramadan banner"
-                        accessibilityHint="Double tap to access Deen tools including prayer times and Quran"
-                    >
-                        <LinearGradient
-                            colors={[colors.surface.goldSubtle, colors.surface.goldMedium, colors.surface.goldSubtle]}
-                            style={StyleSheet.absoluteFill}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                        />
-                        <View style={styles.ramadanContent}>
-                            <Text style={styles.ramadanEmoji}>☪️</Text>
-                            <View style={styles.ramadanTextCol}>
-                                <Text style={styles.ramadanTitle}>
-                                    {ramadan.isEid
-                                        ? 'Eid Mubarak!'
-                                        : ramadan.isDuring
-                                        ? 'Ramadan Mubarak'
-                                        : ramadan.daysUntil <= 1
-                                        ? 'Ramadan starts tomorrow!'
-                                        : `Ramadan in ${ramadan.daysUntil} days`}
+    const renderHeader = () => {
+        // Smart onboarding: show ONE card max, the most relevant action
+        const showSmartCard = !smartCardDismissed && (
+            ramadan || profileCompletion.percent < 100 || posts.length === 0
+        );
+
+        return (
+            <View style={styles.headerContainer}>
+                {/* Single smart onboarding card — one at a time, dismissible */}
+                {showSmartCard && (
+                    <Animated.View entering={FadeInDown.duration(400)} style={styles.smartCard}>
+                        <TouchableOpacity
+                            style={styles.smartCardContent}
+                            onPress={() => {
+                                if (ramadan) router.push('/tools' as any);
+                                else if (profileCompletion.percent < 100) router.push('/(tabs)/profile');
+                                else router.push('/create' as any);
+                            }}
+                            activeOpacity={0.8}
+                        >
+                            <View style={[styles.smartCardIcon, {
+                                backgroundColor: ramadan ? colors.surface.goldSubtle
+                                    : profileCompletion.percent < 100 ? colors.azure[500] + '18'
+                                    : colors.emerald[500] + '18'
+                            }]}>
+                                <Ionicons
+                                    name={ramadan ? 'moon' : profileCompletion.percent < 100 ? 'person' : 'create'}
+                                    size={20}
+                                    color={ramadan ? colors.gold[500] : profileCompletion.percent < 100 ? colors.azure[500] : colors.emerald[500]}
+                                />
+                            </View>
+                            <View style={styles.smartCardText}>
+                                <Text style={[styles.smartCardTitle, { color: c.text.primary }]}>
+                                    {ramadan
+                                        ? (ramadan.isDuring ? 'Ramadan Mubarak' : ramadan.isEid ? 'Eid Mubarak!' : `Ramadan in ${ramadan.daysUntil} days`)
+                                        : profileCompletion.percent < 100
+                                        ? 'Complete your profile'
+                                        : 'Share your first post'}
                                 </Text>
-                                <Text style={styles.ramadanSubtitle}>
-                                    {ramadan.isEid
-                                        ? 'Eid al-Fitr — may your prayers and fasting be accepted'
-                                        : ramadan.isDuring
-                                        ? 'Prayer times, Quran & more — tap to access your Deen tools'
-                                        : 'Get ready — prayer times, Quran reader & fasting tools available'}
+                                <Text style={[styles.smartCardSubtitle, { color: c.text.secondary }]} numberOfLines={1}>
+                                    {ramadan
+                                        ? 'Prayer times, Quran & Deen tools ready'
+                                        : profileCompletion.percent < 100
+                                        ? `Add your ${profileCompletion.missing.slice(0, 2).join(' & ').toLowerCase()}`
+                                        : 'Your feed is waiting for content'}
                                 </Text>
                             </View>
-                            <Ionicons name="chevron-forward" size={16} color={colors.gold[400]} />
-                        </View>
-                    </TouchableOpacity>
-                </Animated.View>
-            )}
+                            <Ionicons name="chevron-forward" size={16} color={c.text.muted} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.smartCardDismiss}
+                            onPress={() => {
+                                setSmartCardDismissed(true);
+                                AsyncStorage.setItem('smartCardDismissed', 'true').catch(() => {});
+                            }}
+                            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                        >
+                            <Ionicons name="close" size={16} color={c.text.muted} />
+                        </TouchableOpacity>
+                    </Animated.View>
+                )}
 
-            {/* Profile Completion Nudge */}
-            {showProfileNudge && (
-                <Animated.View entering={FadeInDown.duration(400).delay(100)}>
-                    <TouchableOpacity
-                        style={styles.profileNudge}
-                        onPress={() => router.push('/(tabs)/profile')}
-                        activeOpacity={0.8}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Complete your profile, ${profileCompletion.percent}% done`}
-                        accessibilityHint="Double tap to complete your profile"
-                    >
-                        <View style={styles.profileNudgeRing}>
-                            <View style={styles.profileNudgeRingBg} />
-                            <View
-                                style={[
-                                    styles.profileNudgeRingFill,
-                                    {
-                                        borderColor: profileCompletion.percent >= 75
-                                            ? colors.emerald[500]
-                                            : profileCompletion.percent >= 50
-                                                ? colors.gold[500]
-                                                : colors.amber[400],
-                                    },
-                                ]}
-                            />
-                            <Text style={styles.profileNudgePercent}>{profileCompletion.percent}%</Text>
-                        </View>
-                        <View style={styles.profileNudgeInfo}>
-                            <Text style={styles.profileNudgeTitle}>Complete your profile</Text>
-                            <Text style={styles.profileNudgeSubtitle}>
-                                Add your {profileCompletion.missing.slice(0, 2).join(' & ').toLowerCase()}
-                            </Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-                    </TouchableOpacity>
-                </Animated.View>
-            )}
-
-            {/* Getting Started Checklist */}
-            {checklistCompleted.size < CHECKLIST_ITEMS.length && (
-                <GettingStartedChecklist
-                    completedIds={checklistCompleted}
-                    onItemPress={handleChecklistItemPress}
-                />
-            )}
-
-            {/* Seed Content Posts — shown when feed is empty or sparse */}
-            {!seedDismissed && posts.length < 5 && (
-                <SeedContentSection onDismiss={handleDismissSeed} />
-            )}
-
-            {/* Feed type tabs */}
-            <FeedTabs activeTab={feedType} onTabChange={handleTabChange} />
-
-            {/* Active Contacts Strip — who's online */}
-            <ActiveContactsStrip onCreatePress={() => router.push('/(tabs)/create')} />
-        </View>
-    );
+                {/* Stories strip — compact, stories only */}
+                <ActiveContactsStrip onCreatePress={() => router.push('/create' as any)} />
+            </View>
+        );
+    };
 
     const renderEmpty = () => {
         if (isLoading) return <SkeletonFeed />;
@@ -1883,96 +1858,45 @@ export default function FeedScreen() {
                 style={StyleSheet.absoluteFill}
             />
 
-            {/* Compact Header — Avatar + Greeting + Actions */}
+            {/* Clean Header — Logo + Actions */}
             <View
                 style={[styles.header, { paddingTop: insets.top + spacing.xs }]}
                 accessible={true}
                 accessibilityRole="header"
-                accessibilityLabel={`${getGreeting()}, ${user?.displayName?.split(' ')[0] || 'there'}. ${hijri.day} ${hijri.monthName} ${hijri.year} AH`}
+                accessibilityLabel="0G Home"
             >
                 <View style={styles.headerLeft}>
-                    <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Your profile" accessibilityHint="Double tap to view your profile">
+                    <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Your profile">
                         <Avatar uri={user?.avatarUrl} name={user?.displayName || 'U'} customSize={34} borderColor={colors.gold[500]} />
                     </TouchableOpacity>
-                    <View style={styles.headerGreetingCol}>
-                        <Text style={styles.headerGreeting} numberOfLines={1}>
-                            {getGreeting()},{' '}
-                            {user?.displayName?.split(' ')[0] || 'there'}
-                        </Text>
-                        <Text style={styles.hijriDate}>
-                            {hijri.day} {hijri.monthName} {hijri.year} AH
-                        </Text>
-                        {/* Feed view toggle — only if community opt-in */}
-                        {user?.communityOptIn && (
-                            <TouchableOpacity onPress={handleFeedViewToggle} style={styles.feedViewToggle} accessibilityRole="button" accessibilityLabel={feedView === 'private' ? 'Private Feed, tap to switch to Community Feed' : 'Community Feed, tap to switch to Private Feed'}>
-                                <Ionicons
-                                    name={feedView === 'private' ? 'lock-closed' : 'globe'}
-                                    size={12}
-                                    color={feedView === 'private' ? colors.gold[400] : colors.azure[400]}
-                                />
-                                <Text style={[styles.feedViewLabel, feedView === 'community' && { color: colors.azure[400] }]}>
-                                    {feedView === 'private' ? 'Private Feed' : 'Community Feed'}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
+                    <Text style={[styles.headerLogo, { color: c.text.primary }]}>0G</Text>
+                    {/* Feed view pill — subtle, only if community opt-in */}
+                    {user?.communityOptIn && (
+                        <TouchableOpacity onPress={handleFeedViewToggle} style={[styles.feedViewPill, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]} accessibilityRole="button" accessibilityLabel={feedView === 'private' ? 'Private Feed' : 'Community Feed'}>
+                            <Ionicons
+                                name={feedView === 'private' ? 'lock-closed' : 'globe'}
+                                size={11}
+                                color={feedView === 'private' ? colors.gold[400] : colors.azure[400]}
+                            />
+                            <Text style={[styles.feedViewPillText, { color: feedView === 'private' ? colors.gold[400] : colors.azure[400] }]}>
+                                {feedView === 'private' ? 'Private' : 'Community'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
                 <View style={styles.headerActions}>
-                    {/* Quick actions menu (algorithm, games, tools) */}
-                    <TouchableOpacity
-                        style={styles.headerBtn}
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            if (Platform.OS === 'ios') {
-                                ActionSheetIOS.showActionSheetWithOptions(
-                                    {
-                                        options: ['Feed Settings', 'Games', 'Deen Tools', 'Cancel'],
-                                        cancelButtonIndex: 3,
-                                    },
-                                    (index) => {
-                                        if (index === 0) router.push('/settings/algorithm' as any);
-                                        else if (index === 1) router.push('/games' as any);
-                                        else if (index === 2) router.push('/tools' as any);
-                                    }
-                                );
-                            } else {
-                                Alert.alert('Quick Actions', 'Select an option', [
-                                    { text: 'Feed Settings', onPress: () => router.push('/settings/algorithm' as any) },
-                                    { text: 'Games', onPress: () => router.push('/games' as any) },
-                                    { text: 'Deen Tools', onPress: () => router.push('/tools' as any) },
-                                    { text: 'Cancel', style: 'cancel' },
-                                ]);
-                            }
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel="Quick actions menu"
-                    >
-                        <Ionicons name="ellipsis-horizontal" size={22} color={colors.text.secondary} />
-                    </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.headerBtn}
                         onPress={() => router.push('/notifications')}
                         accessibilityRole="button"
-                        accessibilityLabel="Notifications"
-                        accessibilityHint="Double tap to view notifications"
+                        accessibilityLabel={notifUnreadCount > 0 ? `Notifications, ${notifUnreadCount} unread` : 'Notifications'}
                     >
-                        <Ionicons name="notifications-outline" size={22} color={colors.text.primary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.headerBtn}
-                        onPress={() => router.push('/messages' as any)}
-                        accessibilityRole="button"
-                        accessibilityLabel={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : 'Messages'}
-                        accessibilityHint="Double tap to open messages"
-                    >
-                        <View>
-                            <Ionicons name="chatbubble-outline" size={22} color={colors.gold[400]} />
-                            {unreadMessages > 0 && (
-                                <View style={styles.messageBadge}>
-                                    <Text style={styles.messageBadgeText}>{unreadMessages > 99 ? '99+' : unreadMessages}</Text>
-                                </View>
-                            )}
-                        </View>
+                        <Ionicons name="notifications-outline" size={22} color={c.text.primary} />
+                        {notifUnreadCount > 0 && (
+                            <View style={styles.headerBadge}>
+                                <Text style={styles.headerBadgeText}>{notifUnreadCount > 99 ? '99+' : notifUnreadCount}</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </View>
             </View>
@@ -2005,10 +1929,7 @@ export default function FeedScreen() {
                     renderItem={renderPost}
                     keyExtractor={keyExtractor}
                     ListHeaderComponent={renderHeader}
-                    contentContainerStyle={{
-                        paddingHorizontal: spacing.md,
-                        paddingBottom: 100,
-                    }}
+                    contentContainerStyle={flatListContentStyle}
                     showsVerticalScrollIndicator={false}
                     accessibilityRole="list"
                     accessibilityLabel={`${feedType === 'foryou' ? 'For You' : 'Following'} feed, ${posts.length} posts`}
@@ -2017,10 +1938,7 @@ export default function FeedScreen() {
                     refreshControl={
                         <RefreshControl
                             refreshing={isRefreshing}
-                            onRefresh={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                fetchFeed(true, feedType, feedView);
-                            }}
+                            onRefresh={handleRefresh}
                             tintColor={colors.gold[500]}
                         />
                     }
@@ -2040,12 +1958,16 @@ export default function FeedScreen() {
                     maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
                 />
             </ErrorBoundary>
+
+            {/* Floating Action Button for creating content */}
+            <FloatingCreateButton bottomOffset={88} />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.obsidian[900] },
+    headerContainer: { paddingTop: spacing.sm },
 
     // Connection banner
     connectionBanner: {
@@ -2094,34 +2016,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '700',
         color: colors.text.primary,
-    },
-    headerGreetingCol: {
-        flex: 1,
-    },
-    headerGreeting: {
-        fontSize: 17,
-        fontWeight: '700',
-        color: colors.text.primary,
-        letterSpacing: -0.3,
-        fontFamily: 'Inter-Bold',
-    },
-    hijriDate: {
-        fontSize: typography.fontSize.xs,
-        color: colors.gold[400],
-        fontFamily: 'Inter-Medium',
-        marginTop: 2,
-    },
-    feedViewToggle: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        marginTop: 2,
-    },
-    feedViewLabel: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: colors.gold[400],
-        fontFamily: 'Inter-SemiBold',
     },
     headerActions: { flexDirection: 'row', gap: spacing.xs },
     headerBtn: {
@@ -2279,7 +2173,7 @@ const styles = StyleSheet.create({
     postCard: {
         backgroundColor: colors.surface.glass,
         borderRadius: 16,
-        marginBottom: spacing.lg,
+        marginBottom: spacing.md,
         borderWidth: 1,
         borderColor: colors.border.subtle,
         overflow: 'hidden',
@@ -2303,6 +2197,7 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.sm,
     },
     authorRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+    verifiedBadge: { marginStart: 4 },
     avatarWrap: { position: 'relative', width: 40, height: 40 },
     avatar: { width: 40, height: 40, borderRadius: 20 },
     avatarPlaceholder: {
@@ -2400,6 +2295,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
     },
+    actionsSpacer: {
+        flex: 1,
+    },
     actionBtn: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -2455,6 +2353,11 @@ const styles = StyleSheet.create({
         width: 16,
         height: 16,
         borderRadius: 8,
+    },
+    authorNoteInitial: {
+        fontSize: 8,
+        color: colors.text.primary,
+        fontWeight: '700',
     },
     authorNoteLabel: {
         fontSize: 10,
@@ -2595,4 +2498,89 @@ const styles = StyleSheet.create({
 
     // Footer
     footer: { paddingVertical: spacing.sm },
+
+    // Clean header
+    headerLogo: {
+        fontSize: 22,
+        fontWeight: '700',
+        letterSpacing: -0.3,
+        marginLeft: spacing.sm,
+    },
+    feedViewPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginLeft: spacing.sm,
+    },
+    feedViewPillText: {
+        fontSize: 11,
+        fontWeight: '600',
+    },
+    headerBadge: {
+        position: 'absolute',
+        top: -4,
+        right: -6,
+        backgroundColor: colors.coral[500],
+        borderRadius: 8,
+        minWidth: 16,
+        height: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 3,
+    },
+    headerBadgeText: {
+        color: '#fff',
+        fontSize: 9,
+        fontWeight: '700',
+    },
+    // Smart onboarding card — single dismissible card
+    smartCard: {
+        marginBottom: spacing.sm,
+        position: 'relative',
+    },
+    smartCardContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.md,
+        backgroundColor: colors.surface.glass,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        gap: spacing.md,
+    },
+    smartCardIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    smartCardText: {
+        flex: 1,
+    },
+    smartCardTitle: {
+        fontSize: 15,
+        fontWeight: '600',
+        fontFamily: 'Inter-SemiBold',
+    },
+    smartCardSubtitle: {
+        fontSize: 13,
+        marginTop: 2,
+        fontFamily: 'Inter-Regular',
+    },
+    smartCardDismiss: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: colors.surface.glassHover,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
 });

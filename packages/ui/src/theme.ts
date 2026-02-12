@@ -170,9 +170,9 @@ export const lightColors = {
     },
 
     border: {
-        subtle: 'rgba(0, 0, 0, 0.06)',
-        default: 'rgba(0, 0, 0, 0.10)',
-        strong: 'rgba(0, 0, 0, 0.18)',
+        subtle: 'rgba(0, 0, 0, 0.10)',
+        default: 'rgba(0, 0, 0, 0.14)',
+        strong: 'rgba(0, 0, 0, 0.22)',
     },
 
     gradients: {

@@ -109,7 +109,7 @@ export function RightSidebar() {
                                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 p-0.5">
                                             <div className="w-full h-full rounded-full overflow-hidden bg-black relative">
                                                 {u.avatarUrl ? (
-                                                    <Image src={u.avatarUrl} alt={u.displayName} fill className="object-cover" />
+                                                    <Image src={u.avatarUrl} alt={`${u.displayName}'s avatar`} fill className="object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-white/50 text-xs font-bold">
                                                         {u.displayName?.charAt(0) || '?'}

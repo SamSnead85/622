@@ -81,21 +81,21 @@ if (process.env.NODE_ENV === 'production') {
 
     // Optional but recommended: Redis for socket scaling & caching
     if (!process.env.REDIS_URL) {
-        console.warn('⚠️  REDIS_URL is not set. Socket.IO will run in memory-only mode (no horizontal scaling).');
+        logger.warn('REDIS_URL is not set. Socket.IO will run in memory-only mode (no horizontal scaling).');
     }
 
     // Optional: Cloudinary for media uploads
     const cloudinaryVars = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
     const missingCloudinary = cloudinaryVars.filter(v => !process.env[v]);
     if (missingCloudinary.length > 0) {
-        console.warn(`⚠️  Missing Cloudinary env vars: ${missingCloudinary.join(', ')}. Media uploads may not work.`);
+        logger.warn(`Missing Cloudinary env vars: ${missingCloudinary.join(', ')}. Media uploads may not work.`);
     }
 
     // Optional: Mux for video/livestream
     const muxVars = ['MUX_TOKEN_ID', 'MUX_TOKEN_SECRET'];
     const missingMux = muxVars.filter(v => !process.env[v]);
     if (missingMux.length > 0) {
-        console.warn(`⚠️  Missing Mux env vars: ${missingMux.join(', ')}. Video/livestream features may not work.`);
+        logger.warn(`Missing Mux env vars: ${missingMux.join(', ')}. Video/livestream features may not work.`);
     }
 }
 

@@ -444,11 +444,11 @@ function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, movePo
             <div className="p-4 pb-2">
                 <div className="flex items-start gap-3">
                     {post.author.avatarUrl ? (
-                        <Image
-                            src={post.author.avatarUrl}
-                            alt={post.author.displayName}
-                            width={40}
-                            height={40}
+                            <Image
+                                src={post.author.avatarUrl}
+                                alt={`${post.author.displayName}'s avatar`}
+                                width={40}
+                                height={40}
                             className="w-10 h-10 rounded-full object-cover flex-shrink-0 cursor-pointer ring-2 ring-white/10 hover:ring-[#D4AF37]/40 transition-all duration-300"
                             onClick={() => router.push(`/profile/${post.author.username}`)}
                         />
@@ -527,7 +527,7 @@ function FeedPostInner({ post, likePost, toggleRsvp, deletePost, pinPost, movePo
                         ) : (
                             <Image
                                 src={post.mediaUrl}
-                                alt="Post media"
+                                alt={post.content?.slice(0, 100) || `Post by ${post.author.displayName}`}
                                 width={800}
                                 height={600}
                                 className={`w-full ${useFeedCrop ? 'h-full object-cover' : 'h-auto max-h-[500px] object-contain'}`}

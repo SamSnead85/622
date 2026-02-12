@@ -117,6 +117,7 @@ model User {
   customGreeting             String?                   // User-defined greeting (for "custom" profile)
 
   @@index([username])
+  @@index([displayName])
   @@index([email])
   @@index([communityOptIn])
 }
@@ -309,6 +310,7 @@ model Post {
   analytics    PostAnalytics[]
 
   @@index([userId])
+  @@index([userId, createdAt(sort: Desc)]) // Author's posts by date (feed queries)
   @@index([userId, sortOrder(sort: Desc), createdAt(sort: Desc)]) // Profile page: posts sorted by pin/sort then date
   @@index([communityId])
   @@index([createdAt])
@@ -317,6 +319,7 @@ model Post {
   @@index([deletedAt]) // Soft delete filter
   @@index([userId, deletedAt]) // User's non-deleted posts
   @@index([communityId, deletedAt, createdAt(sort: Desc)]) // Community feed with soft delete
+  @@index([communityId, deletedAt, isPublic, createdAt(sort: Desc)]) // Community feed with visibility filter
 }
 
 model Music {
@@ -567,6 +570,7 @@ model CommunityMember {
 
   @@unique([userId, communityId])
   @@index([communityId])
+  @@index([userId, communityId]) // Membership lookup by user+community
   @@index([userId, role])
   @@index([communityId, points(sort: Desc)])
 }

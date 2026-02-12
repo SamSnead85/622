@@ -38,43 +38,21 @@ Platform features to know:
 Keep responses brief (2-3 sentences max) unless more detail is needed.`;
 
 async function sendToGemini(messages: Message[]): Promise<string> {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) {
-        return "I'm not configured yet. Please add the Gemini API key.";
-    }
-
     try {
-        // Format messages for Gemini API
-        const contents = messages.map(m => ({
-            role: m.role === 'user' ? 'user' : 'model',
-            parts: [{ text: m.content }]
-        }));
-
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents,
-                    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-                    generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 200,
-                    }
-                })
-            }
-        );
-
+        const response = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages, context: SYSTEM_PROMPT }),
+        });
         const data = await response.json();
 
-        if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-            return data.candidates[0].content.parts[0].text;
+        if (!response.ok) {
+            return data.error || "I'm having connection issues. Please try again in a moment.";
         }
 
-        return "I had trouble understanding. Could you try rephrasing that?";
+        return data.text || "I had trouble understanding. Could you try rephrasing that?";
     } catch (error) {
-        console.error('Gemini API error:', error);
+        console.error('AI chat error:', error);
         return "I'm having connection issues. Please try again in a moment.";
     }
 }

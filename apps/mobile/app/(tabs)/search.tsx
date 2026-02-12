@@ -143,6 +143,13 @@ const SUGGESTED_ITEMS_FALLBACK: SuggestedItem[] = [
     { id: 's6', type: 'user', name: 'Yasmin Mogahed', subtitle: '@yasminmogahed', avatarUrl: undefined, isVerified: true },
 ];
 
+const QUICK_ACCESS_CARDS = [
+    { id: 'communities', icon: 'people' as const, label: 'Communities', color: colors.azure[500], route: '/(tabs)/communities' },
+    { id: 'games', icon: 'game-controller' as const, label: 'Games', color: colors.emerald[500], route: '/games' },
+    { id: 'tools', icon: 'construct' as const, label: 'Tools', color: colors.gold[500], route: '/tools' },
+    { id: 'bulletin', icon: 'megaphone' as const, label: 'Bulletin', color: colors.coral[500], route: '/bulletin' },
+];
+
 const DISCOVERY_CATEGORIES = [
     { id: 'technology', icon: 'code-slash' as const, label: 'Technology', color: colors.azure[500], gradient: [colors.azure[600], colors.azure[400]] },
     { id: 'faith', icon: 'moon' as const, label: 'Faith', color: colors.gold[500], gradient: [colors.gold[600], colors.gold[400]] },
@@ -480,7 +487,7 @@ export default function SearchScreen() {
 
             apiFetch<any>(`${API.search}?q=&suggested=true&limit=6`).then((data) => {
                 const items: SuggestedItem[] = [];
-                if (data?.users) {
+                if (Array.isArray(data?.users)) {
                     data.users.slice(0, 3).forEach((u: any) => {
                         items.push({
                             id: u.id,
@@ -492,7 +499,7 @@ export default function SearchScreen() {
                         });
                     });
                 }
-                if (data?.communities) {
+                if (Array.isArray(data?.communities)) {
                     data.communities.slice(0, 3).forEach((c: any) => {
                         items.push({
                             id: c.id,
@@ -1103,12 +1110,12 @@ export default function SearchScreen() {
                                             ) : (
                                                 <View style={[styles.featuredAuthorAvatar, styles.featuredAuthorPlaceholder]}>
                                                     <Text style={{ fontSize: 8, fontWeight: '700', color: colors.text.primary }}>
-                                                        {(post.authorName || '?')[0]?.toUpperCase()}
+                                                        {post.authorName?.[0]?.toUpperCase() || '?'}
                                                     </Text>
                                                 </View>
                                             )}
                                             <Text style={styles.featuredAuthorName} numberOfLines={1}>
-                                                {post.authorName}
+                                                {post.authorName || 'Unknown'}
                                             </Text>
                                         </View>
                                         <View style={styles.featuredStats}>
@@ -1217,12 +1224,6 @@ export default function SearchScreen() {
                 />
             }
         >
-            {/* Discover Header */}
-            <Animated.View entering={FadeInDown.duration(350)} style={styles.discoverHeader}>
-                <Text style={styles.discoverTitle}>Discover</Text>
-                <Text style={styles.discoverSubtitle}>Find people, communities, and content</Text>
-            </Animated.View>
-
             {/* Offline Banner */}
             {isOffline && (
                 <Animated.View entering={FadeIn.duration(200)} style={styles.offlineBanner}>
@@ -1233,9 +1234,26 @@ export default function SearchScreen() {
                 </Animated.View>
             )}
 
+            {/* Quick Access Hub — 2x2 grid */}
+            <View style={[styles.quickAccessGrid, { paddingHorizontal: spacing.xl, marginTop: spacing.md }]}>
+                {QUICK_ACCESS_CARDS.map((card, i) => (
+                    <Animated.View key={card.id} entering={FadeInDown.duration(300).delay(i * 60)} style={styles.quickAccessCardWrap}>
+                        <TouchableOpacity
+                            style={[styles.quickAccessCard, { borderColor: card.color + '30' }]}
+                            onPress={() => router.push(card.route as any)}
+                            activeOpacity={0.7}
+                        >
+                            <View style={[styles.quickAccessIcon, { backgroundColor: card.color + '18' }]}>
+                                <Ionicons name={card.icon} size={24} color={card.color} />
+                            </View>
+                            <Text style={[styles.quickAccessLabel, { color: c.text.primary }]}>{card.label}</Text>
+                        </TouchableOpacity>
+                    </Animated.View>
+                ))}
+            </View>
+
             {renderRecentSearches()}
             {renderTrending()}
-            {renderCategoryGrid()}
             {renderFeaturedPosts()}
             {renderSuggested()}
         </ScrollView>
@@ -1306,10 +1324,10 @@ export default function SearchScreen() {
             />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+            <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
                 {/* Title */}
                 <Animated.View entering={FadeInDown.duration(400)}>
-                    <Text style={styles.headerTitle}>Search</Text>
+                    <Text style={styles.headerTitle}>Discover</Text>
                 </Animated.View>
 
                 {/* Glass Search Bar */}
@@ -1491,19 +1509,18 @@ const styles = StyleSheet.create({
 
     // Header
     header: {
-        paddingHorizontal: spacing.xl,
+        paddingHorizontal: spacing.lg,
         paddingBottom: spacing.xs,
         borderBottomWidth: 1,
         borderBottomColor: colors.border.subtle,
         zIndex: 10,
     },
     headerTitle: {
-        fontSize: 32,
+        fontSize: 22,
         fontWeight: '700',
         color: colors.text.primary,
-        letterSpacing: -0.8,
+        letterSpacing: -0.3,
         marginBottom: spacing.md,
-        fontFamily: 'Inter-Bold',
     },
 
     // Glass Search Bar
@@ -1752,6 +1769,41 @@ const styles = StyleSheet.create({
     trendingCount: {
         fontSize: typography.fontSize.xs,
         color: colors.text.muted,
+    },
+
+    // Quick Access Hub (2x2 grid)
+    quickAccessGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.sm,
+        marginBottom: spacing.lg,
+        paddingHorizontal: spacing.xs,
+        marginTop: spacing.md,
+    },
+    quickAccessCardWrap: {
+        width: (SCREEN_WIDTH - spacing.xl * 2 - spacing.sm) / 2,
+    },
+    quickAccessCard: {
+        backgroundColor: colors.surface.glass,
+        borderRadius: 16,
+        borderWidth: 1,
+        padding: spacing.md,
+        alignItems: 'center',
+        gap: spacing.sm,
+        minHeight: 100,
+        justifyContent: 'center',
+    },
+    quickAccessIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    quickAccessLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        fontFamily: 'Inter-SemiBold',
     },
 
     // Category Grid
@@ -2122,3 +2174,4 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
 });
+

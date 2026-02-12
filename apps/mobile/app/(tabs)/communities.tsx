@@ -283,15 +283,15 @@ function TabSwitcher({ active, onChange }: {
 function EmptyState({ tab, searchActive }: { tab: TabKey; searchActive: boolean }) {
     const icon = searchActive ? 'search-outline' : tab === 'discover' ? 'compass-outline' : 'heart-outline';
     const title = searchActive
-        ? 'No communities found'
+        ? 'No matches found'
         : tab === 'discover'
-            ? 'No communities yet'
-            : 'You haven\'t joined any communities';
+            ? 'Communities are on the way'
+            : 'Find your people';
     const subtitle = searchActive
-        ? 'Try a different search term'
+        ? 'Try different keywords or browse by category'
         : tab === 'discover'
-            ? 'Be the first to create one!'
-            : 'Discover and join communities to see them here';
+            ? 'Be the first to start a community and bring people together!'
+            : 'Explore and join communities that match your interests';
 
     return (
         <View style={styles.emptyState}>
@@ -459,6 +459,7 @@ export default function CommunitiesScreen() {
     const [discoverCommunities, setDiscoverCommunities] = useState<Community[]>([]);
     const [isLoadingDiscover, setIsLoadingDiscover] = useState(false);
     const [featuredCommunities, setFeaturedCommunities] = useState<Community[]>([]);
+    const [featuredLoading, setFeaturedLoading] = useState(true);
     const searchInputRef = useRef<TextInput>(null);
 
     // ============================================
@@ -472,11 +473,16 @@ export default function CommunitiesScreen() {
     }, []);
 
     const fetchFeatured = async () => {
+        setFeaturedLoading(true);
         try {
             const data = await apiFetch<any>(`${API.communities}?featured=true&limit=10`);
             const list = data.communities || data.data || data || [];
             setFeaturedCommunities(Array.isArray(list) ? list : []);
-        } catch { /* silent */ }
+        } catch {
+            // Silent fail — featured is non-critical
+        } finally {
+            setFeaturedLoading(false);
+        }
     };
 
     // Re-fetch discover when search or category changes
@@ -625,7 +631,7 @@ export default function CommunitiesScreen() {
             />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+            <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
                 <View style={styles.headerRow}>
                     <Text style={styles.headerTitle}>Communities</Text>
                     <TouchableOpacity
@@ -688,39 +694,44 @@ export default function CommunitiesScreen() {
                 columnWrapperStyle={styles.gridRow}
                 contentContainerStyle={[styles.gridContent, { paddingBottom: insets.bottom + 24 }]}
                 showsVerticalScrollIndicator={false}
-                ListHeaderComponent={activeTab === 'discover' && !debouncedQuery.trim() && featuredCommunities.length > 0 ? (
-                    <View style={styles.featuredSection}>
-                        <View style={styles.featuredHeader}>
-                            <Ionicons name="star" size={16} color={colors.gold[500]} />
-                            <Text style={styles.featuredTitle}>Featured Communities</Text>
+                ListHeaderComponent={activeTab === 'discover' && !debouncedQuery.trim() ? (
+                    featuredLoading ? (
+                        <ActivityIndicator size="small" color={colors.gold[500]} style={{ padding: 20 }} />
+                    ) : featuredCommunities.length > 0 ? (
+                        <View style={styles.featuredSection}>
+                            <View style={styles.featuredHeader}>
+                                <Ionicons name="star" size={16} color={colors.gold[500]} />
+                                <Text style={styles.featuredTitle}>Featured Communities</Text>
+                            </View>
+                            <FlatList
+                                horizontal
+                                data={featuredCommunities}
+                                keyExtractor={(item) => `featured-${item.id}`}
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.md }}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={styles.featuredCard}
+                                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/community/${item.id}`); }}
+                                        activeOpacity={0.85}
+                                    >
+                                        <Image
+                                            source={{ uri: item.coverUrl || item.avatarUrl }}
+                                            style={styles.featuredCover}
+                                            placeholder={IMAGE_PLACEHOLDER.blurhash}
+                                            transition={IMAGE_PLACEHOLDER.transition}
+                                            contentFit="cover"
+                                            cachePolicy="memory-disk"
+                                        />
+                                        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.featuredOverlay}>
+                                            <Text style={styles.featuredName} numberOfLines={1}>{item.name}</Text>
+                                            <Text style={styles.featuredMembers}>{formatCount(item.membersCount || item.memberCount || 0)} members</Text>
+                                        </LinearGradient>
+                                    </TouchableOpacity>
+                                )}
+                            />
                         </View>
-                        <FlatList
-                            horizontal
-                            data={featuredCommunities}
-                            keyExtractor={(item) => `featured-${item.id}`}
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.md }}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={styles.featuredCard}
-                                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/community/${item.id}`); }}
-                                    activeOpacity={0.85}
-                                >
-                                    <Image
-                                        source={{ uri: item.coverUrl || item.avatarUrl }}
-                                        style={styles.featuredCover}
-                                        placeholder={IMAGE_PLACEHOLDER?.blurhash}
-                                        transition={300}
-                                        contentFit="cover"
-                                    />
-                                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.featuredOverlay}>
-                                        <Text style={styles.featuredName} numberOfLines={1}>{item.name}</Text>
-                                        <Text style={styles.featuredMembers}>{formatCount(item.membersCount || item.memberCount || 0)} members</Text>
-                                    </LinearGradient>
-                                </TouchableOpacity>
-                            )}
-                        />
-                    </View>
+                    ) : null
                 ) : null}
                 ListEmptyComponent={renderEmpty}
                 refreshControl={
@@ -774,10 +785,10 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
     },
     headerTitle: {
-        fontSize: 28,
+        fontSize: 22,
         fontWeight: '700',
         color: colors.text.primary,
-        letterSpacing: -0.5,
+        letterSpacing: -0.3,
     },
     createBtn: {
         width: 36,
