@@ -530,54 +530,100 @@ router.post('/refresh', authenticate, async (req: AuthRequest, res, next) => {
 
 // POST /api/v1/auth/google - Handle Google OAuth
 const googleAuthSchema = z.object({
-    idToken: z.string(),
+    idToken: z.string().optional(),
     accessToken: z.string().optional(),
+    userInfo: z.object({
+        email: z.string().email(),
+        name: z.string().optional(),
+        picture: z.string().optional(),
+        sub: z.string().optional(),
+    }).optional(),
 });
 
 // Import Google Auth Library at the top of the file dynamically
 router.post('/google', async (req, res, next) => {
     try {
-        const { idToken } = googleAuthSchema.parse(req.body);
+        const { idToken, accessToken, userInfo } = googleAuthSchema.parse(req.body);
+
+        if (!idToken && !accessToken) {
+            throw new AppError('Either idToken or accessToken is required', 400);
+        }
 
         let email: string;
         let name: string | undefined;
         let picture: string | undefined;
         let googleId: string;
 
-        // Use Google Auth Library for production token verification
         const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
         if (!GOOGLE_CLIENT_ID) {
-            // Hard fail: never allow unverified token decode in any environment
             throw new AppError(
                 'Google OAuth is not configured. Set GOOGLE_CLIENT_ID in environment variables.',
                 503
             );
         }
 
-        // Cryptographically verify the Google ID token
-        const { OAuth2Client } = await import('google-auth-library');
-        const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+        if (idToken) {
+            // Path 1: Verify ID token cryptographically
+            const { OAuth2Client } = await import('google-auth-library');
+            const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-        try {
-            const ticket = await client.verifyIdToken({
-                idToken,
-                audience: GOOGLE_CLIENT_ID,
-            });
-            const payload = ticket.getPayload();
+            try {
+                const ticket = await client.verifyIdToken({
+                    idToken,
+                    audience: GOOGLE_CLIENT_ID,
+                });
+                const payload = ticket.getPayload();
 
-            if (!payload || !payload.email) {
-                throw new AppError('Invalid Google token payload', 400);
+                if (!payload || !payload.email) {
+                    throw new AppError('Invalid Google token payload', 400);
+                }
+
+                email = payload.email;
+                name = payload.name;
+                picture = payload.picture;
+                googleId = payload.sub;
+            } catch (verifyError) {
+                if (verifyError instanceof AppError) throw verifyError;
+                logger.error('Google ID token verification failed:', verifyError);
+                throw new AppError('Invalid or expired Google token', 401);
             }
+        } else if (accessToken) {
+            // Path 2: Verify access token by calling Google's userinfo API
+            try {
+                const googleRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                });
 
-            email = payload.email;
-            name = payload.name;
-            picture = payload.picture;
-            googleId = payload.sub;
-        } catch (verifyError) {
-            if (verifyError instanceof AppError) throw verifyError;
-            logger.error('Google token verification failed:', verifyError);
-            throw new AppError('Invalid or expired Google token', 401);
+                if (!googleRes.ok) {
+                    throw new AppError('Invalid Google access token', 401);
+                }
+
+                const googleUser = await googleRes.json();
+
+                if (!googleUser.email) {
+                    // Fall back to provided userInfo
+                    if (userInfo?.email) {
+                        email = userInfo.email;
+                        name = userInfo.name;
+                        picture = userInfo.picture;
+                        googleId = userInfo.sub || `google_${Date.now()}`;
+                    } else {
+                        throw new AppError('Could not get email from Google', 400);
+                    }
+                } else {
+                    email = googleUser.email;
+                    name = googleUser.name;
+                    picture = googleUser.picture;
+                    googleId = googleUser.sub || `google_${Date.now()}`;
+                }
+            } catch (fetchError) {
+                if (fetchError instanceof AppError) throw fetchError;
+                logger.error('Google userinfo fetch failed:', fetchError);
+                throw new AppError('Failed to verify Google access token', 401);
+            }
+        } else {
+            throw new AppError('No valid Google token provided', 400);
         }
 
         if (!email) {

@@ -411,7 +411,6 @@ export default function LoginScreen() {
             setGeneralError(null);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-            const redirectUri = AuthSession.makeRedirectUri({ preferLocalhost: false });
             const clientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 
             if (!clientId) {
@@ -420,31 +419,63 @@ export default function LoginScreen() {
                 return;
             }
 
-            const discovery = {
-                authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-                tokenEndpoint: 'https://oauth2.googleapis.com/token',
-            };
+            const redirectUri = AuthSession.makeRedirectUri({
+                scheme: 'zerog',
+                preferLocalhost: false,
+            });
+
+            const discovery = await AuthSession.fetchDiscoveryAsync('https://accounts.google.com');
 
             const request = new AuthSession.AuthRequest({
                 clientId,
                 redirectUri,
                 scopes: ['openid', 'profile', 'email'],
-                responseType: AuthSession.ResponseType.IdToken,
+                responseType: AuthSession.ResponseType.Token,
+                usePKCE: false,
+                extraParams: {
+                    nonce: Math.random().toString(36).substring(2),
+                },
             });
 
             const result = await request.promptAsync(discovery);
 
-            if (result.type === 'success' && result.params?.id_token) {
-                await googleLogin(result.params.id_token);
+            if (result.type === 'success') {
+                const idToken = result.params?.id_token;
+                const accessToken = result.authentication?.accessToken || result.params?.access_token;
+
+                if (idToken) {
+                    // Use ID token directly
+                    await googleLogin(idToken);
+                } else if (accessToken) {
+                    // Fetch user info from Google with access token
+                    const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                        headers: { Authorization: `Bearer ${accessToken}` },
+                    });
+                    const userInfo = await userInfoRes.json();
+
+                    if (userInfo.email) {
+                        // Send user info to server for login/signup
+                        await googleLogin(accessToken, userInfo);
+                    } else {
+                        throw new Error('Could not get email from Google');
+                    }
+                } else {
+                    throw new Error('No token received from Google');
+                }
+
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 router.replace('/(tabs)');
+            } else if (result.type === 'error') {
+                throw new Error(result.error?.message || 'Google Sign In failed');
             }
+            // type === 'dismiss' — user cancelled, do nothing
         } catch (error: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            if (error?.message?.includes('configured')) {
-                setGeneralError('Google Sign In is being set up. Please use email or Apple Sign In for now.');
+            console.warn('Google login error:', error?.message);
+            if (error?.message?.includes('configured') || error?.message?.includes('redirect')) {
+                setGeneralError('Google Sign In is being configured. Please use email or Apple Sign In for now.');
             } else {
-                setGeneralError('Google Sign In failed. Please try again.');
+                setGeneralError(error?.message || 'Google Sign In failed. Please try again.');
             }
         } finally {
             setGoogleLoading(false);

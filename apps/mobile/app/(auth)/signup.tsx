@@ -428,7 +428,6 @@ export default function SignupScreen() {
             setGeneralError(null);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-            const redirectUri = AuthSession.makeRedirectUri({ preferLocalhost: false });
             const clientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 
             if (!clientId) {
@@ -437,28 +436,56 @@ export default function SignupScreen() {
                 return;
             }
 
-            const discovery = {
-                authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-                tokenEndpoint: 'https://oauth2.googleapis.com/token',
-            };
+            const redirectUri = AuthSession.makeRedirectUri({
+                scheme: 'zerog',
+                preferLocalhost: false,
+            });
+
+            const discovery = await AuthSession.fetchDiscoveryAsync('https://accounts.google.com');
 
             const request = new AuthSession.AuthRequest({
                 clientId,
                 redirectUri,
                 scopes: ['openid', 'profile', 'email'],
-                responseType: AuthSession.ResponseType.IdToken,
+                responseType: AuthSession.ResponseType.Token,
+                usePKCE: false,
+                extraParams: {
+                    nonce: Math.random().toString(36).substring(2),
+                },
             });
 
             const result = await request.promptAsync(discovery);
 
-            if (result.type === 'success' && result.params?.id_token) {
-                await googleLogin(result.params.id_token);
+            if (result.type === 'success') {
+                const idToken = result.params?.id_token;
+                const accessToken = result.authentication?.accessToken || result.params?.access_token;
+
+                if (idToken) {
+                    await googleLogin(idToken);
+                } else if (accessToken) {
+                    const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                        headers: { Authorization: `Bearer ${accessToken}` },
+                    });
+                    const userInfo = await userInfoRes.json();
+
+                    if (userInfo.email) {
+                        await googleLogin(accessToken, userInfo);
+                    } else {
+                        throw new Error('Could not get email from Google');
+                    }
+                } else {
+                    throw new Error('No token received from Google');
+                }
+
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 router.replace('/(auth)/username');
+            } else if (result.type === 'error') {
+                throw new Error(result.error?.message || 'Google Sign Up failed');
             }
-        } catch {
+        } catch (error: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            setGeneralError('Google Sign Up failed. Please try again.');
+            console.warn('Google signup error:', error?.message);
+            setGeneralError(error?.message || 'Google Sign Up failed. Please try again.');
         } finally {
             setGoogleLoading(false);
         }

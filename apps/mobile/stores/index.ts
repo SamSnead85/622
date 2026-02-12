@@ -163,7 +163,7 @@ interface AuthState {
     login: (email: string, password: string) => Promise<void>;
     signup: (email: string, password: string, displayName: string) => Promise<void>;
     appleLogin: (identityToken: string, fullName?: { givenName?: string; familyName?: string } | null) => Promise<void>;
-    googleLogin: (idToken: string) => Promise<void>;
+    googleLogin: (tokenOrAccessToken: string, userInfo?: { email: string; name?: string; picture?: string; sub?: string }) => Promise<void>;
     logout: () => Promise<void>;
     updateUser: (updates: Partial<User>) => void;
     refreshUser: () => Promise<void>;
@@ -321,12 +321,17 @@ export const useAuthStore = create<AuthState>()(
         }
     },
 
-    googleLogin: async (idToken) => {
+    googleLogin: async (tokenOrAccessToken, userInfo) => {
         set({ isLoading: true, error: null });
         try {
+            // If userInfo is provided, this is an access token flow
+            const body = userInfo
+                ? { accessToken: tokenOrAccessToken, userInfo }
+                : { idToken: tokenOrAccessToken };
+
             const data = await apiFetch<any>(API.googleAuth, {
                 method: 'POST',
-                body: JSON.stringify({ idToken }),
+                body: JSON.stringify(body),
             });
 
             if (data.token) {
