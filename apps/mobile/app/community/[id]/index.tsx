@@ -597,9 +597,7 @@ export default function CommunityDetailScreen() {
             if (tab === 'members' && canModerate) {
                 loadJoinRequests();
             }
-            if (tab === 'rules' && rules.length === 0 && !rulesLoading && !rulesError) {
-                loadRules();
-            }
+            // Rules are now shown in the About tab
         },
         [allMembers.length, membersLoading, rules.length, rulesLoading, rulesError, loadAllMembers, loadRules, loadJoinRequests, canModerate, tabIndicatorX, TAB_WIDTH],
     );
@@ -1985,16 +1983,16 @@ export default function CommunityDetailScreen() {
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.actionBtn}
-                                    onPress={() => handleTabChange('rules')}
-                                    accessibilityLabel="Rules"
+                                    onPress={() => handleTabChange('about')}
+                                    accessibilityLabel="About"
                                     accessibilityRole="button"
                                 >
                                     <Ionicons
-                                        name="book-outline"
+                                        name="information-circle-outline"
                                         size={18}
                                         color={colors.gold[400]}
                                     />
-                                    <Text style={styles.actionBtnText}>Rules</Text>
+                                    <Text style={styles.actionBtnText}>About</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.actionBtn}

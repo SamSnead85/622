@@ -715,7 +715,7 @@ export default function CommunitiesScreen() {
                                     />
                                     <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.featuredOverlay}>
                                         <Text style={styles.featuredName} numberOfLines={1}>{item.name}</Text>
-                                        <Text style={styles.featuredMembers}>{formatCount(item.memberCount || 0)} members</Text>
+                                        <Text style={styles.featuredMembers}>{formatCount(item.membersCount || item.memberCount || 0)} members</Text>
                                     </LinearGradient>
                                 </TouchableOpacity>
                             )}

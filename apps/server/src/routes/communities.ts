@@ -2470,13 +2470,18 @@ router.post('/:communityId/courses/:courseId/lessons/:lessonId/progress', authen
             },
         });
 
-        // Award points for completing a lesson
+        // Award points for completing a lesson (only once — check if already awarded)
         if (data.completed) {
-            const community = await prisma.community.findUnique({
-                where: { id: communityId },
-                select: { pointsPerPost: true },
+            const alreadyAwarded = await prisma.pointTransaction.findFirst({
+                where: { communityId, userId, reason: 'course_complete', sourceId: lessonId },
             });
-            await awardPoints(communityId, userId, community?.pointsPerPost || 5, 'course_complete', 'lesson', lessonId);
+            if (!alreadyAwarded) {
+                const community = await prisma.community.findUnique({
+                    where: { id: communityId },
+                    select: { pointsPerPost: true },
+                });
+                await awardPoints(communityId, userId, community?.pointsPerPost || 5, 'course_complete', 'lesson', lessonId);
+            }
         }
 
         res.json(progress);
@@ -2569,6 +2574,11 @@ router.post('/:communityId/events', authenticate, async (req: AuthRequest, res, 
         });
         const data = schema.parse(req.body);
 
+        // Validate date range
+        if (data.endAt && data.startAt >= data.endAt) {
+            throw new AppError('End date must be after start date', 400);
+        }
+
         const event = await prisma.communityEvent.create({
             data: { ...data, communityId, creatorId: req.userId! },
         });
@@ -2652,9 +2662,14 @@ router.post('/:communityId/events/:eventId/rsvp', authenticate, async (req: Auth
             update: { status },
         });
 
-        // Award points for attending
+        // Award points for attending (only once per event)
         if (status === 'going') {
-            await awardPoints(communityId, userId, 2, 'event_attend', 'event', eventId);
+            const alreadyAwarded = await prisma.pointTransaction.findFirst({
+                where: { communityId, userId, reason: 'event_attend', sourceId: eventId },
+            });
+            if (!alreadyAwarded) {
+                await awardPoints(communityId, userId, 2, 'event_attend', 'event', eventId);
+            }
         }
 
         res.json(rsvp);
