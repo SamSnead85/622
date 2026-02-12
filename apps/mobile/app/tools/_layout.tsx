@@ -15,6 +15,7 @@ export default function ToolsLayout() {
             <Stack.Screen name="qibla" />
             <Stack.Screen name="halal-scanner" />
             <Stack.Screen name="boycott-scanner" />
+            <Stack.Screen name="calendar" />
             <Stack.Screen name="quran" />
         </Stack>
     );

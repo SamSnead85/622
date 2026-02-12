@@ -217,6 +217,20 @@ export default function ToolsHub() {
         },
     ];
 
+    // ─── Personal Tools ──────────────────
+    const personalTools = [
+        {
+            icon: 'calendar-outline' as const,
+            title: 'My Calendar',
+            description: 'Events, birthdays & reminders',
+            gradient: [colors.azure[500], colors.azure[300]] as [string, string],
+            iconColor: colors.azure[400],
+            route: '/tools/calendar',
+            badge: 'NEW',
+            badgeColor: colors.azure[500],
+        },
+    ];
+
     // ─── Games ───────────────────────────
     const gameTools = [
         {
@@ -365,8 +379,27 @@ export default function ToolsHub() {
                     ))}
                 </View>
 
+                {/* ── Personal Tools Section ── */}
+                <SectionHeader title="Personal" icon="person-outline" delay={baseDelay + 620} />
+                <View style={styles.grid}>
+                    {personalTools.map((tool, i) => (
+                        <ToolCard
+                            key={tool.route}
+                            icon={tool.icon}
+                            title={tool.title}
+                            description={tool.description}
+                            gradient={tool.gradient}
+                            iconColor={tool.iconColor}
+                            badge={tool.badge}
+                            badgeColor={tool.badgeColor}
+                            onPress={() => navigate(tool.route, { title: tool.title, icon: tool.icon, iconColor: tool.iconColor })}
+                            delay={baseDelay + 680 + i * 90}
+                        />
+                    ))}
+                </View>
+
                 {/* ── Games & Fun Section ── */}
-                <SectionHeader title="Games & Fun" icon="game-controller-outline" delay={baseDelay + 650} />
+                <SectionHeader title="Games & Fun" icon="game-controller-outline" delay={baseDelay + 800} />
                 <View style={styles.grid}>
                     {gameTools.map((tool, i) => (
                         <ToolCard
