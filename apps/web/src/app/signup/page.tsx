@@ -199,31 +199,12 @@ function SignupPageContent() {
                                         </motion.div>
                                     )}
 
-                                    <h1 className="text-3xl font-bold text-white mb-2">Join ZeroG</h1>
+                                    <h1 className="text-3xl font-bold text-white mb-2">Join 0G</h1>
                                     <p className="text-white/50 mb-8">
-                                        Enter your invite code to create an account.
+                                        Create your account — your world, your rules.
                                     </p>
 
                                     <form onSubmit={handleStep1} className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm text-white/60 mb-2">Access Code *</label>
-                                            <input
-                                                type="text"
-                                                value={accessCode}
-                                                onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:bg-white/10 transition-all font-mono tracking-widest text-center text-lg"
-                                                placeholder="ENTER CODE"
-                                                required
-                                                maxLength={20}
-                                            />
-                                            <p className="text-xs text-white/30 mt-1.5">
-                                                Don&apos;t have a code?{' '}
-                                                <Link href="/signup" className="text-[#D4AF37]/70 hover:text-[#D4AF37] underline underline-offset-2">
-                                                    Sign up for free
-                                                </Link>
-                                            </p>
-                                        </div>
-
                                         <div>
                                             <label className="block text-sm text-white/60 mb-2">Email address</label>
                                             <input
