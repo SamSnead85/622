@@ -437,6 +437,16 @@ function FeedVideoPlayer({ uri, thumbnailUrl, isActive, isFirstVideo, shouldRedu
         player.muted = !isFirstVideo;
     });
 
+    // Detect when the first frame is ready via player status
+    useEffect(() => {
+        const sub = player.addListener('statusChange', ({ status }: { status: string }) => {
+            if (status === 'readyToPlay') {
+                setShowFirstFrame(true);
+            }
+        });
+        return () => { sub.remove(); };
+    }, [player]);
+
     useEffect(() => {
         if (shouldReduceData) {
             // On slow connections, don't autoplay — save bandwidth
@@ -473,7 +483,6 @@ function FeedVideoPlayer({ uri, thumbnailUrl, isActive, isFirstVideo, shouldRedu
                 style={styles.videoPlayer}
                 nativeControls={false}
                 contentFit="cover"
-                onFirstFrameRender={() => setShowFirstFrame(true)}
             />
             {/* Poster thumbnail: shown instantly while the video buffers.
                 Once the first video frame renders we fade it out. */}
