@@ -12,7 +12,14 @@ import { logger } from '../utils/logger.js';
 import { validatePassword } from '../utils/security.js';
 import { encryptField } from '../services/encryption.js';
 import { hashValue } from '../services/encryption.js';
-import { trackSignup, trackFailedLogin, trackPasswordReset, checkGeoAnomaly } from '../services/securityMonitor.js';
+import { trackSignup, trackFailedLogin, trackPasswordReset, checkGeoAnomaly, trackUserAgent } from '../services/securityMonitor.js';
+import { generateFingerprint } from '../services/sessionSecurity.js';
+import { logSecurityEvent, SecurityEvents, getClientIP } from '../services/security.js';
+import { getGeoFromIP } from '../services/geoblock.js';
+import { checkForEvasion } from '../services/evasionDetection.js';
+import { recordSignupTime } from '../services/botDetection.js';
+import { sendAlert } from '../services/alerting.js';
+import { evaluatePromotion } from '../services/trustService.js';
 
 // Apple JWKS endpoint for verifying Apple Sign-In tokens
 const APPLE_JWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
@@ -63,7 +70,7 @@ const accessCodeSchema = z.object({
 // Helper to generate tokens
 const generateTokens = async (
     userId: string,
-    deviceInfo?: { type?: string; name?: string; ip?: string },
+    deviceInfo?: { type?: string; name?: string; ip?: string; fingerprint?: string },
     rememberMe: boolean = true
 ) => {
     const sessionId = uuid();
@@ -79,6 +86,7 @@ const generateTokens = async (
             deviceType: deviceInfo?.type,
             deviceName: deviceInfo?.name,
             ipAddress: deviceInfo?.ip,
+            fingerprint: deviceInfo?.fingerprint,
             expiresAt,
         },
     });
@@ -211,11 +219,103 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
             }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err })); // non-blocking
         }
 
+        // ── Founding Creator auto-elevation ──
+        // If the access code is a founding_creator code, auto-create CreatorProfile and elevate trust
+        const isFoundingCreator = codeRecord?.type === 'founding_creator' && codeRecord.isActive;
+        if (isFoundingCreator) {
+            const { default: crypto } = await import('crypto');
+            const referralCode = `FC${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+
+            await prisma.creatorProfile.create({
+                data: {
+                    userId: user.id,
+                    tier: 'partner',
+                    status: 'active',
+                    hasVerifiedBadge: true,
+                    hasPrioritySupport: true,
+                    referralCode,
+                    earlyAccessSlots: 50,
+                    agreedToTerms: true,
+                    agreedAt: new Date(),
+                },
+            }).catch((err) => logger.warn('[Auth] Founding creator profile creation failed:', { error: err?.message || err }));
+
+            // Auto-elevate: skip email verification, max trust, verified badge
+            await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    trustLevel: 3,
+                    isVerified: true,
+                    emailVerified: true,
+                },
+            }).catch((err) => logger.warn('[Auth] Founding creator elevation failed:', { error: err?.message || err }));
+
+            logger.info(`[Auth] Founding creator signed up: userId=${user.id}, username=${user.username}`);
+        }
+
+        // Generate device fingerprint for session tracking and evasion detection
+        const fp = generateFingerprint(req);
+        const signupIp = getClientIP(req);
+
+        // Store fingerprint on user record (first device)
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { deviceFingerprint: fp.hash },
+        }).catch(() => {}); // non-blocking
+
+        // Record signup time for bot velocity detection
+        await recordSignupTime(user.id).catch(() => {});
+
+        // ── Evasion detection: check if this signup correlates with a banned account ──
+        const evasionResult = await checkForEvasion({
+            fingerprint: fp.hash,
+            email: user.email,
+            ip: signupIp,
+        }).catch(() => null);
+
+        if (evasionResult?.shouldShadowBan) {
+            // Silently shadow-ban — account appears to work but content is invisible
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { isShadowBanned: true },
+            }).catch(() => {});
+
+            await sendAlert({
+                severity: 'HIGH',
+                eventType: 'EVASION_DETECTED',
+                message: `Ban evasion detected on signup: ${user.username} (${user.email})`,
+                details: { signals: evasionResult.signals, confidence: evasionResult.confidence },
+                ip: signupIp,
+                userId: user.id,
+            }).catch(() => {});
+        } else if (evasionResult?.evasionDetected) {
+            // Low confidence — log but don't shadow-ban
+            await sendAlert({
+                severity: 'MEDIUM',
+                eventType: 'EVASION_SIGNAL',
+                message: `Possible evasion signal on signup: ${user.username}`,
+                details: { signals: evasionResult.signals, confidence: evasionResult.confidence },
+                ip: signupIp,
+                userId: user.id,
+            }).catch(() => {});
+        }
+
+        // Log signup security event
+        await logSecurityEvent({
+            action: SecurityEvents.SIGNUP_SUCCESS,
+            userId: user.id,
+            ipAddress: signupIp,
+            countryCode: getGeoFromIP(signupIp)?.countryCode || undefined,
+            userAgent: req.headers['user-agent'] || '',
+            details: { username: user.username, fingerprint: fp.hash },
+        }).catch(() => {});
+
         // Generate auth token
         const { token, expiresAt } = await generateTokens(user.id, {
             type: req.headers['x-device-type'] as string,
             name: req.headers['x-device-name'] as string,
             ip: req.ip,
+            fingerprint: fp.hash,
         });
 
         // === Growth Partner referral tracking (non-blocking) ===
@@ -299,17 +399,38 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
                 }
 
                 // 3. Send a welcome notification to the new user
+                const welcomeMessage = isFoundingCreator
+                    ? `Welcome to 0G as a Founding Creator, ${user.displayName || user.username}! 🎉 Your account has full access — you can post, go live, message, and invite your community from day one. Thank you for being part of our founding story.`
+                    : `Welcome to 0G, ${user.displayName || user.username}! 🎉 You're part of a new kind of social platform — one built on privacy, transparency, and community ownership. Start by creating your first post or exploring what others are sharing.`;
                 await prisma.notification.create({
                     data: {
                         userId: user.id,
                         type: 'SYSTEM' as const,
-                        message: `Welcome to 0G, ${user.displayName || user.username}! 🎉 You're part of a new kind of social platform — one built on privacy, transparency, and community ownership. Start by creating your first post or exploring what others are sharing.`,
+                        message: welcomeMessage,
                     },
                 });
             } catch (err) {
                 logger.error('[Auth] Post-signup automation error:', err);
             }
         })();
+
+        // Auto-send verification email (non-blocking)
+        const resendKey = process.env.RESEND_API_KEY;
+        if (resendKey) {
+            const otp = String(Math.floor(100000 + Math.random() * 900000));
+            const { cache: cacheService } = await import('../services/cache/RedisCache.js');
+            await cacheService.set(`email_otp:${user.id}`, otp, 300).catch(() => {});
+            fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    from: process.env.EMAIL_FROM || 'noreply@0g.social',
+                    to: user.email,
+                    subject: 'Verify your 0G account',
+                    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:40px 20px;"><h2 style="color:#111827;">Verify your email</h2><p style="color:#6B7280;">Enter this code in the app:</p><div style="background:#F3F4F6;border-radius:12px;padding:24px;text-align:center;margin:24px 0;"><span style="font-size:36px;font-weight:700;letter-spacing:8px;color:#111827;">${otp}</span></div><p style="color:#9CA3AF;font-size:14px;">Expires in 5 minutes.</p></div>`,
+                }),
+            }).catch(err => logger.error('[Auth] Verification email send failed:', err));
+        }
 
         res.status(201).json({
             user: {
@@ -318,10 +439,14 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
                 username: user.username,
                 displayName: user.displayName,
                 avatarUrl: user.avatarUrl,
-                isVerified: user.isVerified,
+                isVerified: isFoundingCreator ? true : user.isVerified,
+                emailVerified: isFoundingCreator ? true : false,
+                trustLevel: isFoundingCreator ? 3 : 0,
+                isFoundingCreator: isFoundingCreator || false,
             },
             token,
             expiresAt,
+            requiresEmailVerification: !isFoundingCreator,
         });
     } catch (error) {
         next(error);
@@ -382,6 +507,109 @@ router.post('/login', rateLimiters.auth, async (req, res, next) => {
         // Successful login - clear failed attempts
         await clearFailedLogins(email);
 
+        // ── Security monitoring on successful login ──
+        const loginIp = getClientIP(req);
+        const loginGeo = getGeoFromIP(loginIp);
+        const loginUA = req.headers['user-agent'] || '';
+
+        // Track geo-anomaly (login from new country)
+        if (loginGeo?.countryCode) {
+            checkGeoAnomaly(user.id, loginIp, loginGeo.countryCode).catch(() => {});
+        }
+
+        // Track user-agent diversity (bot detection)
+        trackUserAgent(loginIp, loginUA).catch(() => {});
+
+        // Generate device fingerprint
+        const loginFp = generateFingerprint(req);
+
+        // Log successful login
+        await logSecurityEvent({
+            action: SecurityEvents.LOGIN_SUCCESS,
+            userId: user.id,
+            ipAddress: loginIp,
+            countryCode: loginGeo?.countryCode || undefined,
+            userAgent: loginUA,
+            details: { fingerprint: loginFp.hash },
+        }).catch(() => {});
+
+        // ── New device detection ──
+        // Check if this fingerprint has been seen in any of the user's previous sessions
+        (async () => {
+            try {
+                const knownSession = await prisma.session.findFirst({
+                    where: { userId: user.id, fingerprint: loginFp.hash },
+                });
+
+                if (!knownSession) {
+                    // This is a new device — notify the user
+                    const deviceType = req.headers['x-device-type'] as string || 'Unknown device';
+                    const deviceName = req.headers['x-device-name'] as string || loginUA.substring(0, 50);
+                    const location = loginGeo?.city
+                        ? `${loginGeo.city}, ${loginGeo.countryCode}`
+                        : loginGeo?.countryCode || 'Unknown location';
+                    const loginTime = new Date().toLocaleString('en-US', {
+                        weekday: 'short', month: 'short', day: 'numeric',
+                        hour: 'numeric', minute: '2-digit', hour12: true,
+                    });
+
+                    // 1. In-app notification
+                    await prisma.notification.create({
+                        data: {
+                            userId: user.id,
+                            type: 'SYSTEM',
+                            message: `New login from ${deviceType} in ${location} at ${loginTime}. If this wasn't you, go to Settings > Security to secure your account.`,
+                        },
+                    });
+
+                    // 2. Push notification (non-blocking)
+                    try {
+                        const { sendPushNotification } = await import('../services/notifications/ExpoPushService.js');
+                        await sendPushNotification(
+                            user.id,
+                            'New device login',
+                            `Someone logged into your account from ${location}. Was this you?`,
+                            { type: 'security_alert', screen: '/settings/security' },
+                        );
+                    } catch {
+                        // Push not configured or failed — that's fine
+                    }
+
+                    // 3. Email notification (non-blocking)
+                    const resendKey = process.env.RESEND_API_KEY;
+                    if (resendKey) {
+                        fetch('https://api.resend.com/emails', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                from: process.env.EMAIL_FROM || 'security@0g.social',
+                                to: user.email,
+                                subject: 'New login to your 0G account',
+                                html: `
+                                    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:40px 20px;">
+                                        <h2 style="color:#111827;margin-bottom:8px;">New device login</h2>
+                                        <p style="color:#6B7280;font-size:16px;">We noticed a login to your account from a new device:</p>
+                                        <div style="background:#F3F4F6;border-radius:12px;padding:20px;margin:20px 0;">
+                                            <p style="margin:4px 0;color:#374151;"><strong>Device:</strong> ${deviceName}</p>
+                                            <p style="margin:4px 0;color:#374151;"><strong>Location:</strong> ${location}</p>
+                                            <p style="margin:4px 0;color:#374151;"><strong>Time:</strong> ${loginTime}</p>
+                                            <p style="margin:4px 0;color:#374151;"><strong>IP:</strong> ${loginIp}</p>
+                                        </div>
+                                        <p style="color:#6B7280;font-size:14px;">If this was you, no action is needed.</p>
+                                        <p style="color:#EF4444;font-size:14px;font-weight:600;">If this wasn't you, open the app and go to Settings > Security to review your active sessions and secure your account.</p>
+                                    </div>
+                                `,
+                            }),
+                        }).catch(err => logger.error('[Auth] New device email failed:', err));
+                    }
+
+                    logger.info(`[Auth] New device login for user ${user.id} from ${location} (${loginFp.hash})`);
+                }
+            } catch (err) {
+                logger.error('[Auth] New device detection error (non-blocking):', err);
+            }
+        })();
+
         // Check if 2FA is enabled
         if (user.twoFactorEnabled) {
             // Import 2FA service and create challenge
@@ -402,6 +630,7 @@ router.post('/login', rateLimiters.auth, async (req, res, next) => {
             type: req.headers['x-device-type'] as string,
             name: req.headers['x-device-name'] as string,
             ip: req.ip,
+            fingerprint: loginFp.hash,
         }, rememberMe);
 
         res.json({
@@ -445,6 +674,259 @@ router.post('/logout', authenticate, async (req: AuthRequest, res, next) => {
     }
 });
 
+// ============================================
+// SESSION MANAGEMENT
+// ============================================
+
+// GET /api/v1/auth/sessions — List all active sessions for the current user
+router.get('/sessions', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const sessions = await prisma.session.findMany({
+            where: {
+                userId: req.userId!,
+                expiresAt: { gt: new Date() },
+            },
+            select: {
+                id: true,
+                deviceType: true,
+                deviceName: true,
+                ipAddress: true,
+                fingerprint: true,
+                createdAt: true,
+                expiresAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        // Determine which session is the current one
+        const authHeader = req.headers.authorization;
+        const token = authHeader?.split(' ')[1];
+        let currentSessionId: string | null = null;
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { sessionId: string };
+                currentSessionId = decoded.sessionId;
+            } catch {
+                // Token decode failed — not critical
+            }
+        }
+
+        const enriched = sessions.map(s => ({
+            id: s.id,
+            deviceType: s.deviceType || 'Unknown',
+            deviceName: s.deviceName || 'Unknown device',
+            ipAddress: s.ipAddress ? s.ipAddress.substring(0, 3) + '***' : null, // Partially mask IP
+            createdAt: s.createdAt.toISOString(),
+            expiresAt: s.expiresAt.toISOString(),
+            isCurrent: s.id === currentSessionId,
+        }));
+
+        res.json({ sessions: enriched, count: enriched.length });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// DELETE /api/v1/auth/sessions/:sessionId — Revoke a specific session
+router.delete('/sessions/:sessionId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { sessionId } = req.params;
+
+        // Verify the session belongs to this user
+        const session = await prisma.session.findUnique({
+            where: { id: sessionId },
+            select: { userId: true },
+        });
+
+        if (!session) {
+            return res.status(404).json({ error: 'Session not found' });
+        }
+
+        if (session.userId !== req.userId) {
+            return res.status(403).json({ error: 'You can only revoke your own sessions' });
+        }
+
+        // Don't allow revoking the current session (use logout for that)
+        const authHeader = req.headers.authorization;
+        const token = authHeader?.split(' ')[1];
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { sessionId: string };
+                if (decoded.sessionId === sessionId) {
+                    return res.status(400).json({ error: 'Use logout to end your current session' });
+                }
+            } catch {
+                // Token decode failed — allow the revocation
+            }
+        }
+
+        await prisma.session.delete({ where: { id: sessionId } });
+
+        await logSecurityEvent({
+            action: 'SESSION_REVOKED',
+            userId: req.userId,
+            ipAddress: getClientIP(req),
+            details: { revokedSessionId: sessionId },
+            severity: 'LOW',
+        }).catch(() => {});
+
+        res.json({ message: 'Session revoked successfully' });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// DELETE /api/v1/auth/sessions — Revoke ALL other sessions (panic button)
+router.delete('/sessions', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        // Get current session ID so we don't revoke it
+        const authHeader = req.headers.authorization;
+        const token = authHeader?.split(' ')[1];
+        let currentSessionId: string | null = null;
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { sessionId: string };
+                currentSessionId = decoded.sessionId;
+            } catch {
+                // If we can't decode, revoke everything
+            }
+        }
+
+        const result = await prisma.session.deleteMany({
+            where: {
+                userId: req.userId!,
+                ...(currentSessionId ? { id: { not: currentSessionId } } : {}),
+            },
+        });
+
+        await logSecurityEvent({
+            action: 'ALL_SESSIONS_REVOKED',
+            userId: req.userId,
+            ipAddress: getClientIP(req),
+            details: { revokedCount: result.count },
+            severity: 'MEDIUM',
+        }).catch(() => {});
+
+        res.json({ message: `${result.count} session(s) revoked`, count: result.count });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// EMAIL VERIFICATION
+// ============================================
+
+// POST /api/v1/auth/send-verification-email
+router.post('/send-verification-email', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.userId },
+            select: { id: true, email: true, emailVerified: true },
+        });
+
+        if (!user) throw new AppError('User not found', 404);
+        if (user.emailVerified) {
+            return res.json({ message: 'Email already verified', alreadyVerified: true });
+        }
+
+        // Rate limit: max 3 OTP sends per email per hour
+        const { cache } = await import('../services/cache/RedisCache.js');
+        const rateLimitKey = `email_otp_rate:${user.email}`;
+        const sendCount = await cache.increment(rateLimitKey, 3600);
+        if (sendCount > 3) {
+            throw new AppError('Too many verification emails sent. Please try again in an hour.', 429);
+        }
+
+        // Generate 6-digit OTP
+        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        const otpKey = `email_otp:${user.id}`;
+        await cache.set(otpKey, otp, 300); // 5-minute TTL
+
+        // Send email via Resend (if configured)
+        const resendKey = process.env.RESEND_API_KEY;
+        if (resendKey) {
+            await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${resendKey}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    from: process.env.EMAIL_FROM || 'noreply@0g.social',
+                    to: user.email,
+                    subject: 'Verify your 0G account',
+                    html: `
+                        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
+                            <h2 style="color: #111827; margin-bottom: 8px;">Verify your email</h2>
+                            <p style="color: #6B7280; font-size: 16px;">Enter this code in the app to verify your account:</p>
+                            <div style="background: #F3F4F6; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+                                <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #111827;">${otp}</span>
+                            </div>
+                            <p style="color: #9CA3AF; font-size: 14px;">This code expires in 5 minutes. If you didn't create an account, you can ignore this email.</p>
+                        </div>
+                    `,
+                }),
+            }).catch(err => logger.error('[Auth] Failed to send verification email:', err));
+        } else {
+            logger.warn('[Auth] RESEND_API_KEY not configured. OTP for dev:', { otp, userId: user.id });
+        }
+
+        res.json({ message: 'Verification code sent', sent: true });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/auth/verify-email
+router.post('/verify-email', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { code } = req.body;
+        if (!code || typeof code !== 'string' || code.length !== 6) {
+            throw new AppError('Please enter a valid 6-digit code', 400);
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: req.userId },
+            select: { id: true, emailVerified: true },
+        });
+
+        if (!user) throw new AppError('User not found', 404);
+        if (user.emailVerified) {
+            return res.json({ verified: true, message: 'Email already verified' });
+        }
+
+        // Check OTP from Redis
+        const { cache } = await import('../services/cache/RedisCache.js');
+        const otpKey = `email_otp:${user.id}`;
+        const storedOtp = await cache.get<string>(otpKey);
+
+        if (!storedOtp) {
+            throw new AppError('Verification code expired. Please request a new one.', 400);
+        }
+
+        if (storedOtp !== code.trim()) {
+            throw new AppError('Invalid verification code. Please try again.', 400);
+        }
+
+        // Mark email as verified and promote trust level
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { emailVerified: true, trustLevel: 1 },
+        });
+
+        // Clean up OTP
+        await cache.delete(otpKey).catch(() => {});
+
+        // Evaluate if user qualifies for further promotion
+        await evaluatePromotion(user.id).catch(() => {});
+
+        res.json({ verified: true, message: 'Email verified successfully' });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // GET /api/v1/auth/me
 router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
     try {
@@ -477,6 +959,9 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
                     publicBio: true,
                     // Onboarding
                     onboardingComplete: true,
+                    // Security & Trust
+                    emailVerified: true,
+                    trustLevel: true,
                     // Cultural profile
                     culturalProfile: true,
                     customGreeting: true,

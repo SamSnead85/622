@@ -388,6 +388,152 @@ export class InviteService {
 
         logger.info(`[InviteService] Email sent to ${config.to}`);
     }
+
+    /**
+     * Send an SMS invite to a phone number
+     * Uses Twilio when TWILIO_ACCOUNT_SID is set, otherwise logs a warning.
+     */
+    async sendSmsInvite(
+        senderId: string,
+        recipientPhone: string,
+        customMessage?: string
+    ): Promise<InviteResult> {
+        // Check rate limit
+        if (!(await this.checkRateLimit(senderId))) {
+            return {
+                inviteId: '',
+                method: 'SMS',
+                status: 'failed',
+                error: 'Daily invite limit reached',
+            };
+        }
+
+        // Get sender info
+        const sender = await prisma.user.findUnique({
+            where: { id: senderId },
+        });
+
+        if (!sender) {
+            return {
+                inviteId: '',
+                method: 'SMS',
+                status: 'failed',
+                error: 'Sender not found',
+            };
+        }
+
+        // Generate referral code
+        const referralCode = this.generateReferralCode();
+        const baseUrl = process.env.APP_URL || 'https://0gravity.ai';
+        const joinUrl = `${baseUrl}/join?ref=${referralCode}`;
+
+        // Create invite record
+        const invite = await prisma.invite.create({
+            data: {
+                senderId,
+                recipientPhone,
+                method: 'SMS',
+                status: 'SENT',
+                referralCode,
+                message: customMessage,
+            },
+        });
+
+        // Build SMS body
+        const smsBody = customMessage
+            ? `${sender.displayName} invited you to 0G: "${customMessage}" — Join here: ${joinUrl}`
+            : `${sender.displayName} invited you to join 0G — a private, encrypted social platform. Join here: ${joinUrl}`;
+
+        try {
+            await this.sendSms(recipientPhone, smsBody);
+
+            return {
+                inviteId: invite.id,
+                method: 'SMS',
+                status: 'sent',
+            };
+        } catch (error) {
+            await prisma.invite.update({
+                where: { id: invite.id },
+                data: { status: 'BOUNCED' },
+            });
+
+            return {
+                inviteId: invite.id,
+                method: 'SMS',
+                status: 'failed',
+                error: error instanceof Error ? error.message : 'Failed to send SMS',
+            };
+        }
+    }
+
+    /**
+     * Send bulk SMS invites to multiple phone numbers (max 20)
+     */
+    async sendBulkSmsInvites(
+        senderId: string,
+        phones: string[],
+        customMessage?: string
+    ): Promise<BulkInviteResult> {
+        const results: InviteResult[] = [];
+        let sent = 0;
+        let failed = 0;
+
+        // Limit to 20 per batch
+        const batch = phones.slice(0, 20);
+
+        for (const phone of batch) {
+            const result = await this.sendSmsInvite(senderId, phone, customMessage);
+
+            if (result.status === 'sent') {
+                sent++;
+            } else {
+                failed++;
+            }
+
+            results.push(result);
+        }
+
+        return { sent, failed, results };
+    }
+
+    /**
+     * Send an SMS via Twilio when configured, otherwise log a warning.
+     * Twilio is dynamically imported so the service works without the SDK
+     * when TWILIO_ACCOUNT_SID is not set.
+     */
+    private async sendSms(to: string, body: string): Promise<void> {
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const authToken = process.env.TWILIO_AUTH_TOKEN;
+        const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+
+        if (!accountSid || !authToken || !fromNumber) {
+            logger.warn(
+                '[InviteService] ⚠️ Twilio is not configured — SMS invite will NOT be delivered.',
+            );
+            logger.info(`[InviteService] Would have sent SMS to: ${to}`);
+            logger.info(`[InviteService] Body: ${body}`);
+            return;
+        }
+
+        try {
+            // Dynamic import — twilio is an optional dependency
+            const twilioModule = await import(/* webpackIgnore: true */ 'twilio' as string);
+            const createClient = twilioModule.default || twilioModule;
+            const client = createClient(accountSid, authToken);
+
+            await client.messages.create({
+                body,
+                to,
+                from: fromNumber,
+            });
+
+            logger.info(`[InviteService] SMS sent to ${to}`);
+        } catch (importError) {
+            logger.error('[InviteService] Failed to load twilio SDK. Install with: npm install twilio');
+            throw new Error('SMS service unavailable — twilio SDK not installed');
+        }
+    }
 }
 
 export const inviteService = new InviteService();

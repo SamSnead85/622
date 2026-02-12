@@ -1,0 +1,373 @@
+// ============================================
+// Email Verification Screen — 6-digit OTP input
+// Shown after signup, before username selection
+// ============================================
+
+import { useState, useRef, useCallback, useEffect } from 'react';
+import {
+    View,
+    Text,
+    TextInput,
+    StyleSheet,
+    TouchableOpacity,
+    ActivityIndicator,
+    Keyboard,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import { typography, spacing } from '@zerog/ui';
+import { useAuthStore } from '../../stores';
+import { apiFetch, API } from '../../lib/api';
+import { useTheme } from '../../contexts/ThemeContext';
+
+const OTP_LENGTH = 6;
+
+export default function VerifyEmailScreen() {
+    const { colors: c, isDark } = useTheme();
+    const router = useRouter();
+    const insets = useSafeAreaInsets();
+    const { user } = useAuthStore();
+
+    const [code, setCode] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [isResending, setIsResending] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState(false);
+    const [resendCooldown, setResendCooldown] = useState(60);
+
+    const inputRefs = useRef<(TextInput | null)[]>([]);
+
+    // Resend cooldown timer
+    useEffect(() => {
+        if (resendCooldown <= 0) return;
+        const timer = setInterval(() => {
+            setResendCooldown(prev => Math.max(0, prev - 1));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [resendCooldown]);
+
+    const handleCodeChange = useCallback((text: string, index: number) => {
+        const newCode = [...code];
+
+        if (text.length > 1) {
+            // Handle paste — distribute digits across inputs
+            const digits = text.replace(/\D/g, '').split('').slice(0, OTP_LENGTH);
+            for (let i = 0; i < digits.length; i++) {
+                if (index + i < OTP_LENGTH) {
+                    newCode[index + i] = digits[i];
+                }
+            }
+            setCode(newCode);
+            const nextIndex = Math.min(index + digits.length, OTP_LENGTH - 1);
+            inputRefs.current[nextIndex]?.focus();
+        } else {
+            newCode[index] = text.replace(/\D/g, '');
+            setCode(newCode);
+            if (text && index < OTP_LENGTH - 1) {
+                inputRefs.current[index + 1]?.focus();
+            }
+        }
+
+        setError(null);
+    }, [code]);
+
+    const handleKeyPress = useCallback((key: string, index: number) => {
+        if (key === 'Backspace' && !code[index] && index > 0) {
+            const newCode = [...code];
+            newCode[index - 1] = '';
+            setCode(newCode);
+            inputRefs.current[index - 1]?.focus();
+        }
+    }, [code]);
+
+    const handleVerify = useCallback(async () => {
+        const fullCode = code.join('');
+        if (fullCode.length !== OTP_LENGTH) {
+            setError('Please enter the full 6-digit code');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            return;
+        }
+
+        Keyboard.dismiss();
+        setIsVerifying(true);
+        setError(null);
+
+        try {
+            await apiFetch(API.verifyEmail || '/api/v1/auth/verify-email', {
+                method: 'POST',
+                body: JSON.stringify({ code: fullCode }),
+            });
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setSuccess(true);
+
+            // Brief delay to show success, then navigate
+            setTimeout(() => {
+                router.replace('/(auth)/username' as any);
+            }, 800);
+        } catch (err: any) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            setError(err?.data?.error || err?.message || 'Invalid code. Please try again.');
+        } finally {
+            setIsVerifying(false);
+        }
+    }, [code, router]);
+
+    const handleResend = useCallback(async () => {
+        if (resendCooldown > 0 || isResending) return;
+
+        setIsResending(true);
+        setError(null);
+
+        try {
+            await apiFetch(API.sendVerificationEmail || '/api/v1/auth/send-verification-email', {
+                method: 'POST',
+            });
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setResendCooldown(60);
+            setCode(Array(OTP_LENGTH).fill(''));
+            inputRefs.current[0]?.focus();
+        } catch (err: any) {
+            setError(err?.data?.error || 'Failed to resend code');
+        } finally {
+            setIsResending(false);
+        }
+    }, [resendCooldown, isResending]);
+
+    const handleSkip = useCallback(() => {
+        // Allow skip but user won't be able to post until verified
+        router.replace('/(auth)/username' as any);
+    }, [router]);
+
+    // Auto-submit when all digits entered
+    useEffect(() => {
+        const fullCode = code.join('');
+        if (fullCode.length === OTP_LENGTH && !isVerifying) {
+            handleVerify();
+        }
+    }, [code, isVerifying, handleVerify]);
+
+    return (
+        <View style={[styles.container, { backgroundColor: c.obsidian[900], paddingTop: insets.top + 40, paddingBottom: insets.bottom + 20 }]}>
+            {/* Shield icon */}
+            <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.iconWrap}>
+                <View style={[styles.iconCircle, { backgroundColor: c.emerald[500] + '15' }]}>
+                    <Ionicons name="shield-checkmark" size={40} color={c.emerald[500]} />
+                </View>
+            </Animated.View>
+
+            {/* Title */}
+            <Animated.View entering={FadeInDown.delay(200).duration(500)}>
+                <Text style={[styles.title, { color: c.text.primary }]}>
+                    Verify your email
+                </Text>
+                <Text style={[styles.subtitle, { color: c.text.secondary }]}>
+                    We sent a 6-digit code to{'\n'}
+                    <Text style={{ color: c.text.primary, fontWeight: '600' }}>
+                        {user?.email || 'your email'}
+                    </Text>
+                </Text>
+            </Animated.View>
+
+            {/* OTP Input */}
+            <Animated.View entering={FadeInDown.delay(300).duration(500)} style={styles.otpRow}>
+                {Array.from({ length: OTP_LENGTH }).map((_, i) => (
+                    <TextInput
+                        key={i}
+                        ref={ref => { inputRefs.current[i] = ref; }}
+                        style={[
+                            styles.otpInput,
+                            {
+                                backgroundColor: c.obsidian[700],
+                                borderColor: code[i]
+                                    ? (success ? c.emerald[500] : c.text.primary)
+                                    : (error ? c.coral[500] : c.border.subtle),
+                                color: c.text.primary,
+                            },
+                        ]}
+                        value={code[i]}
+                        onChangeText={text => handleCodeChange(text, i)}
+                        onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
+                        keyboardType="number-pad"
+                        maxLength={i === 0 ? OTP_LENGTH : 1} // Allow paste on first input
+                        textContentType="oneTimeCode"
+                        autoComplete="one-time-code"
+                        autoFocus={i === 0}
+                        selectTextOnFocus
+                        accessibilityLabel={`Digit ${i + 1} of ${OTP_LENGTH}`}
+                    />
+                ))}
+            </Animated.View>
+
+            {/* Error */}
+            {error && (
+                <Animated.View entering={FadeIn.duration(200)}>
+                    <Text style={[styles.errorText, { color: c.coral[400] }]}>{error}</Text>
+                </Animated.View>
+            )}
+
+            {/* Success */}
+            {success && (
+                <Animated.View entering={FadeIn.duration(200)} style={styles.successRow}>
+                    <Ionicons name="checkmark-circle" size={20} color={c.emerald[500]} />
+                    <Text style={[styles.successText, { color: c.emerald[500] }]}>Email verified!</Text>
+                </Animated.View>
+            )}
+
+            {/* Verify button */}
+            <Animated.View entering={FadeInDown.delay(400).duration(500)} style={styles.buttonWrap}>
+                <TouchableOpacity
+                    onPress={handleVerify}
+                    disabled={isVerifying || success || code.join('').length !== OTP_LENGTH}
+                    style={[
+                        styles.verifyButton,
+                        {
+                            backgroundColor: c.text.primary,
+                            opacity: (isVerifying || success || code.join('').length !== OTP_LENGTH) ? 0.5 : 1,
+                        },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Verify email"
+                >
+                    {isVerifying ? (
+                        <ActivityIndicator color={c.obsidian[900]} size="small" />
+                    ) : (
+                        <Text style={[styles.verifyButtonText, { color: c.obsidian[900] }]}>
+                            Verify
+                        </Text>
+                    )}
+                </TouchableOpacity>
+            </Animated.View>
+
+            {/* Resend */}
+            <Animated.View entering={FadeInDown.delay(500).duration(500)} style={styles.resendWrap}>
+                <Text style={[styles.resendLabel, { color: c.text.tertiary }]}>
+                    Didn't get the code?
+                </Text>
+                <TouchableOpacity
+                    onPress={handleResend}
+                    disabled={resendCooldown > 0 || isResending}
+                    accessibilityRole="button"
+                    accessibilityLabel={resendCooldown > 0 ? `Resend available in ${resendCooldown} seconds` : 'Resend code'}
+                >
+                    <Text style={[
+                        styles.resendButton,
+                        { color: resendCooldown > 0 ? c.text.tertiary : c.azure[500] },
+                    ]}>
+                        {isResending ? 'Sending...' : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
+                    </Text>
+                </TouchableOpacity>
+            </Animated.View>
+
+            {/* Skip */}
+            <TouchableOpacity onPress={handleSkip} style={styles.skipWrap} accessibilityRole="button" accessibilityLabel="Skip verification for now">
+                <Text style={[styles.skipText, { color: c.text.tertiary }]}>
+                    Skip for now
+                </Text>
+                <Text style={[styles.skipNote, { color: c.text.tertiary }]}>
+                    You'll need to verify before posting
+                </Text>
+            </TouchableOpacity>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        paddingHorizontal: spacing.xl,
+    },
+    iconWrap: {
+        marginBottom: spacing.lg,
+    },
+    iconCircle: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    title: {
+        fontSize: typography.sizes['2xl'],
+        fontWeight: '700' as const,
+        textAlign: 'center',
+        marginBottom: spacing.sm,
+    },
+    subtitle: {
+        fontSize: typography.sizes.md,
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: spacing.xl,
+    },
+    otpRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: spacing.lg,
+    },
+    otpInput: {
+        width: 48,
+        height: 56,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        textAlign: 'center',
+        fontSize: 22,
+        fontWeight: '700' as const,
+    },
+    errorText: {
+        fontSize: typography.sizes.sm,
+        textAlign: 'center',
+        marginBottom: spacing.md,
+    },
+    successRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: spacing.md,
+    },
+    successText: {
+        fontSize: typography.sizes.md,
+        fontWeight: '600' as const,
+    },
+    buttonWrap: {
+        width: '100%',
+        marginBottom: spacing.lg,
+    },
+    verifyButton: {
+        height: 52,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    verifyButtonText: {
+        fontSize: typography.sizes.md,
+        fontWeight: '700' as const,
+    },
+    resendWrap: {
+        alignItems: 'center',
+        marginBottom: spacing.xl,
+    },
+    resendLabel: {
+        fontSize: typography.sizes.sm,
+        marginBottom: 4,
+    },
+    resendButton: {
+        fontSize: typography.sizes.sm,
+        fontWeight: '600' as const,
+    },
+    skipWrap: {
+        alignItems: 'center',
+        marginTop: 'auto',
+    },
+    skipText: {
+        fontSize: typography.sizes.sm,
+        fontWeight: '500' as const,
+    },
+    skipNote: {
+        fontSize: typography.sizes.xs,
+        marginTop: 2,
+    },
+});

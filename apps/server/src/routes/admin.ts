@@ -2,6 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
+import { getRecentThreats, getThreatSummary } from '../services/securityMonitor.js';
+import { blockIP, getClientIP, logSecurityEvent, SecurityEvents } from '../services/security.js';
+import { recordBan } from '../services/evasionDetection.js';
+import { sendAlert } from '../services/alerting.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -347,7 +352,10 @@ router.get('/posts', authenticate, requireAdmin, async (req: AuthRequest, res, n
 // DELETE /api/v1/admin/posts/:id — Delete a post
 router.delete('/posts/:id', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        await prisma.post.delete({ where: { id: req.params.id } });
+        await prisma.post.update({
+            where: { id: req.params.id },
+            data: { deletedAt: new Date() },
+        });
         res.json({ success: true });
     } catch (error) {
         next(error);
@@ -427,6 +435,205 @@ router.get('/stats', authenticate, requireAdmin, async (req: AuthRequest, res, n
             pendingReports,
             activeStrikes,
         });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// SECURITY: THREAT DASHBOARD
+// ============================================
+
+// GET /api/v1/admin/threats — Recent threat events
+router.get('/threats', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+    try {
+        const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+        const threats = getRecentThreats(limit);
+        res.json({ threats, count: threats.length });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/admin/threats/summary — Threat statistics
+router.get('/threats/summary', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+    try {
+        const summary = getThreatSummary();
+
+        // Add shadow-banned count
+        const shadowBannedCount = await prisma.user.count({ where: { isShadowBanned: true } });
+        const blockedIPCount = await prisma.blockedIP.count();
+        const bannedFingerprintCount = await prisma.bannedFingerprint.count();
+        const bannedDomainCount = await prisma.bannedEmailDomain.count();
+
+        res.json({
+            ...summary,
+            shadowBannedCount,
+            blockedIPCount,
+            bannedFingerprintCount,
+            bannedDomainCount,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/admin/security/audit-log — Security audit log
+router.get('/security/audit-log', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+    try {
+        const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+        const offset = parseInt(req.query.offset as string) || 0;
+        const action = req.query.action as string | undefined;
+        const severity = req.query.severity as string | undefined;
+
+        const where: any = {};
+        if (action) where.action = action;
+        if (severity) where.severity = severity;
+
+        const [logs, total] = await Promise.all([
+            prisma.securityAuditLog.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip: offset,
+            }),
+            prisma.securityAuditLog.count({ where }),
+        ]);
+
+        res.json({ logs, total, limit, offset });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/admin/threats/action — Take action on a threat
+router.post('/threats/action', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+    try {
+        const schema = z.object({
+            action: z.enum(['ban_user', 'shadow_ban', 'block_ip', 'dismiss', 'approve_post']),
+            userId: z.string().optional(),
+            ip: z.string().optional(),
+            postId: z.string().optional(),
+            reason: z.string().optional(),
+        });
+
+        const data = schema.parse(req.body);
+
+        switch (data.action) {
+            case 'ban_user': {
+                if (!data.userId) throw new Error('userId required for ban_user');
+                const user = await prisma.user.update({
+                    where: { id: data.userId },
+                    data: { isBanned: true },
+                });
+                // Record ban for evasion detection
+                const userSessions = await prisma.session.findMany({
+                    where: { userId: data.userId },
+                    select: { ipAddress: true },
+                    take: 1,
+                    orderBy: { createdAt: 'desc' },
+                });
+                await recordBan(data.userId, userSessions[0]?.ipAddress || '0.0.0.0');
+                // Delete all sessions
+                await prisma.session.deleteMany({ where: { userId: data.userId } });
+                // Hide all their posts
+                await prisma.post.updateMany({
+                    where: { userId: data.userId },
+                    data: { visible: false },
+                });
+                await logSecurityEvent({
+                    action: SecurityEvents.ADMIN_ACTION,
+                    userId: req.userId,
+                    ipAddress: getClientIP(req),
+                    details: { action: 'ban_user', targetUserId: data.userId, reason: data.reason },
+                    severity: 'HIGH',
+                });
+                res.json({ success: true, message: `User ${user.username} banned` });
+                break;
+            }
+            case 'shadow_ban': {
+                if (!data.userId) throw new Error('userId required for shadow_ban');
+                const user = await prisma.user.update({
+                    where: { id: data.userId },
+                    data: { isShadowBanned: true },
+                });
+                // Hide all their posts
+                await prisma.post.updateMany({
+                    where: { userId: data.userId },
+                    data: { visible: false },
+                });
+                await logSecurityEvent({
+                    action: SecurityEvents.ADMIN_ACTION,
+                    userId: req.userId,
+                    ipAddress: getClientIP(req),
+                    details: { action: 'shadow_ban', targetUserId: data.userId, reason: data.reason },
+                    severity: 'MEDIUM',
+                });
+                res.json({ success: true, message: `User ${user.username} shadow-banned` });
+                break;
+            }
+            case 'block_ip': {
+                if (!data.ip) throw new Error('ip required for block_ip');
+                await blockIP({
+                    ipAddress: data.ip,
+                    reason: data.reason || 'Blocked by admin',
+                    threatLevel: 'HIGH',
+                    source: 'admin',
+                    createdById: req.userId,
+                });
+                res.json({ success: true, message: `IP ${data.ip} blocked` });
+                break;
+            }
+            case 'approve_post': {
+                if (!data.postId) throw new Error('postId required for approve_post');
+                await prisma.post.update({
+                    where: { id: data.postId },
+                    data: { visible: true },
+                });
+                res.json({ success: true, message: 'Post approved and visible' });
+                break;
+            }
+            case 'dismiss': {
+                res.json({ success: true, message: 'Threat dismissed' });
+                break;
+            }
+        }
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/admin/moderation-queue — Posts held for review
+router.get('/moderation-queue', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+    try {
+        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const offset = parseInt(req.query.offset as string) || 0;
+
+        const [posts, total] = await Promise.all([
+            prisma.post.findMany({
+                where: { visible: false, deletedAt: null },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            username: true,
+                            displayName: true,
+                            avatarUrl: true,
+                            trustLevel: true,
+                            emailVerified: true,
+                            createdAt: true,
+                            isShadowBanned: true,
+                        },
+                    },
+                },
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip: offset,
+            }),
+            prisma.post.count({ where: { visible: false, deletedAt: null } }),
+        ]);
+
+        res.json({ posts, total, limit, offset });
     } catch (error) {
         next(error);
     }

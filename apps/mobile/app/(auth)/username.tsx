@@ -1,4 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+// ============================================
+// Username Screen — Clean, theme-aware
+// Simplified: pick a username, then go to main app
+// ============================================
+
+import { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,78 +12,47 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    Animated,
-    Easing,
-    Dimensions,
+    TextInput,
+    ActivityIndicator,
+    Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Button, Input, colors, typography, spacing } from '@zerog/ui';
+import Animated, {
+    FadeInDown,
+    FadeInUp,
+    FadeIn,
+} from 'react-native-reanimated';
+import { typography, spacing } from '@zerog/ui';
 import { BackButton } from '../../components';
 import { apiFetch, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
+import { useTheme } from '../../contexts/ThemeContext';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-// Animated particle for ambient background
-const FloatingOrb = ({ delay, size, startX, startY }: { delay: number; size: number; startX: number; startY: number }) => {
-    const translateY = useRef(new Animated.Value(0)).current;
-    const translateX = useRef(new Animated.Value(0)).current;
-    const opacity = useRef(new Animated.Value(0)).current;
-    const scale = useRef(new Animated.Value(0.8)).current;
-
-    useEffect(() => {
-        const animate = () => {
-            Animated.loop(
-                Animated.sequence([
-                    Animated.parallel([
-                        Animated.timing(translateY, { toValue: -80, duration: 8000 + Math.random() * 4000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-                        Animated.timing(translateX, { toValue: Math.random() * 40 - 20, duration: 6000 + Math.random() * 3000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-                        Animated.sequence([
-                            Animated.timing(opacity, { toValue: 0.6, duration: 2000, useNativeDriver: true }),
-                            Animated.timing(opacity, { toValue: 0.2, duration: 4000, useNativeDriver: true }),
-                        ]),
-                        Animated.sequence([
-                            Animated.timing(scale, { toValue: 1.2, duration: 4000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-                            Animated.timing(scale, { toValue: 0.8, duration: 4000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-                        ]),
-                    ]),
-                    Animated.parallel([
-                        Animated.timing(translateY, { toValue: 0, duration: 0, useNativeDriver: true }),
-                        Animated.timing(translateX, { toValue: 0, duration: 0, useNativeDriver: true }),
-                        Animated.timing(opacity, { toValue: 0, duration: 0, useNativeDriver: true }),
-                        Animated.timing(scale, { toValue: 0.8, duration: 0, useNativeDriver: true }),
-                    ]),
-                ])
-            ).start();
-        };
-        const timer = setTimeout(animate, delay);
-        return () => clearTimeout(timer);
-    }, []);
-
+function RequirementItem({ met, text, colors: c }: { met: boolean; text: string; colors: any }) {
     return (
-        <Animated.View
-            style={[
-                styles.floatingOrb,
-                { width: size, height: size, left: startX, top: startY, opacity, transform: [{ translateY }, { translateX }, { scale }] },
-            ]}
-        >
-            <LinearGradient
-                colors={[colors.surface.goldStrong, colors.surface.goldSubtle, 'transparent']}
-                style={StyleSheet.absoluteFill}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
+        <View style={reqStyles.item}>
+            <Ionicons
+                name={met ? 'checkmark-circle' : 'ellipse-outline'}
+                size={14}
+                color={met ? c.emerald[500] : c.text.muted}
             />
-        </Animated.View>
+            <Text style={[reqStyles.text, { color: met ? c.text.secondary : c.text.muted }]}>{text}</Text>
+        </View>
     );
-};
+}
+
+const reqStyles = StyleSheet.create({
+    item: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    text: { fontSize: typography.fontSize.sm },
+});
 
 export default function UsernameScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { colors: c, isDark } = useTheme();
     const refreshUser = useAuthStore((s) => s.refreshUser);
 
     const [username, setUsername] = useState('');
@@ -87,272 +61,308 @@ export default function UsernameScreen() {
     const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
     const [error, setError] = useState('');
 
-    const headerAnim = useRef(new Animated.Value(0)).current;
-    const cardAnim = useRef(new Animated.Value(0)).current;
-    const shimmerAnim = useRef(new Animated.Value(0)).current;
-    const pulseAnim = useRef(new Animated.Value(1)).current;
-
-    useEffect(() => {
-        Animated.stagger(120, [
-            Animated.spring(headerAnim, { toValue: 1, tension: 40, friction: 8, useNativeDriver: true }),
-            Animated.spring(cardAnim, { toValue: 1, tension: 35, friction: 9, useNativeDriver: true }),
-        ]).start();
-
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(shimmerAnim, { toValue: 1, duration: 2000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-                Animated.timing(shimmerAnim, { toValue: 0, duration: 2000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-            ])
-        ).start();
-
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(pulseAnim, { toValue: 1.02, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-                Animated.timing(pulseAnim, { toValue: 1, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-            ])
-        ).start();
-    }, []);
-
+    // Username availability check
     useEffect(() => {
         if (username.length < 3) { setIsAvailable(null); return; }
         setChecking(true);
         const timer = setTimeout(async () => {
             try {
-                const data = await apiFetch<any>(API.checkUsername, { method: 'POST', body: JSON.stringify({ username }) });
+                const data = await apiFetch<any>(API.checkUsername, {
+                    method: 'POST',
+                    body: JSON.stringify({ username }),
+                });
                 const available = data.available !== false;
                 setIsAvailable(available);
                 if (available) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            } catch { setIsAvailable(true); }
-            finally { setChecking(false); }
+            } catch {
+                // On error, don't block the user
+                setIsAvailable(true);
+            } finally {
+                setChecking(false);
+            }
         }, 500);
         return () => clearTimeout(timer);
     }, [username]);
 
-    const handleContinue = async () => {
-        if (!username || username.length < 3) { setError('Username must be at least 3 characters'); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); return; }
-        if (!isAvailable) { setError('This username is not available'); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); return; }
+    const handleContinue = useCallback(async () => {
+        if (!username || username.length < 3) {
+            setError('Username must be at least 3 characters');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            return;
+        }
+        if (!isAvailable) {
+            setError('This username is not available');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            return;
+        }
+
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setLoading(true);
         try {
             await apiFetch(API.updateProfile, { method: 'PUT', body: JSON.stringify({ username }) });
+            // Mark onboarding as complete — user goes straight to the app
+            try {
+                await apiFetch(API.onboardingComplete, { method: 'POST' });
+            } catch {
+                // Non-critical — continue even if this fails
+            }
             await refreshUser();
-            router.replace('/discover');
+            router.replace('/(tabs)' as any);
         } catch (err: any) {
             setError(err?.data?.error || err?.message || 'Unable to update username.');
-        } finally { setLoading(false); }
-    };
+        } finally {
+            setLoading(false);
+        }
+    }, [username, isAvailable, refreshUser, router]);
 
-    const headerTranslateY = headerAnim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] });
-    const cardTranslateY = cardAnim.interpolate({ inputRange: [0, 1], outputRange: [60, 0] });
-    const shimmerTranslate = shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [-200, 200] });
+    const handleSkip = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        // Mark onboarding complete even when skipping
+        try {
+            await apiFetch(API.onboardingComplete, { method: 'POST' });
+            await refreshUser();
+        } catch {
+            // Non-critical
+        }
+        router.replace('/(tabs)' as any);
+    }, [refreshUser, router]);
 
     return (
-        <View style={styles.container}>
-            <LinearGradient colors={[colors.obsidian[900], colors.obsidian[900], colors.obsidian[900]]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-
-            <View style={styles.orbContainer} pointerEvents="none">
-                <FloatingOrb delay={0} size={120} startX={SCREEN_WIDTH * 0.1} startY={SCREEN_HEIGHT * 0.2} />
-                <FloatingOrb delay={1500} size={80} startX={SCREEN_WIDTH * 0.7} startY={SCREEN_HEIGHT * 0.15} />
-                <FloatingOrb delay={3000} size={100} startX={SCREEN_WIDTH * 0.5} startY={SCREEN_HEIGHT * 0.6} />
-                <FloatingOrb delay={4500} size={60} startX={SCREEN_WIDTH * 0.2} startY={SCREEN_HEIGHT * 0.7} />
-            </View>
-
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+        <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.keyboardView}
+            >
                 <ScrollView
-                    contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}
+                    contentContainerStyle={[
+                        styles.scrollContent,
+                        { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24 },
+                    ]}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 >
                     {/* Back button */}
                     <BackButton
                         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.back(); }}
-                        style={{ alignSelf: 'flex-start', marginBottom: spacing['2xl'] }}
+                        style={{ alignSelf: 'flex-start', marginBottom: spacing.xl }}
                     />
 
-                    <Animated.View style={[styles.header, { opacity: headerAnim, transform: [{ translateY: headerTranslateY }] }]}>
-                        <View style={styles.stepIndicator}>
-                            <View style={[styles.stepDot, styles.stepDotCompleted]} />
-                            <View style={styles.stepLine} />
-                            <View style={[styles.stepDot, styles.stepDotActive]}>
-                                <Animated.View style={[styles.stepDotPulse, { transform: [{ scale: pulseAnim }] }]} />
-                            </View>
-                            <View style={[styles.stepLine, styles.stepLineInactive]} />
-                            <View style={[styles.stepDot, styles.stepDotInactive]} />
-                        </View>
-                        <Text style={styles.title}>Choose your identity</Text>
-                        <Text style={styles.subtitle}>This is how others will find and recognize you on 0G</Text>
+                    {/* Header */}
+                    <Animated.View entering={FadeInDown.delay(100).duration(500)}>
+                        <Text style={[styles.title, { color: c.text.primary }]}>
+                            What would you like{'\n'}to be called?
+                        </Text>
+                        <Text style={[styles.subtitle, { color: c.text.secondary }]}>
+                            Your @handle is unique. You can change it anytime
+                        </Text>
                     </Animated.View>
 
-                    <Animated.View style={[styles.cardContainer, { opacity: cardAnim, transform: [{ translateY: cardTranslateY }] }]}>
-                        <View style={styles.glassCard}>
-                            <View style={styles.cardGlow} />
-                            <Animated.View style={[styles.shimmer, { transform: [{ translateX: shimmerTranslate }] }]} />
-                            <View style={styles.cardContent}>
-                                <View style={styles.previewContainer}>
-                                    <View style={styles.avatarPlaceholder}>
-                                        <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.avatarGradient}>
-                                            <Text style={styles.avatarLetter}>{username ? username[0].toUpperCase() : '?'}</Text>
-                                        </LinearGradient>
+                    {/* Username Input */}
+                    <Animated.View entering={FadeInDown.delay(200).duration(500)} style={styles.inputSection}>
+                        <Text style={[styles.inputLabel, { color: c.text.secondary }]}>Handle</Text>
+                        <View style={[
+                            styles.inputWrapper,
+                            {
+                                backgroundColor: isDark ? c.surface.glass : c.obsidian[700],
+                                borderColor: error
+                                    ? c.coral[500]
+                                    : isAvailable === true
+                                        ? c.emerald[500] + '60'
+                                        : c.border.subtle,
+                            },
+                        ]}>
+                            <Text style={[styles.inputPrefix, { color: c.text.muted }]}>@</Text>
+                            <TextInput
+                                style={[styles.textInput, { color: c.text.primary }]}
+                                placeholder="username"
+                                placeholderTextColor={c.text.muted}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                autoFocus
+                                value={username}
+                                onChangeText={(text) => {
+                                    setUsername(text.toLowerCase().replace(/[^a-z0-9_]/g, ''));
+                                    setError('');
+                                }}
+                                selectionColor={isDark ? c.gold[500] : c.azure[500]}
+                                accessibilityLabel="Username"
+                            />
+                            <View style={styles.statusIndicator}>
+                                {checking && (
+                                    <ActivityIndicator size="small" color={c.text.muted} />
+                                )}
+                                {!checking && isAvailable === true && (
+                                    <View style={[styles.statusDot, { backgroundColor: c.emerald[500] }]}>
+                                        <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                                     </View>
-                                    <View style={styles.previewText}>
-                                        <Text style={styles.previewHandle}>@{username || 'username'}</Text>
-                                        <Text style={styles.previewMeta}>0gravity.ai/{username || 'username'}</Text>
+                                )}
+                                {!checking && isAvailable === false && (
+                                    <View style={[styles.statusDot, { backgroundColor: c.coral[500] }]}>
+                                        <Ionicons name="close" size={14} color="#FFFFFF" />
                                     </View>
-                                </View>
-
-                                <View style={styles.inputSection}>
-                                    <Text style={styles.inputLabel}>Username</Text>
-                                    <View style={styles.inputWrapper}>
-                                        <Text style={styles.inputPrefix}>@</Text>
-                                        <View style={styles.inputContainer}>
-                                            <Input
-                                                placeholder="Choose a unique username"
-                                                autoCapitalize="none"
-                                                autoCorrect={false}
-                                                value={username}
-                                                onChangeText={(text) => { setUsername(text.toLowerCase().replace(/[^a-z0-9_]/g, '')); setError(''); }}
-                                                containerStyle={styles.inputOverride}
-                                            />
-                                        </View>
-                                        <View style={styles.statusIndicator}>
-                                            {checking && <View style={styles.checkingDot}><View style={styles.loadingDot} /></View>}
-                                            {!checking && isAvailable === true && (
-                                                <View style={styles.availableIndicator}>
-                                                    <Ionicons name="checkmark" size={14} color={colors.text.primary} />
-                                                </View>
-                                            )}
-                                            {!checking && isAvailable === false && (
-                                                <View style={styles.unavailableIndicator}>
-                                                    <Ionicons name="close" size={14} color={colors.text.primary} />
-                                                </View>
-                                            )}
-                                        </View>
-                                    </View>
-
-                                    <View style={styles.availabilityMessage}>
-                                        {checking && <Text style={styles.checkingText}>Checking availability...</Text>}
-                                        {!checking && isAvailable === true && <Text style={styles.availableText}>Username is available</Text>}
-                                        {!checking && isAvailable === false && <Text style={styles.unavailableText}>Username is taken</Text>}
-                                        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                                    </View>
-
-                                    <View style={styles.requirements}>
-                                        <RequirementItem met={username.length >= 3} text="At least 3 characters" />
-                                        <RequirementItem met={username.length <= 20} text="Maximum 20 characters" />
-                                        <RequirementItem met={/^[a-z0-9_]*$/.test(username)} text="Only lowercase, numbers, underscores" />
-                                    </View>
-                                </View>
+                                )}
                             </View>
+                        </View>
+
+                        {/* Status messages */}
+                        <View style={styles.statusMessage}>
+                            {checking && (
+                                <Text style={[styles.statusText, { color: c.text.muted }]}>Checking availability...</Text>
+                            )}
+                            {!checking && isAvailable === true && (
+                                <Text style={[styles.statusText, { color: c.emerald[500] }]}>Username is available</Text>
+                            )}
+                            {!checking && isAvailable === false && (
+                                <Text style={[styles.statusText, { color: c.coral[500] }]}>Username is taken</Text>
+                            )}
+                            {error ? <Text style={[styles.statusText, { color: c.coral[500] }]}>{error}</Text> : null}
+                        </View>
+
+                        {/* Requirements */}
+                        <View style={styles.requirements}>
+                            <RequirementItem met={username.length >= 3} text="At least 3 characters" colors={c} />
+                            <RequirementItem met={username.length <= 20} text="Maximum 20 characters" colors={c} />
+                            <RequirementItem met={/^[a-z0-9_]*$/.test(username)} text="Only lowercase, numbers, underscores" colors={c} />
                         </View>
                     </Animated.View>
 
-                    <Animated.View style={[styles.ctaContainer, { transform: [{ scale: pulseAnim }] }]}>
-                        <TouchableOpacity
-                            style={[styles.premiumButton, (!isAvailable || loading) && styles.premiumButtonDisabled]}
+                    {/* Spacer */}
+                    <View style={styles.spacer} />
+
+                    {/* CTA */}
+                    <Animated.View entering={FadeInUp.delay(300).duration(500)}>
+                        <Pressable
                             onPress={handleContinue}
                             disabled={!isAvailable || loading}
-                            activeOpacity={0.9}
+                            style={({ pressed }) => [
+                                styles.continueButton,
+                                {
+                                    backgroundColor: isAvailable && !loading ? c.text.primary : c.obsidian[600],
+                                    opacity: pressed ? 0.9 : 1,
+                                    transform: [{ scale: pressed ? 0.98 : 1 }],
+                                },
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel={loading ? 'Setting up your profile' : 'Sign up'}
                         >
-                            <LinearGradient
-                                colors={isAvailable ? [colors.gold[400], colors.gold[600]] : [colors.obsidian[500], colors.obsidian[600]]}
-                                style={styles.premiumButtonGradient}
-                                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                            >
-                                {loading ? (
-                                    <View style={styles.loadingContainer}>
-                                        <View style={styles.loadingSpinner} />
-                                        <Text style={styles.premiumButtonText}>Creating your profile...</Text>
-                                    </View>
-                                ) : (
-                                    <>
-                                        <Text style={styles.premiumButtonText}>Continue to 0G</Text>
-                                        <Ionicons name="arrow-forward" size={20} color={colors.obsidian[900]} style={{ marginStart: spacing.sm }} />
-                                    </>
-                                )}
-                            </LinearGradient>
+                            {loading ? (
+                                <ActivityIndicator size="small" color={c.text.inverse} />
+                            ) : (
+                                <Text style={[styles.continueButtonText, { color: c.text.inverse }]}>
+                                    Sign up
+                                </Text>
+                            )}
+                        </Pressable>
+
+                        <TouchableOpacity
+                            style={styles.skipButton}
+                            onPress={handleSkip}
+                            accessibilityRole="button"
+                            accessibilityLabel="Skip username selection"
+                        >
+                            <Text style={[styles.skipText, { color: c.text.muted }]}>I'll do this later</Text>
                         </TouchableOpacity>
                     </Animated.View>
-
-                    <TouchableOpacity style={styles.skipButton} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.replace('/discover'); }}>
-                        <Text style={styles.skipText}>I'll do this later</Text>
-                    </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
         </View>
     );
 }
 
-function RequirementItem({ met, text }: { met: boolean; text: string }) {
-    return (
-        <View style={styles.requirementItem}>
-            <Ionicons name={met ? 'checkmark-circle' : 'ellipse-outline'} size={14} color={met ? colors.emerald[500] : colors.obsidian[500]} />
-            <Text style={[styles.requirementText, met && styles.requirementTextMet]}>{text}</Text>
-        </View>
-    );
-}
-
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.obsidian[900] },
-    orbContainer: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
-    floatingOrb: { position: 'absolute', borderRadius: 999 },
+    container: { flex: 1 },
     keyboardView: { flex: 1 },
     scrollContent: { flexGrow: 1, paddingHorizontal: spacing.xl },
-    backButton: { alignSelf: 'flex-start', marginBottom: spacing['2xl'] },
-    backButtonInner: {
-        width: 44, height: 44, borderRadius: 22,
-        backgroundColor: colors.surface.glassHover, borderWidth: 1, borderColor: colors.border.subtle,
-        alignItems: 'center', justifyContent: 'center',
+
+    title: {
+        fontSize: 28,
+        fontWeight: '700',
+        letterSpacing: -0.8,
+        lineHeight: 36,
+        fontFamily: 'Inter-Bold',
     },
-    header: { alignItems: 'center', marginBottom: spacing['2xl'] },
-    stepIndicator: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xl },
-    stepDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.obsidian[500], alignItems: 'center', justifyContent: 'center' },
-    stepDotCompleted: { backgroundColor: colors.gold[500] },
-    stepDotActive: { backgroundColor: 'transparent', borderWidth: 2, borderColor: colors.gold[500] },
-    stepDotPulse: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.gold[500] },
-    stepDotInactive: { backgroundColor: colors.obsidian[600] },
-    stepLine: { width: 40, height: 2, backgroundColor: colors.gold[500], marginHorizontal: spacing.xs },
-    stepLineInactive: { backgroundColor: colors.obsidian[600] },
-    title: { fontSize: 32, fontWeight: '700', color: colors.text.primary, fontFamily: 'Inter-Bold', textAlign: 'center', letterSpacing: -0.8 },
-    subtitle: { fontSize: typography.fontSize.base, color: colors.text.secondary, textAlign: 'center', marginTop: spacing.sm, lineHeight: 22, maxWidth: 280 },
-    cardContainer: { marginBottom: spacing['2xl'] },
-    glassCard: { backgroundColor: colors.surface.glass, borderRadius: 24, borderWidth: 1, borderColor: colors.border.subtle, overflow: 'hidden', position: 'relative' },
-    cardGlow: { position: 'absolute', top: -100, left: '50%', marginLeft: -100, width: 200, height: 200, borderRadius: 100, backgroundColor: colors.surface.goldSubtle },
-    shimmer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.surface.glass, transform: [{ skewX: '-20deg' }], width: 100 },
-    cardContent: { padding: spacing.xl },
-    previewContainer: { flexDirection: 'row', alignItems: 'center', paddingBottom: spacing.xl, borderBottomWidth: 1, borderBottomColor: colors.border.subtle, marginBottom: spacing.xl },
-    avatarPlaceholder: { width: 64, height: 64, borderRadius: 32, overflow: 'hidden' },
-    avatarGradient: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    avatarLetter: { fontSize: 28, fontWeight: '700', color: colors.obsidian[900] },
-    previewText: { marginStart: spacing.lg, flex: 1 },
-    previewHandle: { fontSize: 20, fontWeight: '600', color: colors.text.primary, fontFamily: 'Inter-SemiBold' },
-    previewMeta: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 4 },
-    inputSection: {},
-    inputLabel: { fontSize: typography.fontSize.sm, fontWeight: '500', color: colors.text.secondary, marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 1 },
-    inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface.glass, borderRadius: 16, borderWidth: 1, borderColor: colors.border.subtle, paddingHorizontal: spacing.lg },
-    inputPrefix: { fontSize: 18, color: colors.gold[500], fontWeight: '600', marginEnd: spacing.xs },
-    inputContainer: { flex: 1 },
-    inputOverride: { marginBottom: 0 },
-    statusIndicator: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-    checkingDot: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.gold[500], borderTopColor: 'transparent' },
-    loadingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.gold[500] },
-    availableIndicator: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.emerald[500], alignItems: 'center', justifyContent: 'center' },
-    unavailableIndicator: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.coral[500], alignItems: 'center', justifyContent: 'center' },
-    availabilityMessage: { minHeight: 24, marginTop: spacing.sm },
-    checkingText: { fontSize: typography.fontSize.sm, color: colors.text.muted },
-    availableText: { fontSize: typography.fontSize.sm, color: colors.emerald[500], fontWeight: '500' },
-    unavailableText: { fontSize: typography.fontSize.sm, color: colors.coral[500], fontWeight: '500' },
-    errorText: { fontSize: typography.fontSize.sm, color: colors.coral[500] },
-    requirements: { marginTop: spacing.xl, gap: spacing.sm },
-    requirementItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    requirementText: { fontSize: typography.fontSize.sm, color: colors.text.muted },
-    requirementTextMet: { color: colors.text.secondary },
-    ctaContainer: { marginBottom: spacing.lg },
-    premiumButton: { borderRadius: 16, overflow: 'hidden', shadowColor: colors.gold[500], shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8 },
-    premiumButtonDisabled: { shadowOpacity: 0 },
-    premiumButtonGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 18, paddingHorizontal: spacing.xl },
-    premiumButtonText: { fontSize: typography.fontSize.lg, fontWeight: '600', color: colors.obsidian[900], fontFamily: 'Inter-SemiBold', letterSpacing: -0.3 },
-    loadingContainer: { flexDirection: 'row', alignItems: 'center' },
-    loadingSpinner: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.obsidian[900], borderTopColor: 'transparent', marginEnd: spacing.sm },
-    skipButton: { alignSelf: 'center', paddingVertical: spacing.md },
-    skipText: { fontSize: typography.fontSize.base, color: colors.text.muted },
+    subtitle: {
+        fontSize: typography.fontSize.base,
+        marginTop: spacing.sm,
+        lineHeight: 22,
+    },
+
+    // ---- Input ----
+    inputSection: {
+        marginTop: spacing['2xl'],
+    },
+    inputLabel: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '500',
+        marginBottom: spacing.sm,
+        fontFamily: 'Inter-Medium',
+    },
+    inputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 14,
+        borderWidth: 1.5,
+        paddingHorizontal: spacing.md,
+    },
+    inputPrefix: {
+        fontSize: 18,
+        fontWeight: '500',
+        marginEnd: spacing.xs,
+    },
+    textInput: {
+        flex: 1,
+        fontSize: typography.fontSize.base,
+        paddingVertical: spacing.md,
+        minHeight: 50,
+        fontFamily: 'Inter',
+    },
+    statusIndicator: {
+        width: 28,
+        height: 28,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    statusDot: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    statusMessage: {
+        minHeight: 20,
+        marginTop: spacing.sm,
+    },
+    statusText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '500',
+    },
+    requirements: {
+        marginTop: spacing.xl,
+        gap: spacing.sm,
+    },
+
+    // ---- Spacer ----
+    spacer: { flex: 1, minHeight: 40 },
+
+    // ---- CTA ----
+    continueButton: {
+        height: 52,
+        borderRadius: 26,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    continueButtonText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        fontFamily: 'Inter-SemiBold',
+    },
+    skipButton: {
+        alignSelf: 'center',
+        paddingVertical: spacing.lg,
+    },
+    skipText: {
+        fontSize: typography.fontSize.base,
+        fontFamily: 'Inter-Medium',
+    },
 });

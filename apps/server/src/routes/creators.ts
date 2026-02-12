@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
 import crypto from 'crypto';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -11,6 +12,94 @@ const requireAdmin = (req: AuthRequest, res: any, next: any) => {
     }
     next();
 };
+
+// ============================================
+// FOUNDING CREATOR: Claim founding creator status with access code
+// ============================================
+router.post('/founding', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { accessCode } = req.body;
+        if (!accessCode) {
+            return res.status(400).json({ error: 'Access code is required' });
+        }
+
+        const userId = req.user!.id;
+
+        // Check if already a creator
+        const existing = await prisma.creatorProfile.findUnique({ where: { userId } });
+        if (existing) {
+            return res.status(400).json({ error: 'You already have a creator profile' });
+        }
+
+        // Validate the access code — must be type 'founding_creator' and still usable
+        const codeRecord = await prisma.accessCode.findUnique({
+            where: { code: accessCode.trim().toUpperCase() },
+        });
+
+        if (!codeRecord || codeRecord.type !== 'founding_creator') {
+            return res.status(400).json({ error: 'Invalid founding creator code' });
+        }
+        if (!codeRecord.isActive || (codeRecord.maxUses > 0 && codeRecord.useCount >= codeRecord.maxUses)) {
+            return res.status(400).json({ error: 'This code has already been used or is no longer active' });
+        }
+        if (codeRecord.expiresAt && codeRecord.expiresAt < new Date()) {
+            return res.status(400).json({ error: 'This code has expired' });
+        }
+
+        // Increment code usage
+        await prisma.accessCode.update({
+            where: { id: codeRecord.id },
+            data: { useCount: { increment: 1 } },
+        });
+
+        // Generate referral code for the creator
+        const referralCode = `FC${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+
+        // Create the CreatorProfile with partner tier, active status, verified badge
+        const profile = await prisma.creatorProfile.create({
+            data: {
+                userId,
+                tier: 'partner',
+                status: 'active',
+                hasVerifiedBadge: true,
+                hasPrioritySupport: true,
+                referralCode,
+                earlyAccessSlots: 50, // Founding creators get generous invite slots
+                agreedToTerms: true,
+                agreedAt: new Date(),
+            },
+        });
+
+        // Auto-elevate the user: trustLevel 3, isVerified, emailVerified
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                trustLevel: 3,
+                isVerified: true,
+                emailVerified: true,
+            },
+        });
+
+        // Send a welcome notification
+        await prisma.notification.create({
+            data: {
+                userId,
+                type: 'SYSTEM' as const,
+                message: `Welcome to 0G as a Founding Creator! 🎉 Your account has full access — you can post, go live, message, and invite your community from day one. Thank you for being part of our founding story.`,
+            },
+        }).catch(() => {});
+
+        logger.info(`[Creators] Founding creator activated: userId=${userId}, code=${accessCode}`);
+
+        res.json({
+            success: true,
+            profile,
+            message: 'Welcome aboard! You are now a Founding Creator with full platform access.',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
 
 // ============================================
 // PUBLIC: Apply to Creator Program

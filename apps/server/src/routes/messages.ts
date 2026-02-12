@@ -125,6 +125,11 @@ router.get('/conversations', authenticate, async (req: AuthRequest, res, next) =
                                 },
                             },
                         },
+                        _count: {
+                            select: {
+                                messages: true,
+                            },
+                        },
                     },
                 },
             },
@@ -135,6 +140,19 @@ router.get('/conversations', authenticate, async (req: AuthRequest, res, next) =
             },
         });
 
+        // Fetch accurate unread counts per conversation using each participant's lastReadAt
+        const unreadCountsPerConversation = new Map<string, number>();
+        for (const cp of conversations) {
+            const count = await prisma.message.count({
+                where: {
+                    conversationId: cp.conversationId,
+                    senderId: { not: req.userId },
+                    createdAt: { gt: cp.lastReadAt },
+                },
+            });
+            unreadCountsPerConversation.set(cp.conversationId, count);
+        }
+
         const result = conversations.map((cp) => {
             const otherParticipants = cp.conversation.participants
                 .filter((p) => p.userId !== req.userId)
@@ -142,10 +160,8 @@ router.get('/conversations', authenticate, async (req: AuthRequest, res, next) =
 
             const lastMessage = cp.conversation.messages[0];
 
-            // Calculate unread count
-            const unreadMessages = cp.conversation.messages.filter(
-                (m) => m.createdAt > cp.lastReadAt && m.senderId !== req.userId
-            );
+            // Use accurate unread count from separate query
+            const unreadCount = unreadCountsPerConversation.get(cp.conversationId) || 0;
 
             return {
                 id: cp.conversation.id,
@@ -160,7 +176,7 @@ router.get('/conversations', authenticate, async (req: AuthRequest, res, next) =
                     senderUsername: lastMessage.sender.username,
                     createdAt: lastMessage.createdAt,
                 } : null,
-                unreadCount: unreadMessages.length,
+                unreadCount,
                 isMuted: cp.isMuted,
                 updatedAt: cp.conversation.updatedAt,
             };

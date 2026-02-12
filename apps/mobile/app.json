@@ -12,7 +12,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0A0908"
+      "backgroundColor": "#000000"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -60,7 +60,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0A0908"
+        "backgroundColor": "#000000"
       },
       "package": "com.zerog.social",
       "versionCode": 1,
@@ -105,7 +105,7 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#0A0908"
+          "color": "#000000"
         }
       ],
       "@sentry/react-native",

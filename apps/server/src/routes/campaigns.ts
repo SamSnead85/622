@@ -236,20 +236,56 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res, next)
 });
 
 // PATCH /api/v1/campaigns/:id — Update campaign (admin)
+const updateCampaignSchema = z.object({
+    title: z.string().min(1).max(200).optional(),
+    description: z.string().min(1).max(2000).optional(),
+    status: z.enum(['DRAFT', 'ACTIVE', 'PAUSED', 'ENDED']).optional(),
+    slug: z.string().max(200).regex(/^[a-z0-9-]*$/, 'Slug must be lowercase alphanumeric with hyphens').optional(),
+    coverUrl: z.string().url().optional().nullable(),
+    logoUrl: z.string().url().optional().nullable(),
+    brandColor: z.string().max(20).optional(),
+    eventDate: z.string().datetime().optional().nullable(),
+    eventLocation: z.string().max(500).optional().nullable(),
+    eventCity: z.string().max(200).optional().nullable(),
+    incentiveType: z.string().max(100).optional().nullable(),
+    incentiveValue: z.string().max(500).optional().nullable(),
+    incentiveRules: z.string().max(2000).optional().nullable(),
+    raffleDrawDate: z.string().datetime().optional().nullable(),
+    signupGoal: z.number().int().positive().max(1_000_000).optional().nullable(),
+    partnerName: z.string().max(200).optional().nullable(),
+    partnerLogo: z.string().url().optional().nullable(),
+    partnerUrl: z.string().url().optional().nullable(),
+    expiresAt: z.string().datetime().optional().nullable(),
+    imageUrl: z.string().url().optional().nullable(),
+    maxSignups: z.number().int().positive().optional().nullable(),
+    startDate: z.string().datetime().optional().nullable(),
+    endDate: z.string().datetime().optional().nullable(),
+    requirements: z.string().max(2000).optional().nullable(),
+}).strict();
+
 router.patch('/:id', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        // Whitelist allowed fields to prevent overwriting id, createdById, etc.
-        const { title, description, status, startDate, endDate, maxSignups, slug, imageUrl, requirements } = req.body;
+        const parsed = updateCampaignSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({ error: 'Invalid update data', details: parsed.error.flatten() });
+        }
+
+        // Only include defined fields in the update
         const updateData: Record<string, any> = {};
-        if (title !== undefined) updateData.title = title;
-        if (description !== undefined) updateData.description = description;
-        if (status !== undefined) updateData.status = status;
-        if (startDate !== undefined) updateData.startDate = new Date(startDate);
-        if (endDate !== undefined) updateData.endDate = new Date(endDate);
-        if (maxSignups !== undefined) updateData.maxSignups = maxSignups;
-        if (slug !== undefined) updateData.slug = slug;
-        if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
-        if (requirements !== undefined) updateData.requirements = requirements;
+        for (const [key, value] of Object.entries(parsed.data)) {
+            if (value !== undefined) {
+                // Convert date strings to Date objects
+                if (['startDate', 'endDate', 'eventDate', 'raffleDrawDate', 'expiresAt'].includes(key) && typeof value === 'string') {
+                    updateData[key] = new Date(value);
+                } else {
+                    updateData[key] = value;
+                }
+            }
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ error: 'No fields to update' });
+        }
 
         const campaign = await prisma.campaign.update({
             where: { id: req.params.id },

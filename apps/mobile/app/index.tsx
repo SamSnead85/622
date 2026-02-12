@@ -10,6 +10,7 @@ import ReanimatedView, {
 } from 'react-native-reanimated';
 import { colors } from '@zerog/ui';
 import { useAuthStore } from '../stores';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function SplashIndex() {
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -107,11 +108,9 @@ export default function SplashIndex() {
         }, 400);
     }, []);
 
-    // If authenticated, check if onboarding is complete
+    // If authenticated, go straight to main app
+    // Onboarding completion is now handled at signup/username step
     if (isInitialized && isAuthenticated) {
-        if (user && !user.onboardingComplete) {
-            return <Redirect href="/discover" />;
-        }
         return <Redirect href="/(tabs)" />;
     }
 

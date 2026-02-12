@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import * as Sentry from '@sentry/node';
 import { rateLimiters } from './middleware/rateLimit.js';
 import { securityHeaders, requestId, requestFirewall } from './middleware/securityHeaders.js';
+import { securityMiddleware } from './services/security.js';
 
 import { authRouter } from './routes/auth.js';
 import { usersRouter } from './routes/users.js';
@@ -187,6 +188,9 @@ app.use(helmet({
 app.use(requestId());
 app.use(securityHeaders());
 app.use(requestFirewall());
+
+// Security middleware — IP blocking, geo-blocking, attaches clientIP/clientGeo to request
+app.use(securityMiddleware());
 
 // HTTPS redirect in production
 if (process.env.NODE_ENV === 'production') {

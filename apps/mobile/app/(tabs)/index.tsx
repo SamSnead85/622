@@ -529,20 +529,26 @@ const FeedPostCard = memo(
         onSave,
         onPress,
         onReorder,
+        onDelete,
+        onReport,
         isVideoActive,
         isFirstVideo,
         isOwnPost,
         shouldReduceData,
+        isHighPriority,
     }: {
         post: Post;
         onLike: (id: string) => void;
         onSave: (id: string) => void;
         onPress: (id: string) => void;
         onReorder?: (id: string, direction: 'up' | 'down') => void;
+        onDelete?: (id: string) => void;
+        onReport?: (id: string, reason?: string) => void;
         isVideoActive: boolean;
         isFirstVideo: boolean;
         isOwnPost?: boolean;
         shouldReduceData?: boolean;
+        isHighPriority?: boolean;
     }) => {
         const router = useRouter();
         const lastTapRef = useRef(0);
@@ -582,35 +588,80 @@ const FeedPostCard = memo(
 
         const handleLongPress = () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            const options = ['Copy Link', 'Share', 'Report', 'Cancel'];
-            const cancelIndex = 3;
-            const destructiveIndex = 2;
+            const postUrl = `https://0gravity.ai/post/${post.id}`;
 
-            if (Platform.OS === 'ios') {
-                ActionSheetIOS.showActionSheetWithOptions(
-                    { options, cancelButtonIndex: cancelIndex, destructiveButtonIndex: destructiveIndex },
-                    (buttonIndex) => {
-                        if (buttonIndex === 1) {
-                            Share.share({
-                                message: `Check out this post on 0G`,
-                                url: `https://0gravity.ai/post/${post.id}`,
-                            });
-                        }
+            if (isOwnPost) {
+                // Owner sees Copy Link, Share, Delete
+                const options = ['Copy Link', 'Share', 'Delete', 'Cancel'];
+                const cancelIndex = 3;
+                const destructiveIndex = 2;
+
+                const handleAction = (buttonIndex: number | undefined) => {
+                    if (buttonIndex === 0) {
+                        Clipboard.setStringAsync(postUrl).catch(() => {});
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    } else if (buttonIndex === 1) {
+                        Share.share({ message: `Check out this post on 0G`, url: postUrl });
+                    } else if (buttonIndex === 2) {
+                        Alert.alert('Delete Post', 'This action cannot be undone.', [
+                            { text: 'Cancel', style: 'cancel' },
+                            {
+                                text: 'Delete',
+                                style: 'destructive',
+                                onPress: () => onDelete?.(post.id),
+                            },
+                        ]);
                     }
-                );
+                };
+
+                if (Platform.OS === 'ios') {
+                    ActionSheetIOS.showActionSheetWithOptions(
+                        { options, cancelButtonIndex: cancelIndex, destructiveButtonIndex: destructiveIndex },
+                        handleAction
+                    );
+                } else {
+                    Alert.alert('Post Options', undefined, [
+                        { text: 'Copy Link', onPress: () => handleAction(0) },
+                        { text: 'Share', onPress: () => handleAction(1) },
+                        { text: 'Delete', style: 'destructive', onPress: () => handleAction(2) },
+                        { text: 'Cancel', style: 'cancel' },
+                    ]);
+                }
             } else {
-                Alert.alert('Post Options', 'Choose an action', [
-                    { text: 'Copy Link' },
-                    {
-                        text: 'Share',
-                        onPress: () =>
-                            Share.share({
-                                message: `Check out this post on 0G: https://0gravity.ai/post/${post.id}`,
-                            }),
-                    },
-                    { text: 'Report', style: 'destructive' },
-                    { text: 'Cancel', style: 'cancel' },
-                ]);
+                // Non-owner sees Copy Link, Share, Report
+                const options = ['Copy Link', 'Share', 'Report', 'Cancel'];
+                const cancelIndex = 3;
+                const destructiveIndex = 2;
+
+                const handleAction = (buttonIndex: number | undefined) => {
+                    if (buttonIndex === 0) {
+                        Clipboard.setStringAsync(postUrl).catch(() => {});
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    } else if (buttonIndex === 1) {
+                        Share.share({ message: `Check out this post on 0G`, url: postUrl });
+                    } else if (buttonIndex === 2) {
+                        Alert.alert('Report Post', 'Why are you reporting this post?', [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Spam', onPress: () => onReport?.(post.id, 'spam') },
+                            { text: 'Inappropriate', onPress: () => onReport?.(post.id, 'inappropriate') },
+                            { text: 'Harassment', style: 'destructive', onPress: () => onReport?.(post.id, 'harassment') },
+                        ]);
+                    }
+                };
+
+                if (Platform.OS === 'ios') {
+                    ActionSheetIOS.showActionSheetWithOptions(
+                        { options, cancelButtonIndex: cancelIndex, destructiveButtonIndex: destructiveIndex },
+                        handleAction
+                    );
+                } else {
+                    Alert.alert('Post Options', undefined, [
+                        { text: 'Copy Link', onPress: () => handleAction(0) },
+                        { text: 'Share', onPress: () => handleAction(1) },
+                        { text: 'Report', style: 'destructive', onPress: () => handleAction(2) },
+                        { text: 'Cancel', style: 'cancel' },
+                    ]);
+                }
             }
         };
 
@@ -621,7 +672,7 @@ const FeedPostCard = memo(
         const postLabel = `Post by ${authorName}${contentSummary ? `. ${contentSummary}` : ''}${post.mediaUrl ? '. Has media' : ''}. ${formatCount(post.likesCount)} likes, ${formatCount(post.commentsCount)} comments`;
 
         return (
-            <Animated.View entering={FadeInDown.duration(300).delay(50)}>
+            <View>
                 <Pressable
                     style={styles.postCard}
                     onPress={handleTap}
@@ -726,6 +777,7 @@ const FeedPostCard = memo(
                                     transition={IMAGE_PLACEHOLDER.transition}
                                     cachePolicy="memory-disk"
                                     recyclingKey={post.id}
+                                    priority={isHighPriority ? 'high' : 'normal'}
                                     accessibilityLabel={`Post image by ${post.author?.displayName || 'Anonymous'}`}
                                 />
                             )}
@@ -747,7 +799,7 @@ const FeedPostCard = memo(
                         >
                             <Ionicons
                                 name={post.isLiked ? 'heart' : 'heart-outline'}
-                                size={22}
+                                size={20}
                                 color={post.isLiked ? colors.coral[500] : colors.text.secondary}
                             />
                             <Text style={styles.actionCount}>
@@ -764,7 +816,7 @@ const FeedPostCard = memo(
                         >
                             <Ionicons
                                 name="chatbubble-outline"
-                                size={20}
+                                size={18}
                                 color={colors.text.secondary}
                             />
                             <Text style={styles.actionCount}>
@@ -785,7 +837,7 @@ const FeedPostCard = memo(
                         >
                             <Ionicons
                                 name="arrow-redo-outline"
-                                size={20}
+                                size={18}
                                 color={colors.text.secondary}
                             />
                             <Text style={styles.actionCount}>
@@ -838,7 +890,7 @@ const FeedPostCard = memo(
                         >
                             <Ionicons
                                 name={post.isSaved ? 'bookmark' : 'bookmark-outline'}
-                                size={20}
+                                size={18}
                                 color={post.isSaved ? colors.gold[500] : colors.text.secondary}
                             />
                         </TouchableOpacity>
@@ -880,7 +932,9 @@ const FeedPostCard = memo(
                         </View>
                     )}
                 </Pressable>
-            </Animated.View>
+                {/* Subtle spacing between posts — cleaner than hairline dividers */}
+                <View style={styles.postSpacer} />
+            </View>
         );
     },
     (prev, next) =>
@@ -892,7 +946,8 @@ const FeedPostCard = memo(
         prev.isVideoActive === next.isVideoActive &&
         prev.isFirstVideo === next.isFirstVideo &&
         prev.isOwnPost === next.isOwnPost &&
-        prev.shouldReduceData === next.shouldReduceData
+        prev.shouldReduceData === next.shouldReduceData &&
+        prev.isHighPriority === next.isHighPriority
 );
 
 // ============================================
@@ -1328,6 +1383,8 @@ export default function FeedScreen() {
     const savePost = useFeedStore((s) => s.savePost);
     const unsavePost = useFeedStore((s) => s.unsavePost);
     const reorderPost = useFeedStore((s) => s.movePost);
+    const deletePost = useFeedStore((s) => s.deletePost);
+    const reportPost = useFeedStore((s) => s.reportPost);
 
     const [feedType, setFeedType] = useState<'foryou' | 'following'>('foryou');
     const [feedView, setFeedView] = useState<'private' | 'community'>(
@@ -1341,6 +1398,7 @@ export default function FeedScreen() {
     const [seedDismissed, setSeedDismissed] = useState(true); // hidden until loaded
     const [checklistCompleted, setChecklistCompleted] = useState<Set<string>>(new Set(['account']));
     const [smartCardDismissed, setSmartCardDismissed] = useState(false);
+    const [firstPostDismissed, setFirstPostDismissed] = useState(false);
 
     // Load seed dismissed state and checklist completion from AsyncStorage
     useEffect(() => {
@@ -1348,6 +1406,14 @@ export default function FeedScreen() {
             setSeedDismissed(val === 'true');
         }).catch(() => { /* non-critical */ });
         AsyncStorage.getItem('smartCardDismissed').then(v => { if (v === 'true') setSmartCardDismissed(true); }).catch(() => {});
+        // First-post CTA: dismissed but re-shows after 24h if still no posts
+        AsyncStorage.getItem('firstPostDismissedAt').then(v => {
+            if (v) {
+                const dismissedAt = parseInt(v, 10);
+                const hoursSince = (Date.now() - dismissedAt) / (1000 * 60 * 60);
+                setFirstPostDismissed(hoursSince < 24);
+            }
+        }).catch(() => {});
         // Load checklist completion
         Promise.all(
             CHECKLIST_ITEMS.map(async (item) => {
@@ -1634,12 +1700,20 @@ export default function FeedScreen() {
     const keyExtractor = useCallback((item: Post) => item.id, []);
 
     const flatListContentStyle = useMemo(() => ({
-        paddingHorizontal: spacing.md,
         paddingBottom: 100,
     }), []);
 
+    // Estimated item height for getItemLayout — eliminates layout jumps
+    // Average post: header(56) + content(~60) + media(~260) + actions(44) + spacer(6) ≈ 426
+    const ESTIMATED_ITEM_HEIGHT = 426;
+    const getItemLayout = useCallback((_data: any, index: number) => ({
+        length: ESTIMATED_ITEM_HEIGHT,
+        offset: ESTIMATED_ITEM_HEIGHT * index,
+        index,
+    }), []);
+
     const renderPost = useCallback(
-        ({ item }: { item: Post }) => {
+        ({ item, index }: { item: Post; index: number }) => {
             return (
                 <FeedPostCard
                     post={item}
@@ -1649,6 +1723,7 @@ export default function FeedScreen() {
                     isVideoActive={item.mediaType === 'VIDEO' && activeVideoId === item.id}
                     isFirstVideo={item.mediaType === 'VIDEO' && activeVideoId === item.id}
                     shouldReduceData={shouldReduceData}
+                    isHighPriority={index < 3}
                 />
             );
         },
@@ -1699,8 +1774,52 @@ export default function FeedScreen() {
             ramadan || profileCompletion.percent < 100 || posts.length === 0
         );
 
+        // Show first-post CTA when user has 0 posts and hasn't permanently dismissed
+        const showFirstPostCTA = user && user.postsCount === 0 && !firstPostDismissed;
+
         return (
             <View style={styles.headerContainer}>
+                {/* Compact composer bar — always visible, tapping opens create screen */}
+                <TouchableOpacity
+                    style={[styles.composerBar, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}
+                    onPress={() => router.push('/create' as any)}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Create a new post"
+                    accessibilityHint="Tap to open the post composer"
+                >
+                    {user?.avatarUrl ? (
+                        <Image
+                            source={{ uri: user.avatarUrl }}
+                            style={styles.composerAvatar}
+                            placeholder={AVATAR_PLACEHOLDER.blurhash}
+                            transition={AVATAR_PLACEHOLDER.transition}
+                            cachePolicy="memory-disk"
+                        />
+                    ) : (
+                        <View style={[styles.composerAvatar, styles.composerAvatarPlaceholder]}>
+                            <Ionicons name="person" size={14} color={c.text.muted} />
+                        </View>
+                    )}
+                    <Text style={[styles.composerPlaceholder, { color: c.text.muted }]}>
+                        What&apos;s on your mind?
+                    </Text>
+                    <View style={styles.composerActions}>
+                        <TouchableOpacity
+                            onPress={() => router.push('/create' as any)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                            <Ionicons name="camera-outline" size={20} color={c.text.secondary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => router.push('/create' as any)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                            <Ionicons name="image-outline" size={20} color={c.text.secondary} />
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+
                 {/* Single smart onboarding card — one at a time, dismissible */}
                 {showSmartCard && (
                     <Animated.View entering={FadeInDown.duration(400)} style={styles.smartCard}>
@@ -1757,6 +1876,87 @@ export default function FeedScreen() {
 
                 {/* Stories strip — compact, stories only */}
                 <ActiveContactsStrip onCreatePress={() => router.push('/create' as any)} />
+
+                {/* Engagement Quick-Access Row — differentiator from competitors */}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.engagementStrip}
+                >
+                    {[
+                        { icon: 'paper-plane-outline' as const, label: 'Invite', route: '/invite-contacts', color: c.azure[500] },
+                        { icon: 'game-controller-outline' as const, label: 'Games', route: '/games', color: c.emerald[500] },
+                        { icon: 'radio-outline' as const, label: 'Go Live', route: '/campfire', color: c.coral[500] },
+                        { icon: 'call-outline' as const, label: 'Calls', route: '/call', color: c.gold[500] },
+                        { icon: 'mic-outline' as const, label: 'Spaces', route: '/spaces', color: c.amber[500] },
+                    ].map((item) => (
+                        <TouchableOpacity
+                            key={item.label}
+                            style={[styles.engagementBtn, { backgroundColor: c.surface.glassHover }]}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                router.push(item.route as any);
+                            }}
+                            activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel={item.label}
+                        >
+                            <View style={[styles.engagementIconWrap, { backgroundColor: item.color + '15' }]}>
+                                <Ionicons name={item.icon} size={18} color={item.color} />
+                                {/* Security badge overlay */}
+                                <View style={styles.engagementShield}>
+                                    <Ionicons name="shield-checkmark" size={8} color={c.emerald[500]} />
+                                </View>
+                            </View>
+                            <Text style={[styles.engagementLabel, { color: c.text.secondary }]}>{item.label}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+
+                {/* First Post CTA — prominent card when user has 0 posts */}
+                {showFirstPostCTA && (
+                    <View style={[styles.firstPostCard, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
+                        <LinearGradient
+                            colors={[colors.gold[500] + '12', colors.emerald[500] + '08', 'transparent']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={StyleSheet.absoluteFill}
+                        />
+                        <TouchableOpacity
+                            style={styles.firstPostCardInner}
+                            onPress={() => router.push('/create' as any)}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Share your first moment"
+                        >
+                            <View style={[styles.firstPostIcon, { backgroundColor: colors.gold[500] + '18' }]}>
+                                <Ionicons name="create-outline" size={24} color={colors.gold[500]} />
+                            </View>
+                            <View style={styles.firstPostText}>
+                                <Text style={[styles.firstPostTitle, { color: c.text.primary }]}>
+                                    Share your first moment
+                                </Text>
+                                <Text style={[styles.firstPostSubtitle, { color: c.text.secondary }]}>
+                                    Your community is waiting to hear from you
+                                </Text>
+                            </View>
+                            <Ionicons name="arrow-forward-circle" size={28} color={colors.gold[500]} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.firstPostDismiss}
+                            onPress={() => {
+                                setFirstPostDismissed(true);
+                                AsyncStorage.setItem('firstPostDismissedAt', String(Date.now())).catch(() => {});
+                            }}
+                            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                        >
+                            <Ionicons name="close" size={14} color={c.text.muted} />
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* Feed Tabs — Following / For You */}
+                <FeedTabs activeTab={feedType} onTabChange={handleTabChange} />
             </View>
         );
     };
@@ -1943,11 +2143,12 @@ export default function FeedScreen() {
                     accessibilityLabel={`${feedType === 'foryou' ? 'For You' : 'Following'} feed, ${posts.length} posts`}
                     onScroll={scrollHandler}
                     scrollEventThrottle={16}
+                    decelerationRate={0.998}
                     refreshControl={
                         <RefreshControl
                             refreshing={isRefreshing}
                             onRefresh={handleRefresh}
-                            tintColor={colors.gold[500]}
+                            tintColor={c.gold[500]}
                         />
                     }
                     onEndReached={handleLoadMore}
@@ -1956,14 +2157,18 @@ export default function FeedScreen() {
                     viewabilityConfig={viewabilityConfig}
                     ListEmptyComponent={renderEmpty}
                     ListFooterComponent={renderFooter}
-                    // Performance optimizations
+                    // Performance optimizations for liquid-smooth scrolling
                     removeClippedSubviews={true}
                     maxToRenderPerBatch={5}
                     windowSize={7}
-                    initialNumToRender={5}
-                    updateCellsBatchingPeriod={50}
-                    getItemLayout={undefined} // Variable height — use estimatedItemSize instead
+                    initialNumToRender={4}
+                    updateCellsBatchingPeriod={30}
+                    getItemLayout={getItemLayout}
                     maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+                    scrollToOverflowEnabled={true}
+                    bounces={true}
+                    overScrollMode="never"
+                    scrollIndicatorInsets={{ right: 1 }}
                 />
             </ErrorBoundary>
 
@@ -1974,7 +2179,7 @@ export default function FeedScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.obsidian[900] },
+    container: { flex: 1 },
     headerContainer: { paddingTop: spacing.sm },
 
     // Connection banner
@@ -2144,6 +2349,45 @@ const styles = StyleSheet.create({
         borderColor: colors.obsidian[900],
     },
 
+    // Engagement Quick-Access Strip
+    engagementStrip: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        gap: spacing.sm,
+    },
+    engagementBtn: {
+        alignItems: 'center',
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.md,
+        borderRadius: 12,
+        minWidth: 64,
+    },
+    engagementIconWrap: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+    },
+    engagementShield: {
+        position: 'absolute',
+        bottom: -2,
+        right: -2,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    engagementLabel: {
+        fontSize: 10,
+        fontWeight: '500',
+        marginTop: 4,
+        fontFamily: 'Inter-Medium',
+    },
+
     // Feed Tabs
     feedTabs: {
         flexDirection: 'row',
@@ -2177,15 +2421,14 @@ const styles = StyleSheet.create({
         borderRadius: 1,
     },
 
-    // Post card
+    // Post card — borderless, edge-to-edge for liquid-smooth scrolling
     postCard: {
-        backgroundColor: colors.surface.glass,
-        borderRadius: 16,
-        marginBottom: spacing.md,
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
+        marginBottom: 0,
         overflow: 'hidden',
         position: 'relative',
+    },
+    postSpacer: {
+        height: 6,
     },
     heartOverlay: {
         position: 'absolute',
@@ -2296,12 +2539,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
 
-    // Actions
+    // Actions — compact for cleaner look
     actionsBar: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
+        paddingVertical: 6,
     },
     actionsSpacer: {
         flex: 1,
@@ -2309,10 +2552,10 @@ const styles = StyleSheet.create({
     actionBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginEnd: spacing.lg,
-        minHeight: 44,
-        minWidth: 44,
-        paddingVertical: 4,
+        marginEnd: spacing.md,
+        minHeight: 36,
+        minWidth: 36,
+        paddingVertical: 2,
     },
     actionCount: {
         fontSize: typography.fontSize.sm,
@@ -2587,6 +2830,85 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         borderRadius: 12,
+        backgroundColor: colors.surface.glassHover,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    // Compact composer bar — Facebook/LinkedIn style "What's on your mind?"
+    composerBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: spacing.md,
+        marginBottom: spacing.sm,
+        paddingHorizontal: spacing.md,
+        paddingVertical: 10,
+        borderRadius: 24,
+        borderWidth: 1,
+        gap: spacing.sm,
+    },
+    composerAvatar: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+    },
+    composerAvatarPlaceholder: {
+        backgroundColor: colors.obsidian[500],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    composerPlaceholder: {
+        flex: 1,
+        fontSize: typography.fontSize.base,
+        fontFamily: 'Inter-Regular',
+    },
+    composerActions: {
+        flexDirection: 'row',
+        gap: spacing.md,
+    },
+
+    // First Post CTA — prominent card for users with 0 posts
+    firstPostCard: {
+        marginHorizontal: spacing.md,
+        marginBottom: spacing.sm,
+        borderRadius: 16,
+        borderWidth: 1,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    firstPostCardInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.md,
+        gap: spacing.md,
+    },
+    firstPostIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    firstPostText: {
+        flex: 1,
+    },
+    firstPostTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+    },
+    firstPostSubtitle: {
+        fontSize: 13,
+        marginTop: 2,
+        fontFamily: 'Inter-Regular',
+    },
+    firstPostDismiss: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
         backgroundColor: colors.surface.glassHover,
         alignItems: 'center',
         justifyContent: 'center',

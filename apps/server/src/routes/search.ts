@@ -207,8 +207,8 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
     }
 });
 
-// Trending endpoint
-router.get('/trending', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+// Trending endpoint — public data, no auth required
+router.get('/trending', async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const trending = await prisma.hashtag.findMany({
             orderBy: { usageCount: 'desc' },

@@ -43,6 +43,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { BackButton } from '../../components';
 import { useAuthStore } from '../../stores';
 import { apiFetch } from '../../lib/api';
+import { useTheme } from '../../contexts/ThemeContext';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -277,6 +278,7 @@ function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () =>
 export default function LoginScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { colors: c, isDark } = useTheme();
     const login = useAuthStore((s) => s.login);
     const appleLogin = useAuthStore((s) => s.appleLogin);
     const googleLogin = useAuthStore((s) => s.googleLogin);
@@ -555,10 +557,7 @@ export default function LoginScreen() {
     }, [email, password, login, router, biometricAvailable, biometricType, buttonScale]);
 
     return (
-        <LinearGradient
-            colors={[colors.obsidian[900], colors.obsidian[800]]}
-            style={styles.container}
-        >
+        <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
@@ -799,7 +798,7 @@ export default function LoginScreen() {
                     </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </LinearGradient>
+        </View>
     );
 }
 

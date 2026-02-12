@@ -18,9 +18,10 @@ interface TabIconProps {
     iconNameFocused: keyof typeof Ionicons.glyphMap;
     focused: boolean;
     badge?: number;
+    showShield?: boolean;
 }
 
-function TabIcon({ label, iconName, iconNameFocused, focused, badge }: TabIconProps) {
+function TabIcon({ label, iconName, iconNameFocused, focused, badge, showShield }: TabIconProps) {
     const { colors: c } = useTheme();
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const prevFocused = useRef(focused);
@@ -60,6 +61,11 @@ function TabIcon({ label, iconName, iconNameFocused, focused, badge }: TabIconPr
                         <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
                     </View>
                 )}
+                {showShield && (
+                    <View style={[styles.shieldBadge, { backgroundColor: c.obsidian[900] }]}>
+                        <Ionicons name="shield-checkmark" size={8} color={c.emerald[500]} />
+                    </View>
+                )}
             </View>
             <Text
                 style={[
@@ -84,8 +90,8 @@ export default function TabLayout() {
     const unreadCount = useNotificationsStore((s) => s.unreadCount);
 
     const tabBarBg = useMemo(() => ({
-        surface: { ...StyleSheet.absoluteFillObject, backgroundColor: c.obsidian[900], opacity: 0.92 } as const,
-        border: { position: 'absolute' as const, top: 0, left: 0, right: 0, height: 1, backgroundColor: c.border.subtle },
+        surface: { ...StyleSheet.absoluteFillObject, backgroundColor: c.obsidian[900], opacity: 0.98 } as const,
+        border: { position: 'absolute' as const, top: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: c.border.subtle },
     }), [c]);
 
     return (
@@ -126,13 +132,14 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="messages"
                 options={{
-                    tabBarAccessibilityLabel: 'Messages tab',
+                    tabBarAccessibilityLabel: 'Encrypted messages tab',
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
                             label="Messages"
                             iconName="chatbubbles-outline"
                             iconNameFocused="chatbubbles"
                             focused={focused}
+                            showShield
                         />
                     ),
                 }}
@@ -227,5 +234,15 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
         fontSize: 10,
         fontWeight: '700',
+    },
+    shieldBadge: {
+        position: 'absolute',
+        bottom: -1,
+        right: -3,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

@@ -112,6 +112,12 @@ model User {
   // ── Onboarding ──
   onboardingComplete         Boolean                   @default(false) // Has user completed the onboarding flow?
 
+  // ── Security & Trust ──
+  emailVerified              Boolean                   @default(false)
+  trustLevel                 Int                       @default(0)   // 0=new, 1=verified, 2=established, 3=trusted
+  isShadowBanned             Boolean                   @default(false)
+  deviceFingerprint          String?                   // SHA-256 hash of device characteristics
+
   // ── Cultural Profile System ──
   culturalProfile            String                    @default("standard") // standard | muslim | custom
   customGreeting             String?                   // User-defined greeting (for "custom" profile)
@@ -144,10 +150,11 @@ model Session {
   token      String   @unique
   deviceType String?
   deviceName String?
-  ipAddress  String?
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress        String?
+  fingerprint      String?   // Device fingerprint hash for drift detection
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([token])
@@ -294,6 +301,7 @@ model Post {
   viewCount    Int           @default(0)
   isPublic     Boolean       @default(true)
   isPinned     Boolean       @default(false)
+  visible      Boolean       @default(true) // false = held for moderation review (new accounts)
   deletedAt    DateTime?     // Soft delete support
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -2241,4 +2249,27 @@ model EventRSVP {
   @@unique([eventId, userId])
   @@index([eventId])
   @@index([userId])
+}
+
+// ── Security: Ban Evasion Prevention ──
+
+model BannedFingerprint {
+  id          String      @id @default(uuid())
+  fingerprint String      @unique // SHA-256 device fingerprint hash
+  reason      String?
+  bannedUserId String?    // Original banned user
+  createdAt   DateTime    @default(now())
+
+  @@index([fingerprint])
+}
+
+model BannedEmailDomain {
+  id          String      @id @default(uuid())
+  domain      String      @unique // e.g. "tempmail.xyz"
+  reason      String?
+  hitCount    Int         @default(0) // How many banned accounts used this domain
+  autoBlocked Boolean     @default(false) // Was this auto-detected or manually added?
+  createdAt   DateTime    @default(now())
+
+  @@index([domain])
 }

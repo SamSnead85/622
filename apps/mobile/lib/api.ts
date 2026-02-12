@@ -590,6 +590,8 @@ export const API = {
     appleAuth: '/api/v1/auth/apple',
     me: '/api/v1/auth/me',
     refresh: '/api/v1/auth/refresh',
+    sendVerificationEmail: '/api/v1/auth/send-verification-email',
+    verifyEmail: '/api/v1/auth/verify-email',
 
     // Posts & Feed
     feed: '/api/v1/posts/feed',

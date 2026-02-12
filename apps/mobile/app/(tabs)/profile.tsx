@@ -37,6 +37,7 @@ import { apiFetch, API } from '../../lib/api';
 import { showError } from '../../stores/toastStore';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { formatCount } from '../../lib/utils';
+import { getProfileCompletion, ProfileStep } from '../../lib/profileCompletion';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_HEIGHT = 220;
@@ -617,6 +618,73 @@ export default function ProfileScreen() {
                         <Ionicons name="share-outline" size={18} color={colors.text.secondary} />
                     </TouchableOpacity>
                 </Animated.View>
+
+                {/* Profile Completion Widget */}
+                {user && (() => {
+                    const completion = getProfileCompletion({
+                        avatarUrl: user.avatarUrl,
+                        coverUrl: user.coverUrl,
+                        bio: user.bio,
+                        username: user.username,
+                        displayName: user.displayName,
+                        interests: (user as any).interests,
+                        culturalProfile: (user as any).culturalProfile,
+                        postsCount: user.postsCount || 0,
+                        followingCount: user.followingCount || 0,
+                    });
+                    if (completion.percentage >= 100) return null;
+                    const nextItems = completion.nextSteps.slice(0, 3);
+                    return (
+                        <Animated.View
+                            entering={FadeInDown.delay(420).duration(400).springify()}
+                            style={[profileCompletionStyles.container, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}
+                        >
+                            <View style={profileCompletionStyles.header}>
+                                <View style={profileCompletionStyles.progressRing}>
+                                    <Text style={[profileCompletionStyles.progressText, { color: c.text.primary }]}>
+                                        {completion.percentage}%
+                                    </Text>
+                                </View>
+                                <View style={profileCompletionStyles.headerText}>
+                                    <Text style={[profileCompletionStyles.title, { color: c.text.primary }]}>
+                                        Complete your profile
+                                    </Text>
+                                    <Text style={[profileCompletionStyles.subtitle, { color: c.text.muted }]}>
+                                        {completion.nextSteps.length} steps remaining
+                                    </Text>
+                                </View>
+                            </View>
+                            <View style={profileCompletionStyles.steps}>
+                                {nextItems.map((step: ProfileStep) => (
+                                    <TouchableOpacity
+                                        key={step.id}
+                                        style={[profileCompletionStyles.stepRow, { backgroundColor: c.surface.glassHover }]}
+                                        onPress={() => {
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            if (step.route) router.push(step.route as any);
+                                        }}
+                                        activeOpacity={0.7}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={step.label}
+                                    >
+                                        <View style={[profileCompletionStyles.stepIcon, { backgroundColor: c.surface.goldSubtle }]}>
+                                            <Ionicons name={step.icon as any} size={18} color={c.gold[500]} />
+                                        </View>
+                                        <View style={profileCompletionStyles.stepText}>
+                                            <Text style={[profileCompletionStyles.stepLabel, { color: c.text.primary }]}>
+                                                {step.label}
+                                            </Text>
+                                            <Text style={[profileCompletionStyles.stepDesc, { color: c.text.muted }]}>
+                                                {step.description}
+                                            </Text>
+                                        </View>
+                                        <Ionicons name="chevron-forward" size={16} color={c.text.muted} />
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </Animated.View>
+                    );
+                })()}
 
                 {/* Premium Segmented Tabs */}
                 <Animated.View
@@ -1215,5 +1283,77 @@ const styles = StyleSheet.create({
     // ── Skeleton ─────────────────────────────────────────
     skeletonWrap: {
         paddingTop: spacing.md,
+    },
+});
+
+// ── Profile Completion Widget Styles ─────────────────
+const profileCompletionStyles = StyleSheet.create({
+    container: {
+        marginHorizontal: spacing.lg,
+        marginTop: spacing.lg,
+        borderRadius: 16,
+        borderWidth: 1,
+        padding: spacing.lg,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: spacing.md,
+    },
+    progressRing: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        borderWidth: 3,
+        borderColor: colors.gold[500],
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    progressText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+    },
+    headerText: {
+        marginLeft: spacing.md,
+        flex: 1,
+    },
+    title: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        fontFamily: 'Inter-SemiBold',
+    },
+    subtitle: {
+        fontSize: typography.fontSize.xs,
+        marginTop: 2,
+    },
+    steps: {
+        gap: spacing.sm,
+    },
+    stepRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.md,
+        borderRadius: 12,
+    },
+    stepIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    stepText: {
+        flex: 1,
+        marginLeft: spacing.md,
+    },
+    stepLabel: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        fontFamily: 'Inter-SemiBold',
+    },
+    stepDesc: {
+        fontSize: typography.fontSize.xs,
+        marginTop: 1,
     },
 });

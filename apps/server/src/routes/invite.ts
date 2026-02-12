@@ -104,6 +104,41 @@ router.post('/bulk', requireAuth, async (req: AuthRequest, res: Response, next: 
 });
 
 /**
+ * POST /api/invite/sms-bulk
+ * Send SMS invites to multiple phone numbers (max 20)
+ * Used by the contact picker invite flow
+ */
+router.post('/sms-bulk', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const { phones, message } = req.body;
+
+        if (!Array.isArray(phones) || phones.length === 0) {
+            return res.status(400).json({ error: 'Phone numbers required' });
+        }
+
+        if (phones.length > 20) {
+            return res.status(400).json({ error: 'Maximum 20 invites per batch' });
+        }
+
+        // Basic phone validation
+        const validPhones = phones.filter((p: unknown) => typeof p === 'string' && p.length >= 10);
+        if (validPhones.length === 0) {
+            return res.status(400).json({ error: 'No valid phone numbers provided' });
+        }
+
+        const result = await inviteService.sendBulkSmsInvites(
+            req.user!.id,
+            validPhones,
+            message
+        );
+
+        res.json(result);
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
  * GET /api/invite/connections
  * Get pending connections that can be invited
  */

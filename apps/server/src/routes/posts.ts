@@ -7,6 +7,10 @@ import { cache } from '../services/cache/RedisCache.js';
 import { queueNotification } from '../services/notifications/NotificationQueue.js';
 import { logger } from '../utils/logger.js';
 import { getFeedImageUrls, transformImageUrl, getVideoThumbnailUrl } from '../services/cloudinary.js';
+import { checkContent, trackPost } from '../utils/moderation.js';
+import { logSecurityEvent, SecurityEvents, getClientIP } from '../services/security.js';
+import { trackAction, getBotScore, checkContentSimilarity } from '../services/botDetection.js';
+import { sendAlert } from '../services/alerting.js';
 
 const router = Router();
 
@@ -23,7 +27,7 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
         const limit = clampLimit(rawLimit as string, 20, 50);
 
         const posts = await prisma.post.findMany({
-            where: { isPublic: true, deletedAt: null },
+            where: { isPublic: true, deletedAt: null, visible: true },
             take: limit + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: { createdAt: 'desc' },
@@ -109,6 +113,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
         let whereClause: any = {
             isPublic: true,
             deletedAt: null,
+            visible: true,
             user: { communityOptIn: true }, // Privacy wall: only community members' posts
         };
 
@@ -131,6 +136,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             // Combine: posts from my communities + posts from people I follow + my own posts
             whereClause = {
                 deletedAt: null,
+                visible: true,
                 OR: [
                     // Posts in communities I belong to
                     ...(communityIds.length > 0 ? [{ communityId: { in: communityIds } }] : []),
@@ -155,11 +161,12 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             }
 
             if (following.length === 0) {
-                whereClause = { isPublic: true, deletedAt: null };
+                whereClause = { isPublic: true, deletedAt: null, visible: true };
             } else {
                 whereClause = {
                     isPublic: true,
                     deletedAt: null,
+                    visible: true,
                     userId: { in: following.map((f) => f.followingId) },
                 };
             }
@@ -606,6 +613,63 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             }
         }
 
+        // ── Platform-wide content moderation ──
+        const textToCheck = data.caption || '';
+        if (textToCheck.length > 0) {
+            const contentCheck = checkContent(textToCheck);
+            if (!contentCheck.isSafe) {
+                const ip = getClientIP(req);
+                await logSecurityEvent({
+                    action: 'CONTENT_REJECTED',
+                    userId: req.userId,
+                    ipAddress: ip,
+                    userAgent: req.headers['user-agent'] || '',
+                    details: { flags: contentCheck.flags, preview: textToCheck.substring(0, 100) },
+                    severity: contentCheck.flags.includes('likely_spam') ? 'MEDIUM' : 'LOW',
+                });
+                throw new AppError('Your post was flagged by our content safety system. Please review and try again.', 400);
+            }
+        }
+
+        // ── User posting behavior tracking ──
+        const postBehavior = trackPost(req.userId!, false);
+        if (!postBehavior.allowed) {
+            throw new AppError(postBehavior.reason || 'Posting limit reached. Please try again later.', 429);
+        }
+
+        // ── Content similarity check (coordinated attack detection) ──
+        if (textToCheck.length > 10) {
+            const similarity = await checkContentSimilarity(textToCheck);
+            if (similarity.isDuplicate) {
+                const ip = getClientIP(req);
+                await sendAlert({
+                    severity: 'HIGH',
+                    eventType: 'COORDINATED_CONTENT',
+                    message: `Duplicate content detected from user ${req.userId}: posted ${similarity.matchCount} times in 1 hour`,
+                    details: { preview: textToCheck.substring(0, 100), matchCount: similarity.matchCount },
+                    ip,
+                    userId: req.userId,
+                }).catch(() => {});
+                throw new AppError('This content has been flagged as duplicate. Please post original content.', 400);
+            }
+        }
+
+        // ── Bot behavior tracking ──
+        await trackAction(req.userId!, 'post', { contentLength: String(textToCheck.length) }).catch(() => {});
+
+        // ── Trust-level gating: check if user can post ──
+        const postingUser = await prisma.user.findUnique({
+            where: { id: req.userId! },
+            select: { emailVerified: true, trustLevel: true, isShadowBanned: true },
+        });
+
+        if (!postingUser?.emailVerified) {
+            throw new AppError('Please verify your email before posting.', 403);
+        }
+
+        // Determine if post should be held for moderation (trust level 0-1)
+        const shouldHoldForReview = (postingUser.trustLevel ?? 0) < 2;
+
         // Extract hashtags from caption
         const hashtags = data.caption?.match(/#\w+/g) || [];
 
@@ -613,6 +677,8 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             data: {
                 userId: req.userId!,
                 ...postData,
+                // Shadow-banned users' posts are invisible; new accounts' posts held for review
+                visible: postingUser.isShadowBanned ? false : !shouldHoldForReview,
             },
             include: {
                 user: {

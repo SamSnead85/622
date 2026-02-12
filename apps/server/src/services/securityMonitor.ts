@@ -12,6 +12,7 @@
 
 import { cache } from './cache/RedisCache.js';
 import { logger } from '../utils/logger.js';
+import { sendAlert, type AlertSeverity } from './alerting.js';
 
 // ============================================
 // THRESHOLDS
@@ -47,7 +48,7 @@ const threatLog: ThreatEvent[] = [];
 const MAX_THREAT_LOG = 1000;
 
 /**
- * Record a threat event
+ * Record a threat event and send alert
  */
 function recordThreat(event: ThreatEvent) {
     threatLog.push(event);
@@ -60,6 +61,19 @@ function recordThreat(event: ThreatEvent) {
                    event.severity === 'medium' ? '🔶 MEDIUM' : '🔵 LOW';
 
     logger.warn(`[SECURITY] ${prefix} THREAT: ${event.type} from IP ${event.ip}${event.userId ? ` (user: ${event.userId})` : ''} — ${JSON.stringify(event.details)}`);
+
+    // Send alert for medium+ severity threats
+    const severityMap: Record<string, AlertSeverity> = {
+        low: 'LOW', medium: 'MEDIUM', high: 'HIGH', critical: 'CRITICAL',
+    };
+    sendAlert({
+        severity: severityMap[event.severity] || 'MEDIUM',
+        eventType: event.type.toUpperCase(),
+        message: `Threat detected: ${event.type} from IP ${event.ip}`,
+        details: event.details,
+        ip: event.ip,
+        userId: event.userId,
+    }).catch(() => {}); // Non-blocking
 }
 
 /**
