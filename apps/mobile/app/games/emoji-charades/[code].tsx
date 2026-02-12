@@ -1151,10 +1151,10 @@ export default function EmojiCharadesScreen() {
                         <GlassCard style={styles.guessCard} padding="md">
                             {hasGuessedCorrectly ? (
                                 <Animated.View entering={ZoomIn.duration(400).springify()} style={styles.correctConfirmation}>
-                                    <Text style={styles.correctEmoji}>🎉</Text>
+                                    <Ionicons name="checkmark-circle" size={32} color={colors.emerald[400]} />
                                     <Text style={styles.correctTitle}>CORRECT!</Text>
                                     <Text style={styles.correctSubtitle}>
-                                        Great job! Wait for the round to end.
+                                        Waiting for the round to end.
                                     </Text>
                                 </Animated.View>
                             ) : (
@@ -1732,8 +1732,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: spacing.xl,
     },
-    correctEmoji: {
-        fontSize: 56,
+    correctIcon: {
         marginBottom: spacing.sm,
     },
     correctTitle: {

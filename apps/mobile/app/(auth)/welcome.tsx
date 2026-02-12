@@ -283,9 +283,9 @@ export default function WelcomeScreen() {
                     fullWidth
                     onPress={handleNext}
                     accessibilityRole="button"
-                    accessibilityLabel={isLastSlide ? 'Join the Movement' : 'Next slide'}
+                    accessibilityLabel={isLastSlide ? 'Get Started' : 'Next slide'}
                 >
-                    {isLastSlide ? 'Join the Movement' : 'Next'}
+                    {isLastSlide ? 'Get Started' : 'Next'}
                 </Button>
 
                 <Button

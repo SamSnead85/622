@@ -1,13 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
     ScrollView,
-    Dimensions,
-    Animated as RNAnimated,
-    Easing,
     TextInput,
     ActivityIndicator,
 } from 'react-native';
@@ -23,69 +20,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../stores';
 import { apiFetch, API } from '../lib/api';
 import { GlassCard } from '../components';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// ============================================
-// Celebration Particles — burst on mount
-// ============================================
-const PARTICLE_COLORS = [colors.gold[400], colors.gold[500], colors.emerald[500], colors.azure[500], colors.coral[400], colors.gold[400]];
-const NUM_PARTICLES = 24;
-
-function CelebrationBurst() {
-    const particles = useRef(
-        Array.from({ length: NUM_PARTICLES }, (_, i) => ({
-            x: new RNAnimated.Value(SCREEN_WIDTH / 2),
-            y: new RNAnimated.Value(80),
-            opacity: new RNAnimated.Value(1),
-            scale: new RNAnimated.Value(0),
-            color: PARTICLE_COLORS[i % PARTICLE_COLORS.length],
-            targetX: SCREEN_WIDTH / 2 + (Math.random() - 0.5) * SCREEN_WIDTH * 0.9,
-            targetY: 80 + Math.random() * 300 - 100,
-            size: 6 + Math.random() * 6,
-        }))
-    ).current;
-
-    useEffect(() => {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-        particles.forEach((p, i) => {
-            const delay = i * 20;
-            RNAnimated.sequence([
-                RNAnimated.delay(delay),
-                RNAnimated.parallel([
-                    RNAnimated.spring(p.scale, { toValue: 1, tension: 80, friction: 5, useNativeDriver: true }),
-                    RNAnimated.timing(p.x, { toValue: p.targetX, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-                    RNAnimated.timing(p.y, { toValue: p.targetY, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-                ]),
-                RNAnimated.timing(p.opacity, { toValue: 0, duration: 600, useNativeDriver: true }),
-            ]).start();
-        });
-    }, []);
-
-    return (
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            {particles.map((p, i) => (
-                <RNAnimated.View
-                    key={i}
-                    style={{
-                        position: 'absolute',
-                        width: p.size,
-                        height: p.size,
-                        borderRadius: p.size / 2,
-                        backgroundColor: p.color,
-                        opacity: p.opacity,
-                        transform: [
-                            { translateX: p.x },
-                            { translateY: p.y },
-                            { scale: p.scale },
-                        ],
-                    }}
-                />
-            ))}
-        </View>
-    );
-}
 
 // ============================================
 // Prayer Time Helpers
@@ -266,15 +200,12 @@ export default function DiscoverScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[900], colors.obsidian[900]]} style={StyleSheet.absoluteFill} />
 
-            {/* Celebration particles on first mount */}
-            <CelebrationBurst />
-
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
                 <Animated.View entering={FadeIn.duration(600)}>
                     <Text style={styles.welcomeText}>Welcome to 0G</Text>
                     <Text style={styles.subtitle}>
-                        Let's personalize your experience in a few quick steps
+                        Personalize your experience in a few steps
                     </Text>
                 </Animated.View>
             </View>

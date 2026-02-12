@@ -194,7 +194,7 @@ export default function GoLiveScreen() {
                         >
                             <Ionicons name="checkmark-circle" size={56} color={colors.emerald[400]} />
                         </LinearGradient>
-                        <Text style={styles.successTitle}>You're Ready to Stream!</Text>
+                        <Text style={styles.successTitle}>Stream Ready</Text>
                         <Text style={styles.successSubtitle}>
                             Use the details below to connect your streaming software (OBS, Streamlabs, etc.)
                         </Text>

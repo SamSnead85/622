@@ -423,10 +423,10 @@ function PracticeResults({
     const percentage = Math.round((correctCount / total) * 100);
 
     const getPerformance = () => {
-        if (percentage >= 90) return { text: 'Incredible!', icon: 'star' as const, color: colors.gold[400] };
-        if (percentage >= 70) return { text: 'Great Job!', icon: 'trophy' as const, color: colors.gold[500] };
-        if (percentage >= 50) return { text: 'Good Try!', icon: 'thumbs-up' as const, color: colors.azure[400] };
-        return { text: 'Keep Practicing!', icon: 'fitness' as const, color: colors.coral[400] };
+        if (percentage >= 90) return { text: 'Flawless', icon: 'star' as const, color: colors.gold[400] };
+        if (percentage >= 70) return { text: 'Well Played', icon: 'trophy' as const, color: colors.gold[500] };
+        if (percentage >= 50) return { text: 'Solid Effort', icon: 'thumbs-up' as const, color: colors.azure[400] };
+        return { text: 'Keep Practicing', icon: 'fitness' as const, color: colors.coral[400] };
     };
     const perf = getPerformance();
 

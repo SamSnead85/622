@@ -43,7 +43,7 @@ Unlike other platforms, you control what you see. Use the Algorithm Mixer to cus
 **Available in 5 Languages**
 English, Arabic (العربية), Urdu (اردو), Turkish (Türkçe), and French (Français) — with full right-to-left support.
 
-Download 0G and join the movement for a better social network.
+Download 0G and experience a better social network.
 
 ## Description (Arabic - العربية)
 

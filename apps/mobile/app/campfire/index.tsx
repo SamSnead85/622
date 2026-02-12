@@ -112,7 +112,7 @@ function LivePulseDot({ size = 8 }: { size?: number }) {
                     width: size,
                     height: size,
                     borderRadius: size / 2,
-                    backgroundColor: '#FF4444',
+                    backgroundColor: colors.coral[500],
                 },
                 animatedStyle,
             ]}
@@ -754,7 +754,7 @@ const styles = StyleSheet.create({
     heroLiveText: {
         fontSize: typography.fontSize.xs,
         fontWeight: '700',
-        color: '#FF4444',
+        color: colors.coral[500],
         letterSpacing: 1,
     },
     heroTitle: {

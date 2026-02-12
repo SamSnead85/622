@@ -1137,12 +1137,14 @@ function GettingStartedChecklist({
                     />
                 </View>
 
-                {/* All done celebration */}
+                {/* Setup complete */}
                 {allDone && (
-                    <Animated.View entering={FadeInDown.duration(300)} style={checklistStyles.celebration}>
-                        <Text style={checklistStyles.celebrationEmoji}>🎉✨🌟</Text>
+                    <Animated.View entering={FadeInDown.duration(400)} style={checklistStyles.celebration}>
+                        <View style={checklistStyles.completeBadge}>
+                            <Ionicons name="checkmark-circle" size={24} color={colors.emerald[500]} />
+                        </View>
                         <Text style={checklistStyles.celebrationText}>
-                            You&apos;re all set! Welcome to 0G.
+                            You&apos;re ready. Welcome to 0G.
                         </Text>
                     </Animated.View>
                 )}
@@ -1237,12 +1239,18 @@ const checklistStyles = StyleSheet.create({
         backgroundColor: colors.emerald[500],
     },
     celebration: {
+        flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: spacing.lg,
+        gap: spacing.sm,
+        paddingVertical: spacing.md,
     },
-    celebrationEmoji: {
-        fontSize: 28,
-        marginBottom: spacing.sm,
+    completeBadge: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.emerald[500] + '15',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     celebrationText: {
         fontSize: typography.fontSize.base,

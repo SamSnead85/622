@@ -263,7 +263,9 @@ export default function InterestsScreen() {
                             if (isRamadanSeason && faithTopic && !selectedIds.has(faithTopic.id)) {
                                 return (
                                     <Animated.View entering={FadeInDown.duration(400)} style={styles.ramadanSuggestion}>
-                                        <Text style={styles.ramadanSuggestionIcon}>☪️</Text>
+                                        <View style={styles.ramadanSuggestionIconWrap}>
+                                            <Ionicons name="moon-outline" size={22} color={colors.gold[400]} />
+                                        </View>
                                         <View style={{ flex: 1 }}>
                                             <Text style={styles.ramadanSuggestionTitle}>Recommended for Ramadan</Text>
                                             <Text style={styles.ramadanSuggestionText}>
@@ -335,7 +337,7 @@ export default function InterestsScreen() {
                         {topics.length === 0 && (
                             <View style={styles.emptyState}>
                                 <Ionicons name="pricetags-outline" size={48} color={colors.text.muted} />
-                                <Text style={styles.emptyText}>No topics available yet. Check back soon!</Text>
+                                <Text style={styles.emptyText}>Topics will appear here once they are available.</Text>
                             </View>
                         )}
 
@@ -493,8 +495,11 @@ const styles = StyleSheet.create({
         paddingTop: spacing.xl, paddingBottom: spacing.lg,
     },
     introTitle: {
-        fontSize: 24, fontWeight: '700', color: colors.text.primary,
-        fontFamily: 'Inter-Bold', letterSpacing: -0.5,
+        fontSize: 22,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+        letterSpacing: -0.3,
+        color: colors.text.primary,
     },
     introText: {
         fontSize: typography.fontSize.base, color: colors.text.secondary,
@@ -544,7 +549,14 @@ const styles = StyleSheet.create({
         padding: spacing.md, marginBottom: spacing.lg,
         borderWidth: 1, borderColor: colors.gold[500] + '30',
     },
-    ramadanSuggestionIcon: { fontSize: 24 },
+    ramadanSuggestionIconWrap: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: colors.gold[500] + '20',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     ramadanSuggestionTitle: {
         fontSize: typography.fontSize.sm, fontWeight: '700', color: colors.gold[400],
     },
@@ -572,9 +584,13 @@ const styles = StyleSheet.create({
     },
     // ── Suggested Communities ──
     communitySectionTitle: {
-        fontSize: typography.fontSize.lg, fontWeight: '700',
-        color: colors.text.primary, fontFamily: 'Inter-Bold',
-        marginTop: spacing['2xl'], marginBottom: spacing.xs,
+        fontSize: 22,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+        letterSpacing: -0.3,
+        color: colors.text.primary,
+        marginTop: spacing['2xl'],
+        marginBottom: spacing.xs,
     },
     communitySectionSubtitle: {
         fontSize: typography.fontSize.sm, color: colors.text.secondary,
@@ -624,8 +640,12 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
     },
     inviteTitle: {
-        fontSize: typography.fontSize.lg, fontWeight: '700',
-        color: colors.text.primary, marginBottom: spacing.xs,
+        fontSize: 22,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+        letterSpacing: -0.3,
+        color: colors.text.primary,
+        marginBottom: spacing.xs,
     },
     inviteText: {
         fontSize: typography.fontSize.sm, color: colors.text.secondary,

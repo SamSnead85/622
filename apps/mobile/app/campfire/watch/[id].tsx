@@ -816,7 +816,7 @@ const styles = StyleSheet.create({
         width: 6,
         height: 6,
         borderRadius: 3,
-        backgroundColor: '#FF4444',
+        backgroundColor: colors.coral[500],
     },
     viewerCountText: {
         fontSize: typography.fontSize.xs,

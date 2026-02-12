@@ -1193,9 +1193,10 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     heroTitle: {
-        fontSize: typography.fontSize['3xl'],
+        fontSize: 22,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
+        letterSpacing: -0.3,
         color: colors.text.primary,
         marginBottom: spacing.xs,
         textAlign: 'center',
@@ -1228,7 +1229,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 12,
-        backgroundColor: 'rgba(0,0,0,0.15)',
+        backgroundColor: colors.surface.glassActive,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1373,9 +1374,10 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
     },
     sectionTitle: {
-        fontSize: typography.fontSize.xl,
+        fontSize: 22,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
+        letterSpacing: -0.3,
         color: colors.text.primary,
     },
     sectionBadge: {

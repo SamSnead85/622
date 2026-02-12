@@ -58,10 +58,10 @@ function getSliderLabel(value: number, type: 'recency' | 'engagement' | 'followi
     return '';
 }
 
-function getSliderEmoji(value: number, type: 'recency' | 'engagement' | 'following'): string {
-    if (type === 'recency') return value >= 60 ? '🕐' : '🔥';
-    if (type === 'engagement') return value >= 60 ? '📈' : '💎';
-    return value >= 60 ? '👥' : '🔍';
+function getSliderIcon(value: number, type: 'recency' | 'engagement' | 'following'): keyof typeof Ionicons.glyphMap {
+    if (type === 'recency') return value >= 60 ? 'time-outline' : 'trending-up-outline';
+    if (type === 'engagement') return value >= 60 ? 'stats-chart-outline' : 'diamond-outline';
+    return value >= 60 ? 'people-outline' : 'search-outline';
 }
 
 const SLIDER_HELP: Record<string, { title: string; message: string }> = {
@@ -145,7 +145,7 @@ function SliderControl({
                 ))}
             </View>
             <View style={styles.sliderValueRow}>
-                <Text style={styles.sliderEmoji}>{getSliderEmoji(value, type)}</Text>
+                <Ionicons name={getSliderIcon(value, type)} size={14} color={colors.text.muted} />
                 <Text style={styles.sliderValue}>{getSliderLabel(value, type)}</Text>
                 <Text style={styles.sliderPercent}>{value}%</Text>
             </View>
@@ -538,8 +538,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center',
         justifyContent: 'center', gap: spacing.xs,
     },
-    sliderEmoji: {
-        fontSize: 14,
+    sliderIcon: {
+        marginRight: 2,
     },
     sliderValue: {
         fontSize: typography.fontSize.sm, color: colors.gold[400],

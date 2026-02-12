@@ -796,7 +796,7 @@ export default function SpaceRoomScreen() {
                         style={styles.reactionToggleBtn}
                         activeOpacity={0.7}
                     >
-                        <Text style={styles.reactionToggleEmoji}>🔥</Text>
+                        <Ionicons name="heart-outline" size={22} color={colors.coral[400]} />
                     </TouchableOpacity>
                 </View>
             </Animated.View>
@@ -1000,7 +1000,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface.glass, alignItems: 'center', justifyContent: 'center',
         borderWidth: 1, borderColor: colors.border.subtle,
     },
-    reactionToggleEmoji: { fontSize: 22 },
+    reactionToggleIcon: { /* icon replaces emoji */ },
 
     // ---- Ended State ----
     endedContent: { alignItems: 'center', padding: spacing['2xl'] },

@@ -350,7 +350,7 @@ export default function SettingsScreen() {
                         try {
                             await apiFetch(API.communityOptIn, { method: 'POST', body: JSON.stringify({ optIn: true }) });
                             await refreshUser();
-                            Alert.alert('Welcome!', 'You\'re now part of the larger community. You can switch back to private mode anytime from Settings.');
+                            Alert.alert('Community Joined', 'You are now part of the larger community. You can switch back to private mode anytime from Settings.');
                         } catch {
                             Alert.alert('Join Failed', 'Failed to join community. Please try again.');
                             showError('Could not update profile');
@@ -999,11 +999,11 @@ const styles = StyleSheet.create({
         marginStart: spacing.xs,
     },
     sectionTitle: {
-        fontSize: typography.fontSize.xs,
+        fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: colors.text.muted,
+        letterSpacing: -0.3,
+        color: colors.text.secondary,
         textTransform: 'uppercase',
-        letterSpacing: 1.2,
     },
 
     // ─── Cards (grouping rows) ───────────────────
@@ -1410,7 +1410,7 @@ const styles = StyleSheet.create({
     // ─── Password Modal ─────────────────────────────
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: colors.surface.overlay,
         justifyContent: 'center',
         alignItems: 'center',
         padding: spacing.lg,

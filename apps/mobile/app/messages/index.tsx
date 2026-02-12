@@ -1052,10 +1052,10 @@ const styles = StyleSheet.create({
         backgroundColor: colors.gold[600],
     },
     swipeActionArchive: {
-        backgroundColor: '#6366F1',
+        backgroundColor: colors.azure[600],
     },
     swipeActionDelete: {
-        backgroundColor: '#EF4444',
+        backgroundColor: colors.coral[500],
     },
     swipeActionLabel: {
         fontSize: 10,

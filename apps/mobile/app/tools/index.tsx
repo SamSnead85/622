@@ -295,7 +295,9 @@ export default function ToolsHub() {
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                         />
-                        <Text style={styles.ramadanEmoji}>☪️</Text>
+                        <View style={styles.ramadanIconWrap}>
+                            <Ionicons name="moon-outline" size={24} color={colors.gold[400]} />
+                        </View>
                         <View style={styles.ramadanInfo}>
                             <Text style={styles.ramadanTitle}>
                                 {isDuringRamadan ? 'Ramadan Mubarak' : `Ramadan in ${daysUntil} days`}
@@ -498,7 +500,15 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.gold[500] + '30',
     },
-    ramadanEmoji: { fontSize: 28, marginEnd: spacing.md },
+    ramadanIconWrap: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: colors.gold[500] + '20',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginEnd: spacing.md,
+    },
     ramadanInfo: { flex: 1 },
     ramadanTitle: {
         fontSize: typography.fontSize.lg,
@@ -551,11 +561,11 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
     },
     sectionTitle: {
-        fontSize: typography.fontSize.sm,
+        fontSize: typography.fontSize.lg,
         fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+        letterSpacing: -0.3,
         color: colors.text.secondary,
-        letterSpacing: 1,
-        textTransform: 'uppercase',
     },
     sectionLine: {
         flex: 1,
