@@ -643,6 +643,9 @@ export const API = {
     // Feed Preferences (Algorithm Mixer)
     feedPreferences: '/api/v1/users/preferences/feed',
 
+    // Onboarding
+    onboardingComplete: '/api/v1/auth/onboarding-complete',
+
     // Topics & Interests
     topics: '/api/v1/topics',
     userInterests: '/api/v1/topics/user/interests',

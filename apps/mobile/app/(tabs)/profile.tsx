@@ -30,6 +30,7 @@ import Animated, {
     Extrapolation,
 } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar, LoadingView, EmptyState, SkeletonGrid } from '../../components';
 import { useAuthStore, Post, mapApiPost } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
@@ -198,6 +199,7 @@ const ProfileError = memo(({ message, onRetry }: { message: string; onRetry: () 
 export default function ProfileScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { colors: c } = useTheme();
     const user = useAuthStore((s) => s.user);
     const refreshUser = useAuthStore((s) => s.refreshUser);
 
@@ -381,8 +383,8 @@ export default function ProfileScreen() {
     // ── Loading State ────────────────────────────────────
     if (!user) {
         return (
-            <View style={styles.container}>
-                <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
+            <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
+                <LinearGradient colors={[c.obsidian[900], c.obsidian[800]]} style={StyleSheet.absoluteFill} />
                 <LoadingView message="Loading profile..." />
             </View>
         );
@@ -693,15 +695,15 @@ export default function ProfileScreen() {
             );
         }
 
-        const c = emptyConfig[activeTab];
+        const cfg = emptyConfig[activeTab];
 
         return (
             <EmptyState
-                icon={c.icon}
-                title={c.title}
-                message={c.message}
-                actionLabel={c.actionLabel}
-                onAction={c.actionLabel ? () => router.push('/(tabs)/create' as any) : undefined}
+                icon={cfg.icon}
+                title={cfg.title}
+                message={cfg.message}
+                actionLabel={cfg.actionLabel}
+                onAction={cfg.actionLabel ? () => router.push('/(tabs)/create' as any) : undefined}
                 compact
             />
         );
@@ -709,9 +711,9 @@ export default function ProfileScreen() {
 
     // ── Render ────────────────────────────────────────────
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+                colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
                 locations={[0, 0.5, 1]}
                 style={StyleSheet.absoluteFill}
             />

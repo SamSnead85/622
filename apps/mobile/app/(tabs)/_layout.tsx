@@ -1,12 +1,13 @@
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing } from '@zerog/ui';
 import { useTranslation } from 'react-i18next';
 import { useNotificationsStore } from '../../stores';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // ============================================
 // Tab Icon — uniform for all tabs including Create
@@ -23,6 +24,7 @@ interface TabIconProps {
 }
 
 function TabIcon({ label, iconName, iconNameFocused, focused, isCreate, badge }: TabIconProps) {
+    const { colors: c } = useTheme();
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const prevFocused = useRef(focused);
 
@@ -52,11 +54,11 @@ function TabIcon({ label, iconName, iconNameFocused, focused, isCreate, badge }:
         >
             {/* Create tab gets a subtle pill background */}
             {isCreate ? (
-                <View style={[styles.createPill, focused && styles.createPillFocused]}>
+                <View style={[styles.createPill, { backgroundColor: c.surface.glassActive, borderColor: c.border.default }, focused && { backgroundColor: c.gold[500], borderColor: c.gold[500] }]}>
                     <Ionicons
                         name={focused ? iconNameFocused : iconName}
                         size={20}
-                        color={focused ? colors.gold[500] : colors.text.primary}
+                        color={focused ? c.gold[500] : c.text.primary}
                     />
                 </View>
             ) : (
@@ -64,7 +66,7 @@ function TabIcon({ label, iconName, iconNameFocused, focused, isCreate, badge }:
                     <Ionicons
                         name={focused ? iconNameFocused : iconName}
                         size={23}
-                        color={focused ? colors.text.primary : colors.text.muted}
+                        color={focused ? c.text.primary : c.text.muted}
                     />
                     {badge != null && badge > 0 && (
                         <View style={styles.badge}>
@@ -78,14 +80,14 @@ function TabIcon({ label, iconName, iconNameFocused, focused, isCreate, badge }:
                     styles.tabLabel,
                     {
                         color: isCreate
-                            ? (focused ? colors.gold[500] : colors.text.secondary)
-                            : (focused ? colors.text.primary : colors.text.muted),
+                            ? (focused ? c.gold[500] : c.text.secondary)
+                            : (focused ? c.text.primary : c.text.muted),
                     },
                 ]}
             >
                 {label}
             </Text>
-            {focused && !isCreate && <View style={styles.tabIndicator} />}
+            {focused && !isCreate && <View style={[styles.tabIndicator, { backgroundColor: c.text.primary }]} />}
         </Animated.View>
     );
 }
@@ -97,7 +99,13 @@ function TabIcon({ label, iconName, iconNameFocused, focused, isCreate, badge }:
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
+    const { colors: c } = useTheme();
     const unreadCount = useNotificationsStore((s) => s.unreadCount);
+
+    const tabBarBg = useMemo(() => ({
+        surface: { ...StyleSheet.absoluteFillObject, backgroundColor: c.obsidian[900], opacity: 0.98 } as const,
+        border: { position: 'absolute' as const, top: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: c.border.subtle },
+    }), [c]);
 
     return (
         <Tabs
@@ -109,13 +117,13 @@ export default function TabLayout() {
                 ],
                 tabBarBackground: () => (
                     <View style={styles.tabBarBackground}>
-                        <View style={styles.tabBarSurface} />
-                        <View style={styles.tabBarBorder} />
+                        <View style={tabBarBg.surface} />
+                        <View style={tabBarBg.border} />
                     </View>
                 ),
                 tabBarShowLabel: false,
-                tabBarActiveTintColor: colors.text.primary,
-                tabBarInactiveTintColor: colors.text.muted,
+                tabBarActiveTintColor: c.text.primary,
+                tabBarInactiveTintColor: c.text.muted,
                 tabBarHideOnKeyboard: true,
             }}
         >

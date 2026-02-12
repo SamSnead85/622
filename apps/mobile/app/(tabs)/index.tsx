@@ -38,6 +38,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar, GlassCard, ErrorBoundary } from '../../components';
 import { useFeedStore, useAuthStore, Post } from '../../stores';
 import { SkeletonFeed } from '../../components/SkeletonPost';
@@ -1293,6 +1294,7 @@ const checklistStyles = StyleSheet.create({
 export default function FeedScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { colors: c } = useTheme();
     const user = useAuthStore((s) => s.user);
     const flatListRef = useRef<FlatList>(null);
     const { shouldReduceData, isOffline } = useNetworkQuality();
@@ -1875,9 +1877,9 @@ export default function FeedScreen() {
     };
 
     return (
-        <View style={styles.container} accessible={false} accessibilityLabel="Home feed">
+        <View style={[styles.container, { backgroundColor: c.obsidian[900] }]} accessible={false} accessibilityLabel="Home feed">
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800]]}
+                colors={[c.obsidian[900], c.obsidian[800]]}
                 style={StyleSheet.absoluteFill}
             />
 

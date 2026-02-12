@@ -34,6 +34,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../../components';
 import { apiFetch, API, isNetworkError } from '../../lib/api';
 import { AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
@@ -382,6 +383,7 @@ function getTypeColor(type: string): string {
 export default function SearchScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { colors: c } = useTheme();
     const { isOffline } = useNetworkQuality();
 
     // Search state
@@ -1297,9 +1299,9 @@ export default function SearchScreen() {
 
     return (
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800]]}
+                colors={[c.obsidian[900], c.obsidian[800]]}
                 style={StyleSheet.absoluteFill}
             />
 

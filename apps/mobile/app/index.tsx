@@ -8,6 +8,7 @@ import { useAuthStore } from '../stores';
 export default function SplashIndex() {
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const isInitialized = useAuthStore((s) => s.isInitialized);
+    const user = useAuthStore((s) => s.user);
 
     // Animated values
     const logoScale = useRef(new Animated.Value(0.3)).current;
@@ -87,8 +88,11 @@ export default function SplashIndex() {
         }, 400);
     }, []);
 
-    // If authenticated, go straight to the feed
+    // If authenticated, check if onboarding is complete
     if (isInitialized && isAuthenticated) {
+        if (user && !user.onboardingComplete) {
+            return <Redirect href="/discover" />;
+        }
         return <Redirect href="/(tabs)" />;
     }
 

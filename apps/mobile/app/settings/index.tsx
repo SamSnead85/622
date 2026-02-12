@@ -31,6 +31,7 @@ import i18next from 'i18next';
 import { showError } from '../../stores/toastStore';
 import { AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { useDebounce } from '../../hooks/useDebounce';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // ─── Setting Row Component ───────────────────────────────────────────
 interface SettingRowProps {
@@ -122,12 +123,14 @@ export default function SettingsScreen() {
     const [showLanguagePicker, setShowLanguagePicker] = useState(false);
     const [currentLang, setCurrentLang] = useState(i18next.language || 'en');
     const currentLanguageName = SUPPORTED_LANGUAGES.find((l) => l.code === currentLang)?.nativeName || 'English';
+    const { mode: themeMode, setMode: setThemeMode, colors: c } = useTheme();
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 200);
 
     // Searchable settings metadata for filtering
     const settingsSections = useMemo(() => [
         { key: 'profile', keywords: ['profile', 'name', 'bio', 'avatar', 'photo', 'picture'] },
+        { key: 'appearance', keywords: ['appearance', 'theme', 'dark', 'light', 'mode', 'color', 'display'] },
         { key: 'account', keywords: ['edit profile', 'name', 'bio', 'avatar', 'password', 'security', '2fa', 'email', 'account'] },
         { key: 'cultural', keywords: ['cultural', 'greeting', 'muslim', 'standard', 'custom', 'deen', 'prayer', 'qibla', 'quran'] },
         { key: 'privacy', keywords: ['privacy', 'private', 'public', 'community', 'visible', 'invisible', 'mode'] },
@@ -317,8 +320,8 @@ export default function SettingsScreen() {
     const stagger = (index: number) => FadeInDown.duration(400).delay(index * 80).springify();
 
     return (
-        <View style={styles.container}>
-            <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
+        <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
+            <LinearGradient colors={[c.obsidian[900], c.obsidian[800]]} style={StyleSheet.absoluteFill} />
 
             <ScreenHeader title="Settings" />
 
@@ -326,12 +329,12 @@ export default function SettingsScreen() {
 
                 {/* ─── Search Bar ─────────────────────────────────── */}
                 <View style={styles.searchContainer}>
-                    <View style={styles.searchBar}>
-                        <Ionicons name="search-outline" size={18} color={colors.text.muted} />
+                    <View style={[styles.searchBar, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
+                        <Ionicons name="search-outline" size={18} color={c.text.muted} />
                         <TextInput
-                            style={styles.searchInput}
+                            style={[styles.searchInput, { color: c.text.primary }]}
                             placeholder="Search settings..."
-                            placeholderTextColor={colors.text.muted}
+                            placeholderTextColor={c.text.muted}
                             value={searchQuery}
                             onChangeText={setSearchQuery}
                             autoCorrect={false}
@@ -397,8 +400,54 @@ export default function SettingsScreen() {
                     </TouchableOpacity>
                 </Animated.View>}
 
+                {/* ─── Appearance ──────────────────────────────────── */}
+                {isSectionVisible('appearance') && <Animated.View entering={stagger(1)} style={styles.section}>
+                    <SectionHeader title="Appearance" icon="color-palette-outline" />
+                    <View style={styles.card}>
+                        <View style={styles.appearanceRow}>
+                            {([
+                                { key: 'light' as const, icon: 'sunny-outline' as const, label: 'Light' },
+                                { key: 'dark' as const, icon: 'moon-outline' as const, label: 'Dark' },
+                                { key: 'system' as const, icon: 'phone-portrait-outline' as const, label: 'System' },
+                            ]).map((opt) => {
+                                const isActive = themeMode === opt.key;
+                                return (
+                                    <TouchableOpacity
+                                        key={opt.key}
+                                        style={[
+                                            styles.appearanceOption,
+                                            { backgroundColor: c.surface.glass, borderColor: c.border.subtle },
+                                            isActive && { backgroundColor: c.surface.goldSubtle, borderColor: c.gold[500] },
+                                        ]}
+                                        onPress={() => {
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            setThemeMode(opt.key);
+                                        }}
+                                        activeOpacity={0.7}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`${opt.label} theme`}
+                                        accessibilityState={{ selected: isActive }}
+                                    >
+                                        <Ionicons
+                                            name={opt.icon}
+                                            size={22}
+                                            color={isActive ? c.gold[500] : c.text.muted}
+                                        />
+                                        <Text style={[styles.appearanceLabel, { color: c.text.secondary }, isActive && { color: c.gold[400] }]}>
+                                            {opt.label}
+                                        </Text>
+                                        {isActive && (
+                                            <Ionicons name="checkmark-circle" size={16} color={c.gold[500]} style={{ marginTop: 2 }} />
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </View>
+                </Animated.View>}
+
                 {/* ─── Account ────────────────────────────────────── */}
-                {isSectionVisible('account') && <Animated.View entering={stagger(1)} style={styles.section}>
+                {isSectionVisible('account') && <Animated.View entering={stagger(2)} style={styles.section}>
                     <SectionHeader title="Account" icon="person-circle-outline" />
                     <View style={styles.card}>
                         <SettingRow
@@ -494,7 +543,7 @@ export default function SettingsScreen() {
                 </Animated.View>}
 
                 {/* ─── Cultural Experience ────────────────────────── */}
-                {isSectionVisible('cultural') && <Animated.View entering={stagger(2)} style={styles.section}>
+                {isSectionVisible('cultural') && <Animated.View entering={stagger(3)} style={styles.section}>
                     <SectionHeader title="Cultural Experience" icon="globe-outline" />
                     <View style={styles.card}>
                         <View style={styles.settingRowFlat}>
@@ -536,7 +585,7 @@ export default function SettingsScreen() {
                 </Animated.View>}
 
                 {/* ─── Privacy ────────────────────────────────────── */}
-                {isSectionVisible('privacy') && <Animated.View entering={stagger(3)} style={styles.section}>
+                {isSectionVisible('privacy') && <Animated.View entering={stagger(4)} style={styles.section}>
                     <SectionHeader title="Privacy" icon="shield-half-outline" />
                     <View style={styles.card}>
                         <SettingRow
@@ -576,7 +625,7 @@ export default function SettingsScreen() {
                 </Animated.View>}
 
                 {/* ─── Language & Data ────────────────────────────── */}
-                {isSectionVisible('language') && <Animated.View entering={stagger(4)} style={styles.section}>
+                {isSectionVisible('language') && <Animated.View entering={stagger(5)} style={styles.section}>
                     <SectionHeader title="Language & Data" icon="language-outline" />
                     <View style={styles.card}>
                         <SettingRow
@@ -625,7 +674,7 @@ export default function SettingsScreen() {
                 </Animated.View>}
 
                 {/* ─── Feed & Personalization ─────────────────────── */}
-                {isSectionVisible('feed') && <Animated.View entering={stagger(5)} style={styles.section}>
+                {isSectionVisible('feed') && <Animated.View entering={stagger(6)} style={styles.section}>
                     <SectionHeader title="Feed & Personalization" icon="color-wand-outline" />
                     <View style={styles.card}>
                         <SettingRow
@@ -650,7 +699,7 @@ export default function SettingsScreen() {
                 </Animated.View>}
 
                 {/* ─── Notifications ──────────────────────────────── */}
-                {isSectionVisible('notifications') && <Animated.View entering={stagger(6)} style={styles.section}>
+                {isSectionVisible('notifications') && <Animated.View entering={stagger(7)} style={styles.section}>
                     <SectionHeader title="Notifications" icon="notifications-outline" />
                     <View style={styles.card}>
                         <SettingRow
@@ -663,7 +712,7 @@ export default function SettingsScreen() {
                 </Animated.View>}
 
                 {/* ─── Privacy & Data ─────────────────────────────── */}
-                {isSectionVisible('privacydata') && <Animated.View entering={stagger(7)} style={styles.section}>
+                {isSectionVisible('privacydata') && <Animated.View entering={stagger(8)} style={styles.section}>
                     <SectionHeader title="Data & Storage" icon="server-outline" />
                     <View style={styles.card}>
                         <SettingRow
@@ -707,7 +756,7 @@ export default function SettingsScreen() {
                 </Animated.View>}
 
                 {/* ─── About ──────────────────────────────────────── */}
-                {isSectionVisible('about') && <Animated.View entering={stagger(8)} style={styles.section}>
+                {isSectionVisible('about') && <Animated.View entering={stagger(9)} style={styles.section}>
                     <SectionHeader title="About" icon="information-circle-outline" />
                     <View style={styles.card}>
                         <SettingRow icon="phone-portrait-outline" label="App Version" description={appVersion} />
@@ -725,7 +774,7 @@ export default function SettingsScreen() {
                 </Animated.View>}
 
                 {/* ─── Danger Zone ─────────────────────────────────── */}
-                {isSectionVisible('danger') && <Animated.View entering={stagger(9)} style={styles.section}>
+                {isSectionVisible('danger') && <Animated.View entering={stagger(10)} style={styles.section}>
                     <View style={styles.dangerHeader}>
                         <Ionicons name="warning-outline" size={14} color={colors.coral[500]} style={{ marginRight: 6 }} />
                         <Text style={styles.dangerTitle}>Danger Zone</Text>
@@ -758,7 +807,7 @@ export default function SettingsScreen() {
                 </Animated.View>}
 
                 {/* Footer */}
-                <Animated.View entering={stagger(10)} style={styles.footer}>
+                <Animated.View entering={stagger(11)} style={styles.footer}>
                     <Text style={styles.footerText}>Made with care by 0G</Text>
                     <Text style={styles.footerVersion}>v{appVersion}</Text>
                 </Animated.View>
@@ -943,6 +992,36 @@ const styles = StyleSheet.create({
     settingDescriptionDanger: {
         color: colors.coral[300],
         opacity: 0.7,
+    },
+
+    // ─── Appearance Options ─────────────────────────
+    appearanceRow: {
+        flexDirection: 'row',
+        padding: spacing.md,
+        gap: spacing.sm,
+    },
+    appearanceOption: {
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.xs,
+        borderRadius: 12,
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        gap: spacing.xs,
+    },
+    appearanceOptionActive: {
+        backgroundColor: colors.surface.goldSubtle,
+        borderColor: colors.gold[500],
+    },
+    appearanceLabel: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.text.secondary,
+    },
+    appearanceLabelActive: {
+        color: colors.gold[400],
     },
 
     // ─── Cultural Profile Options ────────────────

@@ -74,7 +74,7 @@ interface MemberStatus {
     user: { id: string; username: string; displayName: string; avatarUrl?: string };
 }
 
-type CommunityTab = 'feed' | 'chat' | 'polls' | 'albums';
+type CommunityTab = 'feed' | 'classroom' | 'calendar' | 'chat' | 'polls' | 'albums';
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=800&h=400&fit=crop';
 
@@ -363,6 +363,14 @@ export default function CommunityDetailPage() {
             icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>,
         },
         {
+            id: 'classroom', label: 'Classroom',
+            icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+        },
+        {
+            id: 'calendar', label: 'Events',
+            icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+        },
+        {
             id: 'chat', label: 'Chat',
             icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
         },
@@ -578,6 +586,58 @@ export default function CommunityDetailPage() {
                                         </button>
                                     </div>
                                 )}
+                            </motion.div>
+                        )}
+
+                        {/* ==================== CLASSROOM TAB ==================== */}
+                        {activeTab === 'classroom' && (
+                            <motion.div key="classroom" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                                <div className="bg-[#0A0A0F]/60 backdrop-blur rounded-2xl border border-white/10 p-8 text-center">
+                                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-2">Courses & Learning</h3>
+                                    <p className="text-white/50 mb-6 max-w-md mx-auto">Access structured courses, track your progress, and level up your knowledge in this community.</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+                                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                                            <div className="text-2xl mb-2">📚</div>
+                                            <div className="text-sm font-medium text-white">Structured Courses</div>
+                                            <div className="text-xs text-white/40 mt-1">Learn at your own pace</div>
+                                        </div>
+                                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                                            <div className="text-2xl mb-2">🏆</div>
+                                            <div className="text-sm font-medium text-white">Leaderboard</div>
+                                            <div className="text-xs text-white/40 mt-1">Earn points & level up</div>
+                                        </div>
+                                    </div>
+                                    <p className="text-white/30 text-xs mt-6">Full classroom experience available in the mobile app</p>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* ==================== CALENDAR TAB ==================== */}
+                        {activeTab === 'calendar' && (
+                            <motion.div key="calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                                <div className="bg-[#0A0A0F]/60 backdrop-blur rounded-2xl border border-white/10 p-8 text-center">
+                                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-2">Community Events</h3>
+                                    <p className="text-white/50 mb-6 max-w-md mx-auto">View upcoming events, RSVP, and never miss a community gathering.</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+                                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                                            <div className="text-2xl mb-2">📅</div>
+                                            <div className="text-sm font-medium text-white">Upcoming Events</div>
+                                            <div className="text-xs text-white/40 mt-1">Never miss a gathering</div>
+                                        </div>
+                                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                                            <div className="text-2xl mb-2">✅</div>
+                                            <div className="text-sm font-medium text-white">RSVP</div>
+                                            <div className="text-xs text-white/40 mt-1">Let others know you&apos;re coming</div>
+                                        </div>
+                                    </div>
+                                    <p className="text-white/30 text-xs mt-6">Full calendar experience available in the mobile app</p>
+                                </div>
                             </motion.div>
                         )}
 

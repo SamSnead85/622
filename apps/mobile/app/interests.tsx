@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../lib/api';
+import { useAuthStore } from '../stores';
 import { ScreenHeader, LoadingView, GlassCard } from '../components';
 
 interface Topic {
@@ -170,6 +171,8 @@ export default function InterestsScreen() {
         });
     };
 
+    const refreshUser = useAuthStore((s) => s.refreshUser);
+
     const handleSave = async () => {
         setSaving(true);
         try {
@@ -179,6 +182,10 @@ export default function InterestsScreen() {
             });
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             if (isOnboarding) {
+                // Mark onboarding as complete on the server
+                await apiFetch(API.onboardingComplete, { method: 'POST' }).catch(() => {});
+                // Refresh user so the store has onboardingComplete = true
+                await refreshUser().catch(() => {});
                 router.replace('/(tabs)');
             } else {
                 router.back();

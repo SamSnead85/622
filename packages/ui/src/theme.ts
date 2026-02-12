@@ -92,6 +92,96 @@ export const colors = {
     },
 } as const;
 
+// Dark theme alias (same as `colors`)
+export const darkColors = colors;
+
+// ============================================
+// 0G Light Theme
+// Clean, bright surfaces with the same accent palette
+// ============================================
+
+export const lightColors = {
+    obsidian: {
+        900: '#FFFFFF',
+        800: '#F8F8FA',
+        700: '#F0F0F3',
+        600: '#E4E4E8',
+        500: '#D4D4DA',
+        400: '#C0C0C8',
+        300: '#A8A8B2',
+    },
+
+    gold: {
+        500: '#D4AF37',
+        400: '#E5C158',
+        300: '#F0D47A',
+        600: '#B8942D',
+        700: '#9A7A24',
+    },
+
+    amber: {
+        500: '#F4A300',
+        400: '#FFBA33',
+        300: '#FFD066',
+        600: '#D18E00',
+        700: '#AE7600',
+    },
+
+    coral: {
+        500: '#FF6B6B',
+        400: '#FF8888',
+        300: '#FFA5A5',
+    },
+
+    emerald: {
+        500: '#10B981',
+        400: '#34D399',
+        300: '#6EE7B7',
+    },
+
+    azure: {
+        500: '#3B82F6',
+        400: '#60A5FA',
+        300: '#93C5FD',
+    },
+
+    text: {
+        primary: '#1A1A1D',
+        secondary: '#5A5A64',
+        muted: '#8A8A94',
+        inverse: '#FAFAFA',
+    },
+
+    surface: {
+        glass: 'rgba(0, 0, 0, 0.03)',
+        glassHover: 'rgba(0, 0, 0, 0.06)',
+        glassActive: 'rgba(0, 0, 0, 0.08)',
+        overlay: 'rgba(0, 0, 0, 0.5)',
+        overlayLight: 'rgba(0, 0, 0, 0.2)',
+        overlayMedium: 'rgba(0, 0, 0, 0.4)',
+        overlayHeavy: 'rgba(0, 0, 0, 0.7)',
+        goldSubtle: 'rgba(212, 175, 55, 0.08)',
+        goldLight: 'rgba(212, 175, 55, 0.12)',
+        goldMedium: 'rgba(212, 175, 55, 0.15)',
+        goldStrong: 'rgba(212, 175, 55, 0.3)',
+        goldFaded: 'rgba(212, 175, 55, 0.04)',
+        coralSubtle: 'rgba(255, 82, 82, 0.08)',
+        azureSubtle: 'rgba(59, 130, 246, 0.08)',
+    },
+
+    border: {
+        subtle: 'rgba(0, 0, 0, 0.06)',
+        default: 'rgba(0, 0, 0, 0.10)',
+        strong: 'rgba(0, 0, 0, 0.18)',
+    },
+
+    gradients: {
+        goldShine: ['#D4AF37', '#F0D47A', '#D4AF37'],
+        obsidianFade: ['#FFFFFF', '#F0F0F3'],
+        glassOverlay: ['rgba(0,0,0,0.04)', 'rgba(0,0,0,0.01)'],
+    },
+} as const;
+
 export const spacing = {
     xxs: 2,
     xs: 4,

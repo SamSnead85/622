@@ -20,6 +20,7 @@ import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../stores';
+import { apiFetch, API } from '../lib/api';
 import { GlassCard } from '../components';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -437,6 +438,20 @@ export default function DiscoverScreen() {
                         />
                     </LinearGradient>
                 </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={async () => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        // Mark onboarding complete even if skipped
+                        await apiFetch(API.onboardingComplete, { method: 'POST' }).catch(() => {});
+                        await useAuthStore.getState().refreshUser().catch(() => {});
+                        router.replace('/(tabs)');
+                    }}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Skip onboarding"
+                >
+                    <Text style={styles.skipText}>Skip for now</Text>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -748,5 +763,11 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: colors.obsidian[900],
         fontFamily: 'Inter-SemiBold',
+    },
+    skipText: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.muted,
+        textAlign: 'center',
+        marginTop: spacing.md,
     },
 });

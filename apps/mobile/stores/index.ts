@@ -46,6 +46,7 @@ function normalizeUser(rawUser: any): User {
         publicUsername: rawUser.publicUsername,
         publicAvatarUrl: rawUser.publicAvatarUrl,
         publicBio: rawUser.publicBio,
+        onboardingComplete: rawUser.onboardingComplete ?? false,
         culturalProfile: rawUser.culturalProfile || 'standard',
         customGreeting: rawUser.customGreeting,
     };
@@ -84,6 +85,8 @@ export interface User {
     publicUsername?: string;
     publicAvatarUrl?: string;
     publicBio?: string;
+    // Onboarding
+    onboardingComplete?: boolean;
     // Cultural profile
     culturalProfile?: string;
     customGreeting?: string;

@@ -386,6 +386,7 @@ router.post('/login', rateLimiters.auth, async (req, res, next) => {
                 isVerified: user.isVerified,
                 role: user.role, // Include role for admin detection
                 createdAt: user.createdAt.toISOString(),
+                onboardingComplete: user.onboardingComplete,
             },
             token,
             expiresAt,
@@ -444,6 +445,8 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
                     publicUsername: true,
                     publicAvatarUrl: true,
                     publicBio: true,
+                    // Onboarding
+                    onboardingComplete: true,
                     // Cultural profile
                     culturalProfile: true,
                     customGreeting: true,
@@ -453,6 +456,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
                             followers: true,
                             following: true,
                             posts: true,
+                            interests: true,
                         },
                     },
                 },
@@ -470,17 +474,45 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
         const gpStatus = user.growthPartner?.status;
         const isGrowthPartner = gpStatus === 'active' || gpStatus === 'invited';
 
+        // Infer onboarding completion for existing users who haven't been flagged yet
+        // If they have interests or posts, they clearly completed onboarding before the flag existed
+        const inferredOnboarding = user.onboardingComplete ||
+            user._count.interests > 0 ||
+            user._count.posts > 0;
+
+        // Auto-fix: if inferred but not flagged, update the DB (fire-and-forget)
+        if (inferredOnboarding && !user.onboardingComplete) {
+            prisma.user.update({
+                where: { id: user.id },
+                data: { onboardingComplete: true },
+            }).catch(() => {});
+        }
+
         res.json({
             user: {
                 ...user,
                 growthPartner: undefined, // Don't leak raw relation data
                 isGrowthPartner,
                 growthPartnerTier: isGrowthPartner ? user.growthPartner!.tier : undefined,
+                onboardingComplete: inferredOnboarding,
                 followersCount: user._count.followers,
                 followingCount: user._count.following,
                 postsCount: user._count.posts,
             },
         });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/auth/onboarding-complete — Mark onboarding as done
+router.post('/onboarding-complete', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        await prisma.user.update({
+            where: { id: req.userId },
+            data: { onboardingComplete: true },
+        });
+        res.json({ success: true });
     } catch (error) {
         next(error);
     }

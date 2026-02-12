@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 import { useAuthStore } from '../stores';
 import { colors } from '@zerog/ui';
+import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ToastProvider } from '../components/ToastProvider';
 import { OfflineBanner } from '../components/OfflineBanner';
@@ -91,7 +92,16 @@ let i18nReady = false;
 initI18n().then(() => { i18nReady = true; }).catch(() => { i18nReady = true; });
 
 function RootLayout() {
+    return (
+        <ThemeProvider>
+            <RootLayoutInner />
+        </ThemeProvider>
+    );
+}
+
+function RootLayoutInner() {
     const router = useRouter();
+    const { isDark, colors: c } = useTheme();
     const initialize = useAuthStore((s) => s.initialize);
     const isInitialized = useAuthStore((s) => s.isInitialized);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -358,13 +368,13 @@ function RootLayout() {
 
     return (
         <ErrorBoundary screenName="Root">
-            <GestureHandlerRootView style={styles.container}>
-                <StatusBar style="light" />
+            <GestureHandlerRootView style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
+                <StatusBar style={isDark ? 'light' : 'dark'} />
                 <OfflineBanner />
                 <Stack
                     screenOptions={{
                         headerShown: false,
-                        contentStyle: { backgroundColor: colors.obsidian[900] },
+                        contentStyle: { backgroundColor: c.obsidian[900] },
                         gestureEnabled: true,
                         gestureDirection: 'horizontal',
                         animation: 'slide_from_right',
@@ -387,6 +397,11 @@ function RootLayout() {
                     <Stack.Screen name="analytics" />
                     <Stack.Screen name="community/[id]/governance" />
                     <Stack.Screen name="community/[id]/proposal/[proposalId]" />
+                    <Stack.Screen name="community/[id]/classroom" />
+                    <Stack.Screen name="community/[id]/course/[courseId]" />
+                    <Stack.Screen name="community/[id]/lesson/[lessonId]" />
+                    <Stack.Screen name="community/[id]/calendar" />
+                    <Stack.Screen name="community/[id]/leaderboard" />
                     <Stack.Screen name="tools" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
                     <Stack.Screen name="games" options={{ animation: 'slide_from_right' }} />

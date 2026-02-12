@@ -107,17 +107,18 @@ interface ChatMessage {
     mediaType?: string;
 }
 
-type TabKey = 'feed' | 'about' | 'members' | 'rules';
+type TabKey = 'feed' | 'classroom' | 'calendar' | 'members' | 'about';
 
 // ============================================
 // Tab definitions
 // ============================================
 
 const TABS: { key: TabKey; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { key: 'feed', label: 'Feed', icon: 'newspaper-outline' },
-    { key: 'about', label: 'About', icon: 'information-circle-outline' },
+    { key: 'feed', label: 'Feed', icon: 'chatbubbles-outline' },
+    { key: 'classroom', label: 'Classroom', icon: 'school-outline' },
+    { key: 'calendar', label: 'Events', icon: 'calendar-outline' },
     { key: 'members', label: 'Members', icon: 'people-outline' },
-    { key: 'rules', label: 'Rules', icon: 'book-outline' },
+    { key: 'about', label: 'About', icon: 'information-circle-outline' },
 ];
 
 const POST_TYPE_FILTERS = [
@@ -2056,9 +2057,64 @@ export default function CommunityDetailScreen() {
                         {/* ── Tab Content ────────────────── */}
                         <View style={styles.tabContent}>
                             {activeTab === 'feed' && renderFeedTab()}
-                            {activeTab === 'about' && renderAboutTab()}
+                            {activeTab === 'classroom' && (
+                                <View style={{ flex: 1, minHeight: 400 }}>
+                                    <TouchableOpacity
+                                        style={styles.tabNavButton}
+                                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/community/${communityId}/classroom` as any); }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <LinearGradient colors={[colors.surface.glass, colors.surface.glassHover]} style={styles.tabNavCard}>
+                                            <View style={styles.tabNavIconWrap}>
+                                                <Ionicons name="school" size={32} color={colors.gold[500]} />
+                                            </View>
+                                            <Text style={styles.tabNavTitle}>Courses & Learning</Text>
+                                            <Text style={styles.tabNavDesc}>Access courses, track your progress, and level up your knowledge</Text>
+                                            <View style={styles.tabNavArrow}>
+                                                <Ionicons name="arrow-forward" size={20} color={colors.gold[500]} />
+                                            </View>
+                                        </LinearGradient>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.tabNavButton}
+                                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/community/${communityId}/leaderboard` as any); }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <LinearGradient colors={[colors.surface.glass, colors.surface.glassHover]} style={styles.tabNavCard}>
+                                            <View style={styles.tabNavIconWrap}>
+                                                <Ionicons name="trophy" size={32} color={colors.gold[500]} />
+                                            </View>
+                                            <Text style={styles.tabNavTitle}>Leaderboard</Text>
+                                            <Text style={styles.tabNavDesc}>See top contributors and your ranking in this community</Text>
+                                            <View style={styles.tabNavArrow}>
+                                                <Ionicons name="arrow-forward" size={20} color={colors.gold[500]} />
+                                            </View>
+                                        </LinearGradient>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                            {activeTab === 'calendar' && (
+                                <View style={{ flex: 1, minHeight: 400 }}>
+                                    <TouchableOpacity
+                                        style={styles.tabNavButton}
+                                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/community/${communityId}/calendar` as any); }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <LinearGradient colors={[colors.surface.glass, colors.surface.glassHover]} style={styles.tabNavCard}>
+                                            <View style={styles.tabNavIconWrap}>
+                                                <Ionicons name="calendar" size={32} color={colors.gold[500]} />
+                                            </View>
+                                            <Text style={styles.tabNavTitle}>Community Events</Text>
+                                            <Text style={styles.tabNavDesc}>View upcoming events, RSVP, and never miss a gathering</Text>
+                                            <View style={styles.tabNavArrow}>
+                                                <Ionicons name="arrow-forward" size={20} color={colors.gold[500]} />
+                                            </View>
+                                        </LinearGradient>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                             {activeTab === 'members' && renderMembersTab()}
-                            {activeTab === 'rules' && renderRulesTab()}
+                            {activeTab === 'about' && renderAboutTab()}
                         </View>
                     </View>
                 </Animated.View>
@@ -2828,5 +2884,49 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.sm,
         color: colors.text.primary,
         fontFamily: 'Inter-Medium',
+    },
+
+    // ─── Tab Navigation Cards ─────────────────
+    tabNavButton: {
+        paddingHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+    },
+    tabNavCard: {
+        borderRadius: 16,
+        padding: spacing.xl,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        alignItems: 'center',
+    },
+    tabNavIconWrap: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: colors.surface.goldSubtle,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.md,
+    },
+    tabNavTitle: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.text.primary,
+        marginBottom: spacing.xs,
+        textAlign: 'center',
+    },
+    tabNavDesc: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        lineHeight: 20,
+        marginBottom: spacing.md,
+    },
+    tabNavArrow: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: colors.surface.goldSubtle,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

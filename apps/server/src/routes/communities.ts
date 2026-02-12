@@ -14,18 +14,27 @@ router.use(rateLimiters.general);
 // GET /api/v1/communities
 router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
-        const { cursor, limit = '20', search } = req.query;
+        const { cursor, limit = '20', search, featured, category } = req.query;
+
+        const where: any = {};
+        if (search) {
+            where.OR = [
+                { name: { contains: search as string, mode: 'insensitive' } },
+                { description: { contains: search as string, mode: 'insensitive' } },
+            ];
+        }
+        if (featured === 'true') {
+            where.isFeatured = true;
+        }
+        if (category && category !== 'all') {
+            where.category = category as string;
+        }
 
         const communities = await prisma.community.findMany({
-            where: search ? {
-                OR: [
-                    { name: { contains: search as string, mode: 'insensitive' } },
-                    { description: { contains: search as string, mode: 'insensitive' } },
-                ],
-            } : undefined,
+            where: Object.keys(where).length > 0 ? where : undefined,
             take: parseInt(limit as string) + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
-            orderBy: { memberCount: 'desc' },
+            orderBy: featured === 'true' ? { memberCount: 'desc' } : { memberCount: 'desc' },
             include: {
                 _count: {
                     select: { members: true, posts: true },
@@ -2015,6 +2024,640 @@ router.post('/seed', authenticate, async (req: AuthRequest, res, next) => {
         }
 
         res.json({ created: created.length, communities: created });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// GAMIFICATION: Leaderboard & Points
+// ============================================
+
+// Level thresholds
+const LEVEL_THRESHOLDS = [0, 10, 50, 150, 500, 1000, 2500, 5000, 10000, 25000];
+
+function calculateLevel(points: number): number {
+    for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+        if (points >= LEVEL_THRESHOLDS[i]) return i + 1;
+    }
+    return 1;
+}
+
+// Helper: award points to a community member
+async function awardPoints(communityId: string, userId: string, points: number, reason: string, sourceType?: string, sourceId?: string) {
+    try {
+        const member = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId, communityId } },
+        });
+        if (!member || member.isBanned) return;
+
+        const newPoints = member.points + points;
+        const newLevel = calculateLevel(newPoints);
+
+        await prisma.$transaction([
+            prisma.communityMember.update({
+                where: { id: member.id },
+                data: { points: newPoints, level: newLevel },
+            }),
+            prisma.pointTransaction.create({
+                data: { communityId, userId, points, reason, sourceType, sourceId },
+            }),
+        ]);
+    } catch (err) {
+        logger.warn('awardPoints failed:', err);
+    }
+}
+
+// GET /api/v1/communities/:communityId/leaderboard
+router.get('/:communityId/leaderboard', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const period = (req.query.period as string) || 'all';
+        const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+
+        if (period === 'all') {
+            const members = await prisma.communityMember.findMany({
+                where: { communityId, isBanned: false },
+                orderBy: { points: 'desc' },
+                take: limit,
+                select: {
+                    userId: true, points: true, level: true, role: true, joinedAt: true,
+                    user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
+                },
+            });
+
+            const community = await prisma.community.findUnique({
+                where: { id: communityId },
+                select: { levelNames: true },
+            });
+
+            res.json({ leaderboard: members, levelNames: community?.levelNames || [] });
+        } else {
+            const since = new Date();
+            if (period === '7d') since.setDate(since.getDate() - 7);
+            else if (period === '30d') since.setDate(since.getDate() - 30);
+
+            const transactions = await prisma.pointTransaction.groupBy({
+                by: ['userId'],
+                where: { communityId, createdAt: { gte: since } },
+                _sum: { points: true },
+                orderBy: { _sum: { points: 'desc' } },
+                take: limit,
+            });
+
+            const userIds = transactions.map(t => t.userId);
+            const members = await prisma.communityMember.findMany({
+                where: { communityId, userId: { in: userIds } },
+                select: {
+                    userId: true, points: true, level: true, role: true,
+                    user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
+                },
+            });
+
+            const memberMap = new Map(members.map(m => [m.userId, m]));
+            const leaderboard = transactions.map((t, i) => ({
+                ...memberMap.get(t.userId),
+                periodPoints: t._sum.points || 0,
+                rank: i + 1,
+            }));
+
+            const community = await prisma.community.findUnique({
+                where: { id: communityId },
+                select: { levelNames: true },
+            });
+
+            res.json({ leaderboard, levelNames: community?.levelNames || [] });
+        }
+    } catch (error) {
+        next(error);
+    }
+});
+
+// PUT /api/v1/communities/:communityId/gamification
+router.put('/:communityId/gamification', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const member = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!member || member.role !== 'ADMIN') throw new AppError('Admin access required', 403);
+
+        const schema = z.object({
+            levelNames: z.array(z.string()).min(1).max(10).optional(),
+            pointsPerLike: z.number().min(0).max(100).optional(),
+            pointsPerPost: z.number().min(0).max(100).optional(),
+            pointsPerComment: z.number().min(0).max(100).optional(),
+        });
+        const data = schema.parse(req.body);
+
+        const updated = await prisma.community.update({
+            where: { id: communityId },
+            data,
+            select: { levelNames: true, pointsPerLike: true, pointsPerPost: true, pointsPerComment: true },
+        });
+
+        res.json(updated);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// CLASSROOM: Courses, Modules, Lessons
+// ============================================
+
+// GET /api/v1/communities/:communityId/courses
+router.get('/:communityId/courses', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const userId = req.userId;
+
+        const courses = await prisma.course.findMany({
+            where: { communityId, isPublished: true },
+            orderBy: { order: 'asc' },
+            include: {
+                modules: {
+                    orderBy: { order: 'asc' },
+                    include: {
+                        lessons: {
+                            orderBy: { order: 'asc' },
+                            select: { id: true },
+                        },
+                    },
+                },
+            },
+        });
+
+        // Get user progress if authenticated
+        let progressMap: Record<string, boolean> = {};
+        if (userId) {
+            const progress = await prisma.lessonProgress.findMany({
+                where: { userId, completed: true, lesson: { module: { course: { communityId } } } },
+                select: { lessonId: true },
+            });
+            progress.forEach(p => { progressMap[p.lessonId] = true; });
+        }
+
+        // Get user's level for lock checks
+        let userLevel = 0;
+        if (userId) {
+            const member = await prisma.communityMember.findUnique({
+                where: { userId_communityId: { userId, communityId } },
+                select: { level: true },
+            });
+            userLevel = member?.level || 0;
+        }
+
+        const result = courses.map(course => {
+            const totalLessons = course.modules.reduce((sum, m) => sum + m.lessons.length, 0);
+            const completedLessons = course.modules.reduce(
+                (sum, m) => sum + m.lessons.filter(l => progressMap[l.id]).length, 0
+            );
+            return {
+                id: course.id,
+                title: course.title,
+                description: course.description,
+                coverUrl: course.coverUrl,
+                order: course.order,
+                requiredLevel: course.requiredLevel,
+                isLocked: course.requiredLevel > userLevel,
+                totalLessons,
+                completedLessons,
+                progressPercent: totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0,
+                moduleCount: course.modules.length,
+            };
+        });
+
+        res.json({ courses: result });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/communities/:communityId/courses
+router.post('/:communityId/courses', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const member = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!member || !['ADMIN', 'MODERATOR'].includes(member.role)) {
+            throw new AppError('Admin or moderator access required', 403);
+        }
+
+        const schema = z.object({
+            title: z.string().min(1).max(200),
+            description: z.string().max(2000).optional(),
+            coverUrl: z.string().url().optional(),
+            requiredLevel: z.number().min(0).max(10).optional(),
+            isPublished: z.boolean().optional(),
+        });
+        const data = schema.parse(req.body);
+
+        const maxOrder = await prisma.course.aggregate({
+            where: { communityId },
+            _max: { order: true },
+        });
+
+        const course = await prisma.course.create({
+            data: { ...data, communityId, order: (maxOrder._max.order || 0) + 1 },
+        });
+
+        res.status(201).json(course);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/communities/:communityId/courses/:courseId
+router.get('/:communityId/courses/:courseId', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { courseId } = req.params;
+        const userId = req.userId;
+
+        const course = await prisma.course.findUnique({
+            where: { id: courseId },
+            include: {
+                modules: {
+                    orderBy: { order: 'asc' },
+                    include: {
+                        lessons: {
+                            orderBy: { order: 'asc' },
+                            select: { id: true, title: true, videoUrl: true, thumbnailUrl: true, duration: true, order: true },
+                        },
+                    },
+                },
+            },
+        });
+
+        if (!course) throw new AppError('Course not found', 404);
+
+        let progressMap: Record<string, { completed: boolean; watchedSeconds: number }> = {};
+        if (userId) {
+            const lessonIds = course.modules.flatMap(m => m.lessons.map(l => l.id));
+            const progress = await prisma.lessonProgress.findMany({
+                where: { userId, lessonId: { in: lessonIds } },
+                select: { lessonId: true, completed: true, watchedSeconds: true },
+            });
+            progress.forEach(p => { progressMap[p.lessonId] = { completed: p.completed, watchedSeconds: p.watchedSeconds }; });
+        }
+
+        const totalLessons = course.modules.reduce((s, m) => s + m.lessons.length, 0);
+        const completedLessons = Object.values(progressMap).filter(p => p.completed).length;
+
+        res.json({
+            ...course,
+            totalLessons,
+            completedLessons,
+            progressPercent: totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0,
+            modules: course.modules.map(m => ({
+                ...m,
+                lessons: m.lessons.map(l => ({
+                    ...l,
+                    completed: progressMap[l.id]?.completed || false,
+                    watchedSeconds: progressMap[l.id]?.watchedSeconds || 0,
+                })),
+            })),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// PUT /api/v1/communities/:communityId/courses/:courseId
+router.put('/:communityId/courses/:courseId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, courseId } = req.params;
+        const member = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!member || !['ADMIN', 'MODERATOR'].includes(member.role)) {
+            throw new AppError('Admin or moderator access required', 403);
+        }
+
+        const schema = z.object({
+            title: z.string().min(1).max(200).optional(),
+            description: z.string().max(2000).optional(),
+            coverUrl: z.string().url().optional().nullable(),
+            requiredLevel: z.number().min(0).max(10).optional(),
+            isPublished: z.boolean().optional(),
+            order: z.number().min(0).optional(),
+        });
+        const data = schema.parse(req.body);
+
+        const course = await prisma.course.update({ where: { id: courseId }, data });
+        res.json(course);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/communities/:communityId/courses/:courseId/modules
+router.post('/:communityId/courses/:courseId/modules', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, courseId } = req.params;
+        const member = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!member || !['ADMIN', 'MODERATOR'].includes(member.role)) {
+            throw new AppError('Admin or moderator access required', 403);
+        }
+
+        const schema = z.object({
+            title: z.string().min(1).max(200),
+            description: z.string().max(1000).optional(),
+        });
+        const data = schema.parse(req.body);
+
+        const maxOrder = await prisma.courseModule.aggregate({
+            where: { courseId },
+            _max: { order: true },
+        });
+
+        const mod = await prisma.courseModule.create({
+            data: { ...data, courseId, order: (maxOrder._max.order || 0) + 1 },
+        });
+
+        res.status(201).json(mod);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/communities/:communityId/courses/:courseId/modules/:moduleId/lessons
+router.post('/:communityId/courses/:courseId/modules/:moduleId/lessons', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, moduleId } = req.params;
+        const member = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!member || !['ADMIN', 'MODERATOR'].includes(member.role)) {
+            throw new AppError('Admin or moderator access required', 403);
+        }
+
+        const schema = z.object({
+            title: z.string().min(1).max(200),
+            content: z.string().max(50000).optional(),
+            videoUrl: z.string().url().optional(),
+            thumbnailUrl: z.string().url().optional(),
+            duration: z.number().min(0).optional(),
+            resources: z.any().optional(),
+        });
+        const data = schema.parse(req.body);
+
+        const maxOrder = await prisma.courseLesson.aggregate({
+            where: { moduleId },
+            _max: { order: true },
+        });
+
+        const lesson = await prisma.courseLesson.create({
+            data: { ...data, moduleId, order: (maxOrder._max.order || 0) + 1 },
+        });
+
+        res.status(201).json(lesson);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/communities/:communityId/courses/:courseId/lessons/:lessonId
+router.get('/:communityId/courses/:courseId/lessons/:lessonId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { lessonId } = req.params;
+        const lesson = await prisma.courseLesson.findUnique({
+            where: { id: lessonId },
+            include: { module: { select: { title: true, courseId: true } } },
+        });
+        if (!lesson) throw new AppError('Lesson not found', 404);
+
+        let progress = null;
+        if (req.userId) {
+            progress = await prisma.lessonProgress.findUnique({
+                where: { lessonId_userId: { lessonId, userId: req.userId } },
+            });
+        }
+
+        res.json({ ...lesson, progress });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/communities/:communityId/courses/:courseId/lessons/:lessonId/progress
+router.post('/:communityId/courses/:courseId/lessons/:lessonId/progress', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, lessonId } = req.params;
+        const userId = req.userId!;
+
+        const schema = z.object({
+            completed: z.boolean().optional(),
+            watchedSeconds: z.number().min(0).optional(),
+        });
+        const data = schema.parse(req.body);
+
+        const progress = await prisma.lessonProgress.upsert({
+            where: { lessonId_userId: { lessonId, userId } },
+            create: {
+                lessonId, userId,
+                completed: data.completed || false,
+                watchedSeconds: data.watchedSeconds || 0,
+                completedAt: data.completed ? new Date() : null,
+            },
+            update: {
+                ...(data.completed !== undefined && { completed: data.completed }),
+                ...(data.watchedSeconds !== undefined && { watchedSeconds: data.watchedSeconds }),
+                ...(data.completed && { completedAt: new Date() }),
+            },
+        });
+
+        // Award points for completing a lesson
+        if (data.completed) {
+            const community = await prisma.community.findUnique({
+                where: { id: communityId },
+                select: { pointsPerPost: true },
+            });
+            await awardPoints(communityId, userId, community?.pointsPerPost || 5, 'course_complete', 'lesson', lessonId);
+        }
+
+        res.json(progress);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// CALENDAR: Events & RSVPs
+// ============================================
+
+// GET /api/v1/communities/:communityId/events
+router.get('/:communityId/events', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const upcoming = req.query.upcoming !== 'false';
+        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const offset = parseInt(req.query.offset as string) || 0;
+
+        const where: any = { communityId };
+        if (upcoming) {
+            where.startAt = { gte: new Date() };
+        }
+
+        const events = await prisma.communityEvent.findMany({
+            where,
+            orderBy: { startAt: upcoming ? 'asc' : 'desc' },
+            take: limit,
+            skip: offset,
+            include: {
+                rsvps: { select: { userId: true, status: true } },
+            },
+        });
+
+        const result = events.map(event => {
+            const goingCount = event.rsvps.filter(r => r.status === 'going').length;
+            const maybeCount = event.rsvps.filter(r => r.status === 'maybe').length;
+            const myRsvp = req.userId ? event.rsvps.find(r => r.userId === req.userId)?.status : null;
+            return {
+                id: event.id,
+                title: event.title,
+                description: event.description,
+                startAt: event.startAt,
+                endAt: event.endAt,
+                timezone: event.timezone,
+                location: event.location,
+                isVirtual: event.isVirtual,
+                meetingUrl: event.meetingUrl,
+                coverUrl: event.coverUrl,
+                maxAttendees: event.maxAttendees,
+                isRecurring: event.isRecurring,
+                goingCount,
+                maybeCount,
+                myRsvp,
+                createdAt: event.createdAt,
+            };
+        });
+
+        res.json({ events: result });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/communities/:communityId/events
+router.post('/:communityId/events', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const member = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!member || !['ADMIN', 'MODERATOR'].includes(member.role)) {
+            throw new AppError('Admin or moderator access required', 403);
+        }
+
+        const schema = z.object({
+            title: z.string().min(1).max(200),
+            description: z.string().max(5000).optional(),
+            startAt: z.string().transform(s => new Date(s)),
+            endAt: z.string().transform(s => new Date(s)).optional(),
+            timezone: z.string().optional(),
+            location: z.string().max(500).optional(),
+            isVirtual: z.boolean().optional(),
+            meetingUrl: z.string().url().optional(),
+            coverUrl: z.string().url().optional(),
+            maxAttendees: z.number().min(1).optional(),
+            isRecurring: z.boolean().optional(),
+            recurrenceRule: z.string().optional(),
+        });
+        const data = schema.parse(req.body);
+
+        const event = await prisma.communityEvent.create({
+            data: { ...data, communityId, creatorId: req.userId! },
+        });
+
+        res.status(201).json(event);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// PUT /api/v1/communities/:communityId/events/:eventId
+router.put('/:communityId/events/:eventId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, eventId } = req.params;
+        const member = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!member || !['ADMIN', 'MODERATOR'].includes(member.role)) {
+            throw new AppError('Admin or moderator access required', 403);
+        }
+
+        const schema = z.object({
+            title: z.string().min(1).max(200).optional(),
+            description: z.string().max(5000).optional(),
+            startAt: z.string().transform(s => new Date(s)).optional(),
+            endAt: z.string().transform(s => new Date(s)).optional().nullable(),
+            timezone: z.string().optional(),
+            location: z.string().max(500).optional().nullable(),
+            isVirtual: z.boolean().optional(),
+            meetingUrl: z.string().url().optional().nullable(),
+            coverUrl: z.string().url().optional().nullable(),
+            maxAttendees: z.number().min(1).optional().nullable(),
+        });
+        const data = schema.parse(req.body);
+
+        const event = await prisma.communityEvent.update({ where: { id: eventId }, data });
+        res.json(event);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// DELETE /api/v1/communities/:communityId/events/:eventId
+router.delete('/:communityId/events/:eventId', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, eventId } = req.params;
+        const member = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!member || !['ADMIN', 'MODERATOR'].includes(member.role)) {
+            throw new AppError('Admin or moderator access required', 403);
+        }
+
+        await prisma.communityEvent.delete({ where: { id: eventId } });
+        res.json({ success: true });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/communities/:communityId/events/:eventId/rsvp
+router.post('/:communityId/events/:eventId/rsvp', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, eventId } = req.params;
+        const userId = req.userId!;
+
+        const schema = z.object({
+            status: z.enum(['going', 'maybe', 'not_going']),
+        });
+        const { status } = schema.parse(req.body);
+
+        if (status === 'not_going') {
+            await prisma.eventRSVP.deleteMany({ where: { eventId, userId } });
+            res.json({ status: 'removed' });
+            return;
+        }
+
+        const rsvp = await prisma.eventRSVP.upsert({
+            where: { eventId_userId: { eventId, userId } },
+            create: { eventId, userId, status },
+            update: { status },
+        });
+
+        // Award points for attending
+        if (status === 'going') {
+            await awardPoints(communityId, userId, 2, 'event_attend', 'event', eventId);
+        }
+
+        res.json(rsvp);
     } catch (error) {
         next(error);
     }

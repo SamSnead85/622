@@ -42,6 +42,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { colors, typography, spacing, borderRadius } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../../components';
 import { useAuthStore, useFeedStore, useCommunitiesStore, mapApiPost } from '../../stores';
 import { apiFetch, apiUpload, API } from '../../lib/api';
@@ -851,6 +852,7 @@ function DraggableMediaItem({
 export default function CreateScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { colors: c } = useTheme();
     const user = useAuthStore((s) => s.user);
     const addPost = useFeedStore((s) => s.addPost);
     const communities = useCommunitiesStore((s) => s.communities);
@@ -1466,9 +1468,9 @@ export default function CreateScreen() {
 
     if (showSuccess) {
         return (
-            <View style={[styles.container, styles.centered]}>
+            <View style={[styles.container, styles.centered, { backgroundColor: c.obsidian[900] }]}>
                 <LinearGradient
-                    colors={[colors.obsidian[900], colors.obsidian[800]]}
+                    colors={[c.obsidian[900], c.obsidian[800]]}
                     style={StyleSheet.absoluteFill}
                 />
                 <SuccessAnimation />
@@ -1481,9 +1483,9 @@ export default function CreateScreen() {
     // ============================================
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800]]}
+                colors={[c.obsidian[900], c.obsidian[800]]}
                 style={StyleSheet.absoluteFill}
             />
 

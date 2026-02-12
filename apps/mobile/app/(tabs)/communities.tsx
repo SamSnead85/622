@@ -23,6 +23,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useCommunitiesStore, useAuthStore, Community } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
@@ -441,6 +442,7 @@ function CreateCommunityModal({ visible, onClose, onCreate }: {
 export default function CommunitiesScreen() {
     const insets = useSafeAreaInsets();
     const router = useRouter();
+    const { colors: c } = useTheme();
     const {
         communities,
         isLoading,
@@ -456,6 +458,7 @@ export default function CommunitiesScreen() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [discoverCommunities, setDiscoverCommunities] = useState<Community[]>([]);
     const [isLoadingDiscover, setIsLoadingDiscover] = useState(false);
+    const [featuredCommunities, setFeaturedCommunities] = useState<Community[]>([]);
     const searchInputRef = useRef<TextInput>(null);
 
     // ============================================
@@ -465,7 +468,16 @@ export default function CommunitiesScreen() {
     useEffect(() => {
         fetchCommunities();
         fetchDiscover();
+        fetchFeatured();
     }, []);
+
+    const fetchFeatured = async () => {
+        try {
+            const data = await apiFetch<any>(`${API.communities}?featured=true&limit=10`);
+            const list = data.communities || data.data || data || [];
+            setFeaturedCommunities(Array.isArray(list) ? list : []);
+        } catch { /* silent */ }
+    };
 
     // Re-fetch discover when search or category changes
     useEffect(() => {
@@ -606,9 +618,9 @@ export default function CommunitiesScreen() {
     // ============================================
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800]]}
+                colors={[c.obsidian[900], c.obsidian[800]]}
                 style={StyleSheet.absoluteFill}
             />
 
@@ -676,6 +688,40 @@ export default function CommunitiesScreen() {
                 columnWrapperStyle={styles.gridRow}
                 contentContainerStyle={[styles.gridContent, { paddingBottom: insets.bottom + 24 }]}
                 showsVerticalScrollIndicator={false}
+                ListHeaderComponent={activeTab === 'discover' && !debouncedQuery.trim() && featuredCommunities.length > 0 ? (
+                    <View style={styles.featuredSection}>
+                        <View style={styles.featuredHeader}>
+                            <Ionicons name="star" size={16} color={colors.gold[500]} />
+                            <Text style={styles.featuredTitle}>Featured Communities</Text>
+                        </View>
+                        <FlatList
+                            horizontal
+                            data={featuredCommunities}
+                            keyExtractor={(item) => `featured-${item.id}`}
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.md }}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.featuredCard}
+                                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/community/${item.id}`); }}
+                                    activeOpacity={0.85}
+                                >
+                                    <Image
+                                        source={{ uri: item.coverUrl || item.avatarUrl }}
+                                        style={styles.featuredCover}
+                                        placeholder={IMAGE_PLACEHOLDER?.blurhash}
+                                        transition={300}
+                                        contentFit="cover"
+                                    />
+                                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.featuredOverlay}>
+                                        <Text style={styles.featuredName} numberOfLines={1}>{item.name}</Text>
+                                        <Text style={styles.featuredMembers}>{formatCount(item.memberCount || 0)} members</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                ) : null}
                 ListEmptyComponent={renderEmpty}
                 refreshControl={
                     <RefreshControl
@@ -1042,6 +1088,52 @@ const styles = StyleSheet.create({
     switchDescription: {
         fontSize: typography.fontSize.sm,
         color: colors.text.muted,
+        marginTop: 2,
+    },
+
+    // ─── Featured Section ─────────────────────
+    featuredSection: {
+        marginBottom: spacing.lg,
+    },
+    featuredHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+        paddingHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+    },
+    featuredTitle: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        color: colors.text.primary,
+        letterSpacing: 0.3,
+    },
+    featuredCard: {
+        width: 200,
+        height: 120,
+        borderRadius: 14,
+        overflow: 'hidden',
+        backgroundColor: colors.obsidian[700],
+    },
+    featuredCover: {
+        width: '100%',
+        height: '100%',
+    },
+    featuredOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: spacing.md,
+    },
+    featuredName: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        color: '#fff',
+    },
+    featuredMembers: {
+        fontSize: typography.fontSize.xs,
+        color: 'rgba(255,255,255,0.7)',
         marginTop: 2,
     },
 });
