@@ -86,6 +86,7 @@ model User {
   receivedStrikes            UserStrike[]              @relation("StrikeTarget")
   issuedStrikes              UserStrike[]              @relation("StrikeIssuer")
   creatorProfile             CreatorProfile?
+  communityJoinRequests      CommunityJoinRequest[]
   // Growth Partner Program (one-to-one via GrowthPartner.userId)
   growthPartner              GrowthPartner?
   // Emergency lockdown
@@ -458,8 +459,28 @@ model Community {
   proposals      Proposal[]
   moderationLogs ModerationLog[]
 
+  joinRequests   CommunityJoinRequest[]
+
   @@index([name])
   @@index([slug])
+}
+
+model CommunityJoinRequest {
+  id          String    @id @default(uuid())
+  communityId String
+  userId      String
+  message     String?
+  status      String    @default("pending") // pending, approved, rejected
+  createdAt   DateTime  @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@index([communityId, status])
+  @@index([userId])
 }
 
 model Proposal {

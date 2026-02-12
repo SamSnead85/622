@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
     View,
     Text,
@@ -15,10 +15,6 @@ import {
     ScrollView,
     RefreshControl,
     Dimensions,
-    Pressable,
-    Share,
-    Linking,
-    AccessibilityInfo,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -26,247 +22,95 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, {
-    FadeInDown,
-    FadeIn,
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    withRepeat,
-    withTiming,
-    interpolate,
-} from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
-import { Avatar, GlassCard, LoadingView } from '../../components';
 import { useCommunitiesStore, useAuthStore, Community } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
-import { RetryView } from '../../components/RetryView';
-import { showError } from '../../stores/toastStore';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { useDebounce } from '../../hooks/useDebounce';
 import { formatCount } from '../../lib/utils';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 3) / 2;
 
 // ============================================
 // Types & Constants
 // ============================================
 
-type CategoryFilter = 'all' | 'faith' | 'family' | 'education' | 'tech' | 'business' | 'health' | 'culture';
+type CategoryFilter = 'all' | 'faith' | 'business' | 'tech' | 'culture' | 'family' | 'education' | 'health';
+type TabKey = 'discover' | 'my-groups';
 
-const CATEGORY_FILTERS: { key: CategoryFilter; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { key: 'all', label: 'All', icon: 'apps-outline' },
-    { key: 'faith', label: 'Faith', icon: 'moon-outline' },
-    { key: 'family', label: 'Family', icon: 'people-outline' },
-    { key: 'education', label: 'Education', icon: 'school-outline' },
-    { key: 'tech', label: 'Tech', icon: 'code-slash-outline' },
-    { key: 'business', label: 'Business', icon: 'briefcase-outline' },
-    { key: 'health', label: 'Health', icon: 'heart-outline' },
-    { key: 'culture', label: 'Culture', icon: 'globe-outline' },
+const CATEGORY_FILTERS: { key: CategoryFilter; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'faith', label: 'Faith' },
+    { key: 'business', label: 'Business' },
+    { key: 'tech', label: 'Tech' },
+    { key: 'culture', label: 'Culture' },
+    { key: 'family', label: 'Family' },
+    { key: 'education', label: 'Education' },
+    { key: 'health', label: 'Health' },
 ];
 
-// ============================================
-// Community Templates
-// ============================================
-
-type CommunityTemplate = {
-    id: string;
-    name: string;
-    icon: keyof typeof Ionicons.glyphMap;
-    color: string;
-    description: string;
-    channels: string[];
+const CATEGORY_GRADIENTS: Record<string, [string, string]> = {
+    faith: [colors.gold[600], colors.gold[400]],
+    business: [colors.azure[500], colors.azure[400]],
+    tech: [colors.emerald[500], colors.emerald[400]],
+    culture: [colors.coral[500], colors.coral[400]],
+    family: ['#9B59B6', '#C39BD3'],
+    education: [colors.azure[500], colors.azure[300]],
+    health: [colors.emerald[500], colors.emerald[300]],
+    default: [colors.obsidian[600], colors.obsidian[500]],
 };
 
-const COMMUNITY_TEMPLATES: CommunityTemplate[] = [
-    {
-        id: 'mosque',
-        name: 'Mosque Community',
-        icon: 'moon-outline',
-        color: colors.gold[500],
-        description: 'For masjids and Islamic centers',
-        channels: ['Announcements', 'General', 'Youth', 'Events', 'Sisters'],
-    },
-    {
-        id: 'family',
-        name: 'Family Circle',
-        icon: 'heart-outline',
-        color: colors.coral[500],
-        description: 'Stay connected with family',
-        channels: ['Photos & Updates', 'Group Chat', 'Planning'],
-    },
-    {
-        id: 'study',
-        name: 'Study Circle',
-        icon: 'book-outline',
-        color: colors.azure[500],
-        description: 'Learning and discussion groups',
-        channels: ['Resources', 'Discussion', 'Schedule'],
-    },
-    {
-        id: 'custom',
-        name: 'Custom Community',
-        icon: 'add-outline',
-        color: colors.emerald[500],
-        description: 'Start from scratch',
-        channels: ['General'],
-    },
-];
-
-// ============================================
-// Featured Seed Groups
-// ============================================
-
-type FeaturedGroup = {
-    id: string;
-    name: string;
-    icon: keyof typeof Ionicons.glyphMap;
-    color: string;
-    description: string;
-    memberCount: number;
-    tags: string[];
-    gradient: [string, string];
-    nextEvent?: { title: string; date: string };
-    logoUrl?: string;
-    isDemo?: boolean;
-    websiteUrl?: string;
+const CAT_KEYWORDS: Record<CategoryFilter, string[]> = {
+    all: [],
+    faith: ['faith', 'islam', 'deen', 'prayer', 'quran', 'muslim', 'spiritual', 'mosque', 'ramadan'],
+    family: ['family', 'parent', 'kids', 'children', 'marriage', 'sisters', 'brothers'],
+    education: ['education', 'learn', 'study', 'school', 'university', 'course', 'book'],
+    tech: ['tech', 'code', 'programming', 'developer', 'software', 'ai', 'data', 'engineering'],
+    business: ['business', 'entrepreneur', 'startup', 'finance', 'invest', 'career', 'professional'],
+    health: ['health', 'fitness', 'wellness', 'mental', 'nutrition', 'exercise', 'yoga'],
+    culture: ['culture', 'art', 'food', 'travel', 'music', 'history', 'language', 'halal'],
 };
 
-const FEATURED_GROUPS: FeaturedGroup[] = [
-    {
-        id: 'seed-miraj-collective',
-        name: 'Miraj Collective',
-        icon: 'diamond-outline',
-        color: '#B8A44C',
-        description: 'A premier coaching program for professional Muslim men uniting faith, leadership, and success. Coaching, community, and clarity.',
-        memberCount: 0,
-        tags: ['Coaching', 'Leadership', 'Faith'],
-        gradient: ['#8A7A3A', '#B8A44C'],
-        nextEvent: { title: 'Group Coaching Session', date: 'Weekly' },
-        logoUrl: 'https://res.cloudinary.com/drsxgxzhb/image/upload/v1770826468/0g-communities/miraj-collective-logo.jpg',
-        isDemo: true,
-        websiteUrl: 'https://www.mirajcollective.com/',
-    },
-    {
-        id: 'seed-muslim-entrepreneurs',
-        name: 'Muslim Entrepreneurs',
-        icon: 'rocket-outline',
-        color: colors.gold[500],
-        description: 'Connect with Muslim business owners, founders, and aspiring entrepreneurs. Share wins, get advice, find partners.',
-        memberCount: 0,
-        tags: ['Business', 'Networking', 'Startups'],
-        gradient: [colors.gold[600], colors.gold[400]],
-    },
-    {
-        id: 'seed-halal-investing',
-        name: 'Halal Stock Investing',
-        icon: 'trending-up-outline',
-        color: colors.emerald[500],
-        description: 'Halal stock picks, live trading discussions, Shariah-compliant portfolio strategies. Trade together, grow together.',
-        memberCount: 0,
-        tags: ['Stocks', 'Halal Finance', 'Trading'],
-        gradient: [colors.emerald[600], colors.emerald[400]],
-        nextEvent: { title: 'Weekly Market Review', date: 'Every Friday' },
-    },
-    // Dev-only seed groups — not shown in production builds
-    ...(__DEV__ ? [
-        {
-            id: 'seed-tampa-ai-builders',
-            name: 'Tampa AI Builders',
-            icon: 'hardware-chip-outline' as keyof typeof Ionicons.glyphMap,
-            color: colors.azure[500],
-            description: 'Tampa Bay\'s AI & ML community. Monthly meetups, hackathons, demos, and knowledge sharing. Build the future together.',
-            memberCount: 0,
-            tags: ['AI', 'Machine Learning', 'Tampa'],
-            gradient: [colors.azure[600], colors.azure[400]] as [string, string],
-            nextEvent: { title: 'Monthly Meetup', date: 'First Saturday' },
-        },
-        {
-            id: 'seed-tampa-muslim-ai',
-            name: 'Tampa Muslim AI Builders',
-            icon: 'code-slash-outline' as keyof typeof Ionicons.glyphMap,
-            color: colors.coral[500],
-            description: 'Muslim technologists in Tampa Bay building with AI. Monthly meetups, hackathons with cash prizes, and speaker events.',
-            memberCount: 0,
-            tags: ['AI', 'Muslim Tech', 'Hackathons'],
-            gradient: [colors.coral[500], colors.gold[500]] as [string, string],
-            nextEvent: { title: 'Hackathon — $500 Prize', date: 'Coming Soon' },
-        },
-    ] : []),
-];
-
-// ============================================
-// Skeleton Shimmer (for loading states)
-// ============================================
-
-function SkeletonShimmer({ width, height, borderRadius = 4, style }: {
-    width: number | string;
-    height: number;
-    borderRadius?: number;
-    style?: any;
-}) {
-    const shimmerAnim = useSharedValue(0);
-
-    useEffect(() => {
-        shimmerAnim.value = withRepeat(
-            withTiming(1, { duration: 1200 }),
-            -1,
-            false
-        );
-    }, []);
-
-    const animStyle = useAnimatedStyle(() => ({
-        opacity: interpolate(shimmerAnim.value, [0, 0.5, 1], [0.3, 0.7, 0.3]),
-    }));
-
-    return (
-        <Animated.View
-            style={[
-                {
-                    width: width as any,
-                    height,
-                    borderRadius,
-                    backgroundColor: colors.obsidian[700],
-                },
-                animStyle,
-                style,
-            ]}
-        />
-    );
+function getCoverGradient(community: Community): [string, string] {
+    const text = `${community.name} ${community.description || ''}`.toLowerCase();
+    for (const [cat, keywords] of Object.entries(CAT_KEYWORDS)) {
+        if (cat === 'all') continue;
+        if (keywords.some((kw) => text.includes(kw))) {
+            return CATEGORY_GRADIENTS[cat] ?? CATEGORY_GRADIENTS.default;
+        }
+    }
+    return CATEGORY_GRADIENTS.default;
 }
 
 // ============================================
-// Your Communities — Horizontal Scroll Card
+// Community Card (Grid Item)
 // ============================================
 
-const YourCommunityChip = memo(({ community, index }: { community: Community; index: number }) => {
-    const router = useRouter();
-    const scale = useSharedValue(1);
-    const animStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-    }));
+function CommunityCard({ community, onPress, onJoin }: {
+    community: Community;
+    onPress: () => void;
+    onJoin?: () => void;
+}) {
+    const hasCover = !!community.coverUrl;
+    const isApprovalRequired = community.approvalRequired === true;
+    const isMember = !!community.role;
+    const isPending = community.requestStatus === 'pending';
 
     return (
-        <Animated.View
-            entering={FadeIn.duration(300).delay(index * 60)}
-            style={animStyle}
+        <TouchableOpacity
+            style={styles.card}
+            activeOpacity={0.88}
+            onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={`${community.name}, ${formatCount(community.membersCount)} members`}
         >
-            <Pressable
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    scale.value = withSpring(0.93, { damping: 15 });
-                    setTimeout(() => { scale.value = withSpring(1); }, 100);
-                    router.push(`/community/${community.id}`);
-                }}
-                style={styles.yourCommunityChip}
-                accessibilityRole="button"
-                accessibilityLabel={`${community.name}, ${formatCount(community.membersCount)} members${community.role === 'admin' ? ', you are admin' : ''}`}
-                accessibilityHint="Double tap to open this community"
-            >
-                {community.coverUrl ? (
+            {/* Cover */}
+            <View style={styles.cardCover}>
+                {hasCover ? (
                     <Image
                         source={{ uri: community.coverUrl }}
-                        style={styles.yourChipCover}
+                        style={StyleSheet.absoluteFill}
                         contentFit="cover"
                         placeholder={IMAGE_PLACEHOLDER.blurhash}
                         transition={IMAGE_PLACEHOLDER.transition}
@@ -274,245 +118,94 @@ const YourCommunityChip = memo(({ community, index }: { community: Community; in
                     />
                 ) : (
                     <LinearGradient
-                        colors={[colors.obsidian[600], colors.obsidian[700]]}
-                        style={styles.yourChipCover}
+                        colors={getCoverGradient(community)}
+                        style={StyleSheet.absoluteFill}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
                     />
                 )}
+                {/* Subtle bottom fade */}
                 <LinearGradient
-                    colors={['transparent', colors.surface.overlayHeavy]}
-                    style={styles.yourChipOverlay}
+                    colors={['transparent', 'rgba(0,0,0,0.35)']}
+                    style={styles.cardCoverFade}
                 />
-                <View style={styles.yourChipContent}>
-                    <Avatar
-                        uri={community.avatarUrl}
-                        name={community.name}
-                        size="sm"
-                        borderColor={colors.gold[500]}
-                        borderWidth={2}
+            </View>
+
+            {/* Avatar overlapping cover */}
+            <View style={styles.cardAvatarWrap}>
+                {community.avatarUrl ? (
+                    <Image
+                        source={{ uri: community.avatarUrl }}
+                        style={styles.cardAvatar}
+                        contentFit="cover"
+                        placeholder={IMAGE_PLACEHOLDER.blurhash}
+                        transition={IMAGE_PLACEHOLDER.transition}
+                        cachePolicy="memory-disk"
                     />
-                    <Text style={styles.yourChipName} numberOfLines={1}>
-                        {community.name}
-                    </Text>
-                    <View style={styles.yourChipMeta}>
-                        <Ionicons name="people" size={10} color={colors.text.muted} />
-                        <Text style={styles.yourChipCount}>
-                            {formatCount(community.membersCount)}
+                ) : (
+                    <View style={[styles.cardAvatar, styles.cardAvatarFallback]}>
+                        <Text style={styles.cardAvatarLetter}>
+                            {community.name.charAt(0).toUpperCase()}
                         </Text>
-                    </View>
-                </View>
-                {community.role === 'admin' && (
-                    <View style={styles.yourChipBadge}>
-                        <Ionicons name="shield-checkmark" size={10} color={colors.gold[500]} />
                     </View>
                 )}
-            </Pressable>
-        </Animated.View>
+            </View>
+
+            {/* Body */}
+            <View style={styles.cardBody}>
+                <Text style={styles.cardName} numberOfLines={1}>
+                    {community.name}
+                </Text>
+                {community.description ? (
+                    <Text style={styles.cardDescription} numberOfLines={2}>
+                        {community.description}
+                    </Text>
+                ) : null}
+
+                {/* Bottom row */}
+                <View style={styles.cardFooter}>
+                    <Text style={styles.cardMembers}>
+                        {formatCount(community.membersCount)} Members
+                    </Text>
+                    {isMember ? (
+                        <View style={[styles.accessBadge, styles.accessBadgeGreen]}>
+                            <Text style={[styles.accessBadgeText, styles.accessBadgeTextGreen]}>Joined</Text>
+                        </View>
+                    ) : isPending ? (
+                        <View style={[styles.accessBadge, { backgroundColor: colors.obsidian[600] }]}>
+                            <Text style={[styles.accessBadgeText, { color: colors.text.muted }]}>Requested</Text>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            style={[
+                                styles.accessBadge,
+                                isApprovalRequired ? styles.accessBadgeAmber : styles.accessBadgeGreen,
+                            ]}
+                            onPress={(e) => {
+                                e.stopPropagation?.();
+                                onJoin?.();
+                            }}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                            <Text style={[
+                                styles.accessBadgeText,
+                                isApprovalRequired ? styles.accessBadgeTextAmber : styles.accessBadgeTextGreen,
+                            ]}>
+                                {isApprovalRequired ? 'Request' : 'Join'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
+        </TouchableOpacity>
     );
-});
+}
 
 // ============================================
-// Discovery Community Card — Full Featured
+// Category Chips
 // ============================================
 
-const DiscoveryCommunityCard = memo(({ community, index, onJoin, isFeatured = false }: {
-    community: Community;
-    index: number;
-    onJoin: (id: string) => void;
-    isFeatured?: boolean;
-}) => {
-    const router = useRouter();
-    const [isJoining, setIsJoining] = useState(false);
-
-    // Subtle glow animation for featured communities
-    const glowAnim = useSharedValue(0);
-    useEffect(() => {
-        if (isFeatured) {
-            glowAnim.value = withRepeat(
-                withTiming(1, { duration: 2400 }),
-                -1,
-                true
-            );
-        }
-    }, [isFeatured]);
-
-    const featuredGlowStyle = useAnimatedStyle(() => {
-        if (!isFeatured) return {};
-        return {
-            borderColor: `rgba(212, 175, 55, ${interpolate(glowAnim.value, [0, 1], [0.15, 0.45])})`,
-            shadowOpacity: interpolate(glowAnim.value, [0, 1], [0.1, 0.35]),
-        };
-    });
-
-    const handleJoin = async () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setIsJoining(true);
-        try {
-            await onJoin(community.id);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {
-            showError('Failed to join community');
-        } finally {
-            setIsJoining(false);
-        }
-    };
-
-    return (
-        <Animated.View entering={FadeInDown.duration(350).delay(80 + index * 70)}>
-            <Animated.View style={[styles.discoveryCardShadow, isFeatured && featuredGlowStyle]}>
-                <TouchableOpacity
-                    style={styles.discoveryCard}
-                    activeOpacity={0.92}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        router.push(`/community/${community.id}`);
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${community.name}, ${formatCount(community.membersCount)} members`}
-                    accessibilityHint="Double tap to open community"
-                >
-                    {/* Cover Image with enhanced gradient overlay */}
-                    <View style={styles.discoveryCover}>
-                        {community.coverUrl ? (
-                            <Image
-                                source={{ uri: community.coverUrl }}
-                                style={StyleSheet.absoluteFill}
-                                contentFit="cover"
-                                placeholder={IMAGE_PLACEHOLDER.blurhash}
-                                transition={IMAGE_PLACEHOLDER.transition}
-                                cachePolicy="memory-disk"
-                            />
-                        ) : (
-                            <LinearGradient
-                                colors={[colors.obsidian[600], colors.obsidian[700]]}
-                                style={StyleSheet.absoluteFill}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                            />
-                        )}
-                        {/* Multi-stop gradient for depth */}
-                        <LinearGradient
-                            colors={['transparent', 'rgba(0,0,0,0.25)', colors.surface.overlayHeavy]}
-                            locations={[0, 0.5, 1]}
-                            style={StyleSheet.absoluteFill}
-                        />
-                        {/* Privacy badge */}
-                        <View style={styles.privacyBadge}>
-                            <Ionicons
-                                name={community.isPublic ? 'globe-outline' : 'lock-closed'}
-                                size={10}
-                                color={colors.text.secondary}
-                            />
-                            <Text style={styles.privacyBadgeText}>
-                                {community.isPublic ? 'Public' : 'Private'}
-                            </Text>
-                        </View>
-                        {/* Member count badge on cover */}
-                        <View style={styles.coverMemberBadge}>
-                            <Ionicons name="people" size={11} color={colors.text.primary} />
-                            <Text style={styles.coverMemberText}>
-                                {formatCount(community.membersCount)}
-                            </Text>
-                        </View>
-                    </View>
-
-                    {/* Card Body */}
-                    <View style={styles.discoveryBody}>
-                        {/* Avatar overlapping cover */}
-                        <View style={styles.discoveryAvatarRow}>
-                            <View style={styles.discoveryAvatarWrap}>
-                                <Avatar
-                                    uri={community.avatarUrl}
-                                    name={community.name}
-                                    customSize={52}
-                                    borderColor={colors.obsidian[900]}
-                                    borderWidth={3}
-                                />
-                            </View>
-
-                            {/* Join button or role badge */}
-                            {community.role ? (
-                                <View style={styles.memberBadge}>
-                                    <Ionicons
-                                        name={community.role === 'admin' ? 'shield-checkmark' : community.role === 'moderator' ? 'shield-half' : 'checkmark-circle'}
-                                        size={14}
-                                        color={colors.gold[500]}
-                                    />
-                                    <Text style={styles.memberBadgeText}>
-                                        {community.role.charAt(0).toUpperCase() + community.role.slice(1)}
-                                    </Text>
-                                </View>
-                            ) : (
-                                <TouchableOpacity
-                                    style={styles.joinBtn}
-                                    onPress={handleJoin}
-                                    disabled={isJoining}
-                                    activeOpacity={0.8}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`Join ${community.name}`}
-                                    accessibilityHint="Double tap to join this community"
-                                    accessibilityState={{ disabled: isJoining }}
-                                >
-                                    <LinearGradient
-                                        colors={[colors.gold[400], colors.gold[600]]}
-                                        style={styles.joinBtnGradient}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 1 }}
-                                    >
-                                        {isJoining ? (
-                                            <ActivityIndicator size="small" color={colors.obsidian[900]} />
-                                        ) : (
-                                            <>
-                                                <Ionicons name="add" size={16} color={colors.obsidian[900]} />
-                                                <Text style={styles.joinBtnText}>Join</Text>
-                                            </>
-                                        )}
-                                    </LinearGradient>
-                                </TouchableOpacity>
-                            )}
-                        </View>
-
-                        {/* Name & Description */}
-                        <Text style={styles.discoveryName} numberOfLines={1}>
-                            {community.name}
-                        </Text>
-                        {community.description ? (
-                            <Text style={styles.discoveryDescription} numberOfLines={2}>
-                                {community.description}
-                            </Text>
-                        ) : null}
-
-                        {/* Stats Row */}
-                        <View style={styles.discoveryStats}>
-                            <View style={styles.discoveryStatPill}>
-                                <Ionicons name="people" size={13} color={colors.gold[500]} />
-                                <Text style={styles.discoveryStatValue}>
-                                    {formatCount(community.membersCount)}
-                                </Text>
-                                <Text style={styles.discoveryStatLabel}>members</Text>
-                            </View>
-                            <View style={styles.discoveryStatPill}>
-                                <Ionicons name="chatbubbles-outline" size={13} color={colors.text.muted} />
-                                <Text style={styles.discoveryStatValue}>
-                                    {formatCount(community.postsCount)}
-                                </Text>
-                                <Text style={styles.discoveryStatLabel}>posts</Text>
-                            </View>
-                        </View>
-                    </View>
-                </TouchableOpacity>
-            </Animated.View>
-        </Animated.View>
-    );
-});
-
-// ============================================
-// Category Filter Pills
-// ============================================
-
-function CategoryPills({
-    active,
-    onSelect,
-}: {
+function CategoryChips({ active, onSelect }: {
     active: CategoryFilter;
     onSelect: (cat: CategoryFilter) => void;
 }) {
@@ -520,31 +213,24 @@ function CategoryPills({
         <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.pillsScroll}
-            style={styles.pillsContainer}
+            contentContainerStyle={styles.chipsScroll}
+            style={styles.chipsContainer}
         >
             {CATEGORY_FILTERS.map((cat) => {
                 const isActive = active === cat.key;
                 return (
                     <TouchableOpacity
                         key={cat.key}
-                        style={[styles.pill, isActive && styles.pillActive]}
+                        style={[styles.chip, isActive && styles.chipActive]}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             onSelect(cat.key);
                         }}
                         activeOpacity={0.7}
                         accessibilityRole="tab"
-                        accessibilityLabel={cat.label}
                         accessibilityState={{ selected: isActive }}
                     >
-                        <Ionicons
-                            name={cat.icon}
-                            size={14}
-                            color={isActive ? colors.gold[500] : colors.text.muted}
-                            style={styles.pillIconMargin}
-                        />
-                        <Text style={[styles.pillText, isActive && styles.pillTextActive]}>
+                        <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
                             {cat.label}
                         </Text>
                     </TouchableOpacity>
@@ -555,446 +241,65 @@ function CategoryPills({
 }
 
 // ============================================
-// Empty State Components
+// Tab Switcher (Discover / My Groups)
 // ============================================
 
-function EmptyYourCommunities({ onCreatePress }: { onCreatePress: () => void }) {
-    return (
-        <Animated.View entering={FadeInDown.duration(300)} style={styles.emptyYours}>
-            <View style={styles.emptyYoursIcon}>
-                <Ionicons name="heart-outline" size={24} color={colors.gold[500]} />
-            </View>
-            <View style={styles.emptyYoursText}>
-                <Text style={styles.emptyYoursTitle}>No communities yet</Text>
-                <Text style={styles.emptyYoursSubtitle}>
-                    Join or create one to get started
-                </Text>
-            </View>
-            <TouchableOpacity
-                style={styles.emptyYoursBtn}
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    onCreatePress();
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="Create community"
-            >
-                <Ionicons name="add" size={18} color={colors.gold[500]} />
-            </TouchableOpacity>
-        </Animated.View>
-    );
-}
-
-function EmptyDiscovery() {
-    return (
-        <Animated.View entering={FadeInDown.duration(350).delay(100)} style={styles.emptyDiscovery}>
-            {/* Decorative stacked icon illustration */}
-            <View style={styles.emptyDiscoveryIllustration}>
-                <Animated.View entering={FadeIn.duration(500).delay(200)} style={styles.emptyDiscoveryOrbitIcon1}>
-                    <Ionicons name="people-outline" size={18} color={colors.gold[400]} />
-                </Animated.View>
-                <Animated.View entering={FadeIn.duration(500).delay(350)} style={styles.emptyDiscoveryOrbitIcon2}>
-                    <Ionicons name="chatbubbles-outline" size={16} color={colors.azure[400]} />
-                </Animated.View>
-                <Animated.View entering={FadeIn.duration(500).delay(500)} style={styles.emptyDiscoveryOrbitIcon3}>
-                    <Ionicons name="heart-outline" size={16} color={colors.coral[400]} />
-                </Animated.View>
-                <View style={styles.emptyDiscoveryIconWrap}>
-                    <LinearGradient
-                        colors={[colors.surface.goldSubtle, colors.surface.goldMedium]}
-                        style={StyleSheet.absoluteFill}
-                    />
-                    <Ionicons name="compass-outline" size={40} color={colors.gold[500]} />
-                </View>
-            </View>
-            <Text style={styles.emptyDiscoveryTitle}>No communities yet</Text>
-            <Text style={styles.emptyDiscoverySubtitle}>
-                Create or join one!{'\n'}New communities are being created every day.
-            </Text>
-        </Animated.View>
-    );
-}
-
-// ============================================
-// Featured Group Card (Seed Groups)
-// ============================================
-
-const FeaturedGroupCard = memo(({ group, index, onJoin, onShare }: {
-    group: FeaturedGroup;
-    index: number;
-    onJoin: (group: FeaturedGroup) => void;
-    onShare: (group: FeaturedGroup) => void;
-}) => {
-    const [isJoining, setIsJoining] = useState(false);
-
-    const handleJoin = async () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setIsJoining(true);
-        try {
-            await onJoin(group);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {
-            showError('Failed to join group');
-        } finally {
-            setIsJoining(false);
-        }
-    };
-
-    return (
-        <Animated.View entering={FadeInDown.duration(350).delay(80 + index * 90)}>
-            <View style={featuredStyles.card}>
-                {/* Gradient Header */}
-                <LinearGradient
-                    colors={group.gradient}
-                    style={featuredStyles.header}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                >
-                    <View style={featuredStyles.headerContent}>
-                        {group.logoUrl ? (
-                            <Image
-                                source={{ uri: group.logoUrl }}
-                                style={featuredStyles.logoImage}
-                                contentFit="contain"
-                                cachePolicy="memory-disk"
-                            />
-                        ) : (
-                            <View style={featuredStyles.iconCircle}>
-                                <Ionicons name={group.icon} size={22} color={colors.obsidian[900]} />
-                            </View>
-                        )}
-                        <View style={{ flex: 1 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={featuredStyles.groupName}>{group.name}</Text>
-                                {group.isDemo && (
-                                    <View style={featuredStyles.demoBadge}>
-                                        <Text style={featuredStyles.demoBadgeText}>DEMO</Text>
-                                    </View>
-                                )}
-                            </View>
-                            <View style={featuredStyles.tagsRow}>
-                                {group.tags.map((tag) => (
-                                    <View key={tag} style={featuredStyles.tag}>
-                                        <Text style={featuredStyles.tagText}>{tag}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        </View>
-                    </View>
-                </LinearGradient>
-
-                {/* Body */}
-                <View style={featuredStyles.body}>
-                    <Text style={featuredStyles.description} numberOfLines={2}>
-                        {group.description}
-                    </Text>
-
-                    {group.websiteUrl && (
-                        <TouchableOpacity
-                            onPress={() => Linking.openURL(group.websiteUrl!)}
-                            style={featuredStyles.websiteLink}
-                            accessibilityRole="link"
-                        >
-                            <Ionicons name="globe-outline" size={13} color={colors.azure[400]} />
-                            <Text style={featuredStyles.websiteLinkText}>{group.websiteUrl.replace('https://', '').replace('www.', '').replace(/\/$/, '')}</Text>
-                        </TouchableOpacity>
-                    )}
-
-                    {/* Next Event */}
-                    {group.nextEvent && (
-                        <View style={featuredStyles.eventRow}>
-                            <Ionicons name="calendar-outline" size={14} color={colors.gold[500]} />
-                            <Text style={featuredStyles.eventTitle}>{group.nextEvent.title}</Text>
-                            <Text style={featuredStyles.eventDate}>{group.nextEvent.date}</Text>
-                        </View>
-                    )}
-
-                    {/* Action Row */}
-                    <View style={featuredStyles.actionRow}>
-                        <TouchableOpacity
-                            style={featuredStyles.joinBtn}
-                            onPress={handleJoin}
-                            disabled={isJoining}
-                            activeOpacity={0.8}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Join ${group.name}`}
-                            accessibilityHint="Double tap to join this group"
-                            accessibilityState={{ disabled: isJoining }}
-                        >
-                            <LinearGradient
-                                colors={[colors.gold[400], colors.gold[600]]}
-                                style={featuredStyles.joinGradient}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                            >
-                                {isJoining ? (
-                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
-                                ) : (
-                                    <>
-                                        <Ionicons name="add" size={16} color={colors.obsidian[900]} />
-                                        <Text style={featuredStyles.joinText}>Join Group</Text>
-                                    </>
-                                )}
-                            </LinearGradient>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={featuredStyles.shareBtn}
-                            onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                onShare(group);
-                            }}
-                            activeOpacity={0.7}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Share ${group.name}`}
-                            accessibilityHint="Double tap to share via text or social media"
-                        >
-                            <Ionicons name="share-outline" size={18} color={colors.gold[500]} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </View>
-        </Animated.View>
-    );
-});
-
-const featuredStyles = StyleSheet.create({
-    sectionContainer: {
-        marginBottom: spacing.lg,
-    },
-    card: {
-        backgroundColor: colors.surface.glass,
-        borderRadius: 16,
-        marginBottom: spacing.md,
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
-        overflow: 'hidden',
-    },
-    header: {
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.md,
-    },
-    headerContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-    },
-    iconCircle: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: colors.surface.overlayLight,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    groupName: {
-        fontSize: typography.fontSize.lg,
-        fontWeight: '700',
-        color: colors.obsidian[900],
-        fontFamily: 'Inter-Bold',
-    },
-    tagsRow: {
-        flexDirection: 'row',
-        gap: 6,
-        marginTop: 4,
-        flexWrap: 'wrap',
-    },
-    tag: {
-        backgroundColor: colors.surface.overlayLight,
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 6,
-    },
-    tagText: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: colors.obsidian[900],
-    },
-    body: {
-        padding: spacing.md,
-    },
-    description: {
-        fontSize: typography.fontSize.sm,
-        color: colors.text.secondary,
-        lineHeight: 20,
-        marginBottom: spacing.sm,
-    },
-    eventRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: colors.surface.goldSubtle,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: 6,
-        borderRadius: 8,
-        marginBottom: spacing.sm,
-    },
-    eventTitle: {
-        fontSize: typography.fontSize.xs,
-        fontWeight: '600',
-        color: colors.gold[500],
-        flex: 1,
-    },
-    eventDate: {
-        fontSize: typography.fontSize.xs,
-        color: colors.text.muted,
-    },
-    actionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm,
-    },
-    joinBtn: {
-        flex: 1,
-        borderRadius: 10,
-        overflow: 'hidden',
-    },
-    joinGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 10,
-        gap: 4,
-    },
-    joinText: {
-        fontSize: typography.fontSize.sm,
-        fontWeight: '700',
-        color: colors.obsidian[900],
-    },
-    shareBtn: {
-        width: 42,
-        height: 42,
-        borderRadius: 10,
-        backgroundColor: colors.surface.goldSubtle,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
-    },
-    logoImage: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        marginEnd: spacing.sm,
-        backgroundColor: colors.obsidian[900],
-    },
-    demoBadge: {
-        backgroundColor: colors.gold[500] + '25',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-        marginStart: 6,
-        alignSelf: 'center',
-    },
-    demoBadgeText: {
-        fontSize: 9,
-        fontWeight: '800',
-        color: colors.gold[400],
-        letterSpacing: 0.8,
-    },
-    websiteLink: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        marginTop: spacing.xs,
-    },
-    websiteLinkText: {
-        fontSize: typography.fontSize.xs,
-        color: colors.azure[400],
-        fontFamily: 'Inter-Medium',
-    },
-});
-
-// ============================================
-// Template Selection Modal
-// ============================================
-
-function TemplateSelectionModal({ visible, onClose, onSelect }: {
-    visible: boolean;
-    onClose: () => void;
-    onSelect: (template: CommunityTemplate) => void;
+function TabSwitcher({ active, onChange }: {
+    active: TabKey;
+    onChange: (tab: TabKey) => void;
 }) {
-    const insets = useSafeAreaInsets();
+    return (
+        <View style={styles.tabBar}>
+            {(['discover', 'my-groups'] as TabKey[]).map((tab) => {
+                const isActive = active === tab;
+                const label = tab === 'discover' ? 'Discover' : 'My Groups';
+                return (
+                    <TouchableOpacity
+                        key={tab}
+                        style={[styles.tab, isActive && styles.tabActive]}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            onChange(tab);
+                        }}
+                        activeOpacity={0.7}
+                        accessibilityRole="tab"
+                        accessibilityState={{ selected: isActive }}
+                    >
+                        <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                            {label}
+                        </Text>
+                    </TouchableOpacity>
+                );
+            })}
+        </View>
+    );
+}
+
+// ============================================
+// Empty State
+// ============================================
+
+function EmptyState({ tab, searchActive }: { tab: TabKey; searchActive: boolean }) {
+    const icon = searchActive ? 'search-outline' : tab === 'discover' ? 'compass-outline' : 'heart-outline';
+    const title = searchActive
+        ? 'No communities found'
+        : tab === 'discover'
+            ? 'No communities yet'
+            : 'You haven\'t joined any communities';
+    const subtitle = searchActive
+        ? 'Try a different search term'
+        : tab === 'discover'
+            ? 'Be the first to create one!'
+            : 'Discover and join communities to see them here';
 
     return (
-        <Modal
-            visible={visible}
-            animationType="slide"
-            presentationStyle="pageSheet"
-            onRequestClose={onClose}
-        >
-            <View style={[templateStyles.container, { paddingTop: insets.top }]}>
-                <LinearGradient
-                    colors={[colors.obsidian[900], colors.obsidian[800]]}
-                    style={StyleSheet.absoluteFill}
-                />
-
-                {/* Header */}
-                <View style={styles.modalHeader}>
-                    <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancel">
-                        <Text style={styles.modalCancel}>Cancel</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.modalTitle} accessibilityRole="header">Choose Template</Text>
-                    <View style={styles.modalHeaderSpacer} />
-                </View>
-
-                <ScrollView
-                    contentContainerStyle={templateStyles.scrollContent}
-                    showsVerticalScrollIndicator={false}
-                >
-                    <Animated.View entering={FadeInDown.duration(350).delay(50)}>
-                        <Text style={templateStyles.subtitle}>
-                            Pick a starting point for your community
-                        </Text>
-                    </Animated.View>
-
-                    {COMMUNITY_TEMPLATES.map((template, index) => (
-                        <Animated.View
-                            key={template.id}
-                            entering={FadeInDown.duration(350).delay(100 + index * 70)}
-                        >
-                            <TouchableOpacity
-                                activeOpacity={0.85}
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                    onSelect(template);
-                                }}
-                                accessibilityRole="button"
-                                accessibilityLabel={`${template.name}: ${template.description}`}
-                            >
-                                <GlassCard style={templateStyles.card} padding="none">
-                                    <View style={templateStyles.cardInner}>
-                                        {/* Icon */}
-                                        <View style={[templateStyles.iconWrap, { backgroundColor: template.color + '18' }]}>
-                                            <Ionicons name={template.icon} size={28} color={template.color} />
-                                        </View>
-
-                                        {/* Text content */}
-                                        <View style={templateStyles.cardText}>
-                                            <Text style={templateStyles.cardTitle}>{template.name}</Text>
-                                            <Text style={templateStyles.cardDescription}>{template.description}</Text>
-
-                                            {/* Channel pills */}
-                                            <View style={templateStyles.channelsRow}>
-                                                {template.channels.map((ch) => (
-                                                    <View key={ch} style={[templateStyles.channelPill, { borderColor: template.color + '30' }]}>
-                                                        <Ionicons name="chatbubble-outline" size={10} color={template.color} />
-                                                        <Text style={[templateStyles.channelText, { color: template.color }]}>{ch}</Text>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                        </View>
-
-                                        {/* Chevron */}
-                                        <Ionicons name="chevron-forward" size={20} color={colors.text.muted} />
-                                    </View>
-                                </GlassCard>
-                            </TouchableOpacity>
-                        </Animated.View>
-                    ))}
-                </ScrollView>
+        <View style={styles.emptyState}>
+            <View style={styles.emptyIconWrap}>
+                <Ionicons name={icon} size={36} color={colors.text.muted} />
             </View>
-        </Modal>
+            <Text style={styles.emptyTitle}>{title}</Text>
+            <Text style={styles.emptySubtitle}>{subtitle}</Text>
+        </View>
     );
 }
 
@@ -1002,25 +307,28 @@ function TemplateSelectionModal({ visible, onClose, onSelect }: {
 // Create Community Modal
 // ============================================
 
-function CreateCommunityModal({ visible, onClose, onCreate, initialName = '' }: {
+function CreateCommunityModal({ visible, onClose, onCreate }: {
     visible: boolean;
     onClose: () => void;
     onCreate: () => void;
-    initialName?: string;
 }) {
-    const [name, setName] = useState(initialName);
+    const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [isPrivate, setIsPrivate] = useState(true);
+    const [isPrivate, setIsPrivate] = useState(false);
+    const [approvalRequired, setApprovalRequired] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const insets = useSafeAreaInsets();
     const { createCommunity } = useCommunitiesStore();
 
-    // Sync initialName when modal opens with a new template
+    // Reset form when modal opens
     useEffect(() => {
         if (visible) {
-            setName(initialName);
+            setName('');
+            setDescription('');
+            setIsPrivate(false);
+            setApprovalRequired(false);
         }
-    }, [visible, initialName]);
+    }, [visible]);
 
     const handleCreate = async () => {
         if (!name.trim() || name.trim().length < 3) {
@@ -1031,9 +339,6 @@ function CreateCommunityModal({ visible, onClose, onCreate, initialName = '' }: 
         try {
             await createCommunity(name.trim(), description.trim(), isPrivate);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setName('');
-            setDescription('');
-            setIsPrivate(true);
             onClose();
             onCreate();
         } catch {
@@ -1050,23 +355,23 @@ function CreateCommunityModal({ visible, onClose, onCreate, initialName = '' }: 
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
                 <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
-                {/* Modal Header */}
+
+                {/* Header */}
                 <View style={styles.modalHeader}>
                     <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancel">
                         <Text style={styles.modalCancel}>Cancel</Text>
                     </TouchableOpacity>
-                    <Text style={styles.modalTitle} accessibilityRole="header">New Community</Text>
+                    <Text style={styles.modalTitle}>New Community</Text>
                     <TouchableOpacity
                         onPress={handleCreate}
                         disabled={isCreating || !name.trim()}
                         accessibilityRole="button"
                         accessibilityLabel="Create community"
-                        accessibilityState={{ disabled: isCreating || !name.trim() }}
                     >
                         {isCreating ? (
                             <ActivityIndicator size="small" color={colors.gold[500]} />
                         ) : (
-                            <Text style={[styles.modalDone, (!name.trim()) && styles.modalDoneDisabled]}>Create</Text>
+                            <Text style={[styles.modalDone, !name.trim() && styles.modalDoneDisabled]}>Create</Text>
                         )}
                     </TouchableOpacity>
                 </View>
@@ -1097,62 +402,35 @@ function CreateCommunityModal({ visible, onClose, onCreate, initialName = '' }: 
                     />
 
                     <View style={styles.switchRow}>
-                        <View style={styles.flex1}>
+                        <View style={styles.switchTextWrap}>
                             <Text style={styles.switchLabel}>Private Community</Text>
-                            <Text style={styles.switchDescription}>Only invited members can join and see content</Text>
+                            <Text style={styles.switchDescription}>Only invited members can see content</Text>
                         </View>
                         <Switch
                             value={isPrivate}
                             onValueChange={setIsPrivate}
                             trackColor={{ false: colors.surface.glassHover, true: colors.gold[500] }}
                             thumbColor={colors.text.primary}
-                            accessibilityLabel="Private community"
-                            accessibilityHint="Toggle to make this community private or public"
-                            accessibilityRole="switch"
-                            accessibilityState={{ checked: isPrivate }}
+                            accessibilityLabel="Private community toggle"
+                        />
+                    </View>
+
+                    <View style={styles.switchRow}>
+                        <View style={styles.switchTextWrap}>
+                            <Text style={styles.switchLabel}>Approval Required</Text>
+                            <Text style={styles.switchDescription}>New members need admin approval to join</Text>
+                        </View>
+                        <Switch
+                            value={approvalRequired}
+                            onValueChange={setApprovalRequired}
+                            trackColor={{ false: colors.surface.glassHover, true: colors.amber[500] }}
+                            thumbColor={colors.text.primary}
+                            accessibilityLabel="Approval required toggle"
                         />
                     </View>
                 </View>
             </KeyboardAvoidingView>
         </Modal>
-    );
-}
-
-// ============================================
-// FAB — Floating Action Button
-// ============================================
-
-function CreateFAB({ onPress }: { onPress: () => void }) {
-    const scale = useSharedValue(1);
-    const animStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-    }));
-
-    return (
-        <Animated.View style={[styles.fabContainer, animStyle]}>
-            <TouchableOpacity
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    scale.value = withSpring(0.88, { damping: 12 });
-                    setTimeout(() => { scale.value = withSpring(1, { damping: 12 }); }, 120);
-                    onPress();
-                }}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel="Create community"
-                accessibilityHint="Double tap to start creating a new community"
-                style={styles.fabTouchable}
-            >
-                <LinearGradient
-                    colors={[colors.gold[400], colors.gold[600]]}
-                    style={styles.fabGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                >
-                    <Ionicons name="add" size={28} color={colors.obsidian[900]} />
-                </LinearGradient>
-            </TouchableOpacity>
-        </Animated.View>
     );
 }
 
@@ -1163,29 +441,22 @@ function CreateFAB({ onPress }: { onPress: () => void }) {
 export default function CommunitiesScreen() {
     const insets = useSafeAreaInsets();
     const router = useRouter();
-    const user = useAuthStore((s) => s.user);
     const {
         communities,
         isLoading,
-        error: commError,
         fetchCommunities,
         joinCommunity,
     } = useCommunitiesStore();
 
-    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [activeTab, setActiveTab] = useState<TabKey>('discover');
+    const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedQuery = useDebounce(searchQuery, 300);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [showTemplateModal, setShowTemplateModal] = useState(false);
-    const [selectedTemplate, setSelectedTemplate] = useState<CommunityTemplate | null>(null);
-    const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
     const [discoverCommunities, setDiscoverCommunities] = useState<Community[]>([]);
     const [isLoadingDiscover, setIsLoadingDiscover] = useState(false);
-    const [joinedFeatured, setJoinedFeatured] = useState<Set<string>>(new Set());
-    const [isRetrying, setIsRetrying] = useState(false);
-
     const searchInputRef = useRef<TextInput>(null);
-    const searchBarScale = useSharedValue(1);
 
     // ============================================
     // Data Fetching
@@ -1196,14 +467,26 @@ export default function CommunitiesScreen() {
         fetchDiscover();
     }, []);
 
+    // Re-fetch discover when search or category changes
+    useEffect(() => {
+        fetchDiscover();
+    }, [debouncedQuery, activeCategory]);
+
     const fetchDiscover = async () => {
         setIsLoadingDiscover(true);
         try {
-            const data = await apiFetch<any>(`${API.communities}?discover=true&limit=20`);
+            let url = `${API.communities}?discover=true&limit=30`;
+            if (debouncedQuery.trim()) {
+                url += `&search=${encodeURIComponent(debouncedQuery.trim())}`;
+            }
+            if (activeCategory !== 'all') {
+                url += `&category=${activeCategory}`;
+            }
+            const data = await apiFetch<any>(url);
             const list = data.communities || data.data || data || [];
             setDiscoverCommunities(Array.isArray(list) ? list : []);
-        } catch (error) {
-            console.warn('Failed to fetch discover communities:', error);
+        } catch {
+            // Silently fail — user can pull to refresh
         } finally {
             setIsLoadingDiscover(false);
         }
@@ -1216,121 +499,44 @@ export default function CommunitiesScreen() {
         setIsRefreshing(false);
     };
 
-    const handleFullRetry = async () => {
-        setIsRetrying(true);
+    const handleJoin = useCallback(async (communityId: string, approvalRequired?: boolean) => {
         try {
-            await Promise.all([fetchCommunities(), fetchDiscover()]);
-        } finally {
-            setIsRetrying(false);
-        }
-    };
+            const result = await apiFetch(`/api/v1/communities/${communityId}/join`, { method: 'POST' }) as any;
 
-    const handleTemplateSelect = useCallback((template: CommunityTemplate) => {
-        setSelectedTemplate(template);
-        setShowTemplateModal(false);
-        // Small delay so the template modal dismiss animation finishes
-        setTimeout(() => {
-            setShowCreateModal(true);
-        }, 300);
-    }, []);
-
-    const handleJoin = useCallback(async (communityId: string) => {
-        await joinCommunity(communityId);
-        // Move to "your communities" optimistically
-        setDiscoverCommunities((prev) =>
-            prev.map((c) => c.id === communityId ? { ...c, role: 'member' as const } : c)
-        );
-    }, [joinCommunity]);
-
-    // ============================================
-    // Featured Group Handlers
-    // ============================================
-
-    const handleJoinFeaturedGroup = useCallback(async (group: FeaturedGroup) => {
-        try {
-            // Create the community on the server and auto-join
-            const data = await apiFetch<any>(API.communities, {
-                method: 'POST',
-                body: JSON.stringify({
-                    name: group.name,
-                    description: group.description,
-                    isPublic: true,
-                }),
-            });
-            const newCommunity = data.community || data;
-            // Refresh communities list
-            fetchCommunities();
-            setJoinedFeatured((prev) => new Set(prev).add(group.id));
-            // Navigate to the new community
-            if (newCommunity?.id) {
-                router.push(`/community/${newCommunity.id}` as any);
-            }
-        } catch (err: any) {
-            // If community already exists, try to find and join it
-            if (err.message?.includes('already exists') || err.message?.includes('duplicate')) {
-                showError('This group already exists — check your communities!');
+            if (result?.status === 'pending') {
+                // Request-to-join — mark as pending in local state
+                setDiscoverCommunities((prev) =>
+                    prev.map((c) => c.id === communityId ? { ...c, requestStatus: 'pending' } : c)
+                );
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                Alert.alert('Request Sent', 'Your request to join has been sent to the admin for approval.');
             } else {
-                throw err;
+                // Direct join
+                setDiscoverCommunities((prev) =>
+                    prev.map((c) => c.id === communityId ? { ...c, role: 'member' as const } : c)
+                );
+                fetchCommunities(true); // Refresh my groups
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
+        } catch {
+            Alert.alert('Error', 'Failed to join community.');
         }
-    }, [fetchCommunities, router]);
-
-    const handleShareFeaturedGroup = useCallback(async (group: FeaturedGroup) => {
-        const inviteLink = `https://0gravity.ai/group/${group.id}`;
-        const message = `🔗 Join ${group.name} on 0G!\n\n${group.description}\n\nTap to join: ${inviteLink}\n\nNo account needed — join in seconds!`;
-        try {
-            await Share.share({
-                message,
-                url: inviteLink,
-            });
-        } catch { /* user cancelled share sheet */ }
-    }, []);
-
-    // ============================================
-    // Search with useDebounce hook (300ms)
-    // ============================================
-
-    const handleSearchChange = useCallback((text: string) => {
-        setSearchQuery(text);
-    }, []);
-
-    const clearSearch = useCallback(() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setSearchQuery('');
-        searchInputRef.current?.blur();
-    }, []);
-
-    // ============================================
-    // Search bar animation
-    // ============================================
-
-    const searchBarAnimStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: searchBarScale.value }],
-    }));
-
-    const handleSearchFocus = useCallback(() => {
-        searchBarScale.value = withSpring(1.02, { damping: 15, stiffness: 300 });
-    }, []);
-
-    const handleSearchBlur = useCallback(() => {
-        searchBarScale.value = withSpring(1, { damping: 15, stiffness: 300 });
-    }, []);
+    }, [fetchCommunities]);
 
     // ============================================
     // Derived Data
     // ============================================
 
-    // Communities the user has joined
-    const yourCommunities = useMemo(() =>
+    const myGroups = useMemo(() =>
         communities.filter((c) => c.role !== null),
     [communities]);
 
-    // Discover communities (filter out already joined)
-    const joinedIds = useMemo(() => new Set(yourCommunities.map((c) => c.id)), [yourCommunities]);
+    const joinedIds = useMemo(() => new Set(myGroups.map((c) => c.id)), [myGroups]);
 
-    const filteredDiscover = useMemo(() => {
+    const discoverList = useMemo(() => {
         let pool = discoverCommunities.filter((c) => !joinedIds.has(c.id));
-        // Also include communities from the main store that the user hasn't joined
+
+        // Also include non-joined communities from the main store
         const discoverIds = new Set(pool.map((c) => c.id));
         communities.forEach((c) => {
             if (!c.role && !discoverIds.has(c.id)) {
@@ -1338,29 +544,17 @@ export default function CommunitiesScreen() {
             }
         });
 
-        // Apply search
+        // Client-side search fallback
         if (debouncedQuery.trim()) {
             const q = debouncedQuery.trim().toLowerCase();
             pool = pool.filter(
-                (c) =>
-                    c.name.toLowerCase().includes(q) ||
-                    c.description?.toLowerCase().includes(q)
+                (c) => c.name.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q)
             );
         }
 
-        // Apply category filter (basic keyword matching)
+        // Client-side category filter fallback
         if (activeCategory !== 'all') {
-            const catKeywords: Record<CategoryFilter, string[]> = {
-                all: [],
-                faith: ['faith', 'islam', 'deen', 'prayer', 'quran', 'muslim', 'spiritual', 'mosque', 'ramadan'],
-                family: ['family', 'parent', 'kids', 'children', 'marriage', 'sisters', 'brothers'],
-                education: ['education', 'learn', 'study', 'school', 'university', 'course', 'book'],
-                tech: ['tech', 'code', 'programming', 'developer', 'software', 'ai', 'data', 'engineering'],
-                business: ['business', 'entrepreneur', 'startup', 'finance', 'invest', 'career', 'professional'],
-                health: ['health', 'fitness', 'wellness', 'mental', 'nutrition', 'exercise', 'yoga'],
-                culture: ['culture', 'art', 'food', 'travel', 'music', 'history', 'language', 'halal'],
-            };
-            const keywords = catKeywords[activeCategory];
+            const keywords = CAT_KEYWORDS[activeCategory];
             pool = pool.filter((c) => {
                 const text = `${c.name} ${c.description || ''}`.toLowerCase();
                 return keywords.some((kw) => text.includes(kw));
@@ -1370,147 +564,41 @@ export default function CommunitiesScreen() {
         return pool;
     }, [discoverCommunities, communities, joinedIds, debouncedQuery, activeCategory]);
 
-    // Also filter "Your Communities" by search
-    const filteredYourCommunities = useMemo(() => {
-        if (!debouncedQuery.trim()) return yourCommunities;
+    const filteredMyGroups = useMemo(() => {
+        if (!debouncedQuery.trim()) return myGroups;
         const q = debouncedQuery.trim().toLowerCase();
-        return yourCommunities.filter((c) =>
+        return myGroups.filter((c) =>
             c.name.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q)
         );
-    }, [yourCommunities, debouncedQuery]);
+    }, [myGroups, debouncedQuery]);
+
+    const activeData = activeTab === 'discover' ? discoverList : filteredMyGroups;
+    const isLoadingActive = activeTab === 'discover' ? isLoadingDiscover : isLoading;
 
     // ============================================
-    // Render: Section Header
+    // Grid Render
     // ============================================
 
-    const renderSectionHeader = (title: string, icon: keyof typeof Ionicons.glyphMap, count?: number) => (
-        <View style={styles.sectionHeader}>
-            <Ionicons name={icon} size={18} color={colors.gold[500]} />
-            <Text style={styles.sectionTitle}>{title}</Text>
-            {count !== undefined && count > 0 && (
-                <View style={styles.sectionCount}>
-                    <Text style={styles.sectionCountText}>{count}</Text>
-                </View>
-            )}
-        </View>
-    );
-
-    // ============================================
-    // Render: List Header (search + yours + discover header)
-    // ============================================
-
-    const renderListHeader = () => (
-        <View>
-            {/* Your Communities Section */}
-            <Animated.View entering={FadeInDown.duration(350).delay(50)}>
-                {renderSectionHeader('Your Communities', 'heart', filteredYourCommunities.length)}
-                {filteredYourCommunities.length > 0 ? (
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.yourCommunitiesScroll}
-                        style={styles.yourCommunitiesContainer}
-                    >
-                        {filteredYourCommunities.map((c, i) => (
-                            <YourCommunityChip key={c.id} community={c} index={i} />
-                        ))}
-                    </ScrollView>
-                ) : (
-                    <EmptyYourCommunities onCreatePress={() => setShowTemplateModal(true)} />
-                )}
-            </Animated.View>
-
-            {/* Featured Groups Section */}
-            <Animated.View entering={FadeInDown.duration(350).delay(100)}>
-                <View style={featuredStyles.sectionContainer}>
-                    {renderSectionHeader('Featured Groups', 'star', FEATURED_GROUPS.length)}
-                    <Text style={styles.featuredSubtitle}>
-                        Join a group — invite friends via text or WhatsApp. No signup required.
-                    </Text>
-                    {FEATURED_GROUPS.filter((g) => !joinedFeatured.has(g.id)).map((group, index) => (
-                        <FeaturedGroupCard
-                            key={group.id}
-                            group={group}
-                            index={index}
-                            onJoin={handleJoinFeaturedGroup}
-                            onShare={handleShareFeaturedGroup}
-                        />
-                    ))}
-                </View>
-            </Animated.View>
-
-            {/* Discover Section Header */}
-            <Animated.View entering={FadeInDown.duration(350).delay(200)}>
-                <View style={styles.discoverHeaderRow}>
-                    {renderSectionHeader('Discover', 'compass', filteredDiscover.length)}
-                </View>
-            </Animated.View>
-        </View>
-    );
-
-    // ============================================
-    // Render: Discover Card
-    // ============================================
-
-    const renderDiscoverItem = useCallback(({ item, index }: { item: Community; index: number }) => (
-        <DiscoveryCommunityCard
+    const renderGridItem = useCallback(({ item }: { item: Community }) => (
+        <CommunityCard
             community={item}
-            index={index}
-            onJoin={handleJoin}
+            onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push(`/community/${item.id}`);
+            }}
+            onJoin={() => handleJoin(item.id, item.approvalRequired)}
         />
-    ), [handleJoin]);
+    ), [router, handleJoin]);
 
-    // ============================================
-    // Render: Empty Discover
-    // ============================================
-
-    const renderEmptyDiscover = () => {
-        if (isLoading || isLoadingDiscover) {
+    const renderEmpty = () => {
+        if (isLoadingActive) {
             return (
-                <View style={styles.skeletonDiscoverList}>
-                    {Array.from({ length: 3 }).map((_, i) => (
-                        <Animated.View key={i} entering={FadeInDown.duration(300).delay(i * 80)}>
-                            <View style={styles.skeletonCard}>
-                                <SkeletonShimmer width="100%" height={100} borderRadius={16} />
-                                <View style={{ padding: spacing.md, gap: spacing.sm }}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-                                        <SkeletonShimmer width={48} height={48} borderRadius={24} />
-                                        <View style={{ flex: 1, gap: 6 }}>
-                                            <SkeletonShimmer width={140} height={14} borderRadius={7} />
-                                            <SkeletonShimmer width={100} height={10} borderRadius={5} />
-                                        </View>
-                                        <SkeletonShimmer width={64} height={28} borderRadius={14} />
-                                    </View>
-                                </View>
-                            </View>
-                        </Animated.View>
-                    ))}
+                <View style={styles.loadingWrap}>
+                    <ActivityIndicator size="large" color={colors.gold[500]} />
                 </View>
             );
         }
-        if (commError && communities.length === 0) {
-            return (
-                <RetryView
-                    message="Couldn't load communities. Tap to try again."
-                    onRetry={() => { fetchCommunities(); fetchDiscover(); }}
-                />
-            );
-        }
-        // Show "No groups found" when search is active
-        if (debouncedQuery.trim() && filteredYourCommunities.length === 0) {
-            return (
-                <Animated.View entering={FadeInDown.duration(300)} style={styles.noResultsContainer}>
-                    <View style={styles.noResultsIconWrap}>
-                        <Ionicons name="search-outline" size={32} color={colors.text.muted} />
-                    </View>
-                    <Text style={styles.noResultsTitle}>No groups found</Text>
-                    <Text style={styles.noResultsSubtitle}>
-                        Try a different search term or create a new community
-                    </Text>
-                </Animated.View>
-            );
-        }
-        return <EmptyDiscovery />;
+        return <EmptyState tab={activeTab} searchActive={!!debouncedQuery.trim()} />;
     };
 
     // ============================================
@@ -1518,7 +606,7 @@ export default function CommunitiesScreen() {
     // ============================================
 
     return (
-        <View style={styles.container} accessible={false}>
+        <View style={styles.container}>
             <LinearGradient
                 colors={[colors.obsidian[900], colors.obsidian[800]]}
                 style={StyleSheet.absoluteFill}
@@ -1526,129 +614,69 @@ export default function CommunitiesScreen() {
 
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-                <Animated.View entering={FadeInDown.duration(400)}>
-                    <View style={styles.headerRow}>
-                        <View style={styles.flex1}>
-                            <Text style={styles.headerTitle} accessibilityRole="header" accessibilityLabel={`Communities. ${filteredYourCommunities.length} joined, ${filteredDiscover.length} to discover`}>
-                                Communities
-                            </Text>
-                            <Text style={styles.headerSubtitle}>
-                                Your private groups and tribes
-                            </Text>
-                        </View>
-                    </View>
-                </Animated.View>
+                <View style={styles.headerRow}>
+                    <Text style={styles.headerTitle}>Communities</Text>
+                    <TouchableOpacity
+                        style={styles.createBtn}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            setShowCreateModal(true);
+                        }}
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Create community"
+                    >
+                        <Ionicons name="add" size={22} color={colors.obsidian[900]} />
+                    </TouchableOpacity>
+                </View>
 
-                {/* Glass Search Bar */}
-                <Animated.View
-                    entering={FadeInDown.duration(400).delay(50)}
-                    style={searchBarAnimStyle}
-                >
-                    <View style={styles.searchContainer}>
-                        <LinearGradient
-                            colors={[
-                                colors.surface.glassHover,
-                                colors.surface.glass,
-                            ]}
-                            style={StyleSheet.absoluteFill}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                        />
-                        <View style={styles.searchIconWrap}>
-                            <Ionicons name="search" size={16} color={colors.gold[500]} />
-                        </View>
-                        <TextInput
-                            ref={searchInputRef}
-                            style={styles.searchInput}
-                            placeholder="Search communities..."
-                            placeholderTextColor={colors.text.muted}
-                            value={searchQuery}
-                            onChangeText={handleSearchChange}
-                            onFocus={handleSearchFocus}
-                            onBlur={handleSearchBlur}
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            returnKeyType="search"
-                            accessibilityLabel="Search communities"
-                        />
-                        {searchQuery.length > 0 && (
-                            <TouchableOpacity
-                                onPress={clearSearch}
-                                style={styles.clearBtn}
-                                hitSlop={8}
-                                accessibilityRole="button"
-                                accessibilityLabel="Clear search"
-                                accessibilityHint="Double tap to clear the search field"
-                            >
-                                <Ionicons name="close-circle" size={18} color={colors.text.muted} />
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                </Animated.View>
+                {/* Search Bar */}
+                <View style={styles.searchBar}>
+                    <Ionicons name="search" size={16} color={colors.text.muted} style={styles.searchIcon} />
+                    <TextInput
+                        ref={searchInputRef}
+                        style={styles.searchInput}
+                        placeholder="Search communities..."
+                        placeholderTextColor={colors.text.muted}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        returnKeyType="search"
+                        accessibilityLabel="Search communities"
+                    />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity
+                            onPress={() => {
+                                setSearchQuery('');
+                                searchInputRef.current?.blur();
+                            }}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Clear search"
+                        >
+                            <Ionicons name="close-circle" size={18} color={colors.text.muted} />
+                        </TouchableOpacity>
+                    )}
+                </View>
 
-                {/* Category Filter Pills */}
-                <Animated.View entering={FadeInDown.duration(400).delay(100)}>
-                    <CategoryPills active={activeCategory} onSelect={setActiveCategory} />
-                </Animated.View>
+                {/* Category Chips */}
+                <CategoryChips active={activeCategory} onSelect={setActiveCategory} />
+
+                {/* Tabs */}
+                <TabSwitcher active={activeTab} onChange={setActiveTab} />
             </View>
 
-            {/* Full-screen error state when initial load fails */}
-            {commError && !isLoading && communities.length === 0 && discoverCommunities.length === 0 ? (
-                <View style={styles.fullErrorContainer}>
-                    <Animated.View entering={FadeInDown.duration(400)} style={styles.fullErrorContent}>
-                        <View style={styles.fullErrorIconWrap}>
-                            <LinearGradient
-                                colors={[colors.coral[500] + '20', colors.coral[500] + '08']}
-                                style={StyleSheet.absoluteFill}
-                            />
-                            <Ionicons name="cloud-offline-outline" size={48} color={colors.coral[400]} />
-                        </View>
-                        <Text style={styles.fullErrorTitle}>Couldn't load communities</Text>
-                        <Text style={styles.fullErrorSubtitle}>
-                            Check your connection and try again.{'\n'}Your communities will appear here.
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.fullErrorRetryBtn}
-                            onPress={handleFullRetry}
-                            disabled={isRetrying}
-                            activeOpacity={0.8}
-                            accessibilityRole="button"
-                            accessibilityLabel="Retry loading communities"
-                        >
-                            <LinearGradient
-                                colors={[colors.gold[400], colors.gold[600]]}
-                                style={styles.fullErrorRetryGradient}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                            >
-                                {isRetrying ? (
-                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
-                                ) : (
-                                    <>
-                                        <Ionicons name="refresh" size={18} color={colors.obsidian[900]} />
-                                        <Text style={styles.fullErrorRetryText}>Try Again</Text>
-                                    </>
-                                )}
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    </Animated.View>
-                </View>
-            ) : (
-
-            /* Main Scrollable Content */
+            {/* Grid */}
             <FlatList
-                data={filteredDiscover}
-                renderItem={renderDiscoverItem}
+                data={activeData}
+                renderItem={renderGridItem}
                 keyExtractor={(item) => item.id}
-                ListHeaderComponent={renderListHeader}
-                ListEmptyComponent={renderEmptyDiscover}
-                contentContainerStyle={[
-                    styles.listContent,
-                    { paddingBottom: 100 },
-                ]}
+                numColumns={2}
+                columnWrapperStyle={styles.gridRow}
+                contentContainerStyle={[styles.gridContent, { paddingBottom: insets.bottom + 24 }]}
                 showsVerticalScrollIndicator={false}
-                accessibilityRole="list"
-                accessibilityLabel="Communities list"
+                ListEmptyComponent={renderEmpty}
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}
@@ -1658,35 +686,19 @@ export default function CommunitiesScreen() {
                     />
                 }
                 removeClippedSubviews
-                maxToRenderPerBatch={6}
+                maxToRenderPerBatch={8}
                 windowSize={7}
-                initialNumToRender={4}
-            />
-            )}
-
-            {/* Floating Action Button */}
-            <CreateFAB onPress={() => setShowTemplateModal(true)} />
-
-            {/* Template Selection Modal */}
-            <TemplateSelectionModal
-                visible={showTemplateModal}
-                onClose={() => setShowTemplateModal(false)}
-                onSelect={handleTemplateSelect}
+                initialNumToRender={6}
             />
 
             {/* Create Modal */}
             <CreateCommunityModal
                 visible={showCreateModal}
-                onClose={() => {
-                    setShowCreateModal(false);
-                    setSelectedTemplate(null);
-                }}
+                onClose={() => setShowCreateModal(false)}
                 onCreate={() => {
-                    setSelectedTemplate(null);
                     fetchCommunities();
                     fetchDiscover();
                 }}
-                initialName={selectedTemplate?.name ?? ''}
             />
         </View>
     );
@@ -1696,605 +708,267 @@ export default function CommunitiesScreen() {
 // Styles
 // ============================================
 
-const CARD_CHIP_WIDTH = 140;
-
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.obsidian[900] },
+    container: {
+        flex: 1,
+        backgroundColor: colors.obsidian[900],
+    },
 
     // Header
     header: {
-        paddingHorizontal: spacing.xl,
+        paddingHorizontal: spacing.lg,
         paddingBottom: spacing.sm,
         borderBottomWidth: 1,
-        borderBottomColor: colors.border.subtle,
+        borderBottomColor: 'rgba(255,255,255,0.06)',
     },
     headerRow: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         justifyContent: 'space-between',
+        marginBottom: spacing.md,
     },
     headerTitle: {
-        fontSize: 34,
+        fontSize: 28,
         fontWeight: '700',
         color: colors.text.primary,
-        letterSpacing: -1,
-        fontFamily: 'Inter-Bold',
+        letterSpacing: -0.5,
     },
-    headerSubtitle: {
-        fontSize: typography.fontSize.base,
-        color: colors.text.secondary,
-        marginTop: spacing.xs,
-    },
-
-    // Glass Search
-    searchContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 16,
-        paddingHorizontal: spacing.md,
-        marginTop: spacing.md,
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
-        overflow: 'hidden',
-        backgroundColor: colors.surface.glass,
-    },
-    searchIconWrap: {
-        width: 30,
-        height: 30,
-        borderRadius: 10,
-        backgroundColor: colors.gold[500] + '15',
+    createBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: colors.gold[500],
         alignItems: 'center',
         justifyContent: 'center',
-        marginEnd: spacing.sm,
+    },
+
+    // Search
+    searchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.obsidian[700],
+        borderRadius: 12,
+        paddingHorizontal: spacing.md,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        marginBottom: spacing.sm,
+    },
+    searchIcon: {
+        marginRight: spacing.sm,
     },
     searchInput: {
         flex: 1,
         fontSize: typography.fontSize.base,
         color: colors.text.primary,
-        paddingVertical: spacing.sm + 2,
-        fontFamily: 'Inter-Medium',
-    },
-    clearBtn: {
-        padding: 4,
-        minWidth: 44,
-        minHeight: 44,
-        alignItems: 'center' as const,
-        justifyContent: 'center' as const,
+        paddingVertical: Platform.OS === 'ios' ? 12 : 10,
     },
 
-    // Category Pills
-    pillsContainer: {
-        marginTop: spacing.sm,
+    // Category Chips
+    chipsContainer: {
+        marginBottom: spacing.xs,
     },
-    pillsScroll: {
-        gap: spacing.xs,
-        paddingEnd: spacing.md,
+    chipsScroll: {
+        gap: spacing.sm,
+        paddingRight: spacing.lg,
     },
-    pill: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: spacing.md,
+    chip: {
+        paddingHorizontal: spacing.lg,
         paddingVertical: spacing.sm,
         borderRadius: 20,
-        backgroundColor: colors.surface.glass,
+        backgroundColor: colors.obsidian[700],
         borderWidth: 1,
-        borderColor: colors.border.subtle,
+        borderColor: 'rgba(255,255,255,0.06)',
     },
-    pillActive: {
-        backgroundColor: colors.surface.goldSubtle,
-        borderColor: colors.gold[500] + '40',
+    chipActive: {
+        backgroundColor: colors.gold[500],
+        borderColor: colors.gold[500],
     },
-    pillText: {
+    chipText: {
         fontSize: typography.fontSize.sm,
         color: colors.text.muted,
         fontWeight: '500',
-        fontFamily: 'Inter-Medium',
     },
-    pillTextActive: {
-        color: colors.gold[500],
+    chipTextActive: {
+        color: colors.obsidian[900],
         fontWeight: '600',
     },
 
-    // List content
-    listContent: {
-        paddingHorizontal: spacing.xl,
+    // Tabs
+    tabBar: {
+        flexDirection: 'row',
+        marginTop: spacing.xs,
+    },
+    tab: {
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: spacing.sm + 2,
+        borderBottomWidth: 2,
+        borderBottomColor: 'transparent',
+    },
+    tabActive: {
+        borderBottomColor: colors.gold[500],
+    },
+    tabText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '500',
+        color: colors.text.muted,
+    },
+    tabTextActive: {
+        color: colors.text.primary,
+        fontWeight: '600',
+    },
+
+    // Grid
+    gridContent: {
+        paddingHorizontal: spacing.lg,
         paddingTop: spacing.lg,
     },
-
-    // Section headers
-    sectionHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.xs,
-        marginBottom: spacing.md,
-        marginTop: spacing.lg,
-    },
-    sectionTitle: {
-        fontSize: typography.fontSize.lg,
-        fontWeight: '700',
-        color: colors.text.primary,
-        fontFamily: 'Inter-Bold',
-        flex: 1,
-    },
-    sectionCount: {
-        backgroundColor: colors.surface.goldSubtle,
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 10,
-    },
-    sectionCountText: {
-        fontSize: typography.fontSize.xs,
-        fontWeight: '700',
-        color: colors.gold[500],
+    gridRow: {
+        justifyContent: 'space-between',
+        marginBottom: spacing.lg,
     },
 
-    // Your Communities — horizontal scroll
-    yourCommunitiesContainer: {
-        marginBottom: spacing.md,
-    },
-    yourCommunitiesScroll: {
-        gap: spacing.sm,
-        paddingEnd: spacing.xl,
-    },
-    yourCommunityChip: {
-        width: CARD_CHIP_WIDTH,
-        height: 160,
+    // Card
+    card: {
+        width: CARD_WIDTH,
+        backgroundColor: colors.obsidian[700],
         borderRadius: 16,
-        overflow: 'hidden',
-        backgroundColor: colors.surface.glass,
         borderWidth: 1,
-        borderColor: colors.border.subtle,
+        borderColor: 'rgba(255,255,255,0.08)',
+        overflow: 'hidden',
+    },
+    cardCover: {
+        width: '100%',
+        height: 130,
         position: 'relative',
+        overflow: 'hidden',
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
     },
-    yourChipCover: {
-        ...StyleSheet.absoluteFillObject,
-        borderRadius: 16,
-    },
-    yourChipOverlay: {
-        ...StyleSheet.absoluteFillObject,
-    },
-    yourChipContent: {
+    cardCoverFade: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        padding: spacing.md,
-        alignItems: 'center',
-        gap: spacing.xs,
+        height: 40,
     },
-    yourChipName: {
-        fontSize: typography.fontSize.sm,
-        fontWeight: '700',
-        color: colors.text.primary,
-        textAlign: 'center',
-        fontFamily: 'Inter-Bold',
-    },
-    yourChipMeta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 3,
-    },
-    yourChipCount: {
-        fontSize: 10,
-        color: colors.text.muted,
-        fontWeight: '600',
-    },
-    yourChipBadge: {
+
+    // Avatar
+    cardAvatarWrap: {
         position: 'absolute',
-        top: spacing.sm,
+        top: 130 - 18, // overlap the cover by half the avatar
         right: spacing.sm,
-        width: 22,
-        height: 22,
-        borderRadius: 11,
-        backgroundColor: colors.surface.goldSubtle,
+        zIndex: 2,
+    },
+    cardAvatar: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        borderWidth: 2,
+        borderColor: colors.obsidian[700],
+    },
+    cardAvatarFallback: {
+        backgroundColor: colors.obsidian[500],
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: colors.gold[500] + '30',
+    },
+    cardAvatarLetter: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: colors.text.primary,
     },
 
-    // Featured subtitle
-    featuredSubtitle: {
-        fontSize: typography.fontSize.sm,
+    // Card Body
+    cardBody: {
+        paddingHorizontal: spacing.sm + 2,
+        paddingTop: spacing.sm + 6,
+        paddingBottom: spacing.sm + 2,
+    },
+    cardName: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: colors.text.primary,
+        marginBottom: 2,
+    },
+    cardDescription: {
+        fontSize: 12,
         color: colors.text.muted,
-        marginBottom: spacing.md,
-        lineHeight: 18,
+        lineHeight: 16,
+        marginBottom: spacing.sm,
     },
-
-    // Discover header
-    discoverHeaderRow: {
-        marginTop: spacing.sm,
-    },
-
-    // Discovery Card — shadow wrapper for elevation
-    discoveryCardShadow: {
-        marginBottom: spacing.lg,
-        borderRadius: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.18,
-        shadowRadius: 14,
-        elevation: 6,
-        borderWidth: 1.5,
-        borderColor: colors.border.subtle,
-    },
-    discoveryCard: {
-        backgroundColor: colors.surface.glass,
-        borderRadius: 20,
-        overflow: 'hidden',
-    },
-    discoveryCover: {
-        height: 120,
-        position: 'relative',
-        overflow: 'hidden',
-    },
-    privacyBadge: {
-        position: 'absolute',
-        top: spacing.sm,
-        left: spacing.sm,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: colors.surface.overlayMedium,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 8,
-    },
-    privacyBadgeText: {
-        fontSize: 10,
-        color: colors.text.secondary,
-        fontWeight: '600',
-    },
-    discoveryBody: {
-        padding: spacing.lg,
-    },
-    discoveryAvatarRow: {
+    cardFooter: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginTop: -42,
-        marginBottom: spacing.md,
     },
-    discoveryAvatarWrap: {
-        shadowColor: colors.obsidian[900],
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    memberBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.xs,
-        backgroundColor: colors.surface.goldSubtle,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: colors.gold[500] + '30',
-    },
-    memberBadgeText: {
-        fontSize: typography.fontSize.xs,
-        fontWeight: '700',
-        color: colors.gold[500],
-    },
-    joinBtn: {
-        borderRadius: 14,
-        overflow: 'hidden',
-        shadowColor: colors.gold[500],
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
-        elevation: 3,
-    },
-    joinBtnGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.sm,
-        gap: 4,
-    },
-    joinBtnText: {
-        fontSize: typography.fontSize.sm,
-        fontWeight: '700',
-        color: colors.obsidian[900],
-        fontFamily: 'Inter-Bold',
-    },
-    discoveryName: {
-        fontSize: typography.fontSize.xl,
-        fontWeight: '700',
-        color: colors.text.primary,
-        letterSpacing: -0.5,
-        fontFamily: 'Inter-Bold',
-    },
-    discoveryDescription: {
-        fontSize: typography.fontSize.sm,
+    cardMembers: {
+        fontSize: 12,
         color: colors.text.secondary,
-        marginTop: spacing.xs,
-        lineHeight: 20,
+        fontWeight: '500',
     },
-    // Cover member badge (overlaid on image)
-    coverMemberBadge: {
-        position: 'absolute',
-        bottom: spacing.sm,
-        right: spacing.sm,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: 'rgba(0,0,0,0.55)',
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 10,
+    accessBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
     },
-    coverMemberText: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: colors.text.primary,
+    accessBadgeGreen: {
+        backgroundColor: colors.emerald[500] + '20',
     },
-    discoveryStats: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: spacing.md,
-        gap: spacing.sm,
+    accessBadgeAmber: {
+        backgroundColor: colors.amber[500] + '20',
     },
-    discoveryStatPill: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: colors.surface.glass,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
-    },
-    discoveryStatValue: {
-        fontSize: typography.fontSize.sm,
-        fontWeight: '700',
-        color: colors.text.primary,
-    },
-    discoveryStatLabel: {
-        fontSize: typography.fontSize.xs,
-        color: colors.text.muted,
-    },
-
-    // Empty states
-    emptyYours: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.surface.glass,
-        borderRadius: 14,
-        padding: spacing.md,
-        marginBottom: spacing.md,
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
-        gap: spacing.md,
-    },
-    emptyYoursIcon: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: colors.surface.goldSubtle,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    emptyYoursText: {
-        flex: 1,
-    },
-    emptyYoursTitle: {
-        fontSize: typography.fontSize.base,
+    accessBadgeText: {
+        fontSize: 10,
         fontWeight: '600',
-        color: colors.text.primary,
     },
-    emptyYoursSubtitle: {
-        fontSize: typography.fontSize.xs,
-        color: colors.text.muted,
-        marginTop: 2,
+    accessBadgeTextGreen: {
+        color: colors.emerald[400],
     },
-    emptyYoursBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: colors.surface.goldSubtle,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: colors.gold[500] + '30',
+    accessBadgeTextAmber: {
+        color: colors.amber[400],
     },
 
-    emptyDiscovery: {
+    // Empty State
+    emptyState: {
         alignItems: 'center',
-        paddingTop: 40,
+        paddingTop: 60,
         paddingHorizontal: spacing.xl,
     },
-    emptyDiscoveryIllustration: {
-        width: 140,
-        height: 140,
+    emptyIconWrap: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        backgroundColor: colors.obsidian[700],
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: spacing.lg,
-    },
-    emptyDiscoveryOrbitIcon1: {
-        position: 'absolute',
-        top: 8,
-        right: 12,
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: colors.gold[500] + '15',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    emptyDiscoveryOrbitIcon2: {
-        position: 'absolute',
-        bottom: 12,
-        left: 8,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: colors.azure[500] + '15',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    emptyDiscoveryOrbitIcon3: {
-        position: 'absolute',
-        top: 20,
-        left: 16,
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        backgroundColor: colors.coral[500] + '15',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    emptyDiscoveryIconWrap: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-    },
-    emptyDiscoveryTitle: {
-        fontSize: typography.fontSize.xl,
-        fontWeight: '700',
-        color: colors.text.primary,
-        marginBottom: spacing.sm,
-        fontFamily: 'Inter-Bold',
-    },
-    emptyDiscoverySubtitle: {
-        fontSize: typography.fontSize.base,
-        color: colors.text.secondary,
-        textAlign: 'center',
-        lineHeight: 22,
-    },
-
-    // Full-screen error state
-    fullErrorContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: spacing.xl,
-    },
-    fullErrorContent: {
-        alignItems: 'center',
-        maxWidth: 320,
-    },
-    fullErrorIconWrap: {
-        width: 96,
-        height: 96,
-        borderRadius: 48,
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        marginBottom: spacing.xl,
-    },
-    fullErrorTitle: {
-        fontSize: typography.fontSize.xl,
-        fontWeight: '700',
-        color: colors.text.primary,
-        fontFamily: 'Inter-Bold',
-        marginBottom: spacing.sm,
-        textAlign: 'center',
-    },
-    fullErrorSubtitle: {
-        fontSize: typography.fontSize.base,
-        color: colors.text.secondary,
-        textAlign: 'center',
-        lineHeight: 22,
-        marginBottom: spacing.xl,
-    },
-    fullErrorRetryBtn: {
-        borderRadius: 14,
-        overflow: 'hidden',
-        shadowColor: colors.gold[500],
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    fullErrorRetryGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: spacing.xl + spacing.md,
-        paddingVertical: spacing.md,
-        gap: spacing.xs,
-    },
-    fullErrorRetryText: {
-        fontSize: typography.fontSize.base,
-        fontWeight: '700',
-        color: colors.obsidian[900],
-        fontFamily: 'Inter-Bold',
-    },
-
-    // No results
-    noResultsContainer: {
-        alignItems: 'center',
-        paddingTop: 40,
-        paddingHorizontal: spacing.xl,
-    },
-    noResultsIconWrap: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: colors.surface.glass,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: spacing.md,
         borderWidth: 1,
-        borderColor: colors.border.subtle,
+        borderColor: 'rgba(255,255,255,0.06)',
     },
-    noResultsTitle: {
+    emptyTitle: {
         fontSize: typography.fontSize.lg,
-        fontWeight: '700',
+        fontWeight: '600',
         color: colors.text.primary,
         marginBottom: spacing.xs,
     },
-    noResultsSubtitle: {
-        fontSize: typography.fontSize.base,
+    emptySubtitle: {
+        fontSize: typography.fontSize.sm,
         color: colors.text.muted,
         textAlign: 'center',
-        lineHeight: 22,
+        lineHeight: 20,
     },
 
-    // Skeleton cards
-    skeletonDiscoverList: {
-        gap: spacing.lg,
-    },
-    skeletonCard: {
-        backgroundColor: colors.surface.glass,
-        borderRadius: 20,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
-    },
-
-    // FAB
-    fabContainer: {
-        position: 'absolute',
-        bottom: 100,
-        right: spacing.xl,
-        shadowColor: colors.gold[500],
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    fabTouchable: {
-        borderRadius: 30,
-        overflow: 'hidden',
-    },
-    fabGradient: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+    // Loading
+    loadingWrap: {
+        paddingTop: 80,
         alignItems: 'center',
-        justifyContent: 'center',
     },
 
     // Modal
-    modalContainer: { flex: 1, backgroundColor: colors.obsidian[900] },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: colors.obsidian[900],
+    },
     modalHeader: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -2302,12 +976,28 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.lg,
         paddingVertical: spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: colors.border.subtle,
+        borderBottomColor: 'rgba(255,255,255,0.08)',
     },
-    modalCancel: { fontSize: typography.fontSize.base, color: colors.text.secondary },
-    modalTitle: { fontSize: typography.fontSize.lg, fontWeight: '700', color: colors.text.primary },
-    modalDone: { fontSize: typography.fontSize.base, fontWeight: '700', color: colors.gold[500] },
-    modalBody: { padding: spacing.xl },
+    modalCancel: {
+        fontSize: typography.fontSize.base,
+        color: colors.text.secondary,
+    },
+    modalTitle: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: colors.text.primary,
+    },
+    modalDone: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+        color: colors.gold[500],
+    },
+    modalDoneDisabled: {
+        opacity: 0.4,
+    },
+    modalBody: {
+        padding: spacing.xl,
+    },
     inputLabel: {
         fontSize: typography.fontSize.xs,
         fontWeight: '600',
@@ -2318,105 +1008,40 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
     },
     modalInput: {
-        backgroundColor: colors.surface.glass,
+        backgroundColor: colors.obsidian[700],
         borderRadius: 12,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm + 2,
         fontSize: typography.fontSize.base,
         color: colors.text.primary,
         borderWidth: 1,
-        borderColor: colors.border.subtle,
+        borderColor: 'rgba(255,255,255,0.08)',
+    },
+    modalTextArea: {
+        minHeight: 80,
+        textAlignVertical: 'top',
     },
     switchRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: spacing.xl,
-        backgroundColor: colors.surface.glass,
+        marginTop: spacing.lg,
+        backgroundColor: colors.obsidian[700],
         borderRadius: 12,
         padding: spacing.md,
         borderWidth: 1,
-        borderColor: colors.border.subtle,
+        borderColor: 'rgba(255,255,255,0.08)',
     },
-    switchLabel: { fontSize: typography.fontSize.base, fontWeight: '600', color: colors.text.primary },
-    switchDescription: { fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: 2 },
-
-    // Extracted inline styles
-    flex1: { flex: 1 },
-    pillIconMargin: { marginEnd: 4 },
-    modalHeaderSpacer: { width: 50 },
-    modalDoneDisabled: { opacity: 0.4 },
-    modalTextArea: { minHeight: 80, textAlignVertical: 'top' },
-});
-
-// ============================================
-// Template Selection Modal Styles
-// ============================================
-
-const templateStyles = StyleSheet.create({
-    container: {
+    switchTextWrap: {
         flex: 1,
-        backgroundColor: colors.obsidian[900],
     },
-    scrollContent: {
-        padding: spacing.xl,
-        paddingBottom: 60,
-        gap: spacing.md,
-    },
-    subtitle: {
+    switchLabel: {
         fontSize: typography.fontSize.base,
-        color: colors.text.secondary,
-        marginBottom: spacing.sm,
-        lineHeight: 22,
-    },
-    card: {
-        overflow: 'hidden',
-    },
-    cardInner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: spacing.lg,
-        gap: spacing.md,
-    },
-    iconWrap: {
-        width: 56,
-        height: 56,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    cardText: {
-        flex: 1,
-        gap: spacing.xs,
-    },
-    cardTitle: {
-        fontSize: typography.fontSize.lg,
-        fontWeight: '700',
-        color: colors.text.primary,
-        fontFamily: 'Inter-Bold',
-    },
-    cardDescription: {
-        fontSize: typography.fontSize.sm,
-        color: colors.text.secondary,
-        lineHeight: 18,
-    },
-    channelsRow: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 6,
-        marginTop: spacing.xs,
-    },
-    channelPill: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 3,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 8,
-        backgroundColor: colors.surface.glass,
-        borderWidth: 1,
-    },
-    channelText: {
-        fontSize: 10,
         fontWeight: '600',
+        color: colors.text.primary,
+    },
+    switchDescription: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        marginTop: 2,
     },
 });

@@ -593,11 +593,14 @@ export default function CommunityDetailScreen() {
             if (tab === 'members' && allMembers.length === 0 && !membersLoading) {
                 loadAllMembers();
             }
+            if (tab === 'members' && canModerate) {
+                loadJoinRequests();
+            }
             if (tab === 'rules' && rules.length === 0 && !rulesLoading && !rulesError) {
                 loadRules();
             }
         },
-        [allMembers.length, membersLoading, rules.length, rulesLoading, rulesError, loadAllMembers, loadRules, tabIndicatorX, TAB_WIDTH],
+        [allMembers.length, membersLoading, rules.length, rulesLoading, rulesError, loadAllMembers, loadRules, loadJoinRequests, canModerate, tabIndicatorX, TAB_WIDTH],
     );
 
     // ── Chat ──────────────────────────────────
@@ -1209,11 +1212,46 @@ export default function CommunityDetailScreen() {
         </Animated.View>
     );
 
+    // ── Join Requests (Admin) ──────────────────────────
+    const [joinRequests, setJoinRequests] = useState<any[]>([]);
+    const [requestsLoading, setRequestsLoading] = useState(false);
+
+    const loadJoinRequests = useCallback(async () => {
+        if (!communityId || !canModerate) return;
+        setRequestsLoading(true);
+        try {
+            const data = await apiFetch<any[]>(`/api/v1/communities/${communityId}/requests`);
+            setJoinRequests(Array.isArray(data) ? data : []);
+        } catch { /* ignore */ }
+        setRequestsLoading(false);
+    }, [communityId, canModerate]);
+
+    const handleApproveRequest = useCallback(async (requestId: string) => {
+        try {
+            await apiFetch(`/api/v1/communities/${communityId}/requests/${requestId}/approve`, { method: 'POST' });
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setJoinRequests((prev) => prev.filter((r) => r.id !== requestId));
+            loadAllMembers(); // Refresh members list
+        } catch {
+            Alert.alert('Error', 'Failed to approve request.');
+        }
+    }, [communityId, loadAllMembers]);
+
+    const handleRejectRequest = useCallback(async (requestId: string) => {
+        try {
+            await apiFetch(`/api/v1/communities/${communityId}/requests/${requestId}/reject`, { method: 'POST' });
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setJoinRequests((prev) => prev.filter((r) => r.id !== requestId));
+        } catch {
+            Alert.alert('Error', 'Failed to reject request.');
+        }
+    }, [communityId]);
+
     const renderMembersTab = () => {
         if (membersLoading) return <TabLoadingState />;
         if (membersError)
             return <ErrorTabState message={membersError} onRetry={loadAllMembers} />;
-        if (allMembers.length === 0)
+        if (allMembers.length === 0 && joinRequests.length === 0)
             return (
                 <EmptyTabState
                     icon="people-outline"
@@ -1224,6 +1262,80 @@ export default function CommunityDetailScreen() {
 
         return (
             <View>
+                {/* Pending Join Requests — Admin only */}
+                {canModerate && joinRequests.length > 0 && (
+                    <View style={{ marginBottom: spacing.lg }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm, gap: spacing.xs }}>
+                            <Ionicons name="hourglass-outline" size={16} color={colors.amber[500]} />
+                            <Text style={{ fontSize: typography.fontSize.sm, fontWeight: '700', color: colors.amber[400] }}>
+                                Pending Requests ({joinRequests.length})
+                            </Text>
+                        </View>
+                        {joinRequests.map((req: any) => (
+                            <Animated.View
+                                key={req.id}
+                                entering={FadeInDown.duration(250)}
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    backgroundColor: colors.surface.glass,
+                                    borderRadius: 12,
+                                    padding: spacing.sm,
+                                    marginBottom: spacing.xs,
+                                    borderWidth: 1,
+                                    borderColor: colors.amber[500] + '30',
+                                }}
+                            >
+                                <View style={{
+                                    width: 40, height: 40, borderRadius: 20,
+                                    backgroundColor: colors.obsidian[600],
+                                    alignItems: 'center', justifyContent: 'center',
+                                    marginRight: spacing.sm,
+                                    overflow: 'hidden',
+                                }}>
+                                    {req.user?.avatarUrl ? (
+                                        <Image source={{ uri: req.user.avatarUrl }} style={{ width: 40, height: 40 }} contentFit="cover" />
+                                    ) : (
+                                        <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text.secondary }}>
+                                            {(req.user?.displayName || '?').charAt(0).toUpperCase()}
+                                        </Text>
+                                    )}
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: typography.fontSize.sm, fontWeight: '600', color: colors.text.primary }}>
+                                        {req.user?.displayName || req.user?.username || 'Unknown'}
+                                    </Text>
+                                    {req.message && (
+                                        <Text style={{ fontSize: typography.fontSize.xs, color: colors.text.muted, marginTop: 2 }} numberOfLines={1}>
+                                            {req.message}
+                                        </Text>
+                                    )}
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => handleApproveRequest(req.id)}
+                                    style={{
+                                        backgroundColor: colors.emerald[500] + '20',
+                                        paddingHorizontal: 12, paddingVertical: 6,
+                                        borderRadius: 8, marginRight: 6,
+                                    }}
+                                >
+                                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.emerald[400] }}>Approve</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => handleRejectRequest(req.id)}
+                                    style={{
+                                        backgroundColor: colors.coral[500] + '15',
+                                        paddingHorizontal: 10, paddingVertical: 6,
+                                        borderRadius: 8,
+                                    }}
+                                >
+                                    <Text style={{ fontSize: 12, fontWeight: '600', color: colors.coral[400] }}>Deny</Text>
+                                </TouchableOpacity>
+                            </Animated.View>
+                        ))}
+                    </View>
+                )}
+
                 <Text style={styles.memberCount}>
                     {formatCount(community.membersCount)} member{community.membersCount !== 1 ? 's' : ''}
                 </Text>

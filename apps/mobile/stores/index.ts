@@ -141,7 +141,9 @@ export interface Community {
     membersCount: number;
     postsCount: number;
     isPublic: boolean;
+    approvalRequired?: boolean;
     role: 'member' | 'admin' | 'moderator' | null;
+    requestStatus?: 'pending' | 'approved' | 'rejected' | null;
     createdAt: string;
 }
 

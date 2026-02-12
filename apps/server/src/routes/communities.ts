@@ -36,8 +36,9 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
         const hasMore = communities.length > parseInt(limit as string);
         const results = hasMore ? communities.slice(0, -1) : communities;
 
-        // Check membership status
-        let memberIds: Set<string> = new Set();
+        // Check membership status and roles
+        let memberMap: Map<string, string> = new Map();
+        let requestMap: Map<string, string> = new Map();
         if (req.userId) {
             const memberships = await prisma.communityMember.findMany({
                 where: {
@@ -45,7 +46,17 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
                     communityId: { in: results.map((c) => c.id) },
                 },
             });
-            memberIds = new Set(memberships.map((m) => m.communityId));
+            memberships.forEach((m) => memberMap.set(m.communityId, m.role));
+
+            // Check pending join requests
+            const requests = await prisma.communityJoinRequest.findMany({
+                where: {
+                    userId: req.userId,
+                    communityId: { in: results.map((c) => c.id) },
+                    status: 'pending',
+                },
+            }).catch(() => []);
+            requests.forEach((r) => requestMap.set(r.communityId, r.status));
         }
 
         res.json({
@@ -53,7 +64,9 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
                 ...c,
                 membersCount: c._count.members,
                 postsCount: c._count.posts,
-                isMember: memberIds.has(c.id),
+                isMember: memberMap.has(c.id),
+                role: memberMap.get(c.id)?.toLowerCase() || null,
+                requestStatus: requestMap.get(c.id) || null,
             })),
             nextCursor: hasMore ? results[results.length - 1].id : null,
         });
@@ -263,6 +276,44 @@ router.post('/:communityId/join', authenticate, async (req: AuthRequest, res, ne
             throw new AppError('Already a member', 400);
         }
 
+        // If approval is required, create a join request instead of direct membership
+        if (community.approvalRequired) {
+            // Check for existing pending request
+            const existingRequest = await prisma.communityJoinRequest.findUnique({
+                where: {
+                    communityId_userId: {
+                        communityId,
+                        userId: req.userId!,
+                    },
+                },
+            });
+
+            if (existingRequest) {
+                if (existingRequest.status === 'pending') {
+                    return res.json({ status: 'pending', message: 'Your request is already pending.' });
+                }
+                if (existingRequest.status === 'rejected') {
+                    // Allow re-request by updating existing record
+                    await prisma.communityJoinRequest.update({
+                        where: { id: existingRequest.id },
+                        data: { status: 'pending', message: req.body.message || null, reviewedAt: null, reviewedBy: null },
+                    });
+                    return res.json({ status: 'pending', message: 'Your request has been resubmitted.' });
+                }
+            }
+
+            await prisma.communityJoinRequest.create({
+                data: {
+                    communityId,
+                    userId: req.userId!,
+                    message: req.body.message || null,
+                },
+            });
+
+            return res.json({ status: 'pending', message: 'Your request to join has been sent to the admin.' });
+        }
+
+        // Open community — join directly
         await prisma.$transaction([
             prisma.communityMember.create({
                 data: {
@@ -277,7 +328,7 @@ router.post('/:communityId/join', authenticate, async (req: AuthRequest, res, ne
             }),
         ]);
 
-        res.json({ joined: true });
+        res.json({ joined: true, status: 'joined' });
     } catch (error) {
         next(error);
     }
@@ -1796,6 +1847,174 @@ router.post('/:communityId/check-content', authenticate, async (req: AuthRequest
             muteAuthor,
             matches: matches.map(m => ({ type: m.type, action: m.action })),
         });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// Join Request Management
+// ============================================
+
+// GET /api/v1/communities/:communityId/requests — Admin gets pending join requests
+router.get('/:communityId/requests', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const { status = 'pending' } = req.query;
+
+        // Verify admin/mod role
+        const membership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!membership || !['ADMIN', 'MODERATOR'].includes(membership.role)) {
+            throw new AppError('Only admins and moderators can view join requests', 403);
+        }
+
+        const requests = await prisma.communityJoinRequest.findMany({
+            where: { communityId, status: status as string },
+            include: {
+                user: { select: { id: true, username: true, displayName: true, avatarUrl: true, bio: true, createdAt: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        res.json(requests);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/communities/:communityId/requests/:requestId/approve
+router.post('/:communityId/requests/:requestId/approve', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, requestId } = req.params;
+
+        // Verify admin/mod role
+        const membership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!membership || !['ADMIN', 'MODERATOR'].includes(membership.role)) {
+            throw new AppError('Only admins and moderators can approve requests', 403);
+        }
+
+        const request = await prisma.communityJoinRequest.findUnique({ where: { id: requestId } });
+        if (!request || request.communityId !== communityId) {
+            throw new AppError('Request not found', 404);
+        }
+        if (request.status !== 'pending') {
+            throw new AppError('Request has already been processed', 400);
+        }
+
+        // Approve: update request + create membership + increment count
+        await prisma.$transaction([
+            prisma.communityJoinRequest.update({
+                where: { id: requestId },
+                data: { status: 'approved', reviewedAt: new Date(), reviewedBy: req.userId },
+            }),
+            prisma.communityMember.create({
+                data: { userId: request.userId, communityId, role: 'MEMBER' },
+            }),
+            prisma.community.update({
+                where: { id: communityId },
+                data: { memberCount: { increment: 1 } },
+            }),
+        ]);
+
+        res.json({ success: true, message: 'Request approved.' });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/communities/:communityId/requests/:requestId/reject
+router.post('/:communityId/requests/:requestId/reject', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId, requestId } = req.params;
+
+        // Verify admin/mod role
+        const membership = await prisma.communityMember.findUnique({
+            where: { userId_communityId: { userId: req.userId!, communityId } },
+        });
+        if (!membership || !['ADMIN', 'MODERATOR'].includes(membership.role)) {
+            throw new AppError('Only admins and moderators can reject requests', 403);
+        }
+
+        const request = await prisma.communityJoinRequest.findUnique({ where: { id: requestId } });
+        if (!request || request.communityId !== communityId) {
+            throw new AppError('Request not found', 404);
+        }
+        if (request.status !== 'pending') {
+            throw new AppError('Request has already been processed', 400);
+        }
+
+        await prisma.communityJoinRequest.update({
+            where: { id: requestId },
+            data: { status: 'rejected', reviewedAt: new Date(), reviewedBy: req.userId },
+        });
+
+        res.json({ success: true, message: 'Request rejected.' });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/communities/:communityId/request-status — Check if current user has a pending request
+router.get('/:communityId/request-status', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { communityId } = req.params;
+        const request = await prisma.communityJoinRequest.findUnique({
+            where: { communityId_userId: { communityId, userId: req.userId! } },
+        });
+        res.json({ status: request?.status || null });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ============================================
+// Seed Communities (admin-only, one-time use)
+// ============================================
+router.post('/seed', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        // Only allow the requesting user to be the admin
+        const userId = req.userId!;
+
+        const seeds = [
+            { name: "The Striver's Path", slug: 'the-strivers-path', description: 'We are a group of Muslims who are on the path to strive in learning the Arabic language to become the best versions of ourselves.', category: 'faith', isPublic: true, approvalRequired: false },
+            { name: 'Muslim Entrepreneurs', slug: 'muslim-entrepreneurs', description: 'Business-minded Muslims building and scaling ventures together. Share wins, get advice, and grow.', category: 'business', isPublic: true, approvalRequired: true },
+            { name: 'Halal Stock Investing', slug: 'halal-stock-investing', description: 'Discussion on halal stocks, live trading ideas, and shariah-compliant investment picks.', category: 'business', isPublic: true, approvalRequired: true },
+            { name: 'Tampa AI Builders', slug: 'tampa-ai-builders', description: 'Tampa Bay area AI enthusiasts, builders, and innovators. Monthly meetups and hackathons.', category: 'tech', isPublic: true, approvalRequired: false },
+            { name: 'Tampa Muslim AI Builders', slug: 'tampa-muslim-ai-builders', description: 'Muslim AI builders in Tampa — monthly meetups, lessons learned, new tech, and hackathons with cash prizes.', category: 'tech', isPublic: true, approvalRequired: true },
+            { name: 'Abundant Muslimah Community', slug: 'abundant-muslimah-community', description: 'A year-long journey of growth, healing, and barakah. For the Muslim wife, mother, and homemaker seeking more than survival.', category: 'faith', isPublic: true, approvalRequired: false },
+            { name: 'Islamic Designers', slug: 'islamic-designers', description: 'Muslim creatives in design, branding, and visual arts. Share your work, get feedback, and collaborate.', category: 'culture', isPublic: true, approvalRequired: false },
+        ];
+
+        const created: any[] = [];
+        for (const seed of seeds) {
+            // Skip if already exists
+            const existing = await prisma.community.findUnique({ where: { slug: seed.slug } });
+            if (existing) {
+                created.push({ ...existing, skipped: true });
+                continue;
+            }
+
+            const community = await prisma.community.create({
+                data: {
+                    ...seed,
+                    creatorId: userId,
+                    memberCount: 1,
+                },
+            });
+
+            // Make the creator an admin member
+            await prisma.communityMember.create({
+                data: { userId, communityId: community.id, role: 'ADMIN' },
+            });
+
+            created.push(community);
+        }
+
+        res.json({ created: created.length, communities: created });
     } catch (error) {
         next(error);
     }
