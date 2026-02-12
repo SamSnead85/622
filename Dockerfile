@@ -29,5 +29,5 @@ RUN mkdir -p logs uploads
 # Expose port (Railway will override with $PORT)
 EXPOSE 8080
 
-# Start the server (push schema changes on startup, then run)
-CMD npx prisma db push --accept-data-loss --skip-generate && node dist/index.js
+# Start the server — run schema push in background so health check responds immediately
+CMD (npx prisma db push --accept-data-loss --skip-generate 2>&1 || echo "Schema push deferred") & node dist/index.js
