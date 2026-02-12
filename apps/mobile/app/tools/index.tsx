@@ -220,14 +220,22 @@ export default function ToolsHub() {
     // ─── Personal Tools ──────────────────
     const personalTools = [
         {
+            icon: 'sunny-outline' as const,
+            title: 'Daily Inspiration',
+            description: 'Hadiths, Quran, quotes & reminders',
+            gradient: [colors.gold[500], colors.amber[400]] as [string, string],
+            iconColor: colors.gold[400],
+            route: '/tools/daily-reminders',
+            badge: 'NEW',
+            badgeColor: colors.gold[500],
+        },
+        {
             icon: 'calendar-outline' as const,
             title: 'My Calendar',
             description: 'Events, birthdays & reminders',
             gradient: [colors.azure[500], colors.azure[300]] as [string, string],
             iconColor: colors.azure[400],
             route: '/tools/calendar',
-            badge: 'NEW',
-            badgeColor: colors.azure[500],
         },
     ];
 

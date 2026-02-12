@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../stores';
 import { apiFetch, API } from '../lib/api';
@@ -153,6 +154,7 @@ export default function DiscoverScreen() {
     // Prayer times state
     const [prayers, setPrayers] = useState<PrayerTimeData[]>([]);
     const [prayerLoading, setPrayerLoading] = useState(true);
+    const [locationName, setLocationName] = useState('New York, US');
 
     // Cultural profile state
     const [selectedProfile, setSelectedProfile] = useState<CulturalProfileType>('muslim');
@@ -164,9 +166,38 @@ export default function DiscoverScreen() {
 
     const fetchPrayerTimes = async () => {
         try {
-            const res = await fetch(
-                'https://api.aladhan.com/v1/timingsByCity?city=NewYork&country=US&method=2'
-            );
+            // Try to get user's actual location
+            let apiUrl = 'https://api.aladhan.com/v1/timingsByCity?city=NewYork&country=US&method=2';
+
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status === 'granted') {
+                    const position = await Location.getCurrentPositionAsync({
+                        accuracy: Location.Accuracy.Balanced,
+                    });
+                    const { latitude, longitude } = position.coords;
+                    apiUrl = `https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=2`;
+
+                    // Reverse geocode to get a display name
+                    try {
+                        const [place] = await Location.reverseGeocodeAsync({ latitude, longitude });
+                        if (place) {
+                            const city = place.city || place.subregion || place.region || '';
+                            const country = place.isoCountryCode || place.country || '';
+                            if (city || country) {
+                                setLocationName([city, country].filter(Boolean).join(', '));
+                            }
+                        }
+                    } catch {
+                        // Reverse geocode failed — keep default display name
+                    }
+                }
+                // If permission denied, fall through to default New York URL
+            } catch {
+                // Location unavailable — fall through to default
+            }
+
+            const res = await fetch(apiUrl);
             const json = await res.json();
             if (json.code === 200 && json.data) {
                 const t = json.data.timings;
@@ -268,7 +299,7 @@ export default function DiscoverScreen() {
                         <View style={styles.prayerCardHeader}>
                             <View style={styles.prayerLocationRow}>
                                 <Ionicons name="location-outline" size={14} color={colors.text.muted} />
-                                <Text style={styles.prayerLocationText}>New York, US</Text>
+                                <Text style={styles.prayerLocationText}>{locationName}</Text>
                             </View>
                             {nextPrayerName && (
                                 <View style={styles.nextPrayerBadge}>

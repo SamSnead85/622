@@ -841,9 +841,9 @@ function ResultsView({
                                 <Ionicons name="podium" size={18} color={colors.azure[500]} />
                             </View>
                             <Text style={styles.resultsStatValue}>
-                                #{Math.max(1, Math.floor(Math.random() * 50) + 1)}
+                                {score >= (highScores[selectedMode] || 0) ? '🏆' : `#${Math.min(score > 0 ? Math.max(1, Math.ceil(100 / Math.max(1, score))) : 99, 99)}`}
                             </Text>
-                            <Text style={styles.resultsStatLabel}>Daily Rank</Text>
+                            <Text style={styles.resultsStatLabel}>Personal Best</Text>
                         </View>
                     </View>
                 </GlassCard>

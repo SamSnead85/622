@@ -42,6 +42,7 @@ import Animated, {
 import { colors, typography, spacing } from '@zerog/ui';
 import { BackButton } from '../../components';
 import { useAuthStore } from '../../stores';
+import { apiFetch } from '../../lib/api';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -289,6 +290,7 @@ export default function LoginScreen() {
     const [biometricType, setBiometricType] = useState<string>('Biometrics');
     const [showBiometric, setShowBiometric] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
+    const [resetSending, setResetSending] = useState(false);
 
     const passwordRef = useRef<TextInput>(null);
     const scrollRef = useRef<ScrollView>(null);
@@ -705,12 +707,44 @@ export default function LoginScreen() {
                                 style={styles.forgotButton}
                                 onPress={() => {
                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    Alert.alert(
+                                    Alert.prompt(
                                         'Reset Password',
-                                        'Visit 0gravity.ai to reset your password. In-app password reset is coming soon.',
-                                        [{ text: 'OK' }]
+                                        'Enter your email address and we\'ll send you a reset link.',
+                                        [
+                                            { text: 'Cancel', style: 'cancel' },
+                                            {
+                                                text: resetSending ? 'Sending...' : 'Send Reset Link',
+                                                onPress: async (inputEmail?: string) => {
+                                                    const trimmed = (inputEmail || '').trim();
+                                                    if (!trimmed || !/\S+@\S+\.\S+/.test(trimmed)) {
+                                                        Alert.alert('Invalid Email', 'Please enter a valid email address.');
+                                                        return;
+                                                    }
+                                                    setResetSending(true);
+                                                    try {
+                                                        await apiFetch('/api/v1/auth/forgot-password', {
+                                                            method: 'POST',
+                                                            body: JSON.stringify({ email: trimmed }),
+                                                        });
+                                                    } catch {
+                                                        // Show success regardless — don't reveal if account exists
+                                                    } finally {
+                                                        setResetSending(false);
+                                                    }
+                                                    Alert.alert(
+                                                        'Check Your Email',
+                                                        "If an account exists with that email, you'll receive a password reset link.",
+                                                        [{ text: 'OK' }]
+                                                    );
+                                                },
+                                            },
+                                        ],
+                                        'plain-text',
+                                        email || '',
+                                        'email-address'
                                     );
                                 }}
+                                disabled={resetSending}
                                 accessibilityRole="button"
                                 accessibilityLabel="Forgot password"
                             >

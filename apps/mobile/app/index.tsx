@@ -2,6 +2,12 @@ import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { Redirect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import ReanimatedView, {
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+    Easing as REasing,
+} from 'react-native-reanimated';
 import { colors } from '@zerog/ui';
 import { useAuthStore } from '../stores';
 
@@ -17,6 +23,19 @@ export default function SplashIndex() {
     const glowScale = useRef(new Animated.Value(0.5)).current;
     const textOpacity = useRef(new Animated.Value(0)).current;
     const textTranslateY = useRef(new Animated.Value(20)).current;
+
+    // Animated progress bar: 0% → 100% over ~2 seconds
+    const progressWidth = useSharedValue(0);
+    const animatedProgressStyle = useAnimatedStyle(() => ({
+        width: `${progressWidth.value}%` as any,
+    }));
+
+    useEffect(() => {
+        progressWidth.value = withTiming(100, {
+            duration: 2000,
+            easing: REasing.out(REasing.cubic),
+        });
+    }, []);
 
     useEffect(() => {
         // Logo entrance: spring scale + fade
@@ -154,8 +173,8 @@ export default function SplashIndex() {
             {/* Subtle gold progress bar at bottom */}
             <View style={styles.progressContainer}>
                 <View style={styles.progressTrack}>
-                    <Animated.View
-                        style={[styles.progressFill, { opacity: glowOpacity }]}
+                    <ReanimatedView
+                        style={[styles.progressFill, animatedProgressStyle]}
                     />
                 </View>
             </View>
@@ -229,7 +248,6 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     progressFill: {
-        width: '60%',
         height: '100%',
         backgroundColor: colors.gold[500],
         borderRadius: 1,

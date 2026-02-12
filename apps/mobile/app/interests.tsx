@@ -112,6 +112,7 @@ export default function InterestsScreen() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [joinedCommunities, setJoinedCommunities] = useState<Set<string>>(new Set());
+    const [communities, setCommunities] = useState<SuggestedCommunity[]>(SUGGESTED_COMMUNITIES);
 
     const handleJoinCommunity = (communityId: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -140,9 +141,10 @@ export default function InterestsScreen() {
 
     const loadData = async () => {
         try {
-            const [topicsRes, interestsRes] = await Promise.allSettled([
+            const [topicsRes, interestsRes, communitiesRes] = await Promise.allSettled([
                 apiFetch<any>(API.topics),
                 apiFetch<any>(API.userInterests),
+                apiFetch<any>(API.communities),
             ]);
 
             if (topicsRes.status === 'fulfilled') {
@@ -154,8 +156,32 @@ export default function InterestsScreen() {
                 const interests = interestsRes.value?.interests || [];
                 setSelectedIds(new Set(interests.map((i: any) => i.topicId || i.topic?.id)));
             }
+
+            if (communitiesRes.status === 'fulfilled') {
+                const raw = communitiesRes.value?.communities || communitiesRes.value || [];
+                if (Array.isArray(raw) && raw.length > 0) {
+                    const mapped: SuggestedCommunity[] = raw.slice(0, 6).map((c: any) => {
+                        const fallback = SUGGESTED_COMMUNITIES.find((sc) => sc.id === c.id);
+                        const memberCount = c.memberCount ?? c._count?.members ?? 0;
+                        return {
+                            id: c.id,
+                            name: c.name || fallback?.name || 'Community',
+                            description: c.description || fallback?.description || '',
+                            icon: (c.icon || fallback?.icon || 'people-outline') as keyof typeof Ionicons.glyphMap,
+                            color: c.color || fallback?.color || colors.gold[500],
+                            members: memberCount > 0
+                                ? memberCount >= 1000
+                                    ? `${(memberCount / 1000).toFixed(1)}K members`
+                                    : `${memberCount} members`
+                                : 'New',
+                        };
+                    });
+                    setCommunities(mapped);
+                }
+                // If empty array or no data, keep the fallback SUGGESTED_COMMUNITIES
+            }
         } catch {
-            // Silently handle
+            // Silently handle — fallback communities already set
         } finally {
             setLoading(false);
         }
@@ -321,7 +347,7 @@ export default function InterestsScreen() {
                                     Join a community to start connecting with people who share your interests
                                 </Text>
                                 <View style={styles.communityCards}>
-                                    {SUGGESTED_COMMUNITIES.map((community, i) => {
+                                    {communities.map((community, i) => {
                                         const isJoined = joinedCommunities.has(community.id);
                                         return (
                                             <Animated.View key={community.id} entering={FadeInDown.duration(300).delay(450 + i * 70)}>
