@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated as RNAnimated } from 'react-native';
+import { View, StyleSheet, Animated as RNAnimated, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing } from '@zerog/ui';
+import { spacing } from '@zerog/ui';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface SkeletonListProps {
   count?: number;
@@ -9,6 +10,7 @@ interface SkeletonListProps {
 }
 
 const ShimmerBlock = ({ width, height, borderRadius = 8 }: { width: number | string; height: number; borderRadius?: number }) => {
+  const { colors } = useTheme();
   const shimmer = useRef(new RNAnimated.Value(0)).current;
   useEffect(() => {
     const loop = RNAnimated.loop(
@@ -66,17 +68,20 @@ const SettingSkeleton = () => (
 );
 
 // Card variant: full-width card
-const CardSkeleton = () => (
-  <View style={skStyles.card}>
-    <ShimmerBlock width="100%" height={120} borderRadius={14} />
-    <View style={{ marginTop: spacing.sm }}>
-      <ShimmerBlock width="60%" height={16} />
+const CardSkeleton = () => {
+  const { colors } = useTheme();
+  return (
+    <View style={[skStyles.card, { backgroundColor: colors.surface.glass }]}>
+      <ShimmerBlock width="100%" height={120} borderRadius={14} />
+      <View style={{ marginTop: spacing.sm }}>
+        <ShimmerBlock width="60%" height={16} />
+      </View>
+      <View style={{ marginTop: spacing.xs }}>
+        <ShimmerBlock width="80%" height={12} />
+      </View>
     </View>
-    <View style={{ marginTop: spacing.xs }}>
-      <ShimmerBlock width="80%" height={12} />
-    </View>
-  </View>
-);
+  );
+};
 
 const VARIANTS = { message: MessageSkeleton, notification: NotificationSkeleton, setting: SettingSkeleton, card: CardSkeleton };
 
@@ -94,5 +99,5 @@ const skStyles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
   textCol: { flex: 1, gap: spacing.xs },
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
-  card: { padding: spacing.md, backgroundColor: colors.surface.glass, borderRadius: 14, marginBottom: spacing.md },
+  card: { padding: spacing.md, borderRadius: 14, marginBottom: spacing.md },
 });

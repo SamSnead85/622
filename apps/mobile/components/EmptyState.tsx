@@ -6,7 +6,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing } from '@zerog/ui';
+import { typography, spacing } from '@zerog/ui';
+import { useTheme } from '../contexts/ThemeContext';
 import { Button } from './Button';
 
 interface EmptyStateProps {
@@ -37,10 +38,13 @@ function EmptyStateComponent({
     actionLabel,
     onAction,
     iconSize = 48,
-    iconColor = colors.text.muted,
+    iconColor,
     style,
     compact = false,
 }: EmptyStateProps) {
+    const { colors } = useTheme();
+    const resolvedIconColor = iconColor ?? colors.text.muted;
+
     return (
         <View
             style={[
@@ -51,11 +55,17 @@ function EmptyStateComponent({
             accessibilityRole="text"
             accessibilityLabel={`${title ? title + '. ' : ''}${message}`}
         >
-            <View style={styles.iconCircle}>
-                <Ionicons name={icon} size={iconSize} color={iconColor} />
+            <View style={[styles.iconCircle, { backgroundColor: colors.surface.glass }]}>
+                <Ionicons name={icon} size={iconSize} color={resolvedIconColor} />
             </View>
-            {title && <Text style={styles.title}>{title}</Text>}
-            <Text style={styles.message}>{message}</Text>
+            {title && (
+                <Text style={[styles.title, { color: colors.text.primary }]}>
+                    {title}
+                </Text>
+            )}
+            <Text style={[styles.message, { color: colors.text.muted }]}>
+                {message}
+            </Text>
             {actionLabel && onAction && (
                 <Button
                     title={actionLabel}
@@ -85,7 +95,6 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: colors.surface.glass,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: spacing.lg,
@@ -93,14 +102,12 @@ const styles = StyleSheet.create({
     title: {
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
-        color: colors.text.primary,
         fontFamily: 'Inter-Bold',
         marginBottom: spacing.xs,
         textAlign: 'center',
     },
     message: {
         fontSize: typography.fontSize.base,
-        color: colors.text.muted,
         textAlign: 'center',
         lineHeight: 22,
         maxWidth: 280,
@@ -111,4 +118,3 @@ const styles = StyleSheet.create({
 });
 
 export default EmptyState;
-

@@ -6,7 +6,8 @@
 import React, { ReactNode } from 'react';
 import { View, Pressable, StyleSheet, ViewStyle } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { colors, spacing, borderRadius as br } from '@zerog/ui';
+import { spacing } from '@zerog/ui';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface GlassCardProps {
     children: ReactNode;
@@ -47,14 +48,17 @@ export function GlassCard({
     gold = false,
     onPress,
 }: GlassCardProps) {
+    const { colors } = useTheme();
+
     const cardStyle = [
         styles.card,
+        { backgroundColor: colors.surface.glass },
         {
             padding: PADDING_MAP[padding],
             borderRadius: RADIUS_MAP[radius],
         },
-        border && styles.border,
-        gold && styles.gold,
+        border && { borderWidth: 1, borderColor: colors.border.subtle },
+        gold && { backgroundColor: colors.surface.goldSubtle, borderColor: colors.gold[500] + '20' },
         style,
     ];
 
@@ -81,17 +85,7 @@ export function GlassCard({
 }
 
 const styles = StyleSheet.create({
-    card: {
-        backgroundColor: colors.surface.glass,
-    },
-    border: {
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
-    },
-    gold: {
-        backgroundColor: colors.surface.goldSubtle,
-        borderColor: colors.gold[500] + '20',
-    },
+    card: {},
 });
 
 export default GlassCard;

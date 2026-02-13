@@ -5,7 +5,8 @@
 
 import React from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, ViewStyle } from 'react-native';
-import { colors, typography, spacing } from '@zerog/ui';
+import { typography, spacing } from '@zerog/ui';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface LoadingViewProps {
     /** Optional message below spinner */
@@ -25,8 +26,11 @@ function LoadingViewComponent({
     size = 'large',
     fullScreen = true,
     style,
-    color = colors.gold[500],
+    color,
 }: LoadingViewProps) {
+    const { colors } = useTheme();
+    const spinnerColor = color ?? colors.gold[500];
+
     return (
         <View
             style={[
@@ -37,8 +41,12 @@ function LoadingViewComponent({
             accessibilityRole="progressbar"
             accessibilityLabel={message || 'Loading'}
         >
-            <ActivityIndicator size={size} color={color} />
-            {message && <Text style={styles.message}>{message}</Text>}
+            <ActivityIndicator size={size} color={spinnerColor} />
+            {message && (
+                <Text style={[styles.message, { color: colors.text.muted }]}>
+                    {message}
+                </Text>
+            )}
         </View>
     );
 }
@@ -56,11 +64,9 @@ const styles = StyleSheet.create({
     },
     message: {
         fontSize: typography.fontSize.sm,
-        color: colors.text.muted,
         marginTop: spacing.md,
         textAlign: 'center',
     },
 });
 
 export default LoadingView;
-

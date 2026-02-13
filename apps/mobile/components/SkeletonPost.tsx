@@ -1,7 +1,8 @@
-import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, StyleSheet, Animated, Dimensions, ViewStyle } from 'react-native';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing } from '@zerog/ui';
+import { spacing } from '@zerog/ui';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -14,8 +15,9 @@ function ShimmerBlock({
     width: number | string;
     height: number;
     borderRadius?: number;
-    style?: any;
+    style?: ViewStyle;
 }) {
+    const { colors } = useTheme();
     const shimmerAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -64,8 +66,10 @@ function ShimmerBlock({
 }
 
 export default function SkeletonPost() {
+    const { colors } = useTheme();
+
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.surface.glass, borderColor: colors.border.subtle }]}>
             {/* Header row */}
             <View style={styles.header}>
                 <ShimmerBlock width={40} height={40} borderRadius={20} />
@@ -206,12 +210,10 @@ const styles = StyleSheet.create({
         paddingTop: spacing.sm,
     },
     card: {
-        backgroundColor: colors.surface.glass,
         borderRadius: 16,
         padding: spacing.md,
         marginBottom: spacing.md,
         borderWidth: 1,
-        borderColor: colors.border.subtle,
     },
     header: {
         flexDirection: 'row',

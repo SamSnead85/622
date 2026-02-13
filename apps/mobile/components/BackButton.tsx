@@ -7,7 +7,8 @@ import React from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing } from '@zerog/ui';
+import { spacing } from '@zerog/ui';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface BackButtonProps {
     /** Override default router.back() behavior */
@@ -29,21 +30,23 @@ export function BackButton({
     icon = 'chevron-back',
     size = 24,
     style,
-    color = colors.text.primary,
+    color,
     label = 'Go back',
 }: BackButtonProps) {
     const router = useRouter();
+    const { colors } = useTheme();
+    const iconColor = color ?? colors.text.primary;
 
     return (
         <TouchableOpacity
-            style={[styles.button, style]}
+            style={[styles.button, { backgroundColor: colors.surface.glassHover }, style]}
             onPress={onPress || (() => router.back())}
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel={label}
             accessibilityHint="Double tap to navigate back"
         >
-            <Ionicons name={icon} size={size} color={color} />
+            <Ionicons name={icon} size={size} color={iconColor} />
         </TouchableOpacity>
     );
 }
@@ -53,7 +56,6 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: colors.surface.glassHover,
         alignItems: 'center',
         justifyContent: 'center',
     },

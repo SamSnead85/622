@@ -7,7 +7,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing } from '@zerog/ui';
+import { typography, spacing } from '@zerog/ui';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface RetryViewProps {
     /** Error message to display */
@@ -29,18 +30,22 @@ function RetryViewComponent({
     compact = false,
     icon = 'cloud-offline-outline',
 }: RetryViewProps) {
+    const { colors } = useTheme();
+
     if (compact) {
         return (
             <TouchableOpacity
-                style={styles.compactContainer}
+                style={[styles.compactContainer, { backgroundColor: colors.surface.glass }]}
                 onPress={onRetry}
                 disabled={isRetrying}
                 activeOpacity={0.7}
             >
                 <Ionicons name={icon} size={16} color={colors.text.muted} />
-                <Text style={styles.compactText}>{isRetrying ? 'Retrying...' : message}</Text>
+                <Text style={[styles.compactText, { color: colors.text.muted }]}>
+                    {isRetrying ? 'Retrying...' : message}
+                </Text>
                 {!isRetrying && (
-                    <View style={styles.compactRetryBadge}>
+                    <View style={[styles.compactRetryBadge, { backgroundColor: colors.surface.goldSubtle }]}>
                         <Ionicons name="refresh" size={12} color={colors.gold[500]} />
                     </View>
                 )}
@@ -50,18 +55,24 @@ function RetryViewComponent({
 
     return (
         <View style={styles.container}>
-            <View style={styles.iconCircle}>
+            <View style={[styles.iconCircle, { backgroundColor: colors.surface.glass }]}>
                 <Ionicons name={icon} size={32} color={colors.text.muted} />
             </View>
-            <Text style={styles.message}>{message}</Text>
+            <Text style={[styles.message, { color: colors.text.secondary }]}>{message}</Text>
             <TouchableOpacity
-                style={[styles.retryButton, isRetrying && styles.retryButtonDisabled]}
+                style={[
+                    styles.retryButton,
+                    { backgroundColor: colors.gold[500] },
+                    isRetrying && styles.retryButtonDisabled,
+                ]}
                 onPress={onRetry}
                 disabled={isRetrying}
                 activeOpacity={0.8}
             >
-                <Ionicons name="refresh" size={16} color="#FFFFFF" />
-                <Text style={styles.retryText}>{isRetrying ? 'Retrying...' : 'Tap to Retry'}</Text>
+                <Ionicons name="refresh" size={16} color={colors.text.inverse} />
+                <Text style={[styles.retryText, { color: colors.text.inverse }]}>
+                    {isRetrying ? 'Retrying...' : 'Tap to Retry'}
+                </Text>
             </TouchableOpacity>
         </View>
     );
@@ -80,14 +91,12 @@ const styles = StyleSheet.create({
         width: 64,
         height: 64,
         borderRadius: 32,
-        backgroundColor: colors.surface.glass,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: spacing.lg,
     },
     message: {
         fontSize: typography.fontSize.base,
-        color: colors.text.secondary,
         textAlign: 'center',
         lineHeight: 22,
         marginBottom: spacing.xl,
@@ -97,7 +106,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,
-        backgroundColor: colors.gold[500],
         paddingHorizontal: spacing.xl,
         paddingVertical: spacing.sm + 2,
         borderRadius: 12,
@@ -108,35 +116,30 @@ const styles = StyleSheet.create({
     retryText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: '#FFFFFF',
     },
     // Compact variant
     compactContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
+        gap: spacing.sm,
         paddingVertical: spacing.md,
         paddingHorizontal: spacing.lg,
-        backgroundColor: colors.surface.glass,
         borderRadius: 12,
         marginHorizontal: spacing.md,
         marginVertical: spacing.sm,
     },
     compactText: {
         fontSize: typography.fontSize.sm,
-        color: colors.text.muted,
         flex: 1,
     },
     compactRetryBadge: {
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: colors.surface.goldSubtle,
         alignItems: 'center',
         justifyContent: 'center',
     },
 });
 
 export default RetryView;
-
