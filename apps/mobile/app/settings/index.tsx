@@ -285,8 +285,8 @@ export default function SettingsScreen() {
                                                         },
                                                     },
                                                 ]);
-                                            } catch (error: any) {
-                                                const errorMessage = error?.message || 'Failed to delete account. Please try again.';
+                                            } catch (error: unknown) {
+                                                const errorMessage = error instanceof Error ? error.message : 'Failed to delete account. Please try again.';
                                                 Alert.alert('Deletion Failed', errorMessage);
                                                 showError('Could not delete account');
                                             }
@@ -327,8 +327,8 @@ export default function SettingsScreen() {
                     },
                 },
             ]);
-        } catch (error: any) {
-            const errorMessage = error?.message || 'Failed to delete account. Please try again.';
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to delete account. Please try again.';
             Alert.alert('Deletion Failed', errorMessage);
             showError('Could not delete account');
             setDeletePassword('');

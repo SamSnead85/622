@@ -76,8 +76,8 @@ export default function MomentCreateScreen() {
                 setMediaUri(result.assets[0].uri);
                 setMediaType(result.assets[0].type === 'video' ? 'video' : 'image');
             }
-        } catch (e: any) {
-            Alert.alert('Media Selection Failed', e.message || 'Unable to select media');
+        } catch (e: unknown) {
+            Alert.alert('Media Selection Failed', e instanceof Error ? e.message : 'Unable to select media');
         }
     };
 
@@ -103,8 +103,8 @@ export default function MomentCreateScreen() {
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             router.back();
-        } catch (e: any) {
-            Alert.alert('Post Failed', e.message || 'Unable to post moment');
+        } catch (e: unknown) {
+            Alert.alert('Post Failed', e instanceof Error ? e.message : 'Unable to post moment');
         } finally {
             setPosting(false);
         }

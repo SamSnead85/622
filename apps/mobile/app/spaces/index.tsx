@@ -394,8 +394,8 @@ export default function SpacesScreen() {
                 { cache: !isRefresh },
             );
             setSpaces(data?.spaces || []);
-        } catch (err: any) {
-            setError(err.message || 'Failed to load spaces');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to load spaces');
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);

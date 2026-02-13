@@ -1317,8 +1317,8 @@ export default function CreateScreen() {
                     url: result.url,
                     type: result.type || (item.type === 'video' ? 'VIDEO' : 'IMAGE'),
                 };
-            } catch (error: any) {
-                lastError = error.message || 'Upload failed';
+            } catch (error: unknown) {
+                lastError = error instanceof Error ? error.message : 'Upload failed';
                 if (attempt < maxRetries) {
                     // Wait before retry
                     await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
@@ -1443,11 +1443,11 @@ export default function CreateScreen() {
                 router.push('/(tabs)');
             }, 1200);
             return () => clearTimeout(timer);
-        } catch (error: any) {
+        } catch (error: unknown) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             Alert.alert(
                 'Publishing Failed',
-                error.message || 'Failed to publish post. Please try again.',
+                error instanceof Error ? error.message : 'Failed to publish post. Please try again.',
                 [
                     { text: 'OK', style: 'cancel' },
                     { text: 'Retry', onPress: () => handlePublish() },

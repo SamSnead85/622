@@ -163,9 +163,9 @@ export default function GoLiveScreen() {
 
             setStreamResult(result);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch (err: any) {
+        } catch (err: unknown) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Stream Creation Failed', err.message || 'Unable to create stream. Please try again.');
+            Alert.alert('Stream Creation Failed', err instanceof Error ? err.message : 'Unable to create stream. Please try again.');
         } finally {
             setIsCreating(false);
         }

@@ -219,8 +219,8 @@ async function fetchWithTimeout(
     try {
         const res = await fetch(url, { ...options, signal: controller.signal });
         return res;
-    } catch (error: any) {
-        if (error.name === 'AbortError') {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError') {
             throw new Error('Request timed out. Please check your connection and try again.');
         }
         // Network failure (no connection, DNS failure, etc.)

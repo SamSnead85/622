@@ -443,8 +443,8 @@ export default function CampfireScreen() {
 
             setLiveStreams(Array.isArray(active) ? active : []);
             setVods(Array.isArray(vodsList) ? vodsList : []);
-        } catch (err: any) {
-            setError(err.message || 'Failed to load streams');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to load streams');
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);

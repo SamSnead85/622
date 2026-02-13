@@ -497,11 +497,12 @@ export default function PostDetailScreen() {
                 );
                 setComments(flat);
                 setNestedComments(nestComments(flat));
-            } catch (e: any) {
+            } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : 'Something went wrong';
                 if (!refresh) {
-                    setError(e.message || 'Failed to load post');
+                    setError(msg);
                 } else {
-                    showError(e.message || 'Failed to refresh');
+                    showError(msg);
                 }
             } finally {
                 setIsLoading(false);

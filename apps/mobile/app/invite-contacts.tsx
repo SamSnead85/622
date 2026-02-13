@@ -125,8 +125,8 @@ export default function InviteContactsScreen() {
 
             setSentCount(result.sent);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch (err: any) {
-            Alert.alert('Error', err?.message || 'Failed to send invites. Please try again.');
+        } catch (err: unknown) {
+            Alert.alert('Error', err instanceof Error ? err.message : 'Failed to send invites. Please try again.');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         } finally {
             setSending(false);

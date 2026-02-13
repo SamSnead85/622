@@ -265,15 +265,15 @@ export default function JoinGroupScreen() {
 
             // Navigate to the community
             router.replace(`/community/${resolvedId}` as any);
-        } catch (err: any) {
+        } catch (err: unknown) {
             // If already a member, just navigate there
-            if (err?.status === 409 || err?.message?.toLowerCase().includes('already')) {
+            if ((err as { status?: number })?.status === 409 || (err instanceof Error && err.message.toLowerCase().includes('already'))) {
                 router.replace(`/community/${resolvedId}` as any);
                 return;
             }
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            setError(err?.message || 'Failed to join group. Please try again.');
+            setError(err instanceof Error ? err.message : 'Failed to join group. Please try again.');
         } finally {
             setIsJoining(false);
         }

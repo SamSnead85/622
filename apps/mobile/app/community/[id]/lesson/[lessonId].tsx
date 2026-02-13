@@ -255,8 +255,8 @@ export default function LessonViewerScreen() {
             );
             setLesson(data);
             setCompleted(data.progress?.completed ?? false);
-        } catch (e: any) {
-            setError(e.message || 'Failed to load lesson');
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : 'Failed to load lesson');
         } finally {
             setLoading(false);
         }
@@ -284,7 +284,7 @@ export default function LessonViewerScreen() {
             );
             setCompleted(true);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch (e: any) {
+        } catch (e: unknown) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         } finally {
             setMarking(false);

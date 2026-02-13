@@ -55,7 +55,7 @@ export default function SecuritySettingsScreen() {
         try {
             const data = await apiFetch('/api/v1/auth/sessions');
             setSessions(data.sessions || []);
-        } catch (err) {
+        } catch (err: unknown) {
             // Silently fail — user can pull to refresh
         }
     }, []);
@@ -86,8 +86,14 @@ export default function SecuritySettingsScreen() {
                             await apiFetch(`/api/v1/auth/sessions/${sessionId}`, { method: 'DELETE' });
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                             setSessions(prev => prev.filter(s => s.id !== sessionId));
-                        } catch (err: any) {
-                            Alert.alert('Error', err?.data?.error || 'Failed to revoke session');
+                        } catch (err: unknown) {
+                            let msg = 'Failed to revoke session';
+                            if (err instanceof Error) msg = err.message;
+                            else if (typeof err === 'object' && err !== null && 'data' in err) {
+                                const d = (err as { data?: { error?: string } }).data;
+                                if (typeof d?.error === 'string') msg = d.error;
+                            }
+                            Alert.alert('Error', msg);
                         } finally {
                             setRevokingId(null);
                         }
@@ -112,8 +118,14 @@ export default function SecuritySettingsScreen() {
                             await apiFetch('/api/v1/auth/sessions', { method: 'DELETE' });
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                             setSessions(prev => prev.filter(s => s.isCurrent));
-                        } catch (err: any) {
-                            Alert.alert('Error', err?.data?.error || 'Failed to revoke sessions');
+                        } catch (err: unknown) {
+                            let msg = 'Failed to revoke sessions';
+                            if (err instanceof Error) msg = err.message;
+                            else if (typeof err === 'object' && err !== null && 'data' in err) {
+                                const d = (err as { data?: { error?: string } }).data;
+                                if (typeof d?.error === 'string') msg = d.error;
+                            }
+                            Alert.alert('Error', msg);
                         } finally {
                             setIsRevokingAll(false);
                         }
@@ -130,8 +142,14 @@ export default function SecuritySettingsScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Alert.alert('Code Sent', 'Check your email for the verification code.');
             router.push('/(auth)/verify-email' as any);
-        } catch (err: any) {
-            Alert.alert('Error', err?.data?.error || 'Failed to send verification email');
+        } catch (err: unknown) {
+            let msg = 'Failed to send verification email';
+            if (err instanceof Error) msg = err.message;
+            else if (typeof err === 'object' && err !== null && 'data' in err) {
+                const d = (err as { data?: { error?: string } }).data;
+                if (typeof d?.error === 'string') msg = d.error;
+            }
+            Alert.alert('Error', msg);
         } finally {
             setIsResendingVerification(false);
         }

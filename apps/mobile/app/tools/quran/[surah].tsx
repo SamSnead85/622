@@ -260,9 +260,9 @@ export default function SurahDetailScreen() {
                     }, 500);
                 }
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Quran fetch error:', err);
-            setError(err.message || 'Failed to load surah');
+            setError(err instanceof Error ? err.message : 'Failed to load surah');
         } finally {
             setIsLoading(false);
             setIsRetrying(false);

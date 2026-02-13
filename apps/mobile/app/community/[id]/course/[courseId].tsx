@@ -358,8 +358,8 @@ export default function CourseDetailScreen() {
                 { cache: !refreshing },
             );
             setCourse(data);
-        } catch (e: any) {
-            setError(e.message || 'Failed to load course');
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : 'Failed to load course');
         } finally {
             setLoading(false);
             setRefreshing(false);

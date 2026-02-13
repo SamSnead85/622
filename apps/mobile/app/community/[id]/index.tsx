@@ -519,9 +519,9 @@ export default function CommunityDetailScreen() {
             } catch {
                 /* silent — member preview is non-critical */
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             if (!isRefreshing)
-                Alert.alert('Load Failed', e.message || 'Failed to load community');
+                Alert.alert('Load Failed', e instanceof Error ? e.message : 'Failed to load community');
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
@@ -550,8 +550,8 @@ export default function CommunityDetailScreen() {
                     joinedAt: m.createdAt,
                 })),
             );
-        } catch (e: any) {
-            setMembersError(e.message || 'Failed to load members');
+        } catch (e: unknown) {
+            setMembersError(e instanceof Error ? e.message : 'Failed to load members');
         } finally {
             setMembersLoading(false);
         }
@@ -568,12 +568,13 @@ export default function CommunityDetailScreen() {
             );
             const rulesList = data.rules || data || [];
             setRules(Array.isArray(rulesList) ? rulesList : []);
-        } catch (e: any) {
+        } catch (e: unknown) {
             // If 404, there are simply no rules — not an error
-            if (e.status === 404) {
+            const status = typeof e === 'object' && e !== null && 'status' in e ? (e as { status: number }).status : undefined;
+            if (status === 404) {
                 setRules([]);
             } else {
-                setRulesError(e.message || 'Failed to load rules');
+                setRulesError(e instanceof Error ? e.message : 'Failed to load rules');
             }
         } finally {
             setRulesLoading(false);

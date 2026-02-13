@@ -307,8 +307,8 @@ export default function ProfileScreen() {
             const data = await apiFetch<any>(`${API.userPosts(user.id)}?limit=50`);
             const rawPosts = data.posts || data.data || [];
             setUserPosts((Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost));
-        } catch (e: any) {
-            const msg = e?.message || 'Failed to load posts';
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : 'Failed to load posts';
             setLoadError(msg);
             showError(msg);
         } finally {

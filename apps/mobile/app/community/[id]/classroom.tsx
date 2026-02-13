@@ -241,8 +241,8 @@ export default function ClassroomScreen() {
             const list = data.courses || [];
             setCourses(Array.isArray(list) ? list : []);
             if (data.role) setUserRole(data.role);
-        } catch (e: any) {
-            setError(e.message || 'Failed to load courses');
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : 'Failed to load courses');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -280,8 +280,8 @@ export default function ClassroomScreen() {
             setNewDesc('');
             setNewLevel(0);
             loadCourses();
-        } catch (e: any) {
-            Alert.alert('Course Creation Failed', e.message || 'Unable to create course');
+        } catch (e: unknown) {
+            Alert.alert('Course Creation Failed', e instanceof Error ? e.message : 'Unable to create course');
         } finally {
             setCreating(false);
         }

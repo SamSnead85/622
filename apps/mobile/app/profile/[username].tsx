@@ -372,8 +372,8 @@ export default function UserProfileScreen() {
                     loadMutualFriends(data.id);
                 }
             }
-        } catch (e: any) {
-            const msg = e?.message || 'Failed to load profile';
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : 'Failed to load profile';
             setLoadError(msg);
         } finally {
             setIsLoading(false);

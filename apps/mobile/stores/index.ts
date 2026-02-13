@@ -647,9 +647,9 @@ export const useFeedStore = create<FeedState>()(
                     };
                 });
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Silently ignore aborted requests
-            if (error?.name === 'AbortError') return;
+            if (error instanceof Error && error.name === 'AbortError') return;
             // Discard stale error — a newer request has been started
             if (requestId !== _feedRequestId) return;
 
@@ -659,7 +659,7 @@ export const useFeedStore = create<FeedState>()(
             const isNetwork = error instanceof TypeError ||
                 (error instanceof Error && error.message.toLowerCase().includes('network'));
             set({
-                error: error.message || 'Failed to load feed',
+                error: error instanceof Error ? error.message : 'Failed to load feed',
                 isLoading: false,
                 isRefreshing: false,
                 isShowingCachedData: isNetwork && currentPosts.length > 0,
@@ -907,9 +907,9 @@ export const useCommunitiesStore = create<CommunitiesState>()(
                 isLoading: false,
                 lastFetched: Date.now(),
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             set({
-                error: error.message || 'Failed to load communities',
+                error: error instanceof Error ? error.message : 'Failed to load communities',
                 isLoading: false,
             });
         } finally {
@@ -929,7 +929,7 @@ export const useCommunitiesStore = create<CommunitiesState>()(
         }));
         try {
             await apiFetch(API.joinCommunity(communityId), { method: 'POST' });
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Revert on failure
             set({ communities: prev });
             devError('Failed to join community:', error);
@@ -948,7 +948,7 @@ export const useCommunitiesStore = create<CommunitiesState>()(
         }));
         try {
             await apiFetch(API.leaveCommunity(communityId), { method: 'POST' });
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Revert on failure
             set({ communities: prev });
             devError('Failed to leave community:', error);

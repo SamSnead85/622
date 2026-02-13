@@ -239,8 +239,8 @@ export default function StreamViewerScreen() {
                 const streamData = data?.stream || data;
                 setStream(streamData);
                 setViewerCount(streamData?.viewerCount || 0);
-            } catch (err: any) {
-                setError(err.message || 'Failed to load stream');
+            } catch (err: unknown) {
+                setError(err instanceof Error ? err.message : 'Failed to load stream');
             } finally {
                 setIsLoading(false);
             }

@@ -82,8 +82,8 @@ export default function PollCreateScreen() {
             });
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             router.back();
-        } catch (e: any) {
-            Alert.alert('Poll Creation Failed', e.message || 'Unable to create poll');
+        } catch (e: unknown) {
+            Alert.alert('Poll Creation Failed', e instanceof Error ? e.message : 'Unable to create poll');
         } finally {
             setCreating(false);
         }

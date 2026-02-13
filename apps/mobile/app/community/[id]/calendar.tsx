@@ -209,8 +209,8 @@ export default function CommunityCalendarScreen() {
                 }>(`${API.communities}/${communityId}/events`, { cache: !silent });
                 setEvents(data.events || []);
                 if (data.role) setCommunityRole(data.role);
-            } catch (err: any) {
-                setError(err.message || 'Failed to load events');
+            } catch (err: unknown) {
+                setError(err instanceof Error ? err.message : 'Failed to load events');
             } finally {
                 setIsLoading(false);
                 setIsRefreshing(false);
