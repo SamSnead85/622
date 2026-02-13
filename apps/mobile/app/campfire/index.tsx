@@ -227,7 +227,7 @@ function StreamCard({ stream, index }: { stream: LiveStream; index: number }) {
                 onPress={handlePress}
                 style={animatedStyle}
                 accessibilityRole="button"
-                accessibilityLabel={`Watch ${stream.title} by ${stream.user.displayName}`}
+                accessibilityLabel={`Watch ${stream.title} by ${stream.user?.displayName ?? 'unknown'}`}
             >
                 <View style={styles.streamCard}>
                     {/* Thumbnail */}
@@ -273,7 +273,7 @@ function StreamCard({ stream, index }: { stream: LiveStream; index: number }) {
                     {/* Info */}
                     <View style={styles.streamInfo}>
                         <View style={styles.streamerRow}>
-                            {stream.user.avatarUrl ? (
+                            {stream.user?.avatarUrl ? (
                                 <Image
                                     source={{ uri: stream.user.avatarUrl }}
                                     style={styles.streamerAvatar}
@@ -287,7 +287,7 @@ function StreamCard({ stream, index }: { stream: LiveStream; index: number }) {
                                 </View>
                             )}
                             <Text style={styles.streamerName} numberOfLines={1}>
-                                {stream.user.displayName}
+                                {stream.user?.displayName}
                             </Text>
                         </View>
                         <Text style={styles.streamTitle} numberOfLines={2}>
@@ -350,7 +350,7 @@ function VodCard({ stream, index }: { stream: LiveStream; index: number }) {
                 <View style={styles.vodInfo}>
                     <Text style={styles.vodTitle} numberOfLines={2}>{stream.title}</Text>
                     <Text style={styles.vodMeta}>
-                        {stream.user.displayName} · {formatViewerCount(stream.viewerCount)} views
+                        {stream.user?.displayName} · {formatViewerCount(stream.viewerCount)} views
                     </Text>
                 </View>
             </TouchableOpacity>

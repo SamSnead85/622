@@ -411,6 +411,8 @@ export default function LoginScreen() {
                             <TouchableOpacity
                                 onPress={() => setGeneralError(null)}
                                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                accessibilityLabel="Dismiss error"
+                                accessibilityRole="button"
                             >
                                 <Ionicons name="close" size={16} color={c.coral[500]} />
                             </TouchableOpacity>
@@ -424,6 +426,8 @@ export default function LoginScreen() {
                                 style={[styles.socialBtn, { backgroundColor: isDark ? '#FFFFFF' : '#000000', borderColor: isDark ? '#FFFFFF' : '#000000' }]}
                                 onPress={handleAppleLogin}
                                 activeOpacity={0.7}
+                                accessibilityLabel="Sign in with Apple"
+                                accessibilityRole="button"
                             >
                                 <Ionicons name="logo-apple" size={20} color={isDark ? '#000000' : '#FFFFFF'} />
                                 <Text style={[styles.socialBtnText, { color: isDark ? '#000000' : '#FFFFFF' }]}>Continue with Apple</Text>
@@ -434,6 +438,8 @@ export default function LoginScreen() {
                             onPress={handleGoogleLogin}
                             activeOpacity={0.7}
                             disabled={googleLoading}
+                            accessibilityLabel="Sign in with Google"
+                            accessibilityRole="button"
                         >
                             {googleLoading ? (
                                 <ActivityIndicator size="small" color={c.text.primary} />
@@ -451,6 +457,8 @@ export default function LoginScreen() {
                                 style={[styles.biometricBtn, { borderColor: c.gold[500] + '30' }]}
                                 onPress={handleBiometricAuth}
                                 activeOpacity={0.7}
+                                accessibilityLabel="Sign in with biometrics"
+                                accessibilityRole="button"
                             >
                                 <LinearGradient
                                     colors={[c.gold[500] + '12', c.gold[500] + '04']}
@@ -486,6 +494,7 @@ export default function LoginScreen() {
                                 placeholder="you@example.com"
                                 placeholderTextColor={c.text.muted}
                                 keyboardType="email-address"
+                                accessibilityLabel="Email address"
                                 autoCapitalize="none"
                                 autoComplete="email"
                                 autoCorrect={false}
@@ -512,6 +521,7 @@ export default function LoginScreen() {
                                 placeholder="Enter your password"
                                 placeholderTextColor={c.text.muted}
                                 secureTextEntry={isSecure}
+                                accessibilityLabel="Password"
                                 autoCapitalize="none"
                                 autoComplete="password"
                                 autoCorrect={false}
@@ -527,6 +537,8 @@ export default function LoginScreen() {
                                 style={styles.eyeBtn}
                                 onPress={() => { setIsSecure(!isSecure); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                                accessibilityLabel="Toggle password visibility"
+                                accessibilityRole="button"
                             >
                                 <Ionicons name={isSecure ? 'eye-off-outline' : 'eye-outline'} size={20} color={c.text.muted} />
                             </TouchableOpacity>
@@ -540,6 +552,8 @@ export default function LoginScreen() {
                             style={styles.forgotBtn}
                             onPress={handleForgotPassword}
                             disabled={resetSending}
+                            accessibilityLabel="Forgot password"
+                            accessibilityRole="link"
                         >
                             <Text style={[styles.forgotText, { color: c.gold[500] }]}>Forgot password?</Text>
                         </TouchableOpacity>
@@ -552,6 +566,8 @@ export default function LoginScreen() {
                             disabled={isLoading}
                             activeOpacity={0.85}
                             style={[styles.submitBtn, isLoading && { opacity: 0.85 }]}
+                            accessibilityLabel="Sign in"
+                            accessibilityRole="button"
                         >
                             <LinearGradient
                                 colors={isLoading ? [c.gold[600], c.gold[700]] : [c.gold[400], c.gold[600]]}
@@ -576,6 +592,8 @@ export default function LoginScreen() {
                         <Text style={[styles.signupText, { color: c.text.secondary }]}>Don&apos;t have an account? </Text>
                         <TouchableOpacity
                             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(auth)/signup'); }}
+                            accessibilityLabel="Create an account"
+                            accessibilityRole="link"
                         >
                             <Text style={[styles.signupLink, { color: c.gold[500] }]}>Sign up</Text>
                         </TouchableOpacity>

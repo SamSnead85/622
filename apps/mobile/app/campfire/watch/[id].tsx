@@ -445,7 +445,7 @@ export default function StreamViewerScreen() {
     const handleFollow = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setIsFollowing((prev) => !prev);
-        if (stream?.user.id) {
+        if (stream?.user?.id) {
             apiFetch(`/api/v1/users/${stream.user.id}/follow`, {
                 method: isFollowing ? 'DELETE' : 'POST',
             }).catch(() => {
@@ -600,7 +600,7 @@ export default function StreamViewerScreen() {
                     {/* Streamer info bar */}
                     <View style={styles.streamerBar}>
                         <View style={styles.streamerInfo}>
-                            {stream.user.avatarUrl ? (
+                            {stream.user?.avatarUrl ? (
                                 <Image
                                     source={{ uri: stream.user.avatarUrl }}
                                     style={styles.streamerAvatar}
@@ -615,9 +615,9 @@ export default function StreamViewerScreen() {
                             )}
                             <View style={styles.streamerText}>
                                 <Text style={styles.streamerName} numberOfLines={1}>
-                                    {stream.user.displayName}
+                                    {stream.user?.displayName}
                                 </Text>
-                                <Text style={styles.streamerUsername}>@{stream.user.username}</Text>
+                                <Text style={styles.streamerUsername}>@{stream.user?.username}</Text>
                             </View>
                         </View>
 
