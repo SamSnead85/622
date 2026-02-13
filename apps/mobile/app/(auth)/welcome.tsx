@@ -4,7 +4,6 @@
 // ============================================
 
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,9 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const LOGO_SOURCE = require('../../assets/logo-0g.png');
+import { BrandLogo } from '../../components';
 
 export default function WelcomeScreen() {
     const router = useRouter();
@@ -50,12 +47,7 @@ export default function WelcomeScreen() {
         >
             {/* Logo */}
             <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.logoSection}>
-                <Image
-                    source={LOGO_SOURCE}
-                    style={styles.logoImage}
-                    contentFit="contain"
-                    cachePolicy="memory-disk"
-                />
+                <BrandLogo size="hero" />
             </Animated.View>
 
             {/* Tagline */}
@@ -161,10 +153,6 @@ const styles = StyleSheet.create({
     logoSection: {
         alignItems: 'center',
         paddingTop: 48,
-    },
-    logoImage: {
-        width: 140,
-        height: 70,
     },
 
     // ---- Tagline ----

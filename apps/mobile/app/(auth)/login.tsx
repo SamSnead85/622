@@ -26,7 +26,6 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image } from 'expo-image';
 import Animated, {
     FadeInDown,
     FadeInUp,
@@ -39,7 +38,7 @@ import Animated, {
     interpolateColor,
 } from 'react-native-reanimated';
 import { typography, spacing } from '@zerog/ui';
-import { BackButton } from '../../components';
+import { BackButton, BrandLogo } from '../../components';
 import { useAuthStore } from '../../stores';
 import { apiFetch } from '../../lib/api';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -78,9 +77,6 @@ function friendlyError(raw: string): string {
     }
     return 'Sign in failed. Please try again.';
 }
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const LOGO_SOURCE = require('../../assets/logo-0g.png');
 
 // ============================================
 // Login Screen
@@ -391,12 +387,7 @@ export default function LoginScreen() {
 
                     {/* 0G Logo */}
                     <Animated.View entering={FadeInDown.delay(30).duration(500).springify()} style={styles.logoArea}>
-                        <Image
-                            source={LOGO_SOURCE}
-                            style={styles.logoImage}
-                            contentFit="contain"
-                            cachePolicy="memory-disk"
-                        />
+                        <BrandLogo size="standard" />
                     </Animated.View>
 
                     {/* Header */}
@@ -605,10 +596,6 @@ const styles = StyleSheet.create({
     logoArea: {
         alignItems: 'center',
         marginBottom: spacing.lg,
-    },
-    logoImage: {
-        width: 110,
-        height: 55,
     },
     header: { marginBottom: spacing.xl },
     title: {
