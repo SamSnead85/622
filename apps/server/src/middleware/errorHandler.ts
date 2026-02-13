@@ -58,7 +58,7 @@ export const errorHandler = (
 
     // Prisma errors
     if (err.name === 'PrismaClientKnownRequestError') {
-        const prismaError = err as any;
+        const prismaError = err as { code?: string; meta?: { target?: string[] } };
 
         if (prismaError.code === 'P2002') {
             res.status(409).json({

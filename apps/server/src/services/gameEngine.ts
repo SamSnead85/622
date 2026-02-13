@@ -168,7 +168,7 @@ export function handleGameAction(code: string, playerId: string, action: string,
 
     let roundEnded = false;
     let gameEnded = false;
-    let roundResults: any = undefined;
+    let roundResults: { scores: Record<string, number>; summary: unknown } | undefined = undefined;
 
     if (handler.isRoundOver(newState)) {
         roundEnded = true;

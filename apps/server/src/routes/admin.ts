@@ -38,7 +38,7 @@ router.get('/users', authenticate, requireAdmin, async (req: AuthRequest, res, n
         const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
         const take = parseInt(limit as string);
 
-        const where: any = {};
+        const where: Record<string, unknown> = {};
         if (search) {
             where.OR = [
                 { username: { contains: search as string, mode: 'insensitive' } },
@@ -369,8 +369,12 @@ router.get('/reports', authenticate, requireAdmin, async (req: AuthRequest, res,
         const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
         const skip = (page - 1) * limit;
 
-        const status = (req.query.status as string) || 'PENDING';
-        const where = { status: status as any };
+        const VALID_REPORT_STATUSES = ['PENDING', 'REVIEWING', 'RESOLVED', 'DISMISSED'] as const;
+        const rawStatus = (req.query.status as string) || 'PENDING';
+        const status = VALID_REPORT_STATUSES.includes(rawStatus as (typeof VALID_REPORT_STATUSES)[number])
+            ? rawStatus
+            : 'PENDING';
+        const where: Record<string, unknown> = { status };
 
         const [reports, total] = await Promise.all([
             prisma.report.findMany({
@@ -486,7 +490,7 @@ router.get('/security/audit-log', authenticate, requireAdmin, async (req: AuthRe
         const action = req.query.action as string | undefined;
         const severity = req.query.severity as string | undefined;
 
-        const where: any = {};
+        const where: Record<string, unknown> = {};
         if (action) where.action = action;
         if (severity) where.severity = severity;
 

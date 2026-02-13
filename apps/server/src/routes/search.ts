@@ -24,16 +24,19 @@ const TABLE_IDENTIFIER: Record<keyof typeof ALLOWED_TABLES, Prisma.Sql> = {
     Community: Prisma.raw('"Community"'),
 };
 
+// FTS raw query returns rows with id field
+interface FtsRow { id: string }
+
 // Helper: Try FTS query with fallback to LIKE
-async function ftsSearch(table: string, query: string, limit: number, offset: number): Promise<any[] | null> {
+async function ftsSearch(table: string, query: string, limit: number, offset: number): Promise<FtsRow[] | null> {
     if (!ALLOWED_TABLES[table as keyof typeof ALLOWED_TABLES]) return null;
     const tableId = TABLE_IDENTIFIER[table as keyof typeof ALLOWED_TABLES];
     try {
         // Prisma.sql parameterizes query, limit, offset; table comes from strict map only
-        const results = await prisma.$queryRaw(
+        const results = await prisma.$queryRaw<FtsRow[]>(
             Prisma.sql`SELECT id FROM ${tableId} WHERE search_vector @@ plainto_tsquery('english', ${query}) ORDER BY ts_rank(search_vector, plainto_tsquery('english', ${query})) DESC LIMIT ${limit} OFFSET ${offset}`
         );
-        return results as any[];
+        return results;
     } catch {
         // FTS not available (migration not run), return null for fallback
         return null;
@@ -56,8 +59,8 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
         const skip = (pageNum - 1) * limitNum;
 
         const searchType = type as string;
-        const results: any = {};
-        const counts: any = {};
+        const results: Record<string, unknown> = {};
+        const counts: Record<string, number> = {};
 
         // Search posts (try FTS first, fallback to LIKE)
         if (searchType === 'all' || searchType === 'posts') {
@@ -68,7 +71,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
 
             let posts, postCount;
             if (ftsResults && ftsResults.length > 0) {
-                const ftsIds = ftsResults.map((r: any) => r.id);
+                const ftsIds = ftsResults.map((r) => r.id);
                 [posts, postCount] = await Promise.all([
                     prisma.post.findMany({
                         where: { id: { in: ftsIds }, deletedAt: null, isPublic: true },

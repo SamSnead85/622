@@ -110,7 +110,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
 
         // Fetch real posts from database
         // Community feed default: only show posts from users who opted into the community
-        let whereClause: any = {
+        let whereClause: Record<string, unknown> = {
             isPublic: true,
             deletedAt: null,
             visible: true,
