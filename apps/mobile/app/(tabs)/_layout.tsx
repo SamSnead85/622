@@ -1,98 +1,49 @@
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { useEffect, useRef, useMemo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing } from '@zerog/ui';
+import { colors } from '@zerog/ui';
 import { useNotificationsStore } from '../../stores';
 import { useTheme } from '../../contexts/ThemeContext';
 
 // ============================================
-// Tab Icon — clean, minimal, premium
+// Tab Icon — clean, minimal, Instagram-style
 // ============================================
 
 interface TabIconProps {
-    label: string;
     iconName: keyof typeof Ionicons.glyphMap;
     iconNameFocused: keyof typeof Ionicons.glyphMap;
     focused: boolean;
     badge?: number;
-    showShield?: boolean;
 }
 
-function TabIcon({ label, iconName, iconNameFocused, focused, badge, showShield }: TabIconProps) {
+function TabIcon({ iconName, iconNameFocused, focused, badge }: TabIconProps) {
     const { colors: c } = useTheme();
-    const scaleAnim = useRef(new Animated.Value(1)).current;
-    const prevFocused = useRef(focused);
-
-    useEffect(() => {
-        Animated.spring(scaleAnim, {
-            toValue: focused ? 1.05 : 1,
-            tension: 300,
-            friction: 10,
-            useNativeDriver: true,
-        }).start();
-
-        if (focused && !prevFocused.current) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-        prevFocused.current = focused;
-    }, [focused]);
 
     return (
-        <Animated.View
-            style={[
-                styles.tabIconContainer,
-                { transform: [{ scale: scaleAnim }] },
-            ]}
-            accessibilityRole="tab"
-            accessibilityLabel={label}
-            accessibilityState={{ selected: focused }}
-        >
-            <View>
-                <Ionicons
-                    name={focused ? iconNameFocused : iconName}
-                    size={23}
-                    color={focused ? c.text.primary : c.text.muted}
-                />
-                {badge != null && badge > 0 && (
-                    <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
-                    </View>
-                )}
-                {showShield && (
-                    <View style={[styles.shieldBadge, { backgroundColor: c.obsidian[900] }]}>
-                        <Ionicons name="shield-checkmark" size={8} color={c.emerald[500]} />
-                    </View>
-                )}
-            </View>
-            <Text
-                style={[
-                    styles.tabLabel,
-                    { color: focused ? c.text.primary : c.text.muted },
-                ]}
-            >
-                {label}
-            </Text>
-            {focused && <View style={[styles.tabIndicator, { backgroundColor: c.text.primary }]} />}
-        </Animated.View>
+        <View style={styles.tabIconContainer}>
+            <Ionicons
+                name={focused ? iconNameFocused : iconName}
+                size={24}
+                color={focused ? c.text.primary : c.text.muted}
+            />
+            {badge != null && badge > 0 && (
+                <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+                </View>
+            )}
+        </View>
     );
 }
 
 // ============================================
-// Tab Layout — 4 tabs: Home, Messages, Discover, You
+// Tab Layout — 5 tabs: Home, Search, Create, Communities, Profile
 // ============================================
 
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
-    const { colors: c, isDark } = useTheme();
+    const { colors: c } = useTheme();
     const unreadCount = useNotificationsStore((s) => s.unreadCount);
-
-    const tabBarBorderStyle = useMemo(() => ({
-        position: 'absolute' as const, top: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: c.border.subtle,
-    }), [c]);
 
     return (
         <Tabs
@@ -100,14 +51,12 @@ export default function TabLayout() {
                 headerShown: false,
                 tabBarStyle: [
                     styles.tabBar,
-                    { paddingBottom: insets.bottom > 0 ? insets.bottom : 8, backgroundColor: 'transparent' },
+                    {
+                        paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+                        backgroundColor: c.background,
+                        borderTopColor: c.border.subtle,
+                    },
                 ],
-                tabBarBackground: () => (
-                    <View style={styles.tabBarBackground}>
-                        <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-                        <View style={tabBarBorderStyle} />
-                    </View>
-                ),
                 tabBarShowLabel: false,
                 tabBarActiveTintColor: c.text.primary,
                 tabBarInactiveTintColor: c.text.muted,
@@ -120,7 +69,6 @@ export default function TabLayout() {
                     tabBarAccessibilityLabel: 'Home tab',
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label="Home"
                             iconName="home-outline"
                             iconNameFocused="home"
                             focused={focused}
@@ -130,29 +78,39 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="messages"
+                name="search"
                 options={{
-                    tabBarAccessibilityLabel: 'Encrypted messages tab',
+                    tabBarAccessibilityLabel: 'Search tab',
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label="Messages"
-                            iconName="chatbubbles-outline"
-                            iconNameFocused="chatbubbles"
+                            iconName="search-outline"
+                            iconNameFocused="search"
                             focused={focused}
-                            showShield
                         />
                     ),
                 }}
             />
             <Tabs.Screen
-                name="search"
+                name="create"
                 options={{
-                    tabBarAccessibilityLabel: 'Discover tab',
+                    tabBarAccessibilityLabel: 'Create tab',
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label="Discover"
-                            iconName="compass-outline"
-                            iconNameFocused="compass"
+                            iconName="add-circle-outline"
+                            iconNameFocused="add-circle"
+                            focused={focused}
+                        />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="communities"
+                options={{
+                    tabBarAccessibilityLabel: 'Communities tab',
+                    tabBarIcon: ({ focused }) => (
+                        <TabIcon
+                            iconName="people-outline"
+                            iconNameFocused="people"
                             focused={focused}
                         />
                     ),
@@ -161,10 +119,9 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="profile"
                 options={{
-                    tabBarAccessibilityLabel: 'You tab',
+                    tabBarAccessibilityLabel: 'Profile tab',
                     tabBarIcon: ({ focused }) => (
                         <TabIcon
-                            label="You"
                             iconName="person-outline"
                             iconNameFocused="person"
                             focused={focused}
@@ -173,8 +130,7 @@ export default function TabLayout() {
                 }}
             />
             {/* Hidden tabs — still routable but not in tab bar */}
-            <Tabs.Screen name="create" options={{ href: null }} />
-            <Tabs.Screen name="communities" options={{ href: null }} />
+            <Tabs.Screen name="messages" options={{ href: null }} />
         </Tabs>
     );
 }
@@ -185,39 +141,16 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
     tabBar: {
-        position: 'absolute',
-        borderTopWidth: 0,
-        backgroundColor: 'transparent',
-        height: 70,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        height: 50,
         elevation: 0,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
-        elevation: 8,
-    },
-    tabBarBackground: {
-        ...StyleSheet.absoluteFillObject,
-        overflow: 'hidden',
+        shadowOpacity: 0,
     },
     tabIconContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 8,
-        minWidth: 56,
-        minHeight: 48,
-    },
-    tabLabel: {
-        fontSize: 10,
-        fontWeight: '500',
-        marginTop: 4,
-        letterSpacing: 0.1,
-    },
-    tabIndicator: {
-        width: 20,
-        height: 3,
-        borderRadius: 1.5,
-        marginTop: 3,
+        minWidth: 48,
+        minHeight: 40,
     },
     badge: {
         position: 'absolute',
@@ -235,15 +168,5 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
         fontSize: 10,
         fontWeight: '700',
-    },
-    shieldBadge: {
-        position: 'absolute',
-        bottom: -1,
-        right: -3,
-        width: 14,
-        height: 14,
-        borderRadius: 7,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
 });

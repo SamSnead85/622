@@ -39,7 +39,7 @@ import Animated, {
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Avatar, GlassCard, ErrorBoundary, BrandLogo } from '../../components';
+import { GlassCard, ErrorBoundary } from '../../components';
 import { useFeedStore, useAuthStore, useNotificationsStore, Post } from '../../stores';
 import { SkeletonFeed } from '../../components/SkeletonPost';
 import { useNetworkQuality } from '../../hooks/useNetworkQuality';
@@ -48,7 +48,6 @@ import { apiFetch, API } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { toHijri } from '../../lib/hijri';
 import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
-import FloatingCreateButton from '../../components/FloatingCreateButton';
 import { timeAgo, formatCount } from '../../lib/utils';
 
 // ============================================
@@ -1779,47 +1778,6 @@ export default function FeedScreen() {
 
         return (
             <View style={[styles.headerContainer, { backgroundColor: c.background }]}>
-                {/* Compact composer bar — always visible, tapping opens create screen */}
-                <TouchableOpacity
-                    style={[styles.composerBar, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}
-                    onPress={() => router.push('/create' as any)}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel="Create a new post"
-                    accessibilityHint="Tap to open the post composer"
-                >
-                    {user?.avatarUrl ? (
-                        <Image
-                            source={{ uri: user.avatarUrl }}
-                            style={styles.composerAvatar}
-                            placeholder={AVATAR_PLACEHOLDER.blurhash}
-                            transition={AVATAR_PLACEHOLDER.transition}
-                            cachePolicy="memory-disk"
-                        />
-                    ) : (
-                        <View style={[styles.composerAvatar, styles.composerAvatarPlaceholder]}>
-                            <Ionicons name="person" size={14} color={c.text.muted} />
-                        </View>
-                    )}
-                    <Text style={[styles.composerPlaceholder, { color: c.text.muted }]}>
-                        What&apos;s on your mind?
-                    </Text>
-                    <View style={styles.composerActions}>
-                        <TouchableOpacity
-                            onPress={() => router.push('/create' as any)}
-                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                            <Ionicons name="camera-outline" size={20} color={c.text.secondary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => router.push('/create' as any)}
-                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                            <Ionicons name="image-outline" size={20} color={c.text.secondary} />
-                        </TouchableOpacity>
-                    </View>
-                </TouchableOpacity>
-
                 {/* Single smart onboarding card — one at a time, dismissible */}
                 {showSmartCard && (
                     <Animated.View entering={FadeInDown.duration(400)} style={styles.smartCard}>
@@ -2066,32 +2024,14 @@ export default function FeedScreen() {
                 style={StyleSheet.absoluteFill}
             />
 
-            {/* Clean Header — Logo + Actions */}
+            {/* Clean Header — ZeroG brand + Actions */}
             <View
                 style={[styles.header, { paddingTop: insets.top + spacing.xs }]}
                 accessible={true}
                 accessibilityRole="header"
-                accessibilityLabel="0G Home"
+                accessibilityLabel="ZeroG Home"
             >
-                <View style={styles.headerLeft}>
-                    <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Your profile">
-                        <Avatar uri={user?.avatarUrl} name={user?.displayName || 'U'} customSize={34} borderColor={c.gold[500]} />
-                    </TouchableOpacity>
-                    <BrandLogo size="compact" />
-                    {/* Feed view pill — subtle, only if community opt-in */}
-                    {user?.communityOptIn && (
-                        <TouchableOpacity onPress={handleFeedViewToggle} style={[styles.feedViewPill, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]} accessibilityRole="button" accessibilityLabel={feedView === 'private' ? 'Private Feed' : 'Community Feed'}>
-                            <Ionicons
-                                name={feedView === 'private' ? 'lock-closed' : 'globe'}
-                                size={11}
-                                color={feedView === 'private' ? c.gold[400] : c.azure[400]}
-                            />
-                            <Text style={[styles.feedViewPillText, { color: feedView === 'private' ? c.gold[400] : c.azure[400] }]}>
-                                {feedView === 'private' ? 'Private' : 'Community'}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
+                <Text style={[styles.headerBrandName, { color: c.text.primary }]}>ZeroG</Text>
                 <View style={styles.headerActions}>
                     <TouchableOpacity
                         style={styles.headerBtn}
@@ -2099,12 +2039,20 @@ export default function FeedScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={notifUnreadCount > 0 ? `Notifications, ${notifUnreadCount} unread` : 'Notifications'}
                     >
-                        <Ionicons name="notifications-outline" size={22} color={c.text.primary} />
+                        <Ionicons name="heart-outline" size={24} color={c.text.primary} />
                         {notifUnreadCount > 0 && (
                             <View style={styles.headerBadge}>
                                 <Text style={styles.headerBadgeText}>{notifUnreadCount > 99 ? '99+' : notifUnreadCount}</Text>
                             </View>
                         )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.headerBtn}
+                        onPress={() => router.push('/messages' as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Messages"
+                    >
+                        <Ionicons name="paper-plane-outline" size={24} color={c.text.primary} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -2172,8 +2120,6 @@ export default function FeedScreen() {
                 />
             </ErrorBoundary>
 
-            {/* Floating Action Button for creating content */}
-            <FloatingCreateButton bottomOffset={88} />
         </View>
     );
 }
@@ -2199,43 +2145,26 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Medium',
     },
 
-    // Header — compact
+    // Header — clean minimal
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.xs,
+        paddingBottom: spacing.sm,
     },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-        gap: spacing.sm,
-    },
-    headerAvatar: {
-        width: 34,
-        height: 34,
-        borderRadius: 17,
-        borderWidth: 2,
-        borderColor: colors.gold[500],
-    },
-    headerAvatarPlaceholder: {
-        backgroundColor: colors.obsidian[500],
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerAvatarInitial: {
-        fontSize: 14,
+    headerBrandName: {
+        fontSize: 28,
         fontWeight: '700',
-        color: colors.text.primary,
+        fontStyle: 'italic',
+        letterSpacing: -0.5,
+        fontFamily: 'Inter-Bold',
     },
     headerActions: { flexDirection: 'row', gap: spacing.xs },
     headerBtn: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: colors.surface.glassHover,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -2758,27 +2687,6 @@ const styles = StyleSheet.create({
     // Footer
     footer: { paddingVertical: spacing.sm },
 
-    // Clean header
-    headerLogo: {
-        fontSize: 22,
-        fontWeight: '700',
-        letterSpacing: -0.3,
-        marginLeft: spacing.sm,
-    },
-    feedViewPill: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-        borderWidth: 1,
-        marginLeft: spacing.sm,
-    },
-    feedViewPillText: {
-        fontSize: 11,
-        fontWeight: '600',
-    },
     headerBadge: {
         position: 'absolute',
         top: -4,
@@ -2843,42 +2751,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
 
-    // Compact composer bar — Facebook/LinkedIn style "What's on your mind?"
-    composerBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginHorizontal: spacing.md,
-        marginBottom: spacing.sm,
-        paddingHorizontal: spacing.md,
-        paddingVertical: 10,
-        borderRadius: 24,
-        borderWidth: 1,
-        gap: spacing.sm,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    composerAvatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-    },
-    composerAvatarPlaceholder: {
-        backgroundColor: colors.obsidian[500],
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    composerPlaceholder: {
-        flex: 1,
-        fontSize: typography.fontSize.base,
-        fontFamily: 'Inter-Regular',
-    },
-    composerActions: {
-        flexDirection: 'row',
-        gap: spacing.md,
-    },
 
     // First Post CTA — prominent card for users with 0 posts
     firstPostCard: {

@@ -786,21 +786,40 @@ export default function ProfileScreen() {
                 style={StyleSheet.absoluteFill}
             />
 
-            {/* Floating Header Buttons */}
+            {/* Floating Header Buttons — Instagram-style */}
             <View style={[styles.headerBar, { paddingTop: insets.top + spacing.xs }]}>
-                <Text style={styles.headerTitle}>You</Text>
-                <TouchableOpacity
-                    style={styles.headerIconBtn}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        router.push('/settings');
-                    }}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel="Settings"
-                >
-                    <Ionicons name="settings-outline" size={22} color={colors.text.primary} />
-                </TouchableOpacity>
+                <View style={styles.headerLeft}>
+                    <Text style={[styles.headerTitle, { color: c.text.primary }]}>
+                        {user.username || 'You'}
+                    </Text>
+                    <Ionicons name="chevron-down" size={16} color={c.text.primary} style={styles.headerChevron} />
+                </View>
+                <View style={styles.headerRight}>
+                    <TouchableOpacity
+                        style={styles.headerIconBtn}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.push('/(tabs)/create' as any);
+                        }}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel="Create"
+                    >
+                        <Ionicons name="add-outline" size={24} color={c.text.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.headerIconBtn}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.push('/settings');
+                        }}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel="Settings"
+                    >
+                        <Ionicons name="settings-outline" size={22} color={c.text.primary} />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <AnimatedFlatList
@@ -894,11 +913,24 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.lg,
         paddingBottom: spacing.sm,
     },
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    headerRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
     headerTitle: {
         fontSize: 22,
         fontWeight: '700',
-        color: colors.text.primary,
         letterSpacing: -0.3,
+        fontFamily: 'Inter-Bold',
+    },
+    headerChevron: {
+        marginLeft: 2,
     },
     headerIconBtn: {
         width: 40,
