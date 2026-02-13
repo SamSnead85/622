@@ -26,7 +26,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
-import { Image } from 'expo-image';
+import Svg, { Defs, LinearGradient as SvgGradient, Stop, Text as SvgText, Line } from 'react-native-svg';
 import Animated, {
     FadeInDown,
     FadeInUp,
@@ -43,9 +43,6 @@ import { BackButton } from '../../components';
 import { useAuthStore } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { useTheme } from '../../contexts/ThemeContext';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const LOGO_SOURCE = require('../../assets/logo-0g.png');
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -284,6 +281,28 @@ const fieldStyles = StyleSheet.create({
 
 // ============================================
 // ============================================
+// Logo — smaller version for form screens
+// ============================================
+function Logo({ isDark }: { isDark: boolean }) {
+    return (
+        <Svg width={100} height={56} viewBox="0 0 130 72">
+            <Defs>
+                <SvgGradient id="metal" x1="0%" y1="0%" x2="15%" y2="100%">
+                    <Stop offset="0%" stopColor={isDark ? '#FFFFFF' : '#D0DAFF'} stopOpacity="1" />
+                    <Stop offset="20%" stopColor="#99AAFF" stopOpacity="1" />
+                    <Stop offset="50%" stopColor="#7C8FFF" stopOpacity="1" />
+                    <Stop offset="80%" stopColor="#4F5FDD" stopOpacity="1" />
+                    <Stop offset="100%" stopColor="#3040AA" stopOpacity="1" />
+                </SvgGradient>
+            </Defs>
+            <SvgText x="36" y="58" textAnchor="middle" fontFamily="Inter-Bold" fontSize="68" fontWeight="900" letterSpacing={-1} fill="url(#metal)">0</SvgText>
+            <Line x1="19" y1="55" x2="52" y2="10" stroke="url(#metal)" strokeWidth="3" strokeLinecap="round" />
+            <SvgText x="92" y="58" textAnchor="middle" fontFamily="Inter-Bold" fontSize="68" fontWeight="900" letterSpacing={-1} fill="url(#metal)">G</SvgText>
+        </Svg>
+    );
+}
+
+// ============================================
 // Signup Screen
 // ============================================
 
@@ -473,12 +492,7 @@ export default function SignupScreen() {
 
                     {/* 0G Logo */}
                     <Animated.View entering={FadeInDown.delay(30).duration(500).springify()} style={styles.logoArea}>
-                        <Image
-                            source={LOGO_SOURCE}
-                            style={styles.logoImage}
-                            contentFit="contain"
-                            cachePolicy="memory-disk"
-                        />
+                        <Logo isDark={isDark} />
                     </Animated.View>
 
                     {/* Header */}
@@ -724,11 +738,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: spacing.lg,
     },
-    logoImage: {
-        width: 90,
-        height: 90,
-    },
-
     header: { marginBottom: spacing.xl },
     title: {
         fontSize: typography.fontSize['3xl'],

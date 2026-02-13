@@ -1,15 +1,14 @@
 // ============================================
 // Welcome Screen — Clean, minimal, theme-aware
 // Single screen: logo, tagline, CTAs
-// Inspired by UpScrolled simplicity + 0G identity
 // ============================================
 
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Defs, LinearGradient as SvgGradient, Stop, Text as SvgText, Line } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -20,8 +19,78 @@ import Animated, {
 import { typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const LOGO_SOURCE = require('../../assets/logo-0g.png');
+// ============================================
+// Logo — Stylized "0G" with slashed zero, liquid metal gradient
+// ============================================
+function Logo({ isDark }: { isDark: boolean }) {
+    // Liquid metal palette — mimics the brushed chrome logo
+    const white = '#FFFFFF';
+    const ice = '#D0DAFF';
+    const bright = '#99AAFF';
+    const core = '#7C8FFF';
+    const deep = '#4F5FDD';
+    const shadow = '#3040AA';
+
+    return (
+        <Svg width={130} height={72} viewBox="0 0 130 72">
+            <Defs>
+                {/* Multi-stop vertical gradient: top-lit metallic sheen */}
+                <SvgGradient id="metal" x1="0%" y1="0%" x2="15%" y2="100%">
+                    <Stop offset="0%" stopColor={isDark ? white : ice} stopOpacity="1" />
+                    <Stop offset="20%" stopColor={bright} stopOpacity="1" />
+                    <Stop offset="50%" stopColor={core} stopOpacity="1" />
+                    <Stop offset="80%" stopColor={deep} stopOpacity="1" />
+                    <Stop offset="100%" stopColor={shadow} stopOpacity="1" />
+                </SvgGradient>
+                {/* Highlight band — bright streak across the middle */}
+                <SvgGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <Stop offset="0%" stopColor={isDark ? white : bright} stopOpacity={isDark ? '0.15' : '0.1'} />
+                    <Stop offset="50%" stopColor={bright} stopOpacity="0" />
+                    <Stop offset="100%" stopColor={isDark ? white : bright} stopOpacity={isDark ? '0.08' : '0.05'} />
+                </SvgGradient>
+            </Defs>
+
+            {/* "0" */}
+            <SvgText
+                x="36"
+                y="58"
+                textAnchor="middle"
+                fontFamily="Inter-Bold"
+                fontSize="68"
+                fontWeight="900"
+                letterSpacing={-1}
+                fill="url(#metal)"
+            >
+                0
+            </SvgText>
+
+            {/* Slash through the zero */}
+            <Line
+                x1="19"
+                y1="55"
+                x2="52"
+                y2="10"
+                stroke="url(#metal)"
+                strokeWidth="3"
+                strokeLinecap="round"
+            />
+
+            {/* "G" */}
+            <SvgText
+                x="92"
+                y="58"
+                textAnchor="middle"
+                fontFamily="Inter-Bold"
+                fontSize="68"
+                fontWeight="900"
+                letterSpacing={-1}
+                fill="url(#metal)"
+            >
+                G
+            </SvgText>
+        </Svg>
+    );
+}
 
 export default function WelcomeScreen() {
     const router = useRouter();
@@ -51,12 +120,7 @@ export default function WelcomeScreen() {
         >
             {/* Logo */}
             <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.logoSection}>
-                <Image
-                    source={LOGO_SOURCE}
-                    style={styles.logoImage}
-                    contentFit="contain"
-                    cachePolicy="memory-disk"
-                />
+                <Logo isDark={isDark} />
             </Animated.View>
 
             {/* Tagline */}
@@ -74,7 +138,6 @@ export default function WelcomeScreen() {
 
             {/* CTAs */}
             <Animated.View entering={FadeInUp.delay(600).duration(500)} style={styles.ctaSection}>
-                {/* Create Account — gold gradient, matches login/signup */}
                 <Pressable
                     onPress={handleCreateAccount}
                     style={({ pressed }) => [
@@ -99,14 +162,12 @@ export default function WelcomeScreen() {
                     </LinearGradient>
                 </Pressable>
 
-                {/* Divider */}
                 <View style={styles.dividerRow}>
                     <View style={[styles.dividerLine, { backgroundColor: colors.border.subtle }]} />
                     <Text style={[styles.dividerText, { color: colors.text.muted }]}>Or</Text>
                     <View style={[styles.dividerLine, { backgroundColor: colors.border.subtle }]} />
                 </View>
 
-                {/* Log In — secondary, glass surface */}
                 <Pressable
                     onPress={handleLogin}
                     style={({ pressed }) => [
@@ -164,17 +225,13 @@ const styles = StyleSheet.create({
     // ---- Logo ----
     logoSection: {
         alignItems: 'center',
-        paddingTop: 48,
-    },
-    logoImage: {
-        width: 120,
-        height: 120,
+        paddingTop: 56,
     },
 
     // ---- Tagline ----
     taglineSection: {
         paddingHorizontal: spacing.xl,
-        paddingTop: 48,
+        paddingTop: 40,
     },
     tagline: {
         fontSize: 38,
