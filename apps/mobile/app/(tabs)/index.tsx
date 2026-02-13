@@ -1778,7 +1778,7 @@ export default function FeedScreen() {
         const showFirstPostCTA = user && user.postsCount === 0 && !firstPostDismissed;
 
         return (
-            <View style={styles.headerContainer}>
+            <View style={[styles.headerContainer, { backgroundColor: c.background }]}>
                 {/* Compact composer bar — always visible, tapping opens create screen */}
                 <TouchableOpacity
                     style={[styles.composerBar, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}
@@ -2426,9 +2426,11 @@ const styles = StyleSheet.create({
         marginBottom: 0,
         overflow: 'hidden',
         position: 'relative',
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(255,255,255,0.06)',
     },
     postSpacer: {
-        height: 6,
+        height: 8,
     },
     heartOverlay: {
         position: 'absolute',
@@ -2494,11 +2496,14 @@ const styles = StyleSheet.create({
     // Media
     mediaContainer: {
         width: '100%',
+        marginHorizontal: spacing.xs,
     },
     mediaImage: {
         width: '100%',
         aspectRatio: 1.5,
         backgroundColor: colors.obsidian[700],
+        borderRadius: 2,
+        overflow: 'hidden',
     },
     videoPlayerContainer: {
         position: 'relative',
@@ -2545,6 +2550,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: spacing.md,
         paddingVertical: 6,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: 'rgba(255,255,255,0.04)',
+        marginTop: spacing.xs,
     },
     actionsSpacer: {
         flex: 1,
@@ -2846,6 +2854,11 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         borderWidth: 1,
         gap: spacing.sm,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 2,
     },
     composerAvatar: {
         width: 32,
