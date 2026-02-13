@@ -9,7 +9,7 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import MaskedView from '@react-native-masked-view/masked-view';
+import Svg, { Defs, LinearGradient as SvgGradient, Stop, Text as SvgText, Ellipse } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -32,23 +32,22 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Premium Logo Mark — gradient text + breathing glow
 // ============================================
 function LogoMark({ colors, isDark }: { colors: any; isDark: boolean }) {
-    const glowOpacity = useSharedValue(0.4);
+    const glowOpacity = useSharedValue(0.55);
     const glowScale = useSharedValue(1);
 
     useEffect(() => {
-        // Slow, organic breathing pulse — not flashy, just alive
         glowOpacity.value = withRepeat(
             withSequence(
-                withTiming(0.7, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0.4, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+                withTiming(0.9, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+                withTiming(0.55, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
             ),
             -1,
             false,
         );
         glowScale.value = withRepeat(
             withSequence(
-                withTiming(1.08, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-                withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+                withTiming(1.05, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+                withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
             ),
             -1,
             false,
@@ -60,32 +59,66 @@ function LogoMark({ colors, isDark }: { colors: any; isDark: boolean }) {
         transform: [{ scale: glowScale.value }],
     }));
 
+    const p = colors.gold[500]; // primary blue
+    const b = colors.gold[300]; // bright blue
+    const d = colors.gold[600]; // deep blue
+
     return (
         <View style={logoStyles.container}>
-            {/* Outer soft glow — large, diffused */}
-            <Animated.View style={[logoStyles.outerGlow, { backgroundColor: colors.gold[500] + '0C' }, glowStyle]} />
-            {/* Inner brighter glow — tighter ring */}
-            <Animated.View style={[logoStyles.innerGlow, { backgroundColor: colors.gold[400] + '14' }, glowStyle]} />
+            {/* Ambient glow behind the mark */}
+            <Animated.View style={[logoStyles.glow, { backgroundColor: p + '20' }, glowStyle]} />
 
-            {/* Gradient text via MaskedView */}
-            <MaskedView
-                maskElement={
-                    <Text style={logoStyles.maskText}>0G</Text>
-                }
-            >
-                <LinearGradient
-                    colors={isDark
-                        ? [colors.gold[300], colors.gold[500], colors.gold[400]]
-                        : [colors.gold[600], colors.gold[500], colors.gold[400]]
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={logoStyles.gradientFill}
+            {/* SVG logo — gradient "0G" with orbital ring accent */}
+            <Svg width={160} height={100} viewBox="0 0 160 100">
+                <Defs>
+                    <SvgGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <Stop offset="0%" stopColor={isDark ? '#FFFFFF' : d} stopOpacity={isDark ? '0.95' : '1'} />
+                        <Stop offset="40%" stopColor={b} stopOpacity="1" />
+                        <Stop offset="100%" stopColor={p} stopOpacity="1" />
+                    </SvgGradient>
+                    <SvgGradient id="orbitGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <Stop offset="0%" stopColor={p} stopOpacity="0" />
+                        <Stop offset="30%" stopColor={b} stopOpacity="0.6" />
+                        <Stop offset="70%" stopColor={p} stopOpacity="0.8" />
+                        <Stop offset="100%" stopColor={p} stopOpacity="0" />
+                    </SvgGradient>
+                </Defs>
+
+                {/* Tilted orbital ellipse around the "0" */}
+                <Ellipse
+                    cx="52"
+                    cy="52"
+                    rx="38"
+                    ry="14"
+                    fill="none"
+                    stroke="url(#orbitGrad)"
+                    strokeWidth="1.5"
+                    rotation="-25"
+                    origin="52, 52"
                 />
-            </MaskedView>
 
-            {/* Subtle bottom reflection line */}
-            <View style={[logoStyles.reflectionLine, { backgroundColor: colors.gold[500] + '18' }]} />
+                {/* The "0G" text */}
+                <SvgText
+                    x="80"
+                    y="72"
+                    textAnchor="middle"
+                    fontFamily="Inter-Bold"
+                    fontSize="78"
+                    fontWeight="900"
+                    letterSpacing={-3}
+                    fill="url(#textGrad)"
+                >
+                    0G
+                </SvgText>
+            </Svg>
+
+            {/* Accent light streak */}
+            <LinearGradient
+                colors={['transparent', p + '40', b + '70', p + '40', 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={logoStyles.streak}
+            />
         </View>
     );
 }
@@ -95,35 +128,18 @@ const logoStyles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
-        height: 100,
+        height: 120,
     },
-    outerGlow: {
+    glow: {
         position: 'absolute',
-        width: 160,
-        height: 160,
-        borderRadius: 80,
+        width: 180,
+        height: 180,
+        borderRadius: 90,
     },
-    innerGlow: {
+    streak: {
         position: 'absolute',
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-    },
-    maskText: {
-        fontSize: 64,
-        fontWeight: '800',
-        letterSpacing: -2,
-        fontFamily: 'Inter-Bold',
-        textAlign: 'center',
-    },
-    gradientFill: {
-        height: 80,
-        width: 140,
-    },
-    reflectionLine: {
-        position: 'absolute',
-        bottom: 6,
-        width: 48,
+        bottom: 4,
+        width: 80,
         height: 2,
         borderRadius: 1,
     },
