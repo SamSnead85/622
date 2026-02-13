@@ -757,7 +757,7 @@ const FeedPostCard = memo(
                                 </View>
                                 <Text style={styles.postTime}>
                                     {timeAgo(post.createdAt)}
-                                    {post.crossPost ? ` · via ${post.crossPost.sourcePlatform.charAt(0) + post.crossPost.sourcePlatform.slice(1).toLowerCase()}` : ''}
+                                    {post.crossPost?.sourcePlatform ? ` · via ${post.crossPost.sourcePlatform.charAt(0) + post.crossPost.sourcePlatform.slice(1).toLowerCase()}` : ''}
                                 </Text>
                             </View>
                         </TouchableOpacity>
@@ -2404,8 +2404,8 @@ const styles = StyleSheet.create({
         height: 18,
         borderRadius: 9,
         backgroundColor: colors.surface.glassHover,
-        alignItems: 'center' as const,
-        justifyContent: 'center' as const,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     avatarWrap: { position: 'relative', width: 40, height: 40 },
     avatar: { width: 40, height: 40, borderRadius: 20 },

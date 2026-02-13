@@ -176,8 +176,8 @@ export default function MessagesTab() {
         if (debouncedSearch.trim()) {
             const q = debouncedSearch.toLowerCase();
             list = list.filter(c =>
-                c.participant.displayName.toLowerCase().includes(q) ||
-                c.participant.username.toLowerCase().includes(q)
+                (c.participant?.displayName || '').toLowerCase().includes(q) ||
+                (c.participant?.username || '').toLowerCase().includes(q)
             );
         }
         // Pinned first, then by last message time

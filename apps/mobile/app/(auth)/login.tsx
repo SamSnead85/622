@@ -331,40 +331,25 @@ export default function LoginScreen() {
     }, [email, password, login, router, biometricAvailable, biometricType, buttonScale]);
 
     // ---- Forgot password ----
-    const handleForgotPassword = useCallback(() => {
+    const handleForgotPassword = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Alert.prompt(
-            'Reset Password',
-            'Enter your email and we\'ll send you a reset link.',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: resetSending ? 'Sending...' : 'Send Reset Link',
-                    onPress: async (inputEmail?: string) => {
-                        const trimmed = (inputEmail || '').trim();
-                        if (!trimmed || !/\S+@\S+\.\S+/.test(trimmed)) {
-                            Alert.alert('Invalid Email', 'Please enter a valid email address.');
-                            return;
-                        }
-                        setResetSending(true);
-                        try {
-                            await apiFetch('/api/v1/auth/forgot-password', {
-                                method: 'POST',
-                                body: JSON.stringify({ email: trimmed }),
-                            });
-                        } catch {
-                            // Don't reveal if account exists
-                        } finally {
-                            setResetSending(false);
-                        }
-                        Alert.alert('Check Your Email', "If an account exists with that email, you'll receive a reset link.");
-                    },
-                },
-            ],
-            'plain-text',
-            email || '',
-            'email-address'
-        );
+        const trimmed = (email || '').trim();
+        if (!trimmed || !/\S+@\S+\.\S+/.test(trimmed)) {
+            Alert.alert('Reset Password', 'Please enter your email address in the field above, then tap "Forgot Password" again.');
+            return;
+        }
+        setResetSending(true);
+        try {
+            await apiFetch('/api/v1/auth/forgot-password', {
+                method: 'POST',
+                body: JSON.stringify({ email: trimmed }),
+            });
+        } catch {
+            // Don't reveal if account exists
+        } finally {
+            setResetSending(false);
+        }
+        Alert.alert('Check Your Email', "If an account exists with that email, you'll receive a reset link.");
     }, [email, resetSending]);
 
     return (
