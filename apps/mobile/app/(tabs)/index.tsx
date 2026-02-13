@@ -737,9 +737,27 @@ const FeedPostCard = memo(
                                             style={styles.verifiedBadge}
                                         />
                                     )}
+                                    {post.crossPost && (
+                                        <View style={styles.crossPostBadge}>
+                                            <Ionicons
+                                                name={
+                                                    post.crossPost.sourcePlatform === 'LINKEDIN' ? 'logo-linkedin' :
+                                                    post.crossPost.sourcePlatform === 'TWITTER' ? 'logo-twitter' :
+                                                    post.crossPost.sourcePlatform === 'INSTAGRAM' ? 'logo-instagram' :
+                                                    post.crossPost.sourcePlatform === 'FACEBOOK' ? 'logo-facebook' :
+                                                    post.crossPost.sourcePlatform === 'TIKTOK' ? 'musical-notes' :
+                                                    post.crossPost.sourcePlatform === 'YOUTUBE' ? 'logo-youtube' :
+                                                    'link'
+                                                }
+                                                size={11}
+                                                color={colors.text.muted}
+                                            />
+                                        </View>
+                                    )}
                                 </View>
                                 <Text style={styles.postTime}>
                                     {timeAgo(post.createdAt)}
+                                    {post.crossPost ? ` · via ${post.crossPost.sourcePlatform.charAt(0) + post.crossPost.sourcePlatform.slice(1).toLowerCase()}` : ''}
                                 </Text>
                             </View>
                         </TouchableOpacity>
@@ -2380,6 +2398,15 @@ const styles = StyleSheet.create({
     },
     authorRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
     verifiedBadge: { marginStart: 4 },
+    crossPostBadge: {
+        marginStart: 4,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: colors.surface.glassHover,
+        alignItems: 'center' as const,
+        justifyContent: 'center' as const,
+    },
     avatarWrap: { position: 'relative', width: 40, height: 40 },
     avatar: { width: 40, height: 40, borderRadius: 20 },
     avatarPlaceholder: {

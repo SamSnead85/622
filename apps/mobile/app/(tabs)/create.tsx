@@ -155,6 +155,7 @@ const MEDIA_BAR_ITEMS: MediaBarItem[] = [
     { key: 'camera', icon: 'camera-outline', label: 'Camera', color: colors.gold[400] },
     { key: 'poll', icon: 'stats-chart-outline', label: 'Poll', color: colors.coral[400] },
     { key: 'location', icon: 'location-outline', label: 'Location', color: colors.amber[400] },
+    { key: 'import', icon: 'link-outline', label: 'Import', color: colors.azure[500] },
 ];
 
 // ============================================
@@ -1234,6 +1235,55 @@ export default function CreateScreen() {
         }
     }, [locationName]);
 
+    const handleImportFromPlatform = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        Alert.prompt(
+            'Import from URL',
+            'Paste a link from LinkedIn, X, Instagram, or any connected platform to import it as a post.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Import',
+                    onPress: async (url?: string) => {
+                        if (!url?.trim()) return;
+                        try {
+                            // Detect platform from URL
+                            let platform = 'TWITTER';
+                            const urlLower = url.toLowerCase();
+                            if (urlLower.includes('linkedin.com')) platform = 'LINKEDIN';
+                            else if (urlLower.includes('instagram.com')) platform = 'INSTAGRAM';
+                            else if (urlLower.includes('facebook.com') || urlLower.includes('fb.com')) platform = 'FACEBOOK';
+                            else if (urlLower.includes('tiktok.com')) platform = 'TIKTOK';
+                            else if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) platform = 'YOUTUBE';
+                            else if (urlLower.includes('threads.net')) platform = 'THREADS';
+                            else if (urlLower.includes('twitter.com') || urlLower.includes('x.com')) platform = 'TWITTER';
+
+                            const res = await apiFetch(API.socialCrossPost, {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    sourceUrl: url.trim(),
+                                    sourcePlatform: platform,
+                                    caption: content.trim() || undefined,
+                                    type: 'TEXT',
+                                }),
+                            });
+                            if (res?.post) {
+                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                Alert.alert('Imported!', 'Post has been imported to your ZeroG feed.');
+                                router.back();
+                            }
+                        } catch {
+                            Alert.alert('Import Failed', 'Could not import this post. Make sure you have the platform connected in Settings > Connected Accounts.');
+                        }
+                    },
+                },
+            ],
+            'plain-text',
+            '',
+            'url'
+        );
+    }, [content, router]);
+
     const handleMediaBarPress = useCallback((key: string) => {
         switch (key) {
             case 'photo': return handlePickPhoto();
@@ -1241,8 +1291,9 @@ export default function CreateScreen() {
             case 'camera': return handleTakePhoto();
             case 'poll': return handleTogglePoll();
             case 'location': return handleLocation();
+            case 'import': return handleImportFromPlatform();
         }
-    }, [handlePickPhoto, handlePickVideo, handleTakePhoto, handleTogglePoll, handleLocation]);
+    }, [handlePickPhoto, handlePickVideo, handleTakePhoto, handleTogglePoll, handleLocation, handleImportFromPlatform]);
 
     // ============================================
     // Discard / Cancel

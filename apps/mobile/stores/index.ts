@@ -145,6 +145,14 @@ export interface PostAuthor {
     isVerified?: boolean;
 }
 
+export interface CrossPostInfo {
+    sourcePlatform: string;
+    sourceUrl?: string;
+    sourceAuthor?: string;
+    sourceAuthorAvatar?: string;
+    direction: 'INBOUND' | 'OUTBOUND' | 'BIDIRECTIONAL';
+}
+
 export interface Post {
     id: string;
     content: string;
@@ -168,6 +176,7 @@ export interface Post {
     eventDate?: string;
     eventLocation?: string;
     type?: string;
+    crossPost?: CrossPostInfo;  // Present if post was imported from another platform
 }
 
 export interface Comment {

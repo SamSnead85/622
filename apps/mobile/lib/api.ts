@@ -710,4 +710,15 @@ export const API = {
     spaceRequestSpeak: (id: string) => `/api/v1/spaces/${id}/request-speak`,
     spaceApproveSpeaker: (id: string) => `/api/v1/spaces/${id}/approve-speaker`,
     spaceEnd: (id: string) => `/api/v1/spaces/${id}/end`,
+
+    // Social Platform Integrations
+    socialPlatforms: '/api/v1/social/platforms',
+    socialAccounts: '/api/v1/social/accounts',
+    socialAccount: (id: string) => `/api/v1/social/accounts/${id}`,
+    socialAccountSync: (id: string) => `/api/v1/social/accounts/${id}/sync`,
+    socialCrossPost: '/api/v1/social/crosspost',
+    socialCrossPostBatch: '/api/v1/social/crosspost/batch',
+    socialCrossPostInfo: (postId: string) => `/api/v1/social/crosspost/${postId}`,
+    socialFeed: '/api/v1/social/feed',
+    socialStats: '/api/v1/social/stats',
 };

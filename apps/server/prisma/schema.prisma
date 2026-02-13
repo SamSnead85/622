@@ -64,6 +64,7 @@ model User {
   momentViews                MomentView[]
   notifications              Notification[]
   oauthAccounts              OAuthAccount[]
+  connectedAccounts          ConnectedAccount[]
   matchedConnections         PendingConnection[]       @relation("MatchedConnections")
   importedConnections        PendingConnection[]       @relation("ImportedConnections")
   posts                      Post[]
@@ -185,6 +186,61 @@ model OAuthAccount {
 
   @@unique([provider, providerId])
   @@index([userId])
+}
+
+// ── Social Platform Integrations ──
+
+model ConnectedAccount {
+  id              String              @id @default(uuid())
+  userId          String
+  platform        SocialPlatform
+  platformUserId  String?             // Platform-specific user ID
+  platformUsername String?            // Display username on the platform
+  displayName     String?             // Display name on the platform
+  avatarUrl       String?             // Profile picture URL from platform
+  accessToken     String?             // OAuth access token (encrypted at rest)
+  refreshToken    String?             // OAuth refresh token (encrypted at rest)
+  tokenExpiresAt  DateTime?           // When the access token expires
+  scopes          String[]            // Granted OAuth scopes
+  isActive        Boolean             @default(true)
+  autoSync        Boolean             @default(false)  // Auto-import new posts
+  syncFrequency   String?             @default("daily") // "realtime" | "hourly" | "daily" | "manual"
+  lastSyncAt      DateTime?           // Last time content was synced
+  lastSyncStatus  String?             // "success" | "failed" | "partial"
+  lastSyncError   String?
+  metadata        Json?               // Platform-specific metadata
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  crossPosts      CrossPost[]
+
+  @@unique([userId, platform])
+  @@index([userId])
+  @@index([platform])
+}
+
+model CrossPost {
+  id                  String            @id @default(uuid())
+  postId              String
+  connectedAccountId  String
+  sourcePlatform      SocialPlatform
+  sourcePostId        String?           // Original post ID on the source platform
+  sourceUrl           String?           // Direct link to the original post
+  sourceAuthor        String?           // Original author username
+  sourceAuthorAvatar  String?           // Original author avatar
+  direction           CrossPostDirection @default(INBOUND)
+  status              CrossPostStatus   @default(PENDING)
+  syncedAt            DateTime?
+  errorMessage        String?
+  metadata            Json?             // Platform-specific metadata (engagement stats, etc.)
+  createdAt           DateTime          @default(now())
+  post                Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  connectedAccount    ConnectedAccount  @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, sourcePlatform, sourcePostId])
+  @@index([postId])
+  @@index([connectedAccountId])
+  @@index([sourcePlatform, sourcePostId])
 }
 
 model Moment {
@@ -315,6 +371,7 @@ model Post {
   topics       PostTopic[]
   saves        Save[]
   shares       Share[]
+  crossPosts   CrossPost[]
   analytics    PostAnalytics[]
 
   @@index([userId])
@@ -1515,6 +1572,30 @@ enum MigrationPlatform {
   TWITTER
   FACEBOOK
   WHATSAPP
+}
+
+enum SocialPlatform {
+  LINKEDIN
+  TWITTER
+  INSTAGRAM
+  FACEBOOK
+  TIKTOK
+  YOUTUBE
+  THREADS
+}
+
+enum CrossPostDirection {
+  INBOUND    // Content pulled from external platform to 0G
+  OUTBOUND   // Content pushed from 0G to external platform
+  BIDIRECTIONAL
+}
+
+enum CrossPostStatus {
+  PENDING
+  SYNCING
+  COMPLETED
+  FAILED
+  SKIPPED
 }
 
 enum MigrationStatus {

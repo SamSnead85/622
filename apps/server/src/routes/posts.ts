@@ -219,6 +219,16 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                             shares: true,
                         },
                     },
+                    crossPosts: {
+                        select: {
+                            sourcePlatform: true,
+                            sourceUrl: true,
+                            sourceAuthor: true,
+                            sourceAuthorAvatar: true,
+                            direction: true,
+                        },
+                        take: 1,
+                    },
                 },
             });
 
@@ -422,9 +432,12 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                     sharesCount: post._count.shares,
                     isLiked: likedPostIds.has(post.id),
                     isSaved: savedPostIds.has(post.id),
+                    // Cross-post source info (if imported from another platform)
+                    crossPost: post.crossPosts?.[0] ?? null,
                     ...(post._rankingFactors ? { rankingFactors: post._rankingFactors } : {}),
                     _engagementScore: undefined,
                     _rankingFactors: undefined,
+                    crossPosts: undefined, // Remove raw array from response
                 };
             }),
             nextCursor: hasMore ? results[results.length - 1].id : null,
