@@ -241,7 +241,7 @@ export default function SecuritySettingsScreen() {
                                     <Text style={[styles.sessionDevice, { color: c.text.primary }]}>
                                         {session.deviceName || session.deviceType || 'This device'}
                                     </Text>
-                                    <Text style={[styles.sessionMeta, { color: c.text.tertiary }]}>
+                                    <Text style={[styles.sessionMeta, { color: c.text.muted }]}>
                                         Active now
                                     </Text>
                                 </View>
@@ -289,7 +289,7 @@ export default function SecuritySettingsScreen() {
                                         <Text style={[styles.sessionDevice, { color: c.text.primary }]}>
                                             {session.deviceName || session.deviceType || 'Unknown device'}
                                         </Text>
-                                        <Text style={[styles.sessionMeta, { color: c.text.tertiary }]}>
+                                        <Text style={[styles.sessionMeta, { color: c.text.muted }]}>
                                             Logged in {formatDate(session.createdAt)}
                                             {session.ipAddress ? ` · ${session.ipAddress}` : ''}
                                         </Text>
@@ -341,7 +341,7 @@ export default function SecuritySettingsScreen() {
                             { icon: 'notifications-outline' as const, text: 'We\'ll notify you of any new device logins' },
                         ].map((tip, i) => (
                             <View key={i} style={[styles.tipRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border.subtle }]}>
-                                <Ionicons name={tip.icon} size={16} color={c.text.tertiary} />
+                                <Ionicons name={tip.icon} size={16} color={c.text.muted} />
                                 <Text style={[styles.tipText, { color: c.text.secondary }]}>{tip.text}</Text>
                             </View>
                         ))}

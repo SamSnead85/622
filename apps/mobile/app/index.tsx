@@ -55,7 +55,7 @@ export default function SplashIndex() {
         ]).start();
 
         // Gold glow pulse (start after logo appears)
-        setTimeout(() => {
+        const glowTimer = setTimeout(() => {
             Animated.loop(
                 Animated.parallel([
                     Animated.sequence([
@@ -91,7 +91,7 @@ export default function SplashIndex() {
         }, 200);
 
         // Text entrance (staggered)
-        setTimeout(() => {
+        const textTimer = setTimeout(() => {
             Animated.parallel([
                 Animated.timing(textOpacity, {
                     toValue: 1,
@@ -106,6 +106,18 @@ export default function SplashIndex() {
                 }),
             ]).start();
         }, 400);
+
+        return () => {
+            clearTimeout(glowTimer);
+            clearTimeout(textTimer);
+            // Stop all running animations on unmount
+            logoScale.stopAnimation();
+            logoOpacity.stopAnimation();
+            glowOpacity.stopAnimation();
+            glowScale.stopAnimation();
+            textOpacity.stopAnimation();
+            textTranslateY.stopAnimation();
+        };
     }, []);
 
     // If authenticated, go straight to main app

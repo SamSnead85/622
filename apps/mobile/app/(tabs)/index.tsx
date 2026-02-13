@@ -22,7 +22,6 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import MaskedView from '@react-native-masked-view/masked-view';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -40,7 +39,7 @@ import Animated, {
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Avatar, GlassCard, ErrorBoundary } from '../../components';
+import { Avatar, GlassCard, ErrorBoundary, BrandLogo } from '../../components';
 import { useFeedStore, useAuthStore, useNotificationsStore, Post } from '../../stores';
 import { SkeletonFeed } from '../../components/SkeletonPost';
 import { useNetworkQuality } from '../../hooks/useNetworkQuality';
@@ -2076,25 +2075,18 @@ export default function FeedScreen() {
             >
                 <View style={styles.headerLeft}>
                     <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Your profile">
-                        <Avatar uri={user?.avatarUrl} name={user?.displayName || 'U'} customSize={34} borderColor={colors.gold[500]} />
+                        <Avatar uri={user?.avatarUrl} name={user?.displayName || 'U'} customSize={34} borderColor={c.gold[500]} />
                     </TouchableOpacity>
-                    <MaskedView maskElement={<Text style={styles.headerLogo}>0G</Text>}>
-                        <LinearGradient
-                            colors={isDark ? [c.gold[300], c.gold[500]] : [c.gold[600], c.gold[500]]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={{ height: 28, width: 36 }}
-                        />
-                    </MaskedView>
+                    <BrandLogo size="compact" />
                     {/* Feed view pill — subtle, only if community opt-in */}
                     {user?.communityOptIn && (
                         <TouchableOpacity onPress={handleFeedViewToggle} style={[styles.feedViewPill, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]} accessibilityRole="button" accessibilityLabel={feedView === 'private' ? 'Private Feed' : 'Community Feed'}>
                             <Ionicons
                                 name={feedView === 'private' ? 'lock-closed' : 'globe'}
                                 size={11}
-                                color={feedView === 'private' ? colors.gold[400] : colors.azure[400]}
+                                color={feedView === 'private' ? c.gold[400] : c.azure[400]}
                             />
-                            <Text style={[styles.feedViewPillText, { color: feedView === 'private' ? colors.gold[400] : colors.azure[400] }]}>
+                            <Text style={[styles.feedViewPillText, { color: feedView === 'private' ? c.gold[400] : c.azure[400] }]}>
                                 {feedView === 'private' ? 'Private' : 'Community'}
                             </Text>
                         </TouchableOpacity>

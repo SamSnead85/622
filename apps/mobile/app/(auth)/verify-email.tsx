@@ -248,7 +248,7 @@ export default function VerifyEmailScreen() {
 
             {/* Resend */}
             <Animated.View entering={FadeInDown.delay(500).duration(500)} style={styles.resendWrap}>
-                <Text style={[styles.resendLabel, { color: c.text.tertiary }]}>
+                <Text style={[styles.resendLabel, { color: c.text.muted }]}>
                     Didn't get the code?
                 </Text>
                 <TouchableOpacity
@@ -259,7 +259,7 @@ export default function VerifyEmailScreen() {
                 >
                     <Text style={[
                         styles.resendButton,
-                        { color: resendCooldown > 0 ? c.text.tertiary : c.gold[500] },
+                        { color: resendCooldown > 0 ? c.text.muted : c.gold[500] },
                     ]}>
                         {isResending ? 'Sending...' : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
                     </Text>
@@ -268,10 +268,10 @@ export default function VerifyEmailScreen() {
 
             {/* Skip */}
             <TouchableOpacity onPress={handleSkip} style={styles.skipWrap} accessibilityRole="button" accessibilityLabel="Skip verification for now">
-                <Text style={[styles.skipText, { color: c.text.tertiary }]}>
+                <Text style={[styles.skipText, { color: c.text.muted }]}>
                     Skip for now
                 </Text>
-                <Text style={[styles.skipNote, { color: c.text.tertiary }]}>
+                <Text style={[styles.skipNote, { color: c.text.muted }]}>
                     You'll need to verify before posting
                 </Text>
             </TouchableOpacity>
