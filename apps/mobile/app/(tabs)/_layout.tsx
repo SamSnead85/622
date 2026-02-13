@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useEffect, useRef, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing } from '@zerog/ui';
 import { useNotificationsStore } from '../../stores';
@@ -86,12 +87,11 @@ function TabIcon({ label, iconName, iconNameFocused, focused, badge, showShield 
 
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
-    const { colors: c } = useTheme();
+    const { colors: c, isDark } = useTheme();
     const unreadCount = useNotificationsStore((s) => s.unreadCount);
 
-    const tabBarBg = useMemo(() => ({
-        surface: { ...StyleSheet.absoluteFillObject, backgroundColor: c.obsidian[900], opacity: 0.98 } as const,
-        border: { position: 'absolute' as const, top: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: c.border.subtle },
+    const tabBarBorderStyle = useMemo(() => ({
+        position: 'absolute' as const, top: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: c.border.subtle,
     }), [c]);
 
     return (
@@ -100,12 +100,12 @@ export default function TabLayout() {
                 headerShown: false,
                 tabBarStyle: [
                     styles.tabBar,
-                    { paddingBottom: insets.bottom > 0 ? insets.bottom : 8 },
+                    { paddingBottom: insets.bottom > 0 ? insets.bottom : 8, backgroundColor: 'transparent' },
                 ],
                 tabBarBackground: () => (
                     <View style={styles.tabBarBackground}>
-                        <View style={tabBarBg.surface} />
-                        <View style={tabBarBg.border} />
+                        <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+                        <View style={tabBarBorderStyle} />
                     </View>
                 ),
                 tabBarShowLabel: false,
@@ -191,9 +191,10 @@ const styles = StyleSheet.create({
         height: 70,
         elevation: 0,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 16,
+        elevation: 8,
     },
     tabBarBackground: {
         ...StyleSheet.absoluteFillObject,
@@ -213,9 +214,9 @@ const styles = StyleSheet.create({
         letterSpacing: 0.1,
     },
     tabIndicator: {
-        width: 4,
-        height: 4,
-        borderRadius: 2,
+        width: 20,
+        height: 3,
+        borderRadius: 1.5,
         marginTop: 3,
     },
     badge: {

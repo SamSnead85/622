@@ -6,7 +6,8 @@
 import React, { ReactNode } from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, typography, spacing } from '@zerog/ui';
+import { typography, spacing } from '@zerog/ui';
+import { useTheme } from '../contexts/ThemeContext';
 import { BackButton } from './BackButton';
 
 interface ScreenHeaderProps {
@@ -36,13 +37,17 @@ function ScreenHeaderComponent({
     style,
 }: ScreenHeaderProps) {
     const insets = useSafeAreaInsets();
+    const { colors: c } = useTheme();
 
     return (
         <View
             style={[
                 styles.header,
-                { paddingTop: insets.top + spacing.md },
-                noBorder && styles.noBorder,
+                {
+                    paddingTop: insets.top + spacing.md,
+                    backgroundColor: c.background,
+                    borderBottomColor: noBorder ? 'transparent' : c.border.subtle,
+                },
                 style,
             ]}
             accessibilityRole="header"
@@ -50,7 +55,7 @@ function ScreenHeaderComponent({
             <View style={styles.left}>
                 {leftElement || (showBack ? <BackButton onPress={onBack} /> : <View style={styles.spacer} />)}
             </View>
-            <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
+            <Text style={[styles.title, { color: c.text.primary }]} numberOfLines={1} accessibilityRole="header">
                 {title}
             </Text>
             <View style={styles.right}>
@@ -70,10 +75,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.lg,
         paddingBottom: spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: colors.border.subtle,
-    },
-    noBorder: {
-        borderBottomWidth: 0,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 3,
     },
     left: {
         width: 44,
@@ -87,7 +93,6 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: typography.fontSize.xl,
         fontWeight: '700',
-        color: colors.text.primary,
         fontFamily: 'Inter-Bold',
         textAlign: 'center',
     },
@@ -97,4 +102,3 @@ const styles = StyleSheet.create({
 });
 
 export default ScreenHeader;
-
