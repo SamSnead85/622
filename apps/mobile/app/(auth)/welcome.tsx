@@ -4,24 +4,18 @@
 // Inspired by UpScrolled simplicity + 0G identity
 // ============================================
 
-import { View, Text, StyleSheet, Dimensions, Pressable, Platform } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, LinearGradient as SvgGradient, Stop, Text as SvgText, Ellipse } from 'react-native-svg';
+import Svg, { Defs, LinearGradient as SvgGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
     FadeInUp,
     FadeInDown,
     FadeIn,
-    useSharedValue,
-    useAnimatedStyle,
-    withRepeat,
-    withTiming,
-    withSequence,
-    Easing,
 } from 'react-native-reanimated';
 import { typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -29,121 +23,43 @@ import { useTheme } from '../../contexts/ThemeContext';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================
-// Premium Logo Mark — gradient text + breathing glow
+// Logo Mark — clean metallic "0G" via SVG gradient
+// No effects, no glows, no animations. Just the type.
 // ============================================
 function LogoMark({ colors, isDark }: { colors: any; isDark: boolean }) {
-    const glowOpacity = useSharedValue(0.55);
-    const glowScale = useSharedValue(1);
-
-    useEffect(() => {
-        glowOpacity.value = withRepeat(
-            withSequence(
-                withTiming(0.9, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0.55, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-            ),
-            -1,
-            false,
-        );
-        glowScale.value = withRepeat(
-            withSequence(
-                withTiming(1.05, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-                withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-            ),
-            -1,
-            false,
-        );
-    }, [glowOpacity, glowScale]);
-
-    const glowStyle = useAnimatedStyle(() => ({
-        opacity: glowOpacity.value,
-        transform: [{ scale: glowScale.value }],
-    }));
-
-    const p = colors.gold[500]; // primary blue
-    const b = colors.gold[300]; // bright blue
-    const d = colors.gold[600]; // deep blue
+    // Metallic gradient: light highlight at top, deep tone at bottom,
+    // with a bright mid-band that mimics light catching brushed metal
+    const highlight = isDark ? '#FFFFFF' : colors.gold[300];
+    const mid = colors.gold[400];
+    const base = colors.gold[500];
+    const deep = colors.gold[600];
 
     return (
-        <View style={logoStyles.container}>
-            {/* Ambient glow behind the mark */}
-            <Animated.View style={[logoStyles.glow, { backgroundColor: p + '20' }, glowStyle]} />
-
-            {/* SVG logo — gradient "0G" with orbital ring accent */}
-            <Svg width={160} height={100} viewBox="0 0 160 100">
-                <Defs>
-                    <SvgGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <Stop offset="0%" stopColor={isDark ? '#FFFFFF' : d} stopOpacity={isDark ? '0.95' : '1'} />
-                        <Stop offset="40%" stopColor={b} stopOpacity="1" />
-                        <Stop offset="100%" stopColor={p} stopOpacity="1" />
-                    </SvgGradient>
-                    <SvgGradient id="orbitGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <Stop offset="0%" stopColor={p} stopOpacity="0" />
-                        <Stop offset="30%" stopColor={b} stopOpacity="0.6" />
-                        <Stop offset="70%" stopColor={p} stopOpacity="0.8" />
-                        <Stop offset="100%" stopColor={p} stopOpacity="0" />
-                    </SvgGradient>
-                </Defs>
-
-                {/* Tilted orbital ellipse around the "0" */}
-                <Ellipse
-                    cx="52"
-                    cy="52"
-                    rx="38"
-                    ry="14"
-                    fill="none"
-                    stroke="url(#orbitGrad)"
-                    strokeWidth="1.5"
-                    rotation="-25"
-                    origin="52, 52"
-                />
-
-                {/* The "0G" text */}
-                <SvgText
-                    x="80"
-                    y="72"
-                    textAnchor="middle"
-                    fontFamily="Inter-Bold"
-                    fontSize="78"
-                    fontWeight="900"
-                    letterSpacing={-3}
-                    fill="url(#textGrad)"
-                >
-                    0G
-                </SvgText>
-            </Svg>
-
-            {/* Accent light streak */}
-            <LinearGradient
-                colors={['transparent', p + '40', b + '70', p + '40', 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={logoStyles.streak}
-            />
-        </View>
+        <Svg width={140} height={88} viewBox="0 0 140 88">
+            <Defs>
+                {/* Vertical metallic gradient — top-lit like polished chrome */}
+                <SvgGradient id="metalFill" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <Stop offset="0%" stopColor={highlight} stopOpacity={isDark ? '0.9' : '1'} />
+                    <Stop offset="35%" stopColor={mid} stopOpacity="1" />
+                    <Stop offset="60%" stopColor={base} stopOpacity="1" />
+                    <Stop offset="100%" stopColor={deep} stopOpacity="1" />
+                </SvgGradient>
+            </Defs>
+            <SvgText
+                x="70"
+                y="70"
+                textAnchor="middle"
+                fontFamily="Inter-Bold"
+                fontSize="82"
+                fontWeight="900"
+                letterSpacing={-4}
+                fill="url(#metalFill)"
+            >
+                0G
+            </SvgText>
+        </Svg>
     );
 }
-
-const logoStyles = StyleSheet.create({
-    container: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        height: 120,
-    },
-    glow: {
-        position: 'absolute',
-        width: 180,
-        height: 180,
-        borderRadius: 90,
-    },
-    streak: {
-        position: 'absolute',
-        bottom: 4,
-        width: 80,
-        height: 2,
-        borderRadius: 1,
-    },
-});
 
 export default function WelcomeScreen() {
     const router = useRouter();
@@ -281,7 +197,7 @@ const styles = StyleSheet.create({
     // ---- Logo ----
     logoSection: {
         alignItems: 'center',
-        paddingTop: 48,
+        paddingTop: 56,
     },
 
     // ---- Tagline ----
