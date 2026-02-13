@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
         paddingTop: spacing.md,
     },
     sectionTitle: {
-        fontSize: typography.sizes.xs,
+        fontSize: typography.fontSize.xs,
         fontWeight: '600' as const,
         textTransform: 'uppercase',
         letterSpacing: 0.8,
@@ -401,12 +401,12 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     verificationTitle: {
-        fontSize: typography.sizes.md,
+        fontSize: typography.fontSize.base,
         fontWeight: '600' as const,
         marginBottom: 2,
     },
     verificationSubtitle: {
-        fontSize: typography.sizes.sm,
+        fontSize: typography.fontSize.sm,
         lineHeight: 18,
     },
     verifyButton: {
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     },
     verifyButtonText: {
         color: '#fff',
-        fontSize: typography.sizes.sm,
+        fontSize: typography.fontSize.sm,
         fontWeight: '600' as const,
     },
     // Sessions
@@ -439,12 +439,12 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     sessionDevice: {
-        fontSize: typography.sizes.sm,
+        fontSize: typography.fontSize.sm,
         fontWeight: '600' as const,
         marginBottom: 2,
     },
     sessionMeta: {
-        fontSize: typography.sizes.xs,
+        fontSize: typography.fontSize.xs,
     },
     currentBadge: {
         paddingHorizontal: 10,
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     currentBadgeText: {
-        fontSize: typography.sizes.xs,
+        fontSize: typography.fontSize.xs,
         fontWeight: '600' as const,
     },
     revokeButton: {
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     revokeAllText: {
-        fontSize: typography.sizes.sm,
+        fontSize: typography.fontSize.sm,
         fontWeight: '600' as const,
     },
     // Empty state
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     emptyText: {
-        fontSize: typography.sizes.sm,
+        fontSize: typography.fontSize.sm,
     },
     // Tips
     tipRow: {
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
     },
     tipText: {
-        fontSize: typography.sizes.sm,
+        fontSize: typography.fontSize.sm,
         flex: 1,
     },
 });

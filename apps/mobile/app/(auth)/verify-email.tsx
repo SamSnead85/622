@@ -296,13 +296,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     title: {
-        fontSize: typography.sizes['2xl'],
+        fontSize: typography.fontSize['2xl'],
         fontWeight: '700' as const,
         textAlign: 'center',
         marginBottom: spacing.sm,
     },
     subtitle: {
-        fontSize: typography.sizes.md,
+        fontSize: typography.fontSize.base,
         textAlign: 'center',
         lineHeight: 22,
         marginBottom: spacing.xl,
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
         fontWeight: '700' as const,
     },
     errorText: {
-        fontSize: typography.sizes.sm,
+        fontSize: typography.fontSize.sm,
         textAlign: 'center',
         marginBottom: spacing.md,
     },
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
     },
     successText: {
-        fontSize: typography.sizes.md,
+        fontSize: typography.fontSize.base,
         fontWeight: '600' as const,
     },
     buttonWrap: {
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
     },
     verifyButtonText: {
-        fontSize: typography.sizes.md,
+        fontSize: typography.fontSize.base,
         fontWeight: '700' as const,
         color: '#FFFFFF',
     },
@@ -360,11 +360,11 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xl,
     },
     resendLabel: {
-        fontSize: typography.sizes.sm,
+        fontSize: typography.fontSize.sm,
         marginBottom: 4,
     },
     resendButton: {
-        fontSize: typography.sizes.sm,
+        fontSize: typography.fontSize.sm,
         fontWeight: '600' as const,
     },
     skipWrap: {
@@ -372,11 +372,11 @@ const styles = StyleSheet.create({
         marginTop: 'auto',
     },
     skipText: {
-        fontSize: typography.sizes.sm,
+        fontSize: typography.fontSize.sm,
         fontWeight: '500' as const,
     },
     skipNote: {
-        fontSize: typography.sizes.xs,
+        fontSize: typography.fontSize.xs,
         marginTop: 2,
     },
 });
