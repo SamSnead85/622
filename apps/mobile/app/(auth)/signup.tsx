@@ -76,7 +76,7 @@ function friendlyError(raw: string): string {
 // Password Strength
 // ============================================
 
-function getPasswordStrength(password: string, c: any): { level: number; label: string; color: string; tips: string[] } {
+function getPasswordStrength(password: string, c: Record<string, any>): { level: number; label: string; color: string; tips: string[] } {
     let score = 0;
     const tips: string[] = [];
 
@@ -114,7 +114,7 @@ interface AnimatedFieldProps {
     delay?: number;
     icon?: keyof typeof Ionicons.glyphMap;
     rightElement?: React.ReactNode;
-    colors: any;
+    colors: Record<string, any>;
     isDark: boolean;
 }
 
@@ -326,8 +326,9 @@ export default function SignupScreen() {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 router.replace('/(auth)/username');
             }
-        } catch (error: any) {
-            if (error.code !== 'ERR_REQUEST_CANCELED') {
+        } catch (error: unknown) {
+            const err = error as { code?: string };
+            if (err.code !== 'ERR_REQUEST_CANCELED') {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                 setGeneralError('Apple Sign Up failed. Please try again.');
             }
@@ -385,10 +386,11 @@ export default function SignupScreen() {
             } else if (result.type === 'error') {
                 throw new Error(result.error?.message || 'Google Sign Up failed');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            if (__DEV__) console.warn('Google signup error:', error?.message);
-            setGeneralError(error?.message || 'Google Sign Up failed. Please try again.');
+            const message = error instanceof Error ? error.message : 'Google Sign Up failed. Please try again.';
+            if (__DEV__) console.warn('Google signup error:', message);
+            setGeneralError(message);
         } finally {
             setGoogleLoading(false);
         }
@@ -439,9 +441,10 @@ export default function SignupScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             // Navigate to email verification before username
             router.replace('/(auth)/verify-email' as any);
-        } catch (error: any) {
+        } catch (error: unknown) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            const rawMessage = error?.data?.error || error?.message || 'Signup failed';
+            const err = error as { data?: { error?: string }; message?: string };
+            const rawMessage = err?.data?.error || (error instanceof Error ? error.message : 'Signup failed');
             setGeneralError(friendlyError(rawMessage));
         }
     }, [validateForm, signup, email, password, displayName, router, buttonScale]);

@@ -205,8 +205,9 @@ export default function LoginScreen() {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 router.replace('/(tabs)');
             }
-        } catch (error: any) {
-            if (error.code !== 'ERR_REQUEST_CANCELED') {
+        } catch (error: unknown) {
+            const err = error as { code?: string };
+            if (err.code !== 'ERR_REQUEST_CANCELED') {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                 setGeneralError('Apple Sign In failed. Please try again.');
             }
@@ -259,12 +260,13 @@ export default function LoginScreen() {
             } else if (result.type === 'error') {
                 throw new Error(result.error?.message || 'Google Sign In failed');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            if (error?.message?.includes('configured') || error?.message?.includes('redirect')) {
+            const message = error instanceof Error ? error.message : 'Google Sign In failed. Please try again.';
+            if (message?.includes('configured') || message?.includes('redirect')) {
                 setGeneralError('Google Sign In is being configured. Please use email or Apple Sign In for now.');
             } else {
-                setGeneralError(error?.message || 'Google Sign In failed. Please try again.');
+                setGeneralError(message);
             }
         } finally {
             setGoogleLoading(false);
@@ -320,9 +322,10 @@ export default function LoginScreen() {
                 }
             }
             router.replace('/(tabs)');
-        } catch (error: any) {
+        } catch (error: unknown) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            const rawMessage = error?.data?.error || error?.message || 'Invalid email or password';
+            const err = error as { data?: { error?: string }; message?: string };
+            const rawMessage = err?.data?.error || (error instanceof Error ? error.message : 'Invalid email or password');
             setGeneralError(friendlyError(rawMessage));
         }
     }, [email, password, login, router, biometricAvailable, biometricType, buttonScale]);

@@ -32,7 +32,7 @@ import { apiFetch, API } from '../../lib/api';
 import { useAuthStore } from '../../stores';
 import { useTheme } from '../../contexts/ThemeContext';
 
-function RequirementItem({ met, text, colors: c }: { met: boolean; text: string; colors: any }) {
+function RequirementItem({ met, text, colors: c }: { met: boolean; text: string; colors: Record<string, any> }) {
     return (
         <View style={reqStyles.item}>
             <Ionicons
@@ -109,8 +109,10 @@ export default function UsernameScreen() {
             }
             await refreshUser();
             router.replace('/(tabs)' as any);
-        } catch (err: any) {
-            setError(err?.data?.error || err?.message || 'Unable to update username.');
+        } catch (err: unknown) {
+            const errorObj = err as { data?: { error?: string }; message?: string };
+            const message = errorObj?.data?.error || (err instanceof Error ? err.message : 'Unable to update username.');
+            setError(message);
         } finally {
             setLoading(false);
         }

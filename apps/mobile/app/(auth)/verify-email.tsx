@@ -109,9 +109,11 @@ export default function VerifyEmailScreen() {
             setTimeout(() => {
                 router.replace('/(auth)/username' as any);
             }, 800);
-        } catch (err: any) {
+        } catch (err: unknown) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            setError(err?.data?.error || err?.message || 'Invalid code. Please try again.');
+            const errorObj = err as { data?: { error?: string }; message?: string };
+            const message = errorObj?.data?.error || (err instanceof Error ? err.message : 'Invalid code. Please try again.');
+            setError(message);
         } finally {
             setIsVerifying(false);
         }
@@ -131,8 +133,9 @@ export default function VerifyEmailScreen() {
             setResendCooldown(60);
             setCode(Array(OTP_LENGTH).fill(''));
             inputRefs.current[0]?.focus();
-        } catch (err: any) {
-            setError(err?.data?.error || 'Failed to resend code');
+        } catch (err: unknown) {
+            const errorObj = err as { data?: { error?: string }; message?: string };
+            setError(errorObj?.data?.error || 'Failed to resend code');
         } finally {
             setIsResending(false);
         }
