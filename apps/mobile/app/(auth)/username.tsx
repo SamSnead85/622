@@ -275,16 +275,20 @@ const styles = StyleSheet.create({
     scrollContent: { flexGrow: 1, paddingHorizontal: spacing.xl },
 
     title: {
-        fontSize: 28,
-        fontWeight: '700',
-        letterSpacing: -0.8,
+        fontSize: 30,
+        fontWeight: '800',
+        letterSpacing: -1,
         lineHeight: 36,
         fontFamily: 'Inter-Bold',
     },
     subtitle: {
-        fontSize: typography.fontSize.base,
-        marginTop: spacing.sm,
-        lineHeight: 22,
+        fontSize: typography.fontSize.sm,
+        fontWeight: '400',
+        marginTop: 6,
+        lineHeight: 20,
+        letterSpacing: 0.2,
+        fontFamily: 'Inter',
+        opacity: 0.7,
     },
 
     // ---- Input ----

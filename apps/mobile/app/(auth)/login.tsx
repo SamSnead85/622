@@ -26,7 +26,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Svg, { Defs, LinearGradient as SvgGradient, Stop, Text as SvgText, Line } from 'react-native-svg';
+import { Image } from 'expo-image';
 import Animated, {
     FadeInDown,
     FadeInUp,
@@ -79,28 +79,8 @@ function friendlyError(raw: string): string {
     return 'Sign in failed. Please try again.';
 }
 
-// ============================================
-// ============================================
-// Logo — smaller version for form screens
-// ============================================
-function Logo({ isDark }: { isDark: boolean }) {
-    return (
-        <Svg width={100} height={56} viewBox="0 0 130 72">
-            <Defs>
-                <SvgGradient id="metal" x1="0%" y1="0%" x2="15%" y2="100%">
-                    <Stop offset="0%" stopColor={isDark ? '#FFFFFF' : '#D0DAFF'} stopOpacity="1" />
-                    <Stop offset="20%" stopColor="#99AAFF" stopOpacity="1" />
-                    <Stop offset="50%" stopColor="#7C8FFF" stopOpacity="1" />
-                    <Stop offset="80%" stopColor="#4F5FDD" stopOpacity="1" />
-                    <Stop offset="100%" stopColor="#3040AA" stopOpacity="1" />
-                </SvgGradient>
-            </Defs>
-            <SvgText x="36" y="58" textAnchor="middle" fontFamily="Inter-Bold" fontSize="68" fontWeight="900" letterSpacing={-1} fill="url(#metal)">0</SvgText>
-            <Line x1="19" y1="55" x2="52" y2="10" stroke="url(#metal)" strokeWidth="3" strokeLinecap="round" />
-            <SvgText x="92" y="58" textAnchor="middle" fontFamily="Inter-Bold" fontSize="68" fontWeight="900" letterSpacing={-1} fill="url(#metal)">G</SvgText>
-        </Svg>
-    );
-}
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const LOGO_SOURCE = require('../../assets/logo-0g.png');
 
 // ============================================
 // Login Screen
@@ -411,7 +391,12 @@ export default function LoginScreen() {
 
                     {/* 0G Logo */}
                     <Animated.View entering={FadeInDown.delay(30).duration(500).springify()} style={styles.logoArea}>
-                        <Logo isDark={isDark} />
+                        <Image
+                            source={LOGO_SOURCE}
+                            style={styles.logoImage}
+                            contentFit="contain"
+                            cachePolicy="memory-disk"
+                        />
                     </Animated.View>
 
                     {/* Header */}
@@ -420,7 +405,7 @@ export default function LoginScreen() {
                             Welcome back
                         </Text>
                         <Text style={[styles.subtitle, { color: c.text.secondary }]}>
-                            Welcome back
+                            Sign in to continue
                         </Text>
                     </Animated.View>
 
@@ -621,16 +606,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: spacing.lg,
     },
+    logoImage: {
+        width: 110,
+        height: 55,
+    },
     header: { marginBottom: spacing.xl },
     title: {
-        fontSize: typography.fontSize['3xl'],
-        fontWeight: '700',
-        letterSpacing: -0.5,
+        fontSize: 30,
+        fontWeight: '800',
+        letterSpacing: -1,
+        lineHeight: 36,
         fontFamily: 'Inter-Bold',
     },
     subtitle: {
-        fontSize: typography.fontSize.base,
-        marginTop: spacing.xs,
+        fontSize: typography.fontSize.sm,
+        fontWeight: '400',
+        marginTop: 6,
+        letterSpacing: 0.2,
+        fontFamily: 'Inter',
+        opacity: 0.7,
     },
 
     // Error banner
