@@ -790,7 +790,7 @@ export default function ProfileScreen() {
             <View style={[styles.headerBar, { paddingTop: insets.top + spacing.xs }]}>
                 <View style={styles.headerLeft}>
                     <Text style={[styles.headerTitle, { color: c.text.primary }]}>
-                        {user.username || 'You'}
+                        {user?.username || 'You'}
                     </Text>
                     <Ionicons name="chevron-down" size={16} color={c.text.primary} style={styles.headerChevron} />
                 </View>

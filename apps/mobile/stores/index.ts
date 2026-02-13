@@ -554,6 +554,7 @@ export function mapApiPost(raw: any): Post {
         eventDate: raw.eventDate,
         eventLocation: raw.eventLocation,
         type: raw.type,
+        crossPost: raw.crossPost ?? undefined,
     };
 }
 
