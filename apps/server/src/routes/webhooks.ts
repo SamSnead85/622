@@ -33,8 +33,8 @@ router.post('/stripe', async (req: Request, res: Response) => {
         // req.body is a Buffer when using express.raw() middleware
         const rawBody = Buffer.isBuffer(req.body) ? req.body : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
         event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
-    } catch (err: any) {
-        logger.error(`Stripe webhook signature verification failed: ${err.message}`);
+    } catch (err: unknown) {
+        logger.error(`Stripe webhook signature verification failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
         return res.status(400).json({ error: 'Webhook signature verification failed' });
     }
 

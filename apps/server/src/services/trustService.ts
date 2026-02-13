@@ -241,7 +241,7 @@ export async function evaluatePromotion(userId: string): Promise<{
                 type: 'SYSTEM',
                 message: `Your account has been upgraded to "${levelNames[newLevel]}" status! You now have access to more features.`,
             },
-        }).catch(() => {});
+        }).catch(() => { /* intentionally swallowed: trust upgrade notification is best-effort */ });
 
         return { promoted: true, oldLevel, newLevel };
     }

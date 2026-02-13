@@ -65,7 +65,7 @@ export const authenticate = async (
 
         if (session.expiresAt < new Date()) {
             // Clean up expired session
-            await prisma.session.delete({ where: { id: decoded.sessionId } }).catch(() => { });
+            await prisma.session.delete({ where: { id: decoded.sessionId } }).catch(() => { /* fire-and-forget: expired session cleanup is non-blocking */ });
             res.status(401).json({ error: 'Session expired' });
             return;
         }
@@ -87,7 +87,7 @@ export const authenticate = async (
         await prisma.user.update({
             where: { id: decoded.userId },
             data: { lastActiveAt: new Date() },
-        }).catch(() => { }); // Silently ignore update errors
+        }).catch(() => { /* fire-and-forget: lastActiveAt update is non-blocking */ });
 
         next();
     } catch (error) {

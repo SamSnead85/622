@@ -287,8 +287,8 @@ app.get('/health', async (_, res) => {
         const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('DB probe timeout (5s)')), 5000));
         await Promise.race([dbCheck, timeout]);
         checks.database = { status: 'ok', latencyMs: Date.now() - dbStart };
-    } catch (err: any) {
-        checks.database = { status: 'degraded', error: err.message?.slice(0, 120) };
+    } catch (err: unknown) {
+        checks.database = { status: 'degraded', error: (err instanceof Error ? err.message : 'Unknown error').slice(0, 120) };
     }
 
     // Redis probe (optional — only if configured)
@@ -298,8 +298,8 @@ app.get('/health', async (_, res) => {
             const { cache } = await import('./services/cache/RedisCache.js');
             const isHealthy = await cache.healthCheck();
             checks.redis = { status: isHealthy ? 'ok' : 'unavailable', latencyMs: Date.now() - redisStart };
-        } catch (err: any) {
-            checks.redis = { status: 'unavailable', error: err.message?.slice(0, 120) };
+        } catch (err: unknown) {
+            checks.redis = { status: 'unavailable', error: (err instanceof Error ? err.message : 'Unknown error').slice(0, 120) };
         }
     }
 

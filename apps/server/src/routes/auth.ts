@@ -261,10 +261,10 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
         await prisma.user.update({
             where: { id: user.id },
             data: { deviceFingerprint: fp.hash },
-        }).catch(() => {}); // non-blocking
+        }).catch(() => { /* fire-and-forget: non-blocking metadata update */ });
 
         // Record signup time for bot velocity detection
-        await recordSignupTime(user.id).catch(() => {});
+        await recordSignupTime(user.id).catch(() => { /* fire-and-forget: bot detection is best-effort */ });
 
         // ── Evasion detection: check if this signup correlates with a banned account ──
         const evasionResult = await checkForEvasion({
@@ -278,7 +278,7 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
             await prisma.user.update({
                 where: { id: user.id },
                 data: { isShadowBanned: true },
-            }).catch(() => {});
+            }).catch(() => { /* fire-and-forget: shadow-ban update is non-blocking */ });
 
             await sendAlert({
                 severity: 'HIGH',
@@ -287,7 +287,7 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
                 details: { signals: evasionResult.signals, confidence: evasionResult.confidence },
                 ip: signupIp,
                 userId: user.id,
-            }).catch(() => {});
+            }).catch(() => { /* intentionally swallowed: alert delivery is best-effort */ });
         } else if (evasionResult?.evasionDetected) {
             // Low confidence — log but don't shadow-ban
             await sendAlert({
@@ -297,7 +297,7 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
                 details: { signals: evasionResult.signals, confidence: evasionResult.confidence },
                 ip: signupIp,
                 userId: user.id,
-            }).catch(() => {});
+            }).catch(() => { /* intentionally swallowed: alert delivery is best-effort */ });
         }
 
         // Log signup security event
@@ -308,7 +308,7 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
             countryCode: getGeoFromIP(signupIp)?.countryCode || undefined,
             userAgent: req.headers['user-agent'] || '',
             details: { username: user.username, fingerprint: fp.hash },
-        }).catch(() => {});
+        }).catch(() => { /* fire-and-forget: security event logging is non-blocking */ });
 
         // Generate auth token
         const { token, expiresAt } = await generateTokens(user.id, {
@@ -419,7 +419,7 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
         if (resendKey) {
             const otp = String(Math.floor(100000 + Math.random() * 900000));
             const { cache: cacheService } = await import('../services/cache/RedisCache.js');
-            await cacheService.set(`email_otp:${user.id}`, otp, 300).catch(() => {});
+            await cacheService.set(`email_otp:${user.id}`, otp, 300).catch(() => { /* fire-and-forget: OTP cache set is non-blocking; email still sent */ });
             fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
@@ -514,11 +514,11 @@ router.post('/login', rateLimiters.auth, async (req, res, next) => {
 
         // Track geo-anomaly (login from new country)
         if (loginGeo?.countryCode) {
-            checkGeoAnomaly(user.id, loginIp, loginGeo.countryCode).catch(() => {});
+            checkGeoAnomaly(user.id, loginIp, loginGeo.countryCode).catch(() => { /* fire-and-forget: geo anomaly tracking is best-effort */ });
         }
 
         // Track user-agent diversity (bot detection)
-        trackUserAgent(loginIp, loginUA).catch(() => {});
+        trackUserAgent(loginIp, loginUA).catch(() => { /* fire-and-forget: bot detection is best-effort */ });
 
         // Generate device fingerprint
         const loginFp = generateFingerprint(req);
@@ -531,7 +531,7 @@ router.post('/login', rateLimiters.auth, async (req, res, next) => {
             countryCode: loginGeo?.countryCode || undefined,
             userAgent: loginUA,
             details: { fingerprint: loginFp.hash },
-        }).catch(() => {});
+        }).catch(() => { /* fire-and-forget: security event logging is non-blocking */ });
 
         // ── New device detection ──
         // Check if this fingerprint has been seen in any of the user's previous sessions
@@ -768,7 +768,7 @@ router.delete('/sessions/:sessionId', authenticate, async (req: AuthRequest, res
             ipAddress: getClientIP(req),
             details: { revokedSessionId: sessionId },
             severity: 'LOW',
-        }).catch(() => {});
+        }).catch(() => { /* fire-and-forget: security event logging is non-blocking */ });
 
         res.json({ message: 'Session revoked successfully' });
     } catch (error) {
@@ -805,7 +805,7 @@ router.delete('/sessions', authenticate, async (req: AuthRequest, res, next) => 
             ipAddress: getClientIP(req),
             details: { revokedCount: result.count },
             severity: 'MEDIUM',
-        }).catch(() => {});
+        }).catch(() => { /* fire-and-forget: security event logging is non-blocking */ });
 
         res.json({ message: `${result.count} session(s) revoked`, count: result.count });
     } catch (error) {
@@ -916,10 +916,10 @@ router.post('/verify-email', authenticate, async (req: AuthRequest, res, next) =
         });
 
         // Clean up OTP
-        await cache.delete(otpKey).catch(() => {});
+        await cache.delete(otpKey).catch(() => { /* fire-and-forget: OTP cleanup is non-blocking; verification already succeeded */ });
 
         // Evaluate if user qualifies for further promotion
-        await evaluatePromotion(user.id).catch(() => {});
+        await evaluatePromotion(user.id).catch(() => { /* fire-and-forget: trust promotion check is best-effort */ });
 
         res.json({ verified: true, message: 'Email verified successfully' });
     } catch (error) {

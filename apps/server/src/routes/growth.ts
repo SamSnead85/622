@@ -484,7 +484,7 @@ router.post('/admin/invite', authenticate, requireAdmin, async (req: AuthRequest
                 actorId: req.user!.id,
                 message: 'You have been invited to the Growth Partner program! Visit your Growth dashboard to activate your account and start earning.',
             },
-        }).catch(() => {});
+        }).catch(() => { /* intentionally swallowed: invitation notification is best-effort */ });
 
         res.status(201).json({
             success: true,

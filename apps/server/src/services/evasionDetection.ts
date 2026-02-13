@@ -195,7 +195,7 @@ export async function recordBan(userId: string, ip: string): Promise<void> {
                 update: {
                     bannedUserId: userId,
                 },
-            }).catch(() => {});
+            }).catch(() => { /* fire-and-forget: banned fingerprint record is best-effort */ });
         }
 
         // 2. Track email domain
@@ -212,7 +212,7 @@ export async function recordBan(userId: string, ip: string): Promise<void> {
                 update: {
                     hitCount: { increment: 1 },
                 },
-            }).catch(() => {});
+            }).catch(() => { /* fire-and-forget: banned domain record is best-effort */ });
 
             // Auto-block domain if 5+ banned accounts used it
             const domainRecord = await prisma.bannedEmailDomain.findUnique({
@@ -222,7 +222,7 @@ export async function recordBan(userId: string, ip: string): Promise<void> {
                 await prisma.bannedEmailDomain.update({
                     where: { domain: emailDomain },
                     data: { autoBlocked: true, reason: 'Auto-blocked: 5+ banned accounts' },
-                }).catch(() => {});
+                }).catch(() => { /* fire-and-forget: auto-block update is best-effort */ });
                 logger.warn(`[Evasion] Auto-blocked email domain: ${emailDomain} (${domainRecord.hitCount} banned accounts)`);
             }
         }

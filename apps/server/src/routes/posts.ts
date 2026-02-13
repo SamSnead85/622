@@ -371,7 +371,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             prisma.save.findMany({
                 where: { userId: req.userId, postId: { in: results.map((p) => p.id) } },
             }),
-        ]).catch(() => [[], []]);
+        ]).catch(() => { /* fire-and-forget: use empty arrays on failure so feed can still render */ return [[], []]; });
 
         const likedPostIds = new Set(likes.map((l) => l.postId));
         const savedPostIds = new Set(saves.map((s) => s.postId));
@@ -483,7 +483,7 @@ router.get('/:postId', optionalAuth, async (req: AuthRequest, res, next) => {
         prisma.post.update({
             where: { id: postId },
             data: { viewCount: { increment: 1 } },
-        }).catch(() => { }); // Silently ignore if update fails
+        }).catch(() => { /* fire-and-forget: view count is analytics, non-blocking */ });
 
         let isLiked = false;
         let isSaved = false;
@@ -597,7 +597,7 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
                         prisma.contentFilter.update({
                             where: { id: filter.id },
                             data: { hitCount: { increment: 1 } },
-                        }).catch(() => {});
+                        }).catch(() => { /* fire-and-forget: filter hit count is analytics, non-blocking */ });
 
                         if (filter.action === 'block') {
                             blocked = true;
@@ -649,13 +649,13 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
                     details: { preview: textToCheck.substring(0, 100), matchCount: similarity.matchCount },
                     ip,
                     userId: req.userId,
-                }).catch(() => {});
+                }).catch(() => { /* intentionally swallowed: alert delivery is best-effort */ });
                 throw new AppError('This content has been flagged as duplicate. Please post original content.', 400);
             }
         }
 
         // ── Bot behavior tracking ──
-        await trackAction(req.userId!, 'post', { contentLength: String(textToCheck.length) }).catch(() => {});
+        await trackAction(req.userId!, 'post', { contentLength: String(textToCheck.length) }).catch(() => { /* fire-and-forget: bot detection is best-effort */ });
 
         // ── Trust-level gating: check if user can post ──
         const postingUser = await prisma.user.findUnique({
@@ -905,7 +905,7 @@ router.delete('/:postId/rsvp', authenticate, async (req: AuthRequest, res, next)
                     postId,
                 },
             },
-        }).catch(() => { });
+        }).catch(() => { /* fire-and-forget: idempotent delete; no-op if already removed */ });
 
         const rsvpCount = await prisma.postRSVP.count({
             where: { postId, status: 'IN' },
@@ -1050,7 +1050,7 @@ router.delete('/:postId/like', authenticate, async (req: AuthRequest, res, next)
                     postId,
                 },
             },
-        }).catch(() => { });
+        }).catch(() => { /* fire-and-forget: idempotent delete; no-op if already unliked */ });
 
         res.json({ liked: false });
     } catch (error) {
@@ -1138,7 +1138,7 @@ router.delete('/:postId/save', authenticate, async (req: AuthRequest, res, next)
                     postId,
                 },
             },
-        }).catch(() => { });
+        }).catch(() => { /* fire-and-forget: idempotent delete; no-op if already unsaved */ });
 
         res.json({ saved: false });
     } catch (error) {

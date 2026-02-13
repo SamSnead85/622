@@ -191,7 +191,7 @@ router.post('/create', authenticate, async (req: AuthRequest, res, next) => {
                 data: { status: 'ENDED', endedAt: new Date() },
             });
             if (existingStream.muxStreamId) {
-                endMuxLiveStream(existingStream.muxStreamId).catch(() => {});
+                endMuxLiveStream(existingStream.muxStreamId).catch(() => { /* fire-and-forget: Mux stream cleanup is best-effort; DB already updated */ });
             }
         }
 

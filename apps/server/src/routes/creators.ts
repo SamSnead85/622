@@ -87,7 +87,7 @@ router.post('/founding', authenticate, async (req: AuthRequest, res, next) => {
                 type: 'SYSTEM' as const,
                 message: `Welcome to 0G as a Founding Creator! 🎉 Your account has full access — you can post, go live, message, and invite your community from day one. Thank you for being part of our founding story.`,
             },
-        }).catch(() => {});
+        }).catch(() => { /* intentionally swallowed: welcome notification is best-effort */ });
 
         logger.info(`[Creators] Founding creator activated: userId=${userId}, code=${accessCode}`);
 

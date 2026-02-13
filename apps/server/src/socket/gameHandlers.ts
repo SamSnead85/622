@@ -79,10 +79,10 @@ export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedS
             if (typeof callback === 'function') {
                 callback({ success: true, code: state.code, state: sanitizeStateForPlayer(state, userId) });
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('game:create error:', error);
             if (typeof callback === 'function') {
-                callback({ success: false, error: error.message });
+                callback({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
             }
         }
     });
@@ -102,9 +102,9 @@ export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedS
                 hostName: username || 'Someone',
             });
             if (typeof callback === 'function') callback({ success: true });
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('game:invite error:', error);
-            if (typeof callback === 'function') callback({ success: false, error: error.message });
+            if (typeof callback === 'function') callback({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
         }
     });
 
@@ -136,10 +136,10 @@ export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedS
                 const pid = player.id;
                 io.to(`game:${code}`).emit('game:state', sanitizeStateForPlayer(state, pid));
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('game:join error:', error);
             if (typeof callback === 'function') {
-                callback({ success: false, error: error.message });
+                callback({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
             }
         }
     });
@@ -165,10 +165,10 @@ export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedS
             if (typeof callback === 'function') {
                 callback({ success: true });
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('game:start error:', error);
             if (typeof callback === 'function') {
-                callback({ success: false, error: error.message });
+                callback({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
             }
         }
     });
@@ -217,9 +217,9 @@ export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedS
                     });
                 }
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('game:action error:', error);
-            socket.emit('game:error', { message: error.message });
+            socket.emit('game:error', { message: error instanceof Error ? error.message : 'Unknown error' });
         }
     });
 
@@ -235,7 +235,7 @@ export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedS
                     playerCount: state.players.filter(p => p.isConnected).length,
                 });
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('game:leave error:', error);
         }
     });
