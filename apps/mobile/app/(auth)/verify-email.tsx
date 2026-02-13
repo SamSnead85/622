@@ -27,7 +27,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 const OTP_LENGTH = 6;
 
 export default function VerifyEmailScreen() {
-    const { colors: c, isDark } = useTheme();
+    const { colors: c } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { user } = useAuthStore();

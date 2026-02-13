@@ -40,7 +40,7 @@ import Animated, {
 import { typography, spacing } from '@zerog/ui';
 import { BackButton, BrandLogo } from '../../components';
 import { useAuthStore } from '../../stores';
-import { apiFetch, API } from '../../lib/api';
+import { apiFetch } from '../../lib/api';
 import { useTheme } from '../../contexts/ThemeContext';
 
 WebBrowser.maybeCompleteAuthSession();

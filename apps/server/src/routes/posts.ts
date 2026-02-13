@@ -9,7 +9,7 @@ import { logger } from '../utils/logger.js';
 import { getFeedImageUrls, transformImageUrl, getVideoThumbnailUrl } from '../services/cloudinary.js';
 import { checkContent, trackPost } from '../utils/moderation.js';
 import { logSecurityEvent, SecurityEvents, getClientIP } from '../services/security.js';
-import { trackAction, getBotScore, checkContentSimilarity } from '../services/botDetection.js';
+import { trackAction, checkContentSimilarity } from '../services/botDetection.js';
 import { sendAlert } from '../services/alerting.js';
 
 const router = Router();

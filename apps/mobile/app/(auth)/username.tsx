@@ -14,7 +14,6 @@ import {
     ScrollView,
     TextInput,
     ActivityIndicator,
-    Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -53,7 +52,7 @@ const reqStyles = StyleSheet.create({
 export default function UsernameScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { colors: c, isDark } = useTheme();
+    const { colors: c } = useTheme();
     const refreshUser = useAuthStore((s) => s.refreshUser);
 
     const [username, setUsername] = useState('');

@@ -36,7 +36,7 @@ interface SessionInfo {
 }
 
 export default function SecuritySettingsScreen() {
-    const { colors: c, isDark } = useTheme();
+    const { colors: c } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const user = useAuthStore((s) => s.user);

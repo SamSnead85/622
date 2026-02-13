@@ -30,7 +30,6 @@ import Animated, {
     FadeInDown,
     FadeInUp,
     BounceIn,
-    SlideInDown,
     useSharedValue,
     useAnimatedStyle,
     withSpring,
@@ -41,7 +40,7 @@ import Animated, {
     runOnJS,
     Layout,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { colors, typography, spacing, borderRadius } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../../components';

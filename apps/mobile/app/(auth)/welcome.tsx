@@ -22,7 +22,7 @@ import { BrandLogo } from '../../components';
 export default function WelcomeScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { colors, isDark } = useTheme();
+    const { colors } = useTheme();
 
     const handleCreateAccount = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

@@ -7,7 +7,6 @@ import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import dotenv from 'dotenv';
 import * as Sentry from '@sentry/node';
-import { rateLimiters } from './middleware/rateLimit.js';
 import { securityHeaders, requestId, requestFirewall } from './middleware/securityHeaders.js';
 import { securityMiddleware } from './services/security.js';
 
