@@ -26,7 +26,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import MaskedView from '@react-native-masked-view/masked-view';
+import { Image } from 'expo-image';
 import Animated, {
     FadeInDown,
     FadeInUp,
@@ -36,15 +36,16 @@ import Animated, {
     withTiming,
     withSpring,
     withSequence,
-    withRepeat,
     interpolateColor,
-    Easing,
 } from 'react-native-reanimated';
 import { typography, spacing } from '@zerog/ui';
 import { BackButton } from '../../components';
 import { useAuthStore } from '../../stores';
 import { apiFetch } from '../../lib/api';
 import { useTheme } from '../../contexts/ThemeContext';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const LOGO_SOURCE = require('../../assets/logo-0g.png');
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -82,97 +83,6 @@ function friendlyError(raw: string): string {
 }
 
 // ============================================
-// Premium Logo Mark — gradient text + breathing glow
-// ============================================
-function LoginLogoMark({ colors, isDark }: { colors: any; isDark: boolean }) {
-    const glowOpacity = useSharedValue(0.4);
-    const glowScale = useSharedValue(1);
-
-    useEffect(() => {
-        glowOpacity.value = withRepeat(
-            withSequence(
-                withTiming(0.7, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0.4, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-            ),
-            -1,
-            false,
-        );
-        glowScale.value = withRepeat(
-            withSequence(
-                withTiming(1.08, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-                withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-            ),
-            -1,
-            false,
-        );
-    }, [glowOpacity, glowScale]);
-
-    const glowStyle = useAnimatedStyle(() => ({
-        opacity: glowOpacity.value,
-        transform: [{ scale: glowScale.value }],
-    }));
-
-    return (
-        <View style={loginLogoStyles.container}>
-            <Animated.View style={[loginLogoStyles.outerGlow, { backgroundColor: colors.gold[500] + '0C' }, glowStyle]} />
-            <Animated.View style={[loginLogoStyles.innerGlow, { backgroundColor: colors.gold[400] + '14' }, glowStyle]} />
-            <MaskedView
-                maskElement={<Text style={loginLogoStyles.maskText}>0G</Text>}
-            >
-                <LinearGradient
-                    colors={isDark
-                        ? [colors.gold[300], colors.gold[500], colors.gold[400]]
-                        : [colors.gold[600], colors.gold[500], colors.gold[400]]
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={loginLogoStyles.gradientFill}
-                />
-            </MaskedView>
-            <View style={[loginLogoStyles.reflectionLine, { backgroundColor: colors.gold[500] + '18' }]} />
-        </View>
-    );
-}
-
-const loginLogoStyles = StyleSheet.create({
-    container: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        height: 80,
-    },
-    outerGlow: {
-        position: 'absolute',
-        width: 140,
-        height: 140,
-        borderRadius: 70,
-    },
-    innerGlow: {
-        position: 'absolute',
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-    },
-    maskText: {
-        fontSize: 56,
-        fontWeight: '800',
-        letterSpacing: -2,
-        fontFamily: 'Inter-Bold',
-        textAlign: 'center',
-    },
-    gradientFill: {
-        height: 72,
-        width: 120,
-    },
-    reflectionLine: {
-        position: 'absolute',
-        bottom: 2,
-        width: 40,
-        height: 1.5,
-        borderRadius: 1,
-    },
-});
-
 // ============================================
 // Login Screen
 // ============================================
@@ -480,9 +390,14 @@ export default function LoginScreen() {
                     {/* Back button */}
                     <BackButton style={{ alignSelf: 'flex-start', marginBottom: spacing.md }} />
 
-                    {/* 0G Logo — gradient text + breathing glow */}
+                    {/* 0G Logo */}
                     <Animated.View entering={FadeInDown.delay(30).duration(500).springify()} style={styles.logoArea}>
-                        <LoginLogoMark colors={c} isDark={isDark} />
+                        <Image
+                            source={LOGO_SOURCE}
+                            style={styles.logoImage}
+                            contentFit="contain"
+                            cachePolicy="memory-disk"
+                        />
                     </Animated.View>
 
                     {/* Header */}
@@ -691,6 +606,10 @@ const styles = StyleSheet.create({
     logoArea: {
         alignItems: 'center',
         marginBottom: spacing.lg,
+    },
+    logoImage: {
+        width: 90,
+        height: 90,
     },
 
     header: { marginBottom: spacing.xl },

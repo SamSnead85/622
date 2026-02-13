@@ -4,12 +4,12 @@
 // Inspired by UpScrolled simplicity + 0G identity
 // ============================================
 
-import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, LinearGradient as SvgGradient, Stop, Text as SvgText, Line } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -20,70 +20,8 @@ import Animated, {
 import { typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// ============================================
-// Logo Mark — clean metallic "0G" via SVG gradient
-// No effects, no glows, no animations. Just the type.
-// ============================================
-function LogoMark({ colors, isDark }: { colors: any; isDark: boolean }) {
-    const highlight = isDark ? '#FFFFFF' : colors.gold[300];
-    const mid = colors.gold[400];
-    const base = colors.gold[500];
-    const deep = colors.gold[600];
-
-    return (
-        <Svg width={150} height={90} viewBox="0 0 150 90">
-            <Defs>
-                <SvgGradient id="metalFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <Stop offset="0%" stopColor={highlight} stopOpacity={isDark ? '0.9' : '1'} />
-                    <Stop offset="35%" stopColor={mid} stopOpacity="1" />
-                    <Stop offset="60%" stopColor={base} stopOpacity="1" />
-                    <Stop offset="100%" stopColor={deep} stopOpacity="1" />
-                </SvgGradient>
-            </Defs>
-
-            {/* "0" — rendered separately so we can scale it to match the G */}
-            <SvgText
-                x="42"
-                y="72"
-                textAnchor="middle"
-                fontFamily="Inter-Bold"
-                fontSize="84"
-                fontWeight="900"
-                letterSpacing={-2}
-                fill="url(#metalFill)"
-            >
-                0
-            </SvgText>
-
-            {/* Slash through the zero — diagonal, same gradient */}
-            <Line
-                x1="24"
-                y1="68"
-                x2="60"
-                y2="16"
-                stroke="url(#metalFill)"
-                strokeWidth="3.5"
-                strokeLinecap="round"
-            />
-
-            {/* "G" — positioned tight next to the slashed zero */}
-            <SvgText
-                x="106"
-                y="72"
-                textAnchor="middle"
-                fontFamily="Inter-Bold"
-                fontSize="84"
-                fontWeight="900"
-                letterSpacing={-2}
-                fill="url(#metalFill)"
-            >
-                G
-            </SvgText>
-        </Svg>
-    );
-}
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const LOGO_SOURCE = require('../../assets/logo-0g.png');
 
 export default function WelcomeScreen() {
     const router = useRouter();
@@ -113,7 +51,12 @@ export default function WelcomeScreen() {
         >
             {/* Logo */}
             <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.logoSection}>
-                <LogoMark colors={colors} isDark={isDark} />
+                <Image
+                    source={LOGO_SOURCE}
+                    style={styles.logoImage}
+                    contentFit="contain"
+                    cachePolicy="memory-disk"
+                />
             </Animated.View>
 
             {/* Tagline */}
@@ -221,7 +164,11 @@ const styles = StyleSheet.create({
     // ---- Logo ----
     logoSection: {
         alignItems: 'center',
-        paddingTop: 56,
+        paddingTop: 48,
+    },
+    logoImage: {
+        width: 120,
+        height: 120,
     },
 
     // ---- Tagline ----
