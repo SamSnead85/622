@@ -1237,52 +1237,18 @@ export default function CreateScreen() {
 
     const handleImportFromPlatform = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        Alert.prompt(
-            'Import from URL',
-            'Paste a link from LinkedIn, X, Instagram, or any connected platform to import it as a post.',
+        Alert.alert(
+            'Import from Platform',
+            'Connect your social accounts to import posts from LinkedIn, X, Instagram, and more.',
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
-                    text: 'Import',
-                    onPress: async (url?: string) => {
-                        if (!url?.trim()) return;
-                        try {
-                            // Detect platform from URL
-                            let platform = 'TWITTER';
-                            const urlLower = url.toLowerCase();
-                            if (urlLower.includes('linkedin.com')) platform = 'LINKEDIN';
-                            else if (urlLower.includes('instagram.com')) platform = 'INSTAGRAM';
-                            else if (urlLower.includes('facebook.com') || urlLower.includes('fb.com')) platform = 'FACEBOOK';
-                            else if (urlLower.includes('tiktok.com')) platform = 'TIKTOK';
-                            else if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) platform = 'YOUTUBE';
-                            else if (urlLower.includes('threads.net')) platform = 'THREADS';
-                            else if (urlLower.includes('twitter.com') || urlLower.includes('x.com')) platform = 'TWITTER';
-
-                            const res = await apiFetch(API.socialCrossPost, {
-                                method: 'POST',
-                                body: JSON.stringify({
-                                    sourceUrl: url.trim(),
-                                    sourcePlatform: platform,
-                                    caption: content.trim() || undefined,
-                                    type: 'TEXT',
-                                }),
-                            });
-                            if (res?.post) {
-                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                                Alert.alert('Imported!', 'Post has been imported to your ZeroG feed.');
-                                router.back();
-                            }
-                        } catch {
-                            Alert.alert('Import Failed', 'Could not import this post. Make sure you have the platform connected in Settings > Connected Accounts.');
-                        }
-                    },
+                    text: 'Connect Accounts',
+                    onPress: () => router.push('/settings/connected-accounts' as any),
                 },
-            ],
-            'plain-text',
-            '',
-            'url'
+            ]
         );
-    }, [content, router]);
+    }, [router]);
 
     const handleMediaBarPress = useCallback((key: string) => {
         switch (key) {

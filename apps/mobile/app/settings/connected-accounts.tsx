@@ -14,7 +14,6 @@ import {
     ActivityIndicator,
     RefreshControl,
     Switch,
-    Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -168,7 +167,7 @@ function PlatformCard({
                                 onPress={() => onDisconnect(account)}
                                 activeOpacity={0.7}
                             >
-                                <Ionicons name="unlink-outline" size={16} color={c.coral[500]} />
+                                <Ionicons name="close-circle-outline" size={16} color={c.coral[500]} />
                                 <Text style={[styles.disconnectBtnText, { color: c.coral[500] }]}>Disconnect</Text>
                             </TouchableOpacity>
                         </View>

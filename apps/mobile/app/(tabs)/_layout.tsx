@@ -37,7 +37,7 @@ function TabIcon({ iconName, iconNameFocused, focused, badge }: TabIconProps) {
 }
 
 // ============================================
-// Tab Layout — 5 tabs: Home, Search, Create, Communities, Profile
+// Tab Layout — 4 visible tabs + hidden routes
 // ============================================
 
 export default function TabLayout() {
@@ -91,19 +91,6 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="create"
-                options={{
-                    tabBarAccessibilityLabel: 'Create tab',
-                    tabBarIcon: ({ focused }) => (
-                        <TabIcon
-                            iconName="add-circle-outline"
-                            iconNameFocused="add-circle"
-                            focused={focused}
-                        />
-                    ),
-                }}
-            />
-            <Tabs.Screen
                 name="communities"
                 options={{
                     tabBarAccessibilityLabel: 'Communities tab',
@@ -131,6 +118,7 @@ export default function TabLayout() {
             />
             {/* Hidden tabs — still routable but not in tab bar */}
             <Tabs.Screen name="messages" options={{ href: null }} />
+            <Tabs.Screen name="create" options={{ href: null }} />
         </Tabs>
     );
 }
@@ -142,7 +130,7 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
     tabBar: {
         borderTopWidth: StyleSheet.hairlineWidth,
-        height: 50,
+        height: 56,
         elevation: 0,
         shadowOpacity: 0,
     },
@@ -150,7 +138,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         minWidth: 48,
-        minHeight: 40,
+        minHeight: 44,
     },
     badge: {
         position: 'absolute',
@@ -165,7 +153,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     badgeText: {
-        color: colors.text.primary,
+        color: '#FFFFFF',
         fontSize: 10,
         fontWeight: '700',
     },
