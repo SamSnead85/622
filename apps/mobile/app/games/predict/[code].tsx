@@ -11,8 +11,8 @@ import {
     TouchableOpacity,
     ScrollView,
     Dimensions,
-    Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, {
     FadeInDown,
     FadeIn,
@@ -72,7 +72,13 @@ function SubjectSpotlight({
             {/* Avatar */}
             <View style={styles.spotlightAvatar}>
                 {player.avatarUrl ? (
-                    <Image source={{ uri: player.avatarUrl }} style={styles.spotlightAvatarImage} />
+                    <Image
+                        source={{ uri: player.avatarUrl }}
+                        style={styles.spotlightAvatarImage}
+                        placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4"
+                        transition={200}
+                        cachePolicy="memory-disk"
+                    />
                 ) : (
                     <Text style={styles.spotlightAvatarText}>
                         {player.name?.charAt(0)?.toUpperCase() ?? '?'}

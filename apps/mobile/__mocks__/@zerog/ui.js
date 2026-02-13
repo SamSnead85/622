@@ -41,8 +41,8 @@ const colors = {
         300: '#93C5FD',
     },
     badge: {
-        gold: '#D4AF37',
-        goldLight: '#E5C158',
+        gold: '#7C8FFF',
+        goldLight: '#99AAFF',
     },
     text: {
         primary: '#FAFAFA',
@@ -118,8 +118,8 @@ const lightColors = {
         300: '#60A5FA',
     },
     badge: {
-        gold: '#B8942D',
-        goldLight: '#D4AF37',
+        gold: '#7C8FFF',
+        goldLight: '#99AAFF',
     },
     text: {
         primary: '#111827',
