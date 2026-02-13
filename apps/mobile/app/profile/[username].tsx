@@ -29,6 +29,7 @@ import Animated, {
     Easing,
 } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthStore, Post, mapApiPost } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { ScreenHeader, LoadingView, Avatar, EmptyState, SkeletonGrid } from '../../components';
@@ -272,6 +273,7 @@ export default function UserProfileScreen() {
     const { username } = useLocalSearchParams<{ username: string }>();
     const insets = useSafeAreaInsets();
     const currentUser = useAuthStore((s) => s.user);
+    const { colors: c } = useTheme();
 
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [posts, setPosts] = useState<Post[]>([]);
@@ -608,7 +610,7 @@ export default function UserProfileScreen() {
                     style={styles.userInfo}
                 >
                     <View style={styles.nameRow}>
-                        <Text style={styles.displayName}>{profile.displayName || profile.username || 'User'}</Text>
+                        <Text style={[styles.displayName, { color: c.text.primary }]}>{profile.displayName || profile.username || 'User'}</Text>
                         {profile.isVerified && (
                             <Ionicons name="checkmark-circle" size={18} color={colors.gold[500]} style={styles.verifiedIcon} />
                         )}
@@ -842,10 +844,14 @@ const styles = StyleSheet.create({
         height: COVER_HEIGHT,
         position: 'relative',
         overflow: 'hidden',
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
     },
     coverImageWrap: {
         ...StyleSheet.absoluteFillObject,
         overflow: 'hidden',
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
     },
     coverImage: {
         width: '100%',
@@ -857,6 +863,9 @@ const styles = StyleSheet.create({
     coverGradientOverlay: {
         ...StyleSheet.absoluteFillObject,
         zIndex: 1,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        overflow: 'hidden',
     },
     coverFade: {
         position: 'absolute',
@@ -865,6 +874,8 @@ const styles = StyleSheet.create({
         right: 0,
         height: COVER_HEIGHT * 0.75,
         zIndex: 2,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
     },
 
     // ── Profile Content ──────────────────────────────────
@@ -936,9 +947,9 @@ const styles = StyleSheet.create({
     },
     displayName: {
         fontSize: 26,
-        fontWeight: '700',
+        fontWeight: '800',
         color: colors.text.primary,
-        letterSpacing: -0.5,
+        letterSpacing: -0.6,
         fontFamily: 'Inter-Bold',
     },
     username: {
@@ -993,6 +1004,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border.subtle,
         overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 2,
     },
     stat: {
         flex: 1,
@@ -1000,8 +1016,8 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
     },
     statValue: {
-        fontSize: typography.fontSize.xl,
-        fontWeight: '700',
+        fontSize: typography.fontSize['2xl'],
+        fontWeight: '800',
         color: colors.gold[400],
         fontFamily: 'Inter-Bold',
         letterSpacing: -0.5,
@@ -1040,6 +1056,7 @@ const styles = StyleSheet.create({
     followButtonActive: {
         borderWidth: 1,
         borderColor: colors.border.strong,
+        backgroundColor: colors.surface.glassHover,
     },
     followingInner: {
         flexDirection: 'row',
@@ -1067,10 +1084,15 @@ const styles = StyleSheet.create({
         width: 48,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.surface.glass,
+        backgroundColor: colors.surface.glassHover,
         borderRadius: 14,
         borderWidth: 1,
         borderColor: colors.border.subtle,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        elevation: 1,
     },
 
     // ── Segmented Tabs ───────────────────────────────────
@@ -1127,10 +1149,12 @@ const styles = StyleSheet.create({
         height: POST_SIZE,
         overflow: 'hidden',
         backgroundColor: colors.obsidian[700],
+        borderRadius: 5,
     },
     postImage: {
         width: '100%',
         height: '100%',
+        borderRadius: 5,
     },
     textPostBg: {
         padding: spacing.md,

@@ -419,6 +419,9 @@ export default function SearchScreen() {
     const flatListRef = useRef<FlatList>(null);
     const scrollViewRef = useRef<ScrollView>(null);
 
+    // Search bar focus state
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
+
     // Animation values
     const searchBarScale = useSharedValue(1);
 
@@ -888,10 +891,12 @@ export default function SearchScreen() {
     }));
 
     const handleSearchBarFocus = useCallback(() => {
+        setIsSearchFocused(true);
         searchBarScale.value = withSpring(1.02, { damping: 15, stiffness: 300 });
     }, [searchBarScale]);
 
     const handleSearchBarBlur = useCallback(() => {
+        setIsSearchFocused(false);
         searchBarScale.value = withSpring(1, { damping: 15, stiffness: 300 });
         // Delay hiding suggestions so tap events can fire
         setTimeout(() => setShowSuggestions(false), 200);
@@ -1335,7 +1340,7 @@ export default function SearchScreen() {
                     entering={FadeInDown.duration(400).delay(50)}
                     style={searchBarAnimStyle}
                 >
-                    <View style={styles.searchContainer}>
+                    <View style={[styles.searchContainer, isSearchFocused && styles.searchContainerFocused]}>
                         <LinearGradient
                             colors={[
                                 colors.surface.glassHover,
@@ -1346,7 +1351,7 @@ export default function SearchScreen() {
                             end={{ x: 1, y: 1 }}
                         />
                         <View style={styles.searchIconWrap}>
-                            <Ionicons name="search" size={18} color={colors.gold[500]} />
+                            <Ionicons name="search" size={18} color={isSearchFocused ? colors.gold[500] : colors.text.muted} />
                         </View>
                         <TextInput
                             ref={inputRef}
@@ -1527,18 +1532,21 @@ const styles = StyleSheet.create({
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 24,
+        borderRadius: 16,
         paddingHorizontal: spacing.md,
         borderWidth: 1,
         borderColor: colors.border.subtle,
         overflow: 'hidden',
         backgroundColor: colors.surface.glass,
     },
+    searchContainerFocused: {
+        borderColor: colors.gold[500] + '50',
+    },
     searchIconWrap: {
         width: 32,
         height: 32,
         borderRadius: 10,
-        backgroundColor: colors.gold[500] + '15',
+        backgroundColor: colors.surface.glassHover,
         alignItems: 'center',
         justifyContent: 'center',
         marginEnd: spacing.sm,
@@ -1678,15 +1686,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: spacing.sm,
-        gap: spacing.xs,
+        marginBottom: spacing.md,
+        gap: spacing.sm,
     },
     sectionTitle: {
         fontSize: typography.fontSize.lg,
-        fontWeight: '700',
+        fontWeight: '800',
         color: colors.text.primary,
         fontFamily: 'Inter-Bold',
         flex: 1,
+        letterSpacing: -0.3,
     },
     sectionSubtitle: {
         fontSize: typography.fontSize.sm,
@@ -1736,12 +1745,17 @@ const styles = StyleSheet.create({
     trendingCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: spacing.sm + 2,
+        paddingVertical: spacing.md,
         paddingHorizontal: spacing.md,
         backgroundColor: colors.surface.glass,
         borderRadius: 14,
         borderWidth: 1,
         borderColor: colors.border.subtle,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+        elevation: 1,
     },
     trendingIcon: {
         width: 36,
@@ -1792,6 +1806,11 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
         minHeight: 100,
         justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 2,
     },
     quickAccessIcon: {
         width: 48,
@@ -1822,10 +1841,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: colors.border.subtle,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 2,
     },
     categoryIcon: {
-        width: 42,
-        height: 42,
+        width: 44,
+        height: 44,
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
@@ -1836,6 +1860,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: colors.text.primary,
         textAlign: 'center',
+        fontFamily: 'Inter-SemiBold',
     },
 
     // Featured Posts (horizontal scroll)

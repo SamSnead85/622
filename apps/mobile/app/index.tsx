@@ -134,10 +134,10 @@ export default function SplashIndex() {
     // Still initializing — show animated splash
     return (
         <LinearGradient
-            colors={[colors.obsidian[900], colors.obsidian[900], colors.obsidian[900]]}
+            colors={['#0A0A0B', '#0F0F18', '#0A0A0B']}
             style={styles.container}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
         >
             <View style={styles.logoContainer}>
                 {/* Gold glow behind logo */}
@@ -204,57 +204,60 @@ const styles = StyleSheet.create({
     },
     glow: {
         position: 'absolute',
-        width: 200,
-        height: 200,
-        borderRadius: 100,
+        width: 240,
+        height: 240,
+        borderRadius: 120,
         backgroundColor: colors.gold[500],
-        top: -50,
+        top: -60,
     },
     logoIcon: {
-        marginBottom: 24,
+        marginBottom: 28,
     },
     logoGradient: {
-        width: 100,
-        height: 100,
-        borderRadius: 28,
+        width: 120,
+        height: 120,
+        borderRadius: 32,
         alignItems: 'center',
         justifyContent: 'center',
         shadowColor: colors.gold[500],
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.4,
-        shadowRadius: 20,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 24,
+        elevation: 12,
     },
     logoLetter: {
-        fontSize: 48,
-        fontWeight: '700',
+        fontSize: 56,
+        fontWeight: '800',
         color: '#FFFFFF',
         fontFamily: 'Inter-Bold',
+        letterSpacing: -1,
     },
     brandName: {
-        fontSize: 42,
-        fontWeight: '700',
+        fontSize: 44,
+        fontWeight: '800',
         color: colors.text.primary,
-        letterSpacing: -1,
+        letterSpacing: -1.5,
         textAlign: 'center',
         fontFamily: 'Inter-Bold',
     },
     tagline: {
-        fontSize: 16,
-        color: colors.text.secondary,
-        marginTop: 8,
+        fontSize: 14,
+        color: colors.text.muted,
+        marginTop: 10,
         textAlign: 'center',
-        fontFamily: 'Inter',
+        fontFamily: 'Inter-Medium',
+        letterSpacing: 2,
+        textTransform: 'uppercase',
     },
     progressContainer: {
         position: 'absolute',
         bottom: 80,
-        left: 80,
-        right: 80,
+        left: 60,
+        right: 60,
     },
     progressTrack: {
-        height: 2,
-        backgroundColor: colors.obsidian[600],
+        height: 1.5,
+        backgroundColor: 'rgba(255,255,255,0.06)',
         borderRadius: 1,
         overflow: 'hidden',
     },
