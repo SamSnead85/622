@@ -421,6 +421,7 @@ export default function CommunityDetailScreen() {
     const [showChat, setShowChat] = useState(false);
     const chatListRef = useRef<FlatList>(null);
     const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // ── Moderation State ──────────────────────────────────
     const [showModPanel, setShowModPanel] = useState(false);
@@ -641,7 +642,8 @@ export default function CommunityDetailScreen() {
             );
             const msg = data.message || data;
             setChatMessages((prev) => [...prev, msg]);
-            setTimeout(() => {
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+            scrollTimeoutRef.current = setTimeout(() => {
                 chatListRef.current?.scrollToEnd({ animated: true });
             }, 100);
         } catch {
@@ -667,7 +669,8 @@ export default function CommunityDetailScreen() {
                         if (prev.some((m) => m.id === msg.id)) return prev;
                         return [...prev, msg];
                     });
-                    setTimeout(() => {
+                    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+                    scrollTimeoutRef.current = setTimeout(() => {
                         chatListRef.current?.scrollToEnd({ animated: true });
                     }, 100);
                 }
@@ -710,12 +713,20 @@ export default function CommunityDetailScreen() {
         [communityId],
     );
 
-    // Cleanup typing timer
+    // Cleanup typing and scroll timers on unmount
     useEffect(() => {
         return () => {
             if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
         };
     }, []);
+
+    const renderChatItem = useCallback(
+        ({ item }: { item: ChatMessage }) => (
+            <ChatBubble message={item} isMine={item.senderId === currentUser?.id} />
+        ),
+        [currentUser?.id],
+    );
 
     // ── Filtered posts ──────────────────────────────
     const filteredPosts = useMemo(() => {
@@ -1007,12 +1018,7 @@ export default function CommunityDetailScreen() {
                         ref={chatListRef}
                         data={chatMessages}
                         keyExtractor={(item) => item.id}
-                        renderItem={({ item }) => (
-                            <ChatBubble
-                                message={item}
-                                isMine={item.senderId === currentUser?.id}
-                            />
-                        )}
+                        renderItem={renderChatItem}
                         contentContainerStyle={styles.chatListContent}
                         showsVerticalScrollIndicator={false}
                         ListEmptyComponent={

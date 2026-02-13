@@ -219,6 +219,8 @@ export default function StreamViewerScreen() {
     const chatListRef = useRef<FlatList>(null);
     const controlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const reactionIdRef = useRef(0);
+    const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const floatingReactionTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
     // ---- Video Player ----
     const player = useVideoPlayer(stream?.playbackUrl || '', (p) => {
@@ -432,7 +434,8 @@ export default function StreamViewerScreen() {
 
             // Burst of reactions
             for (let i = 0; i < 5; i++) {
-                setTimeout(() => addFloatingReaction(gift?.emoji || '🎁'), i * 100);
+                const id = setTimeout(() => addFloatingReaction(gift?.emoji || '🎁'), i * 100);
+                floatingReactionTimeoutsRef.current.push(id);
             }
         },
         [id, user, addFloatingReaction],
@@ -460,11 +463,25 @@ export default function StreamViewerScreen() {
     // ---- Auto-scroll chat ----
     useEffect(() => {
         if (chatMessages.length > 0) {
-            setTimeout(() => {
+            scrollTimeoutRef.current = setTimeout(() => {
                 chatListRef.current?.scrollToEnd({ animated: true });
             }, 100);
         }
+        return () => {
+            if (scrollTimeoutRef.current) {
+                clearTimeout(scrollTimeoutRef.current);
+                scrollTimeoutRef.current = null;
+            }
+        };
     }, [chatMessages.length]);
+
+    // ---- Cleanup floating reaction timeouts on unmount ----
+    useEffect(() => {
+        return () => {
+            floatingReactionTimeoutsRef.current.forEach((id) => clearTimeout(id));
+            floatingReactionTimeoutsRef.current = [];
+        };
+    }, []);
 
     // ---- Loading state ----
     if (isLoading) {

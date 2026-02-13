@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import {
     View,
     Text,
@@ -88,7 +88,7 @@ function getCoverGradient(community: Community): [string, string] {
 // Community Card (Grid Item)
 // ============================================
 
-function CommunityCard({ community, onPress, onJoin }: {
+const CommunityCard = memo(function CommunityCard({ community, onPress, onJoin }: {
     community: Community;
     onPress: () => void;
     onJoin?: () => void;
@@ -200,7 +200,7 @@ function CommunityCard({ community, onPress, onJoin }: {
             </View>
         </TouchableOpacity>
     );
-}
+});
 
 // ============================================
 // Category Chips
