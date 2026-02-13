@@ -46,6 +46,8 @@ interface SettingRowProps {
 }
 
 function SettingRow({ icon, label, description, onPress, rightElement, danger, toggle }: SettingRowProps) {
+    const { colors: c } = useTheme();
+
     const handlePress = () => {
         if (toggle) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -58,7 +60,7 @@ function SettingRow({ icon, label, description, onPress, rightElement, danger, t
 
     return (
         <TouchableOpacity
-            style={[styles.settingRow, danger && styles.settingRowDanger]}
+            style={[styles.settingRow, { borderBottomColor: c.border.subtle }, danger && styles.settingRowDanger]}
             onPress={handlePress}
             activeOpacity={onPress || toggle ? 0.7 : 1}
             disabled={!onPress && !toggle}
@@ -66,16 +68,16 @@ function SettingRow({ icon, label, description, onPress, rightElement, danger, t
             accessibilityLabel={`${label}${description ? `, ${description}` : ''}`}
             accessibilityState={toggle ? { checked: toggle.value } : undefined}
         >
-            <View style={[styles.settingIcon, danger && styles.settingIconDanger]}>
+            <View style={[styles.settingIcon, { backgroundColor: c.surface.glassHover }, danger && styles.settingIconDanger]}>
                 <Ionicons
                     name={icon}
                     size={20}
-                    color={danger ? colors.coral[500] : colors.gold[500]}
+                    color={danger ? colors.coral[500] : c.gold[500]}
                 />
             </View>
             <View style={styles.settingContent}>
-                <Text style={[styles.settingLabel, danger && styles.settingLabelDanger]}>{label}</Text>
-                {description && <Text style={[styles.settingDescription, danger && styles.settingDescriptionDanger]}>{description}</Text>}
+                <Text style={[styles.settingLabel, { color: c.text.primary }, danger && styles.settingLabelDanger]}>{label}</Text>
+                {description && <Text style={[styles.settingDescription, { color: c.text.muted }, danger && styles.settingDescriptionDanger]}>{description}</Text>}
             </View>
             {toggle ? (
                 <Switch
@@ -84,11 +86,11 @@ function SettingRow({ icon, label, description, onPress, rightElement, danger, t
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         toggle.onValueChange(val);
                     }}
-                    trackColor={{ false: colors.obsidian[600], true: colors.gold[500] + '60' }}
-                    thumbColor={toggle.value ? colors.gold[500] : colors.text.muted}
+                    trackColor={{ false: c.obsidian[600], true: c.gold[500] + '60' }}
+                    thumbColor={toggle.value ? c.gold[500] : c.text.muted}
                 />
             ) : rightElement || (onPress ? (
-                <Ionicons name="chevron-forward" size={16} color={danger ? colors.coral[400] : colors.text.muted} />
+                <Ionicons name="chevron-forward" size={16} color={danger ? colors.coral[400] : c.text.muted} />
             ) : null)}
         </TouchableOpacity>
     );
@@ -96,12 +98,13 @@ function SettingRow({ icon, label, description, onPress, rightElement, danger, t
 
 // ─── Section Header Component ────────────────────────────────────────
 function SectionHeader({ title, icon }: { title: string; icon?: keyof typeof Ionicons.glyphMap }) {
+    const { colors: c } = useTheme();
     return (
         <View style={styles.sectionHeader}>
             {icon && (
-                <Ionicons name={icon} size={14} color={colors.gold[500]} style={{ marginRight: 6 }} />
+                <Ionicons name={icon} size={14} color={c.gold[500]} style={{ marginRight: 6 }} />
             )}
-            <Text style={styles.sectionTitle}>{title}</Text>
+            <Text style={[styles.sectionTitle, { color: c.text.secondary }]}>{title}</Text>
         </View>
     );
 }
@@ -436,7 +439,7 @@ export default function SettingsScreen() {
                 {/* ─── Profile Summary Card ───────────────────────── */}
                 {isSectionVisible('profile') && <Animated.View entering={stagger(0)} style={styles.section}>
                     <TouchableOpacity
-                        style={styles.profileCard}
+                        style={[styles.profileCard, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}
                         activeOpacity={0.8}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -447,27 +450,27 @@ export default function SettingsScreen() {
                     >
                         <View style={styles.profileCardInner}>
                             {user?.avatarUrl ? (
-                                <Image source={{ uri: user.avatarUrl }} style={styles.profileAvatar} placeholder={AVATAR_PLACEHOLDER.blurhash} transition={AVATAR_PLACEHOLDER.transition} cachePolicy="memory-disk" />
+                                <Image source={{ uri: user.avatarUrl }} style={[styles.profileAvatar, { borderColor: c.gold[500] }]} placeholder={AVATAR_PLACEHOLDER.blurhash} transition={AVATAR_PLACEHOLDER.transition} cachePolicy="memory-disk" />
                             ) : (
-                                <View style={[styles.profileAvatar, styles.profileAvatarPlaceholder]}>
-                                    <Ionicons name="person" size={28} color={colors.gold[500]} />
+                                <View style={[styles.profileAvatar, styles.profileAvatarPlaceholder, { borderColor: c.gold[500], backgroundColor: c.surface.goldSubtle }]}>
+                                    <Ionicons name="person" size={28} color={c.gold[500]} />
                                 </View>
                             )}
                             <View style={styles.profileInfo}>
-                                <Text style={styles.profileName} numberOfLines={1}>
+                                <Text style={[styles.profileName, { color: c.text.primary }]} numberOfLines={1}>
                                     {user?.displayName || 'Your Name'}
                                 </Text>
                                 {user?.username ? (
-                                    <Text style={styles.profileUsername} numberOfLines={1}>
+                                    <Text style={[styles.profileUsername, { color: c.gold[400] }]} numberOfLines={1}>
                                         @{user.username}
                                     </Text>
                                 ) : null}
-                                <Text style={styles.profileEmail} numberOfLines={1}>
+                                <Text style={[styles.profileEmail, { color: c.text.muted }]} numberOfLines={1}>
                                     {user?.email || 'No email set'}
                                 </Text>
                             </View>
-                            <View style={styles.profileChevron}>
-                                <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+                            <View style={[styles.profileChevron, { backgroundColor: c.surface.glassHover }]}>
+                                <Ionicons name="chevron-forward" size={18} color={c.text.muted} />
                             </View>
                         </View>
                     </TouchableOpacity>
@@ -476,7 +479,7 @@ export default function SettingsScreen() {
                 {/* ─── Appearance ──────────────────────────────────── */}
                 {isSectionVisible('appearance') && <Animated.View entering={stagger(1)} style={styles.section}>
                     <SectionHeader title="Appearance" icon="color-palette-outline" />
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
                         <View style={styles.appearanceRow}>
                             {([
                                 { key: 'light' as const, icon: 'sunny-outline' as const, label: 'Light' },
@@ -522,7 +525,7 @@ export default function SettingsScreen() {
                 {/* ─── Account ────────────────────────────────────── */}
                 {isSectionVisible('account') && <Animated.View entering={stagger(2)} style={styles.section}>
                     <SectionHeader title="Account" icon="person-circle-outline" />
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
                         <SettingRow
                             icon="create-outline"
                             label="Edit Profile"
@@ -548,9 +551,9 @@ export default function SettingsScreen() {
                                     )}
                                     <View style={styles.avatarEditBadge}>
                                         {isUploadingAvatar ? (
-                                            <ActivityIndicator size="small" color="#FFFFFF" />
+                                            <ActivityIndicator size="small" color={colors.text.primary} />
                                         ) : (
-                                            <Ionicons name="camera" size={14} color="#FFFFFF" />
+                                            <Ionicons name="camera" size={14} color={colors.text.primary} />
                                         )}
                                     </View>
                                 </TouchableOpacity>
@@ -591,7 +594,7 @@ export default function SettingsScreen() {
                                 >
                                     <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.saveProfileGradient}>
                                         {isSavingProfile ? (
-                                            <ActivityIndicator size="small" color="#FFFFFF" />
+                                            <ActivityIndicator size="small" color={colors.text.primary} />
                                         ) : (
                                             <Text style={styles.saveProfileText}>Save Profile</Text>
                                         )}
@@ -618,7 +621,7 @@ export default function SettingsScreen() {
                 {/* ─── Cultural Experience ────────────────────────── */}
                 {isSectionVisible('cultural') && <Animated.View entering={stagger(3)} style={styles.section}>
                     <SectionHeader title="Cultural Experience" icon="globe-outline" />
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
                         <View style={styles.settingRowFlat}>
                             <View style={styles.settingIcon}>
                                 <Ionicons name="sparkles-outline" size={20} color={colors.gold[500]} />
@@ -660,7 +663,7 @@ export default function SettingsScreen() {
                 {/* ─── Privacy ────────────────────────────────────── */}
                 {isSectionVisible('privacy') && <Animated.View entering={stagger(4)} style={styles.section}>
                     <SectionHeader title="Privacy" icon="shield-half-outline" />
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
                         <SettingRow
                             icon={user?.communityOptIn ? 'globe-outline' : 'lock-closed-outline'}
                             label="Community Visibility"
@@ -676,13 +679,13 @@ export default function SettingsScreen() {
                                 },
                             }}
                         />
-                        <View style={styles.privacyStatusRow}>
+                        <View style={[styles.privacyStatusRow, { backgroundColor: c.surface.glassHover, borderBottomColor: c.border.subtle }]}>
                             <Ionicons
                                 name={user?.communityOptIn ? 'eye-outline' : 'eye-off-outline'}
                                 size={14}
-                                color={user?.communityOptIn ? colors.gold[400] : colors.emerald[500]}
+                                color={user?.communityOptIn ? c.gold[400] : colors.emerald[500]}
                             />
-                            <Text style={styles.privacyStatusText}>
+                            <Text style={[styles.privacyStatusText, { color: c.text.muted }]}>
                                 {user?.communityOptIn
                                     ? 'Your profile is discoverable. Switch off to go private anytime.'
                                     : 'You are invisible to others outside your groups.'}
@@ -700,7 +703,7 @@ export default function SettingsScreen() {
                 {/* ─── Language & Data ────────────────────────────── */}
                 {isSectionVisible('language') && <Animated.View entering={stagger(5)} style={styles.section}>
                     <SectionHeader title="Language & Data" icon="language-outline" />
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
                         <SettingRow
                             icon="language-outline"
                             label="Language"
@@ -749,7 +752,7 @@ export default function SettingsScreen() {
                 {/* ─── Feed & Personalization ─────────────────────── */}
                 {isSectionVisible('feed') && <Animated.View entering={stagger(6)} style={styles.section}>
                     <SectionHeader title="Feed & Personalization" icon="color-wand-outline" />
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
                         <SettingRow
                             icon="options-outline"
                             label="Algorithm Mixer"
@@ -774,7 +777,7 @@ export default function SettingsScreen() {
                 {/* ─── Notifications ──────────────────────────────── */}
                 {isSectionVisible('notifications') && <Animated.View entering={stagger(7)} style={styles.section}>
                     <SectionHeader title="Notifications" icon="notifications-outline" />
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
                         <SettingRow
                             icon="notifications-outline"
                             label="Push Notifications"
@@ -787,7 +790,7 @@ export default function SettingsScreen() {
                 {/* ─── Privacy & Data ─────────────────────────────── */}
                 {isSectionVisible('privacydata') && <Animated.View entering={stagger(8)} style={styles.section}>
                     <SectionHeader title="Data & Storage" icon="server-outline" />
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
                         <SettingRow
                             icon="download-outline"
                             label="Export Your Data"
@@ -831,7 +834,7 @@ export default function SettingsScreen() {
                 {/* ─── About ──────────────────────────────────────── */}
                 {isSectionVisible('about') && <Animated.View entering={stagger(9)} style={styles.section}>
                     <SectionHeader title="About" icon="information-circle-outline" />
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
                         <SettingRow icon="phone-portrait-outline" label="App Version" description={appVersion} />
                         <SettingRow
                             icon="document-text-outline"
@@ -847,7 +850,7 @@ export default function SettingsScreen() {
                 </Animated.View>}
 
                 {/* ─── Danger Zone ─────────────────────────────────── */}
-                {isSectionVisible('danger') && <Animated.View entering={stagger(10)} style={styles.section}>
+                {isSectionVisible('danger') && <Animated.View entering={stagger(10)} style={[styles.section, { marginTop: spacing.xl }]}>
                     <View style={styles.dangerHeader}>
                         <Ionicons name="warning-outline" size={14} color={colors.coral[500]} style={{ marginRight: 6 }} />
                         <Text style={styles.dangerTitle}>Danger Zone</Text>
@@ -881,8 +884,8 @@ export default function SettingsScreen() {
 
                 {/* Footer */}
                 <Animated.View entering={stagger(11)} style={styles.footer}>
-                    <Text style={styles.footerText}>Made with care by 0G</Text>
-                    <Text style={styles.footerVersion}>v{appVersion}</Text>
+                    <Text style={[styles.footerText, { color: c.text.muted }]}>Made with care by 0G</Text>
+                    <Text style={[styles.footerVersion, { color: c.text.muted }]}>v{appVersion}</Text>
                 </Animated.View>
 
             </ScrollView>
@@ -930,7 +933,7 @@ export default function SettingsScreen() {
                                 disabled={isDeletingAccount || !deletePassword.trim()}
                             >
                                 {isDeletingAccount ? (
-                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                    <ActivityIndicator size="small" color={colors.text.primary} />
                                 ) : (
                                     <Text style={styles.modalButtonDeleteText}>Delete</Text>
                                 )}
@@ -999,10 +1002,10 @@ const styles = StyleSheet.create({
         marginStart: spacing.xs,
     },
     sectionTitle: {
-        fontSize: typography.fontSize.sm,
+        fontSize: 11,
         fontWeight: '700',
-        letterSpacing: -0.3,
-        color: colors.text.secondary,
+        letterSpacing: 1.2,
+        color: colors.text.muted,
         textTransform: 'uppercase',
     },
 
@@ -1018,10 +1021,21 @@ const styles = StyleSheet.create({
     // ─── Profile Summary Card ────────────────────
     profileCard: {
         backgroundColor: colors.surface.glass,
-        borderRadius: 18,
+        borderRadius: 20,
         borderWidth: 1,
         borderColor: colors.border.subtle,
         overflow: 'hidden',
+        ...Platform.select({
+            ios: {
+                shadowColor: colors.obsidian[900],
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+            },
+            android: {
+                elevation: 3,
+            },
+        }),
     },
     profileCardInner: {
         flexDirection: 'row',
@@ -1029,11 +1043,22 @@ const styles = StyleSheet.create({
         padding: spacing.lg,
     },
     profileAvatar: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        borderWidth: 2,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        borderWidth: 2.5,
         borderColor: colors.gold[500],
+        ...Platform.select({
+            ios: {
+                shadowColor: colors.gold[500],
+                shadowOffset: { width: 0, height: 3 },
+                shadowOpacity: 0.35,
+                shadowRadius: 10,
+            },
+            android: {
+                elevation: 8,
+            },
+        }),
     },
     profileAvatarPlaceholder: {
         backgroundColor: colors.surface.goldSubtle,
@@ -1046,8 +1071,10 @@ const styles = StyleSheet.create({
     },
     profileName: {
         fontSize: typography.fontSize.lg,
-        fontWeight: '700',
+        fontWeight: '800',
         color: colors.text.primary,
+        letterSpacing: -0.4,
+        fontFamily: 'Inter-Bold',
     },
     profileUsername: {
         fontSize: typography.fontSize.sm,
@@ -1073,8 +1100,10 @@ const styles = StyleSheet.create({
     settingRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: spacing.md,
-        borderBottomWidth: 1,
+        minHeight: 54,
+        paddingVertical: 14,
+        paddingHorizontal: spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border.subtle,
     },
     settingRowDanger: {
@@ -1083,8 +1112,10 @@ const styles = StyleSheet.create({
     settingRowFlat: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: spacing.md,
-        borderBottomWidth: 1,
+        minHeight: 54,
+        paddingVertical: 14,
+        paddingHorizontal: spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border.subtle,
     },
     settingIcon: {
@@ -1294,7 +1325,7 @@ const styles = StyleSheet.create({
     saveProfileText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.primary,
     },
 
     // ─── Language Picker ─────────────────────────
@@ -1345,20 +1376,22 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: spacing.sm,
         marginStart: spacing.xs,
+        marginTop: spacing.md,
     },
     dangerTitle: {
-        fontSize: typography.fontSize.xs,
+        fontSize: 11,
         fontWeight: '700',
-        color: colors.coral[500],
+        color: colors.coral[400],
         textTransform: 'uppercase',
-        letterSpacing: 1.2,
+        letterSpacing: 1.4,
     },
     dangerCard: {
         backgroundColor: colors.coral[500] + '0A',
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: colors.coral[500] + '26',
+        borderColor: colors.coral[500] + '30',
         overflow: 'hidden',
+        marginTop: spacing.xs,
     },
     dangerDivider: {
         height: 1,
@@ -1473,6 +1506,6 @@ const styles = StyleSheet.create({
     modalButtonDeleteText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.primary,
     },
 });

@@ -43,7 +43,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_HEIGHT = 220;
 const AVATAR_SIZE = 108;
 const AVATAR_RING_SIZE = AVATAR_SIZE + 8;
-const POST_GAP = 2;
+const POST_GAP = 3;
 const POST_SIZE = (SCREEN_WIDTH - POST_GAP * 2) / 3;
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<Post>);
@@ -190,7 +190,7 @@ const ProfileError = memo(({ message, onRetry }: { message: string; onRetry: () 
             }}
             activeOpacity={0.8}
         >
-            <Ionicons name="refresh" size={18} color="#FFFFFF" />
+            <Ionicons name="refresh" size={18} color={colors.text.primary} />
             <Text style={styles.retryButtonText}>Try Again</Text>
         </TouchableOpacity>
     </View>
@@ -480,7 +480,7 @@ export default function ProfileScreen() {
                 >
                     <View style={styles.nameRow}>
                         <View style={styles.nameShimmerWrap}>
-                            <Text style={styles.displayName} accessibilityRole="header">
+                            <Text style={[styles.displayName, { color: c.text.primary }]} accessibilityRole="header">
                                 {user.displayName || user.username || 'User'}
                             </Text>
                             {user.isVerified && (
@@ -503,7 +503,7 @@ export default function ProfileScreen() {
                             />
                         )}
                     </View>
-                    <Text style={styles.username}>@{user.username || 'unknown'}</Text>
+                    <Text style={[styles.username, { color: c.text.muted }]}>@{user.username || 'unknown'}</Text>
                 </Animated.View>
 
                 {/* Bio */}
@@ -512,7 +512,7 @@ export default function ProfileScreen() {
                         entering={FadeInDown.delay(240).duration(400).springify().damping(18)}
                         style={styles.bioSection}
                     >
-                        <Text style={styles.bio}>{user.bio}</Text>
+                        <Text style={[styles.bio, { color: c.text.secondary }]}>{user.bio}</Text>
                         <TouchableOpacity
                             style={styles.bioEditBtn}
                             onPress={() => {
@@ -878,7 +878,7 @@ const styles = StyleSheet.create({
     retryButtonText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.primary,
     },
 
     // ── Floating Header ──────────────────────────────────
@@ -916,10 +916,14 @@ const styles = StyleSheet.create({
         height: COVER_HEIGHT,
         position: 'relative',
         overflow: 'hidden',
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
     },
     coverImageWrap: {
         ...StyleSheet.absoluteFillObject,
         overflow: 'hidden',
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
     },
     coverImage: {
         width: '100%',
@@ -931,6 +935,9 @@ const styles = StyleSheet.create({
     coverGradientOverlay: {
         ...StyleSheet.absoluteFillObject,
         zIndex: 1,
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        overflow: 'hidden',
     },
     coverFade: {
         position: 'absolute',
@@ -939,6 +946,8 @@ const styles = StyleSheet.create({
         right: 0,
         height: COVER_HEIGHT * 0.75,
         zIndex: 2,
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
     },
 
     // ── Profile Content ──────────────────────────────────
@@ -964,12 +973,12 @@ const styles = StyleSheet.create({
         ...Platform.select({
             ios: {
                 shadowColor: colors.gold[500],
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.5,
-                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.55,
+                shadowRadius: 20,
             },
             android: {
-                elevation: 8,
+                elevation: 12,
             },
         }),
     },
@@ -983,18 +992,21 @@ const styles = StyleSheet.create({
     },
     avatarGlow: {
         position: 'absolute',
-        top: -8,
-        left: -8,
-        right: -8,
-        bottom: -8,
-        borderRadius: (AVATAR_RING_SIZE + 16) / 2,
+        top: -10,
+        left: -10,
+        right: -10,
+        bottom: -10,
+        borderRadius: (AVATAR_RING_SIZE + 20) / 2,
         backgroundColor: 'transparent',
         ...Platform.select({
             ios: {
-                shadowColor: colors.gold[500],
+                shadowColor: colors.gold[400],
                 shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.3,
-                shadowRadius: 20,
+                shadowOpacity: 0.35,
+                shadowRadius: 24,
+            },
+            android: {
+                elevation: 6,
             },
         }),
     },
@@ -1019,10 +1031,10 @@ const styles = StyleSheet.create({
         marginStart: 6,
     },
     displayName: {
-        fontSize: typography.fontSize['3xl'],
-        fontWeight: '700',
+        fontSize: 26,
+        fontWeight: '800',
         color: colors.text.primary,
-        letterSpacing: typography.letterSpacing.tight,
+        letterSpacing: -0.5,
         fontFamily: 'Inter-Bold',
     },
     username: {
@@ -1108,19 +1120,19 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
     },
     statValue: {
-        fontSize: typography.fontSize['3xl'],
+        fontSize: 24,
         fontWeight: '800',
         color: colors.gold[400],
         fontFamily: 'Inter-Bold',
-        letterSpacing: typography.letterSpacing.tight,
+        letterSpacing: -0.5,
     },
     statLabel: {
-        fontSize: typography.fontSize.xs,
+        fontSize: 11,
         color: colors.text.muted,
-        marginTop: 4,
+        marginTop: 5,
         fontWeight: '600',
         textTransform: 'uppercase',
-        letterSpacing: 1,
+        letterSpacing: 0.8,
     },
     statDivider: {
         width: 1,
@@ -1141,10 +1153,21 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingVertical: spacing.md + 2,
         borderRadius: 14,
-        borderWidth: 1.5,
-        borderColor: colors.gold[500],
-        backgroundColor: colors.surface.goldFaded,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '40',
+        backgroundColor: colors.surface.glass,
         gap: spacing.sm,
+        ...Platform.select({
+            ios: {
+                shadowColor: colors.gold[500],
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.12,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 2,
+            },
+        }),
     },
     editButtonText: {
         fontSize: typography.fontSize.base,
@@ -1227,10 +1250,12 @@ const styles = StyleSheet.create({
         height: POST_SIZE,
         overflow: 'hidden',
         backgroundColor: colors.obsidian[700],
+        borderRadius: 4,
     },
     postImage: {
         width: '100%',
         height: '100%',
+        borderRadius: 4,
     },
     textPostBg: {
         padding: spacing.md,
