@@ -9,7 +9,7 @@ import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, LinearGradient as SvgGradient, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Defs, LinearGradient as SvgGradient, Stop, Text as SvgText, Line } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -27,17 +27,14 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // No effects, no glows, no animations. Just the type.
 // ============================================
 function LogoMark({ colors, isDark }: { colors: any; isDark: boolean }) {
-    // Metallic gradient: light highlight at top, deep tone at bottom,
-    // with a bright mid-band that mimics light catching brushed metal
     const highlight = isDark ? '#FFFFFF' : colors.gold[300];
     const mid = colors.gold[400];
     const base = colors.gold[500];
     const deep = colors.gold[600];
 
     return (
-        <Svg width={140} height={88} viewBox="0 0 140 88">
+        <Svg width={150} height={90} viewBox="0 0 150 90">
             <Defs>
-                {/* Vertical metallic gradient — top-lit like polished chrome */}
                 <SvgGradient id="metalFill" x1="0%" y1="0%" x2="0%" y2="100%">
                     <Stop offset="0%" stopColor={highlight} stopOpacity={isDark ? '0.9' : '1'} />
                     <Stop offset="35%" stopColor={mid} stopOpacity="1" />
@@ -45,17 +42,44 @@ function LogoMark({ colors, isDark }: { colors: any; isDark: boolean }) {
                     <Stop offset="100%" stopColor={deep} stopOpacity="1" />
                 </SvgGradient>
             </Defs>
+
+            {/* "0" — rendered separately so we can scale it to match the G */}
             <SvgText
-                x="70"
-                y="70"
+                x="42"
+                y="72"
                 textAnchor="middle"
                 fontFamily="Inter-Bold"
-                fontSize="82"
+                fontSize="84"
                 fontWeight="900"
-                letterSpacing={-4}
+                letterSpacing={-2}
                 fill="url(#metalFill)"
             >
-                0G
+                0
+            </SvgText>
+
+            {/* Slash through the zero — diagonal, same gradient */}
+            <Line
+                x1="24"
+                y1="68"
+                x2="60"
+                y2="16"
+                stroke="url(#metalFill)"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+            />
+
+            {/* "G" — positioned tight next to the slashed zero */}
+            <SvgText
+                x="106"
+                y="72"
+                textAnchor="middle"
+                fontFamily="Inter-Bold"
+                fontSize="84"
+                fontWeight="900"
+                letterSpacing={-2}
+                fill="url(#metalFill)"
+            >
+                G
             </SvgText>
         </Svg>
     );
