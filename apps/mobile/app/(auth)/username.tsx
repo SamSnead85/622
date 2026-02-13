@@ -52,7 +52,7 @@ const reqStyles = StyleSheet.create({
 export default function UsernameScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { colors: c } = useTheme();
+    const { colors: c, isDark } = useTheme();
     const refreshUser = useAuthStore((s) => s.refreshUser);
 
     const [username, setUsername] = useState('');
@@ -130,7 +130,11 @@ export default function UsernameScreen() {
     }, [refreshUser, router]);
 
     return (
-        <View style={[styles.container, { backgroundColor: c.background }]}>
+        <LinearGradient
+            colors={[c.background, isDark ? '#0F0F18' : '#F8F9FC', c.background]}
+            locations={[0, 0.5, 1]}
+            style={styles.container}
+        >
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
@@ -266,7 +270,7 @@ export default function UsernameScreen() {
                     </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </View>
+        </LinearGradient>
     );
 }
 
@@ -354,6 +358,11 @@ const styles = StyleSheet.create({
     continueButton: {
         borderRadius: 14,
         overflow: 'hidden',
+        shadowColor: c.gold[500],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 4,
     },
     continueGradient: {
         alignItems: 'center',

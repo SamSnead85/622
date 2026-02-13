@@ -27,7 +27,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 const OTP_LENGTH = 6;
 
 export default function VerifyEmailScreen() {
-    const { colors: c } = useTheme();
+    const { colors: c, isDark } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { user } = useAuthStore();
@@ -155,7 +155,11 @@ export default function VerifyEmailScreen() {
     }, [code, isVerifying, handleVerify]);
 
     return (
-        <View style={[styles.container, { backgroundColor: c.background, paddingTop: insets.top + 40, paddingBottom: insets.bottom + 20 }]}>
+        <LinearGradient
+            colors={[c.background, isDark ? '#0F0F18' : '#F8F9FC', c.background]}
+            locations={[0, 0.5, 1]}
+            style={[styles.container, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 20 }]}
+        >
             {/* Shield icon */}
             <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.iconWrap}>
                 <View style={[styles.iconCircle, { backgroundColor: c.emerald[500] + '15' }]}>
@@ -278,7 +282,7 @@ export default function VerifyEmailScreen() {
                     You'll need to verify before posting
                 </Text>
             </TouchableOpacity>
-        </View>
+        </LinearGradient>
     );
 }
 
@@ -353,6 +357,11 @@ const styles = StyleSheet.create({
     verifyButton: {
         borderRadius: 14,
         overflow: 'hidden',
+        shadowColor: c.gold[500],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 4,
     },
     verifyGradient: {
         alignItems: 'center',

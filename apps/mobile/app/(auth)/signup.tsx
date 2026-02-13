@@ -155,7 +155,7 @@ function AnimatedField({
             : interpolateColor(
                 isFocused.value,
                 [0, 1],
-                [c.border.subtle, c.gold[500] + '60']
+                [c.border.subtle, c.gold[500] + '80']
             ),
     }));
 
@@ -450,7 +450,11 @@ export default function SignupScreen() {
     }, [validateForm, signup, email, password, displayName, router, buttonScale]);
 
     return (
-        <View style={[styles.container, { backgroundColor: c.background }]}>
+        <LinearGradient
+            colors={[c.background, isDark ? '#0F0F18' : '#F8F9FC', c.background]}
+            locations={[0, 0.5, 1]}
+            style={styles.container}
+        >
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
@@ -700,7 +704,7 @@ export default function SignupScreen() {
                     </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </View>
+        </LinearGradient>
     );
 }
 
@@ -788,6 +792,11 @@ const styles = StyleSheet.create({
     // ---- Submit — gold gradient, matches login ----
     submitButton: {
         marginTop: spacing.md,
+        shadowColor: c.gold[500],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 4,
     },
     submitGradient: {
         flexDirection: 'row',

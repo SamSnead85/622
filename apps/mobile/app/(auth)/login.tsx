@@ -118,12 +118,12 @@ export default function LoginScreen() {
     const emailBorderStyle = useAnimatedStyle(() => ({
         borderColor: errors.email
             ? c.coral[500]
-            : interpolateColor(emailFocused.value, [0, 1], [c.border.subtle, c.gold[500] + '60']),
+            : interpolateColor(emailFocused.value, [0, 1], [c.border.subtle, c.gold[500] + '80']),
     }));
     const passBorderStyle = useAnimatedStyle(() => ({
         borderColor: errors.password
             ? c.coral[500]
-            : interpolateColor(passFocused.value, [0, 1], [c.border.subtle, c.gold[500] + '60']),
+            : interpolateColor(passFocused.value, [0, 1], [c.border.subtle, c.gold[500] + '80']),
     }));
 
     // ---- Check biometric availability ----
@@ -368,7 +368,11 @@ export default function LoginScreen() {
     }, [email, resetSending]);
 
     return (
-        <View style={[styles.container, { backgroundColor: c.background }]}>
+        <LinearGradient
+            colors={[c.background, isDark ? '#0F0F18' : '#F8F9FC', c.background]}
+            locations={[0, 0.5, 1]}
+            style={styles.container}
+        >
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
@@ -600,7 +604,7 @@ export default function LoginScreen() {
                     </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </View>
+        </LinearGradient>
     );
 }
 
@@ -751,6 +755,11 @@ const styles = StyleSheet.create({
     // Submit button
     submitBtn: {
         marginBottom: spacing.sm,
+        shadowColor: c.gold[500],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 4,
     },
     submitGradient: {
         flexDirection: 'row',
@@ -762,7 +771,7 @@ const styles = StyleSheet.create({
     submitText: {
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
-        color: '#000000',
+        color: '#FFFFFF',
         fontFamily: 'Inter-Bold',
     },
     loadingRow: {

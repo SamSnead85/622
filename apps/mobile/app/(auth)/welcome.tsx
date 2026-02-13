@@ -22,7 +22,7 @@ import { BrandLogo } from '../../components';
 export default function WelcomeScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
 
     const handleCreateAccount = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -35,13 +35,14 @@ export default function WelcomeScreen() {
     }, [router]);
 
     return (
-        <View
+        <LinearGradient
+            colors={[colors.background, isDark ? '#0F0F18' : '#F8F9FC', colors.background]}
+            locations={[0, 0.5, 1]}
             style={[
                 styles.container,
                 {
                     paddingTop: insets.top,
                     paddingBottom: insets.bottom,
-                    backgroundColor: colors.background,
                 },
             ]}
         >
@@ -140,7 +141,7 @@ export default function WelcomeScreen() {
                     </Text>
                 </Pressable>
             </Animated.View>
-        </View>
+        </LinearGradient>
     );
 }
 
@@ -188,6 +189,11 @@ const styles = StyleSheet.create({
     primaryButton: {
         overflow: 'hidden',
         borderRadius: 14,
+        shadowColor: colors.gold[500],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 4,
     },
     primaryGradient: {
         alignItems: 'center',
