@@ -208,7 +208,7 @@ function ReadReceipt({ status }: { status?: string }) {
                 <Ionicons
                     name="alert-circle"
                     size={13}
-                    color="#EF4444"
+                    color={colors.coral[500]}
                 />
             );
         default:
@@ -344,7 +344,7 @@ const MessageBubble = memo(function MessageBubble({
                                 accessibilityRole="button"
                                 accessibilityLabel="Retry sending message"
                             >
-                                <Ionicons name="refresh-outline" size={12} color="#EF4444" />
+                                <Ionicons name="refresh-outline" size={12} color={colors.coral[500]} />
                                 <Text style={styles.retryText}>Tap to retry</Text>
                             </TouchableOpacity>
                         ) : (
@@ -1353,13 +1353,13 @@ export default function ChatScreen() {
                                     {(isSending || isUploading) ? (
                                         <ActivityIndicator
                                             size="small"
-                                            color="#FFFFFF"
+                                            color={colors.text.inverse}
                                         />
                                     ) : (
                                         <Ionicons
                                             name="arrow-up"
                                             size={18}
-                                            color="#FFFFFF"
+                                            color={colors.text.inverse}
                                         />
                                     )}
                                 </LinearGradient>
@@ -1475,9 +1475,11 @@ const styles = StyleSheet.create({
         borderBottomRightRadius: 6,
     },
     otherBubble: {
-        backgroundColor: colors.surface.glassHover,
+        backgroundColor: colors.surface.glassActive,
         borderBottomLeftRadius: 6,
         minWidth: 60,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
     },
     otherBubbleTail: {
         borderBottomLeftRadius: 6,
@@ -1489,7 +1491,7 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
         lineHeight: 22,
     },
-    ownText: { color: '#FFFFFF', fontWeight: '500' },
+    ownText: { color: colors.text.inverse, fontWeight: '500' },
     ownMeta: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1509,9 +1511,9 @@ const styles = StyleSheet.create({
     // Failed message styles
     failedBubbleWrap: { opacity: 0.85 },
     failedBubble: {
-        backgroundColor: `${'#EF4444'}20`,
+        backgroundColor: colors.surface.coralSubtle,
         borderWidth: 1,
-        borderColor: `${'#EF4444'}40`,
+        borderColor: `${colors.coral[500]}40`,
     },
     failedText: { color: colors.text.primary },
     failedMediaBubble: { opacity: 0.6 },
@@ -1523,7 +1525,7 @@ const styles = StyleSheet.create({
     },
     retryText: {
         fontSize: 11,
-        color: '#EF4444',
+        color: colors.coral[500],
         fontWeight: '600',
     },
 
@@ -1626,6 +1628,7 @@ const styles = StyleSheet.create({
         paddingTop: spacing.sm,
         borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.border.subtle,
+        backgroundColor: colors.surface.glass,
     },
     inputWrapper: {
         flexDirection: 'row',

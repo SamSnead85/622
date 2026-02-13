@@ -182,7 +182,7 @@ const SwipeableConversationItem = memo(({
                         onPress={() => handleSwipeAction('pin')}
                         accessibilityLabel={isPinned ? 'Unpin conversation' : 'Pin conversation'}
                     >
-                        <Ionicons name={isPinned ? 'pin-outline' : 'pin'} size={20} color="#fff" />
+                        <Ionicons name={isPinned ? 'pin-outline' : 'pin'} size={20} color={colors.text.inverse} />
                         <Text style={styles.swipeActionLabel}>{isPinned ? 'Unpin' : 'Pin'}</Text>
                     </TouchableOpacity>
                 </Animated.View>
@@ -194,7 +194,7 @@ const SwipeableConversationItem = memo(({
                         onPress={() => handleSwipeAction('archive')}
                         accessibilityLabel="Archive conversation"
                     >
-                        <Ionicons name="archive-outline" size={20} color="#fff" />
+                        <Ionicons name="archive-outline" size={20} color={colors.text.inverse} />
                         <Text style={styles.swipeActionLabel}>Archive</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -202,7 +202,7 @@ const SwipeableConversationItem = memo(({
                         onPress={() => handleSwipeAction('delete')}
                         accessibilityLabel="Delete conversation"
                     >
-                        <Ionicons name="trash-outline" size={20} color="#fff" />
+                        <Ionicons name="trash-outline" size={20} color={colors.text.inverse} />
                         <Text style={styles.swipeActionLabel}>Delete</Text>
                     </TouchableOpacity>
                 </Animated.View>
@@ -660,7 +660,7 @@ export default function MessagesScreen() {
                         accessibilityLabel="Compose new message"
                         accessibilityHint="Opens search to find someone to message"
                     >
-                        <Ionicons name="create-outline" size={20} color="#FFFFFF" />
+                        <Ionicons name="create-outline" size={20} color={colors.text.inverse} />
                     </TouchableOpacity>
                 }
                 noBorder
@@ -830,7 +830,7 @@ export default function MessagesScreen() {
                                     }}
                                     activeOpacity={0.8}
                                 >
-                                    <Ionicons name="add" size={18} color="#FFFFFF" />
+                                    <Ionicons name="add" size={18} color={colors.text.inverse} />
                                     <Text style={styles.elegantEmptyButtonText}>New Conversation</Text>
                                 </TouchableOpacity>
                             </View>
@@ -859,7 +859,7 @@ export default function MessagesScreen() {
                         colors={[colors.gold[400], colors.gold[600]]}
                         style={styles.fabGradient}
                     >
-                        <Ionicons name="add" size={28} color="#FFFFFF" />
+                        <Ionicons name="add" size={28} color={colors.text.inverse} />
                     </LinearGradient>
                 </TouchableOpacity>
             </Animated.View>
@@ -904,8 +904,8 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
     },
     searchContainerFocused: {
-        borderColor: `${colors.gold[500]}60`,
-        backgroundColor: `${colors.surface.glass}`,
+        borderColor: `${colors.gold[500]}40`,
+        backgroundColor: colors.surface.glassHover,
     },
     searchInput: {
         flex: 1,
@@ -956,7 +956,7 @@ const styles = StyleSheet.create({
     filterTabBadgeText: {
         fontSize: 9,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 
     // Online Now strip
@@ -1060,7 +1060,7 @@ const styles = StyleSheet.create({
     swipeActionLabel: {
         fontSize: 10,
         fontWeight: '600',
-        color: '#fff',
+        color: colors.text.inverse,
     },
 
     // Pin indicator
@@ -1179,7 +1179,7 @@ const styles = StyleSheet.create({
     unreadCount: {
         fontSize: 11,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
     chevron: {
         marginStart: spacing.xs,
@@ -1212,10 +1212,11 @@ const styles = StyleSheet.create({
 
     // Elegant empty state
     elegantEmpty: {
+        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 100,
-        paddingHorizontal: spacing.xl,
+        paddingTop: 80,
+        paddingHorizontal: spacing.xl * 1.5,
     },
     elegantEmptyGlow: {
         position: 'absolute',
@@ -1247,7 +1248,7 @@ const styles = StyleSheet.create({
         color: colors.text.muted,
         textAlign: 'center',
         lineHeight: 22,
-        marginBottom: spacing.xl,
+        marginBottom: spacing.xl * 1.5,
     },
     elegantEmptyButton: {
         flexDirection: 'row',
@@ -1261,6 +1262,6 @@ const styles = StyleSheet.create({
     elegantEmptyButtonText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 });
