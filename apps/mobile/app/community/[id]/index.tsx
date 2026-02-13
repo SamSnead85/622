@@ -1064,7 +1064,7 @@ export default function CommunityDetailScreen() {
                         accessibilityLabel="Send message"
                     >
                         {chatSending ? (
-                            <ActivityIndicator size="small" color="#FFFFFF" />
+                            <ActivityIndicator size="small" color={colors.text.primary} />
                         ) : (
                             <Ionicons
                                 name="send"
@@ -1572,7 +1572,7 @@ export default function CommunityDetailScreen() {
                                         <Ionicons
                                             name="arrow-forward"
                                             size={14}
-                                            color="#FFFFFF"
+                                            color={colors.text.primary}
                                         />
                                     </TouchableOpacity>
                                     {community.websiteUrl && (
@@ -1758,7 +1758,7 @@ export default function CommunityDetailScreen() {
                                         <Ionicons
                                             name="add-circle-outline"
                                             size={18}
-                                            color="#FFFFFF"
+                                            color={colors.text.primary}
                                         />
                                         <Text style={styles.joinButtonText}>
                                             Join Community
@@ -2172,9 +2172,15 @@ const styles = StyleSheet.create({
     },
 
     // ── Parallax Cover ──────────────────
-    coverContainer: { height: COVER_HEIGHT, position: 'relative', overflow: 'hidden' },
+    coverContainer: {
+        height: COVER_HEIGHT,
+        position: 'relative',
+        overflow: 'hidden',
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+    },
     coverImage: { width: '100%', height: '100%' },
-    coverGradient: { ...StyleSheet.absoluteFillObject },
+    coverGradient: { ...StyleSheet.absoluteFillObject, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
 
     // ── Content ──────────────────
     content: { paddingHorizontal: spacing.xl },
@@ -2189,6 +2195,11 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
         overflow: 'hidden',
         backgroundColor: colors.obsidian[800],
+        shadowColor: colors.gold[500],
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 4,
     },
     avatar: { width: '100%', height: '100%' },
     avatarFallback: {
@@ -2204,7 +2215,7 @@ const styles = StyleSheet.create({
     },
     communityName: {
         fontSize: 28,
-        fontWeight: '700',
+        fontWeight: '800',
         color: colors.text.primary,
         letterSpacing: -0.5,
         textAlign: 'center',
@@ -2216,10 +2227,11 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: spacing.xs,
         fontStyle: 'italic',
+        letterSpacing: 0.2,
     },
     communityDescription: {
         fontSize: typography.fontSize.base,
-        color: colors.text.secondary,
+        color: colors.text.muted,
         textAlign: 'center',
         marginTop: spacing.sm,
         lineHeight: 22,
@@ -2236,6 +2248,11 @@ const styles = StyleSheet.create({
         marginVertical: spacing.lg,
         borderWidth: 1,
         borderColor: colors.border.subtle,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        elevation: 2,
     },
     stat: { flex: 1, alignItems: 'center', gap: 4 },
     statValue: {
@@ -2250,9 +2267,18 @@ const styles = StyleSheet.create({
     statDivider: { width: 1, height: 40, backgroundColor: colors.border.subtle },
 
     // ── Join / Leave Button ──────────────────
-    joinButton: { borderRadius: 12, overflow: 'hidden', marginBottom: spacing.lg },
+    joinButton: {
+        borderRadius: 14,
+        overflow: 'hidden',
+        marginBottom: spacing.lg,
+        shadowColor: colors.gold[500],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
+    },
     joinGradient: {
-        paddingVertical: spacing.md,
+        paddingVertical: spacing.md + 2,
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
@@ -2261,23 +2287,30 @@ const styles = StyleSheet.create({
     joinButtonText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.primary,
+        letterSpacing: 0.3,
     },
     joinLoadingWrap: {
-        paddingVertical: spacing.md,
+        paddingVertical: spacing.md + 2,
         alignItems: 'center',
     },
     leaveButton: {
+        backgroundColor: colors.surface.glass,
         borderWidth: 1,
-        borderColor: colors.border.strong,
+        borderColor: colors.border.subtle,
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 1,
     },
     leaveInner: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.sm,
-        paddingVertical: spacing.md,
+        paddingVertical: spacing.md + 2,
     },
     leaveButtonText: {
         fontSize: typography.fontSize.base,
@@ -2382,20 +2415,23 @@ const styles = StyleSheet.create({
     tabBar: {
         flexDirection: 'row',
         marginBottom: spacing.lg,
-        borderRadius: 12,
+        borderRadius: 14,
         backgroundColor: colors.surface.glass,
         borderWidth: 1,
         borderColor: colors.border.subtle,
         overflow: 'hidden',
         position: 'relative',
+        padding: 3,
     },
     tabIndicator: {
         position: 'absolute',
-        top: 0,
+        top: 3,
         left: 0,
-        bottom: 0,
+        bottom: 3,
         backgroundColor: colors.surface.goldSubtle,
-        borderRadius: 12,
+        borderRadius: 11,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '30',
     },
     tabItem: {
         flex: 1,
@@ -2404,6 +2440,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 4,
         paddingVertical: spacing.md,
+        zIndex: 1,
     },
     tabLabel: {
         fontSize: typography.fontSize.xs,
@@ -2873,7 +2910,7 @@ const styles = StyleSheet.create({
     claimBtnText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.primary,
         fontFamily: 'Inter-Bold',
     },
     visitWebsiteBtn: {

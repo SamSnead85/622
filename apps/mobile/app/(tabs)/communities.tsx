@@ -644,7 +644,7 @@ export default function CommunitiesScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="Create community"
                     >
-                        <Ionicons name="add" size={22} color="#FFFFFF" />
+                        <Ionicons name="add" size={22} color={colors.text.primary} />
                     </TouchableOpacity>
                 </View>
 
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.lg,
         paddingBottom: spacing.sm,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.06)',
+        borderBottomColor: colors.border.subtle,
     },
     headerRow: {
         flexDirection: 'row',
@@ -803,11 +803,11 @@ const styles = StyleSheet.create({
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.obsidian[700],
+        backgroundColor: colors.surface.glass,
         borderRadius: 12,
         paddingHorizontal: spacing.md,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: colors.border.subtle,
         marginBottom: spacing.sm,
     },
     searchIcon: {
@@ -831,22 +831,22 @@ const styles = StyleSheet.create({
     chip: {
         paddingHorizontal: spacing.lg,
         paddingVertical: spacing.sm,
-        borderRadius: 20,
-        backgroundColor: colors.obsidian[700],
+        borderRadius: 24,
+        backgroundColor: colors.surface.glass,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.06)',
+        borderColor: colors.border.subtle,
     },
     chipActive: {
         backgroundColor: colors.gold[500],
-        borderColor: colors.gold[500],
+        borderColor: colors.gold[400],
     },
     chipText: {
         fontSize: typography.fontSize.sm,
-        color: colors.text.muted,
+        color: colors.text.secondary,
         fontWeight: '500',
     },
     chipTextActive: {
-        color: '#FFFFFF',
+        color: colors.text.primary,
         fontWeight: '600',
     },
 
@@ -888,19 +888,24 @@ const styles = StyleSheet.create({
     // Card
     card: {
         width: CARD_WIDTH,
-        backgroundColor: colors.obsidian[700],
+        backgroundColor: colors.surface.glass,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: colors.border.subtle,
         overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+        elevation: 2,
     },
     cardCover: {
         width: '100%',
         height: 130,
         position: 'relative',
         overflow: 'hidden',
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
+        borderTopLeftRadius: 15,
+        borderTopRightRadius: 15,
     },
     cardCoverFade: {
         position: 'absolute',
@@ -922,10 +927,10 @@ const styles = StyleSheet.create({
         height: 36,
         borderRadius: 18,
         borderWidth: 2,
-        borderColor: colors.obsidian[700],
+        borderColor: colors.surface.glass,
     },
     cardAvatarFallback: {
-        backgroundColor: colors.obsidian[500],
+        backgroundColor: colors.surface.glassHover,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -995,12 +1000,12 @@ const styles = StyleSheet.create({
         width: 72,
         height: 72,
         borderRadius: 36,
-        backgroundColor: colors.obsidian[700],
+        backgroundColor: colors.surface.glass,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: spacing.lg,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.06)',
+        borderColor: colors.border.subtle,
     },
     emptyTitle: {
         fontSize: typography.fontSize.lg,
@@ -1033,7 +1038,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.lg,
         paddingVertical: spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.08)',
+        borderBottomColor: colors.border.subtle,
     },
     modalCancel: {
         fontSize: typography.fontSize.base,
@@ -1065,14 +1070,14 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
     },
     modalInput: {
-        backgroundColor: colors.obsidian[700],
+        backgroundColor: colors.surface.glass,
         borderRadius: 12,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm + 2,
         fontSize: typography.fontSize.base,
         color: colors.text.primary,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: colors.border.subtle,
     },
     modalTextArea: {
         minHeight: 80,
@@ -1082,11 +1087,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: spacing.lg,
-        backgroundColor: colors.obsidian[700],
+        backgroundColor: colors.surface.glass,
         borderRadius: 12,
         padding: spacing.md,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: colors.border.subtle,
     },
     switchTextWrap: {
         flex: 1,
@@ -1124,7 +1129,14 @@ const styles = StyleSheet.create({
         height: 120,
         borderRadius: 14,
         overflow: 'hidden',
-        backgroundColor: colors.obsidian[700],
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
     },
     featuredCover: {
         width: '100%',
@@ -1140,11 +1152,11 @@ const styles = StyleSheet.create({
     featuredName: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#fff',
+        color: colors.text.primary,
     },
     featuredMembers: {
         fontSize: typography.fontSize.xs,
-        color: 'rgba(255,255,255,0.7)',
+        color: colors.text.secondary,
         marginTop: 2,
     },
 });
