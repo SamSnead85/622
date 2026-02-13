@@ -22,6 +22,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import MaskedView from '@react-native-masked-view/masked-view';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -1358,7 +1359,7 @@ const checklistStyles = StyleSheet.create({
 export default function FeedScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { colors: c } = useTheme();
+    const { colors: c, isDark } = useTheme();
     const user = useAuthStore((s) => s.user);
     const flatListRef = useRef<FlatList>(null);
     const { shouldReduceData, isOffline } = useNetworkQuality();
@@ -2077,7 +2078,14 @@ export default function FeedScreen() {
                     <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Your profile">
                         <Avatar uri={user?.avatarUrl} name={user?.displayName || 'U'} customSize={34} borderColor={colors.gold[500]} />
                     </TouchableOpacity>
-                    <Text style={[styles.headerLogo, { color: c.text.primary }]}>0G</Text>
+                    <MaskedView maskElement={<Text style={styles.headerLogo}>0G</Text>}>
+                        <LinearGradient
+                            colors={isDark ? [c.gold[300], c.gold[500]] : [c.gold[600], c.gold[500]]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={{ height: 28, width: 36 }}
+                        />
+                    </MaskedView>
                     {/* Feed view pill — subtle, only if community opt-in */}
                     {user?.communityOptIn && (
                         <TouchableOpacity onPress={handleFeedViewToggle} style={[styles.feedViewPill, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]} accessibilityRole="button" accessibilityLabel={feedView === 'private' ? 'Private Feed' : 'Community Feed'}>

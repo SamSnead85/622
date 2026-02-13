@@ -26,6 +26,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
+import MaskedView from '@react-native-masked-view/masked-view';
 import Animated, {
     FadeInDown,
     FadeInUp,
@@ -35,7 +36,9 @@ import Animated, {
     withTiming,
     withSequence,
     withSpring,
+    withRepeat,
     interpolateColor,
+    Easing,
 } from 'react-native-reanimated';
 import { typography, spacing } from '@zerog/ui';
 import { BackButton } from '../../components';
@@ -279,6 +282,98 @@ const fieldStyles = StyleSheet.create({
 });
 
 // ============================================
+// Premium Logo Mark — gradient text + breathing glow
+// ============================================
+function SignupLogoMark({ colors, isDark }: { colors: any; isDark: boolean }) {
+    const glowOpacity = useSharedValue(0.4);
+    const glowScale = useSharedValue(1);
+
+    useEffect(() => {
+        glowOpacity.value = withRepeat(
+            withSequence(
+                withTiming(0.7, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+                withTiming(0.4, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+            ),
+            -1,
+            false,
+        );
+        glowScale.value = withRepeat(
+            withSequence(
+                withTiming(1.08, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+                withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+            ),
+            -1,
+            false,
+        );
+    }, [glowOpacity, glowScale]);
+
+    const glowStyle = useAnimatedStyle(() => ({
+        opacity: glowOpacity.value,
+        transform: [{ scale: glowScale.value }],
+    }));
+
+    return (
+        <View style={signupLogoStyles.container}>
+            <Animated.View style={[signupLogoStyles.outerGlow, { backgroundColor: colors.gold[500] + '0C' }, glowStyle]} />
+            <Animated.View style={[signupLogoStyles.innerGlow, { backgroundColor: colors.gold[400] + '14' }, glowStyle]} />
+            <MaskedView
+                maskElement={<Text style={signupLogoStyles.maskText}>0G</Text>}
+            >
+                <LinearGradient
+                    colors={isDark
+                        ? [colors.gold[300], colors.gold[500], colors.gold[400]]
+                        : [colors.gold[600], colors.gold[500], colors.gold[400]]
+                    }
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={signupLogoStyles.gradientFill}
+                />
+            </MaskedView>
+            <View style={[signupLogoStyles.reflectionLine, { backgroundColor: colors.gold[500] + '18' }]} />
+        </View>
+    );
+}
+
+const signupLogoStyles = StyleSheet.create({
+    container: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        height: 80,
+    },
+    outerGlow: {
+        position: 'absolute',
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+    },
+    innerGlow: {
+        position: 'absolute',
+        width: 90,
+        height: 90,
+        borderRadius: 45,
+    },
+    maskText: {
+        fontSize: 56,
+        fontWeight: '800',
+        letterSpacing: -2,
+        fontFamily: 'Inter-Bold',
+        textAlign: 'center',
+    },
+    gradientFill: {
+        height: 72,
+        width: 120,
+    },
+    reflectionLine: {
+        position: 'absolute',
+        bottom: 2,
+        width: 40,
+        height: 1.5,
+        borderRadius: 1,
+    },
+});
+
+// ============================================
 // Signup Screen
 // ============================================
 
@@ -466,10 +561,9 @@ export default function SignupScreen() {
                     {/* Back button */}
                     <BackButton style={{ alignSelf: 'flex-start', marginBottom: spacing.md }} />
 
-                    {/* 0G Logo — matches login screen */}
+                    {/* 0G Logo — gradient text + breathing glow */}
                     <Animated.View entering={FadeInDown.delay(30).duration(500).springify()} style={styles.logoArea}>
-                        <View style={[styles.logoGlow, { backgroundColor: c.gold[500] + '10' }]} />
-                        <Text style={[styles.logoText, { color: c.gold[500] }]} accessibilityLabel="Zero G">0G</Text>
+                        <SignupLogoMark colors={c} isDark={isDark} />
                     </Animated.View>
 
                     {/* Header */}
@@ -710,24 +804,10 @@ const styles = StyleSheet.create({
     keyboardView: { flex: 1 },
     scrollContent: { flexGrow: 1, paddingHorizontal: spacing.xl },
 
-    // Logo — matches login screen
+    // Logo area
     logoArea: {
         alignItems: 'center',
         marginBottom: spacing.lg,
-        position: 'relative',
-    },
-    logoGlow: {
-        position: 'absolute',
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        top: -20,
-    },
-    logoText: {
-        fontSize: 56,
-        fontWeight: '800',
-        letterSpacing: -2,
-        fontFamily: 'Inter-Bold',
     },
 
     header: { marginBottom: spacing.xl },
