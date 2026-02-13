@@ -149,13 +149,13 @@ export function GlobalMessageListener() {
                         className="fixed top-6 left-0 right-0 z-[100] flex justify-center pointer-events-none"
                     >
                         <div
-                            className="pointer-events-auto bg-[#0A0A0F]/90 backdrop-blur-xl border border-[#D4AF37]/30 rounded-2xl p-4 shadow-[0_0_30px_rgba(0,212,255,0.15)] flex items-center gap-4 cursor-pointer hover:scale-105 transition-transform w-[90%] max-w-md ring-1 ring-white/10"
+                            className="pointer-events-auto bg-[#0A0A0F]/90 backdrop-blur-xl border border-[#7C8FFF]/30 rounded-2xl p-4 shadow-[0_0_30px_rgba(0,212,255,0.15)] flex items-center gap-4 cursor-pointer hover:scale-105 transition-transform w-[90%] max-w-md ring-1 ring-white/10"
                             onClick={() => {
                                 router.push('/messages');
                                 setNotification(null);
                             }}
                         >
-                            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex-shrink-0 border-2 border-black">
+                            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#7C8FFF] to-[#6070EE] flex-shrink-0 border-2 border-black">
                                 {notification.sender.avatarUrl ? (
                                     <Image src={notification.sender.avatarUrl} alt="" fill className="object-cover" />
                                 ) : (
@@ -167,7 +167,7 @@ export function GlobalMessageListener() {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between mb-0.5">
                                     <h4 className="font-bold text-white text-sm truncate">{notification.sender.displayName}</h4>
-                                    <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider bg-[#D4AF37]/10 px-1.5 py-0.5 rounded">New Message</span>
+                                    <span className="text-[10px] font-bold text-[#7C8FFF] uppercase tracking-wider bg-[#7C8FFF]/10 px-1.5 py-0.5 rounded">New Message</span>
                                 </div>
                                 <p className="text-white/80 truncate text-sm font-medium">{notification.content}</p>
                                 <p className="text-white/40 text-xs mt-1">Tap to reply</p>

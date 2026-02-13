@@ -210,7 +210,7 @@ export default function DeveloperPortal() {
             {/* Background */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute inset-0 bg-gradient-to-b from-[#020818] via-black to-black" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[#D4AF37]/[0.03] blur-[120px] rounded-full" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[#7C8FFF]/[0.03] blur-[120px] rounded-full" />
             </div>
 
             {/* Header */}
@@ -223,7 +223,7 @@ export default function DeveloperPortal() {
                             </Link>
                             <div>
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7C8FFF] to-[#6070EE] flex items-center justify-center">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
                                     </div>
                                     <div>
@@ -251,7 +251,7 @@ export default function DeveloperPortal() {
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex items-center gap-2 px-5 py-3 rounded-t-xl text-sm font-medium transition-all border-b-2 ${
                                     activeTab === tab.id
-                                        ? 'bg-white/[0.05] text-white border-[#D4AF37]'
+                                        ? 'bg-white/[0.05] text-white border-[#7C8FFF]'
                                         : 'text-white/40 border-transparent hover:text-white/60 hover:bg-white/[0.02]'
                                 }`}
                             >
@@ -270,7 +270,7 @@ export default function DeveloperPortal() {
                     {activeTab === 'overview' && (
                         <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-8">
                             {/* Hero */}
-                            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#D4AF37]/10 via-[#B8942D]/5 to-transparent p-8 md:p-12">
+                            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#7C8FFF]/10 via-[#6070EE]/5 to-transparent p-8 md:p-12">
                                 <div className="max-w-xl">
                                     <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Build the future of social</h2>
                                     <p className="text-white/60 text-lg mb-6 leading-relaxed">
@@ -280,7 +280,7 @@ export default function DeveloperPortal() {
                                     <div className="flex gap-3">
                                         <button
                                             onClick={() => { setActiveTab('apps'); setShowCreateApp(true); }}
-                                            className="px-6 py-3 bg-[#D4AF37] text-black font-semibold rounded-xl hover:opacity-90 transition-opacity text-sm"
+                                            className="px-6 py-3 bg-[#7C8FFF] text-white font-semibold rounded-xl hover:opacity-90 transition-opacity text-sm"
                                         >
                                             Create Your First App
                                         </button>
@@ -292,19 +292,19 @@ export default function DeveloperPortal() {
                                         </button>
                                     </div>
                                 </div>
-                                <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-[#D4AF37]/10 rounded-full blur-3xl" />
+                                <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-[#7C8FFF]/10 rounded-full blur-3xl" />
                             </div>
 
                             {/* Features Grid */}
                             <div className="grid md:grid-cols-3 gap-4">
                                 {[
                                     {
-                                        icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+                                        icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C8FFF" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
                                         title: 'OAuth 2.0',
                                         desc: 'Secure authentication with granular permission scopes. Users authorize exactly what your app can access.',
                                     },
                                     {
-                                        icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B8942D" strokeWidth="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>,
+                                        icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6070EE" strokeWidth="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>,
                                         title: 'RESTful API',
                                         desc: 'Clean, consistent API endpoints for communities, posts, users, polls, albums, and real-time events.',
                                     },
@@ -324,7 +324,7 @@ export default function DeveloperPortal() {
                                         desc: 'Programmatically create groups, invite members, configure permissions, and manage content at scale.',
                                     },
                                     {
-                                        icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366F1" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+                                        icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C8FFF" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
                                         title: 'Cross-Platform',
                                         desc: 'Connect 0G to Zapier, Make, IFTTT, or your own tools. Automate posting, notifications, and member management.',
                                     },
@@ -343,11 +343,11 @@ export default function DeveloperPortal() {
                                 <div className="grid md:grid-cols-2 gap-3">
                                     {SCOPES.map(s => (
                                         <div key={s.scope} className="flex items-center gap-4 bg-white/[0.02] border border-white/5 rounded-xl p-4">
-                                            <div className="w-9 h-9 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center shrink-0">
-                                                <span className="text-xs font-bold text-[#D4AF37] font-mono">{s.icon}</span>
+                                            <div className="w-9 h-9 rounded-lg bg-[#7C8FFF]/10 border border-[#7C8FFF]/20 flex items-center justify-center shrink-0">
+                                                <span className="text-xs font-bold text-[#7C8FFF] font-mono">{s.icon}</span>
                                             </div>
                                             <div>
-                                                <code className="text-sm font-mono text-[#D4AF37]">{s.scope}</code>
+                                                <code className="text-sm font-mono text-[#7C8FFF]">{s.scope}</code>
                                                 <p className="text-xs text-white/40 mt-0.5">{s.desc}</p>
                                             </div>
                                         </div>
@@ -396,7 +396,7 @@ curl -H "X-Api-Key: 0g_your_api_key_here" \\
                                 </div>
                                 <button
                                     onClick={() => setShowCreateApp(true)}
-                                    className="px-5 py-2.5 bg-[#D4AF37] text-black font-semibold rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center gap-2"
+                                    className="px-5 py-2.5 bg-[#7C8FFF] text-white font-semibold rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center gap-2"
                                 >
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
                                     New App
@@ -428,7 +428,7 @@ curl -H "X-Api-Key: 0g_your_api_key_here" \\
                                             </div>
                                             <div>
                                                 <label className="text-xs text-white/40 uppercase tracking-wider">API Key</label>
-                                                <div className="bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 font-mono text-sm mt-1 break-all text-[#D4AF37]">{createdCreds.apiKey}</div>
+                                                <div className="bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 font-mono text-sm mt-1 break-all text-[#7C8FFF]">{createdCreds.apiKey}</div>
                                             </div>
                                         </div>
                                         <button onClick={() => setCreatedCreds(null)} className="mt-4 px-4 py-2 bg-white/10 rounded-lg text-sm hover:bg-white/15 transition-colors">
@@ -451,20 +451,20 @@ curl -H "X-Api-Key: 0g_your_api_key_here" \\
                                         <div className="grid md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-xs text-white/40 mb-1.5">App Name *</label>
-                                                <input type="text" value={newApp.name} onChange={(e) => setNewApp({ ...newApp, name: e.target.value })} placeholder="My Integration" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#D4AF37]/50" />
+                                                <input type="text" value={newApp.name} onChange={(e) => setNewApp({ ...newApp, name: e.target.value })} placeholder="My Integration" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#7C8FFF]/50" />
                                             </div>
                                             <div>
                                                 <label className="block text-xs text-white/40 mb-1.5">Website URL</label>
-                                                <input type="url" value={newApp.websiteUrl} onChange={(e) => setNewApp({ ...newApp, websiteUrl: e.target.value })} placeholder="https://yourapp.com" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#D4AF37]/50" />
+                                                <input type="url" value={newApp.websiteUrl} onChange={(e) => setNewApp({ ...newApp, websiteUrl: e.target.value })} placeholder="https://yourapp.com" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#7C8FFF]/50" />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="block text-xs text-white/40 mb-1.5">Description</label>
-                                            <textarea value={newApp.description} onChange={(e) => setNewApp({ ...newApp, description: e.target.value })} placeholder="What does your app do?" rows={2} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#D4AF37]/50 resize-none" />
+                                            <textarea value={newApp.description} onChange={(e) => setNewApp({ ...newApp, description: e.target.value })} placeholder="What does your app do?" rows={2} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#7C8FFF]/50 resize-none" />
                                         </div>
                                         <div>
                                             <label className="block text-xs text-white/40 mb-1.5">OAuth Callback URL</label>
-                                            <input type="url" value={newApp.callbackUrl} onChange={(e) => setNewApp({ ...newApp, callbackUrl: e.target.value })} placeholder="https://yourapp.com/callback" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#D4AF37]/50" />
+                                            <input type="url" value={newApp.callbackUrl} onChange={(e) => setNewApp({ ...newApp, callbackUrl: e.target.value })} placeholder="https://yourapp.com/callback" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#7C8FFF]/50" />
                                         </div>
                                         <div>
                                             <label className="block text-xs text-white/40 mb-2">Scopes</label>
@@ -480,7 +480,7 @@ curl -H "X-Api-Key: 0g_your_api_key_here" \\
                                                                 setNewApp({ ...newApp, scopes: updated.join(',') || 'read' });
                                                             }}
                                                             className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all ${
-                                                                selected ? 'bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30' : 'bg-white/5 text-white/40 border border-white/10'
+                                                                selected ? 'bg-[#7C8FFF]/20 text-[#7C8FFF] border border-[#7C8FFF]/30' : 'bg-white/5 text-white/40 border border-white/10'
                                                             }`}
                                                         >
                                                             {scope}
@@ -491,7 +491,7 @@ curl -H "X-Api-Key: 0g_your_api_key_here" \\
                                         </div>
                                         <div className="flex justify-end gap-3 pt-2">
                                             <button onClick={() => setShowCreateApp(false)} className="px-4 py-2 text-sm text-white/50 hover:text-white/70">Cancel</button>
-                                            <button onClick={createApp} disabled={!newApp.name.trim()} className="px-6 py-2.5 bg-[#D4AF37] text-black font-semibold rounded-xl text-sm disabled:opacity-30 hover:opacity-90 transition-opacity">
+                                            <button onClick={createApp} disabled={!newApp.name.trim()} className="px-6 py-2.5 bg-[#7C8FFF] text-white font-semibold rounded-xl text-sm disabled:opacity-30 hover:opacity-90 transition-opacity">
                                                 Create Application
                                             </button>
                                         </div>
@@ -532,7 +532,7 @@ curl -H "X-Api-Key: 0g_your_api_key_here" \\
                                             <div className="grid sm:grid-cols-4 gap-4 mb-4">
                                                 <div className="bg-black/20 rounded-xl p-3">
                                                     <div className="text-xs text-white/30 mb-1">Client ID</div>
-                                                    <div className="font-mono text-xs text-[#D4AF37] truncate">{app.clientId}</div>
+                                                    <div className="font-mono text-xs text-[#7C8FFF] truncate">{app.clientId}</div>
                                                 </div>
                                                 <div className="bg-black/20 rounded-xl p-3">
                                                     <div className="text-xs text-white/30 mb-1">Scopes</div>
@@ -602,20 +602,20 @@ curl -H "X-Api-Key: 0g_your_api_key_here" \\
                             {/* Auth Section */}
                             <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6">
                                 <h3 className="font-semibold mb-3 flex items-center gap-2">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C8FFF" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                                     Authentication
                                 </h3>
                                 <p className="text-sm text-white/50 mb-4">Two authentication methods are supported:</p>
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div className="bg-black/30 rounded-xl p-4">
-                                        <h4 className="text-sm font-semibold text-[#D4AF37] mb-2">API Key</h4>
+                                        <h4 className="text-sm font-semibold text-[#7C8FFF] mb-2">API Key</h4>
                                         <p className="text-xs text-white/40 mb-3">Best for server-to-server or agentic tools. Read-only by default.</p>
                                         <pre className="text-xs font-mono text-white/60 bg-black/40 rounded-lg p-3 overflow-x-auto">
 {`X-Api-Key: 0g_your_api_key`}
                                         </pre>
                                     </div>
                                     <div className="bg-black/30 rounded-xl p-4">
-                                        <h4 className="text-sm font-semibold text-[#B8942D] mb-2">OAuth 2.0 Bearer Token</h4>
+                                        <h4 className="text-sm font-semibold text-[#6070EE] mb-2">OAuth 2.0 Bearer Token</h4>
                                         <p className="text-xs text-white/40 mb-3">Required for write operations. Acts on behalf of a user.</p>
                                         <pre className="text-xs font-mono text-white/60 bg-black/40 rounded-lg p-3 overflow-x-auto">
 {`Authorization: Bearer 0gat_token`}
@@ -668,8 +668,8 @@ curl -H "X-Api-Key: 0g_your_api_key_here" \\
                                 <div className="grid md:grid-cols-3 gap-4">
                                     {[
                                         { tier: 'Free', limit: '100 req/min', color: 'text-white/60' },
-                                        { tier: 'Pro', limit: '1,000 req/min', color: 'text-[#D4AF37]' },
-                                        { tier: 'Enterprise', limit: '10,000 req/min', color: 'text-[#B8942D]' },
+                                        { tier: 'Pro', limit: '1,000 req/min', color: 'text-[#7C8FFF]' },
+                                        { tier: 'Enterprise', limit: '10,000 req/min', color: 'text-[#6070EE]' },
                                     ].map(t => (
                                         <div key={t.tier} className="bg-black/30 rounded-xl p-4 text-center">
                                             <div className="text-xs text-white/30 uppercase tracking-wider mb-1">{t.tier}</div>
@@ -707,7 +707,7 @@ curl -H "X-Api-Key: 0g_your_api_key_here" \\
                                             value={consoleApiKey}
                                             onChange={(e) => setConsoleApiKey(e.target.value)}
                                             placeholder="0g_your_api_key_here"
-                                            className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 font-mono text-sm text-[#D4AF37] placeholder:text-white/15 focus:outline-none focus:border-[#D4AF37]/50"
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 font-mono text-sm text-[#7C8FFF] placeholder:text-white/15 focus:outline-none focus:border-[#7C8FFF]/50"
                                         />
                                     </div>
 
@@ -732,7 +732,7 @@ curl -H "X-Api-Key: 0g_your_api_key_here" \\
                                         <button
                                             onClick={runConsole}
                                             disabled={consoleLoading}
-                                            className="px-6 py-2.5 bg-[#D4AF37] text-black font-bold rounded-lg text-sm hover:opacity-90 transition-opacity disabled:opacity-50 font-mono"
+                                            className="px-6 py-2.5 bg-[#7C8FFF] text-white font-bold rounded-lg text-sm hover:opacity-90 transition-opacity disabled:opacity-50 font-mono"
                                         >
                                             {consoleLoading ? '...' : 'Send'}
                                         </button>

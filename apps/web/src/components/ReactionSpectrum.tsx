@@ -17,9 +17,9 @@ export interface Reaction {
 }
 
 export const REACTION_SPECTRUM: Reaction[] = [
-    { id: 'resonate', emoji: '💫', label: 'Resonate', color: '#D4AF37', description: 'This speaks to me' },
+    { id: 'resonate', emoji: '💫', label: 'Resonate', color: '#7C8FFF', description: 'This speaks to me' },
     { id: 'curious', emoji: '🤔', label: 'Curious', color: '#F59E0B', description: 'Tell me more' },
-    { id: 'inspired', emoji: '✨', label: 'Inspired', color: '#B8942D', description: 'This motivates me' },
+    { id: 'inspired', emoji: '✨', label: 'Inspired', color: '#6070EE', description: 'This motivates me' },
     { id: 'support', emoji: '🤝', label: 'Support', color: '#10B981', description: "I'm with you" },
     { id: 'love', emoji: '❤️', label: 'Love', color: '#EF4444', description: 'Love this' },
     { id: 'celebrate', emoji: '🎉', label: 'Celebrate', color: '#EC4899', description: 'Congratulations!' },
@@ -188,9 +188,9 @@ export interface PostIntention {
 }
 
 export const POST_INTENTIONS: PostIntention[] = [
-    { id: 'share', emoji: '📢', label: 'Share', color: '#D4AF37', placeholder: "What's on your mind?" },
+    { id: 'share', emoji: '📢', label: 'Share', color: '#7C8FFF', placeholder: "What's on your mind?" },
     { id: 'question', emoji: '❓', label: 'Question', color: '#F59E0B', placeholder: 'Ask your community...' },
-    { id: 'reflection', emoji: '💭', label: 'Reflection', color: '#B8942D', placeholder: 'Share your thoughts...' },
+    { id: 'reflection', emoji: '💭', label: 'Reflection', color: '#6070EE', placeholder: 'Share your thoughts...' },
     { id: 'celebration', emoji: '🎉', label: 'Celebration', color: '#10B981', placeholder: 'Celebrate something!' },
     { id: 'request', emoji: '🤝', label: 'Request', color: '#EC4899', placeholder: 'Ask for help or support...' },
     { id: 'announcement', emoji: '📣', label: 'Announcement', color: '#EF4444', placeholder: 'Make an announcement...' },
@@ -276,9 +276,9 @@ interface ConnectionDepthProps {
 
 export function ConnectionDepthIndicator({ depth }: ConnectionDepthProps) {
     const config: Record<ConnectionDepth, { label: string; color: string; rings: number }> = {
-        self: { label: 'You', color: '#D4AF37', rings: 4 },
+        self: { label: 'You', color: '#7C8FFF', rings: 4 },
         close: { label: 'Close Friend', color: '#10B981', rings: 3 },
-        friend: { label: 'Friend', color: '#B8942D', rings: 2 },
+        friend: { label: 'Friend', color: '#6070EE', rings: 2 },
         following: { label: 'Following', color: '#F59E0B', rings: 1 },
         community: { label: 'Community', color: '#6B7280', rings: 1 },
         discover: { label: 'Discover', color: '#374151', rings: 0 },

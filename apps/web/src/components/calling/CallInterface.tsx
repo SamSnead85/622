@@ -76,7 +76,7 @@ export function CallInterface({
                     />
                 ) : (
                     <div className="flex flex-col items-center gap-4">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-3xl font-bold">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#7C8FFF] to-[#6070EE] flex items-center justify-center text-3xl font-bold">
                             {participantAvatar ? (
                                 <img src={participantAvatar} alt="" className="w-full h-full rounded-full object-cover" />
                             ) : participantName[0]?.toUpperCase() || '?'}
@@ -169,11 +169,11 @@ export function CallInterface({
                     <button
                         onClick={onToggleScreenShare}
                         className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-                            isScreenSharing ? 'bg-[#D4AF37]' : 'bg-white/15 hover:bg-white/25'
+                            isScreenSharing ? 'bg-[#7C8FFF]' : 'bg-white/15 hover:bg-white/25'
                         }`}
                         aria-label={isScreenSharing ? 'Stop screen share' : 'Share screen'}
                     >
-                        <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={isScreenSharing ? 'black' : 'white'} strokeWidth={2}>
+                        <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2}>
                             <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
                             <path d="M8 21h8M12 17v4" strokeLinecap="round" />
                         </svg>

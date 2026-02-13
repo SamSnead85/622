@@ -310,7 +310,7 @@ export default function MessagesTab() {
                 accessibilityRole="button"
                 accessibilityLabel="New message"
             >
-                <Ionicons name="create-outline" size={22} color={colors.obsidian[900]} />
+                <Ionicons name="create-outline" size={22} color="#FFFFFF" />
             </TouchableOpacity>
         </View>
     );
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 5,
     },
     unreadBadgeText: {
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         fontSize: 11,
         fontWeight: '700',
     },

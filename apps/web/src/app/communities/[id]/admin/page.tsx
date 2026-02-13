@@ -236,7 +236,7 @@ export default function CommunityAdminPage() {
                         </svg>
                     </div>
                     <p className="text-white/60 mb-4">{error}</p>
-                    <Link href={`/communities/${id}`} className="text-[#D4AF37] text-sm hover:underline">
+                    <Link href={`/communities/${id}`} className="text-[#7C8FFF] text-sm hover:underline">
                         Back to community
                     </Link>
                 </div>
@@ -291,7 +291,7 @@ export default function CommunityAdminPage() {
             <div className="max-w-6xl mx-auto px-4 py-6">
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <div className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
+                        <div className="w-8 h-8 border-2 border-[#7C8FFF]/30 border-t-[#7C8FFF] rounded-full animate-spin" />
                     </div>
                 ) : (
                     <AnimatePresence mode="wait">
@@ -340,7 +340,7 @@ export default function CommunityAdminPage() {
                                     <p className="text-white/40 mb-4">Community settings are available on the dedicated settings page.</p>
                                     <Link
                                         href={`/communities/${id}/settings`}
-                                        className="px-4 py-2 bg-[#D4AF37]/10 text-[#D4AF37] rounded-lg text-sm hover:bg-[#D4AF37]/20 transition"
+                                        className="px-4 py-2 bg-[#7C8FFF]/10 text-[#7C8FFF] rounded-lg text-sm hover:bg-[#7C8FFF]/20 transition"
                                     >
                                         Open Settings
                                     </Link>
@@ -409,7 +409,7 @@ function OverviewTab({ overview, topPosts, topContributors, memberGrowth }: {
                         {memberGrowth.map((g, i) => (
                             <div key={i} className="flex-1 flex flex-col items-center gap-1">
                                 <div
-                                    className="w-full bg-gradient-to-t from-[#D4AF37]/40 to-[#D4AF37]/10 rounded-t"
+                                    className="w-full bg-gradient-to-t from-[#7C8FFF]/40 to-[#7C8FFF]/10 rounded-t"
                                     style={{ height: `${(g.count / maxGrowth) * 100}%`, minHeight: '4px' }}
                                 />
                                 <span className="text-[8px] text-white/30">{g.count}</span>
@@ -468,7 +468,7 @@ function OverviewTab({ overview, topPosts, topContributors, memberGrowth }: {
                                     <p className="text-sm text-white/80 truncate">{c.displayName}</p>
                                     <p className="text-[10px] text-white/30">@{c.username}</p>
                                 </div>
-                                <div className="text-xs font-medium text-[#D4AF37]">{c.postCount} posts</div>
+                                <div className="text-xs font-medium text-[#7C8FFF]">{c.postCount} posts</div>
                             </div>
                         ))}
                         {topContributors.length === 0 && (
@@ -526,7 +526,7 @@ function MembersTab({ members, search, onSearchChange, onAction }: {
                     placeholder="Search members..."
                     value={search}
                     onChange={e => onSearchChange(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/30"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#7C8FFF]/30"
                 />
             </div>
 
@@ -559,7 +559,7 @@ function MembersTab({ members, search, onSearchChange, onAction }: {
                             <div>
                                 <span className={`text-[10px] px-2 py-0.5 rounded-full ${
                                     m.role === 'ADMIN' || m.role === 'OWNER'
-                                        ? 'bg-[#D4AF37]/10 text-[#D4AF37]'
+                                        ? 'bg-[#7C8FFF]/10 text-[#7C8FFF]'
                                         : m.role === 'MODERATOR'
                                         ? 'bg-purple-500/10 text-purple-400'
                                         : 'bg-white/[0.05] text-white/40'
@@ -783,7 +783,7 @@ function FiltersTab({ filters, communityId, onRefresh }: {
                 <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider">Content Filters</h2>
                 <button
                     onClick={() => setShowAdd(!showAdd)}
-                    className="px-3 py-1.5 bg-[#D4AF37]/10 text-[#D4AF37] rounded-lg text-xs font-medium hover:bg-[#D4AF37]/20 transition"
+                    className="px-3 py-1.5 bg-[#7C8FFF]/10 text-[#7C8FFF] rounded-lg text-xs font-medium hover:bg-[#7C8FFF]/20 transition"
                 >
                     {showAdd ? 'Cancel' : '+ Add Filter'}
                 </button>
@@ -794,7 +794,7 @@ function FiltersTab({ filters, communityId, onRefresh }: {
                 <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.03] p-4 space-y-3"
+                    className="rounded-xl border border-[#7C8FFF]/20 bg-[#7C8FFF]/[0.03] p-4 space-y-3"
                 >
                     <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -839,13 +839,13 @@ function FiltersTab({ filters, communityId, onRefresh }: {
                                 newFilter.type === 'spam' ? 'auto' :
                                 '7'
                             }
-                            className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs text-white placeholder-white/20 focus:outline-none focus:border-[#D4AF37]/30"
+                            className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs text-white placeholder-white/20 focus:outline-none focus:border-[#7C8FFF]/30"
                         />
                     </div>
                     <button
                         onClick={handleAdd}
                         disabled={saving || !newFilter.pattern.trim()}
-                        className="w-full py-2 bg-[#D4AF37]/10 text-[#D4AF37] rounded-lg text-xs font-medium hover:bg-[#D4AF37]/20 transition disabled:opacity-50"
+                        className="w-full py-2 bg-[#7C8FFF]/10 text-[#7C8FFF] rounded-lg text-xs font-medium hover:bg-[#7C8FFF]/20 transition disabled:opacity-50"
                     >
                         {saving ? 'Creating...' : 'Create Filter'}
                     </button>
@@ -861,7 +861,7 @@ function FiltersTab({ filters, communityId, onRefresh }: {
                         }`}>
                             <button
                                 onClick={() => handleToggle(f.id, f.isActive)}
-                                className={`w-8 h-5 rounded-full transition-colors relative ${f.isActive ? 'bg-[#D4AF37]' : 'bg-white/10'}`}
+                                className={`w-8 h-5 rounded-full transition-colors relative ${f.isActive ? 'bg-[#7C8FFF]' : 'bg-white/10'}`}
                             >
                                 <div className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-all ${f.isActive ? 'left-4' : 'left-0.5'}`} />
                             </button>

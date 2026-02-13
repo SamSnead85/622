@@ -61,7 +61,7 @@ export function HexAvatar({
                             <linearGradient id={`story-grad-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
                                 <stop offset="0%" stopColor="#F59E0B" />
                                 <stop offset="50%" stopColor="#F43F5E" />
-                                <stop offset="100%" stopColor="#B8942D" />
+                                <stop offset="100%" stopColor="#6070EE" />
                             </linearGradient>
                         </defs>
                         <polygon

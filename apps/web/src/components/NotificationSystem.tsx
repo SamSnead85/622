@@ -228,7 +228,7 @@ const NotificationItem = memo(function NotificationItem({ notification, onClick 
     return (
         <button
             onClick={() => onClick(notification)}
-            className={`w-full flex items-start gap-3 p-4 hover:bg-white/5 transition-colors text-left ${!notification.isRead ? 'bg-[#D4AF37]/5' : ''
+            className={`w-full flex items-start gap-3 p-4 hover:bg-white/5 transition-colors text-left ${!notification.isRead ? 'bg-[#7C8FFF]/5' : ''
                 }`}
         >
             <div className="relative flex-shrink-0">
@@ -236,7 +236,7 @@ const NotificationItem = memo(function NotificationItem({ notification, onClick 
                     <span className="text-lg">{getIcon(notification.type)}</span>
                 </div>
                 {!notification.isRead && (
-                    <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#D4AF37]" />
+                    <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#7C8FFF]" />
                 )}
             </div>
             <div className="flex-1 min-w-0">
@@ -296,7 +296,7 @@ export function NotificationCenter({
                                 {unreadCount > 0 && (
                                     <button
                                         onClick={onMarkAllRead}
-                                        className="text-sm text-[#D4AF37] hover:underline"
+                                        className="text-sm text-[#7C8FFF] hover:underline"
                                     >
                                         Mark all read
                                     </button>

@@ -397,7 +397,7 @@ export default function LoginScreen() {
                             Welcome back
                         </Text>
                         <Text style={[styles.subtitle, { color: c.text.secondary }]}>
-                            Sign in to your private community
+                            Welcome back
                         </Text>
                     </Animated.View>
 
@@ -559,7 +559,7 @@ export default function LoginScreen() {
                             >
                                 {isLoading ? (
                                     <View style={styles.loadingRow}>
-                                        <ActivityIndicator size="small" color="#000" />
+                                        <ActivityIndicator size="small" color="#FFFFFF" />
                                         <Text style={styles.submitText}>Signing in...</Text>
                                     </View>
                                 ) : (

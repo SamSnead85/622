@@ -877,7 +877,7 @@ const styles = StyleSheet.create({
     completeBtn: {
         borderRadius: 16,
         overflow: 'hidden',
-        shadowColor: '#D4AF37',
+        shadowColor: '#7C8FFF',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 12,

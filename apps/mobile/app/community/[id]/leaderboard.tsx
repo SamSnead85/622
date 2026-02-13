@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
     periodPillTextActive: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // ---- Loading ----
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     rankBadgeText: {
         fontSize: 12,
         fontWeight: '800',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     podiumName: {
         fontSize: typography.fontSize.sm,

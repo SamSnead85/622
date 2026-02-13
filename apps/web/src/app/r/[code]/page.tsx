@@ -24,7 +24,7 @@ export default function InviteRedirectPage() {
 
     return (
         <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
-            <div className="w-16 h-16 rounded-full border-4 border-[#D4AF37]/20 border-t-[#D4AF37] animate-spin mb-4" />
+            <div className="w-16 h-16 rounded-full border-4 border-[#7C8FFF]/20 border-t-[#7C8FFF] animate-spin mb-4" />
             <p className="text-white/60">Redirecting to ZeroG...</p>
         </div>
     );

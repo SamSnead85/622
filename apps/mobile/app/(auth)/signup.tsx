@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
@@ -154,7 +155,7 @@ function AnimatedField({
             : interpolateColor(
                 isFocused.value,
                 [0, 1],
-                [c.border.subtle, isDark ? c.gold[500] + '60' : c.text.primary + '30']
+                [c.border.subtle, c.gold[500] + '60']
             ),
     }));
 
@@ -171,7 +172,7 @@ function AnimatedField({
                 <Text style={[fieldStyles.label, { color: c.text.secondary }]}>{label}</Text>
                 <Animated.View style={[
                     fieldStyles.input,
-                    { backgroundColor: isDark ? c.surface.glass : c.obsidian[700] },
+                    { backgroundColor: c.surface.glass },
                     animatedBorderStyle,
                 ]}>
                     {icon && (
@@ -199,7 +200,7 @@ function AnimatedField({
                         onBlur={handleBlur}
                         value={value}
                         onChangeText={onChangeText}
-                        selectionColor={isDark ? c.gold[500] : c.azure[500]}
+                        selectionColor={c.gold[500]}
                         accessibilityLabel={label}
                         accessibilityHint={error ? `Error: ${error}` : hint || undefined}
                     />
@@ -445,7 +446,7 @@ export default function SignupScreen() {
     }, [validateForm, signup, email, password, displayName, router, buttonScale]);
 
     return (
-        <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
+        <View style={[styles.container, { backgroundColor: c.background }]}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
@@ -463,13 +464,22 @@ export default function SignupScreen() {
                     bounces={false}
                 >
                     {/* Back button */}
-                    <BackButton style={{ alignSelf: 'flex-start', marginBottom: spacing.lg }} />
+                    <BackButton style={{ alignSelf: 'flex-start', marginBottom: spacing.md }} />
+
+                    {/* 0G Logo — matches login screen */}
+                    <Animated.View entering={FadeInDown.delay(30).duration(500).springify()} style={styles.logoArea}>
+                        <View style={[styles.logoGlow, { backgroundColor: c.gold[500] + '10' }]} />
+                        <Text style={[styles.logoText, { color: c.gold[500] }]} accessibilityLabel="Zero G">0G</Text>
+                    </Animated.View>
 
                     {/* Header */}
-                    <Animated.View entering={FadeInDown.delay(50).duration(500).springify()}>
+                    <Animated.View entering={FadeInDown.delay(60).duration(500).springify()}>
                         <View style={styles.header}>
                             <Text style={[styles.title, { color: c.text.primary }]} accessibilityRole="header">
                                 Create your account
+                            </Text>
+                            <Text style={[styles.subtitle, { color: c.text.secondary }]}>
+                                Your community is waiting
                             </Text>
                         </View>
                     </Animated.View>
@@ -567,7 +577,7 @@ export default function SignupScreen() {
                                                         backgroundColor:
                                                             level <= passwordStrength.level
                                                                 ? passwordStrength.color
-                                                                : c.obsidian[600],
+                                                                : c.border.subtle,
                                                     },
                                                 ]}
                                             />
@@ -585,30 +595,32 @@ export default function SignupScreen() {
                             </Animated.View>
                         )}
 
-                        {/* Submit Button */}
+                        {/* Submit Button — gold gradient, matches login */}
                         <Animated.View entering={FadeInDown.delay(260).duration(400)} style={animatedButtonStyle}>
-                            <Pressable
+                            <TouchableOpacity
                                 onPress={handleSignup}
                                 disabled={isLoading}
-                                style={({ pressed }) => [
-                                    styles.submitButton,
-                                    {
-                                        backgroundColor: c.text.primary,
-                                        opacity: pressed ? 0.9 : isLoading ? 0.7 : 1,
-                                        transform: [{ scale: pressed ? 0.98 : 1 }],
-                                    },
-                                ]}
+                                activeOpacity={0.85}
+                                style={[styles.submitButton, isLoading && { opacity: 0.85 }]}
                                 accessibilityRole="button"
                                 accessibilityLabel={isLoading ? 'Creating account' : 'Create account'}
                             >
-                                {isLoading ? (
-                                    <ActivityIndicator size="small" color={c.text.inverse} />
-                                ) : (
-                                    <Text style={[styles.submitButtonText, { color: c.text.inverse }]}>
-                                        Next
-                                    </Text>
-                                )}
-                            </Pressable>
+                                <LinearGradient
+                                    colors={isLoading ? [c.gold[600], c.gold[700]] : [c.gold[400], c.gold[600]]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.submitGradient}
+                                >
+                                    {isLoading ? (
+                                        <View style={styles.loadingRow}>
+                                            <ActivityIndicator size="small" color="#FFFFFF" />
+                                            <Text style={styles.submitButtonText}>Creating account...</Text>
+                                        </View>
+                                    ) : (
+                                        <Text style={styles.submitButtonText}>Create Account</Text>
+                                    )}
+                                </LinearGradient>
+                            </TouchableOpacity>
                         </Animated.View>
                     </View>
 
@@ -619,29 +631,29 @@ export default function SignupScreen() {
                         <View style={[styles.dividerLine, { backgroundColor: c.border.subtle }]} />
                     </Animated.View>
 
-                    {/* Social Sign Up */}
+                    {/* Social Sign Up — matches login screen */}
                     <Animated.View entering={FadeInDown.delay(340).duration(400)}>
                         <View style={styles.socialButtons}>
                             {Platform.OS === 'ios' && (
                                 <TouchableOpacity
                                     style={[styles.socialButton, {
-                                        backgroundColor: isDark ? c.obsidian[600] : c.text.primary,
-                                        borderColor: isDark ? c.border.default : 'transparent',
+                                        backgroundColor: isDark ? '#FFFFFF' : '#000000',
+                                        borderColor: isDark ? '#FFFFFF' : '#000000',
                                     }]}
                                     onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleAppleSignup(); }}
                                     activeOpacity={0.7}
                                     accessibilityRole="button"
                                     accessibilityLabel="Continue with Apple"
                                 >
-                                    <Ionicons name="logo-apple" size={20} color={isDark ? c.text.primary : '#FFFFFF'} />
-                                    <Text style={[styles.socialButtonText, { color: isDark ? c.text.primary : '#FFFFFF' }]}>
+                                    <Ionicons name="logo-apple" size={20} color={isDark ? '#000000' : '#FFFFFF'} />
+                                    <Text style={[styles.socialButtonText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
                                         Continue with Apple
                                     </Text>
                                 </TouchableOpacity>
                             )}
                             <TouchableOpacity
                                 style={[styles.socialButton, {
-                                    backgroundColor: isDark ? c.surface.glass : c.obsidian[700],
+                                    backgroundColor: c.surface.glass,
                                     borderColor: c.border.subtle,
                                 }]}
                                 onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleGoogleSignup(); }}
@@ -651,11 +663,11 @@ export default function SignupScreen() {
                                 accessibilityLabel="Continue with Google"
                             >
                                 {googleLoading ? (
-                                    <ActivityIndicator size="small" color={c.text.secondary} />
+                                    <ActivityIndicator size="small" color={c.text.primary} />
                                 ) : (
-                                    <Ionicons name="logo-google" size={20} color={c.text.secondary} />
+                                    <Ionicons name="logo-google" size={18} color={c.text.primary} />
                                 )}
-                                <Text style={[styles.socialButtonText, { color: c.text.secondary }]}>
+                                <Text style={[styles.socialButtonText, { color: c.text.primary }]}>
                                     Continue with Google
                                 </Text>
                             </TouchableOpacity>
@@ -673,7 +685,7 @@ export default function SignupScreen() {
                             accessibilityRole="link"
                             accessibilityLabel="Log in to existing account"
                         >
-                            <Text style={[styles.loginLink, { color: c.azure[500] }]}>Log in</Text>
+                            <Text style={[styles.loginLink, { color: c.gold[500] }]}>Log in</Text>
                         </TouchableOpacity>
                     </Animated.View>
 
@@ -697,12 +709,37 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     keyboardView: { flex: 1 },
     scrollContent: { flexGrow: 1, paddingHorizontal: spacing.xl },
+
+    // Logo — matches login screen
+    logoArea: {
+        alignItems: 'center',
+        marginBottom: spacing.lg,
+        position: 'relative',
+    },
+    logoGlow: {
+        position: 'absolute',
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        top: -20,
+    },
+    logoText: {
+        fontSize: 56,
+        fontWeight: '800',
+        letterSpacing: -2,
+        fontFamily: 'Inter-Bold',
+    },
+
     header: { marginBottom: spacing.xl },
     title: {
         fontSize: typography.fontSize['3xl'],
         fontWeight: '700',
         letterSpacing: -0.5,
         fontFamily: 'Inter-Bold',
+    },
+    subtitle: {
+        fontSize: typography.fontSize.base,
+        marginTop: spacing.xs,
     },
 
     // ---- Error Banner ----
@@ -755,18 +792,27 @@ const styles = StyleSheet.create({
         marginTop: spacing.xs,
     },
 
-    // ---- Submit ----
+    // ---- Submit — gold gradient, matches login ----
     submitButton: {
-        height: 52,
-        borderRadius: 26,
-        alignItems: 'center',
-        justifyContent: 'center',
         marginTop: spacing.md,
     },
+    submitGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 15,
+        borderRadius: 14,
+    },
     submitButtonText: {
-        fontSize: typography.fontSize.base,
-        fontWeight: '600',
-        fontFamily: 'Inter-SemiBold',
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        fontFamily: 'Inter-Bold',
+    },
+    loadingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
     },
 
     // ---- Divider ----
@@ -775,7 +821,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginVertical: spacing.lg,
     },
-    dividerLine: { flex: 1, height: StyleSheet.hairlineWidth },
+    dividerLine: { flex: 1, height: 1 },
     dividerText: {
         fontSize: typography.fontSize.sm,
         paddingHorizontal: spacing.md,
@@ -792,7 +838,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderRadius: 26,
+        borderRadius: 14,
         paddingVertical: 14,
         gap: spacing.sm,
     },

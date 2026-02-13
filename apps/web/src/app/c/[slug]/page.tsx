@@ -77,7 +77,7 @@ export default function CampaignPage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-[#0A0A0C] flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[#7C8FFF]/30 border-t-[#7C8FFF] rounded-full animate-spin" />
             </div>
         );
     }
@@ -92,7 +92,7 @@ export default function CampaignPage() {
                         </svg>
                     </div>
                     <p className="text-white/50 mb-4">Campaign not found</p>
-                    <Link href="/" className="text-[#D4AF37] text-sm hover:underline">Go to ZeroG</Link>
+                    <Link href="/" className="text-[#7C8FFF] text-sm hover:underline">Go to ZeroG</Link>
                 </div>
             </div>
         );
@@ -101,13 +101,13 @@ export default function CampaignPage() {
     if (!campaign) {
         return (
             <div className="min-h-screen bg-[#0A0A0C] flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[#7C8FFF]/30 border-t-[#7C8FFF] rounded-full animate-spin" />
             </div>
         );
     }
 
     const progress = Math.min((campaign.signupCount / campaign.signupGoal) * 100, 100);
-    const brandColor = campaign.brandColor || '#D4AF37';
+    const brandColor = campaign.brandColor || '#7C8FFF';
 
     return (
         <div className="min-h-screen bg-[#0A0A0C] text-white">

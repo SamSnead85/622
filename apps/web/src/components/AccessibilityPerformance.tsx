@@ -143,7 +143,7 @@ export function useColorContrast() {
         text: '#FFFFFF',
         background: '#0A0A0F',
         border: 'rgba(255,255,255,0.1)',
-        accent: '#D4AF37',
+        accent: '#7C8FFF',
     };
 
     return { highContrast, setHighContrast, contrastColors };

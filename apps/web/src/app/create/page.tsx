@@ -266,7 +266,7 @@ function CreateContent() {
                     <button
                         onClick={handlePublish}
                         disabled={!canPublish || isPublishing}
-                        className="px-5 py-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold text-sm disabled:opacity-30 transition-all hover:opacity-90 active:scale-95"
+                        className="px-5 py-2 rounded-full bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white font-semibold text-sm disabled:opacity-30 transition-all hover:opacity-90 active:scale-95"
                     >
                         {isPublishing ? 'Posting...' : 'Post'}
                     </button>
@@ -287,15 +287,15 @@ function CreateContent() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 z-30 rounded-2xl border-2 border-dashed border-[#D4AF37] bg-[#D4AF37]/5 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-none"
+                            className="absolute inset-0 z-30 rounded-2xl border-2 border-dashed border-[#7C8FFF] bg-[#7C8FFF]/5 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-none"
                         >
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" className="mb-3">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#7C8FFF" strokeWidth="2" className="mb-3">
                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                                 <circle cx="8.5" cy="8.5" r="1.5" />
                                 <path d="M21 15l-5-5L5 21" />
                             </svg>
-                            <p className="text-[#D4AF37] font-semibold">Drop photo or video here</p>
-                            <p className="text-[#D4AF37]/50 text-sm mt-1">Supports images and videos</p>
+                            <p className="text-[#7C8FFF] font-semibold">Drop photo or video here</p>
+                            <p className="text-[#7C8FFF]/50 text-sm mt-1">Supports images and videos</p>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -325,7 +325,7 @@ function CreateContent() {
                                 className="w-11 h-11 rounded-full object-cover ring-2 ring-white/10"
                             />
                         ) : (
-                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-black font-bold">
+                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#7C8FFF] to-[#6070EE] flex items-center justify-center text-white font-bold">
                                 {user?.displayName?.[0] || 'U'}
                             </div>
                         )}
@@ -369,7 +369,7 @@ function CreateContent() {
                                                 key={r}
                                                 onClick={() => { setChosenRatio(r); setCropY(50); }}
                                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${chosenRatio === r
-                                                    ? 'bg-[#D4AF37]/20 text-[#D4AF37] ring-1 ring-[#D4AF37]/30'
+                                                    ? 'bg-[#7C8FFF]/20 text-[#7C8FFF] ring-1 ring-[#7C8FFF]/30'
                                                     : 'bg-white/[0.04] text-white/40 hover:bg-white/[0.08] hover:text-white/60'
                                                 }`}
                                             >
@@ -451,7 +451,7 @@ function CreateContent() {
                             />
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors text-sm"
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-[#7C8FFF] hover:bg-[#7C8FFF]/10 transition-colors text-sm"
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -462,7 +462,7 @@ function CreateContent() {
                             </button>
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-[#B8942D] hover:bg-[#B8942D]/10 transition-colors text-sm"
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-[#6070EE] hover:bg-[#6070EE]/10 transition-colors text-sm"
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z" />
@@ -496,7 +496,7 @@ function CreateContent() {
                         <motion.div
                             animate={{ rotate: 360 }}
                             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                            className="w-12 h-12 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full mb-4"
+                            className="w-12 h-12 border-2 border-[#7C8FFF]/30 border-t-[#7C8FFF] rounded-full mb-4"
                         />
                         <p className="text-white font-semibold">Sharing your post...</p>
                         <p className="text-white/40 text-sm mt-1">This won&apos;t take long</p>

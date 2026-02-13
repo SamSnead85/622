@@ -134,7 +134,7 @@ export function PhotoEditor({ imageUrl, onSave, onCancel }: PhotoEditorProps) {
                 max={max}
                 value={value}
                 onChange={(e) => onChange(Number(e.target.value))}
-                className="flex-1 accent-[#D4AF37] h-1"
+                className="flex-1 accent-[#7C8FFF] h-1"
                 aria-label={`${label}: ${value}`}
             />
             <span className="text-white/40 text-xs w-8 text-right">{value}</span>
@@ -150,7 +150,7 @@ export function PhotoEditor({ imageUrl, onSave, onCancel }: PhotoEditorProps) {
                 <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="text-[#D4AF37] font-semibold text-sm hover:opacity-80 disabled:opacity-50"
+                    className="text-[#7C8FFF] font-semibold text-sm hover:opacity-80 disabled:opacity-50"
                 >
                     {isSaving ? 'Saving...' : 'Done'}
                 </button>
@@ -173,7 +173,7 @@ export function PhotoEditor({ imageUrl, onSave, onCancel }: PhotoEditorProps) {
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={`flex-1 py-3 text-sm font-medium capitalize ${
-                                activeTab === tab ? 'text-[#D4AF37] border-b-2 border-[#D4AF37]' : 'text-white/40'
+                                activeTab === tab ? 'text-[#7C8FFF] border-b-2 border-[#7C8FFF]' : 'text-white/40'
                             }`}
                         >
                             {tab}
@@ -222,7 +222,7 @@ export function PhotoEditor({ imageUrl, onSave, onCancel }: PhotoEditorProps) {
                                     onClick={() => setCropAspect(aspect)}
                                     className={`px-4 py-2 rounded-lg text-sm ${
                                         cropAspect === aspect
-                                            ? 'bg-[#D4AF37] text-black font-semibold'
+                                            ? 'bg-[#7C8FFF] text-white font-semibold'
                                             : 'bg-white/10 text-white/60'
                                     }`}
                                 >

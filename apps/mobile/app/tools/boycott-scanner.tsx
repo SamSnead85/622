@@ -147,7 +147,7 @@ export default function BoycottScannerScreen() {
                                     onPress={handleSearch}
                                     disabled={!searchQuery.trim()}
                                 >
-                                    <Ionicons name="search" size={20} color={colors.obsidian[900]} />
+                                    <Ionicons name="search" size={20} color="#FFFFFF" />
                                 </TouchableOpacity>
                             </View>
                             <Text style={styles.inputHint}>

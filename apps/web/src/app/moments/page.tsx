@@ -56,7 +56,7 @@ function FloatingParticles() {
             {[...Array(20)].map((_, i) => (
                 <motion.div
                     key={i}
-                    className="absolute w-1 h-1 bg-[#D4AF37]/30 rounded-full"
+                    className="absolute w-1 h-1 bg-[#7C8FFF]/30 rounded-full"
                     style={{
                         left: `${Math.random() * 100}%`,
                         top: `${Math.random() * 100}%`,
@@ -103,7 +103,7 @@ function HeartExplosion({ show }: { show: boolean }) {
                     key={i}
                     className="absolute w-3 h-3 rounded-full"
                     style={{
-                        background: i % 2 === 0 ? '#FF0064' : '#D4AF37',
+                        background: i % 2 === 0 ? '#FF0064' : '#7C8FFF',
                     }}
                     initial={{ scale: 0, x: 0, y: 0 }}
                     animate={{
@@ -208,7 +208,7 @@ function SpinningDisc({ avatarUrl, isPlaying }: { avatarUrl?: string; isPlaying:
             className="relative w-12 h-12"
         >
             {/* Outer ring */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#B8942D] to-[#FF0064] p-[2px]">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#7C8FFF] via-[#6070EE] to-[#FF0064] p-[2px]">
                 <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
                     {/* Inner disc */}
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center overflow-hidden border-2 border-zinc-700">
@@ -442,7 +442,7 @@ export default function MomentsPage() {
                 <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                    className="w-16 h-16 rounded-full border-2 border-transparent border-t-[#D4AF37] border-r-[#B8942D]"
+                    className="w-16 h-16 rounded-full border-2 border-transparent border-t-[#7C8FFF] border-r-[#6070EE]"
                 />
             </div>
         );
@@ -471,7 +471,7 @@ export default function MomentsPage() {
                     href="/create?type=moment"
                     className="group relative px-8 py-4 rounded-2xl overflow-hidden"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#D4AF37] via-[#B8942D] to-[#FF0064] opacity-80 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#7C8FFF] via-[#6070EE] to-[#FF0064] opacity-80 group-hover:opacity-100 transition-opacity" />
                     <div className="absolute inset-[1px] bg-black rounded-2xl" />
                     <span className="relative font-bold text-white">Create Your First Moment</span>
                 </Link>
@@ -575,7 +575,7 @@ export default function MomentsPage() {
 
                             <div className="text-right">
                                 <div className="font-bold text-lg tracking-tight">
-                                    <span className="text-[#D4AF37]">0</span>
+                                    <span className="text-[#7C8FFF]">0</span>
                                     <span className="text-white">G</span>
                                 </div>
                                 <div className="text-white/40 text-[10px] uppercase tracking-widest">Moments</div>
@@ -587,7 +587,7 @@ export default function MomentsPage() {
                             {/* Author info */}
                             <div className="flex items-center gap-3 mb-4">
                                 <Link href={`/profile/${currentPost.author.username}`} className="relative">
-                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-[#D4AF37] to-[#B8942D] rounded-full opacity-80" />
+                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] rounded-full opacity-80" />
                                     {currentPost.author.avatarUrl ? (
                                         <img
                                             src={currentPost.author.avatarUrl}
@@ -595,7 +595,7 @@ export default function MomentsPage() {
                                             className="relative w-11 h-11 rounded-full object-cover border-2 border-black"
                                         />
                                     ) : (
-                                        <div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-black font-bold border-2 border-black">
+                                        <div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-[#7C8FFF] to-[#6070EE] flex items-center justify-center text-white font-bold border-2 border-black">
                                             {currentPost.author.displayName?.[0] || 'U'}
                                         </div>
                                     )}
@@ -609,7 +609,7 @@ export default function MomentsPage() {
                                             {currentPost.author.displayName}
                                         </Link>
                                         {currentPost.author.isVerified && (
-                                            <span className="text-[#D4AF37]">✓</span>
+                                            <span className="text-[#7C8FFF]">✓</span>
                                         )}
                                     </div>
                                     <span className="text-white/50 text-sm">@{currentPost.author.username}</span>
@@ -617,7 +617,7 @@ export default function MomentsPage() {
                                 {!currentPost.author.isFollowing && (
                                     <motion.button
                                         whileTap={{ scale: 0.95 }}
-                                        className="px-4 py-1.5 rounded-lg bg-[#D4AF37] text-black text-sm font-bold"
+                                        className="px-4 py-1.5 rounded-lg bg-[#7C8FFF] text-white text-sm font-bold"
                                     >
                                         Follow
                                     </motion.button>
@@ -635,7 +635,7 @@ export default function MomentsPage() {
                             {currentPost.tags && (
                                 <div className="flex flex-wrap gap-2 mb-4">
                                     {currentPost.tags.slice(0, 3).map((tag, i) => (
-                                        <span key={i} className="text-[#D4AF37] text-sm font-medium">
+                                        <span key={i} className="text-[#7C8FFF] text-sm font-medium">
                                             {tag}
                                         </span>
                                     ))}
@@ -684,7 +684,7 @@ export default function MomentsPage() {
                             {/* Bookmark */}
                             <ActionButton
                                 active={currentPost.isBookmarked}
-                                accentColor="#B8942D"
+                                accentColor="#6070EE"
                                 onClick={() => handleBookmark(currentPost.id)}
                             >
                                 <BookmarkIcon
@@ -726,7 +726,7 @@ export default function MomentsPage() {
                                     <motion.div
                                         key={actualIdx}
                                         className={`rounded-full transition-all cursor-pointer ${isActive
-                                            ? 'w-1.5 h-6 bg-gradient-to-b from-[#D4AF37] to-[#B8942D]'
+                                            ? 'w-1.5 h-6 bg-gradient-to-b from-[#7C8FFF] to-[#6070EE]'
                                             : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/50'
                                             }`}
                                         onClick={() => setCurrentIndex(actualIdx)}
@@ -757,8 +757,8 @@ export default function MomentsPage() {
                             whileTap={{ scale: 0.95 }}
                         >
                             {/* Gradient background layers */}
-                            <div className="absolute inset-0 rounded-xl bg-[#D4AF37] blur-sm opacity-50" />
-                            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#D4AF37] via-[#B8942D] to-[#FF0064]" />
+                            <div className="absolute inset-0 rounded-xl bg-[#7C8FFF] blur-sm opacity-50" />
+                            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#7C8FFF] via-[#6070EE] to-[#FF0064]" />
                             <PlusIcon size={24} className="relative text-white" />
                         </motion.div>
                     </Link>

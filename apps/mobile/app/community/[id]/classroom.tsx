@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
         right: spacing.xl,
         borderRadius: 30,
         overflow: 'hidden',
-        shadowColor: '#D4AF37',
+        shadowColor: '#7C8FFF',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.35,
         shadowRadius: 12,

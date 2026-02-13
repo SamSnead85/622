@@ -266,7 +266,7 @@ export function Confetti({ trigger }: ConfettiProps) {
             const newParticles = Array.from({ length: 30 }, () => ({
                 id: nextId.current++,
                 x: Math.random() * 100,
-                color: ['#D4AF37', '#B8942D', '#F59E0B', '#10B981', '#EC4899'][Math.floor(Math.random() * 5)],
+                color: ['#7C8FFF', '#6070EE', '#F59E0B', '#10B981', '#EC4899'][Math.floor(Math.random() * 5)],
                 delay: Math.random() * 0.5,
             }));
             setParticles(newParticles);

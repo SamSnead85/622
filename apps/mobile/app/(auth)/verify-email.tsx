@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
@@ -151,7 +152,7 @@ export default function VerifyEmailScreen() {
     }, [code, isVerifying, handleVerify]);
 
     return (
-        <View style={[styles.container, { backgroundColor: c.obsidian[900], paddingTop: insets.top + 40, paddingBottom: insets.bottom + 20 }]}>
+        <View style={[styles.container, { backgroundColor: c.background, paddingTop: insets.top + 40, paddingBottom: insets.bottom + 20 }]}>
             {/* Shield icon */}
             <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.iconWrap}>
                 <View style={[styles.iconCircle, { backgroundColor: c.emerald[500] + '15' }]}>
@@ -181,7 +182,7 @@ export default function VerifyEmailScreen() {
                         style={[
                             styles.otpInput,
                             {
-                                backgroundColor: c.obsidian[700],
+                                backgroundColor: c.surface.glass,
                                 borderColor: code[i]
                                     ? (success ? c.emerald[500] : c.text.primary)
                                     : (error ? c.coral[500] : c.border.subtle),
@@ -217,28 +218,31 @@ export default function VerifyEmailScreen() {
                 </Animated.View>
             )}
 
-            {/* Verify button */}
+            {/* Verify button — gold gradient */}
             <Animated.View entering={FadeInDown.delay(400).duration(500)} style={styles.buttonWrap}>
                 <TouchableOpacity
                     onPress={handleVerify}
                     disabled={isVerifying || success || code.join('').length !== OTP_LENGTH}
+                    activeOpacity={0.85}
                     style={[
                         styles.verifyButton,
-                        {
-                            backgroundColor: c.text.primary,
-                            opacity: (isVerifying || success || code.join('').length !== OTP_LENGTH) ? 0.5 : 1,
-                        },
+                        (isVerifying || success || code.join('').length !== OTP_LENGTH) && { opacity: 0.5 },
                     ]}
                     accessibilityRole="button"
                     accessibilityLabel="Verify email"
                 >
-                    {isVerifying ? (
-                        <ActivityIndicator color={c.obsidian[900]} size="small" />
-                    ) : (
-                        <Text style={[styles.verifyButtonText, { color: c.obsidian[900] }]}>
-                            Verify
-                        </Text>
-                    )}
+                    <LinearGradient
+                        colors={[c.gold[400], c.gold[600]]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.verifyGradient}
+                    >
+                        {isVerifying ? (
+                            <ActivityIndicator color="#FFF" size="small" />
+                        ) : (
+                            <Text style={styles.verifyButtonText}>Verify</Text>
+                        )}
+                    </LinearGradient>
                 </TouchableOpacity>
             </Animated.View>
 
@@ -255,7 +259,7 @@ export default function VerifyEmailScreen() {
                 >
                     <Text style={[
                         styles.resendButton,
-                        { color: resendCooldown > 0 ? c.text.tertiary : c.azure[500] },
+                        { color: resendCooldown > 0 ? c.text.tertiary : c.gold[500] },
                     ]}>
                         {isResending ? 'Sending...' : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
                     </Text>
@@ -337,14 +341,19 @@ const styles = StyleSheet.create({
         marginBottom: spacing.lg,
     },
     verifyButton: {
-        height: 52,
         borderRadius: 14,
+        overflow: 'hidden',
+    },
+    verifyGradient: {
         alignItems: 'center',
         justifyContent: 'center',
+        paddingVertical: 15,
+        borderRadius: 14,
     },
     verifyButtonText: {
         fontSize: typography.sizes.md,
         fontWeight: '700' as const,
+        color: '#FFFFFF',
     },
     resendWrap: {
         alignItems: 'center',

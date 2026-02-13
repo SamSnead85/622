@@ -105,7 +105,7 @@ export function VoiceMessageRecorder({
                     </div>
                     <button
                         onClick={stopRecording}
-                        className="w-10 h-10 rounded-full bg-[#D4AF37] text-black flex items-center justify-center hover:opacity-90 transition-opacity"
+                        className="w-10 h-10 rounded-full bg-[#7C8FFF] text-white flex items-center justify-center hover:opacity-90 transition-opacity"
                     >
                         ✓
                     </button>
@@ -180,12 +180,12 @@ export function VoiceMessagePlayer({ src, duration, isOwn = false }: VoiceMessag
     };
 
     return (
-        <div className={`flex items-center gap-3 p-3 rounded-2xl ${isOwn ? 'bg-[#D4AF37]/20' : 'bg-white/10'}`}>
+        <div className={`flex items-center gap-3 p-3 rounded-2xl ${isOwn ? 'bg-[#7C8FFF]/20' : 'bg-white/10'}`}>
             <audio ref={audioRef} src={src} preload="metadata" />
 
             <button
                 onClick={togglePlay}
-                className={`w-10 h-10 rounded-full flex items-center justify-center ${isOwn ? 'bg-[#D4AF37] text-black' : 'bg-white/20 text-white'
+                className={`w-10 h-10 rounded-full flex items-center justify-center ${isOwn ? 'bg-[#7C8FFF] text-white' : 'bg-white/20 text-white'
                     }`}
             >
                 {isPlaying ? '⏸️' : '▶️'}
@@ -194,7 +194,7 @@ export function VoiceMessagePlayer({ src, duration, isOwn = false }: VoiceMessag
             <div className="flex-1">
                 <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
                     <div
-                        className={`h-full ${isOwn ? 'bg-[#D4AF37]' : 'bg-white/60'} transition-all`}
+                        className={`h-full ${isOwn ? 'bg-[#7C8FFF]' : 'bg-white/60'} transition-all`}
                         style={{ width: `${progress}%` }}
                     />
                 </div>
@@ -270,7 +270,7 @@ export function ReadReceipts({ status, readAt, compact = false }: ReadReceiptsPr
         switch (status) {
             case 'sent': return 'text-white/30';
             case 'delivered': return 'text-white/50';
-            case 'read': return 'text-[#D4AF37]';
+            case 'read': return 'text-[#7C8FFF]';
         }
     };
 
@@ -306,7 +306,7 @@ export function MessageReactions({ reactions, onReact }: MessageReactionsProps) 
                     key={reaction.emoji}
                     onClick={() => onReact(reaction.emoji)}
                     className={`px-2 py-0.5 rounded-full text-sm flex items-center gap-1 ${reaction.userReacted
-                            ? 'bg-[#D4AF37]/20 border border-[#D4AF37]/30'
+                            ? 'bg-[#7C8FFF]/20 border border-[#7C8FFF]/30'
                             : 'bg-white/10 hover:bg-white/20'
                         }`}
                 >
@@ -396,7 +396,7 @@ export function MessageBubble({
             <div className={`max-w-[70%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                 <div
                     className={`px-4 py-2.5 rounded-2xl ${isOwn
-                            ? 'bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black rounded-br-md'
+                            ? 'bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white rounded-br-md'
                             : 'bg-white/10 text-white rounded-bl-md'
                         }`}
                 >

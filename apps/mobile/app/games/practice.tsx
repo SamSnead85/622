@@ -134,7 +134,7 @@ function TopicSelector({
                     colors={[colors.gold[500], colors.gold[400]]}
                     style={styles.topicIconBg}
                 >
-                    <Ionicons name="school" size={24} color={colors.obsidian[900]} />
+                    <Ionicons name="school" size={24} color="#FFFFFF" />
                 </LinearGradient>
                 <Text style={styles.topicTitle}>Solo Practice</Text>
                 <Text style={styles.topicSubtitle}>
@@ -245,7 +245,7 @@ function TopicSelector({
                         end={{ x: 1, y: 0 }}
                         style={styles.startButton}
                     >
-                        <Ionicons name="play" size={20} color={colors.obsidian[900]} />
+                        <Ionicons name="play" size={20} color="#FFFFFF" />
                         <Text style={styles.startButtonText}>Start Practice</Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -381,7 +381,7 @@ function OptionButton({
                 <View style={[styles.optionLabel, {
                     backgroundColor: isCorrect ? colors.emerald[500] : isWrong ? colors.coral[500] : colors.obsidian[600],
                 }]}>
-                    <Text style={[styles.optionLabelText, (isCorrect || isWrong) && { color: colors.obsidian[900] }]}>
+                    <Text style={[styles.optionLabelText, (isCorrect || isWrong) && { color: '#FFFFFF' }]}>
                         {OPTION_LABELS[index]}
                     </Text>
                 </View>
@@ -493,7 +493,7 @@ function PracticeResults({
                         end={{ x: 1, y: 0 }}
                         style={styles.actionButton}
                     >
-                        <Ionicons name="reload" size={20} color={colors.obsidian[900]} />
+                        <Ionicons name="reload" size={20} color="#FFFFFF" />
                         <Text style={styles.actionButtonText}>Play Again</Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -861,7 +861,7 @@ const styles = StyleSheet.create({
     },
     startButtonText: {
         fontSize: typography.fontSize.lg, fontWeight: '700',
-        fontFamily: 'Inter-Bold', color: colors.obsidian[900],
+        fontFamily: 'Inter-Bold', color: '#FFFFFF',
     },
 
     // ---- Playing ----
@@ -1019,7 +1019,7 @@ const styles = StyleSheet.create({
     },
     actionButtonText: {
         fontSize: typography.fontSize.base, fontWeight: '700',
-        fontFamily: 'Inter-Bold', color: colors.obsidian[900],
+        fontFamily: 'Inter-Bold', color: '#FFFFFF',
     },
     secondaryActionButton: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

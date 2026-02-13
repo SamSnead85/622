@@ -205,7 +205,7 @@ export default function PollCreateScreen() {
                         style={styles.saveBtnGradient}
                     >
                         {creating ? (
-                            <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                            <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
                             <Text style={[styles.saveBtnText, !isValid && { color: colors.text.muted }]}>
                                 Create Poll
@@ -307,6 +307,6 @@ const styles = StyleSheet.create({
     },
     saveBtnText: {
         fontSize: typography.fontSize.lg, fontWeight: '600',
-        color: colors.obsidian[900], fontFamily: 'Inter-SemiBold',
+        color: '#FFFFFF', fontFamily: 'Inter-SemiBold',
     },
 });

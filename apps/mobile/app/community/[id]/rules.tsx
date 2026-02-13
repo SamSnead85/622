@@ -458,7 +458,7 @@ export default function CommunityRulesScreen() {
                             end={{ x: 1, y: 1 }}
                         >
                             {saving ? (
-                                <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
                                 <Text style={styles.saveBtnText}>Save Rules</Text>
                             )}
@@ -707,7 +707,7 @@ const styles = StyleSheet.create({
     saveBtnText: {
         fontSize: typography.fontSize.lg,
         fontWeight: '600',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         fontFamily: 'Inter-SemiBold',
     },
 });

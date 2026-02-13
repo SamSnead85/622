@@ -94,7 +94,7 @@ export function PeopleToFollow({ currentUserId }: { currentUserId?: string }) {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-4">
-                <div className="w-5 h-5 border-2 border-white/20 border-t-[#D4AF37] rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/20 border-t-[#7C8FFF] rounded-full animate-spin" />
             </div>
         );
     }
@@ -117,7 +117,7 @@ export function PeopleToFollow({ currentUserId }: { currentUserId?: string }) {
                                 className="w-10 h-10 rounded-full object-cover"
                             />
                         ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-black font-semibold text-sm">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7C8FFF] to-[#6070EE] flex items-center justify-center text-white font-semibold text-sm">
                                 {user.displayName?.[0] || 'U'}
                             </div>
                         )}
@@ -130,7 +130,7 @@ export function PeopleToFollow({ currentUserId }: { currentUserId?: string }) {
                         onClick={() => handleFollow(user.id)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${followingIds.has(user.id)
                             ? 'bg-white/10 text-white/70 hover:bg-white/20'
-                            : 'bg-[#D4AF37] text-black hover:opacity-90'
+                            : 'bg-[#7C8FFF] text-white hover:opacity-90'
                             }`}
                     >
                         {followingIds.has(user.id) ? 'Following' : 'Follow'}

@@ -264,7 +264,7 @@ export default function GoLiveScreen() {
                                 end={{ x: 1, y: 0 }}
                                 style={styles.viewStreamGradient}
                             >
-                                <Ionicons name="eye" size={20} color={colors.obsidian[900]} />
+                                <Ionicons name="eye" size={20} color="#FFFFFF" />
                                 <Text style={styles.viewStreamText}>View Your Stream</Text>
                             </LinearGradient>
                         </TouchableOpacity>
@@ -426,7 +426,7 @@ export default function GoLiveScreen() {
                                     <ActivityIndicator size="small" color={colors.text.primary} />
                                 ) : (
                                     <>
-                                        <Ionicons name="radio" size={22} color={colors.obsidian[900]} />
+                                        <Ionicons name="radio" size={22} color="#FFFFFF" />
                                         <Text style={styles.goLiveBtnText}>Go Live</Text>
                                     </>
                                 )}
@@ -601,7 +601,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.xl,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // ---- Success State ----
@@ -736,6 +736,6 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 });

@@ -149,7 +149,7 @@ export function OnboardingTour({ forceShow = false, onComplete }: OnboardingTour
                         {/* Progress Bar */}
                         <div className="h-1 bg-white/10">
                             <motion.div
-                                className="h-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D]"
+                                className="h-full bg-gradient-to-r from-[#7C8FFF] to-[#6070EE]"
                                 initial={false}
                                 animate={{ width: `${progress}%` }}
                                 transition={{ duration: 0.3 }}
@@ -193,9 +193,9 @@ export function OnboardingTour({ forceShow = false, onComplete }: OnboardingTour
                                             key={i}
                                             onClick={() => setCurrentStep(i)}
                                             className={`w-2 h-2 rounded-full transition-colors ${i === currentStep
-                                                    ? 'bg-[#D4AF37]'
+                                                    ? 'bg-[#7C8FFF]'
                                                     : i < currentStep
-                                                        ? 'bg-[#D4AF37]/50'
+                                                        ? 'bg-[#7C8FFF]/50'
                                                         : 'bg-white/20'
                                                 }`}
                                         />
@@ -213,7 +213,7 @@ export function OnboardingTour({ forceShow = false, onComplete }: OnboardingTour
 
                                 <button
                                     onClick={handleNext}
-                                    className="px-6 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black text-sm font-semibold hover:opacity-90 transition-opacity"
+                                    className="px-6 py-2 rounded-xl bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
                                 >
                                     {currentStep === TOUR_STEPS.length - 1 ? 'Get Started' : 'Next'}
                                 </button>
@@ -292,7 +292,7 @@ export function EmptyState({ type, title, description, action }: EmptyStateProps
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', delay: 0.1 }}
-                className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#B8942D]/20 flex items-center justify-center mb-6"
+                className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#7C8FFF]/20 to-[#6070EE]/20 flex items-center justify-center mb-6"
             >
                 <span className="text-4xl">{state.emoji}</span>
             </motion.div>
@@ -308,7 +308,7 @@ export function EmptyState({ type, title, description, action }: EmptyStateProps
             {action && (
                 <button
                     onClick={action.onClick}
-                    className="mt-6 px-6 py-2.5 rounded-xl bg-[#D4AF37] text-black font-medium hover:opacity-90 transition-opacity"
+                    className="mt-6 px-6 py-2.5 rounded-xl bg-[#7C8FFF] text-white font-medium hover:opacity-90 transition-opacity"
                 >
                     {action.label}
                 </button>

@@ -114,11 +114,11 @@ export function AICoDirector({ onApplySuggestion }: AICoDirectorProps) {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-[#D4AF37]/10 to-[#B8942D]/10 rounded-2xl border border-[#D4AF37]/20 p-6"
+            className="bg-gradient-to-br from-[#7C8FFF]/10 to-[#6070EE]/10 rounded-2xl border border-[#7C8FFF]/20 p-6"
         >
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#7C8FFF] to-[#6070EE] flex items-center justify-center">
                         <span className="text-2xl">🤖</span>
                     </div>
                     <div>
@@ -133,7 +133,7 @@ export function AICoDirector({ onApplySuggestion }: AICoDirectorProps) {
                     className={`
                         px-3 py-1 rounded-full text-xs font-medium transition-colors
                         ${isActive
-                            ? 'bg-[#D4AF37] text-black'
+                            ? 'bg-[#7C8FFF] text-white'
                             : 'bg-white/10 text-white/60 hover:bg-white/20'
                         }
                     `}

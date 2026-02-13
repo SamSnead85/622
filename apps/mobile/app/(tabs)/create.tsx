@@ -233,7 +233,7 @@ function SuccessAnimation() {
             ))}
             <Animated.View entering={BounceIn.duration(500)} style={checkStyle}>
                 <View style={styles.successCircle}>
-                    <Ionicons name="checkmark" size={48} color={colors.obsidian[900]} />
+                    <Ionicons name="checkmark" size={48} color="#FFFFFF" />
                 </View>
             </Animated.View>
             <Animated.Text entering={FadeIn.delay(400).duration(300)} style={styles.successText}>
@@ -1531,14 +1531,14 @@ export default function CreateScreen() {
                             )}
                             {isPublishing ? (
                                 <View style={styles.publishingRow}>
-                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
                                     <Text style={styles.publishingText}>
                                         {uploadProgress > 0 ? `${Math.round(uploadProgress)}%` : ''}
                                     </Text>
                                 </View>
                             ) : (
                                 <View style={styles.publishContentRow}>
-                                    <Ionicons name="send" size={14} color={canPublish ? colors.obsidian[900] : colors.text.muted} />
+                                    <Ionicons name="send" size={14} color={canPublish ? '#FFFFFF' : colors.text.muted} />
                                     <Text
                                         style={[
                                             styles.publishText,
@@ -1821,7 +1821,7 @@ const styles = StyleSheet.create({
     publishText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         fontFamily: 'Inter-Bold',
     },
     publishTextDisabled: {
@@ -1835,7 +1835,7 @@ const styles = StyleSheet.create({
     publishingText: {
         fontSize: typography.fontSize.xs,
         fontWeight: '600',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // Progress Bar

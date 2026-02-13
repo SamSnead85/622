@@ -190,7 +190,7 @@ const ProfileError = memo(({ message, onRetry }: { message: string; onRetry: () 
             }}
             activeOpacity={0.8}
         >
-            <Ionicons name="refresh" size={18} color={colors.obsidian[900]} />
+            <Ionicons name="refresh" size={18} color="#FFFFFF" />
             <Text style={styles.retryButtonText}>Try Again</Text>
         </TouchableOpacity>
     </View>
@@ -878,7 +878,7 @@ const styles = StyleSheet.create({
     retryButtonText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // ── Floating Header ──────────────────────────────────

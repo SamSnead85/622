@@ -375,7 +375,7 @@ function ProfilePageContent() {
                                 <>
                                     {/* Compose on your profile — visible to your followers */}
                                     {user && !isStealth && (
-                                        <div className="mb-6 bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 hover:border-white/[0.12] focus-within:border-[#D4AF37]/30 transition-all">
+                                        <div className="mb-6 bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 hover:border-white/[0.12] focus-within:border-[#7C8FFF]/30 transition-all">
                                             <InlineComposer
                                                 user={user}
                                                 onPostSuccess={() => fetchPosts()}
@@ -401,7 +401,7 @@ function ProfilePageContent() {
                                                         <button
                                                             onClick={saveReorder}
                                                             disabled={reorderSaving}
-                                                            className="px-4 py-1.5 text-sm rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                                                            className="px-4 py-1.5 text-sm rounded-full bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                                                         >
                                                             {reorderSaving ? 'Saving...' : 'Save Order'}
                                                         </button>
@@ -470,7 +470,7 @@ function ProfilePageContent() {
                                                             </p>
                                                             <p className="text-xs text-white/40 mt-0.5">
                                                                 {post.likesCount} likes · {post.commentsCount} comments
-                                                                {post.isPinned && <span className="ml-2 text-[#D4AF37]">📌 Pinned</span>}
+                                                                {post.isPinned && <span className="ml-2 text-[#7C8FFF]">📌 Pinned</span>}
                                                             </p>
                                                         </div>
 
@@ -531,7 +531,7 @@ function ProfilePageContent() {
                                                             )}
                                                             {/* Position badge in reorder-aware mode */}
                                                             {post.isPinned && (
-                                                                <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[10px] text-[#D4AF37] font-medium">
+                                                                <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[10px] text-[#7C8FFF] font-medium">
                                                                     📌
                                                                 </div>
                                                             )}

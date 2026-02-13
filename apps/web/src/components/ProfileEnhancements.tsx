@@ -17,7 +17,7 @@ export interface ProfileTheme {
 }
 
 export const PROFILE_THEMES: ProfileTheme[] = [
-    { id: 'default', name: 'Default', accentColor: '#D4AF37', backgroundColor: '#0A0A0F', textColor: '#FFFFFF' },
+    { id: 'default', name: 'Default', accentColor: '#7C8FFF', backgroundColor: '#0A0A0F', textColor: '#FFFFFF' },
     { id: 'sunset', name: 'Sunset', accentColor: '#FF6B6B', backgroundColor: '#1A0F0F', textColor: '#FFFFFF' },
     { id: 'forest', name: 'Forest', accentColor: '#2ECC71', backgroundColor: '#0F1A0F', textColor: '#FFFFFF' },
     { id: 'ocean', name: 'Ocean', accentColor: '#3498DB', backgroundColor: '#0F0F1A', textColor: '#FFFFFF' },
@@ -80,7 +80,7 @@ export interface VerificationBadge {
 }
 
 export const VERIFICATION_BADGES: Record<VerificationType, VerificationBadge> = {
-    verified: { type: 'verified', label: 'Verified', icon: '✓', color: '#D4AF37', description: 'This account has been verified' },
+    verified: { type: 'verified', label: 'Verified', icon: '✓', color: '#7C8FFF', description: 'This account has been verified' },
     creator: { type: 'creator', label: 'Creator', icon: '★', color: '#FF6B9D', description: 'Established content creator' },
     business: { type: 'business', label: 'Business', icon: '🏢', color: '#2ECC71', description: 'Official business account' },
     government: { type: 'government', label: 'Government', icon: '🏛️', color: '#9B59B6', description: 'Government or official entity' },

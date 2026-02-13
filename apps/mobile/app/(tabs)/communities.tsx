@@ -644,7 +644,7 @@ export default function CommunitiesScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="Create community"
                     >
-                        <Ionicons name="add" size={22} color={colors.obsidian[900]} />
+                        <Ionicons name="add" size={22} color="#FFFFFF" />
                     </TouchableOpacity>
                 </View>
 
@@ -846,7 +846,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     chipTextActive: {
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         fontWeight: '600',
     },
 

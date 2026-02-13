@@ -136,7 +136,7 @@ export default function MomentCreateScreen() {
                                     colors={[colors.gold[400], colors.gold[600]]}
                                     style={styles.pickerBtnGradient}
                                 >
-                                    <Ionicons name="camera" size={24} color={colors.obsidian[900]} />
+                                    <Ionicons name="camera" size={24} color="#FFFFFF" />
                                     <Text style={styles.pickerBtnText}>Camera</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -246,10 +246,10 @@ export default function MomentCreateScreen() {
                                         style={styles.postBtnGradient}
                                     >
                                         {posting ? (
-                                            <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                            <ActivityIndicator size="small" color="#FFFFFF" />
                                         ) : (
                                             <>
-                                                <Ionicons name="send" size={16} color={colors.obsidian[900]} />
+                                                <Ionicons name="send" size={16} color="#FFFFFF" />
                                                 <Text style={styles.postBtnText}>Share</Text>
                                             </>
                                         )}
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     },
     pickerBtnText: {
         fontSize: typography.fontSize.base, fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     pickerBtnOutline: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     },
     postBtnText: {
         fontSize: typography.fontSize.base, fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // Toolbar
@@ -535,6 +535,6 @@ const styles = StyleSheet.create({
     textModalDoneText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 });

@@ -965,10 +965,10 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Bold',
     },
     scaleCircleTextSelected: {
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     scaleCircleTextReveal: {
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // Choice Selector

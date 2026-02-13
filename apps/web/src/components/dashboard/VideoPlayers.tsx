@@ -189,7 +189,7 @@ export function AutoPlayVideo({ src, className = '' }: { src: string; className?
                     onClick={handleSeek}
                 >
                     <motion.div
-                        className="h-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D] rounded-full relative"
+                        className="h-full bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] rounded-full relative"
                         style={{ width: `${progress}%` }}
                     >
                         {/* Scrubber Handle */}

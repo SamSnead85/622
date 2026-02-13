@@ -88,7 +88,7 @@ export class ErrorBoundary extends Component<Props, State> {
                         </ScrollView>
                     )}
                     <TouchableOpacity style={styles.retryButton} onPress={this.handleRestart} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Restart">
-                        <Ionicons name="refresh" size={18} color={colors.obsidian[900]} />
+                        <Ionicons name="refresh" size={18} color="#FFFFFF" />
                         <Text style={styles.retryText}>Restart</Text>
                     </TouchableOpacity>
                 </View>
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     retryText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 });
 

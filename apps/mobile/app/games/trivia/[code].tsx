@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Bold',
     },
     optionLabelTextActive: {
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     optionText: {
         flex: 1,
@@ -876,7 +876,7 @@ const styles = StyleSheet.create({
     scorePopupText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         fontFamily: 'Inter-Bold',
     },
 

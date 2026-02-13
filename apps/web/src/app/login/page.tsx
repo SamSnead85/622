@@ -83,7 +83,7 @@ function PremiumMeshBackground() {
             <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#030305] to-transparent" />
 
             {/* Left side accent line */}
-            <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#D4AF37]/20 to-transparent" />
+            <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#7C8FFF]/20 to-transparent" />
         </div>
     );
 }
@@ -103,10 +103,10 @@ function HexLogo({ size = 48 }: { size?: number }) {
         >
             <defs>
                 <linearGradient id="login-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#D4AF37" />
+                    <stop offset="0%" stopColor="#7C8FFF" />
                     <stop offset="35%" stopColor="#F59E0B" />
                     <stop offset="65%" stopColor="#F43F5E" />
-                    <stop offset="100%" stopColor="#B8942D" />
+                    <stop offset="100%" stopColor="#6070EE" />
                 </linearGradient>
                 <filter id="login-glow" x="-50%" y="-50%" width="200%" height="200%">
                     <feGaussianBlur stdDeviation="2" result="blur" />
@@ -190,7 +190,7 @@ const Icons = {
 function LoginLoading() {
     return (
         <div className="min-h-screen bg-black flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full border-4 border-[#D4AF37]/20 border-t-[#D4AF37] animate-spin" />
+            <div className="w-12 h-12 rounded-full border-4 border-[#7C8FFF]/20 border-t-[#7C8FFF] animate-spin" />
         </div>
     );
 }
@@ -321,7 +321,7 @@ function LoginContent() {
                     >
                         {/* 0G Logo */}
                         <div className="text-6xl font-bold">
-                            <span className="text-[#D4AF37]">0</span>
+                            <span className="text-[#7C8FFF]">0</span>
                             <span className="text-white">G</span>
                         </div>
                         <h2 className="mt-8 text-3xl font-bold text-white">
@@ -360,7 +360,7 @@ function LoginContent() {
                         {/* Mobile logo */}
                         <div className="lg:hidden flex justify-center mb-8">
                             <div className="text-4xl font-bold">
-                                <span className="text-[#D4AF37]">0</span>
+                                <span className="text-[#7C8FFF]">0</span>
                                 <span className="text-white">G</span>
                             </div>
                         </div>
@@ -443,7 +443,7 @@ function LoginContent() {
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="Enter your email address"
                                         required
-                                        className="w-full px-4 py-3 rounded-lg bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/50 transition-all"
+                                        className="w-full px-4 py-3 rounded-lg bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#7C8FFF]/50 focus:ring-1 focus:ring-[#7C8FFF]/50 transition-all"
                                     />
                                 </div>
                             </div>
@@ -456,7 +456,7 @@ function LoginContent() {
                                     </label>
                                     <Link
                                         href="/forgot-password"
-                                        className="text-sm text-[#D4AF37] hover:text-[#E5C158] transition-colors"
+                                        className="text-sm text-[#7C8FFF] hover:text-[#99AAFF] transition-colors"
                                     >
                                         Forgot Password?
                                     </Link>
@@ -468,7 +468,7 @@ function LoginContent() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="Enter a unique password"
                                         required
-                                        className="w-full px-4 py-3 pr-12 rounded-lg bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/50 transition-all"
+                                        className="w-full px-4 py-3 pr-12 rounded-lg bg-white/[0.03] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#7C8FFF]/50 focus:ring-1 focus:ring-[#7C8FFF]/50 transition-all"
                                     />
                                     <button
                                         type="button"
@@ -502,7 +502,7 @@ function LoginContent() {
                             New to 0G?{' '}
                             <Link
                                 href="/signup"
-                                className="text-[#D4AF37] hover:text-[#E5C158] font-medium transition-colors"
+                                className="text-[#7C8FFF] hover:text-[#99AAFF] font-medium transition-colors"
                             >
                                 Join ZeroG
                             </Link>

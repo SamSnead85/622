@@ -142,7 +142,7 @@ const DEFAULT_TOPICS = [
         name: 'Education & Learning',
         description: 'Online courses, Islamic studies, and knowledge sharing',
         icon: '📚',
-        color: '#6366F1',
+        color: '#7C8FFF',
     },
     {
         slug: 'parenting',

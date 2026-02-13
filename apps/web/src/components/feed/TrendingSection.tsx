@@ -54,9 +54,9 @@ export function TrendingSection() {
             {hashtags.length > 0 && (
                 <div>
                     <h3 className="text-white font-semibold text-sm mb-3 flex items-center gap-2">
-                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth={2}>
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#7C8FFF" strokeWidth={2}>
                             <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
-                            <circle cx="7" cy="7" r="1" fill="#D4AF37" />
+                            <circle cx="7" cy="7" r="1" fill="#7C8FFF" />
                         </svg>
                         Trending
                     </h3>
@@ -70,7 +70,7 @@ export function TrendingSection() {
                                 className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-white/5 cursor-pointer transition-colors group"
                             >
                                 <div>
-                                    <p className="text-white text-sm font-medium group-hover:text-[#D4AF37] transition-colors">
+                                    <p className="text-white text-sm font-medium group-hover:text-[#7C8FFF] transition-colors">
                                         #{tag.name}
                                     </p>
                                     <p className="text-white/30 text-xs">{tag.usageCount.toLocaleString()} posts</p>
@@ -86,7 +86,7 @@ export function TrendingSection() {
             {communities.length > 0 && (
                 <div>
                     <h3 className="text-white font-semibold text-sm mb-3 flex items-center gap-2">
-                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#B8942D" strokeWidth={2}>
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#6070EE" strokeWidth={2}>
                             <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
                             <circle cx="9" cy="7" r="4" />
                             <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
@@ -100,7 +100,7 @@ export function TrendingSection() {
                                 href={`/communities/${community.id}`}
                                 className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-white/5 transition-colors"
                             >
-                                <div className="w-8 h-8 rounded-lg bg-[#B8942D]/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                <div className="w-8 h-8 rounded-lg bg-[#6070EE]/20 flex items-center justify-center overflow-hidden flex-shrink-0">
                                     {community.iconUrl ? (
                                         <img src={community.iconUrl} alt="" className="w-full h-full object-cover" />
                                     ) : (

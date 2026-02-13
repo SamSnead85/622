@@ -324,10 +324,10 @@ function CreatePollModal({
                             style={createStyles.submitGradient}
                         >
                             {isSubmitting ? (
-                                <ActivityIndicator size="small" color={canSubmit ? colors.obsidian[900] : colors.text.muted} />
+                                <ActivityIndicator size="small" color={canSubmit ? '#FFFFFF' : colors.text.muted} />
                             ) : (
                                 <>
-                                    <Ionicons name="bar-chart-outline" size={18} color={canSubmit ? colors.obsidian[900] : colors.text.muted} />
+                                    <Ionicons name="bar-chart-outline" size={18} color={canSubmit ? '#FFFFFF' : colors.text.muted} />
                                     <Text style={[createStyles.submitText, !canSubmit && createStyles.submitTextDisabled]}>
                                         Create Poll
                                     </Text>
@@ -398,7 +398,7 @@ const createStyles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
         gap: spacing.sm, paddingVertical: spacing.md,
     },
-    submitText: { fontSize: typography.fontSize.base, fontWeight: '700', color: colors.obsidian[900] },
+    submitText: { fontSize: typography.fontSize.base, fontWeight: '700', color: '#FFFFFF' },
     submitTextDisabled: { color: colors.text.muted },
 });
 
@@ -526,7 +526,7 @@ export default function CommunityPollsScreen() {
                                 onPress={() => setShowCreateModal(true)}
                             >
                                 <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.createBtnGradient}>
-                                    <Ionicons name="add" size={18} color={colors.obsidian[900]} />
+                                    <Ionicons name="add" size={18} color="#FFFFFF" />
                                     <Text style={styles.createBtnText}>Create Poll</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -613,6 +613,6 @@ const styles = StyleSheet.create({
     },
     createBtnText: {
         fontSize: typography.fontSize.base, fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 });

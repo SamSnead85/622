@@ -1583,7 +1583,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize['2xl'],
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // ---- Emoji Picker ----

@@ -95,7 +95,7 @@ export function FeedTuner({ isOpen, onClose, onSave }: FeedTunerProps) {
                 max={100}
                 value={value}
                 onChange={(e) => onChange(Number(e.target.value))}
-                className="w-full accent-[#D4AF37] h-1.5"
+                className="w-full accent-[#7C8FFF] h-1.5"
                 aria-label={`${label}: ${value}%`}
             />
             <p className="text-white/30 text-xs">{description}</p>
@@ -165,7 +165,7 @@ export function FeedTuner({ isOpen, onClose, onSave }: FeedTunerProps) {
                                                 max={100}
                                                 value={weight * 100}
                                                 onChange={(e) => updateContentType(type, Number(e.target.value) / 100)}
-                                                className="flex-1 accent-[#D4AF37] h-1"
+                                                className="flex-1 accent-[#7C8FFF] h-1"
                                                 aria-label={`${type} weight: ${Math.round(weight * 100)}%`}
                                             />
                                             <span className="text-white/40 text-xs w-8 text-right">{Math.round(weight * 100)}%</span>
@@ -186,7 +186,7 @@ export function FeedTuner({ isOpen, onClose, onSave }: FeedTunerProps) {
                             <button
                                 onClick={handleSave}
                                 disabled={!hasChanges || isSaving}
-                                className="px-6 py-2.5 rounded-xl bg-[#D4AF37] text-black text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+                                className="px-6 py-2.5 rounded-xl bg-[#7C8FFF] text-white text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
                             >
                                 {isSaving ? 'Saving...' : 'Save Preferences'}
                             </button>

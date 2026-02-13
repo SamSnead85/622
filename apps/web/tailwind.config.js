@@ -18,10 +18,10 @@ module.exports = {
 
                 // === GOLD - Premium accent system ===
                 aurora: {
-                    violet: '#B8942D',
-                    'violet-bright': '#E5C158',
-                    cyan: '#D4AF37', // 0G Gold
-                    'cyan-bright': '#E5C158', // Gold Light
+                    violet: '#6070EE',
+                    'violet-bright': '#99AAFF',
+                    cyan: '#7C8FFF', // 0G Gold
+                    'cyan-bright': '#99AAFF', // Gold Light
                     rose: '#F43F5E',
                     'rose-bright': '#FB7185',
                 },

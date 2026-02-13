@@ -79,7 +79,7 @@ export function ArchCard({ post, onClick, onLike, delay = 0 }: ArchCardProps) {
                                         <path d="M22 0 C35 0, 44 10, 44 22 L44 44 L0 44 L0 22 C0 10, 9 0, 22 0" />
                                     </clipPath>
                                     <linearGradient id="avatar-border-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#D4AF37" />
+                                        <stop offset="0%" stopColor="#7C8FFF" />
                                         <stop offset="100%" stopColor="#E8927C" />
                                     </linearGradient>
                                 </defs>

@@ -215,12 +215,12 @@ export default function PublicProfilePage() {
             {/* Pull-to-refresh indicator */}
             {pullDistance > 0 && (
                 <div className="flex items-center justify-center py-2 relative z-50" style={{ height: pullDistance }}>
-                    <div className={`w-5 h-5 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full ${isRefreshing ? 'animate-spin' : ''}`} />
+                    <div className={`w-5 h-5 border-2 border-[#7C8FFF]/30 border-t-[#7C8FFF] rounded-full ${isRefreshing ? 'animate-spin' : ''}`} />
                 </div>
             )}
             {/* Ambient Background matching Premium Theme */}
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-0 left-1/3 w-96 h-96 rounded-full bg-[#D4AF37]/[0.03] blur-[120px]" />
+                <div className="absolute top-0 left-1/3 w-96 h-96 rounded-full bg-[#7C8FFF]/[0.03] blur-[120px]" />
                 <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-[#9A7A24]/[0.03] blur-[120px]" />
             </div>
 
@@ -241,7 +241,7 @@ export default function PublicProfilePage() {
                         ) : (
                             <>
                                 {/* Decorative blur orbs for cover */}
-                                <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-[#D4AF37]/10 blur-[80px]" />
+                                <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-[#7C8FFF]/10 blur-[80px]" />
                                 <div className="absolute bottom-0 right-1/3 w-48 h-48 rounded-full bg-[#9A7A24]/10 blur-[60px]" />
                             </>
                         )}
@@ -252,7 +252,7 @@ export default function PublicProfilePage() {
                     <div className="max-w-4xl mx-auto px-6 relative">
                         <div className="flex flex-col md:flex-row items-start md:items-end gap-6 -mt-20 md:-mt-16 mb-8">
                             {/* Avatar */}
-                            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-[#050508] p-1.5 relative z-10 ring-4 ring-black ring-offset-2 ring-offset-[#D4AF37]/20 shadow-[0_0_20px_rgba(0,212,255,0.2)]">
+                            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-[#050508] p-1.5 relative z-10 ring-4 ring-black ring-offset-2 ring-offset-[#7C8FFF]/20 shadow-[0_0_20px_rgba(0,212,255,0.2)]">
                                 <div className="w-full h-full rounded-full overflow-hidden bg-gray-800 relative">
                                     {profile.avatarUrl ? (
                                         <Image src={profile.avatarUrl} alt={profile.displayName} fill className="object-cover" />
@@ -296,14 +296,14 @@ export default function PublicProfilePage() {
                                             className={`font-semibold px-6 py-2.5 rounded-xl transition-all duration-300 hover:scale-[1.02] ${
                                                 isFollowing
                                                     ? 'bg-white/[0.06] border border-white/[0.1] text-white hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'
-                                                    : 'bg-gradient-to-r from-[#D4AF37] to-[#9A7A24] text-white hover:shadow-[0_4px_20px_rgba(0,212,255,0.3)]'
+                                                    : 'bg-gradient-to-r from-[#7C8FFF] to-[#9A7A24] text-white hover:shadow-[0_4px_20px_rgba(0,212,255,0.3)]'
                                             }`}
                                         >
                                             {isFollowing ? 'Following' : 'Follow'}
                                         </button>
                                         <button
                                             onClick={() => router.push(`/messages?user=${profile?.username}`)}
-                                            className="bg-white/[0.06] border border-white/[0.1] text-white font-medium px-6 py-2.5 rounded-xl hover:bg-white/[0.1] hover:border-[#D4AF37]/20 transition-all duration-300"
+                                            className="bg-white/[0.06] border border-white/[0.1] text-white font-medium px-6 py-2.5 rounded-xl hover:bg-white/[0.1] hover:border-[#7C8FFF]/20 transition-all duration-300"
                                         >
                                             Message
                                         </button>
@@ -358,7 +358,7 @@ export default function PublicProfilePage() {
                 <div className="max-w-4xl mx-auto px-6">
                     {/* Tab Navigation */}
                     <div className="flex gap-8 border-b border-white/[0.06] mb-8">
-                        <button className="text-[#D4AF37] border-b-2 border-[#D4AF37] pb-3 font-semibold text-sm">Posts</button>
+                        <button className="text-[#7C8FFF] border-b-2 border-[#7C8FFF] pb-3 font-semibold text-sm">Posts</button>
                         <button className="text-white/40 hover:text-white/70 pb-3 transition-colors duration-200 text-sm">Likes</button>
                         <button className="text-white/40 hover:text-white/70 pb-3 transition-colors duration-200 text-sm">Media</button>
                     </div>
@@ -371,7 +371,7 @@ export default function PublicProfilePage() {
                                         key={post.id}
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
-                                        className="aspect-square bg-white/5 rounded-xl overflow-hidden relative group cursor-pointer hover:ring-2 hover:ring-[#D4AF37]/30 transition-all duration-300"
+                                        className="aspect-square bg-white/5 rounded-xl overflow-hidden relative group cursor-pointer hover:ring-2 hover:ring-[#7C8FFF]/30 transition-all duration-300"
                                     >
                                         {post.mediaUrl ? (
                                             <Image src={post.mediaUrl} alt="" fill className="object-cover transition-transform duration-500 group-hover:scale-110" />
@@ -430,7 +430,7 @@ export default function PublicProfilePage() {
                                     placeholder="Describe the issue..."
                                     rows={4}
                                     maxLength={1000}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-[#D4AF37]/40 focus:outline-none resize-none mb-4"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-[#7C8FFF]/40 focus:outline-none resize-none mb-4"
                                 />
                                 <div className="flex gap-3">
                                     <button

@@ -1153,7 +1153,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     startButtonTextDisabled: {
         color: colors.text.muted,

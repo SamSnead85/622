@@ -86,7 +86,7 @@ export function TrendingHashtags({
                     </h3>
                     <Link
                         href="/search?tab=trending"
-                        className="text-xs text-[#D4AF37] hover:underline"
+                        className="text-xs text-[#7C8FFF] hover:underline"
                     >
                         See all
                     </Link>
@@ -106,13 +106,13 @@ export function TrendingHashtags({
                         className={`flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors group ${compact ? 'p-1.5' : 'p-2'
                             }`}
                     >
-                        <div className={`flex items-center justify-center rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#B8942D]/20 ${compact ? 'w-7 h-7' : 'w-9 h-9'
+                        <div className={`flex items-center justify-center rounded-lg bg-gradient-to-br from-[#7C8FFF]/20 to-[#6070EE]/20 ${compact ? 'w-7 h-7' : 'w-9 h-9'
                             }`}>
                             <span className={compact ? 'text-sm' : 'text-base'}>#{index + 1}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                                <span className={`font-medium text-white group-hover:text-[#D4AF37] transition-colors ${compact ? 'text-sm' : ''
+                                <span className={`font-medium text-white group-hover:text-[#7C8FFF] transition-colors ${compact ? 'text-sm' : ''
                                     }`}>
                                     #{hashtag.tag}
                                 </span>
@@ -186,7 +186,7 @@ export function SearchHistory({ onSearchSelect, onClear }: SearchHistoryProps) {
                 <h3 className="text-sm font-medium text-white/60">Recent Searches</h3>
                 <button
                     onClick={clearHistory}
-                    className="text-xs text-[#D4AF37] hover:underline"
+                    className="text-xs text-[#7C8FFF] hover:underline"
                 >
                     Clear all
                 </button>

@@ -169,7 +169,7 @@ function HeroSection({ liveCount }: { liveCount: number }) {
                         colors={[colors.coral[500], colors.amber[500]]}
                         style={styles.heroIconBg}
                     >
-                        <Ionicons name="flame" size={20} color={colors.obsidian[900]} />
+                        <Ionicons name="flame" size={20} color="#FFFFFF" />
                     </LinearGradient>
                     {liveCount > 0 && (
                         <View style={styles.heroLiveBadge}>
@@ -529,7 +529,7 @@ export default function CampfireScreen() {
                             <View style={styles.goLiveBannerContent}>
                                 <View style={styles.goLiveBannerLeft}>
                                     <View style={styles.goLiveBannerIcon}>
-                                        <Ionicons name="radio" size={22} color={colors.obsidian[900]} />
+                                        <Ionicons name="radio" size={22} color="#FFFFFF" />
                                     </View>
                                     <View>
                                         <Text style={styles.goLiveBannerTitle}>Go Live</Text>
@@ -538,7 +538,7 @@ export default function CampfireScreen() {
                                         </Text>
                                     </View>
                                 </View>
-                                <Ionicons name="chevron-forward" size={20} color={colors.obsidian[900]} />
+                                <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
                             </View>
                         </LinearGradient>
                     </TouchableOpacity>
@@ -801,11 +801,11 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     goLiveBannerSubtitle: {
         fontSize: typography.fontSize.xs,
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         opacity: 0.7,
     },
 

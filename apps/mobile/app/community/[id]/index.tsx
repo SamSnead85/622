@@ -1057,7 +1057,7 @@ export default function CommunityDetailScreen() {
                         accessibilityLabel="Send message"
                     >
                         {chatSending ? (
-                            <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                            <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
                             <Ionicons
                                 name="send"
@@ -1565,7 +1565,7 @@ export default function CommunityDetailScreen() {
                                         <Ionicons
                                             name="arrow-forward"
                                             size={14}
-                                            color={colors.obsidian[900]}
+                                            color="#FFFFFF"
                                         />
                                     </TouchableOpacity>
                                     {community.websiteUrl && (
@@ -1751,7 +1751,7 @@ export default function CommunityDetailScreen() {
                                         <Ionicons
                                             name="add-circle-outline"
                                             size={18}
-                                            color={colors.obsidian[900]}
+                                            color="#FFFFFF"
                                         />
                                         <Text style={styles.joinButtonText}>
                                             Join Community
@@ -2254,7 +2254,7 @@ const styles = StyleSheet.create({
     joinButtonText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     joinLoadingWrap: {
         paddingVertical: spacing.md,
@@ -2866,7 +2866,7 @@ const styles = StyleSheet.create({
     claimBtnText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         fontFamily: 'Inter-Bold',
     },
     visitWebsiteBtn: {

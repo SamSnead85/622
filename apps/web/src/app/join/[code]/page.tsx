@@ -131,7 +131,7 @@ export default function JoinPage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-[#0A0A0C] flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[#7C8FFF]/30 border-t-[#7C8FFF] rounded-full animate-spin" />
             </div>
         );
     }
@@ -147,7 +147,7 @@ export default function JoinPage() {
                     </div>
                     <h2 className="text-lg font-semibold text-white mb-2">Invite Not Found</h2>
                     <p className="text-sm text-white/40 mb-6">{error}</p>
-                    <Link href="/" className="text-sm text-[#D4AF37] hover:underline">Visit ZeroG</Link>
+                    <Link href="/" className="text-sm text-[#7C8FFF] hover:underline">Visit ZeroG</Link>
                 </div>
             </div>
         );
@@ -170,7 +170,7 @@ export default function JoinPage() {
             {/* ZeroG branding — subtle top-left */}
             <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center">
-                    <span className="text-[9px] font-bold text-[#D4AF37]">0G</span>
+                    <span className="text-[9px] font-bold text-[#7C8FFF]">0G</span>
                 </div>
             </div>
 

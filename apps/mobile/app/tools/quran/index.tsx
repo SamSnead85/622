@@ -828,7 +828,7 @@ const styles = StyleSheet.create({
         color: colors.text.muted,
     },
     juzTabTextActive: {
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         fontWeight: '700',
     },
 

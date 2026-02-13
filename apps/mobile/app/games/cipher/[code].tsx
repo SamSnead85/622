@@ -373,7 +373,7 @@ export default function CipherGameScreen() {
                                 >
                                     {isTrap && (
                                         <View style={styles.trapIcon}>
-                                            <Ionicons name="skull" size={12} color={colors.obsidian[900]} />
+                                            <Ionicons name="skull" size={12} color="#FFFFFF" />
                                         </View>
                                     )}
                                     <Text
@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     wordTextRevealed: {
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         fontWeight: '700',
     },
 

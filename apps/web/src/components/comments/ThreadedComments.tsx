@@ -244,7 +244,7 @@ function ThreadedCommentsInner({
                                 className="w-8 h-8 rounded-full object-cover"
                             />
                         ) : (
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-xs font-bold text-black">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C8FFF] to-[#6070EE] flex items-center justify-center text-xs font-bold text-white">
                                 {comment.user.displayName?.[0]?.toUpperCase() || 'U'}
                             </div>
                         )}
@@ -290,7 +290,7 @@ function ThreadedCommentsInner({
                                 <textarea
                                     value={editedContent}
                                     onChange={(e) => setEditedContent(e.target.value)}
-                                    className="w-full bg-white/5 rounded-xl px-3 py-2 text-white text-sm border border-white/10 focus:border-[#D4AF37]/50 focus:outline-none transition-colors resize-none"
+                                    className="w-full bg-white/5 rounded-xl px-3 py-2 text-white text-sm border border-white/10 focus:border-[#7C8FFF]/50 focus:outline-none transition-colors resize-none"
                                     rows={2}
                                     autoFocus
                                 />
@@ -306,7 +306,7 @@ function ThreadedCommentsInner({
                                     </button>
                                     <button
                                         onClick={() => handleEditComment(comment.id)}
-                                        className="px-3 py-1 rounded-lg bg-[#D4AF37] text-black font-semibold hover:opacity-90 transition-opacity text-sm"
+                                        className="px-3 py-1 rounded-lg bg-[#7C8FFF] text-white font-semibold hover:opacity-90 transition-opacity text-sm"
                                     >
                                         Save
                                     </button>
@@ -335,7 +335,7 @@ function ThreadedCommentsInner({
                                                 setReplyText('');
                                             }
                                         }}
-                                        className="text-white/30 text-xs hover:text-[#D4AF37] transition-colors"
+                                        className="text-white/30 text-xs hover:text-[#7C8FFF] transition-colors"
                                     >
                                         Reply
                                     </button>
@@ -343,7 +343,7 @@ function ThreadedCommentsInner({
                                 {hasReplies && (
                                     <button
                                         onClick={() => toggleReplies(comment.id)}
-                                        className="text-[#D4AF37]/60 text-xs hover:text-[#D4AF37] transition-colors"
+                                        className="text-[#7C8FFF]/60 text-xs hover:text-[#7C8FFF] transition-colors"
                                     >
                                         {isExpanded ? 'Hide' : 'View'}{' '}
                                         {comment.replies!.length}{' '}
@@ -374,13 +374,13 @@ function ThreadedCommentsInner({
                                                 }
                                             }}
                                             placeholder={`Reply to @${comment.user.username}...`}
-                                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#D4AF37]/50"
+                                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#7C8FFF]/50"
                                             autoFocus
                                         />
                                         <button
                                             onClick={() => handleSubmit(comment.id)}
                                             disabled={!replyText.trim() || isSubmitting}
-                                            className="px-3 py-2 rounded-xl bg-[#D4AF37] text-black text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+                                            className="px-3 py-2 rounded-xl bg-[#7C8FFF] text-white text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
                                         >
                                             Reply
                                         </button>
@@ -438,12 +438,12 @@ function ThreadedCommentsInner({
                             }
                         }}
                         placeholder="Add a comment..."
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#D4AF37]/50"
+                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#7C8FFF]/50"
                     />
                     <button
                         onClick={() => handleSubmit()}
                         disabled={!newComment.trim() || isSubmitting}
-                        className="px-4 py-2.5 rounded-xl bg-[#D4AF37] text-black text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+                        className="px-4 py-2.5 rounded-xl bg-[#7C8FFF] text-white text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
                     >
                         Post
                     </button>

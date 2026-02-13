@@ -294,7 +294,7 @@ export default function GovernanceScreen() {
                                 onPress={() => setShowCreate(true)}
                             >
                                 <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.createBtnGradient}>
-                                    <Ionicons name="add" size={18} color={colors.obsidian[900]} />
+                                    <Ionicons name="add" size={18} color="#FFFFFF" />
                                     <Text style={styles.createBtnText}>New Proposal</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -380,7 +380,7 @@ export default function GovernanceScreen() {
                                 style={styles.submitBtnGradient}
                             >
                                 {creating ? (
-                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
                                 ) : (
                                     <Text style={[styles.submitBtnText, !newTitle.trim() && { color: colors.text.muted }]}>
                                         Submit Proposal
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.md, paddingHorizontal: spacing.xl,
     },
     createBtnText: {
-        fontSize: typography.fontSize.base, fontWeight: '700', color: colors.obsidian[900],
+        fontSize: typography.fontSize.base, fontWeight: '700', color: '#FFFFFF',
     },
 
     // Mod log
@@ -587,6 +587,6 @@ const styles = StyleSheet.create({
     },
     submitBtnText: {
         fontSize: typography.fontSize.base, fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 });

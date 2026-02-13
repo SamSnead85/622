@@ -320,7 +320,7 @@ function MigrateContent() {
                                 onDrop={handleDrop}
                                 onClick={() => fileInputRef.current?.click()}
                                 className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 ${
-                                    isDragging ? 'border-[#D4AF37]/50 bg-[#D4AF37]/5' :
+                                    isDragging ? 'border-[#7C8FFF]/50 bg-[#7C8FFF]/5' :
                                     'border-white/[0.08] hover:border-white/[0.15] bg-white/[0.02] hover:bg-white/[0.04]'
                                 }`}
                             >
@@ -354,9 +354,9 @@ function MigrateContent() {
                     {/* Step 4: Processing */}
                     {step === 'processing' && (
                         <motion.div key="processing" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="text-center py-16">
-                            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center">
+                            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#7C8FFF]/10 border border-[#7C8FFF]/20 flex items-center justify-center">
                                 <motion.svg
-                                    className="w-8 h-8 text-[#D4AF37]"
+                                    className="w-8 h-8 text-[#7C8FFF]"
                                     viewBox="0 0 24 24"
                                     fill="none"
                                     stroke="currentColor"

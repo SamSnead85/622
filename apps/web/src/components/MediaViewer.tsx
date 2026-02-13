@@ -279,7 +279,7 @@ export function ContentReportModal({
                         <label
                             key={reason.id}
                             className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${selectedReason === reason.id
-                                    ? 'bg-[#D4AF37]/10 border border-[#D4AF37]/30'
+                                    ? 'bg-[#7C8FFF]/10 border border-[#7C8FFF]/30'
                                     : 'bg-white/5 border border-transparent hover:bg-white/10'
                                 }`}
                         >
@@ -305,7 +305,7 @@ export function ContentReportModal({
                                 value={details}
                                 onChange={(e) => setDetails(e.target.value)}
                                 placeholder="Add more details (optional)"
-                                className="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/40 resize-none focus:outline-none focus:border-[#D4AF37]/50"
+                                className="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/40 resize-none focus:outline-none focus:border-[#7C8FFF]/50"
                             />
                         </motion.div>
                     )}

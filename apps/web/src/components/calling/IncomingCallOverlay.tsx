@@ -39,16 +39,16 @@ export function IncomingCallOverlay({
                         {/* Ringing animation */}
                         <div className="relative">
                             <motion.div
-                                className="absolute inset-0 rounded-full bg-[#D4AF37]/20"
+                                className="absolute inset-0 rounded-full bg-[#7C8FFF]/20"
                                 animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
                                 transition={{ repeat: Infinity, duration: 2 }}
                             />
                             <motion.div
-                                className="absolute inset-0 rounded-full bg-[#D4AF37]/10"
+                                className="absolute inset-0 rounded-full bg-[#7C8FFF]/10"
                                 animate={{ scale: [1, 2, 1], opacity: [0.3, 0, 0.3] }}
                                 transition={{ repeat: Infinity, duration: 2, delay: 0.5 }}
                             />
-                            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-4xl font-bold relative z-10">
+                            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#7C8FFF] to-[#6070EE] flex items-center justify-center text-4xl font-bold relative z-10">
                                 {callerAvatar ? (
                                     <img src={callerAvatar} alt="" className="w-full h-full rounded-full object-cover" />
                                 ) : callerName[0]?.toUpperCase() || '?'}
@@ -94,10 +94,10 @@ export function IncomingCallOverlay({
                             {callType === 'video' && (
                                 <button
                                     onClick={onAcceptVideo}
-                                    className="w-16 h-16 rounded-full bg-[#D4AF37] flex items-center justify-center hover:opacity-90 transition-opacity"
+                                    className="w-16 h-16 rounded-full bg-[#7C8FFF] flex items-center justify-center hover:opacity-90 transition-opacity"
                                     aria-label="Accept video call"
                                 >
-                                    <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth={2.5}>
+                                    <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5}>
                                         <path d="M23 7l-7 5 7 5V7z" />
                                         <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
                                     </svg>

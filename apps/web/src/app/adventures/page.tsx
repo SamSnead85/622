@@ -82,7 +82,7 @@ export default function AdventuresPage() {
                         <p className="text-white/50 mb-6">Join your family and friends on exciting trips!</p>
                         <Link
                             href="/login"
-                            className="inline-block px-6 py-3 rounded-xl bg-[#D4AF37] text-black font-semibold hover:opacity-90"
+                            className="inline-block px-6 py-3 rounded-xl bg-[#7C8FFF] text-white font-semibold hover:opacity-90"
                         >
                             Sign In
                         </Link>
@@ -98,7 +98,7 @@ export default function AdventuresPage() {
 
             <main className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
                 {/* Hero Header */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-[#D4AF37]/20 via-[#B8942D]/10 to-transparent">
+                <div className="relative overflow-hidden bg-gradient-to-br from-[#7C8FFF]/20 via-[#6070EE]/10 to-transparent">
                     <div className="absolute inset-0 bg-[url('/patterns/topography.svg')] opacity-5" />
                     <div className="max-w-4xl mx-auto px-4 py-12 relative">
                         <div className="flex items-center gap-4 mb-6">
@@ -118,8 +118,8 @@ export default function AdventuresPage() {
                                 className="p-4 rounded-2xl bg-white/5 backdrop-blur border border-white/10"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl bg-[#D4AF37]/20">
-                                        <MapIcon size={24} className="text-[#D4AF37]" />
+                                    <div className="p-2 rounded-xl bg-[#7C8FFF]/20">
+                                        <MapIcon size={24} className="text-[#7C8FFF]" />
                                     </div>
                                     <div>
                                         <div className="text-2xl font-bold text-white">{stats.upcoming}</div>
@@ -171,7 +171,7 @@ export default function AdventuresPage() {
                                         key={f}
                                         onClick={() => setFilter(f)}
                                         className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${filter === f
-                                            ? 'bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white'
+                                            ? 'bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white'
                                             : 'bg-white/5 text-white/60 hover:bg-white/10'
                                             }`}
                                     >
@@ -186,7 +186,7 @@ export default function AdventuresPage() {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => setShowWizard(true)}
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-medium shadow-lg shadow-[#D4AF37]/20"
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white font-medium shadow-lg shadow-[#7C8FFF]/20"
                             >
                                 <PlusIcon size={18} />
                                 <span className="hidden sm:inline">Plan Adventure</span>

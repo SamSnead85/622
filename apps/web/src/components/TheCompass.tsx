@@ -43,7 +43,7 @@ export function TheCompass({
                         className={`
                             px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-2
                             ${scopeMode === 'tribe'
-                                ? 'bg-[#D4AF37]/20 text-[#D4AF37] shadow-[0_0_10px_rgba(0,212,255,0.2)]'
+                                ? 'bg-[#7C8FFF]/20 text-[#7C8FFF] shadow-[0_0_10px_rgba(0,212,255,0.2)]'
                                 : 'text-white/40 hover:text-white/80'}
                         `}
                     >

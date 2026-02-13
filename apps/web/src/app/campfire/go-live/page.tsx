@@ -50,7 +50,7 @@ function ChatMsg({ msg }: { msg: StreamChatMessage }) {
     }
     return (
         <div className="px-3 py-0.5 flex gap-1.5">
-            <span className="text-[11px] font-semibold text-[#D4AF37] flex-shrink-0">{msg.user.displayName}</span>
+            <span className="text-[11px] font-semibold text-[#7C8FFF] flex-shrink-0">{msg.user.displayName}</span>
             <span className="text-[11px] text-white/70 break-words">{msg.content}</span>
         </div>
     );
@@ -301,7 +301,7 @@ function GoLiveContent() {
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => setMode('browser')}
-                                className={`p-4 rounded-xl border text-left transition-all ${mode === 'browser' ? 'bg-[#D4AF37]/10 border-[#D4AF37]/30' : 'bg-white/[0.03] border-white/[0.06] hover:border-white/[0.12]'}`}
+                                className={`p-4 rounded-xl border text-left transition-all ${mode === 'browser' ? 'bg-[#7C8FFF]/10 border-[#7C8FFF]/30' : 'bg-white/[0.03] border-white/[0.06] hover:border-white/[0.12]'}`}
                             >
                                 <div className="text-2xl mb-2">📱</div>
                                 <div className="font-semibold text-sm">Camera</div>
@@ -309,7 +309,7 @@ function GoLiveContent() {
                             </button>
                             <button
                                 onClick={() => setMode('obs')}
-                                className={`p-4 rounded-xl border text-left transition-all ${mode === 'obs' ? 'bg-[#D4AF37]/10 border-[#D4AF37]/30' : 'bg-white/[0.03] border-white/[0.06] hover:border-white/[0.12]'}`}
+                                className={`p-4 rounded-xl border text-left transition-all ${mode === 'obs' ? 'bg-[#7C8FFF]/10 border-[#7C8FFF]/30' : 'bg-white/[0.03] border-white/[0.06] hover:border-white/[0.12]'}`}
                             >
                                 <div className="text-2xl mb-2">Desktop</div>
                                 <div className="font-semibold text-sm">OBS / RTMP</div>
@@ -339,7 +339,7 @@ function GoLiveContent() {
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="What are you streaming?"
                             maxLength={200}
-                            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-[#D4AF37]/40 focus:ring-1 focus:ring-[#D4AF37]/20 transition-all"
+                            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-[#7C8FFF]/40 focus:ring-1 focus:ring-[#7C8FFF]/20 transition-all"
                         />
                     </div>
 
@@ -353,7 +353,7 @@ function GoLiveContent() {
                                     onClick={() => setCategory(category === cat.id ? '' : cat.id)}
                                     className={`px-3 py-2 rounded-xl text-sm transition-all active:scale-95 ${
                                         category === cat.id
-                                            ? 'bg-[#D4AF37]/20 border border-[#D4AF37]/30 text-[#D4AF37]'
+                                            ? 'bg-[#7C8FFF]/20 border border-[#7C8FFF]/30 text-[#7C8FFF]'
                                             : 'bg-white/[0.04] border border-white/[0.06] text-white/60 hover:text-white/80 hover:border-white/[0.12]'
                                     }`}
                                 >
@@ -371,7 +371,7 @@ function GoLiveContent() {
                             value={tags}
                             onChange={(e) => setTags(e.target.value)}
                             placeholder="e.g. competitive, tutorial, chill"
-                            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-[#D4AF37]/40 focus:ring-1 focus:ring-[#D4AF37]/20 transition-all"
+                            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-[#7C8FFF]/40 focus:ring-1 focus:ring-[#7C8FFF]/20 transition-all"
                         />
                     </div>
 
@@ -383,7 +383,7 @@ function GoLiveContent() {
                         </div>
                         <button
                             onClick={() => setIsRecorded(!isRecorded)}
-                            className={`w-12 h-7 rounded-full transition-all relative ${isRecorded ? 'bg-[#D4AF37]' : 'bg-white/20'}`}
+                            className={`w-12 h-7 rounded-full transition-all relative ${isRecorded ? 'bg-[#7C8FFF]' : 'bg-white/20'}`}
                         >
                             <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all shadow ${isRecorded ? 'left-6' : 'left-1'}`} />
                         </button>
@@ -532,7 +532,7 @@ function GoLiveContent() {
                         )}
                         <Link
                             href="/dashboard"
-                            className="block w-full py-3 rounded-xl bg-[#D4AF37] text-black font-semibold text-sm hover:bg-[#D4AF37]/90 transition-all"
+                            className="block w-full py-3 rounded-xl bg-[#7C8FFF] text-white font-semibold text-sm hover:bg-[#7C8FFF]/90 transition-all"
                         >
                             Back to Dashboard
                         </Link>
@@ -638,12 +638,12 @@ function GoLiveContent() {
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 placeholder="Chat with your viewers..."
                                 maxLength={500}
-                                className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#D4AF37]/40 transition-all"
+                                className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#7C8FFF]/40 transition-all"
                             />
                             <button
                                 type="submit"
                                 disabled={!newMessage.trim()}
-                                className="bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 text-[#D4AF37] p-2.5 rounded-xl transition-all disabled:opacity-30 active:scale-95"
+                                className="bg-[#7C8FFF]/20 hover:bg-[#7C8FFF]/30 text-[#7C8FFF] p-2.5 rounded-xl transition-all disabled:opacity-30 active:scale-95"
                             >
                                 <SendIcon size={18} />
                             </button>

@@ -420,10 +420,10 @@ export default function AlgorithmMixerScreen() {
                             end={{ x: 1, y: 1 }}
                         >
                             {saving ? (
-                                <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
                                 <>
-                                    <Ionicons name="checkmark-circle" size={18} color={colors.obsidian[900]} />
+                                    <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
                                     <Text style={styles.saveBtnText}>Save Preferences</Text>
                                 </>
                             )}
@@ -655,6 +655,6 @@ const styles = StyleSheet.create({
     },
     saveBtnText: {
         fontSize: typography.fontSize.lg, fontWeight: '600',
-        color: colors.obsidian[900], fontFamily: 'Inter-SemiBold',
+        color: '#FFFFFF', fontFamily: 'Inter-SemiBold',
     },
 });

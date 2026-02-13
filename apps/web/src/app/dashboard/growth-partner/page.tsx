@@ -207,7 +207,7 @@ export default function GrowthPartnerPage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[#7C8FFF]/30 border-t-[#7C8FFF] rounded-full animate-spin" />
             </div>
         );
     }
@@ -270,27 +270,27 @@ export default function GrowthPartnerPage() {
                             placeholder="PayPal email (optional)"
                             value={enrollForm.paymentEmail}
                             onChange={e => setEnrollForm(f => ({ ...f, paymentEmail: e.target.value }))}
-                            className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/30"
+                            className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#7C8FFF]/30"
                         />
                         <input
                             type="text"
                             placeholder="Legal name (for tax purposes, optional)"
                             value={enrollForm.legalName}
                             onChange={e => setEnrollForm(f => ({ ...f, legalName: e.target.value }))}
-                            className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/30"
+                            className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#7C8FFF]/30"
                         />
                         <input
                             type="text"
                             placeholder="Country of residence (optional)"
                             value={enrollForm.country}
                             onChange={e => setEnrollForm(f => ({ ...f, country: e.target.value }))}
-                            className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/30"
+                            className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#7C8FFF]/30"
                         />
 
                         <button
                             onClick={handleEnroll}
                             disabled={enrolling}
-                            className="w-full py-3 bg-gradient-to-r from-[#D4AF37] to-[#00B4E6] text-black font-semibold rounded-xl text-sm hover:opacity-90 transition disabled:opacity-50"
+                            className="w-full py-3 bg-gradient-to-r from-[#7C8FFF] to-[#00B4E6] text-white font-semibold rounded-xl text-sm hover:opacity-90 transition disabled:opacity-50"
                         >
                             {enrolling ? 'Enrolling...' : 'Join Growth Partner Program'}
                         </button>
@@ -314,7 +314,7 @@ export default function GrowthPartnerPage() {
                 <div className="max-w-5xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D4AF37]/30 to-violet-500/30 flex items-center justify-center text-lg">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7C8FFF]/30 to-violet-500/30 flex items-center justify-center text-lg">
                                 🚀
                             </div>
                             <div>
@@ -323,7 +323,7 @@ export default function GrowthPartnerPage() {
                                     <span className={`text-[10px] px-2 py-0.5 rounded-full ${
                                         partner?.tier === 'cofounder_track' ? 'bg-amber-500/20 text-amber-400' :
                                         partner?.tier === 'community_leader' ? 'bg-purple-500/20 text-purple-400' :
-                                        'bg-[#D4AF37]/10 text-[#D4AF37]'
+                                        'bg-[#7C8FFF]/10 text-[#7C8FFF]'
                                     }`}>
                                         {partner?.tier?.replace('_', ' ').toUpperCase()}
                                     </span>
@@ -370,9 +370,9 @@ export default function GrowthPartnerPage() {
                                     <div className="text-[10px] text-white/40 mb-1">This Month</div>
                                     <div className="text-2xl font-bold text-green-400">${stats.monthlyEarnings.toFixed(2)}</div>
                                 </div>
-                                <div className="rounded-xl border border-white/[0.06] bg-gradient-to-br from-[#D4AF37]/10 to-blue-600/5 p-4">
+                                <div className="rounded-xl border border-white/[0.06] bg-gradient-to-br from-[#7C8FFF]/10 to-blue-600/5 p-4">
                                     <div className="text-[10px] text-white/40 mb-1">Total Earned</div>
-                                    <div className="text-2xl font-bold text-[#D4AF37]">${stats.totalEarned.toFixed(2)}</div>
+                                    <div className="text-2xl font-bold text-[#7C8FFF]">${stats.totalEarned.toFixed(2)}</div>
                                 </div>
                                 <div className="rounded-xl border border-white/[0.06] bg-gradient-to-br from-purple-500/10 to-purple-600/5 p-4">
                                     <div className="text-[10px] text-white/40 mb-1">Total Paid</div>
@@ -430,7 +430,7 @@ export default function GrowthPartnerPage() {
                             </div>
 
                             {/* Invite Tools */}
-                            <div className="rounded-xl border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/5 to-transparent p-5">
+                            <div className="rounded-xl border border-[#7C8FFF]/20 bg-gradient-to-br from-[#7C8FFF]/5 to-transparent p-5">
                                 <h3 className="text-sm font-semibold text-white mb-3">Your Invite Link</h3>
                                 <div className="flex gap-2 mb-3">
                                     <input
@@ -440,7 +440,7 @@ export default function GrowthPartnerPage() {
                                     />
                                     <button
                                         onClick={copyLink}
-                                        className="px-4 py-2 bg-[#D4AF37]/10 text-[#D4AF37] rounded-lg text-xs font-medium hover:bg-[#D4AF37]/20 transition"
+                                        className="px-4 py-2 bg-[#7C8FFF]/10 text-[#7C8FFF] rounded-lg text-xs font-medium hover:bg-[#7C8FFF]/20 transition"
                                     >
                                         {copied ? 'Copied!' : 'Copy'}
                                     </button>
@@ -474,7 +474,7 @@ export default function GrowthPartnerPage() {
                                     <p className="text-[10px] text-white/30 mb-3">Reach 50 qualified referrals to unlock $500 bonus + leadership invitation</p>
                                     <div className="w-full bg-white/[0.06] rounded-full h-3 mb-1">
                                         <div
-                                            className="bg-gradient-to-r from-[#D4AF37] to-violet-500 h-3 rounded-full transition-all"
+                                            className="bg-gradient-to-r from-[#7C8FFF] to-violet-500 h-3 rounded-full transition-all"
                                             style={{ width: `${Math.min((stats.directReferrals.qualified / 50) * 100, 100)}%` }}
                                         />
                                     </div>
@@ -535,7 +535,7 @@ export default function GrowthPartnerPage() {
                                     <div className="divide-y divide-white/[0.04]">
                                         {referrals.map(r => (
                                             <div key={r.id} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 px-4 py-3 items-center hover:bg-white/[0.02] transition">
-                                                <span className={`text-xs ${r.level === 'direct' ? 'text-[#D4AF37]' : 'text-violet-400'}`}>
+                                                <span className={`text-xs ${r.level === 'direct' ? 'text-[#7C8FFF]' : 'text-violet-400'}`}>
                                                     {r.level === 'direct' ? 'Direct' : '2nd Level'}
                                                 </span>
                                                 <span className={`text-[10px] px-2 py-0.5 rounded-full inline-block w-fit ${
@@ -585,7 +585,7 @@ export default function GrowthPartnerPage() {
                             <div className="flex items-center justify-between">
                                 <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider">Monthly Leaderboard</h2>
                                 {myRank > 0 && (
-                                    <span className="text-xs text-[#D4AF37]">Your rank: #{myRank}</span>
+                                    <span className="text-xs text-[#7C8FFF]">Your rank: #{myRank}</span>
                                 )}
                             </div>
                             <div className="rounded-xl border border-white/[0.06] overflow-hidden">
@@ -598,7 +598,7 @@ export default function GrowthPartnerPage() {
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ delay: i * 0.03 }}
                                             className={`flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0 ${
-                                                isMe ? 'bg-[#D4AF37]/[0.04]' : 'hover:bg-white/[0.02]'
+                                                isMe ? 'bg-[#7C8FFF]/[0.04]' : 'hover:bg-white/[0.02]'
                                             } transition`}
                                         >
                                             <div className={`w-8 text-center text-sm font-bold ${
@@ -614,7 +614,7 @@ export default function GrowthPartnerPage() {
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className={`text-sm ${isMe ? 'text-[#D4AF37] font-semibold' : 'text-white/70'}`}>
+                                                <p className={`text-sm ${isMe ? 'text-[#7C8FFF] font-semibold' : 'text-white/70'}`}>
                                                     {entry.displayName} {isMe && '(You)'}
                                                 </p>
                                                 <p className="text-[10px] text-white/30">@{entry.username}</p>
@@ -688,7 +688,7 @@ function PaymentSettings({ partner }: { partner: PartnerInfo | null }) {
                     type="email"
                     value={form.paymentEmail}
                     onChange={e => setForm(f => ({ ...f, paymentEmail: e.target.value }))}
-                    className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/30"
+                    className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#7C8FFF]/30"
                 />
             </div>
             <div>
@@ -696,7 +696,7 @@ function PaymentSettings({ partner }: { partner: PartnerInfo | null }) {
                 <select
                     value={form.paymentMethod}
                     onChange={e => setForm(f => ({ ...f, paymentMethod: e.target.value }))}
-                    className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:outline-none focus:border-[#D4AF37]/30"
+                    className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:outline-none focus:border-[#7C8FFF]/30"
                 >
                     <option value="manual">Manual (Admin Transfer)</option>
                     <option value="paypal">PayPal</option>
@@ -706,7 +706,7 @@ function PaymentSettings({ partner }: { partner: PartnerInfo | null }) {
             <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-6 py-2.5 bg-[#D4AF37]/10 text-[#D4AF37] rounded-xl text-sm font-medium hover:bg-[#D4AF37]/20 transition disabled:opacity-50"
+                className="px-6 py-2.5 bg-[#7C8FFF]/10 text-[#7C8FFF] rounded-xl text-sm font-medium hover:bg-[#7C8FFF]/20 transition disabled:opacity-50"
             >
                 {saving ? 'Saving...' : saved ? 'Saved!' : 'Update Payment Info'}
             </button>

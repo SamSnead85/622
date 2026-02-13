@@ -111,7 +111,7 @@ export default function MyPostsPage() {
                         <p className="text-white/50 mb-6">You need to be logged in to manage your posts.</p>
                         <Link
                             href="/login"
-                            className="inline-block px-6 py-3 rounded-xl bg-[#D4AF37] text-black font-semibold hover:opacity-90"
+                            className="inline-block px-6 py-3 rounded-xl bg-[#7C8FFF] text-white font-semibold hover:opacity-90"
                         >
                             Sign In
                         </Link>
@@ -141,7 +141,7 @@ export default function MyPostsPage() {
                             </div>
                             <Link
                                 href="/dashboard"
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-medium hover:opacity-90 transition-opacity"
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white font-medium hover:opacity-90 transition-opacity"
                             >
                                 <PlusIcon size={18} />
                                 New Post
@@ -156,7 +156,7 @@ export default function MyPostsPage() {
                                         key={f}
                                         onClick={() => setFilter(f)}
                                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filter === f
-                                            ? 'bg-[#D4AF37] text-black'
+                                            ? 'bg-[#7C8FFF] text-white'
                                             : 'bg-white/5 text-white/60 hover:bg-white/10'
                                             }`}
                                     >
@@ -167,7 +167,7 @@ export default function MyPostsPage() {
                             <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                                className="px-4 py-2 rounded-xl bg-white/5 text-white text-sm border-0 focus:ring-2 focus:ring-[#D4AF37]"
+                                className="px-4 py-2 rounded-xl bg-white/5 text-white text-sm border-0 focus:ring-2 focus:ring-[#7C8FFF]"
                             >
                                 <option value="newest">Newest First</option>
                                 <option value="oldest">Oldest First</option>
@@ -194,7 +194,7 @@ export default function MyPostsPage() {
                                     >
                                         {selectedPosts.length === sortedPosts.length ? 'Deselect All' : 'Select All'}
                                     </button>
-                                    <span className="text-sm text-[#D4AF37] font-medium">
+                                    <span className="text-sm text-[#7C8FFF] font-medium">
                                         {selectedPosts.length} selected
                                     </span>
                                 </div>
@@ -229,8 +229,8 @@ export default function MyPostsPage() {
                         </div>
                     ) : sortedPosts.length === 0 ? (
                         <div className="text-center py-16">
-                            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#B8942D]/20 flex items-center justify-center">
-                                <EditIcon size={40} className="text-[#D4AF37]" />
+                            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[#7C8FFF]/20 to-[#6070EE]/20 flex items-center justify-center">
+                                <EditIcon size={40} className="text-[#7C8FFF]" />
                             </div>
                             <h2 className="text-2xl font-bold text-white mb-2">No posts yet</h2>
                             <p className="text-white/50 mb-6 max-w-md mx-auto">
@@ -238,7 +238,7 @@ export default function MyPostsPage() {
                             </p>
                             <Link
                                 href="/dashboard"
-                                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-semibold hover:opacity-90 transition-opacity"
+                                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white font-semibold hover:opacity-90 transition-opacity"
                             >
                                 <PlusIcon size={20} />
                                 Create Your First Post
@@ -252,7 +252,7 @@ export default function MyPostsPage() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
-                                    className={`bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 rounded-2xl p-4 transition-all ${selectedPosts.includes(post.id) ? 'ring-2 ring-[#D4AF37]' : ''
+                                    className={`bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 rounded-2xl p-4 transition-all ${selectedPosts.includes(post.id) ? 'ring-2 ring-[#7C8FFF]' : ''
                                         }`}
                                 >
                                     <div className="flex gap-4">
@@ -260,7 +260,7 @@ export default function MyPostsPage() {
                                         <button
                                             onClick={() => toggleSelectPost(post.id)}
                                             className={`w-5 h-5 rounded border-2 flex-shrink-0 mt-1 transition-all ${selectedPosts.includes(post.id)
-                                                ? 'bg-[#D4AF37] border-[#D4AF37]'
+                                                ? 'bg-[#7C8FFF] border-[#7C8FFF]'
                                                 : 'border-white/20 hover:border-white/40'
                                                 }`}
                                         >
@@ -285,7 +285,7 @@ export default function MyPostsPage() {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-[#D4AF37]/10 to-[#B8942D]/10 flex items-center justify-center flex-shrink-0">
+                                            <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-[#7C8FFF]/10 to-[#6070EE]/10 flex items-center justify-center flex-shrink-0">
                                                 <EditIcon size={32} className="text-white/20" />
                                             </div>
                                         )}

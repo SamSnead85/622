@@ -34,9 +34,9 @@
   --text-inverse: #000000;
 
   /* === ACCENT - Premium Gold === */
-  --accent-primary: #D4AF37;
-  --accent-primary-hover: #E5C158;
-  --accent-secondary: #B8942D;
+  --accent-primary: #7C8FFF;
+  --accent-primary-hover: #99AAFF;
+  --accent-secondary: #6070EE;
   --accent-success: #10B981;
   --accent-warning: #F59E0B;
   --accent-danger: #EF4444;
@@ -58,25 +58,25 @@
   --void-surface: #12121A;
 
   /* === 0G PRIMARY - Premium Gold === */
-  --og-primary: #D4AF37;
-  --og-primary-bright: #E5C158;
+  --og-primary: #7C8FFF;
+  --og-primary-bright: #99AAFF;
   --og-primary-glow: rgba(212, 175, 55, 0.4);
   --og-primary-subtle: rgba(212, 175, 55, 0.15);
 
   /* === GOLD SYSTEM - Refined energy === */
-  --aurora-violet: #B8942D;
-  --aurora-violet-bright: #E5C158;
+  --aurora-violet: #6070EE;
+  --aurora-violet-bright: #99AAFF;
   --aurora-violet-glow: rgba(184, 148, 45, 0.4);
 
-  --aurora-cyan: #D4AF37;
-  --aurora-cyan-bright: #E5C158;
+  --aurora-cyan: #7C8FFF;
+  --aurora-cyan-bright: #99AAFF;
   --aurora-cyan-glow: rgba(212, 175, 55, 0.4);
 
   --aurora-rose: #F43F5E;
   --aurora-rose-bright: #FB7185;
   --aurora-rose-glow: rgba(244, 63, 94, 0.4);
 
-  --ember: #D4AF37;
+  --ember: #7C8FFF;
   --ember-glow: rgba(212, 175, 55, 0.4);
 
   /* === GLASS - Layered surfaces === */
@@ -88,18 +88,18 @@
   --glass-border-bright: rgba(255, 255, 255, 0.15);
 
   /* === SILK ROAD RENAISSANCE - Heritage Tokens === */
-  --silk-gold: #D4AF37;
+  --silk-gold: #7C8FFF;
   --silk-gold-glow: rgba(212, 175, 55, 0.4);
   --silk-amber: #F59E0B;
   --silk-amber-glow: rgba(245, 158, 11, 0.4);
   --silk-rose: #F43F5E;
   --silk-rose-glow: rgba(244, 63, 94, 0.35);
-  --silk-violet: #B8942D;
+  --silk-violet: #6070EE;
   --silk-emerald: #10B981;
 
   /* === JOURNEY GRADIENTS === */
   --gradient-silk: linear-gradient(135deg, var(--silk-violet) 0%, var(--silk-rose) 50%, var(--silk-amber) 100%);
-  --gradient-golden-hour: linear-gradient(135deg, #F59E0B 0%, #D4AF37 50%, #FBBF24 100%);
+  --gradient-golden-hour: linear-gradient(135deg, #F59E0B 0%, #7C8FFF 50%, #FBBF24 100%);
   --gradient-desert-dusk: linear-gradient(180deg, #0f0f16 0%, #1a1025 50%, #0f0f16 100%);
 
   /* === TYPOGRAPHY === */
@@ -1066,7 +1066,7 @@ img[loading="lazy"] {
  * FOCUS VISIBLE STYLES
  * ============================================ */
 :focus-visible {
-    outline: 2px solid var(--accent-primary, #D4AF37);
+    outline: 2px solid var(--accent-primary, #7C8FFF);
     outline-offset: 2px;
     border-radius: 4px;
 }
@@ -1076,6 +1076,6 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-    outline: 2px solid var(--accent-primary, #D4AF37);
+    outline: 2px solid var(--accent-primary, #7C8FFF);
     outline-offset: 2px;
 }

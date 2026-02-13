@@ -168,7 +168,7 @@ export function GameInviteSheet({ code, visible, onClose }: GameInviteSheetProps
                                 accessibilityRole="button"
                                 accessibilityLabel="Share game invite"
                             >
-                                <Ionicons name="share-social" size={20} color={colors.obsidian[900]} />
+                                <Ionicons name="share-social" size={20} color="#FFFFFF" />
                                 <Text style={styles.shareButtonText}>Share Invite Link</Text>
                             </TouchableOpacity>
                         </Animated.View>
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // ---- Manual Code Note ----

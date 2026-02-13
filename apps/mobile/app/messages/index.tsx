@@ -660,7 +660,7 @@ export default function MessagesScreen() {
                         accessibilityLabel="Compose new message"
                         accessibilityHint="Opens search to find someone to message"
                     >
-                        <Ionicons name="create-outline" size={20} color={colors.obsidian[900]} />
+                        <Ionicons name="create-outline" size={20} color="#FFFFFF" />
                     </TouchableOpacity>
                 }
                 noBorder
@@ -830,7 +830,7 @@ export default function MessagesScreen() {
                                     }}
                                     activeOpacity={0.8}
                                 >
-                                    <Ionicons name="add" size={18} color={colors.obsidian[900]} />
+                                    <Ionicons name="add" size={18} color="#FFFFFF" />
                                     <Text style={styles.elegantEmptyButtonText}>New Conversation</Text>
                                 </TouchableOpacity>
                             </View>
@@ -859,7 +859,7 @@ export default function MessagesScreen() {
                         colors={[colors.gold[400], colors.gold[600]]}
                         style={styles.fabGradient}
                     >
-                        <Ionicons name="add" size={28} color={colors.obsidian[900]} />
+                        <Ionicons name="add" size={28} color="#FFFFFF" />
                     </LinearGradient>
                 </TouchableOpacity>
             </Animated.View>
@@ -956,7 +956,7 @@ const styles = StyleSheet.create({
     filterTabBadgeText: {
         fontSize: 9,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // Online Now strip
@@ -1179,7 +1179,7 @@ const styles = StyleSheet.create({
     unreadCount: {
         fontSize: 11,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     chevron: {
         marginStart: spacing.xs,
@@ -1261,6 +1261,6 @@ const styles = StyleSheet.create({
     elegantEmptyButtonText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 });

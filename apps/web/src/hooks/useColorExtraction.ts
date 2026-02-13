@@ -11,7 +11,7 @@ interface ColorPalette {
 const defaultPalette: ColorPalette = {
     dominant: '#0A0A0F',
     muted: '#1a1a2e',
-    vibrant: '#D4AF37',
+    vibrant: '#7C8FFF',
 };
 
 export function useColorExtraction(imageUrl?: string): ColorPalette {

@@ -22,7 +22,7 @@
     --og-amber: #F59E0B;
     --og-amber-light: #FBBF24;
     --og-amber-dark: #D97706;
-    --og-gold: #D4AF37;
+    --og-gold: #7C8FFF;
     --og-gold-light: #E8C547;
     --og-gold-dark: #B8942A;
 
@@ -30,8 +30,8 @@
     --og-rose-light: #FB7185;
     --og-rose-dark: #E11D48;
 
-    --og-violet: #B8942D;
-    --og-violet-light: #E5C158;
+    --og-violet: #6070EE;
+    --og-violet-light: #99AAFF;
     --og-violet-dark: #9A7A24;
 
     /* Desert & Earth Tones */
@@ -66,8 +66,8 @@
     --gradient-brand-vertical: linear-gradient(180deg, var(--og-gold) 0%, var(--og-amber) 30%, var(--og-rose) 70%, var(--og-violet) 100%);
     --gradient-brand-radial: radial-gradient(circle, var(--og-gold) 0%, var(--og-amber) 30%, var(--og-rose) 60%, var(--og-violet) 100%);
 
-    --gradient-sunset: linear-gradient(135deg, #D4AF37 0%, #F59E0B 25%, #F43F5E 50%, #B8942D 75%, #1a1a40 100%);
-    --gradient-desert: linear-gradient(180deg, #C2A06A 0%, #B87333 50%, #B8942D 100%);
+    --gradient-sunset: linear-gradient(135deg, #7C8FFF 0%, #F59E0B 25%, #F43F5E 50%, #6070EE 75%, #1a1a40 100%);
+    --gradient-desert: linear-gradient(180deg, #C2A06A 0%, #B87333 50%, #6070EE 100%);
     --gradient-night-sky: linear-gradient(180deg, #030305 0%, #1a1a40 50%, #2a2a5a 100%);
 
     --gradient-amber: linear-gradient(135deg, var(--og-amber-light) 0%, var(--og-amber-dark) 100%);

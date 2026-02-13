@@ -8,6 +8,7 @@ import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -42,7 +43,7 @@ export default function WelcomeScreen() {
                 {
                     paddingTop: insets.top,
                     paddingBottom: insets.bottom,
-                    backgroundColor: colors.obsidian[900],
+                    backgroundColor: colors.background,
                 },
             ]}
         >
@@ -56,10 +57,10 @@ export default function WelcomeScreen() {
             {/* Tagline */}
             <Animated.View entering={FadeInUp.delay(400).duration(600)} style={styles.taglineSection}>
                 <Text style={[styles.tagline, { color: colors.text.primary }]}>
-                    Your circle.{'\n'}Your rules.{'\n'}Your privacy.
+                    Social without{'\n'}the surveillance.
                 </Text>
                 <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
-                    Encrypted messaging, private groups, and a feed you actually control.
+                    Private communities, encrypted messaging, and a feed that works for you — not advertisers. Built for people who refuse to be the product.
                 </Text>
             </Animated.View>
 
@@ -68,13 +69,12 @@ export default function WelcomeScreen() {
 
             {/* CTAs */}
             <Animated.View entering={FadeInUp.delay(600).duration(500)} style={styles.ctaSection}>
-                {/* Create Account — primary, filled */}
+                {/* Create Account — gold gradient, matches login/signup */}
                 <Pressable
                     onPress={handleCreateAccount}
                     style={({ pressed }) => [
                         styles.primaryButton,
                         {
-                            backgroundColor: isDark ? colors.text.primary : colors.text.primary,
                             opacity: pressed ? 0.9 : 1,
                             transform: [{ scale: pressed ? 0.98 : 1 }],
                         },
@@ -82,9 +82,16 @@ export default function WelcomeScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Create account"
                 >
-                    <Text style={[styles.primaryButtonText, { color: colors.text.inverse }]}>
-                        Create account
-                    </Text>
+                    <LinearGradient
+                        colors={[colors.gold[400], colors.gold[600]]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.primaryGradient}
+                    >
+                        <Text style={styles.primaryButtonText}>
+                            Create account
+                        </Text>
+                    </LinearGradient>
                 </Pressable>
 
                 {/* Divider */}
@@ -94,15 +101,14 @@ export default function WelcomeScreen() {
                     <View style={[styles.dividerLine, { backgroundColor: colors.border.subtle }]} />
                 </View>
 
-                {/* Log In — secondary, outlined */}
+                {/* Log In — secondary, glass surface */}
                 <Pressable
                     onPress={handleLogin}
                     style={({ pressed }) => [
                         styles.secondaryButton,
                         {
-                            backgroundColor: isDark
-                                ? colors.surface.glass
-                                : colors.obsidian[700],
+                            backgroundColor: colors.surface.glass,
+                            borderColor: colors.border.subtle,
                             opacity: pressed ? 0.85 : 1,
                             transform: [{ scale: pressed ? 0.98 : 1 }],
                         },
@@ -110,7 +116,7 @@ export default function WelcomeScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Log in to existing account"
                 >
-                    <Text style={[styles.secondaryButtonText, { color: colors.text.secondary }]}>
+                    <Text style={[styles.secondaryButtonText, { color: colors.text.primary }]}>
                         Log in
                     </Text>
                 </Pressable>
@@ -120,10 +126,10 @@ export default function WelcomeScreen() {
             <Animated.View entering={FadeIn.delay(900).duration(400)} style={styles.footer}>
                 <Text style={[styles.termsText, { color: colors.text.muted }]}>
                     By signing up, you agree to our{' '}
-                    <Text style={[styles.termsLink, { color: colors.azure[500] }]}>Terms</Text>,{' '}
-                    <Text style={[styles.termsLink, { color: colors.azure[500] }]}>Rules & Policies</Text>
+                    <Text style={[styles.termsLink, { color: colors.gold[500] }]}>Terms</Text>,{' '}
+                    <Text style={[styles.termsLink, { color: colors.gold[500] }]}>Rules & Policies</Text>
                     , and{' '}
-                    <Text style={[styles.termsLink, { color: colors.azure[500] }]}>Privacy Policy</Text>.
+                    <Text style={[styles.termsLink, { color: colors.gold[500] }]}>Privacy Policy</Text>.
                 </Text>
 
                 <Pressable
@@ -200,15 +206,20 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.lg,
     },
     primaryButton: {
-        height: 52,
-        borderRadius: 26,
+        overflow: 'hidden',
+        borderRadius: 14,
+    },
+    primaryGradient: {
         alignItems: 'center',
         justifyContent: 'center',
+        paddingVertical: 15,
+        borderRadius: 14,
     },
     primaryButtonText: {
-        fontSize: typography.fontSize.base,
-        fontWeight: '600',
-        fontFamily: 'Inter-SemiBold',
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        fontFamily: 'Inter-Bold',
     },
     dividerRow: {
         flexDirection: 'row',
@@ -218,7 +229,7 @@ const styles = StyleSheet.create({
     },
     dividerLine: {
         flex: 1,
-        height: StyleSheet.hairlineWidth,
+        height: 1,
     },
     dividerText: {
         fontSize: typography.fontSize.sm,
@@ -227,7 +238,8 @@ const styles = StyleSheet.create({
     },
     secondaryButton: {
         height: 52,
-        borderRadius: 26,
+        borderRadius: 14,
+        borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
     },

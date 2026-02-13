@@ -64,7 +64,7 @@ const COLOR_PRESETS = [
     colors.amber[500],
     '#A855F7',  // purple
     '#EC4899',  // pink
-    '#6366F1',  // indigo
+    '#7C8FFF',  // bright blue
 ];
 
 // ─── Event Type Config ────────────────────────────────────────────

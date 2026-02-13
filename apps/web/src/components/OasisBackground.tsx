@@ -33,7 +33,7 @@ function ArabesquePattern() {
                     </g>
                 </pattern>
                 <linearGradient id="arabesque-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#D4AF37" />
+                    <stop offset="0%" stopColor="#7C8FFF" />
                     <stop offset="100%" stopColor="#E8927C" />
                 </linearGradient>
             </defs>
@@ -86,7 +86,7 @@ function EightPointedStar({ size = 12, className = '' }: { size?: number; classN
             />
             <defs>
                 <linearGradient id="star-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#D4AF37" />
+                    <stop offset="0%" stopColor="#7C8FFF" />
                     <stop offset="100%" stopColor="#F59E0B" />
                 </linearGradient>
             </defs>
@@ -110,7 +110,7 @@ export function CrescentMoon({ size = 16, className = '' }: { size?: number; cla
             />
             <defs>
                 <linearGradient id="moon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#D4AF37" />
+                    <stop offset="0%" stopColor="#7C8FFF" />
                     <stop offset="100%" stopColor="#F59E0B" />
                 </linearGradient>
             </defs>

@@ -55,7 +55,7 @@ export function DoubleTapHeart({
                             <motion.div
                                 key={i}
                                 className="absolute w-3 h-3 rounded-full"
-                                style={{ background: i % 2 === 0 ? '#FF0064' : '#D4AF37' }}
+                                style={{ background: i % 2 === 0 ? '#FF0064' : '#7C8FFF' }}
                                 initial={{ scale: 0, x: 0, y: 0 }}
                                 animate={{
                                     scale: [0, 1, 0],

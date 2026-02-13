@@ -161,7 +161,7 @@ function HeroSection({ liveCount }: { liveCount: number }) {
                         colors={[colors.amber[500], colors.gold[500]]}
                         style={styles.heroIconBg}
                     >
-                        <Ionicons name="mic" size={20} color={colors.obsidian[900]} />
+                        <Ionicons name="mic" size={20} color="#FFFFFF" />
                     </LinearGradient>
                     {liveCount > 0 && (
                         <View style={styles.heroLiveBadge}>
@@ -444,7 +444,7 @@ export default function SpacesScreen() {
                     end={{ x: 1, y: 0 }}
                     style={styles.headerBtnGradient}
                 >
-                    <Ionicons name="add" size={16} color={colors.obsidian[900]} />
+                    <Ionicons name="add" size={16} color="#FFFFFF" />
                 </LinearGradient>
             </TouchableOpacity>
         ),
@@ -487,7 +487,7 @@ export default function SpacesScreen() {
                             <View style={styles.startBannerContent}>
                                 <View style={styles.startBannerLeft}>
                                     <View style={styles.startBannerIcon}>
-                                        <Ionicons name="mic" size={22} color={colors.obsidian[900]} />
+                                        <Ionicons name="mic" size={22} color="#FFFFFF" />
                                     </View>
                                     <View>
                                         <Text style={styles.startBannerTitle}>Start a Space</Text>
@@ -496,7 +496,7 @@ export default function SpacesScreen() {
                                         </Text>
                                     </View>
                                 </View>
-                                <Ionicons name="chevron-forward" size={20} color={colors.obsidian[900]} />
+                                <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
                             </View>
                         </LinearGradient>
                     </TouchableOpacity>
@@ -642,8 +642,8 @@ const styles = StyleSheet.create({
         width: 40, height: 40, borderRadius: 12,
         backgroundColor: 'rgba(0,0,0,0.15)', alignItems: 'center', justifyContent: 'center',
     },
-    startBannerTitle: { fontSize: typography.fontSize.lg, fontWeight: '700', fontFamily: 'Inter-Bold', color: colors.obsidian[900] },
-    startBannerSubtitle: { fontSize: typography.fontSize.xs, color: colors.obsidian[900], opacity: 0.7 },
+    startBannerTitle: { fontSize: typography.fontSize.lg, fontWeight: '700', fontFamily: 'Inter-Bold', color: '#FFFFFF' },
+    startBannerSubtitle: { fontSize: typography.fontSize.xs, color: '#FFFFFF', opacity: 0.7 },
 
     topicChips: { flexDirection: 'row', gap: spacing.sm, paddingBottom: spacing.lg },
     filterChip: {

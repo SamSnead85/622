@@ -121,7 +121,7 @@ export default function FloatingCreateButton({ bottomOffset = 80 }: FloatingCrea
                     accessibilityLabel="Create new content"
                     accessibilityHint="Opens creation menu for posts, stories, and polls"
                 >
-                    <Ionicons name="add" size={26} color={colors.obsidian[900]} />
+                    <Ionicons name="add" size={26} color="#FFFFFF" />
                 </TouchableOpacity>
             </Animated.View>
 

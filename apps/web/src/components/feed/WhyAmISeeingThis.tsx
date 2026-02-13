@@ -31,12 +31,12 @@ export function WhyAmISeeingThis({ postId, factors, onClose }: WhyAmISeeingThisP
     const f = factors || defaultFactors;
 
     const factorList = [
-        { label: 'Author Relationship', value: f.authorRelationship, desc: 'How closely you interact with this creator', color: '#D4AF37' },
-        { label: 'Engagement Score', value: f.engagementScore, desc: 'Likes, comments, and shares from the community', color: '#B8942D' },
+        { label: 'Author Relationship', value: f.authorRelationship, desc: 'How closely you interact with this creator', color: '#7C8FFF' },
+        { label: 'Engagement Score', value: f.engagementScore, desc: 'Likes, comments, and shares from the community', color: '#6070EE' },
         { label: 'Time Freshness', value: f.timeDecay, desc: 'How recent this content is', color: '#10B981' },
         { label: 'Interest Match', value: f.interestMatch, desc: 'How well this matches topics you engage with', color: '#F59E0B' },
         { label: 'Diversity Boost', value: f.diversityBoost, desc: 'Boosted to show you diverse content', color: '#EC4899' },
-        { label: 'New Creator Boost', value: f.newUserBoost, desc: 'Boost for new creators finding their audience', color: '#6366F1' },
+        { label: 'New Creator Boost', value: f.newUserBoost, desc: 'Boost for new creators finding their audience', color: '#7C8FFF' },
     ].filter(item => item.value > 0).sort((a, b) => b.value - a.value);
 
     return (
@@ -96,7 +96,7 @@ export function WhyAmISeeingThis({ postId, factors, onClose }: WhyAmISeeingThisP
                         Got it
                     </button>
                     <button
-                        className="flex-1 py-2.5 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] text-sm font-medium hover:bg-[#D4AF37]/30 transition-colors"
+                        className="flex-1 py-2.5 rounded-xl bg-[#7C8FFF]/20 text-[#7C8FFF] text-sm font-medium hover:bg-[#7C8FFF]/30 transition-colors"
                     >
                         Tune My Feed
                     </button>

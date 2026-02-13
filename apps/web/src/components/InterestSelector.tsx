@@ -85,7 +85,7 @@ export default function InterestSelector({ onComplete, onSkip }: InterestSelecto
                 <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    className="w-12 h-12 border-4 border-[#D4AF37] border-t-transparent rounded-full"
+                    className="w-12 h-12 border-4 border-[#7C8FFF] border-t-transparent rounded-full"
                 />
             </div>
         );
@@ -96,7 +96,7 @@ export default function InterestSelector({ onComplete, onSkip }: InterestSelecto
             {/* Animated Background Gradient */}
             <div className="absolute inset-0 opacity-30">
                 <motion.div
-                    className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/20 via-[#B8942D]/20 to-[#EC4899]/20"
+                    className="absolute inset-0 bg-gradient-to-br from-[#7C8FFF]/20 via-[#6070EE]/20 to-[#EC4899]/20"
                     animate={{
                         backgroundPosition: ['0% 0%', '100% 100%'],
                     }}
@@ -122,10 +122,10 @@ export default function InterestSelector({ onComplete, onSkip }: InterestSelecto
                         transition={{ type: 'spring', duration: 0.6 }}
                         className="inline-flex items-center gap-2 mb-4"
                     >
-                        <SparklesIcon size={32} className="text-[#D4AF37]" />
+                        <SparklesIcon size={32} className="text-[#7C8FFF]" />
                     </motion.div>
 
-                    <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-[#D4AF37] via-[#B8942D] to-[#EC4899] bg-clip-text text-transparent">
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-[#7C8FFF] via-[#6070EE] to-[#EC4899] bg-clip-text text-transparent">
                         What interests you?
                     </h1>
 
@@ -145,7 +145,7 @@ export default function InterestSelector({ onComplete, onSkip }: InterestSelecto
                             <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                className="w-5 h-5 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D] flex items-center justify-center"
+                                className="w-5 h-5 rounded-full bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] flex items-center justify-center"
                             >
                                 <CheckIcon size={12} />
                             </motion.div>
@@ -282,7 +282,7 @@ export default function InterestSelector({ onComplete, onSkip }: InterestSelecto
               px-10 py-4 rounded-xl font-semibold text-white
               transition-all duration-300 relative overflow-hidden
               ${selected.size >= 3
-                                ? 'bg-gradient-to-r from-[#D4AF37] to-[#B8942D] hover:shadow-2xl cursor-pointer'
+                                ? 'bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] hover:shadow-2xl cursor-pointer'
                                 : 'bg-white/5 text-gray-500 cursor-not-allowed'
                             }
             `}
@@ -303,7 +303,7 @@ export default function InterestSelector({ onComplete, onSkip }: InterestSelecto
                         {/* Animated Background */}
                         {selected.size >= 3 && (
                             <motion.div
-                                className="absolute inset-0 bg-gradient-to-r from-[#B8942D] to-[#EC4899] opacity-0 hover:opacity-100 transition-opacity -z-10"
+                                className="absolute inset-0 bg-gradient-to-r from-[#6070EE] to-[#EC4899] opacity-0 hover:opacity-100 transition-opacity -z-10"
                                 animate={{
                                     backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
                                 }}

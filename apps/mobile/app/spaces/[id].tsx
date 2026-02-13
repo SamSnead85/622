@@ -286,7 +286,7 @@ function SpeakRequestCard({
                 style={styles.approveBtn}
                 activeOpacity={0.7}
             >
-                <Ionicons name="checkmark" size={16} color={colors.obsidian[900]} />
+                <Ionicons name="checkmark" size={16} color="#FFFFFF" />
             </TouchableOpacity>
         </Animated.View>
     );
@@ -762,7 +762,7 @@ export default function SpaceRoomScreen() {
                                 <Ionicons
                                     name={isMuted ? 'mic-off' : 'mic'}
                                     size={24}
-                                    color={isMuted ? colors.text.muted : colors.obsidian[900]}
+                                    color={isMuted ? colors.text.muted : '#FFFFFF'}
                                 />
                             </TouchableOpacity>
                         )}

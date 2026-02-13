@@ -117,15 +117,15 @@ export default function CreatorsPage() {
             <header className="sticky top-0 z-50 bg-[#0A0A0C]/90 backdrop-blur-lg border-b border-white/[0.04]">
                 <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center">
-                            <span className="text-xs font-bold text-[#D4AF37]">0G</span>
+                        <div className="w-8 h-8 rounded-lg bg-[#7C8FFF]/10 border border-[#7C8FFF]/20 flex items-center justify-center">
+                            <span className="text-xs font-bold text-[#7C8FFF]">0G</span>
                         </div>
                         <span className="text-sm font-medium text-white/50">Creators</span>
                     </Link>
                     {step === 'landing' && (
                         <button
                             onClick={() => setStep('apply')}
-                            className="px-5 py-2 rounded-xl bg-[#D4AF37] text-sm font-medium text-white hover:bg-[#D4AF37]/90 transition-all"
+                            className="px-5 py-2 rounded-xl bg-[#7C8FFF] text-sm font-medium text-white hover:bg-[#7C8FFF]/90 transition-all"
                         >
                             Apply Now
                         </button>
@@ -139,8 +139,8 @@ export default function CreatorsPage() {
                         {/* Hero */}
                         <section className="relative overflow-hidden">
                             <div className="absolute inset-0">
-                                <div className="absolute top-20 left-1/4 w-[500px] h-[300px] rounded-full blur-[150px] opacity-8 bg-[#D4AF37]" />
-                                <div className="absolute bottom-10 right-1/4 w-[400px] h-[250px] rounded-full blur-[120px] opacity-6 bg-[#B8942D]" />
+                                <div className="absolute top-20 left-1/4 w-[500px] h-[300px] rounded-full blur-[150px] opacity-8 bg-[#7C8FFF]" />
+                                <div className="absolute bottom-10 right-1/4 w-[400px] h-[250px] rounded-full blur-[120px] opacity-6 bg-[#6070EE]" />
                             </div>
                             <div className="relative max-w-4xl mx-auto px-4 pt-16 sm:pt-24 pb-16 text-center">
                                 <motion.div
@@ -148,7 +148,7 @@ export default function CreatorsPage() {
                                     animate={{ opacity: 1, y: 0 }}
                                     className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.06] mb-8"
                                 >
-                                    <span className="text-xs text-[#D4AF37] font-medium">Creator Program</span>
+                                    <span className="text-xs text-[#7C8FFF] font-medium">Creator Program</span>
                                     <span className="text-xs text-white/30">Now Accepting Applications</span>
                                 </motion.div>
 
@@ -159,7 +159,7 @@ export default function CreatorsPage() {
                                     className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6 leading-[1.1]"
                                 >
                                     Your Audience.{' '}
-                                    <span className="bg-gradient-to-r from-[#D4AF37] to-[#B8942D] bg-clip-text text-transparent">
+                                    <span className="bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] bg-clip-text text-transparent">
                                         Your Platform.
                                     </span>
                                     <br />Your Insurance Policy.
@@ -183,7 +183,7 @@ export default function CreatorsPage() {
                                 >
                                     <button
                                         onClick={() => setStep('apply')}
-                                        className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#D4AF37]/80 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                                        className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#7C8FFF] to-[#7C8FFF]/80 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
                                     >
                                         Apply to Creator Program
                                     </button>
@@ -282,7 +282,7 @@ export default function CreatorsPage() {
                                             transition={{ delay: i * 0.08 }}
                                             className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06]"
                                         >
-                                            <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] mb-4">
+                                            <div className="w-10 h-10 rounded-xl bg-[#7C8FFF]/10 border border-[#7C8FFF]/20 flex items-center justify-center text-[#7C8FFF] mb-4">
                                                 {item.icon}
                                             </div>
                                             <h3 className="text-sm font-semibold text-white mb-2">{item.title}</h3>
@@ -307,12 +307,12 @@ export default function CreatorsPage() {
                                             viewport={{ once: true }}
                                             transition={{ delay: i * 0.1 }}
                                             className={`p-6 rounded-2xl border ${tier.featured
-                                                ? 'bg-[#D4AF37]/[0.04] border-[#D4AF37]/20'
+                                                ? 'bg-[#7C8FFF]/[0.04] border-[#7C8FFF]/20'
                                                 : 'bg-white/[0.02] border-white/[0.06]'
                                                 }`}
                                         >
                                             {tier.featured && (
-                                                <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 text-[10px] font-semibold text-[#D4AF37] uppercase tracking-wider mb-3">
+                                                <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#7C8FFF]/15 text-[10px] font-semibold text-[#7C8FFF] uppercase tracking-wider mb-3">
                                                     Most Popular
                                                 </span>
                                             )}
@@ -321,7 +321,7 @@ export default function CreatorsPage() {
                                             <div className="space-y-2.5">
                                                 {tier.perks.map((perk, j) => (
                                                     <div key={j} className="flex items-start gap-2">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" className="mt-0.5 shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7C8FFF" strokeWidth="2" className="mt-0.5 shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
                                                         <span className="text-xs text-white/55">{perk}</span>
                                                     </div>
                                                 ))}
@@ -329,7 +329,7 @@ export default function CreatorsPage() {
                                             <button
                                                 onClick={() => setStep('apply')}
                                                 className={`w-full mt-6 py-2.5 rounded-xl text-sm font-medium transition-all ${tier.featured
-                                                    ? 'bg-[#D4AF37] text-white hover:bg-[#D4AF37]/90'
+                                                    ? 'bg-[#7C8FFF] text-white hover:bg-[#7C8FFF]/90'
                                                     : 'bg-white/5 text-white/60 hover:bg-white/10'
                                                     }`}
                                             >
@@ -359,7 +359,7 @@ export default function CreatorsPage() {
                                             { time: 'Forever', action: 'A community that no one can take from you' },
                                         ].map((item, i) => (
                                             <div key={i} className="flex items-center gap-4 text-left">
-                                                <span className="text-xs font-mono text-[#D4AF37] w-20 shrink-0">{item.time}</span>
+                                                <span className="text-xs font-mono text-[#7C8FFF] w-20 shrink-0">{item.time}</span>
                                                 <span className="text-xs text-white/50">{item.action}</span>
                                             </div>
                                         ))}
@@ -367,7 +367,7 @@ export default function CreatorsPage() {
                                 </div>
                                 <button
                                     onClick={() => setStep('apply')}
-                                    className="mt-8 px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                                    className="mt-8 px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-sm font-semibold text-white hover:opacity-90 transition-opacity"
                                 >
                                     Protect Your Audience — Apply Now
                                 </button>
@@ -392,7 +392,7 @@ export default function CreatorsPage() {
                             {result.success ? 'Application Submitted' : 'Submission Failed'}
                         </h2>
                         <p className="text-sm text-white/50 mb-8">{result.message}</p>
-                        <Link href="/" className="text-sm text-[#D4AF37] hover:underline">Back to ZeroG</Link>
+                        <Link href="/" className="text-sm text-[#7C8FFF] hover:underline">Back to ZeroG</Link>
                     </motion.div>
                 ) : (
                     <motion.div
@@ -421,7 +421,7 @@ export default function CreatorsPage() {
                                             type="button"
                                             onClick={() => setForm(f => ({ ...f, platform: p.id }))}
                                             className={`py-2.5 rounded-xl text-xs font-medium transition-all ${form.platform === p.id
-                                                ? 'bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#D4AF37]'
+                                                ? 'bg-[#7C8FFF]/15 border border-[#7C8FFF]/30 text-[#7C8FFF]'
                                                 : 'bg-white/[0.03] border border-white/[0.06] text-white/50 hover:bg-white/[0.06]'
                                                 }`}
                                         >
@@ -465,7 +465,7 @@ export default function CreatorsPage() {
                                             type="button"
                                             onClick={() => setForm(f => ({ ...f, contentNiche: n }))}
                                             className={`px-3 py-1.5 rounded-lg text-xs transition-all ${form.contentNiche === n
-                                                ? 'bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#D4AF37]'
+                                                ? 'bg-[#7C8FFF]/15 border border-[#7C8FFF]/30 text-[#7C8FFF]'
                                                 : 'bg-white/[0.03] border border-white/[0.06] text-white/40 hover:text-white/60'
                                                 }`}
                                         >
@@ -502,7 +502,7 @@ export default function CreatorsPage() {
                             <button
                                 type="submit"
                                 disabled={submitting || !form.platform || !form.platformHandle}
-                                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#D4AF37]/80 text-sm font-semibold text-white hover:opacity-90 transition-all disabled:opacity-40"
+                                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#7C8FFF] to-[#7C8FFF]/80 text-sm font-semibold text-white hover:opacity-90 transition-all disabled:opacity-40"
                             >
                                 {submitting ? 'Submitting...' : 'Submit Application'}
                             </button>

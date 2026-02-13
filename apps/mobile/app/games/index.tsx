@@ -605,14 +605,14 @@ function QuickPlayButton({ onPress }: { onPress: () => void }) {
                         <View style={styles.quickPlayContent}>
                             <View style={styles.quickPlayLeft}>
                                 <View style={styles.quickPlayIconCircle}>
-                                    <Ionicons name="shuffle" size={22} color={colors.obsidian[900]} />
+                                    <Ionicons name="shuffle" size={22} color="#FFFFFF" />
                                 </View>
                                 <View>
                                     <Text style={styles.quickPlayTitle}>Quick Play</Text>
                                     <Text style={styles.quickPlaySubtitle}>Jump into a random game</Text>
                                 </View>
                             </View>
-                            <Ionicons name="chevron-forward" size={20} color={colors.obsidian[900]} />
+                            <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
                         </View>
                     </LinearGradient>
                 </Animated.View>
@@ -688,7 +688,7 @@ function HeroSection() {
                         colors={[colors.gold[500], colors.gold[400]]}
                         style={styles.heroIconBg}
                     >
-                        <Ionicons name="game-controller" size={20} color={colors.obsidian[900]} />
+                        <Ionicons name="game-controller" size={20} color="#FFFFFF" />
                     </LinearGradient>
                     <View style={styles.heroLiveBadge}>
                         <Animated.View style={[styles.heroLiveDot, liveDotStyle]} />
@@ -855,7 +855,7 @@ export default function GamesHubScreen() {
                                     style={styles.joinButtonGradient}
                                 >
                                     <Text style={[styles.joinButtonText, roomCode.length < 6 && styles.joinButtonTextDisabled]}>Go</Text>
-                                    <Ionicons name="arrow-forward" size={16} color={roomCode.length >= 6 ? colors.obsidian[900] : colors.text.muted} />
+                                    <Ionicons name="arrow-forward" size={16} color={roomCode.length >= 6 ? '#FFFFFF' : colors.text.muted} />
                                 </LinearGradient>
                             </TouchableOpacity>
                         </View>
@@ -930,7 +930,7 @@ export default function GamesHubScreen() {
                                             colors={[colors.azure[500], colors.azure[400]]}
                                             style={styles.dailyFireBg}
                                         >
-                                            <Ionicons name="school" size={20} color={colors.obsidian[900]} />
+                                            <Ionicons name="school" size={20} color="#FFFFFF" />
                                         </LinearGradient>
                                         <View>
                                             <Text style={styles.practiceTitle}>Solo Practice</Text>
@@ -1237,11 +1237,11 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     quickPlaySubtitle: {
         fontSize: typography.fontSize.xs,
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         opacity: 0.7,
     },
 
@@ -1355,7 +1355,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     joinButtonTextDisabled: {
         color: colors.text.muted,

@@ -1305,7 +1305,7 @@ export default function SearchScreen() {
                 style={styles.retryBtn}
                 onPress={retrySearch}
             >
-                <Ionicons name="refresh" size={16} color={colors.obsidian[900]} />
+                <Ionicons name="refresh" size={16} color="#FFFFFF" />
                 <Text style={styles.retryBtnText}>Try Again</Text>
             </TouchableOpacity>
         </Animated.View>
@@ -2130,7 +2130,7 @@ const styles = StyleSheet.create({
     retryBtnText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // Offline Banner

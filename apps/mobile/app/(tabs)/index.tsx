@@ -196,7 +196,7 @@ function ActiveContactBubble({
                     {/* Create "+" badge for user's own avatar */}
                     {isUser && (
                         <View style={styles.createBadge}>
-                            <Ionicons name="add" size={12} color={colors.obsidian[900]} />
+                            <Ionicons name="add" size={12} color="#FFFFFF" />
                         </View>
                     )}
                 </View>
@@ -1050,7 +1050,7 @@ const seedStyles = StyleSheet.create({
     logoText: {
         fontSize: 11,
         fontWeight: '800',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         letterSpacing: -0.5,
     },
     headerTitle: {
@@ -1115,7 +1115,7 @@ const seedStyles = StyleSheet.create({
     cardAuthorBadgeText: {
         fontSize: 8,
         fontWeight: '800',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         letterSpacing: -0.3,
     },
     cardAuthor: {

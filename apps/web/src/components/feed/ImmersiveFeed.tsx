@@ -75,7 +75,7 @@ export function ImmersiveFeed({
                         exit={{ height: 0, opacity: 0 }}
                     >
                         <motion.div
-                            className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full"
+                            className="w-8 h-8 border-2 border-[#7C8FFF]/30 border-t-[#7C8FFF] rounded-full"
                             animate={{ rotate: pullDistance * 3 }}
                         />
                     </motion.div>
@@ -113,7 +113,7 @@ export function ImmersiveFeed({
             {/* Load more sentinel */}
             {hasMore && (
                 <div ref={sentinelRef} className="py-8 flex justify-center">
-                    <div className="w-8 h-8 rounded-full border-2 border-[#D4AF37]/30 border-t-[#D4AF37] animate-spin" />
+                    <div className="w-8 h-8 rounded-full border-2 border-[#7C8FFF]/30 border-t-[#7C8FFF] animate-spin" />
                 </div>
             )}
 

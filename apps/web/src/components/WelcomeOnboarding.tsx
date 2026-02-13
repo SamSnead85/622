@@ -30,7 +30,7 @@ const INTERESTS = [
 
 const PRESET_AVATARS = [
     { id: 'gradient-1', type: 'gradient', colors: ['#f97316', '#ec4899'] },
-    { id: 'gradient-2', type: 'gradient', colors: ['#B8942D', '#3b82f6'] },
+    { id: 'gradient-2', type: 'gradient', colors: ['#6070EE', '#3b82f6'] },
     { id: 'gradient-3', type: 'gradient', colors: ['#10b981', '#06b6d4'] },
     { id: 'gradient-4', type: 'gradient', colors: ['#f59e0b', '#f97316'] },
     { id: 'emoji-1', type: 'emoji', emoji: '😊' },

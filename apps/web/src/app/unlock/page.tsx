@@ -78,7 +78,7 @@ export default function UnlockAccountPage() {
                         {result.success && (
                             <Link
                                 href="/login"
-                                className="inline-block mt-3 text-sm text-[#D4AF37] hover:underline"
+                                className="inline-block mt-3 text-sm text-[#7C8FFF] hover:underline"
                             >
                                 Go to login
                             </Link>
@@ -97,7 +97,7 @@ export default function UnlockAccountPage() {
                                 onChange={e => setEmail(e.target.value)}
                                 placeholder="your@email.com"
                                 required
-                                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#D4AF37]/30 transition"
+                                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#7C8FFF]/30 transition"
                             />
                         </div>
                         <div>
@@ -108,7 +108,7 @@ export default function UnlockAccountPage() {
                                 onChange={e => setPassword(e.target.value)}
                                 placeholder="Enter your password"
                                 required
-                                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#D4AF37]/30 transition"
+                                className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#7C8FFF]/30 transition"
                             />
                         </div>
 

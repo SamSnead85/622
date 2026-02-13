@@ -191,13 +191,13 @@ export default function ResetPasswordPage() {
                                 <linearGradient id="reset-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
                                     <stop offset="0%" stopColor="#F59E0B" />
                                     <stop offset="50%" stopColor="#F43F5E" />
-                                    <stop offset="100%" stopColor="#B8942D" />
+                                    <stop offset="100%" stopColor="#6070EE" />
                                 </linearGradient>
                             </defs>
                             <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#reset-logo-grad)" />
                             <text x="20" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">6</text>
                         </svg>
-                        <span className="text-2xl font-bold"><span className="text-[#D4AF37]">0</span><span className="text-white">G</span></span>
+                        <span className="text-2xl font-bold"><span className="text-[#7C8FFF]">0</span><span className="text-white">G</span></span>
                     </Link>
                 </div>
 

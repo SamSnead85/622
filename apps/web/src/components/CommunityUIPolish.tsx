@@ -409,7 +409,7 @@ function getThemeColors(theme: 'light' | 'dark') {
         text: '#FFFFFF',
         textSecondary: 'rgba(255,255,255,0.6)',
         border: 'rgba(255,255,255,0.1)',
-        accent: '#D4AF37',
+        accent: '#7C8FFF',
     } : {
         background: '#FFFFFF',
         surface: '#F5F5F5',
@@ -460,7 +460,7 @@ export function useMicroInteractions() {
 }
 
 // Phase 541-550: Loading States
-export const LoadingSpinner = memo(function LoadingSpinner({ size = 24, color = '#D4AF37' }: { size?: number; color?: string }) {
+export const LoadingSpinner = memo(function LoadingSpinner({ size = 24, color = '#7C8FFF' }: { size?: number; color?: string }) {
     return (
         <motion.div
             animate={{ rotate: 360 }}
@@ -515,7 +515,7 @@ export const EmptyState = memo(function EmptyState({ icon, title, description, a
             {action && (
                 <button
                     onClick={action.onClick}
-                    className="px-6 py-3 bg-[#D4AF37] text-black font-medium rounded-xl hover:bg-[#D4AF37]/90 transition-colors"
+                    className="px-6 py-3 bg-[#7C8FFF] text-white font-medium rounded-xl hover:bg-[#7C8FFF]/90 transition-colors"
                 >
                     {action.label}
                 </button>

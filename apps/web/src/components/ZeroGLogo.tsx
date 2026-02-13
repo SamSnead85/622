@@ -57,7 +57,7 @@ export function ZeroGLogo({
                     <linearGradient id="path-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#F59E0B" />
                         <stop offset="50%" stopColor="#F43F5E" />
-                        <stop offset="100%" stopColor="#B8942D" />
+                        <stop offset="100%" stopColor="#6070EE" />
                     </linearGradient>
 
                     {/* Subtle glow */}
@@ -109,7 +109,7 @@ export function ZeroGLogo({
                     cx="68"
                     cy="35"
                     r="3.5"
-                    fill="#B8942D"
+                    fill="#6070EE"
                     initial={animated ? { scale: 0 } : { scale: 1 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 1, duration: 0.3 }}
@@ -122,7 +122,7 @@ export function ZeroGLogo({
                         cy="35"
                         r="6"
                         fill="none"
-                        stroke="#B8942D"
+                        stroke="#6070EE"
                         strokeWidth="1"
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{
@@ -147,7 +147,7 @@ export function ZeroGLogo({
                         style={{
                             fontSize: dims.text * 1.3,
                             lineHeight: 1,
-                            background: 'linear-gradient(135deg, #F59E0B 0%, #F43F5E 50%, #B8942D 100%)',
+                            background: 'linear-gradient(135deg, #F59E0B 0%, #F43F5E 50%, #6070EE 100%)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             backgroundClip: 'text',
@@ -171,7 +171,7 @@ export function ZeroGLogo({
                     className="font-bold tracking-tight"
                     style={{
                         fontSize: dims.text * 1.2,
-                        background: 'linear-gradient(135deg, #F59E0B 0%, #F43F5E 50%, #B8942D 100%)',
+                        background: 'linear-gradient(135deg, #F59E0B 0%, #F43F5E 50%, #6070EE 100%)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                         backgroundClip: 'text',
@@ -205,7 +205,7 @@ export function JourneyHero({ className = '' }: { className?: string }) {
                     <linearGradient id="hero-journey-grad" x1="0%" y1="50%" x2="100%" y2="50%">
                         <stop offset="0%" stopColor="#F59E0B" />
                         <stop offset="40%" stopColor="#F43F5E" />
-                        <stop offset="100%" stopColor="#B8942D" />
+                        <stop offset="100%" stopColor="#6070EE" />
                     </linearGradient>
 
                     <filter id="hero-glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -222,8 +222,8 @@ export function JourneyHero({ className = '' }: { className?: string }) {
                     </radialGradient>
 
                     <radialGradient id="dest-glow" cx="50%" cy="50%" r="50%">
-                        <stop offset="0%" stopColor="#B8942D" stopOpacity="0.8" />
-                        <stop offset="100%" stopColor="#B8942D" stopOpacity="0" />
+                        <stop offset="0%" stopColor="#6070EE" stopOpacity="0.8" />
+                        <stop offset="100%" stopColor="#6070EE" stopOpacity="0" />
                     </radialGradient>
                 </defs>
 
@@ -279,7 +279,7 @@ export function JourneyHero({ className = '' }: { className?: string }) {
                     transition={{ delay: 2.2, duration: 0.5 }}
                 >
                     <circle cx="520" cy="180" r="40" fill="url(#dest-glow)" />
-                    <circle cx="520" cy="180" r="12" fill="#B8942D" />
+                    <circle cx="520" cy="180" r="12" fill="#6070EE" />
                     <circle cx="520" cy="180" r="5" fill="#E9D5FF" />
 
                     {/* Subtle rays */}
@@ -290,7 +290,7 @@ export function JourneyHero({ className = '' }: { className?: string }) {
                             y1={180 + Math.sin(angle * Math.PI / 180) * 18}
                             x2={520 + Math.cos(angle * Math.PI / 180) * 28}
                             y2={180 + Math.sin(angle * Math.PI / 180) * 28}
-                            stroke="#B8942D"
+                            stroke="#6070EE"
                             strokeWidth="2"
                             strokeLinecap="round"
                             initial={{ opacity: 0, pathLength: 0 }}

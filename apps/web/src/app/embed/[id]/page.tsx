@@ -55,7 +55,7 @@ export default function VideoEmbedPage() {
     if (!videoUrl) {
         return (
             <div className="w-screen h-screen bg-black flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[#7C8FFF]/30 border-t-[#7C8FFF] rounded-full animate-spin" />
             </div>
         );
     }
@@ -75,7 +75,7 @@ export default function VideoEmbedPage() {
                 href={`/post/${postId}`}
                 className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white/80 text-xs font-semibold hover:text-white transition-colors z-10"
             >
-                <span className="w-4 h-4 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#9A7A24] flex items-center justify-center text-[6px] font-black text-white">0G</span>
+                <span className="w-4 h-4 rounded-full bg-gradient-to-br from-[#7C8FFF] to-[#9A7A24] flex items-center justify-center text-[6px] font-black text-white">0G</span>
                 ZeroG
             </a>
         </div>

@@ -446,11 +446,11 @@ export default function InterestsScreen() {
                                     end={{ x: 1, y: 1 }}
                                 >
                                     {saving ? (
-                                        <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                        <ActivityIndicator size="small" color="#FFFFFF" />
                                     ) : (
                                         <View style={styles.getStartedRow}>
                                             <Text style={styles.saveBtnText}>Get Started</Text>
-                                            <Ionicons name="arrow-forward" size={20} color={colors.obsidian[900]} style={{ marginStart: spacing.sm }} />
+                                            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={{ marginStart: spacing.sm }} />
                                         </View>
                                     )}
                                 </LinearGradient>
@@ -472,7 +472,7 @@ export default function InterestsScreen() {
                                     end={{ x: 1, y: 1 }}
                                 >
                                     {saving ? (
-                                        <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                        <ActivityIndicator size="small" color="#FFFFFF" />
                                     ) : (
                                         <Text style={[styles.saveBtnText, selectedIds.size < 3 && { color: colors.text.muted }]}>
                                             {selectedIds.size < 3 ? `Pick ${3 - selectedIds.size} more` : 'Save Interests'}
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
     },
     ramadanSuggestionBtnText: {
-        fontSize: typography.fontSize.sm, fontWeight: '700', color: colors.obsidian[900],
+        fontSize: typography.fontSize.sm, fontWeight: '700', color: '#FFFFFF',
     },
     ramadanTopicHighlight: {
         borderColor: colors.gold[500] + '40',
@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
     },
     saveBtnText: {
         fontSize: typography.fontSize.lg, fontWeight: '600',
-        color: colors.obsidian[900], fontFamily: 'Inter-SemiBold',
+        color: '#FFFFFF', fontFamily: 'Inter-SemiBold',
     },
     getStartedRow: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

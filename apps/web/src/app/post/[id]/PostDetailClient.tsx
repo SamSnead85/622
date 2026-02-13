@@ -263,7 +263,7 @@ export default function PostDetailClient() {
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gradient-to-b from-[#0A0A0A] to-[#121212] flex items-center justify-center">
-                <div className="w-10 h-10 rounded-full border-2 border-[#D4AF37]/20 border-t-[#D4AF37] animate-spin" />
+                <div className="w-10 h-10 rounded-full border-2 border-[#7C8FFF]/20 border-t-[#7C8FFF] animate-spin" />
             </div>
         );
     }
@@ -276,7 +276,7 @@ export default function PostDetailClient() {
                 <p className="text-white/60 mb-6">This post may have been deleted or doesn&apos;t exist.</p>
                 <Link
                     href="/dashboard"
-                    className="px-6 py-3 rounded-xl bg-[#D4AF37] text-black font-semibold hover:opacity-90 transition-opacity"
+                    className="px-6 py-3 rounded-xl bg-[#7C8FFF] text-white font-semibold hover:opacity-90 transition-opacity"
                 >
                     Back to Feed
                 </Link>
@@ -293,7 +293,7 @@ export default function PostDetailClient() {
                 <div className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-white/5">
                     <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
                         <Link href="/" className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#9A7A24] flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C8FFF] to-[#9A7A24] flex items-center justify-center">
                                 <span className="text-white font-black text-xs">0G</span>
                             </div>
                             <span className="text-white font-bold text-lg tracking-tight">ZeroG</span>
@@ -307,7 +307,7 @@ export default function PostDetailClient() {
                             </Link>
                             <Link
                                 href="/signup"
-                                className="px-5 py-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#9A7A24] text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-[#D4AF37]/20"
+                                className="px-5 py-2 rounded-full bg-gradient-to-r from-[#7C8FFF] to-[#9A7A24] text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-[#7C8FFF]/20"
                             >
                                 Join 0G
                             </Link>
@@ -358,7 +358,7 @@ export default function PostDetailClient() {
                                     className="w-12 h-12 rounded-full object-cover"
                                 />
                             ) : (
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-black font-bold">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#7C8FFF] to-[#6070EE] flex items-center justify-center text-white font-bold">
                                     {post.author.displayName?.[0] || 'U'}
                                 </div>
                             )}
@@ -377,7 +377,7 @@ export default function PostDetailClient() {
                                     <textarea
                                         value={editedCaption}
                                         onChange={(e) => setEditedCaption(e.target.value)}
-                                        className="w-full bg-white/5 rounded-xl px-4 py-3 text-white text-lg border border-white/10 focus:border-[#D4AF37]/50 focus:outline-none transition-colors resize-none"
+                                        className="w-full bg-white/5 rounded-xl px-4 py-3 text-white text-lg border border-white/10 focus:border-[#7C8FFF]/50 focus:outline-none transition-colors resize-none"
                                         rows={3}
                                     />
                                     <div className="flex gap-2 justify-end">
@@ -392,7 +392,7 @@ export default function PostDetailClient() {
                                         </button>
                                         <button
                                             onClick={handleEditPost}
-                                            className="px-4 py-2 rounded-xl bg-[#D4AF37] text-black font-semibold hover:opacity-90 transition-opacity"
+                                            className="px-4 py-2 rounded-xl bg-[#7C8FFF] text-white font-semibold hover:opacity-90 transition-opacity"
                                         >
                                             Save
                                         </button>
@@ -488,7 +488,7 @@ export default function PostDetailClient() {
 
                         <button
                             onClick={handleShare}
-                            className="flex items-center gap-2 text-white/60 hover:text-[#D4AF37] transition-colors ml-auto relative"
+                            className="flex items-center gap-2 text-white/60 hover:text-[#7C8FFF] transition-colors ml-auto relative"
                         >
                             <ShareIcon size={24} />
                             <span className="font-medium">{copied ? 'Copied!' : 'Share'}</span>
@@ -520,7 +520,7 @@ export default function PostDetailClient() {
                             <p className="text-white/60 mb-3">Sign in to join the conversation</p>
                             <Link
                                 href="/signup"
-                                className="inline-block px-6 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#9A7A24] text-white font-semibold hover:opacity-90 transition-opacity"
+                                className="inline-block px-6 py-2 rounded-xl bg-gradient-to-r from-[#7C8FFF] to-[#9A7A24] text-white font-semibold hover:opacity-90 transition-opacity"
                             >
                                 Join 0G
                             </Link>
@@ -551,7 +551,7 @@ export default function PostDetailClient() {
                             </div>
                             <Link
                                 href="/signup"
-                                className="flex-shrink-0 px-6 py-2.5 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#9A7A24] text-white text-sm font-bold hover:opacity-90 transition-opacity shadow-lg shadow-[#D4AF37]/20"
+                                className="flex-shrink-0 px-6 py-2.5 rounded-full bg-gradient-to-r from-[#7C8FFF] to-[#9A7A24] text-white text-sm font-bold hover:opacity-90 transition-opacity shadow-lg shadow-[#7C8FFF]/20"
                             >
                                 Join 0G
                             </Link>

@@ -8,7 +8,7 @@ export default function SupportPage() {
             {/* Background */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute inset-0 bg-[#030305]" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[#D4AF37]/[0.03] blur-[150px] rounded-full" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[#7C8FFF]/[0.03] blur-[150px] rounded-full" />
             </div>
 
             {/* Nav */}
@@ -45,7 +45,7 @@ export default function SupportPage() {
                         </p>
                         <a
                             href="mailto:support@0gravity.ai"
-                            className="inline-flex items-center gap-2 text-[#D4AF37] hover:text-[#E5C547] transition-colors"
+                            className="inline-flex items-center gap-2 text-[#7C8FFF] hover:text-[#E5C547] transition-colors"
                         >
                             support@0gravity.ai
                         </a>
@@ -58,7 +58,7 @@ export default function SupportPage() {
                         </p>
                         <a
                             href="mailto:privacy@0gravity.ai"
-                            className="inline-flex items-center gap-2 text-[#D4AF37] hover:text-[#E5C547] transition-colors"
+                            className="inline-flex items-center gap-2 text-[#7C8FFF] hover:text-[#E5C547] transition-colors"
                         >
                             privacy@0gravity.ai
                         </a>
@@ -71,7 +71,7 @@ export default function SupportPage() {
                         </p>
                         <a
                             href="mailto:abuse@0gravity.ai"
-                            className="inline-flex items-center gap-2 text-[#D4AF37] hover:text-[#E5C547] transition-colors"
+                            className="inline-flex items-center gap-2 text-[#7C8FFF] hover:text-[#E5C547] transition-colors"
                         >
                             abuse@0gravity.ai
                         </a>
@@ -84,7 +84,7 @@ export default function SupportPage() {
                         </p>
                         <a
                             href="mailto:hello@0gravity.ai"
-                            className="inline-flex items-center gap-2 text-[#D4AF37] hover:text-[#E5C547] transition-colors"
+                            className="inline-flex items-center gap-2 text-[#7C8FFF] hover:text-[#E5C547] transition-colors"
                         >
                             hello@0gravity.ai
                         </a>
@@ -122,7 +122,7 @@ export default function SupportPage() {
                         <div>
                             <h3 className="text-lg font-medium mb-2">Do you sell my data?</h3>
                             <p className="text-white/50">
-                                No. Never. We do not sell data, serve ads, or share your information with third parties. Read our full <Link href="/privacy" className="text-[#D4AF37] hover:underline">Privacy Policy</Link>.
+                                No. Never. We do not sell data, serve ads, or share your information with third parties. Read our full <Link href="/privacy" className="text-[#7C8FFF] hover:underline">Privacy Policy</Link>.
                             </p>
                         </div>
                     </div>

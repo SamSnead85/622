@@ -267,7 +267,7 @@ export default function CreateSpaceScreen() {
                                 style={styles.createButton}
                             >
                                 {isCreating ? (
-                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
                                 ) : (
                                     <>
                                         <Ionicons
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     },
     createButtonText: {
         fontSize: typography.fontSize.lg, fontWeight: '700', fontFamily: 'Inter-Bold',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     createButtonTextDisabled: { color: colors.text.muted },
 });

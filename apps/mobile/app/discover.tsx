@@ -395,7 +395,7 @@ export default function DiscoverScreen() {
                         <Ionicons
                             name="arrow-forward"
                             size={20}
-                            color={colors.obsidian[900]}
+                            color="#FFFFFF"
                             style={{ marginStart: spacing.sm }}
                         />
                     </LinearGradient>
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
     ctaText: {
         fontSize: typography.fontSize.lg,
         fontWeight: '600',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         fontFamily: 'Inter-SemiBold',
     },
     skipText: {

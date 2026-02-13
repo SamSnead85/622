@@ -464,13 +464,13 @@ export default function PrivacyDashboardScreen() {
                                 end={{ x: 1, y: 1 }}
                             >
                                 {isExporting ? (
-                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
                                 ) : (
                                     <>
                                         <Ionicons
                                             name="download-outline"
                                             size={18}
-                                            color={colors.obsidian[900]}
+                                            color="#FFFFFF"
                                         />
                                         <Text style={styles.exportBtnText}>Export All My Data</Text>
                                     </>
@@ -767,7 +767,7 @@ const styles = StyleSheet.create({
     exportBtnText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // ─── Delete Link ────────────────────────────────

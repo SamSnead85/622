@@ -219,7 +219,7 @@ const FollowButton = memo(({
                     </View>
                 ) : (
                     <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.followGradient}>
-                        <Ionicons name="person-add" size={14} color={colors.obsidian[900]} style={styles.followIconMargin} />
+                        <Ionicons name="person-add" size={14} color="#FFFFFF" style={styles.followIconMargin} />
                         <Text style={styles.followButtonText}>Follow</Text>
                     </LinearGradient>
                 )}
@@ -252,7 +252,7 @@ const ProfileError = memo(({
                 }}
                 activeOpacity={0.8}
             >
-                <Ionicons name="refresh" size={18} color={colors.obsidian[900]} />
+                <Ionicons name="refresh" size={18} color="#FFFFFF" />
                 <Text style={styles.retryButtonText}>Try Again</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -809,7 +809,7 @@ const styles = StyleSheet.create({
     retryButtonText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     goBackButton: {
         paddingHorizontal: spacing.xl,
@@ -1056,7 +1056,7 @@ const styles = StyleSheet.create({
     followButtonText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     followButtonActiveText: {
         fontSize: typography.fontSize.base,

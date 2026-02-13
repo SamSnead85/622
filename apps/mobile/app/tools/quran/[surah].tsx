@@ -511,7 +511,7 @@ export default function SurahDetailScreen() {
                             <Ionicons
                                 name="refresh"
                                 size={16}
-                                color={colors.obsidian[900]}
+                                color="#FFFFFF"
                             />
                             <Text style={styles.retryButtonText}>
                                 {isRetrying ? 'Retrying...' : 'Tap to Retry'}
@@ -822,6 +822,6 @@ const styles = StyleSheet.create({
     retryButtonText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 });

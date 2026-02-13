@@ -731,7 +731,7 @@ export default function PostDetailScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="Tap to retry loading post"
                     >
-                        <Ionicons name="refresh" size={18} color={colors.obsidian[900]} />
+                        <Ionicons name="refresh" size={18} color="#FFFFFF" />
                         <Text style={styles.retryButtonText}>Tap to retry</Text>
                     </TouchableOpacity>
                 </View>
@@ -1101,12 +1101,12 @@ export default function PostDetailScreen() {
                             style={styles.sendBtn}
                         >
                             {isSending ? (
-                                <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
                                 <Ionicons
                                     name="arrow-up"
                                     size={18}
-                                    color={colors.obsidian[900]}
+                                    color="#FFFFFF"
                                 />
                             )}
                         </LinearGradient>
@@ -1170,7 +1170,7 @@ const styles = StyleSheet.create({
     },
     retryButtonText: {
         fontSize: typography.fontSize.base,
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         fontWeight: '600',
     },
 

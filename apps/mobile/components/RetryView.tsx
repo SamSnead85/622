@@ -60,7 +60,7 @@ function RetryViewComponent({
                 disabled={isRetrying}
                 activeOpacity={0.8}
             >
-                <Ionicons name="refresh" size={16} color={colors.obsidian[900]} />
+                <Ionicons name="refresh" size={16} color="#FFFFFF" />
                 <Text style={styles.retryText}>{isRetrying ? 'Retrying...' : 'Tap to Retry'}</Text>
             </TouchableOpacity>
         </View>
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     retryText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     // Compact variant
     compactContainer: {

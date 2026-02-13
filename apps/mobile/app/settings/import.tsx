@@ -397,7 +397,7 @@ export default function ImportScreen() {
                                         colors={[colors.gold[400], colors.gold[600]]}
                                         style={styles.uploadBtnGradient}
                                     >
-                                        <Ionicons name="cloud-upload-outline" size={22} color={colors.obsidian[900]} />
+                                        <Ionicons name="cloud-upload-outline" size={22} color="#FFFFFF" />
                                         <Text style={styles.uploadBtnText}>Select Export File</Text>
                                     </LinearGradient>
                                 </TouchableOpacity>
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    stepNumberText: { fontSize: 13, fontWeight: '700', color: colors.obsidian[900] },
+    stepNumberText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
     stepText: { flex: 1, fontSize: typography.fontSize.base, color: colors.text.secondary, lineHeight: 22, paddingTop: 3 },
 
     // Import preview
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         borderRadius: 14,
     },
-    uploadBtnText: { fontSize: typography.fontSize.base, fontWeight: '700', color: colors.obsidian[900] },
+    uploadBtnText: { fontSize: typography.fontSize.base, fontWeight: '700', color: '#FFFFFF' },
 
     // Progress
     progressSection: { alignItems: 'center', paddingTop: 60 },
@@ -713,7 +713,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         alignItems: 'center',
     },
-    doneBtnText: { fontSize: typography.fontSize.base, fontWeight: '700', color: colors.obsidian[900] },
+    doneBtnText: { fontSize: typography.fontSize.base, fontWeight: '700', color: '#FFFFFF' },
     retryBtn: {
         backgroundColor: colors.surface.glassHover,
         paddingHorizontal: spacing.xl,

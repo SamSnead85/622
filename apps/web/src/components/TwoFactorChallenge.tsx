@@ -130,8 +130,8 @@ function CodeInput({
                         ${error
                             ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/30 text-red-400'
                             : localValues[index]
-                                ? 'border-[#D4AF37]/50 text-white'
-                                : 'border-white/20 focus:border-[#D4AF37] focus:ring-[#D4AF37]/30 text-white'
+                                ? 'border-[#7C8FFF]/50 text-white'
+                                : 'border-white/20 focus:border-[#7C8FFF] focus:ring-[#7C8FFF]/30 text-white'
                         }
                     `}
                     initial={{ scale: 0.95, opacity: 0 }}
@@ -232,12 +232,12 @@ export function TwoFactorChallenge({
                     {/* Header */}
                     <div className="text-center mb-8">
                         <motion.div
-                            className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#B8942D]/20 border border-[#D4AF37]/30 flex items-center justify-center"
+                            className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#7C8FFF]/20 to-[#6070EE]/20 border border-[#7C8FFF]/30 flex items-center justify-center"
                             initial={{ rotate: -10, scale: 0.8 }}
                             animate={{ rotate: 0, scale: 1 }}
                             transition={{ type: 'spring', damping: 15 }}
                         >
-                            <ShieldIcon size={32} className="text-[#D4AF37]" />
+                            <ShieldIcon size={32} className="text-[#7C8FFF]" />
                         </motion.div>
 
                         <h2 className="text-2xl font-bold text-white mb-2">
@@ -282,7 +282,7 @@ export function TwoFactorChallenge({
                     <button
                         onClick={() => handleVerify(code)}
                         disabled={code.length !== 6 || isLoading}
-                        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-black font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isLoading ? (
                             <span className="flex items-center justify-center gap-2">

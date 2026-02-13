@@ -153,7 +153,7 @@ export function PiPVideoPlayer({
                             onClick={seekTo}
                         >
                             <div
-                                className="h-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D] rounded-full"
+                                className="h-full bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] rounded-full"
                                 style={{ width: `${progress}%` }}
                             />
                         </div>
@@ -187,7 +187,7 @@ export function PiPVideoPlayer({
                                 {isPiPSupported && (
                                     <button
                                         onClick={togglePiP}
-                                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isPiP ? 'bg-[#D4AF37] text-black' : 'bg-white/10 hover:bg-white/20 text-white'
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isPiP ? 'bg-[#7C8FFF] text-white' : 'bg-white/10 hover:bg-white/20 text-white'
                                             }`}
                                         title="Picture-in-Picture"
                                     >
@@ -275,7 +275,7 @@ export function QuoteRepost({ isOpen, onClose, originalPost, onSubmit }: QuoteRe
                             value={comment}
                             onChange={(e) => setComment(e.target.value.slice(0, maxLength))}
                             placeholder="Add your thoughts..."
-                            className="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/40 resize-none focus:outline-none focus:border-[#D4AF37]/50"
+                            className="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/40 resize-none focus:outline-none focus:border-[#7C8FFF]/50"
                             autoFocus
                         />
                         <div className="text-right mt-1">
@@ -288,7 +288,7 @@ export function QuoteRepost({ isOpen, onClose, originalPost, onSubmit }: QuoteRe
                     {/* Original Post Preview */}
                     <div className="p-4 rounded-xl bg-white/5 border border-white/10">
                         <div className="flex items-center gap-2 mb-2">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-black font-bold text-sm">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C8FFF] to-[#6070EE] flex items-center justify-center text-white font-bold text-sm">
                                 {originalPost.author.displayName[0]}
                             </div>
                             <div>
@@ -312,7 +312,7 @@ export function QuoteRepost({ isOpen, onClose, originalPost, onSubmit }: QuoteRe
                     <button
                         onClick={handleSubmit}
                         disabled={!comment.trim()}
-                        className="flex-1 py-3 rounded-xl bg-[#D4AF37] text-black font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                        className="flex-1 py-3 rounded-xl bg-[#7C8FFF] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                     >
                         Repost
                     </button>

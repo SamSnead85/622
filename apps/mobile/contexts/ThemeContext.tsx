@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors as darkColors, lightColors, shadows, lightShadows } from '@zerog/ui';
@@ -8,7 +8,7 @@ type ThemeMode = 'light' | 'dark' | 'system';
 interface ThemeContextType {
     mode: ThemeMode;
     isDark: boolean;
-    colors: typeof darkColors;
+    colors: typeof darkColors & { background: string };
     shadows: typeof shadows;
     setMode: (mode: ThemeMode) => void;
 }
@@ -18,7 +18,7 @@ const THEME_KEY = '@0g-theme-mode';
 const ThemeContext = createContext<ThemeContextType>({
     mode: 'light',
     isDark: false,
-    colors: lightColors,
+    colors: { ...lightColors, background: lightColors.obsidian[900] },
     shadows: lightShadows,
     setMode: () => {},
 });
@@ -43,7 +43,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const isDark = mode === 'system' ? systemScheme !== 'light' : mode === 'dark';
-    const themeColors = isDark ? darkColors : lightColors;
+    const baseColors = isDark ? darkColors : lightColors;
+    const themeColors = useMemo(() => ({
+        ...baseColors,
+        background: baseColors.obsidian[900],
+    }), [baseColors]);
     const themeShadows = isDark ? shadows : lightShadows;
 
     if (!isReady) {

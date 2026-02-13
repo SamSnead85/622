@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     logoLetter: {
         fontSize: 48,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         fontFamily: 'Inter-Bold',
     },
     brandName: {

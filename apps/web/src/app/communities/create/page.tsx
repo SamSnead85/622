@@ -59,8 +59,8 @@ function ArchetypeIcon({ type, size = 22 }: { type: string; size?: number }) {
 // BRAND COLOR PRESETS
 // ============================================
 const BRAND_COLORS = [
-    '#D4AF37', '#B8942D', '#F59E0B', '#EF4444', '#10B981',
-    '#3B82F6', '#EC4899', '#F97316', '#14B8A6', '#6366F1',
+    '#7C8FFF', '#6070EE', '#F59E0B', '#EF4444', '#10B981',
+    '#3B82F6', '#EC4899', '#F97316', '#14B8A6', '#7C8FFF',
     '#84CC16', '#D946EF',
 ];
 
@@ -83,7 +83,7 @@ export default function CreateTribePage() {
         approvalRequired: true,
         coverImage: null,
         isEncrypted: true,
-        brandColor: '#D4AF37',
+        brandColor: '#7C8FFF',
         tagline: '',
         logoUrl: null,
         websiteUrl: '',
@@ -182,14 +182,14 @@ export default function CreateTribePage() {
     // Generate slug for preview
     const slug = tribeData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const inviteUrl = typeof window !== 'undefined' ? `${window.location.origin}/communities/${createdSlug || slug}/join` : '';
-    const brandColor = tribeData.brandColor || '#D4AF37';
+    const brandColor = tribeData.brandColor || '#7C8FFF';
 
     // Archetype context
     const selectedArchetype = ARCHETYPES.find(a => a.id === tribeData.category);
     const isContainedType = ['family', 'friends'].includes(tribeData.category);
 
     return (
-        <div className="min-h-screen bg-[#050508] text-white font-sans selection:bg-[#D4AF37]/30">
+        <div className="min-h-screen bg-[#050508] text-white font-sans selection:bg-[#7C8FFF]/30">
             <NavigationSidebar />
             <div className="lg:ml-20 xl:ml-64 pb-24 lg:pb-8">
             {/* Ambient Background */}
@@ -256,19 +256,19 @@ export default function CreateTribePage() {
                                         }}
                                         className={`group relative p-5 rounded-2xl border text-left transition-all duration-200 ${
                                             tribeData.category === arch.id
-                                                ? 'border-[#D4AF37] bg-[#D4AF37]/5'
+                                                ? 'border-[#7C8FFF] bg-[#7C8FFF]/5'
                                                 : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20'
                                         }`}
                                     >
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-colors duration-300 ${
-                                            tribeData.category === arch.id ? 'bg-[#D4AF37]/15 text-[#D4AF37]' : 'bg-white/5 text-white/40 group-hover:text-white/60'
+                                            tribeData.category === arch.id ? 'bg-[#7C8FFF]/15 text-[#7C8FFF]' : 'bg-white/5 text-white/40 group-hover:text-white/60'
                                         }`}>
                                             <ArchetypeIcon type={arch.icon} size={20} />
                                         </div>
-                                        <h3 className={`font-bold text-sm mb-0.5 ${tribeData.category === arch.id ? 'text-[#D4AF37]' : 'text-white'}`}>{arch.label}</h3>
+                                        <h3 className={`font-bold text-sm mb-0.5 ${tribeData.category === arch.id ? 'text-[#7C8FFF]' : 'text-white'}`}>{arch.label}</h3>
                                         <p className="text-xs text-white/40">{arch.desc}</p>
                                         {tribeData.category === arch.id && (
-                                            <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#D4AF37] flex items-center justify-center">
+                                            <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#7C8FFF] flex items-center justify-center">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3">
                                                     <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
                                                 </svg>
@@ -313,7 +313,7 @@ export default function CreateTribePage() {
                                         value={tribeData.name}
                                         onChange={(e) => setTribeData({ ...tribeData, name: e.target.value })}
                                         placeholder={isContainedType ? 'e.g. The Smith Family' : 'e.g. Engineering Club at MIT'}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-lg text-white placeholder:text-white/20 focus:outline-none focus:border-[#D4AF37]/50 transition-all font-medium"
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-lg text-white placeholder:text-white/20 focus:outline-none focus:border-[#7C8FFF]/50 transition-all font-medium"
                                         maxLength={50}
                                         autoFocus
                                     />
@@ -329,7 +329,7 @@ export default function CreateTribePage() {
                                         value={tribeData.description}
                                         onChange={(e) => setTribeData({ ...tribeData, description: e.target.value })}
                                         placeholder={isContainedType ? 'Our private family space for sharing updates, photos, and staying connected.' : 'What is this group about?'}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-[#D4AF37]/50 h-28 resize-none transition-all leading-relaxed text-sm"
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-[#7C8FFF]/50 h-28 resize-none transition-all leading-relaxed text-sm"
                                         maxLength={280}
                                     />
                                 </div>
@@ -341,7 +341,7 @@ export default function CreateTribePage() {
                                         value={tribeData.tagline}
                                         onChange={(e) => setTribeData({ ...tribeData, tagline: e.target.value })}
                                         placeholder={isContainedType ? 'Join our family circle — private and secure' : 'Join us on 0G — your own private space'}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-[#D4AF37]/50 transition-all text-sm"
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-[#7C8FFF]/50 transition-all text-sm"
                                         maxLength={120}
                                     />
                                     <p className="text-xs text-white/20 mt-1">Shown on the invite page your members will see</p>
@@ -354,7 +354,7 @@ export default function CreateTribePage() {
                                         value={tribeData.websiteUrl}
                                         onChange={(e) => setTribeData({ ...tribeData, websiteUrl: e.target.value })}
                                         placeholder="https://your-organization.com"
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-[#D4AF37]/50 transition-all text-sm"
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-[#7C8FFF]/50 transition-all text-sm"
                                     />
                                     <p className="text-xs text-white/20 mt-1">Link your organization&apos;s website for members to reference</p>
                                 </div>
@@ -535,7 +535,7 @@ export default function CreateTribePage() {
 
                                 <button
                                     onClick={() => setTribeData({ ...tribeData, privacy: 'public' })}
-                                    className={`relative p-5 rounded-2xl border text-left transition-all ${tribeData.privacy === 'public' ? 'border-[#D4AF37]/40 bg-[#D4AF37]/5' : 'border-white/10 bg-white/[0.03] hover:border-white/20'}`}
+                                    className={`relative p-5 rounded-2xl border text-left transition-all ${tribeData.privacy === 'public' ? 'border-[#7C8FFF]/40 bg-[#7C8FFF]/5' : 'border-white/10 bg-white/[0.03] hover:border-white/20'}`}
                                 >
                                     <div className="flex items-start gap-4">
                                         <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
@@ -550,8 +550,8 @@ export default function CreateTribePage() {
                                                 Anyone can find and join. Discoverable in search and recommendations.
                                             </p>
                                         </div>
-                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-1 ${tribeData.privacy === 'public' ? 'border-[#D4AF37]' : 'border-white/20'}`}>
-                                            {tribeData.privacy === 'public' && <div className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" />}
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-1 ${tribeData.privacy === 'public' ? 'border-[#7C8FFF]' : 'border-white/20'}`}>
+                                            {tribeData.privacy === 'public' && <div className="w-2.5 h-2.5 rounded-full bg-[#7C8FFF]" />}
                                         </div>
                                     </div>
                                 </button>

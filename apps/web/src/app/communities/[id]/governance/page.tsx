@@ -62,7 +62,7 @@ export default function GovernancePage() {
     };
 
     const statusColors: Record<string, string> = {
-        ACTIVE: 'text-[#D4AF37] bg-[#D4AF37]/10',
+        ACTIVE: 'text-[#7C8FFF] bg-[#7C8FFF]/10',
         PASSED: 'text-emerald-400 bg-emerald-400/10',
         REJECTED: 'text-red-400 bg-red-400/10',
         EXPIRED: 'text-white/40 bg-white/5',
@@ -78,7 +78,7 @@ export default function GovernancePage() {
                 </div>
                 <button
                     onClick={() => setShowCreate(true)}
-                    className="px-4 py-2 rounded-xl bg-[#D4AF37] text-black font-semibold text-sm hover:opacity-90"
+                    className="px-4 py-2 rounded-xl bg-[#7C8FFF] text-white font-semibold text-sm hover:opacity-90"
                 >
                     New Proposal
                 </button>
@@ -262,7 +262,7 @@ function CreateProposalModal({ onClose, onCreate }: {
                     <button
                         onClick={() => onCreate({ title, description, type })}
                         disabled={!title.trim() || !description.trim()}
-                        className="flex-1 py-2.5 rounded-xl bg-[#D4AF37] text-black font-semibold text-sm disabled:opacity-50"
+                        className="flex-1 py-2.5 rounded-xl bg-[#7C8FFF] text-white font-semibold text-sm disabled:opacity-50"
                     >
                         Submit
                     </button>

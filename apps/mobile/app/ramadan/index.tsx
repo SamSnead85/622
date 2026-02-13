@@ -267,7 +267,7 @@ const CalendarDayCell = memo(function CalendarDayCell({
             ]}
         >
             {fasted ? (
-                <Ionicons name="checkmark" size={12} color={colors.obsidian[900]} />
+                <Ionicons name="checkmark" size={12} color="#FFFFFF" />
             ) : (
                 <Text
                     style={[
@@ -969,7 +969,7 @@ export default function RamadanHub() {
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                             />
-                            <Ionicons name="book-outline" size={16} color={colors.obsidian[900]} />
+                            <Ionicons name="book-outline" size={16} color="#FFFFFF" />
                             <Text style={s.readingButtonText}>Open Quran</Text>
                         </TouchableOpacity>
                     </GlassCard>
@@ -1800,7 +1800,7 @@ const s = StyleSheet.create({
     readingButtonText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // ── Quran Progress ────────────────────────────────────────────

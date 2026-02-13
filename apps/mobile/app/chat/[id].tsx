@@ -1353,13 +1353,13 @@ export default function ChatScreen() {
                                     {(isSending || isUploading) ? (
                                         <ActivityIndicator
                                             size="small"
-                                            color={colors.obsidian[900]}
+                                            color="#FFFFFF"
                                         />
                                     ) : (
                                         <Ionicons
                                             name="arrow-up"
                                             size={18}
-                                            color={colors.obsidian[900]}
+                                            color="#FFFFFF"
                                         />
                                     )}
                                 </LinearGradient>
@@ -1489,7 +1489,7 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
         lineHeight: 22,
     },
-    ownText: { color: colors.obsidian[900], fontWeight: '500' },
+    ownText: { color: '#FFFFFF', fontWeight: '500' },
     ownMeta: {
         flexDirection: 'row',
         alignItems: 'center',

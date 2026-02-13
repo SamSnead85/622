@@ -908,7 +908,7 @@ const styles = StyleSheet.create({
     followBtnText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
     followBtnTextActive: {
         color: colors.text.primary,

@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -128,7 +129,7 @@ export default function UsernameScreen() {
     }, [refreshUser, router]);
 
     return (
-        <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
+        <View style={[styles.container, { backgroundColor: c.background }]}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
@@ -163,7 +164,7 @@ export default function UsernameScreen() {
                         <View style={[
                             styles.inputWrapper,
                             {
-                                backgroundColor: isDark ? c.surface.glass : c.obsidian[700],
+                                backgroundColor: c.surface.glass,
                                 borderColor: error
                                     ? c.coral[500]
                                     : isAvailable === true
@@ -184,7 +185,7 @@ export default function UsernameScreen() {
                                     setUsername(text.toLowerCase().replace(/[^a-z0-9_]/g, ''));
                                     setError('');
                                 }}
-                                selectionColor={isDark ? c.gold[500] : c.azure[500]}
+                                selectionColor={c.gold[500]}
                                 accessibilityLabel="Username"
                             />
                             <View style={styles.statusIndicator}>
@@ -229,30 +230,29 @@ export default function UsernameScreen() {
                     {/* Spacer */}
                     <View style={styles.spacer} />
 
-                    {/* CTA */}
+                    {/* CTA — gold gradient, matches entire auth flow */}
                     <Animated.View entering={FadeInUp.delay(300).duration(500)}>
-                        <Pressable
+                        <TouchableOpacity
                             onPress={handleContinue}
                             disabled={!isAvailable || loading}
-                            style={({ pressed }) => [
-                                styles.continueButton,
-                                {
-                                    backgroundColor: isAvailable && !loading ? c.text.primary : c.obsidian[600],
-                                    opacity: pressed ? 0.9 : 1,
-                                    transform: [{ scale: pressed ? 0.98 : 1 }],
-                                },
-                            ]}
+                            activeOpacity={0.85}
+                            style={[styles.continueButton, (!isAvailable || loading) && { opacity: 0.5 }]}
                             accessibilityRole="button"
                             accessibilityLabel={loading ? 'Setting up your profile' : 'Sign up'}
                         >
-                            {loading ? (
-                                <ActivityIndicator size="small" color={c.text.inverse} />
-                            ) : (
-                                <Text style={[styles.continueButtonText, { color: c.text.inverse }]}>
-                                    Sign up
-                                </Text>
-                            )}
-                        </Pressable>
+                            <LinearGradient
+                                colors={(!isAvailable || loading) ? [c.border.subtle, c.border.default] : [c.gold[400], c.gold[600]]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.continueGradient}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator size="small" color="#000" />
+                                ) : (
+                                    <Text style={styles.continueButtonText}>Sign up</Text>
+                                )}
+                            </LinearGradient>
+                        </TouchableOpacity>
 
                         <TouchableOpacity
                             style={styles.skipButton}
@@ -345,17 +345,22 @@ const styles = StyleSheet.create({
     // ---- Spacer ----
     spacer: { flex: 1, minHeight: 40 },
 
-    // ---- CTA ----
+    // ---- CTA — gold gradient, matches auth flow ----
     continueButton: {
-        height: 52,
-        borderRadius: 26,
+        borderRadius: 14,
+        overflow: 'hidden',
+    },
+    continueGradient: {
         alignItems: 'center',
         justifyContent: 'center',
+        paddingVertical: 15,
+        borderRadius: 14,
     },
     continueButtonText: {
-        fontSize: typography.fontSize.base,
-        fontWeight: '600',
-        fontFamily: 'Inter-SemiBold',
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        fontFamily: 'Inter-Bold',
     },
     skipButton: {
         alignSelf: 'center',

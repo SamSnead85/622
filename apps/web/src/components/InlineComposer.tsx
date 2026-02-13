@@ -304,11 +304,11 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="absolute inset-0 z-20 rounded-2xl border-2 border-dashed border-[#D4AF37] bg-[#D4AF37]/5 backdrop-blur-sm flex items-center justify-center pointer-events-none"
+                        className="absolute inset-0 z-20 rounded-2xl border-2 border-dashed border-[#7C8FFF] bg-[#7C8FFF]/5 backdrop-blur-sm flex items-center justify-center pointer-events-none"
                     >
                         <div className="text-center">
-                            <CameraIcon size={32} className="mx-auto text-[#D4AF37] mb-2" />
-                            <p className="text-[#D4AF37] font-semibold text-sm">Drop photo or video</p>
+                            <CameraIcon size={32} className="mx-auto text-[#7C8FFF] mb-2" />
+                            <p className="text-[#7C8FFF] font-semibold text-sm">Drop photo or video</p>
                         </div>
                     </motion.div>
                 )}
@@ -323,7 +323,7 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
                         className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                     />
                 ) : (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8942D] flex items-center justify-center text-black font-bold flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#7C8FFF] to-[#6070EE] flex items-center justify-center text-white font-bold flex-shrink-0">
                         {user.displayName?.[0] || 'U'}
                     </div>
                 )}
@@ -357,7 +357,7 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
                                                 key={r}
                                                 onClick={() => { setChosenRatio(r); setCropY(50); }}
                                                 className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${chosenRatio === r
-                                                    ? 'bg-[#D4AF37]/20 text-[#D4AF37] ring-1 ring-[#D4AF37]/30'
+                                                    ? 'bg-[#7C8FFF]/20 text-[#7C8FFF] ring-1 ring-[#7C8FFF]/30'
                                                     : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60'
                                                 }`}
                                             >
@@ -473,14 +473,14 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
                             />
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="p-2.5 rounded-full text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-90"
+                                className="p-2.5 rounded-full text-[#7C8FFF] hover:bg-[#7C8FFF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-90"
                                 title="Photo/Video"
                             >
                                 <CameraIcon size={20} />
                             </button>
                             <button
                                 onClick={() => router.push('/campfire')}
-                                className="p-2.5 rounded-full text-white/40 hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-90"
+                                className="p-2.5 rounded-full text-white/40 hover:text-[#7C8FFF] hover:bg-[#7C8FFF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-90"
                                 title="Go Live"
                             >
                                 <VideoIcon size={20} />
@@ -490,7 +490,7 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
                             <div className="h-4 w-[1px] bg-white/10 mx-2" />
                             <button
                                 onClick={() => setPrivacy(privacy === 'public' ? 'private' : 'public')}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-xs font-medium text-[#D4AF37] transition-colors"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-xs font-medium text-[#7C8FFF] transition-colors"
                             >
                                 <GlobeIcon size={14} />
                                 <span>{privacy === 'public' ? 'Everyone' : 'Private'}</span>
@@ -503,7 +503,7 @@ export function InlineComposer({ user, communityId, onPostSuccess }: InlineCompo
                             disabled={(!content.trim() && !mediaFile) || isPosting}
                             className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 min-h-[44px] active:scale-95 ${(!content.trim() && !mediaFile) || isPosting
                                 ? 'bg-white/10 text-white/30 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-[#D4AF37] to-[#D4AF37]/80 text-black hover:shadow-[0_2px_12px_rgba(0,212,255,0.3)]'
+                                : 'bg-gradient-to-r from-[#7C8FFF] to-[#7C8FFF]/80 text-white hover:shadow-[0_2px_12px_rgba(0,212,255,0.3)]'
                                 }`}
                         >
                             {isPosting ? 'Posting...' : 'Post'}

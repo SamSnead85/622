@@ -548,9 +548,9 @@ export default function SettingsScreen() {
                                     )}
                                     <View style={styles.avatarEditBadge}>
                                         {isUploadingAvatar ? (
-                                            <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                            <ActivityIndicator size="small" color="#FFFFFF" />
                                         ) : (
-                                            <Ionicons name="camera" size={14} color={colors.obsidian[900]} />
+                                            <Ionicons name="camera" size={14} color="#FFFFFF" />
                                         )}
                                     </View>
                                 </TouchableOpacity>
@@ -591,7 +591,7 @@ export default function SettingsScreen() {
                                 >
                                     <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.saveProfileGradient}>
                                         {isSavingProfile ? (
-                                            <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                            <ActivityIndicator size="small" color="#FFFFFF" />
                                         ) : (
                                             <Text style={styles.saveProfileText}>Save Profile</Text>
                                         )}
@@ -930,7 +930,7 @@ export default function SettingsScreen() {
                                 disabled={isDeletingAccount || !deletePassword.trim()}
                             >
                                 {isDeletingAccount ? (
-                                    <ActivityIndicator size="small" color={colors.obsidian[900]} />
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
                                 ) : (
                                     <Text style={styles.modalButtonDeleteText}>Delete</Text>
                                 )}
@@ -1294,7 +1294,7 @@ const styles = StyleSheet.create({
     saveProfileText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 
     // ─── Language Picker ─────────────────────────
@@ -1473,6 +1473,6 @@ const styles = StyleSheet.create({
     modalButtonDeleteText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
     },
 });

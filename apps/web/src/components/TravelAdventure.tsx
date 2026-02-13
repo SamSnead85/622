@@ -371,7 +371,7 @@ export const AdventureCard = memo(function AdventureCard({
                                             selectedResponse === 'maybe' ? "Let me check my schedule..." :
                                                 "Sorry, I have other plans..."
                                     }
-                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#D4AF37] focus:outline-none resize-none"
+                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#7C8FFF] focus:outline-none resize-none"
                                     rows={3}
                                 />
                             </div>
@@ -519,7 +519,7 @@ export function CreateAdventureWizard({
                 {/* Progress Bar */}
                 <div className="h-1 bg-white/5">
                     <motion.div
-                        className="h-full bg-gradient-to-r from-[#D4AF37] to-[#B8942D]"
+                        className="h-full bg-gradient-to-r from-[#7C8FFF] to-[#6070EE]"
                         initial={{ width: 0 }}
                         animate={{ width: `${progress}%` }}
                     />
@@ -584,7 +584,7 @@ export function CreateAdventureWizard({
                                             value={formData.customDestination}
                                             onChange={(e) => setFormData(prev => ({ ...prev, customDestination: e.target.value }))}
                                             placeholder="Enter your destination..."
-                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#D4AF37] focus:outline-none"
+                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#7C8FFF] focus:outline-none"
                                         />
                                     </motion.div>
                                 )}
@@ -609,7 +609,7 @@ export function CreateAdventureWizard({
                                         value={formData.title}
                                         onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                                         placeholder={`Amazing ${selectedPreset?.name || 'Adventure'}!`}
-                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#D4AF37] focus:outline-none"
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#7C8FFF] focus:outline-none"
                                     />
                                 </div>
 
@@ -619,7 +619,7 @@ export function CreateAdventureWizard({
                                         value={formData.description}
                                         onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                                         placeholder="I want to go see the redwood forest next weekend! Who's in? 🌲"
-                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#D4AF37] focus:outline-none resize-none"
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#7C8FFF] focus:outline-none resize-none"
                                         rows={3}
                                     />
                                 </div>
@@ -631,7 +631,7 @@ export function CreateAdventureWizard({
                                         value={formData.mediaUrl}
                                         onChange={(e) => handleMediaUrlChange(e.target.value)}
                                         placeholder="Paste YouTube link or image URL..."
-                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#D4AF37] focus:outline-none"
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#7C8FFF] focus:outline-none"
                                     />
                                     {formData.youtubeId && (
                                         <div className="mt-3 rounded-xl overflow-hidden aspect-video">
@@ -664,7 +664,7 @@ export function CreateAdventureWizard({
                                             type="date"
                                             value={formData.startDate}
                                             onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-[#D4AF37] focus:outline-none"
+                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-[#7C8FFF] focus:outline-none"
                                         />
                                     </div>
                                     <div>
@@ -674,7 +674,7 @@ export function CreateAdventureWizard({
                                             value={formData.endDate}
                                             onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
                                             min={formData.startDate}
-                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-[#D4AF37] focus:outline-none"
+                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-[#7C8FFF] focus:outline-none"
                                         />
                                     </div>
                                 </div>
@@ -689,7 +689,7 @@ export function CreateAdventureWizard({
                                                 value={formData.budgetMin}
                                                 onChange={(e) => setFormData(prev => ({ ...prev, budgetMin: e.target.value }))}
                                                 placeholder="Min"
-                                                className="w-full pl-8 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#D4AF37] focus:outline-none"
+                                                className="w-full pl-8 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#7C8FFF] focus:outline-none"
                                             />
                                         </div>
                                         <div className="relative">
@@ -699,7 +699,7 @@ export function CreateAdventureWizard({
                                                 value={formData.budgetMax}
                                                 onChange={(e) => setFormData(prev => ({ ...prev, budgetMax: e.target.value }))}
                                                 placeholder="Max"
-                                                className="w-full pl-8 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#D4AF37] focus:outline-none"
+                                                className="w-full pl-8 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#7C8FFF] focus:outline-none"
                                             />
                                         </div>
                                     </div>
@@ -725,11 +725,11 @@ export function CreateAdventureWizard({
                                         onChange={(e) => setNewActivity(e.target.value)}
                                         onKeyPress={(e) => e.key === 'Enter' && addActivity()}
                                         placeholder="Add an activity..."
-                                        className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#D4AF37] focus:outline-none"
+                                        className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-[#7C8FFF] focus:outline-none"
                                     />
                                     <button
                                         onClick={addActivity}
-                                        className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-medium"
+                                        className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white font-medium"
                                     >
                                         Add
                                     </button>
@@ -764,7 +764,7 @@ export function CreateAdventureWizard({
                                 </div>
 
                                 {/* Preview */}
-                                <div className="mt-8 p-4 bg-gradient-to-br from-[#D4AF37]/10 to-[#B8942D]/10 rounded-2xl border border-white/10">
+                                <div className="mt-8 p-4 bg-gradient-to-br from-[#7C8FFF]/10 to-[#6070EE]/10 rounded-2xl border border-white/10">
                                     <h4 className="text-sm font-medium text-white/60 mb-3">Preview</h4>
                                     <div className="flex items-center gap-3">
                                         <div className="text-4xl">{selectedPreset?.emoji || '✨'}</div>
@@ -801,7 +801,7 @@ export function CreateAdventureWizard({
                             }
                         }}
                         disabled={step === 1 && !formData.destination}
-                        className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {step === totalSteps ? "Who's In? 🚀" : 'Next'}
                     </button>
@@ -833,7 +833,7 @@ export function AdventureList({
     if (adventures.length === 0) {
         return (
             <div className="text-center py-16">
-                <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-[#D4AF37]/20 to-[#B8942D]/20 flex items-center justify-center">
+                <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-[#7C8FFF]/20 to-[#6070EE]/20 flex items-center justify-center">
                     <span className="text-5xl">🗺️</span>
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-3">{emptyMessage}</h3>
@@ -844,7 +844,7 @@ export function AdventureList({
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={onCreateNew}
-                    className="px-8 py-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-bold text-lg shadow-lg shadow-[#D4AF37]/20"
+                    className="px-8 py-4 rounded-2xl bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white font-bold text-lg shadow-lg shadow-[#7C8FFF]/20"
                 >
                     <span className="mr-2">🚀</span>
                     Plan an Adventure
@@ -861,7 +861,7 @@ export function AdventureList({
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={onCreateNew}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8942D] text-white font-medium"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] text-white font-medium"
                 >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

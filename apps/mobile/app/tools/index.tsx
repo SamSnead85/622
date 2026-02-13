@@ -623,7 +623,7 @@ const styles = StyleSheet.create({
     toolBadgeText: {
         fontSize: 9,
         fontWeight: '800',
-        color: colors.obsidian[900],
+        color: '#FFFFFF',
         letterSpacing: 0.6,
     },
 
