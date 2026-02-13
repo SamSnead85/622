@@ -61,5 +61,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-export const useTheme = () => useContext(ThemeContext);
+const fallbackColors = { ...lightColors, background: lightColors.obsidian[900] };
+
+export const useTheme = () => {
+    const ctx = useContext(ThemeContext);
+    // Defensive: ensure colors is always defined even if context is incomplete
+    if (!ctx.colors) {
+        return { ...ctx, colors: fallbackColors };
+    }
+    return ctx;
+};
 export default ThemeContext;

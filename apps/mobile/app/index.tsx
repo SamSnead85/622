@@ -10,7 +10,6 @@ import ReanimatedView, {
 } from 'react-native-reanimated';
 import { colors } from '@zerog/ui';
 import { useAuthStore } from '../stores';
-import { useTheme } from '../contexts/ThemeContext';
 
 export default function SplashIndex() {
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
