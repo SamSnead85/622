@@ -20,6 +20,7 @@ model User {
   bio                        String?
   website                    String?
   avatarUrl                  String?
+  avatarFrame                String?
   coverUrl                   String?
   passwordHash               String?
   role                       Role                      @default(USER)

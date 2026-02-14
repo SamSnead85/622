@@ -59,6 +59,7 @@ interface UserProfile {
     bio?: string;
     website?: string;
     avatarUrl?: string;
+    avatarFrame?: string;
     coverUrl?: string;
     isVerified: boolean;
     isPrivate: boolean;
@@ -1026,23 +1027,34 @@ export default function UserProfileScreen() {
                         accessibilityLabel="View profile photo"
                         accessibilityHint="Tap to view full size"
                     >
-                        <View style={styles.avatarWrapper}>
-                            <LinearGradient
-                                colors={[colors.gold[400], colors.gold[500], colors.gold[600]]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.avatarRing}
-                            >
-                                <View style={styles.avatarInner}>
-                                    <Avatar
-                                        uri={profile.avatarUrl}
-                                        name={profile.displayName || profile.username || '?'}
-                                        customSize={AVATAR_SIZE}
-                                    />
-                                </View>
-                            </LinearGradient>
-                            <View style={styles.avatarGlow} />
-                        </View>
+                        {profile.avatarFrame ? (
+                            <View style={styles.avatarWrapper}>
+                                <Avatar
+                                    uri={profile.avatarUrl}
+                                    name={profile.displayName || profile.username || '?'}
+                                    customSize={AVATAR_SIZE}
+                                    frameId={profile.avatarFrame}
+                                />
+                            </View>
+                        ) : (
+                            <View style={styles.avatarWrapper}>
+                                <LinearGradient
+                                    colors={[colors.gold[400], colors.gold[500], colors.gold[600]]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.avatarRing}
+                                >
+                                    <View style={styles.avatarInner}>
+                                        <Avatar
+                                            uri={profile.avatarUrl}
+                                            name={profile.displayName || profile.username || '?'}
+                                            customSize={AVATAR_SIZE}
+                                        />
+                                    </View>
+                                </LinearGradient>
+                                <View style={styles.avatarGlow} />
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </Animated.View>
 

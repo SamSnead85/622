@@ -1,13 +1,16 @@
 // ============================================
 // Avatar — Reusable circular profile image
-// Supports multiple sizes with fallback initial letter
+// Supports multiple sizes, fallback initial letter,
+// and optional cause/identity frame rings
 // ============================================
 
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
+import Svg, { Circle, G } from 'react-native-svg';
 import { colors, typography } from '@zerog/ui';
 import { AVATAR_PLACEHOLDER } from '../lib/imagePlaceholder';
+import { getAvatarFrame, type AvatarFrame } from '../lib/avatarFrames';
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
@@ -29,6 +32,55 @@ const FONT_SIZES: Record<AvatarSize, number> = {
     '2xl': 36,
 };
 
+/** Ring width scales with avatar size */
+function getRingWidth(dimension: number): number {
+    if (dimension <= 36) return 2.5;
+    if (dimension <= 48) return 3;
+    if (dimension <= 64) return 3.5;
+    return 4.5;
+}
+
+/** Renders a segmented or gradient ring around the avatar using SVG arcs */
+function FrameRing({ frame, dimension }: { frame: AvatarFrame; dimension: number }) {
+    const ringWidth = getRingWidth(dimension);
+    const svgSize = dimension + ringWidth * 2 + 2; // +2 for anti-alias padding
+    const center = svgSize / 2;
+    const radius = (dimension / 2) + (ringWidth / 2) + 0.5;
+    const circumference = 2 * Math.PI * radius;
+    const segmentCount = frame.ringColors.length;
+    const segmentLength = circumference / segmentCount;
+    const gapLength = frame.segmented ? 1.5 : 0; // Small gap between segments for flag-style
+
+    return (
+        <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+            <Svg width={svgSize} height={svgSize} viewBox={`0 0 ${svgSize} ${svgSize}`}>
+                <G rotation="-90" origin={`${center}, ${center}`}>
+                    {frame.ringColors.map((color, i) => {
+                        const offset = i * segmentLength;
+                        const dash = frame.segmented
+                            ? segmentLength - gapLength
+                            : segmentLength;
+                        return (
+                            <Circle
+                                key={`${frame.id}-${i}`}
+                                cx={center}
+                                cy={center}
+                                r={radius}
+                                stroke={color}
+                                strokeWidth={ringWidth}
+                                fill="none"
+                                strokeDasharray={`${dash} ${circumference - dash}`}
+                                strokeDashoffset={-offset}
+                                strokeLinecap={frame.segmented ? 'butt' : 'round'}
+                            />
+                        );
+                    })}
+                </G>
+            </Svg>
+        </View>
+    );
+}
+
 interface AvatarProps {
     /** Image URL */
     uri?: string | null;
@@ -48,6 +100,8 @@ interface AvatarProps {
     glow?: boolean;
     /** Accessibility label */
     label?: string;
+    /** Avatar frame ID (cause/identity ring) */
+    frameId?: string | null;
 }
 
 function Avatar({
@@ -60,18 +114,24 @@ function Avatar({
     style,
     glow = false,
     label,
+    frameId,
 }: AvatarProps) {
     const dimension = customSize || SIZES[size];
     const fontSize = customSize ? customSize * 0.4 : FONT_SIZES[size];
     const radius = dimension / 2;
     const initial = name?.charAt(0).toUpperCase() || '?';
+    const frame = getAvatarFrame(frameId);
+
+    // When a frame is active, add padding for the ring
+    const ringWidth = frame ? getRingWidth(dimension) : 0;
+    const outerSize = dimension + (ringWidth * 2) + 2;
 
     const containerStyle: ViewStyle = {
         width: dimension,
         height: dimension,
         borderRadius: radius,
-        ...(borderColor && { borderColor, borderWidth: borderW || 2 }),
-        ...(glow && {
+        ...(borderColor && !frame && { borderColor, borderWidth: borderW || 2 }),
+        ...(glow && !frame && {
             shadowColor: colors.gold[500],
             shadowOffset: { width: 0, height: 0 },
             shadowOpacity: 0.4,
@@ -79,28 +139,42 @@ function Avatar({
         }),
     };
 
-    if (uri) {
-        return (
-            <Image
-                source={{ uri }}
-                style={[containerStyle, style]}
-                contentFit="cover"
-                placeholder={AVATAR_PLACEHOLDER.blurhash}
-                transition={AVATAR_PLACEHOLDER.transition}
-                cachePolicy="memory-disk"
-                accessibilityLabel={label || `${name || 'User'}'s avatar`}
-                accessibilityRole="image"
-            />
-        );
-    }
-
-    return (
+    const avatarContent = uri ? (
+        <Image
+            source={{ uri }}
+            style={[containerStyle, style]}
+            contentFit="cover"
+            placeholder={AVATAR_PLACEHOLDER.blurhash}
+            transition={AVATAR_PLACEHOLDER.transition}
+            cachePolicy="memory-disk"
+            accessibilityLabel={label || `${name || 'User'}'s avatar`}
+            accessibilityRole="image"
+        />
+    ) : (
         <View
             style={[styles.placeholder, containerStyle, style]}
             accessibilityLabel={label || `${name || 'User'}'s avatar`}
             accessibilityRole="image"
         >
             <Text style={[styles.initial, { fontSize }]}>{initial}</Text>
+        </View>
+    );
+
+    // If no frame, return the avatar directly (no wrapper overhead)
+    if (!frame) return avatarContent;
+
+    // With frame: wrap in a container that includes the SVG ring
+    return (
+        <View
+            style={{
+                width: outerSize,
+                height: outerSize,
+                alignItems: 'center',
+                justifyContent: 'center',
+            }}
+        >
+            <FrameRing frame={frame} dimension={dimension} />
+            {avatarContent}
         </View>
     );
 }

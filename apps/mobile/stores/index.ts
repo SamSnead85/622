@@ -71,6 +71,7 @@ interface RawUserResponse {
     username?: string;
     displayName?: string;
     avatarUrl?: string;
+    avatarFrame?: string;
     coverUrl?: string;
     bio?: string;
     website?: string;
@@ -118,6 +119,7 @@ function normalizeUser(rawUser: RawUserResponse): User {
         displayName: rawUser.displayName || rawUser.username || 'User',
         email: rawUser.email || '',
         avatarUrl: rawUser.avatarUrl,
+        avatarFrame: rawUser.avatarFrame,
         coverUrl: rawUser.coverUrl,
         bio: rawUser.bio,
         website: rawUser.website,
@@ -156,6 +158,7 @@ export interface User {
     displayName: string;
     email: string;
     avatarUrl?: string;
+    avatarFrame?: string;
     coverUrl?: string;
     bio?: string;
     website?: string;

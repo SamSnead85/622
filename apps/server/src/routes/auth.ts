@@ -996,6 +996,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
                     bio: true,
                     website: true,
                     avatarUrl: true,
+                    avatarFrame: true,
                     coverUrl: true,
                     isVerified: true,
                     isPrivate: true,

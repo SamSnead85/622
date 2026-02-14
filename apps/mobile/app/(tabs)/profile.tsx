@@ -582,24 +582,34 @@ export default function ProfileScreen() {
                         accessibilityLabel="View profile photo"
                         accessibilityHint="Tap to view full size"
                     >
-                        <View style={styles.avatarWrapper}>
-                            <LinearGradient
-                                colors={[colors.gold[400], colors.gold[500], colors.gold[600]]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.avatarRing}
-                            >
-                                <View style={styles.avatarInner}>
-                                    <Avatar
-                                        uri={user.avatarUrl}
-                                        name={user.displayName || user.username || '?'}
-                                        customSize={AVATAR_SIZE}
-                                    />
-                                </View>
-                            </LinearGradient>
-                            {/* Gold glow shadow */}
-                            <View style={styles.avatarGlow} />
-                        </View>
+                        {user.avatarFrame ? (
+                            <View style={styles.avatarWrapper}>
+                                <Avatar
+                                    uri={user.avatarUrl}
+                                    name={user.displayName || user.username || '?'}
+                                    customSize={AVATAR_SIZE}
+                                    frameId={user.avatarFrame}
+                                />
+                            </View>
+                        ) : (
+                            <View style={styles.avatarWrapper}>
+                                <LinearGradient
+                                    colors={[colors.gold[400], colors.gold[500], colors.gold[600]]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.avatarRing}
+                                >
+                                    <View style={styles.avatarInner}>
+                                        <Avatar
+                                            uri={user.avatarUrl}
+                                            name={user.displayName || user.username || '?'}
+                                            customSize={AVATAR_SIZE}
+                                        />
+                                    </View>
+                                </LinearGradient>
+                                <View style={styles.avatarGlow} />
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </Animated.View>
 
@@ -777,8 +787,8 @@ export default function ProfileScreen() {
                         bio: user.bio,
                         username: user.username,
                         displayName: user.displayName,
-                        interests: (user as Record<string, unknown>).interests as unknown[] | undefined,
-                        culturalProfile: (user as Record<string, unknown>).culturalProfile as string | undefined,
+                        interests: (user as unknown as Record<string, unknown>).interests as unknown[] | undefined,
+                        culturalProfile: (user as unknown as Record<string, unknown>).culturalProfile as string | undefined,
                         postsCount: user.postsCount || 0,
                         followingCount: user.followingCount || 0,
                     });
@@ -1115,7 +1125,6 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: '700',
         letterSpacing: -0.5,
-        fontFamily: 'SpaceGrotesk-Bold',
         fontFamily: 'Inter-Bold',
     },
     headerChevron: {

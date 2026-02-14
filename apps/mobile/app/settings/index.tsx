@@ -32,6 +32,8 @@ import i18next from 'i18next';
 import { showError } from '../../stores/toastStore';
 import { AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { useDebounce } from '../../hooks/useDebounce';
+import { Avatar } from '../../components/Avatar';
+import { AVATAR_FRAMES, getFramesByCategory, FRAME_CATEGORY_LABELS, getAvatarFrame } from '../../lib/avatarFrames';
 import { useTheme } from '../../contexts/ThemeContext';
 
 // ─── Setting Row Component ───────────────────────────────────────────
@@ -134,6 +136,9 @@ export default function SettingsScreen() {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [deletePassword, setDeletePassword] = useState('');
     const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+    const [showFramePicker, setShowFramePicker] = useState(false);
+    const [selectedFrame, setSelectedFrame] = useState<string | null>(user?.avatarFrame || null);
+    const [isSavingFrame, setIsSavingFrame] = useState(false);
 
     // Searchable settings metadata for filtering
     const settingsSections = useMemo(() => [
@@ -166,6 +171,23 @@ export default function SettingsScreen() {
         if (!visibleSections) return true;
         return visibleSections.has(key);
     }, [visibleSections]);
+
+    const handleSaveFrame = useCallback(async (frameId: string | null) => {
+        setSelectedFrame(frameId);
+        setIsSavingFrame(true);
+        try {
+            await apiFetch(`${API.users}/profile`, {
+                method: 'PUT',
+                body: JSON.stringify({ avatarFrame: frameId }),
+            });
+            await refreshUser();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {
+            showError('Could not update frame');
+        } finally {
+            setIsSavingFrame(false);
+        }
+    }, [refreshUser]);
 
     const handleSaveProfile = useCallback(async () => {
         setIsSavingProfile(true);
@@ -630,6 +652,92 @@ export default function SettingsScreen() {
                                         )}
                                     </View>
                                 </TouchableOpacity>
+
+                                {/* Avatar Frame Picker */}
+                                <TouchableOpacity
+                                    style={[styles.framePickerToggle, { backgroundColor: c.surface.glass, borderColor: c.surface.glassHover }]}
+                                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowFramePicker(!showFramePicker); }}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons name="color-palette-outline" size={18} color={c.gold[500]} />
+                                    <Text style={[styles.framePickerLabel, { color: c.text.primary }]}>
+                                        {selectedFrame ? `Frame: ${getAvatarFrame(selectedFrame)?.label || 'Custom'}` : 'Add Profile Frame'}
+                                    </Text>
+                                    {selectedFrame && getAvatarFrame(selectedFrame)?.badge && (
+                                        <Text style={{ fontSize: 16 }}>{getAvatarFrame(selectedFrame)?.badge}</Text>
+                                    )}
+                                    <Ionicons name={showFramePicker ? 'chevron-up' : 'chevron-down'} size={16} color={c.text.muted} style={{ marginLeft: 'auto' }} />
+                                </TouchableOpacity>
+
+                                {showFramePicker && (
+                                    <View style={[styles.framePickerContainer, { backgroundColor: c.surface.glass, borderColor: c.surface.glassHover }]}>
+                                        {/* Preview */}
+                                        <View style={styles.framePreview}>
+                                            <Avatar
+                                                uri={user?.avatarUrl}
+                                                name={user?.displayName || user?.username || '?'}
+                                                customSize={80}
+                                                frameId={selectedFrame}
+                                            />
+                                            <Text style={[styles.framePreviewLabel, { color: c.text.secondary }]}>
+                                                {selectedFrame ? getAvatarFrame(selectedFrame)?.description || '' : 'No frame selected'}
+                                            </Text>
+                                        </View>
+
+                                        {/* Remove frame option */}
+                                        {selectedFrame && (
+                                            <TouchableOpacity
+                                                style={[styles.removeFrameBtn, { borderColor: c.surface.glassHover }]}
+                                                onPress={() => handleSaveFrame(null)}
+                                                disabled={isSavingFrame}
+                                            >
+                                                <Ionicons name="close-circle-outline" size={16} color={c.text.muted} />
+                                                <Text style={[styles.removeFrameText, { color: c.text.muted }]}>Remove Frame</Text>
+                                            </TouchableOpacity>
+                                        )}
+
+                                        {/* Frame categories */}
+                                        {Object.entries(getFramesByCategory()).map(([category, frames]) => (
+                                            <View key={category} style={styles.frameCategorySection}>
+                                                <Text style={[styles.frameCategoryTitle, { color: c.text.secondary }]}>
+                                                    {FRAME_CATEGORY_LABELS[category] || category}
+                                                </Text>
+                                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.frameCategoryScroll}>
+                                                    {frames.map((frame) => {
+                                                        const isSelected = selectedFrame === frame.id;
+                                                        return (
+                                                            <TouchableOpacity
+                                                                key={frame.id}
+                                                                style={[
+                                                                    styles.frameOption,
+                                                                    { borderColor: isSelected ? c.gold[500] : c.surface.glassHover, backgroundColor: isSelected ? c.surface.glassHover : 'transparent' },
+                                                                ]}
+                                                                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleSaveFrame(frame.id); }}
+                                                                disabled={isSavingFrame}
+                                                                activeOpacity={0.7}
+                                                            >
+                                                                <Avatar
+                                                                    uri={user?.avatarUrl}
+                                                                    name={user?.displayName || '?'}
+                                                                    customSize={48}
+                                                                    frameId={frame.id}
+                                                                />
+                                                                <Text style={[styles.frameOptionLabel, { color: c.text.primary }]} numberOfLines={1}>
+                                                                    {frame.badge ? `${frame.badge} ${frame.label}` : frame.label}
+                                                                </Text>
+                                                                {isSelected && (
+                                                                    <View style={[styles.frameSelectedBadge, { backgroundColor: c.gold[500] }]}>
+                                                                        <Ionicons name="checkmark" size={10} color="#fff" />
+                                                                    </View>
+                                                                )}
+                                                            </TouchableOpacity>
+                                                        );
+                                                    })}
+                                                </ScrollView>
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
 
                                 {/* Display Name */}
                                 <Text style={styles.editorLabel}>Display Name</Text>
@@ -1392,6 +1500,89 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 2,
         borderColor: colors.obsidian[900],
+    },
+    // ─── Frame Picker ──────────────────────────
+    framePickerToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginBottom: 12,
+    },
+    framePickerLabel: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+    },
+    framePickerContainer: {
+        borderRadius: 12,
+        borderWidth: 1,
+        padding: 12,
+        marginBottom: 16,
+    },
+    framePreview: {
+        alignItems: 'center',
+        paddingVertical: 12,
+        gap: 8,
+    },
+    framePreviewLabel: {
+        fontSize: typography.fontSize.xs,
+        fontStyle: 'italic',
+    },
+    removeFrameBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 8,
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+        marginBottom: 8,
+    },
+    removeFrameText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '500',
+    },
+    frameCategorySection: {
+        marginTop: 8,
+    },
+    frameCategoryTitle: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+        marginBottom: 8,
+        paddingLeft: 2,
+    },
+    frameCategoryScroll: {
+        marginBottom: 4,
+    },
+    frameOption: {
+        alignItems: 'center',
+        width: 80,
+        paddingVertical: 10,
+        paddingHorizontal: 4,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        marginRight: 8,
+    },
+    frameOptionLabel: {
+        fontSize: 10,
+        fontWeight: '600',
+        marginTop: 6,
+        textAlign: 'center',
+    },
+    frameSelectedBadge: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     editorLabel: {
         fontSize: typography.fontSize.xs,
