@@ -35,7 +35,7 @@ import Animated, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Avatar } from '../../components';
+import { Avatar, ErrorBoundary } from '../../components';
 import { apiFetch, API, isNetworkError } from '../../lib/api';
 import { AVATAR_PLACEHOLDER, IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { useNetworkQuality } from '../../hooks/useNetworkQuality';
@@ -1469,6 +1469,7 @@ export default function SearchScreen() {
     // ============================================
 
     return (
+        <ErrorBoundary>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
             <LinearGradient
@@ -1647,6 +1648,7 @@ export default function SearchScreen() {
             )}
         </View>
         </KeyboardAvoidingView>
+        </ErrorBoundary>
     );
 }
 

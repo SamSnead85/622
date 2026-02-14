@@ -215,10 +215,12 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             const [memberships, following] = await Promise.all([
                 prisma.communityMember.findMany({
                     where: { userId: req.userId!, isBanned: false },
+                    take: 500,
                     select: { communityId: true },
                 }),
                 prisma.follow.findMany({
                     where: { followerId: req.userId },
+                    take: 5000,
                     select: { followingId: true },
                 }),
             ]);
@@ -245,6 +247,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
             try {
                 following = await prisma.follow.findMany({
                     where: { followerId: req.userId },
+                    take: 5000,
                     select: { followingId: true },
                 });
             } catch (dbError) {
@@ -639,6 +642,7 @@ router.get('/feed/stats', authenticate, async (req: AuthRequest, res, next) => {
 
         const following = await prisma.follow.findMany({
             where: { followerId: userId },
+            take: 5000,
             select: { followingId: true },
         });
         const followingIds = new Set(following.map(f => f.followingId));
@@ -797,6 +801,7 @@ router.post('/', rateLimiters.createPost, authenticate, async (req: AuthRequest,
         if (data.communityId && data.caption) {
             const filters = await prisma.contentFilter.findMany({
                 where: { communityId: data.communityId, isActive: true },
+                take: 100,
             });
 
             if (filters.length > 0) {

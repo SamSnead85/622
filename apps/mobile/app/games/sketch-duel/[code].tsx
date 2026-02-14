@@ -49,6 +49,7 @@ const CANVAS_PADDING = spacing.md;
 const CANVAS_WIDTH = SCREEN_WIDTH - CANVAS_PADDING * 2;
 const CANVAS_HEIGHT = Math.min(CANVAS_WIDTH * 0.75, SCREEN_HEIGHT * 0.35);
 
+// Drawing palette — intentionally hardcoded (not theme colors)
 const PALETTE_COLORS = [
     '#FFFFFF', // White
     '#FF3366', // Pink
@@ -408,6 +409,7 @@ export default function SketchDuelScreen() {
     const [revealWord, setRevealWord] = useState<string | null>(null);
 
     // ---- Drawing State ----
+    // Drawing palette — intentionally hardcoded (not theme colors)
     const [selectedColor, setSelectedColor] = useState('#FFFFFF');
     const [brushSize, setBrushSize] = useState(4);
 

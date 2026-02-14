@@ -98,6 +98,7 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
                     followerId: req.userId,
                     followingId: { in: results.map((u) => u.id) },
                 },
+                take: 50,
                 select: { followingId: true },
             });
             followingIds = new Set(follows.map((f) => f.followingId));
@@ -158,6 +159,7 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
                         followerId: req.userId,
                         followingId: { in: users.map((u) => u.id) },
                     },
+                    take: 50,
                     select: { followingId: true },
                 });
                 followingIds = new Set(follows.map((f) => f.followingId));
@@ -196,6 +198,7 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
                     followerId: req.userId,
                     followingId: { in: users.map((u) => u.id) },
                 },
+                take: 50,
                 select: { followingId: true },
             });
             followingIds = new Set(follows.map((f) => f.followingId));

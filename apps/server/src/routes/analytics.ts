@@ -66,7 +66,7 @@ router.get('/posts', authenticate, async (req: AuthRequest, res: Response, next:
                 _count: { select: { likes: true, comments: true, shares: true } },
             },
             orderBy,
-            take: parseInt(limit as string),
+            take: Math.min(parseInt(limit as string) || 20, 50),
             skip,
         });
 
@@ -105,6 +105,7 @@ router.get('/audience', authenticate, async (req: AuthRequest, res: Response, ne
                 followingId: req.userId!,
                 createdAt: { gte: startDate },
             },
+            take: 5000,
             select: { createdAt: true },
             orderBy: { createdAt: 'asc' },
         });

@@ -25,6 +25,7 @@ const createJourneySchema = z.object({
 router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { cursor, limit = '20' } = req.query;
+        const limitNum = Math.min(parseInt(limit as string) || 20, 20);
 
         const journeys = await prisma.post.findMany({
             where: {
@@ -33,7 +34,7 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
                 isPublic: true,
                 deletedAt: null,
             },
-            take: parseInt(limit as string) + 1,
+            take: limitNum + 1,
             cursor: cursor ? { id: cursor as string } : undefined,
             orderBy: { createdAt: 'desc' },
             include: {
@@ -54,8 +55,8 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
             },
         });
 
-        const hasMore = journeys.length > parseInt(limit as string);
-        const results = hasMore ? journeys.slice(0, -1) : journeys;
+        const hasMore = journeys.length > limitNum;
+        const results = hasMore ? journeys.slice(0, limitNum) : journeys;
 
         res.json({
             journeys: results.map((j) => ({
@@ -83,6 +84,7 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
 router.get('/feed', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { cursor, limit = '20' } = req.query;
+        const feedLimitNum = Math.min(parseInt(limit as string) || 20, 20);
 
         const journeys = await prisma.post.findMany({
             where: {
@@ -90,7 +92,7 @@ router.get('/feed', optionalAuth, async (req: AuthRequest, res, next) => {
                 mediaUrl: { not: null },
                 deletedAt: null,
             },
-            take: parseInt(limit as string) + 1,
+            take: feedLimitNum + 1,
             cursor: cursor ? { id: cursor as string } : undefined,
             orderBy: { createdAt: 'desc' },
             include: {
@@ -112,8 +114,8 @@ router.get('/feed', optionalAuth, async (req: AuthRequest, res, next) => {
             },
         });
 
-        const hasMore = journeys.length > parseInt(limit as string);
-        const results = hasMore ? journeys.slice(0, -1) : journeys;
+        const hasMore = journeys.length > feedLimitNum;
+        const results = hasMore ? journeys.slice(0, feedLimitNum) : journeys;
 
         // Check if current user liked these journeys
         let likedIds = new Set<string>();
@@ -123,6 +125,7 @@ router.get('/feed', optionalAuth, async (req: AuthRequest, res, next) => {
                     userId: req.userId,
                     postId: { in: results.map((j) => j.id) },
                 },
+                take: 20,
             });
             likedIds = new Set(likes.map((l) => l.postId));
         }
@@ -135,6 +138,7 @@ router.get('/feed', optionalAuth, async (req: AuthRequest, res, next) => {
                     followerId: req.userId,
                     followingId: { in: results.map((j) => j.userId) },
                 },
+                take: 20,
             });
             followingIds = new Set(follows.map((f) => f.followingId));
         }

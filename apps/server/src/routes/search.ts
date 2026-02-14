@@ -38,7 +38,7 @@ async function ftsSearch(table: string, query: string, limit: number, offset: nu
         );
         return results;
     } catch {
-        // FTS not available (migration not run), return null for fallback
+        // FTS query failed — fall back to basic search
         return null;
     }
 }
@@ -75,6 +75,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
                 [posts, postCount] = await Promise.all([
                     prisma.post.findMany({
                         where: { id: { in: ftsIds }, deletedAt: null, isPublic: true },
+                        take: 20,
                         include: {
                             user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
                         },
@@ -152,6 +153,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
                         followerId: req.userId,
                         followingId: { in: users.map((u) => u.id) },
                     },
+                    take: 20,
                     select: { followingId: true },
                 });
                 followingIds = new Set(follows.map((f) => f.followingId));

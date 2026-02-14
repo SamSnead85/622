@@ -761,7 +761,7 @@ router.get('/sessions', authenticate, async (req: AuthRequest, res, next) => {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { sessionId: string };
                 currentSessionId = decoded.sessionId;
             } catch {
-                // Token decode failed — not critical
+                // Non-critical: session cleanup can fail silently
             }
         }
 
@@ -810,7 +810,7 @@ router.delete('/sessions/:sessionId', authenticate, async (req: AuthRequest, res
                     return res.status(400).json({ error: 'Use logout to end your current session' });
                 }
             } catch {
-                // Token decode failed — allow the revocation
+                // Token refresh failure — proceed with existing token
             }
         }
 
@@ -842,7 +842,7 @@ router.delete('/sessions', authenticate, async (req: AuthRequest, res, next) => 
                 const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { sessionId: string };
                 currentSessionId = decoded.sessionId;
             } catch {
-                // If we can't decode, revoke everything
+                // Non-critical: session cleanup can fail silently
             }
         }
 

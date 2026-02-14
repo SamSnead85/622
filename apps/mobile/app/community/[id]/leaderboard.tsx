@@ -58,9 +58,9 @@ const PERIODS: { key: Period; label: string }[] = [
 ];
 
 const MEDAL_COLORS = {
-    gold: '#FFD700',
-    silver: '#C0C0C0',
-    bronze: '#CD7F32',
+    gold: colors.gold[500],
+    silver: colors.text.secondary,
+    bronze: colors.amber[600],
 } as const;
 
 // ============================================

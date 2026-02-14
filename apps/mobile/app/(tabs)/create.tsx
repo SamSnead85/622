@@ -50,6 +50,7 @@ import type { Community } from '../../stores';
 import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDebounce } from '../../hooks/useDebounce';
+import { ErrorBoundary } from '../../components';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAX_LENGTH = 2000;
@@ -1558,6 +1559,7 @@ export default function CreateScreen() {
     // ============================================
 
     return (
+        <ErrorBoundary>
         <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
             <LinearGradient
                 colors={[c.obsidian[900], c.obsidian[800]]}
@@ -1828,6 +1830,7 @@ export default function CreateScreen() {
                 </Animated.View>
             </KeyboardAvoidingView>
         </View>
+        </ErrorBoundary>
     );
 }
 

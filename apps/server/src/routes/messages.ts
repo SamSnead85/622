@@ -157,6 +157,7 @@ router.get('/conversations', authenticate, async (req: AuthRequest, res, next) =
                     conversationId: { in: conversationIds },
                     senderId: { not: req.userId },
                 },
+                take: 5000,
                 select: {
                     conversationId: true,
                     createdAt: true,
@@ -449,6 +450,7 @@ router.post('/conversations/:conversationId/messages', authenticate, async (req:
                 userId: { not: req.userId },
                 isMuted: false,
             },
+            take: 100,
         });
 
         await prisma.notification.createMany({

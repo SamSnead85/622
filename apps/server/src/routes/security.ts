@@ -62,6 +62,7 @@ router.use(requireRole('SUPERADMIN'));
 router.get('/policies', authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const policies = await prisma.platformSecurityPolicy.findMany({
+            take: 100,
             orderBy: { type: 'asc' },
         });
         res.json(policies);
@@ -309,7 +310,7 @@ router.get('/audit-log', authenticate, async (req: Request, res: Response, next:
                 ...(severity ? { severity: severity as ThreatLevel } : {}),
             },
             orderBy: { createdAt: 'desc' },
-            take: parseInt(limit as string),
+            take: Math.min(parseInt(limit as string) || 50, 100),
             skip: parseInt(offset as string),
         });
 

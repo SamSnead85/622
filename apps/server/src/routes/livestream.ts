@@ -62,6 +62,7 @@ router.get('/active', optionalAuth, async (req: AuthRequest, res: Response, next
                 status: 'LIVE',
                 ...(category && typeof category === 'string' ? { category } : {}),
             },
+            take: 20,
             include: {
                 user: {
                     select: {

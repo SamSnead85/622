@@ -164,7 +164,7 @@ router.post('/post', authenticate, rateLimiters.upload, diskUpload.single('file'
                 const { getVideoThumbnailUrl } = await import('../services/cloudinary.js');
                 videoThumbnail = getVideoThumbnailUrl(result.url);
             } catch {
-                // Cloudinary not available — thumbnail stays null
+                // Cleanup of previous upload failed — non-critical
             }
         }
 

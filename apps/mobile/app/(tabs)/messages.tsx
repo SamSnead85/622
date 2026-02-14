@@ -30,7 +30,7 @@ import { colors, spacing, typography } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthStore } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
-import { Avatar, EmptyState } from '../../components';
+import { Avatar, EmptyState, ErrorBoundary } from '../../components';
 import SkeletonList from '../../components/SkeletonList';
 import { useDebounce } from '../../hooks/useDebounce';
 import { timeAgo } from '../../lib/utils';
@@ -357,6 +357,7 @@ export default function MessagesTab() {
     ), [onlineConnections, c.text.muted, handleOnlinePress]);
 
     return (
+        <ErrorBoundary>
         <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
@@ -430,6 +431,7 @@ export default function MessagesTab() {
             />
 
         </View>
+        </ErrorBoundary>
     );
 }
 

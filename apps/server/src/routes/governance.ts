@@ -194,7 +194,7 @@ router.get('/:communityId/moderation-log', authenticate, async (req: AuthRequest
             prisma.moderationLog.findMany({
                 where: { communityId },
                 orderBy: { createdAt: 'desc' },
-                take: parseInt(limit as string),
+                take: Math.min(parseInt(limit as string) || 50, 50),
                 skip,
             }),
             prisma.moderationLog.count({ where: { communityId } }),

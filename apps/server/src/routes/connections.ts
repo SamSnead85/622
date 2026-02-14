@@ -212,6 +212,7 @@ router.get('/requests', async (req: AuthRequest, res, next) => {
             where: type === 'received'
                 ? { receiverId: userId, status: 'PENDING' }
                 : { senderId: userId, status: 'PENDING' },
+            take: 100,
             include: {
                 sender: {
                     select: {
@@ -303,14 +304,18 @@ router.post('/request/:userId', async (req: AuthRequest, res, next) => {
             throw new AppError('A connection request already exists between you and this user', 409);
         }
 
-        // Create connection request
-        const request = await prisma.connectionRequest.create({
-            data: {
+        // Create connection request (upsert to prevent race-condition duplicates)
+        const request = await prisma.connectionRequest.upsert({
+            where: {
+                senderId_receiverId: { senderId, receiverId },
+            },
+            create: {
                 senderId,
                 receiverId,
                 status: 'PENDING',
                 message: message?.slice(0, 500) || null,
             },
+            update: {}, // If already exists, do nothing
         });
 
         // Create notification for the receiver
@@ -801,6 +806,7 @@ router.get('/suggestions', async (req: AuthRequest, res, next) => {
                     { blockedId: userId },
                 ],
             },
+            take: 100,
             select: { blockerId: true, blockedId: true },
         });
         const blockedIds = blockedUsers.map(b =>
@@ -815,6 +821,7 @@ router.get('/suggestions', async (req: AuthRequest, res, next) => {
                     { receiverId: userId, status: 'PENDING' },
                 ],
             },
+            take: 100,
             select: { senderId: true, receiverId: true },
         });
         const pendingIds = pendingRequests.map(r =>

@@ -56,6 +56,7 @@ router.get('/accounts', authenticate, async (req: AuthRequest, res: Response, ne
 
         const accounts = await prisma.connectedAccount.findMany({
             where: { userId: req.user.id },
+            take: 100,
             select: {
                 id: true,
                 platform: true,
@@ -410,6 +411,7 @@ router.get('/crosspost/:postId', async (req: AuthRequest, res: Response, next: N
     try {
         const crossPosts = await prisma.crossPost.findMany({
             where: { postId: req.params.postId },
+            take: 100,
             select: {
                 id: true,
                 sourcePlatform: true,
@@ -583,6 +585,7 @@ router.get('/stats', authenticate, async (req: AuthRequest, res: Response, next:
 
         const accounts = await prisma.connectedAccount.findMany({
             where: { userId: req.user.id },
+            take: 100,
             select: {
                 id: true,
                 platform: true,

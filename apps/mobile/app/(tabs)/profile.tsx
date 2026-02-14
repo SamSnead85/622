@@ -38,6 +38,7 @@ import { showError } from '../../stores/toastStore';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { formatCount } from '../../lib/utils';
 import { getProfileCompletion, ProfileStep } from '../../lib/profileCompletion';
+import { ErrorBoundary } from '../../components';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_HEIGHT = 220;
@@ -843,6 +844,7 @@ export default function ProfileScreen() {
 
     // ── Render ────────────────────────────────────────────
     return (
+        <ErrorBoundary>
         <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
             <LinearGradient
                 colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
@@ -914,6 +916,7 @@ export default function ProfileScreen() {
                 initialNumToRender={9}
             />
         </View>
+        </ErrorBoundary>
     );
 }
 

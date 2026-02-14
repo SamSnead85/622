@@ -29,6 +29,7 @@ import { apiFetch, API } from '../../lib/api';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { useDebounce } from '../../hooks/useDebounce';
 import { formatCount } from '../../lib/utils';
+import { ErrorBoundary } from '../../components';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 3) / 2;
@@ -634,6 +635,7 @@ export default function CommunitiesScreen() {
     // ============================================
 
     return (
+        <ErrorBoundary>
         <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
             <LinearGradient
                 colors={[c.obsidian[900], c.obsidian[800]]}
@@ -768,6 +770,7 @@ export default function CommunitiesScreen() {
                 }}
             />
         </View>
+        </ErrorBoundary>
     );
 }
 

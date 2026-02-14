@@ -110,7 +110,7 @@ const ActionButton = memo(({ icon, label, count, onPress, isActive, activeColor 
                 <Ionicons
                     name={icon as any}
                     size={28}
-                    color={isActive ? (activeColor || '#FF4757') : colors.text.inverse}
+                    color={isActive ? (activeColor || colors.coral[500]) : colors.text.inverse}
                 />
             </Animated.View>
             {count !== undefined && count > 0 && (
@@ -287,7 +287,7 @@ const ReelItem = memo(({ reel, isActive, height: itemHeight }: {
                     />
                     <Text style={styles.username}>@{reel.user?.username}</Text>
                     {reel.user?.isVerified && (
-                        <Ionicons name="checkmark-circle" size={14} color="#FFD700" />
+                        <Ionicons name="checkmark-circle" size={14} color={colors.gold[500]} />
                     )}
                     {reel.user?.id !== user?.id && (
                         <TouchableOpacity style={styles.followBtn}>
@@ -315,7 +315,7 @@ const ReelItem = memo(({ reel, isActive, height: itemHeight }: {
                     count={reel.likesCount + (isLiked ? 1 : 0)}
                     onPress={handleLike}
                     isActive={isLiked}
-                    activeColor="#FF4757"
+                    activeColor={colors.coral[500]}
                 />
                 <ActionButton
                     icon="chatbubble-outline"
@@ -334,7 +334,7 @@ const ReelItem = memo(({ reel, isActive, height: itemHeight }: {
                     label="Save"
                     onPress={handleSave}
                     isActive={isSaved}
-                    activeColor="#FFD700"
+                    activeColor={colors.gold[500]}
                 />
                 <ActionButton
                     icon={isMuted ? 'volume-mute' : 'volume-high'}
