@@ -50,7 +50,8 @@ import { apiFetch, API } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { toHijri } from '../../lib/hijri';
 import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
-import { timeAgo, formatCount } from '../../lib/utils';
+import { timeAgo, formatCount, clampAspectRatio } from '../../lib/utils';
+import { CommentsSheet } from '../../components/CommentsSheet';
 
 // ============================================
 // Avatar Glow Ring — premium animated ring
@@ -432,7 +433,8 @@ function ReadMoreText({ text }: { text: string }) {
 // Feed Video Player (auto-play with mute toggle)
 // Shows poster thumbnail instantly while video buffers — no spinner.
 // ============================================
-function FeedVideoPlayer({ uri, thumbnailUrl, isActive, isFirstVideo, shouldReduceData }: { uri: string; thumbnailUrl?: string; isActive: boolean; isFirstVideo: boolean; shouldReduceData?: boolean }) {
+function FeedVideoPlayer({ uri, thumbnailUrl, isActive, isFirstVideo, shouldReduceData, mediaAspectRatio }: { uri: string; thumbnailUrl?: string; isActive: boolean; isFirstVideo: boolean; shouldReduceData?: boolean; mediaAspectRatio?: string }) {
+    const videoAspect = 1 / clampAspectRatio(mediaAspectRatio);
     const [isMuted, setIsMuted] = useState(!isFirstVideo);
     const [showFirstFrame, setShowFirstFrame] = useState(false);
 
@@ -481,7 +483,7 @@ function FeedVideoPlayer({ uri, thumbnailUrl, isActive, isFirstVideo, shouldRedu
     };
 
     return (
-        <Pressable onPress={toggleMute} style={styles.videoPlayerContainer} accessibilityRole="button" accessibilityLabel={isMuted ? 'Video muted, tap to unmute' : 'Video playing, tap to mute'}>
+        <Pressable onPress={toggleMute} style={[styles.videoPlayerContainer, { aspectRatio: videoAspect }]} accessibilityRole="button" accessibilityLabel={isMuted ? 'Video muted, tap to unmute' : 'Video playing, tap to mute'}>
             <VideoView
                 player={player}
                 style={styles.videoPlayer}
@@ -530,6 +532,7 @@ const FeedPostCard = memo(
         onLike,
         onSave,
         onPress,
+        onComment,
         onReorder,
         onDelete,
         onReport,
@@ -543,6 +546,7 @@ const FeedPostCard = memo(
         onLike: (id: string) => void;
         onSave: (id: string) => void;
         onPress: (id: string) => void;
+        onComment: (id: string) => void;
         onReorder?: (id: string, direction: 'up' | 'down') => void;
         onDelete?: (id: string) => void;
         onReport?: (id: string, reason?: string) => void;
@@ -773,18 +777,14 @@ const FeedPostCard = memo(
                                     isActive={isVideoActive}
                                     isFirstVideo={isFirstVideo}
                                     shouldReduceData={shouldReduceData}
+                                    mediaAspectRatio={post.mediaAspectRatio}
                                 />
                             ) : (
                                 <Image
                                     source={{ uri: post.mediaUrl }}
                                     style={[
                                         styles.mediaImage,
-                                        post.mediaAspectRatio
-                                            ? {
-                                                  aspectRatio:
-                                                      parseFloat(post.mediaAspectRatio) || 1,
-                                              }
-                                            : { aspectRatio: 4 / 5 },
+                                        { aspectRatio: 1 / clampAspectRatio(post.mediaAspectRatio) },
                                     ]}
                                     contentFit="cover"
                                     placeholder={IMAGE_PLACEHOLDER.blurhash}
@@ -823,7 +823,10 @@ const FeedPostCard = memo(
 
                         <TouchableOpacity
                             style={styles.actionBtn}
-                            onPress={() => onPress(post.id)}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                onComment(post.id);
+                            }}
                             accessibilityRole="button"
                             accessibilityLabel={`${formatCount(post.commentsCount)} comments`}
                             accessibilityHint="Double tap to view comments"
@@ -1408,6 +1411,7 @@ export default function FeedScreen() {
     const [screenFocused, setScreenFocused] = useState(true);
     const [unreadMessages, setUnreadMessages] = useState(0);
     const [showMoreMenu, setShowMoreMenu] = useState(false);
+    const [commentPostId, setCommentPostId] = useState<string | null>(null);
 
     // Seed content & checklist state
     const [seedDismissed, setSeedDismissed] = useState(true); // hidden until loaded
@@ -1675,6 +1679,23 @@ export default function FeedScreen() {
         [router]
     );
 
+    const handleOpenComments = useCallback((postId: string) => {
+        setCommentPostId(postId);
+    }, []);
+
+    const handleCommentCountChange = useCallback((postId: string, delta: number) => {
+        // Update the local comment count in the feed store
+        const store = useFeedStore.getState();
+        const post = store.posts.find((p) => p.id === postId);
+        if (post) {
+            useFeedStore.setState({
+                posts: store.posts.map((p) =>
+                    p.id === postId ? { ...p, commentsCount: Math.max(0, p.commentsCount + delta) } : p
+                ),
+            });
+        }
+    }, []);
+
     const handleSave = useCallback(
         (postId: string) => {
             const post = posts.find((p) => p.id === postId);
@@ -1724,8 +1745,8 @@ export default function FeedScreen() {
     }), []);
 
     // Estimated item height for getItemLayout — eliminates layout jumps
-    // Average post: header(56) + content(~60) + media(~260) + actions(44) + spacer(6) ≈ 426
-    const ESTIMATED_ITEM_HEIGHT = 426;
+    // Average post: header(56) + content(~40) + media(~488 at 4:5) + actions(44) + spacer(4) ≈ 632
+    const ESTIMATED_ITEM_HEIGHT = 632;
     const getItemLayout = useCallback((_data: unknown, index: number) => ({
         length: ESTIMATED_ITEM_HEIGHT,
         offset: ESTIMATED_ITEM_HEIGHT * index,
@@ -1740,6 +1761,7 @@ export default function FeedScreen() {
                     onLike={handleLike}
                     onSave={handleSave}
                     onPress={handlePostPress}
+                    onComment={handleOpenComments}
                     isVideoActive={item.mediaType === 'VIDEO' && activeVideoId === item.id}
                     isFirstVideo={item.mediaType === 'VIDEO' && activeVideoId === item.id}
                     shouldReduceData={shouldReduceData}
@@ -1747,7 +1769,7 @@ export default function FeedScreen() {
                 />
             );
         },
-        [handleLike, handleSave, handlePostPress, activeVideoId, shouldReduceData]
+        [handleLike, handleSave, handlePostPress, handleOpenComments, activeVideoId, shouldReduceData]
     );
 
     // ============================================
@@ -2123,6 +2145,13 @@ export default function FeedScreen() {
                 />
             </ErrorBoundary>
 
+            {/* Comments Bottom Sheet */}
+            <CommentsSheet
+                postId={commentPostId}
+                onClose={() => setCommentPostId(null)}
+                onCommentCountChange={handleCommentCountChange}
+            />
+
             {/* Quick Actions Dropdown Menu */}
             <Modal
                 visible={showMoreMenu}
@@ -2483,14 +2512,14 @@ const styles = StyleSheet.create({
     },
     mediaImage: {
         width: '100%',
-        aspectRatio: 4 / 5,
+        // aspectRatio set dynamically per-post via clampAspectRatio
         backgroundColor: colors.obsidian[700],
         overflow: 'hidden',
     },
     videoPlayerContainer: {
         position: 'relative',
         width: '100%',
-        aspectRatio: 16 / 9,
+        // aspectRatio set dynamically per-post via clampAspectRatio
         backgroundColor: colors.obsidian[800],
     },
     videoPlayer: {

@@ -31,6 +31,7 @@ import Animated, {
 import { useTheme } from '../contexts/ThemeContext';
 import { typography, spacing } from '@zerog/ui';
 import { IMAGE_PLACEHOLDER } from '../lib/imagePlaceholder';
+import { clampAspectRatio } from '../lib/utils';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -219,16 +220,11 @@ function MediaCarouselInner({
     const [activeIndex, setActiveIndex] = useState(0);
     const flatListRef = useRef<FlatList>(null);
 
-    // Calculate height based on aspect ratio of first item, or default to 4:5
+    // Calculate height based on aspect ratio of first item, clamped to Instagram's band
     const computedHeight = useMemo(() => {
         if (height) return height;
         const firstItem = media[0];
-        if (firstItem?.aspectRatio) {
-            const [w, h] = firstItem.aspectRatio.split(':').map(Number);
-            if (w && h) return width * (h / w);
-        }
-        // Default 4:5 ratio (Instagram-style portrait)
-        return width * 1.25;
+        return width * clampAspectRatio(firstItem?.aspectRatio);
     }, [height, media, width]);
 
     const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
