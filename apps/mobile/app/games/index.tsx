@@ -41,6 +41,7 @@ import { ScreenHeader } from '../../components';
 import { GlassCard } from '../../components';
 import { useGameStore, useAuthStore } from '../../stores';
 import { showError } from '../../stores/toastStore';
+import { PlayWithFriendSheet } from '../../components/PlayWithFriendSheet';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_GAP = spacing.md;
@@ -717,6 +718,7 @@ export default function GamesHubScreen() {
     const [roomCode, setRoomCode] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [activeCategory, setActiveCategory] = useState<GameCategory | null>(null);
+    const [showPlayWithFriend, setShowPlayWithFriend] = useState(false);
     const inputRef = useRef<TextInput>(null);
 
     const filteredGames = useMemo(() => {
@@ -824,6 +826,40 @@ export default function GamesHubScreen() {
 
                 {/* ---- Quick Play ---- */}
                 <QuickPlayButton onPress={handleQuickPlay} />
+
+                {/* ---- Play with a Friend ---- */}
+                <Animated.View entering={FadeInDown.delay(85).duration(500)}>
+                    <TouchableOpacity
+                        style={styles.playWithFriendBtn}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            setShowPlayWithFriend(true);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Play with a Friend"
+                    >
+                        <LinearGradient
+                            colors={[colors.gold[500], colors.gold[600]]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.playWithFriendGradient}
+                        >
+                            <View style={styles.playWithFriendContent}>
+                                <View style={styles.playWithFriendLeft}>
+                                    <View style={styles.playWithFriendIconCircle}>
+                                        <Ionicons name="people" size={20} color={colors.text.primary} />
+                                    </View>
+                                    <View>
+                                        <Text style={styles.playWithFriendTitle}>Play with a Friend</Text>
+                                        <Text style={styles.playWithFriendSubtitle}>Pick a friend, then pick a game</Text>
+                                    </View>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color={colors.text.primary} />
+                            </View>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </Animated.View>
 
                 {/* ---- Stats Section ---- */}
                 <StatsSection />
@@ -1011,6 +1047,11 @@ export default function GamesHubScreen() {
                 {/* Bottom spacing */}
                 <View style={{ height: spacing['3xl'] }} />
             </ScrollView>
+
+            <PlayWithFriendSheet
+                visible={showPlayWithFriend}
+                onClose={() => setShowPlayWithFriend(false)}
+            />
         </View>
     );
 }
@@ -1245,6 +1286,47 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
     },
     quickPlaySubtitle: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.primary,
+        opacity: 0.7,
+    },
+
+    // ---- Play with a Friend ----
+    playWithFriendBtn: {
+        borderRadius: 16,
+        overflow: 'hidden',
+        marginBottom: spacing.lg,
+    },
+    playWithFriendGradient: {
+        borderRadius: 16,
+    },
+    playWithFriendContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.lg,
+    },
+    playWithFriendLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+    },
+    playWithFriendIconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: colors.surface.glassActive,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    playWithFriendTitle: {
+        fontSize: typography.fontSize.lg,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+        color: colors.text.primary,
+    },
+    playWithFriendSubtitle: {
         fontSize: typography.fontSize.xs,
         color: colors.text.primary,
         opacity: 0.7,

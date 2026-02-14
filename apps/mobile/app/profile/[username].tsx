@@ -35,6 +35,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthStore, Post, mapApiPost } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { ScreenHeader, LoadingView, Avatar, EmptyState, SkeletonGrid } from '../../components';
+import { PlayWithFriendSheet } from '../../components/PlayWithFriendSheet';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { formatCount } from '../../lib/utils';
 import { showError, showSuccess } from '../../stores/toastStore';
@@ -490,6 +491,9 @@ export default function UserProfileScreen() {
 
     // Block state (local override when API doesn't return it)
     const [isBlocked, setIsBlocked] = useState(false);
+
+    // Play with friend sheet
+    const [showPlaySheet, setShowPlaySheet] = useState(false);
 
     // Tabs
     const [likedPosts, setLikedPosts] = useState<Post[]>([]);
@@ -1108,6 +1112,18 @@ export default function UserProfileScreen() {
                         </TouchableOpacity>
                     )}
 
+                    {connectionStatus === 'connected' && (
+                        <TouchableOpacity
+                            style={styles.gameBtn}
+                            activeOpacity={0.8}
+                            onPress={() => setShowPlaySheet(true)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Play a game"
+                        >
+                            <Ionicons name="game-controller-outline" size={18} color={colors.gold[500]} />
+                        </TouchableOpacity>
+                    )}
+
                     <TouchableOpacity
                         style={styles.shareBtn}
                         activeOpacity={0.8}
@@ -1205,6 +1221,12 @@ export default function UserProfileScreen() {
                 maxToRenderPerBatch={12}
                 windowSize={9}
                 initialNumToRender={9}
+            />
+
+            <PlayWithFriendSheet
+                visible={showPlaySheet}
+                onClose={() => setShowPlaySheet(false)}
+                targetUser={profile ? { id: profile.id, displayName: profile.displayName, username: profile.username, avatarUrl: profile.avatarUrl } : undefined}
             />
         </View>
     );
@@ -1527,6 +1549,19 @@ const styles = StyleSheet.create({
         color: colors.text.secondary,
     },
     messageBtn: {
+        width: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.surface.goldFaded,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '30',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+    },
+    gameBtn: {
         width: 48,
         alignItems: 'center',
         justifyContent: 'center',

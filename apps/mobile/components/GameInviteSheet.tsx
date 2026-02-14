@@ -1,10 +1,12 @@
 // ============================================
 // GameInviteSheet — Bottom sheet for inviting players
-// 1. Tap online friends to invite instantly (no code needed)
-// 2. Share link to non-app friends (they just enter a username to play)
+// 1. Shows 1st-degree connections with online status
+// 2. Search/filter connections by name
+// 3. One-tap invite with invited state
+// 4. External sharing for non-app friends
 // ============================================
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import {
     View,
     Text,
@@ -15,13 +17,14 @@ import {
     Pressable,
     Dimensions,
     Linking,
-    ScrollView,
+    FlatList,
+    TextInput,
     ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn, FadeInRight } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { showSuccess } from '../stores/toastStore';
 import { apiFetch, API } from '../lib/api';
@@ -31,7 +34,7 @@ import { AVATAR_PLACEHOLDER } from '../lib/imagePlaceholder';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DEEP_LINK_BASE = 'https://0gravity.ai/game';
 
-interface Friend {
+interface Connection {
     id: string;
     username: string;
     displayName: string;
@@ -50,36 +53,61 @@ export function GameInviteSheet({ code, gameType, visible, onClose }: GameInvite
     const gameUrl = `${DEEP_LINK_BASE}/${code}`;
     const shareMessage = `Join my game on 0G! Tap to play — no account needed, just pick a username:\n\n${gameUrl}`;
 
-    const [friends, setFriends] = useState<Friend[]>([]);
-    const [loadingFriends, setLoadingFriends] = useState(false);
+    const [connections, setConnections] = useState<Connection[]>([]);
+    const [loadingConnections, setLoadingConnections] = useState(false);
     const [invitedIds, setInvitedIds] = useState<Set<string>>(new Set());
+    const [searchQuery, setSearchQuery] = useState('');
 
-    // ---- Load friends when sheet opens ----
+    // ---- Load 1st-degree connections when sheet opens ----
     useEffect(() => {
         if (!visible) {
             setInvitedIds(new Set());
+            setSearchQuery('');
             return;
         }
-        setLoadingFriends(true);
-        apiFetch<{ users: Friend[] }>(`/api/v1/users/search?q=&limit=20`)
+        setLoadingConnections(true);
+        apiFetch<{ connections?: Connection[]; users?: Connection[]; data?: Connection[] }>(API.connections)
             .then((data) => {
-                setFriends(data.users || []);
+                const list = data.connections || data.users || data.data || [];
+                setConnections(Array.isArray(list) ? list : []);
             })
             .catch(() => {
-                setFriends([]);
+                setConnections([]);
             })
-            .finally(() => setLoadingFriends(false));
+            .finally(() => setLoadingConnections(false));
     }, [visible]);
 
-    // ---- Invite a friend directly (no code needed for them) ----
-    const handleInviteFriend = useCallback((friend: Friend) => {
+    // ---- Filter and sort: online first, then alphabetical, filtered by search ----
+    const filteredConnections = useMemo(() => {
+        let list = connections;
+
+        // Filter by search query
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase().trim();
+            list = list.filter(
+                (c) =>
+                    c.displayName.toLowerCase().includes(q) ||
+                    c.username.toLowerCase().includes(q)
+            );
+        }
+
+        // Sort: online first, then alphabetical
+        return [...list].sort((a, b) => {
+            if (a.isOnline && !b.isOnline) return -1;
+            if (!a.isOnline && b.isOnline) return 1;
+            return a.displayName.localeCompare(b.displayName);
+        });
+    }, [connections, searchQuery]);
+
+    // ---- Invite a connection directly ----
+    const handleInvite = useCallback((connection: Connection) => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        socketManager.sendGameInvite(code, friend.id, gameType);
-        setInvitedIds((prev) => new Set(prev).add(friend.id));
-        showSuccess(`Invited ${friend.displayName}!`);
+        socketManager.sendGameInvite(code, connection.id, gameType);
+        setInvitedIds((prev) => new Set(prev).add(connection.id));
+        showSuccess(`Invited ${connection.displayName}!`);
     }, [code, gameType]);
 
-    // ---- Share via native sheet (for non-app friends) ----
+    // ---- Share via native sheet ----
     const handleShare = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         try {
@@ -88,6 +116,67 @@ export function GameInviteSheet({ code, gameType, visible, onClose }: GameInvite
             // User cancelled
         }
     }, [shareMessage]);
+
+    // ---- Render a single connection row ----
+    const renderConnection = useCallback(({ item, index }: { item: Connection; index: number }) => {
+        const isInvited = invitedIds.has(item.id);
+        return (
+            <Animated.View entering={FadeInDown.delay(Math.min(index * 40, 300)).duration(350).springify()}>
+                <View style={styles.connectionRow}>
+                    {/* Avatar with online indicator */}
+                    <View style={styles.avatarContainer}>
+                        <Image
+                            source={{ uri: item.avatarUrl || undefined }}
+                            style={styles.avatar}
+                            placeholder={AVATAR_PLACEHOLDER.blurhash}
+                            transition={150}
+                            cachePolicy="memory-disk"
+                        />
+                        {item.isOnline && <View style={styles.onlineDot} />}
+                    </View>
+
+                    {/* Name & username */}
+                    <View style={styles.connectionInfo}>
+                        <Text style={styles.connectionName} numberOfLines={1}>
+                            {item.displayName}
+                        </Text>
+                        <View style={styles.connectionMeta}>
+                            <Text style={styles.connectionUsername} numberOfLines={1}>
+                                @{item.username}
+                            </Text>
+                            {item.isOnline && (
+                                <View style={styles.onlineLabel}>
+                                    <View style={styles.onlineDotSmall} />
+                                    <Text style={styles.onlineText}>Online</Text>
+                                </View>
+                            )}
+                        </View>
+                    </View>
+
+                    {/* Invite / Invited button */}
+                    {isInvited ? (
+                        <View style={styles.invitedBadge}>
+                            <Ionicons name="checkmark-circle" size={16} color={colors.emerald[500]} />
+                            <Text style={styles.invitedText}>Invited</Text>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            style={styles.inviteBtn}
+                            onPress={() => handleInvite(item)}
+                            activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Invite ${item.displayName}`}
+                        >
+                            <Text style={styles.inviteBtnText}>Invite</Text>
+                            <Ionicons name="arrow-forward" size={14} color={colors.gold[500]} />
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </Animated.View>
+        );
+    }, [invitedIds, handleInvite]);
+
+    const keyExtractor = useCallback((item: Connection) => item.id, []);
 
     return (
         <Modal
@@ -113,79 +202,83 @@ export function GameInviteSheet({ code, gameType, visible, onClose }: GameInvite
                             <View style={styles.handle} />
                         </View>
 
-                        {/* ---- Title ---- */}
-                        <Animated.Text
-                            entering={FadeIn.delay(100).duration(300)}
-                            style={styles.title}
-                        >
-                            Invite Players
-                        </Animated.Text>
-
-                        {/* ---- Friends Section (tap to invite instantly) ---- */}
-                        <Animated.View entering={FadeInDown.delay(100).duration(400)}>
-                            <Text style={styles.sectionLabel}>TAP TO INVITE</Text>
-                            {loadingFriends ? (
-                                <View style={styles.friendsLoading}>
-                                    <ActivityIndicator size="small" color={colors.gold[400]} />
-                                </View>
-                            ) : friends.length > 0 ? (
-                                <ScrollView
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    contentContainerStyle={styles.friendsScroll}
-                                >
-                                    {friends.map((friend) => {
-                                        const isInvited = invitedIds.has(friend.id);
-                                        return (
-                                            <TouchableOpacity
-                                                key={friend.id}
-                                                onPress={() => !isInvited && handleInviteFriend(friend)}
-                                                activeOpacity={isInvited ? 1 : 0.7}
-                                                style={styles.friendItem}
-                                            >
-                                                <View style={styles.friendAvatarWrap}>
-                                                    <Image
-                                                        source={{ uri: friend.avatarUrl || undefined }}
-                                                        style={styles.friendAvatar}
-                                                        placeholder={AVATAR_PLACEHOLDER.blurhash}
-                                                        transition={150}
-                                                        cachePolicy="memory-disk"
-                                                    />
-                                                    {isInvited && (
-                                                        <View style={styles.invitedBadge}>
-                                                            <Ionicons name="checkmark" size={10} color={colors.text.inverse} />
-                                                        </View>
-                                                    )}
-                                                </View>
-                                                <Text
-                                                    style={[
-                                                        styles.friendName,
-                                                        isInvited && styles.friendNameInvited,
-                                                    ]}
-                                                    numberOfLines={1}
-                                                >
-                                                    {friend.displayName.split(' ')[0]}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        );
-                                    })}
-                                </ScrollView>
-                            ) : (
-                                <Text style={styles.noFriendsText}>
-                                    No friends found — share a link instead
-                                </Text>
-                            )}
+                        {/* ---- Title & Room Code ---- */}
+                        <Animated.View entering={FadeIn.delay(100).duration(300)}>
+                            <Text style={styles.title}>Invite Players</Text>
+                            <View style={styles.roomCodeRow}>
+                                <Ionicons name="keypad-outline" size={12} color={colors.text.muted} />
+                                <Text style={styles.roomCodeText}>Room: {code}</Text>
+                            </View>
                         </Animated.View>
 
-                        {/* ---- Divider ---- */}
-                        <View style={styles.divider}>
-                            <View style={styles.dividerLine} />
-                            <Text style={styles.dividerText}>or share with anyone</Text>
-                            <View style={styles.dividerLine} />
-                        </View>
+                        {/* ---- Search Bar ---- */}
+                        <Animated.View entering={FadeInDown.delay(120).duration(400)}>
+                            <View style={styles.searchContainer}>
+                                <Ionicons name="search" size={16} color={colors.text.muted} />
+                                <TextInput
+                                    style={styles.searchInput}
+                                    placeholder="Search connections..."
+                                    placeholderTextColor={colors.text.muted}
+                                    value={searchQuery}
+                                    onChangeText={setSearchQuery}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    returnKeyType="search"
+                                    accessibilityLabel="Search connections"
+                                />
+                                {searchQuery.length > 0 && (
+                                    <TouchableOpacity
+                                        onPress={() => setSearchQuery('')}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    >
+                                        <Ionicons name="close-circle" size={16} color={colors.text.muted} />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        </Animated.View>
 
-                        {/* ---- Quick Share Buttons ---- */}
+                        {/* ---- Connections List ---- */}
+                        <Animated.View entering={FadeInDown.delay(150).duration(400)}>
+                            <Text style={styles.sectionLabel}>YOUR CONNECTIONS</Text>
+                        </Animated.View>
+
+                        {loadingConnections ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="small" color={colors.gold[400]} />
+                            </View>
+                        ) : filteredConnections.length > 0 ? (
+                            <FlatList
+                                data={filteredConnections}
+                                renderItem={renderConnection}
+                                keyExtractor={keyExtractor}
+                                style={styles.connectionsList}
+                                contentContainerStyle={styles.connectionsListContent}
+                                showsVerticalScrollIndicator={false}
+                                keyboardShouldPersistTaps="handled"
+                            />
+                        ) : (
+                            <View style={styles.emptyContainer}>
+                                <Ionicons name="people-outline" size={28} color={colors.text.muted} />
+                                <Text style={styles.emptyText}>
+                                    {searchQuery.trim()
+                                        ? 'No connections match your search'
+                                        : 'No connections yet — share a link instead'}
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* ---- External Sharing Section ---- */}
                         <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+                            <View style={styles.divider}>
+                                <View style={styles.dividerLine} />
+                                <Text style={styles.dividerText}>invite friends outside 0G</Text>
+                                <View style={styles.dividerLine} />
+                            </View>
+
+                            <Text style={styles.externalNote}>
+                                They can play instantly as a guest — just a username
+                            </Text>
+
                             <View style={styles.quickShareRow}>
                                 <TouchableOpacity
                                     onPress={() => Linking.openURL(`whatsapp://send?text=${encodeURIComponent(shareMessage)}`)}
@@ -193,7 +286,7 @@ export function GameInviteSheet({ code, gameType, visible, onClose }: GameInvite
                                     accessibilityLabel="Share via WhatsApp"
                                 >
                                     <View style={styles.quickShareBtn}>
-                                        <Ionicons name="logo-whatsapp" size={24} color={colors.emerald[500]} />
+                                        <Ionicons name="logo-whatsapp" size={22} color={colors.emerald[500]} />
                                         <Text style={styles.quickShareLabel}>WhatsApp</Text>
                                     </View>
                                 </TouchableOpacity>
@@ -203,7 +296,7 @@ export function GameInviteSheet({ code, gameType, visible, onClose }: GameInvite
                                     accessibilityLabel="Share via iMessage"
                                 >
                                     <View style={styles.quickShareBtn}>
-                                        <Ionicons name="chatbubble-outline" size={24} color={colors.azure[500]} />
+                                        <Ionicons name="chatbubble-outline" size={22} color={colors.azure[500]} />
                                         <Text style={styles.quickShareLabel}>iMessage</Text>
                                     </View>
                                 </TouchableOpacity>
@@ -213,14 +306,14 @@ export function GameInviteSheet({ code, gameType, visible, onClose }: GameInvite
                                     accessibilityLabel="More sharing options"
                                 >
                                     <View style={styles.quickShareBtn}>
-                                        <Ionicons name="share-outline" size={24} color={colors.gold[500]} />
+                                        <Ionicons name="share-outline" size={22} color={colors.gold[500]} />
                                         <Text style={styles.quickShareLabel}>More</Text>
                                     </View>
                                 </TouchableOpacity>
                             </View>
                         </Animated.View>
 
-                        {/* ---- Share Button ---- */}
+                        {/* ---- Share Invite Link Button ---- */}
                         <Animated.View entering={FadeInDown.delay(300).duration(400)}>
                             <TouchableOpacity
                                 onPress={handleShare}
@@ -228,19 +321,9 @@ export function GameInviteSheet({ code, gameType, visible, onClose }: GameInvite
                                 style={styles.shareButton}
                                 accessibilityLabel="Share game invite link"
                             >
-                                <Ionicons name="share-social" size={20} color={colors.text.inverse} />
+                                <Ionicons name="share-social" size={18} color={colors.text.inverse} />
                                 <Text style={styles.shareButtonText}>Share Invite Link</Text>
                             </TouchableOpacity>
-                        </Animated.View>
-
-                        {/* ---- Guest Note ---- */}
-                        <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-                            <View style={styles.noteContainer}>
-                                <Ionicons name="person-outline" size={14} color={colors.text.muted} />
-                                <Text style={styles.noteText}>
-                                    Friends without the app can play as a guest — just a username
-                                </Text>
-                            </View>
                         </Animated.View>
                     </Animated.View>
                 </Pressable>
@@ -268,14 +351,14 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderBottomWidth: 0,
         borderColor: colors.border.subtle,
-        maxHeight: '80%',
+        maxHeight: '85%',
     },
 
     // ---- Handle ----
     handleContainer: {
         alignItems: 'center',
         paddingTop: spacing.sm,
-        paddingBottom: spacing.md,
+        paddingBottom: spacing.sm,
     },
     handle: {
         width: 40,
@@ -284,14 +367,47 @@ const styles = StyleSheet.create({
         backgroundColor: colors.text.muted + '40',
     },
 
-    // ---- Title ----
+    // ---- Title & Room Code ----
     title: {
         fontSize: typography.fontSize.xl,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
         color: colors.text.primary,
         textAlign: 'center',
+        marginBottom: spacing.xs,
+    },
+    roomCodeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.xs,
         marginBottom: spacing.md,
+    },
+    roomCodeText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.text.muted,
+        letterSpacing: 1,
+    },
+
+    // ---- Search ----
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.obsidian[700],
+        borderRadius: 12,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        gap: spacing.sm,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        marginBottom: spacing.md,
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: typography.fontSize.base,
+        color: colors.text.primary,
+        paddingVertical: 0,
     },
 
     // ---- Section Label ----
@@ -304,64 +420,143 @@ const styles = StyleSheet.create({
         marginBottom: spacing.sm,
     },
 
-    // ---- Friends List ----
-    friendsLoading: {
-        paddingVertical: spacing.lg,
+    // ---- Connections List ----
+    loadingContainer: {
+        paddingVertical: spacing.xl,
         alignItems: 'center',
     },
-    friendsScroll: {
+    connectionsList: {
+        maxHeight: 260,
+    },
+    connectionsListContent: {
+        gap: spacing.xs,
         paddingBottom: spacing.sm,
+    },
+    connectionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.sm,
+        backgroundColor: colors.surface.glass,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
         gap: spacing.md,
     },
-    friendItem: {
-        alignItems: 'center',
-        width: 64,
-    },
-    friendAvatarWrap: {
+
+    // ---- Avatar ----
+    avatarContainer: {
         position: 'relative',
-        marginBottom: 4,
     },
-    friendAvatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+    avatar: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         borderWidth: 2,
-        borderColor: colors.gold[500] + '30',
+        borderColor: colors.border.subtle,
     },
-    invitedBadge: {
+    onlineDot: {
         position: 'absolute',
-        bottom: -2,
-        right: -2,
-        width: 18,
-        height: 18,
-        borderRadius: 9,
+        bottom: 0,
+        right: 0,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
         backgroundColor: colors.emerald[500],
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
+        borderWidth: 2.5,
         borderColor: colors.obsidian[800],
     },
-    friendName: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: colors.text.secondary,
-        textAlign: 'center',
+
+    // ---- Connection Info ----
+    connectionInfo: {
+        flex: 1,
     },
-    friendNameInvited: {
+    connectionName: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.primary,
+        marginBottom: 2,
+    },
+    connectionMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    connectionUsername: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+    },
+    onlineLabel: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    onlineDotSmall: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: colors.emerald[500],
+    },
+    onlineText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
         color: colors.emerald[500],
     },
-    noFriendsText: {
+
+    // ---- Invite Button ----
+    inviteBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: 10,
+        backgroundColor: colors.gold[500] + '15',
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '30',
+    },
+    inviteBtnText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '700',
+        color: colors.gold[500],
+    },
+
+    // ---- Invited Badge ----
+    invitedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: 10,
+        backgroundColor: colors.emerald[500] + '15',
+        borderWidth: 1,
+        borderColor: colors.emerald[500] + '30',
+    },
+    invitedText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600',
+        color: colors.emerald[500],
+    },
+
+    // ---- Empty State ----
+    emptyContainer: {
+        alignItems: 'center',
+        paddingVertical: spacing.xl,
+        gap: spacing.sm,
+    },
+    emptyText: {
         fontSize: typography.fontSize.sm,
         color: colors.text.muted,
         textAlign: 'center',
-        paddingVertical: spacing.md,
     },
 
     // ---- Divider ----
     divider: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: spacing.md,
+        marginTop: spacing.md,
+        marginBottom: spacing.sm,
     },
     dividerLine: {
         flex: 1,
@@ -370,8 +565,19 @@ const styles = StyleSheet.create({
     },
     dividerText: {
         fontSize: typography.fontSize.xs,
+        fontWeight: '600',
         color: colors.text.muted,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
         marginHorizontal: spacing.md,
+    },
+
+    // ---- External Note ----
+    externalNote: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        textAlign: 'center',
+        marginBottom: spacing.md,
     },
 
     // ---- Quick Share ----
@@ -407,7 +613,6 @@ const styles = StyleSheet.create({
         backgroundColor: colors.gold[500],
         paddingVertical: spacing.md + 2,
         borderRadius: 14,
-        marginBottom: spacing.md,
         shadowColor: colors.gold[500],
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.3,
@@ -418,19 +623,5 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
         color: colors.text.inverse,
-    },
-
-    // ---- Guest Note ----
-    noteContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: spacing.xs,
-    },
-    noteText: {
-        fontSize: typography.fontSize.xs,
-        color: colors.text.muted,
-        textAlign: 'center',
-        flex: 1,
     },
 });
