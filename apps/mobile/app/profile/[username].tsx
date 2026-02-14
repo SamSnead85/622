@@ -11,10 +11,9 @@ import {
     Share,
     Alert,
     ActionSheetIOS,
-    Modal,
     Pressable,
-    StatusBar,
 } from 'react-native';
+import { FullscreenImageViewer } from '../../components/profile';
 import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -968,7 +967,7 @@ export default function UserProfileScreen() {
                     {profile.coverUrl ? (
                         <TouchableOpacity
                             activeOpacity={0.9}
-                            onPress={() => setViewerImage(profile.coverUrl)}
+                            onPress={() => setViewerImage(profile.coverUrl ?? null)}
                             accessibilityLabel="View cover photo"
                         >
                             <Image
@@ -1260,39 +1259,11 @@ export default function UserProfileScreen() {
             />
 
             {/* Fullscreen Image Viewer */}
-            <Modal
-                visible={!!viewerImage}
-                transparent
-                animationType="fade"
-                statusBarTranslucent
-                onRequestClose={() => setViewerImage(null)}
-            >
-                <Pressable
-                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}
-                    onPress={() => setViewerImage(null)}
-                >
-                    <StatusBar barStyle="light-content" />
-                    <TouchableOpacity
-                        style={{ position: 'absolute', top: insets.top + 12, right: 16, zIndex: 10, padding: 8 }}
-                        onPress={() => setViewerImage(null)}
-                        accessibilityLabel="Close"
-                    >
-                        <Ionicons name="close-circle" size={32} color="#fff" />
-                    </TouchableOpacity>
-                    {viewerImage && (
-                        <Image
-                            source={{ uri: viewerImage }}
-                            style={{ width: SCREEN_WIDTH - 32, height: SCREEN_WIDTH - 32, borderRadius: 16 }}
-                            contentFit="contain"
-                            transition={200}
-                            cachePolicy="memory-disk"
-                        />
-                    )}
-                    <Text style={{ color: '#fff', marginTop: 16, fontSize: 16, fontWeight: '600' }}>
-                        {profile?.displayName || profile?.username || ''}
-                    </Text>
-                </Pressable>
-            </Modal>
+            <FullscreenImageViewer
+                imageUri={viewerImage}
+                onClose={() => setViewerImage(null)}
+                displayName={profile?.displayName || profile?.username || ''}
+            />
         </View>
     );
 }

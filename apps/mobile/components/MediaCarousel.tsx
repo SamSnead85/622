@@ -41,7 +41,7 @@ export interface MediaItem {
     id: string;
     mediaUrl: string;
     thumbnailUrl?: string | null;
-    type: 'IMAGE' | 'VIDEO';
+    type: 'IMAGE' | 'VIDEO' | 'image' | 'video' | 'audio' | 'AUDIO';
     position: number;
     aspectRatio?: string | null;
     duration?: number | null;

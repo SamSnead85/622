@@ -10,6 +10,8 @@ import { shallow } from 'zustand/shallow';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch, apiUpload, saveToken, removeToken, getToken, API, clearApiCache, setSessionExpiredHandler } from '../lib/api';
 import { socketManager } from '../lib/socket';
+import type { UserSummary, PostMedia as SharedPostMedia } from '@zerog/types';
+import { mapServerPost as sharedMapServerPost, mapServerComment as sharedMapServerComment } from '@zerog/types';
 
 // ============================================
 // Helper Interfaces for Type Safety
@@ -35,8 +37,8 @@ interface ApiPostRaw {
     mediaCropY?: number;
     mediaAspectRatio?: string;
     sortOrder?: number;
-    user?: Record<string, unknown> | null;
-    author?: Record<string, unknown> | null;
+    user?: UserSummary | null;
+    author?: UserSummary | null;
     authorNote?: string;
     pinnedComment?: string;
     likesCount?: number;
@@ -50,8 +52,8 @@ interface ApiPostRaw {
     communityId?: string;
     eventDate?: string;
     eventLocation?: string;
-    crossPost?: Record<string, unknown>;
-    media?: Array<Record<string, unknown>>;
+    crossPost?: CrossPostInfo;
+    media?: SharedPostMedia[];
 }
 
 // ============================================
@@ -183,13 +185,8 @@ export interface User {
     customGreeting?: string;
 }
 
-export interface PostAuthor {
-    id: string;
-    username: string;
-    displayName: string;
-    avatarUrl?: string;
-    isVerified?: boolean;
-}
+/** @deprecated Use UserSummary from @zerog/types instead */
+export type PostAuthor = UserSummary;
 
 export interface CrossPostInfo {
     sourcePlatform: string;
@@ -199,18 +196,8 @@ export interface CrossPostInfo {
     direction: 'INBOUND' | 'OUTBOUND' | 'BIDIRECTIONAL';
 }
 
-export interface PostMediaItem {
-    id: string;
-    mediaUrl: string;
-    thumbnailUrl?: string | null;
-    type: 'IMAGE' | 'VIDEO';
-    position: number;
-    aspectRatio?: string | null;
-    duration?: number | null;
-    width?: number | null;
-    height?: number | null;
-    altText?: string | null;
-}
+/** @deprecated Use PostMedia from @zerog/types instead */
+export type PostMediaItem = SharedPostMedia;
 
 export interface Post {
     id: string;

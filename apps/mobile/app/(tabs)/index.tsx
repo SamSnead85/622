@@ -52,6 +52,8 @@ import { toHijri } from '../../lib/hijri';
 import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { timeAgo, formatCount, clampAspectRatio } from '../../lib/utils';
 import { CommentsSheet } from '../../components/CommentsSheet';
+import { FeedVideoPlayer as ExtractedFeedVideoPlayer } from '../../components/feed';
+import { QuickActionsMenu } from '../../components/feed';
 
 // ============================================
 // Avatar Glow Ring — premium animated ring
@@ -429,99 +431,8 @@ function ReadMoreText({ text }: { text: string }) {
     );
 }
 
-// ============================================
-// Feed Video Player (auto-play with mute toggle)
-// Shows poster thumbnail instantly while video buffers — no spinner.
-// ============================================
-function FeedVideoPlayer({ uri, thumbnailUrl, isActive, isFirstVideo, shouldReduceData, mediaAspectRatio }: { uri: string; thumbnailUrl?: string; isActive: boolean; isFirstVideo: boolean; shouldReduceData?: boolean; mediaAspectRatio?: string }) {
-    const videoAspect = 1 / clampAspectRatio(mediaAspectRatio);
-    const [isMuted, setIsMuted] = useState(!isFirstVideo);
-    const [showFirstFrame, setShowFirstFrame] = useState(false);
-
-    const player = useVideoPlayer(uri, (player) => {
-        player.loop = true;
-        player.muted = !isFirstVideo;
-    });
-
-    // Detect when the first frame is ready via player status
-    useEffect(() => {
-        const sub = player.addListener('statusChange', ({ status }: { status: string }) => {
-            if (status === 'readyToPlay') {
-                setShowFirstFrame(true);
-            }
-        });
-        return () => { sub.remove(); };
-    }, [player]);
-
-    useEffect(() => {
-        if (shouldReduceData) {
-            // On slow connections, don't autoplay — save bandwidth
-            player.pause();
-            return;
-        }
-        if (isActive) {
-            player.play();
-        } else {
-            player.pause();
-            player.muted = true;
-            setIsMuted(true);
-        }
-    }, [isActive, player, shouldReduceData]);
-
-    useEffect(() => {
-        if (isActive && isFirstVideo && !shouldReduceData) {
-            player.muted = false;
-            setIsMuted(false);
-        }
-    }, [isActive, isFirstVideo, player, shouldReduceData]);
-
-    const toggleMute = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        const newMuted = !player.muted;
-        player.muted = newMuted;
-        setIsMuted(newMuted);
-    };
-
-    return (
-        <Pressable onPress={toggleMute} style={[styles.videoPlayerContainer, { aspectRatio: videoAspect }]} accessibilityRole="button" accessibilityLabel={isMuted ? 'Video muted, tap to unmute' : 'Video playing, tap to mute'}>
-            <VideoView
-                player={player}
-                style={styles.videoPlayer}
-                nativeControls={false}
-                contentFit="cover"
-            />
-            {/* Poster thumbnail: shown instantly while the video buffers.
-                Once the first video frame renders we fade it out. */}
-            {!showFirstFrame && thumbnailUrl && (
-                <View style={styles.videoPosterOverlay}>
-                    <Image
-                        source={{ uri: thumbnailUrl }}
-                        style={styles.videoPoster}
-                        contentFit="cover"
-                        placeholder={IMAGE_PLACEHOLDER.blurhash}
-                        transition={100}
-                        cachePolicy="memory-disk"
-                    />
-                </View>
-            )}
-            {/* Fallback: if there's no poster, show the subtle buffering indicator */}
-            {!showFirstFrame && !thumbnailUrl && (
-                <View style={styles.videoBuffering}>
-                    <View style={styles.videoBufferingInner}>
-                        <ActivityIndicator size="small" color={colors.gold[500]} />
-                    </View>
-                </View>
-            )}
-            <View style={styles.muteIndicator}>
-                <Ionicons
-                    name={isMuted ? 'volume-mute' : 'volume-high'}
-                    size={14}
-                    color={colors.text.primary}
-                />
-            </View>
-        </Pressable>
-    );
-}
+// FeedVideoPlayer — extracted to components/feed/FeedVideoPlayer.tsx
+const FeedVideoPlayer = ExtractedFeedVideoPlayer;
 
 // ============================================
 // Feed Post Card
@@ -541,6 +452,7 @@ const FeedPostCard = memo(
         isOwnPost,
         shouldReduceData,
         isHighPriority,
+        screenFocused,
     }: {
         post: Post;
         onLike: (id: string) => void;
@@ -555,6 +467,7 @@ const FeedPostCard = memo(
         isOwnPost?: boolean;
         shouldReduceData?: boolean;
         isHighPriority?: boolean;
+        screenFocused?: boolean;
     }) => {
         const router = useRouter();
         const lastTapRef = useRef(0);
@@ -1766,10 +1679,11 @@ export default function FeedScreen() {
                     isFirstVideo={item.mediaType === 'VIDEO' && activeVideoId === item.id}
                     shouldReduceData={shouldReduceData}
                     isHighPriority={index < 3}
+                    screenFocused={screenFocused}
                 />
             );
         },
-        [handleLike, handleSave, handlePostPress, handleOpenComments, activeVideoId, shouldReduceData]
+        [handleLike, handleSave, handlePostPress, handleOpenComments, activeVideoId, shouldReduceData, screenFocused]
     );
 
     // ============================================
@@ -2153,49 +2067,11 @@ export default function FeedScreen() {
             />
 
             {/* Quick Actions Dropdown Menu */}
-            <Modal
+            <QuickActionsMenu
                 visible={showMoreMenu}
-                transparent
-                animationType="fade"
-                statusBarTranslucent
-                onRequestClose={() => setShowMoreMenu(false)}
-            >
-                <Pressable
-                    style={styles.menuOverlay}
-                    onPress={() => setShowMoreMenu(false)}
-                >
-                    <Animated.View
-                        entering={FadeInDown.duration(200).springify().damping(18)}
-                        style={[styles.menuDropdown, { backgroundColor: c.surface.glass, borderColor: c.border.subtle, top: insets.top + 52 }]}
-                    >
-                        {[
-                            { icon: 'game-controller-outline' as const, label: 'Games', route: '/games', color: c.emerald[500] },
-                            { icon: 'play-circle-outline' as const, label: 'Reels', route: '/reels', color: c.coral[500] },
-                            { icon: 'radio-outline' as const, label: 'Go Live', route: '/campfire', color: c.emerald[500] },
-                            { icon: 'mic-outline' as const, label: 'Spaces', route: '/spaces', color: c.amber[500] },
-                            { icon: 'paper-plane-outline' as const, label: 'Invite Friends', route: '/invite-contacts', color: c.azure[500] },
-                            { icon: 'compass-outline' as const, label: 'Tools', route: '/tools', color: c.gold[500] },
-                        ].map((item, idx) => (
-                            <TouchableOpacity
-                                key={item.label}
-                                style={[styles.menuItem, idx > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border.subtle }]}
-                                onPress={() => {
-                                    setShowMoreMenu(false);
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    router.push(item.route as any);
-                                }}
-                                activeOpacity={0.7}
-                            >
-                                <View style={[styles.menuItemIcon, { backgroundColor: item.color + '15' }]}>
-                                    <Ionicons name={item.icon} size={20} color={item.color} />
-                                </View>
-                                <Text style={[styles.menuItemLabel, { color: c.text.primary }]}>{item.label}</Text>
-                                <Ionicons name="chevron-forward" size={16} color={c.text.muted} />
-                            </TouchableOpacity>
-                        ))}
-                    </Animated.View>
-                </Pressable>
-            </Modal>
+                onClose={() => setShowMoreMenu(false)}
+                topOffset={insets.top}
+            />
 
         </View>
     );
