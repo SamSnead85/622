@@ -55,7 +55,9 @@ export default function PrayerTimesScreen() {
         (async () => {
             try {
                 const stored = await AsyncStorage.getItem(NOTIF_KEY);
-                if (stored) setNotifEnabled(JSON.parse(stored));
+                if (stored) {
+                    try { setNotifEnabled(JSON.parse(stored)); } catch { /* corrupted data */ }
+                }
             } catch { /* ignore read failure */ }
         })();
     }, []);
@@ -161,7 +163,8 @@ export default function PrayerTimesScreen() {
             const cached = await AsyncStorage.getItem(CACHE_KEY);
             if (cached) {
                 try {
-                    const { data, date, location, sunrise, sunset } = JSON.parse(cached);
+                    const parsed = JSON.parse(cached);
+                    const { data, date, location, sunrise, sunset } = parsed;
                     const today = new Date().toDateString();
                     if (date === today && Array.isArray(data) && data.length > 0) {
                         setPrayers(data);
@@ -254,7 +257,8 @@ export default function PrayerTimesScreen() {
             try {
                 const cached = await AsyncStorage.getItem(CACHE_KEY);
                 if (cached) {
-                    const { data, location } = JSON.parse(cached);
+                    let data: any, location: any;
+                    try { ({ data, location } = JSON.parse(cached)); } catch { data = null; }
                     if (Array.isArray(data) && data.length > 0) {
                         setPrayers(data);
                         setLocationName(location || 'Your Location');

@@ -46,10 +46,10 @@ setInterval(() => {
     }
 }, 5 * 60 * 1000);
 
-function sanitizeStateForPlayer(state: GameState, playerId: string): any {
+function sanitizeStateForPlayer(state: GameState, playerId: string): Record<string, unknown> {
     // Remove private game data that shouldn't be visible to all players
     const { gameData, ...publicState } = state;
-    const safeGameData: Record<string, any> = { ...gameData };
+    const safeGameData: Record<string, unknown> = { ...gameData };
     // Remove fields that start with '_private_' or '_secret_'
     for (const key of Object.keys(safeGameData)) {
         if (key.startsWith('_private_') || key.startsWith('_secret_')) {
@@ -66,7 +66,7 @@ function sanitizeStateForPlayer(state: GameState, playerId: string): any {
 
 export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedSocket, userId: string, username: string) {
     // Create a new game
-    socket.on('game:create', (data: { gameType: string; settings?: Record<string, any> }, callback?: (result: any) => void) => {
+    socket.on('game:create', (data: { gameType: string; settings?: Record<string, unknown> }, callback?: (result: { success: boolean; code?: string; state?: Record<string, unknown>; error?: string }) => void) => {
         try {
             const state = createGame(data.gameType, {
                 userId,
@@ -88,7 +88,7 @@ export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedS
     });
 
     // Invite a user to a game (sends real-time notification)
-    socket.on('game:invite', (data: { code: string; targetUserId: string; gameType?: string }, callback?: (result: any) => void) => {
+    socket.on('game:invite', (data: { code: string; targetUserId: string; gameType?: string }, callback?: (result: { success: boolean; code?: string; state?: Record<string, unknown>; error?: string }) => void) => {
         try {
             const game = getGame(data.code);
             if (!game) {
@@ -109,7 +109,7 @@ export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedS
     });
 
     // Join an existing game
-    socket.on('game:join', (data: { code: string; playerName?: string }, callback?: (result: any) => void) => {
+    socket.on('game:join', (data: { code: string; playerName?: string }, callback?: (result: { success: boolean; code?: string; state?: Record<string, unknown>; error?: string }) => void) => {
         try {
             const code = data.code.toUpperCase().trim();
             const state = joinGame(code, {
@@ -145,7 +145,7 @@ export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedS
     });
 
     // Start the game (host only)
-    socket.on('game:start', (data: { code: string }, callback?: (result: any) => void) => {
+    socket.on('game:start', (data: { code: string }, callback?: (result: { success: boolean; code?: string; state?: Record<string, unknown>; error?: string }) => void) => {
         try {
             const state = startGame(data.code, userId);
 
@@ -174,7 +174,7 @@ export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedS
     });
 
     // Send a game action
-    socket.on('game:action', (data: { code: string; action: string; payload: any }) => {
+    socket.on('game:action', (data: { code: string; action: string; payload: Record<string, unknown> }) => {
         try {
             const playerId = userId;
             const { state, roundEnded, gameEnded, roundResults } = handleGameAction(
@@ -188,7 +188,7 @@ export function setupGameSocketHandlers(io: SocketServer, socket: AuthenticatedS
                 round: state.round,
             });
 
-            if (roundEnded) {
+            if (roundEnded && roundResults) {
                 io.to(`game:${data.code}`).emit('game:round-end', {
                     round: state.round - (gameEnded ? 0 : 1),
                     scores: roundResults.scores,

@@ -4,6 +4,7 @@ import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
 import crypto from 'crypto';
 import { rateLimiters } from '../middleware/rateLimit.js';
+import { safeParseInt } from '../utils/validation.js';
 
 const router = Router();
 
@@ -144,8 +145,8 @@ router.post('/:slug/signup', async (req, res, next) => {
 // GET /api/v1/campaigns — List all campaigns (admin)
 router.get('/', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const page = Math.max(1, parseInt(req.query.page as string) || 1);
-        const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const page = safeParseInt(req.query.page, 1, 1, 10000);
+        const limit = safeParseInt(req.query.limit, 50, 1, 100);
         const skip = (page - 1) * limit;
 
         const [campaigns, total] = await Promise.all([

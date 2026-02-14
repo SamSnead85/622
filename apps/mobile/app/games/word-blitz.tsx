@@ -975,7 +975,7 @@ export default function WordBlitzScreen() {
             try {
                 const savedStats = await AsyncStorage.getItem(STORAGE_KEY_STATS);
                 if (savedStats) {
-                    setStats(JSON.parse(savedStats));
+                    try { setStats(JSON.parse(savedStats)); } catch { /* corrupted stats, use defaults */ }
                 }
             } catch {
                 // Use defaults
@@ -987,7 +987,8 @@ export default function WordBlitzScreen() {
                     const dateKey = getDateKey();
                     const saved = await AsyncStorage.getItem(getCompletionKey(dateKey));
                     if (saved) {
-                        const completion: SavedCompletion = JSON.parse(saved);
+                        let completion: SavedCompletion;
+                        try { completion = JSON.parse(saved); } catch { throw new Error('corrupted'); }
                         setAlreadyCompleted(true);
 
                         // Restore the grid from saved guesses

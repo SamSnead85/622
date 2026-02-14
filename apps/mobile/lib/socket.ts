@@ -47,7 +47,7 @@ export interface CallIncoming {
         displayName: string;
         avatarUrl?: string;
     };
-    offer?: any;
+    offer?: Record<string, unknown>;
 }
 
 export interface MomentNewEvent {
@@ -78,7 +78,7 @@ export interface NotificationNewEvent {
     type: string;
     title: string;
     body: string;
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
 }
 
 export interface GamePlayerEvent {
@@ -96,23 +96,23 @@ export interface GameStateEvent {
     code: string;
     type: string;
     status: string;
-    players: any[];
+    players: Array<{ id: string; name: string; avatarUrl?: string; score: number; isHost: boolean; isConnected: boolean }>;
     round: number;
     totalRounds: number;
-    gameData: Record<string, any>;
+    gameData: Record<string, unknown>;
 }
 
 export interface GameRoundEvent {
     round: number;
     totalRounds: number;
-    gameData: Record<string, any>;
+    gameData: Record<string, unknown>;
 }
 
 export interface GameRoundEndEvent {
     round: number;
     scores: Record<string, number>;
-    summary: any;
-    players: any[];
+    summary: Record<string, unknown>;
+    players: Array<{ id: string; name: string; avatarUrl?: string; score: number; isHost: boolean; isConnected: boolean }>;
 }
 
 export interface GameEndedEvent {
@@ -124,7 +124,7 @@ export interface GameEndedEvent {
 // Event Listener Types
 // ============================================
 
-type EventCallback = (...args: any[]) => void;
+type EventCallback = (...args: unknown[]) => void;
 
 interface EventListeners {
     'message:new': ((msg: SocketMessage) => void)[];
@@ -135,17 +135,17 @@ interface EventListeners {
     'user:offline': ((data: { userId: string }) => void)[];
     'presence:update': ((data: PresenceEvent) => void)[];
     'call:incoming': ((data: CallIncoming) => void)[];
-    'call:answered': ((data: any) => void)[];
-    'call:rejected': ((data: any) => void)[];
-    'call:ended': ((data: any) => void)[];
-    'call:ice-candidate': ((data: any) => void)[];
+    'call:answered': ((data: Record<string, unknown>) => void)[];
+    'call:rejected': ((data: Record<string, unknown>) => void)[];
+    'call:ended': ((data: Record<string, unknown>) => void)[];
+    'call:ice-candidate': ((data: Record<string, unknown>) => void)[];
     'call:mute': ((data: { muted: boolean }) => void)[];
     'moment:new': ((data: MomentNewEvent) => void)[];
     'poll:vote': ((data: PollVoteEvent) => void)[];
     'proposal:vote': ((data: ProposalVoteEvent) => void)[];
     'notification:new': ((data: NotificationNewEvent) => void)[];
     'game:state': ((data: GameStateEvent) => void)[];
-    'game:update': ((data: any) => void)[];
+    'game:update': ((data: Record<string, unknown>) => void)[];
     'game:player-joined': ((data: GamePlayerEvent) => void)[];
     'game:player-left': ((data: { playerId: string; playerCount: number }) => void)[];
     'game:round-start': ((data: GameRoundEvent) => void)[];
@@ -261,7 +261,7 @@ class SocketManager {
         ];
 
         forwardEvents.forEach((event) => {
-            this.socket!.on(event, (data: any) => {
+            this.socket!.on(event, (data: unknown) => {
                 this.emit(event, data);
             });
         });
@@ -330,11 +330,11 @@ class SocketManager {
     // Calling
     // ============================================
 
-    initiateCall(data: { callId: string; userId: string; type: 'audio' | 'video'; offer?: any }): void {
+    initiateCall(data: { callId: string; userId: string; type: 'audio' | 'video'; offer?: Record<string, unknown> }): void {
         this.socket?.emit('call:initiate', data);
     }
 
-    answerCall(data: { callId: string; answer: any }): void {
+    answerCall(data: { callId: string; answer: Record<string, unknown> }): void {
         this.socket?.emit('call:answer', data);
     }
 
@@ -346,7 +346,7 @@ class SocketManager {
         this.socket?.emit('call:end', { callId });
     }
 
-    sendIceCandidate(userId: string, candidate: any): void {
+    sendIceCandidate(userId: string, candidate: Record<string, unknown>): void {
         this.socket?.emit('call:ice-candidate', { userId, candidate });
     }
 
@@ -370,8 +370,8 @@ class SocketManager {
     // Games
     // ============================================
 
-    createGame(gameType: string, settings?: Record<string, any>): Promise<{ success: boolean; code?: string; state?: any; error?: string }> {
-        return new Promise((resolve, reject) => {
+    createGame(gameType: string, settings?: Record<string, unknown>): Promise<{ success: boolean; code?: string; state?: Record<string, unknown>; error?: string }> {
+        return new Promise((resolve) => {
             if (!this.socket?.connected) {
                 // Fallback: generate a local room code so games work without socket
                 const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -381,40 +381,40 @@ class SocketManager {
                 return;
             }
             const timeout = setTimeout(() => resolve({ success: false, error: 'Connection timeout' }), 8000);
-            this.socket.emit('game:create', { gameType, settings }, (result: any) => {
+            this.socket.emit('game:create', { gameType, settings }, (result: Record<string, unknown>) => {
                 clearTimeout(timeout);
-                resolve(result);
+                resolve(result as { success: boolean; code?: string; state?: Record<string, unknown>; error?: string });
             });
         });
     }
 
-    joinGame(code: string, playerName?: string): Promise<{ success: boolean; state?: any; error?: string }> {
+    joinGame(code: string, playerName?: string): Promise<{ success: boolean; state?: Record<string, unknown>; error?: string }> {
         return new Promise((resolve) => {
             if (!this.socket?.connected) {
                 resolve({ success: false, error: 'Not connected to server. Please check your connection.' });
                 return;
             }
             const timeout = setTimeout(() => resolve({ success: false, error: 'Connection timeout' }), 8000);
-            this.socket.emit('game:join', { code, playerName }, (result: any) => {
+            this.socket.emit('game:join', { code, playerName }, (result: Record<string, unknown>) => {
                 clearTimeout(timeout);
-                resolve(result);
+                resolve(result as { success: boolean; state?: Record<string, unknown>; error?: string });
             });
         });
     }
 
     startGame(code: string): Promise<{ success: boolean; error?: string }> {
         return new Promise((resolve) => {
-            this.socket?.emit('game:start', { code }, (result: any) => {
-                resolve(result);
+            this.socket?.emit('game:start', { code }, (result: Record<string, unknown>) => {
+                resolve(result as { success: boolean; error?: string });
             });
         });
     }
 
-    sendGameAction(code: string, action: string, payload: any): void {
+    sendGameAction(code: string, action: string, payload: Record<string, unknown>): void {
         this.socket?.emit('game:action', { code, action, payload });
     }
 
-    updateGameSettings(code: string, settings: Record<string, any>): void {
+    updateGameSettings(code: string, settings: Record<string, unknown>): void {
         this.socket?.emit('game:settings', { code, settings });
     }
 
@@ -522,7 +522,7 @@ class SocketManager {
         }
     }
 
-    private emit(event: string, data: any): void {
+    private emit(event: string, data: unknown): void {
         this.listeners[event]?.forEach((cb) => {
             try {
                 cb(data);

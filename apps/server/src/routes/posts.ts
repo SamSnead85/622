@@ -496,7 +496,19 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
         // ── Public profile masking for community feed ──
         // When viewing the community feed, authors who use a public profile
         // appear under their public persona — their real identity is hidden.
-        const maskAuthor = (user: any) => {
+        interface FeedUser {
+            id: string;
+            username: string;
+            displayName: string;
+            avatarUrl?: string | null;
+            isVerified: boolean;
+            usePublicProfile?: boolean;
+            publicDisplayName?: string | null;
+            publicUsername?: string | null;
+            publicAvatarUrl?: string | null;
+            communityOptIn?: boolean;
+        }
+        const maskAuthor = (user: FeedUser) => {
             if (feedView === 'community' && user?.usePublicProfile) {
                 return {
                     id: user.id,
@@ -507,12 +519,12 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                 };
             }
             // Strip privacy fields from response regardless
-            const { usePublicProfile, publicDisplayName, publicUsername, publicAvatarUrl, communityOptIn, ...cleanUser } = user || {};
+            const { usePublicProfile, publicDisplayName, publicUsername, publicAvatarUrl, communityOptIn, ...cleanUser } = user || {} as FeedUser;
             return cleanUser;
         };
 
         const response = {
-            posts: results.map((post: any) => {
+            posts: results.map((post: Record<string, unknown> & { mediaUrl?: string; type?: string; thumbnailUrl?: string; user?: FeedUser; _count: { likes: number; comments: number; shares: number }; _rankingFactors?: unknown; crossPosts?: Array<Record<string, unknown>>; id: string }) => {
                 // ── Image optimization: serve feed-sized images, not full-res ──
                 // This is the #1 speed improvement — reduces ~3MB per image to ~50KB.
                 const { thumbnailUrl: optimizedThumb, feedMediaUrl } = getFeedImageUrls(post.mediaUrl, post.type);
@@ -531,8 +543,8 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                     fullMediaUrl: post.mediaUrl,
                     // User avatar: serve at 200px for feed
                     user: {
-                        ...maskAuthor(post.user),
-                        avatarUrl: transformImageUrl(post.user?.avatarUrl, 200, 'auto') ?? post.user?.avatarUrl,
+                        ...maskAuthor(post.user as FeedUser),
+                        avatarUrl: transformImageUrl((post.user as FeedUser)?.avatarUrl, 200, 'auto') ?? (post.user as FeedUser)?.avatarUrl,
                     },
                     likesCount: post._count.likes,
                     commentsCount: post._count.comments,

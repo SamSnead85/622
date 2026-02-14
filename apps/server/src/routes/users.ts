@@ -16,7 +16,21 @@ const clampLimit = (val: string | undefined, max = 50, defaultVal = 20) => {
 };
 
 // ── Privacy helper: mask user identity if they use a public profile ──
-function maskUserForDiscovery(u: any) {
+interface DiscoverableUser {
+    id: string;
+    username: string;
+    displayName: string;
+    bio?: string | null;
+    avatarUrl?: string | null;
+    isVerified: boolean;
+    usePublicProfile?: boolean;
+    publicDisplayName?: string | null;
+    publicUsername?: string | null;
+    publicAvatarUrl?: string | null;
+    publicBio?: string | null;
+    communityOptIn?: boolean;
+}
+function maskUserForDiscovery(u: DiscoverableUser) {
     if (u.usePublicProfile) {
         return {
             id: u.id,
@@ -697,10 +711,8 @@ router.put('/:userId', rateLimiters.general, authenticate, async (req: AuthReque
         const data = updateSchema.parse(req.body);
 
         // Non-admins cannot set privileged fields
-        if (!isAdmin) {
-            delete (data as any).isVerified;
-            delete (data as any).role;
-        }
+        const { isVerified: _isVerified, role: _role, ...safeData } = data;
+        const updateData = isAdmin ? data : safeData;
 
         if (data.role === 'SUPERADMIN' && userRole !== 'SUPERADMIN') {
             throw new AppError('Only Superadmins can promote users to Superadmin', 403);
@@ -708,7 +720,7 @@ router.put('/:userId', rateLimiters.general, authenticate, async (req: AuthReque
 
         const user = await prisma.user.update({
             where: { id: userId },
-            data,
+            data: updateData,
             select: {
                 id: true,
                 username: true,
@@ -998,7 +1010,7 @@ router.post('/:id/wave', rateLimiters.general, authenticate, async (req: AuthReq
             data: {
                 userId: id,
                 actorId: senderId,
-                type: 'WAVE' as any,
+                type: 'WAVE',
                 message: message,
                 ...(targetId && { targetId }),
             },

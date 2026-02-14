@@ -5,6 +5,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
 import { rateLimiters } from '../middleware/rateLimit.js';
 import { logger } from '../utils/logger.js';
+import { safeParseInt } from '../utils/validation.js';
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
         const { cursor, limit = '20', search, featured, category } = req.query;
 
-        const where: any = {};
+        const where: Record<string, unknown> = {};
         if (search) {
             where.OR = [
                 { name: { contains: search as string, mode: 'insensitive' } },
@@ -87,8 +88,8 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
 // GET /api/v1/communities/my
 router.get('/my', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        const take = Math.min(parseInt(req.query.limit as string) || 50, 100);
-        const skip = parseInt(req.query.offset as string) || 0;
+        const take = safeParseInt(req.query.limit, 50, 1, 100);
+        const skip = safeParseInt(req.query.offset, 0, 0, 10000);
 
         const memberships = await prisma.communityMember.findMany({
             where: { userId: req.userId },
@@ -173,7 +174,7 @@ router.get('/:idOrSlug', optionalAuth, async (req: AuthRequest, res, next) => {
             throw new AppError('Community not found', 404);
         }
 
-        let membership: any = null;
+        let membership: { id: string; role: string; userId: string; communityId: string } | null = null;
         if (req.userId) {
             membership = await prisma.communityMember.findUnique({
                 where: {
@@ -298,6 +299,9 @@ router.post('/:communityId/join', authenticate, async (req: AuthRequest, res, ne
                 },
             });
 
+            // Validate and sanitize the optional join message
+            const joinMessage = typeof req.body.message === 'string' ? req.body.message.slice(0, 500) : null;
+
             if (existingRequest) {
                 if (existingRequest.status === 'pending') {
                     return res.json({ status: 'pending', message: 'Your request is already pending.' });
@@ -306,7 +310,7 @@ router.post('/:communityId/join', authenticate, async (req: AuthRequest, res, ne
                     // Allow re-request by updating existing record
                     await prisma.communityJoinRequest.update({
                         where: { id: existingRequest.id },
-                        data: { status: 'pending', message: req.body.message || null, reviewedAt: null, reviewedBy: null },
+                        data: { status: 'pending', message: joinMessage, reviewedAt: null, reviewedBy: null },
                     });
                     return res.json({ status: 'pending', message: 'Your request has been resubmitted.' });
                 }
@@ -317,7 +321,7 @@ router.post('/:communityId/join', authenticate, async (req: AuthRequest, res, ne
                 create: {
                     communityId,
                     userId: req.userId!,
-                    message: req.body.message || null,
+                    message: joinMessage,
                 },
                 update: {},
             });
@@ -548,8 +552,8 @@ router.get('/:communityId/members', optionalAuth, async (req: AuthRequest, res, 
     try {
         const { communityId } = req.params;
         const { search, role } = req.query;
-        const take = Math.min(parseInt(req.query.limit as string) || 50, 100);
-        const skip = parseInt(req.query.offset as string) || 0;
+        const take = safeParseInt(req.query.limit, 50, 1, 100);
+        const skip = safeParseInt(req.query.offset, 0, 0, 10000);
 
         const community = await prisma.community.findUnique({ where: { id: communityId }, select: { isPublic: true } });
         if (!community) throw new AppError('Community not found', 404);
@@ -562,7 +566,7 @@ router.get('/:communityId/members', optionalAuth, async (req: AuthRequest, res, 
             if (!membership) throw new AppError('Access denied', 403);
         }
 
-        const where: any = { communityId };
+        const where: Record<string, unknown> = { communityId };
         if (role) where.role = (role as string).toUpperCase();
 
         const members = await prisma.communityMember.findMany({
@@ -629,9 +633,18 @@ router.put('/:communityId/members/:userId', authenticate, async (req: AuthReques
             }
         }
 
+        // Validate role if provided (before any further checks)
+        const validRoles = ['MEMBER', 'MODERATOR', 'ADMIN'] as const;
+        if (req.body.role !== undefined) {
+            const rawRole = String(req.body.role).toUpperCase();
+            if (!validRoles.includes(rawRole as typeof validRoles[number])) {
+                return res.status(400).json({ error: 'Invalid role. Must be MEMBER, MODERATOR, or ADMIN.' });
+            }
+        }
+
         // Prevent demoting yourself from admin (last admin check)
         if (userId === req.userId && callerMembership.role === 'ADMIN') {
-            const updateRole = req.body.role;
+            const updateRole = req.body.role ? String(req.body.role).toUpperCase() : undefined;
             if (updateRole && updateRole !== 'ADMIN') {
                 const otherAdmins = await prisma.communityMember.count({
                     where: { communityId, role: 'ADMIN', userId: { not: req.userId } },
@@ -1050,8 +1063,8 @@ router.delete('/:communityId/status', authenticate, async (req: AuthRequest, res
 router.get('/:communityId/polls', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { communityId } = req.params;
-        const take = Math.min(parseInt(req.query.limit as string) || 50, 100);
-        const skip = parseInt(req.query.offset as string) || 0;
+        const take = safeParseInt(req.query.limit, 50, 1, 100);
+        const skip = safeParseInt(req.query.offset, 0, 0, 10000);
 
         const membership = await prisma.communityMember.findUnique({
             where: { userId_communityId: { userId: req.userId!, communityId } },
@@ -1195,8 +1208,8 @@ router.post('/:communityId/polls/:pollId/vote', authenticate, async (req: AuthRe
 router.get('/:communityId/albums', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { communityId } = req.params;
-        const take = Math.min(parseInt(req.query.limit as string) || 50, 100);
-        const skip = parseInt(req.query.offset as string) || 0;
+        const take = safeParseInt(req.query.limit, 50, 1, 100);
+        const skip = safeParseInt(req.query.offset, 0, 0, 10000);
 
         const membership = await prisma.communityMember.findUnique({
             where: { userId_communityId: { userId: req.userId!, communityId } },
@@ -1362,7 +1375,7 @@ router.post('/:communityId/import/whatsapp', authenticate, async (req: AuthReque
 
         // Batch import messages (use the importer's user as sender for all)
         const imported = await prisma.$transaction(
-            messages.slice(0, 500).map((msg: any) =>
+            messages.slice(0, 500).map((msg: { sender?: string; content: string; timestamp?: string | number | Date }) =>
                 prisma.message.create({
                     data: {
                         conversationId: conversation!.id,
@@ -2050,7 +2063,7 @@ router.post('/seed', authenticate, async (req: AuthRequest, res, next) => {
             { name: 'Islamic Designers', slug: 'islamic-designers', description: 'Muslim creatives in design, branding, and visual arts. Share your work, get feedback, and collaborate.', category: 'culture', isPublic: true, approvalRequired: false },
         ];
 
-        const created: any[] = [];
+        const created: Array<{ id: string; name: string; [key: string]: unknown }> = [];
         for (const seed of seeds) {
             // Skip if already exists
             const existing = await prisma.community.findUnique({ where: { slug: seed.slug } });
@@ -2125,7 +2138,7 @@ router.get('/:communityId/leaderboard', optionalAuth, async (req: AuthRequest, r
     try {
         const { communityId } = req.params;
         const period = (req.query.period as string) || 'all';
-        const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const limit = safeParseInt(req.query.limit, 50, 1, 100);
 
         if (period === 'all') {
             const members = await prisma.communityMember.findMany({
@@ -2482,7 +2495,7 @@ router.get('/:communityId/courses/:courseId/lessons/:lessonId', authenticate, as
         });
         if (!lesson) throw new AppError('Lesson not found', 404);
 
-        let progress: any = null;
+        let progress: { id: string; completed: boolean; completedAt?: Date | null } | null = null;
         if (req.userId) {
             progress = await prisma.lessonProgress.findUnique({
                 where: { lessonId_userId: { lessonId, userId: req.userId } },
@@ -2551,10 +2564,10 @@ router.get('/:communityId/events', optionalAuth, async (req: AuthRequest, res, n
     try {
         const { communityId } = req.params;
         const upcoming = req.query.upcoming !== 'false';
-        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-        const offset = parseInt(req.query.offset as string) || 0;
+        const limit = safeParseInt(req.query.limit, 20, 1, 100);
+        const offset = safeParseInt(req.query.offset, 0, 0, 10000);
 
-        const where: any = { communityId };
+        const where: Record<string, unknown> = { communityId };
         if (upcoming) {
             where.startAt = { gte: new Date() };
         }

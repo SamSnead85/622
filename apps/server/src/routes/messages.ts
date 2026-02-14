@@ -4,6 +4,7 @@ import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { rateLimiters } from '../middleware/rateLimit.js';
+import { safeParseInt } from '../utils/validation.js';
 
 const router = Router();
 
@@ -13,8 +14,8 @@ router.use(rateLimiters.general);
 // GET /api/v1/messages - Alias for /conversations
 router.get('/', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        const take = Math.min(parseInt(req.query.limit as string) || 30, 100);
-        const skip = parseInt(req.query.offset as string) || 0;
+        const take = safeParseInt(req.query.limit, 30, 1, 100);
+        const skip = safeParseInt(req.query.offset, 0, 0, 10000);
 
         const conversations = await prisma.conversationParticipant.findMany({
             where: { userId: req.userId },
@@ -90,8 +91,8 @@ router.get('/', authenticate, async (req: AuthRequest, res, next) => {
 // GET /api/v1/messages/conversations
 router.get('/conversations', authenticate, async (req: AuthRequest, res, next) => {
     try {
-        const take = Math.min(parseInt(req.query.limit as string) || 50, 100);
-        const skip = parseInt(req.query.offset as string) || 0;
+        const take = safeParseInt(req.query.limit, 50, 1, 100);
+        const skip = safeParseInt(req.query.offset, 0, 0, 10000);
 
         const conversations = await prisma.conversationParticipant.findMany({
             where: { userId: req.userId },
@@ -211,7 +212,8 @@ router.get('/conversations', authenticate, async (req: AuthRequest, res, next) =
 router.get('/conversations/:conversationId', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { conversationId } = req.params;
-        const { cursor, limit = '50' } = req.query;
+        const { cursor } = req.query;
+        const messageLimit = safeParseInt(req.query.limit, 50, 1, 100);
 
         // Verify user is participant and get conversation details
         const conversationParticipant = await prisma.conversationParticipant.findUnique({
@@ -261,7 +263,7 @@ router.get('/conversations/:conversationId', authenticate, async (req: AuthReque
 
         const messages = await prisma.message.findMany({
             where: { conversationId },
-            take: parseInt(limit as string) + 1,
+            take: messageLimit + 1,
             ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
             orderBy: { createdAt: 'desc' },
             include: {
@@ -287,7 +289,7 @@ router.get('/conversations/:conversationId', authenticate, async (req: AuthReque
             data: { lastReadAt: new Date() },
         });
 
-        const hasMore = messages.length > parseInt(limit as string);
+        const hasMore = messages.length > messageLimit;
         const results = hasMore ? messages.slice(0, -1) : messages;
 
         // For DMs, return the single other participant; for groups, return the first

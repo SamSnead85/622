@@ -12,11 +12,54 @@ import { apiFetch, apiUpload, saveToken, removeToken, getToken, API, clearApiCac
 import { socketManager } from '../lib/socket';
 
 // ============================================
+// Helper Interfaces for Type Safety
+// ============================================
+
+interface AuthStateWithHydration extends AuthState {
+    _hasHydrated?: boolean;
+}
+
+interface ApiError extends Error {
+    status?: number;
+}
+
+interface ApiPostRaw {
+    id: string;
+    caption?: string;
+    content?: string;
+    mediaUrl?: string;
+    thumbnailUrl?: string;
+    fullMediaUrl?: string;
+    type?: string;
+    mediaType?: string;
+    mediaCropY?: number;
+    mediaAspectRatio?: string;
+    sortOrder?: number;
+    user?: Record<string, unknown> | null;
+    author?: Record<string, unknown> | null;
+    authorNote?: string;
+    pinnedComment?: string;
+    likesCount?: number;
+    commentsCount?: number;
+    sharesCount?: number;
+    _count?: { likes?: number; comments?: number; shares?: number };
+    isLiked?: boolean;
+    isSaved?: boolean;
+    isRsvped?: boolean;
+    createdAt: string;
+    communityId?: string;
+    eventDate?: string;
+    eventLocation?: string;
+    crossPost?: Record<string, unknown>;
+    media?: Array<Record<string, unknown>>;
+}
+
+// ============================================
 // Conditional logging — only in development
 // ============================================
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const devLog = __DEV__ ? (...args: any[]) => console.log('[stores]', ...args) : () => {};
-const devError = __DEV__ ? (...args: any[]) => console.error('[stores]', ...args) : () => {};
+const devLog = __DEV__ ? (...args: unknown[]) => console.log('[stores]', ...args) : () => {};
+const devError = __DEV__ ? (...args: unknown[]) => console.error('[stores]', ...args) : () => {};
 
 // ============================================
 // Raw API Response Types
@@ -261,11 +304,11 @@ export const useAuthStore = create<AuthState>()(
         // We must wait for it to complete so get().user and get().isAuthenticated
         // reflect the persisted values, not the initial defaults.
         // Safety: timeout after 3 seconds to prevent infinite hang if rehydration fails.
-        if (!(get() as any)._hasHydrated) {
+        if (!(get() as AuthStateWithHydration)._hasHydrated) {
             await new Promise<void>((resolve) => {
                 const startTime = Date.now();
                 const check = () => {
-                    if ((useAuthStore.getState() as any)._hasHydrated) {
+                    if ((useAuthStore.getState() as AuthStateWithHydration)._hasHydrated) {
                         resolve();
                     } else if (Date.now() - startTime > 3000) {
                         // Rehydration timed out — proceed as unauthenticated
@@ -318,7 +361,7 @@ export const useAuthStore = create<AuthState>()(
                 } catch (error) {
                     // Network error — keep the user logged in with cached data.
                     // They'll get fresh data when connectivity returns.
-                    const status = error instanceof Error ? (error as any).status : undefined;
+                    const status = error instanceof Error ? (error as ApiError).status : undefined;
                     if (status === 401 || status === 403) {
                         await removeToken();
                         const msg = status === 403
@@ -352,7 +395,7 @@ export const useAuthStore = create<AuthState>()(
             // No persisted user to fall back to — but don't clear the token
             // on network errors so the user can retry
             const isAuthError = error instanceof Error &&
-                (error as any).status === 401;
+                (error as ApiError).status === 401;
             if (isAuthError) {
                 try { await removeToken(); } catch { /* ignore */ }
             }
@@ -577,7 +620,7 @@ export const useAuthStore = create<AuthState>()(
                         devError('Auth store rehydration failed:', error);
                     }
                     // Mark rehydration as complete so initialize() can trust persisted state
-                    useAuthStore.setState({ _hasHydrated: true } as any);
+                    useAuthStore.setState({ _hasHydrated: true } as Partial<AuthStateWithHydration>);
                 };
             },
         }
@@ -628,7 +671,7 @@ interface FeedState {
 }
 
 // Map server post shape to mobile Post interface
-export function mapApiPost(raw: any): Post {
+export function mapApiPost(raw: ApiPostRaw): Post {
     return {
         id: raw.id,
         content: raw.caption || raw.content || '',
@@ -1438,22 +1481,22 @@ interface GameStoreState {
     players: GamePlayerData[];
     round: number;
     totalRounds: number;
-    gameData: Record<string, any>;
+    gameData: Record<string, unknown>;
     isHost: boolean;
     myPlayerId: string | null;
     error: string | null;
 
     // Actions
-    createGame: (type: string, settings?: Record<string, any>) => Promise<string | null>;
+    createGame: (type: string, settings?: Record<string, unknown>) => Promise<string | null>;
     joinGame: (code: string, playerName?: string) => Promise<boolean>;
     startGame: () => Promise<boolean>;
-    sendAction: (action: string, payload: any) => void;
+    sendAction: (action: string, payload: Record<string, unknown>) => void;
     leaveGame: () => void;
-    updateFromState: (state: any) => void;
-    updateFromDelta: (delta: any) => void;
-    setRoundEnd: (data: any) => void;
-    setGameEnded: (data: any) => void;
-    addPlayer: (data: any) => void;
+    updateFromState: (state: Partial<GameStoreState>) => void;
+    updateFromDelta: (delta: Record<string, unknown>) => void;
+    setRoundEnd: (data: Record<string, unknown>) => void;
+    setGameEnded: (data: Record<string, unknown>) => void;
+    addPlayer: (data: Record<string, unknown>) => void;
     removePlayer: (playerId: string) => void;
     reset: () => void;
     setError: (error: string | null) => void;
@@ -1558,29 +1601,30 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
             players: incoming.players || prev.players,
             round: incoming.round ?? prev.round,
             totalRounds: incoming.totalRounds ?? prev.totalRounds,
-            gameData: incoming.gameData || prev.gameData,
+            gameData: (incoming.gameData as Record<string, unknown>) || prev.gameData,
         }));
     },
 
     updateFromDelta: (delta) => {
         set((prev) => ({
-            players: delta.players || prev.players,
-            round: delta.round ?? prev.round,
-            gameData: { ...prev.gameData, ...delta.gameData },
+            players: (delta.players as GamePlayerData[]) || prev.players,
+            round: (delta.round as number) ?? prev.round,
+            gameData: { ...prev.gameData, ...(delta.gameData as Record<string, unknown>) },
         }));
     },
 
     setRoundEnd: (data) => {
         set((prev) => ({
             status: 'round_end' as const,
-            players: data.players || prev.players,
+            players: (data.players as GamePlayerData[]) || prev.players,
         }));
     },
 
     setGameEnded: (data) => {
+        const finalScores = data.finalScores as Array<{ id: string; name: string; score: number; avatarUrl?: string }> | undefined;
         set((prev) => ({
             status: 'finished' as const,
-            players: data.finalScores?.map((s: any) => ({
+            players: finalScores?.map((s) => ({
                 ...prev.players.find(p => p.id === s.id),
                 score: s.score,
                 name: s.name,
@@ -1589,8 +1633,9 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
     },
 
     addPlayer: (data) => {
+        const player = data.player as GamePlayerData;
         set((prev) => ({
-            players: [...prev.players.filter(p => p.id !== data.player.id), data.player],
+            players: [...prev.players.filter(p => p.id !== player.id), player],
         }));
     },
 

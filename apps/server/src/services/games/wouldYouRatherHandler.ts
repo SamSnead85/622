@@ -83,7 +83,7 @@ export const wouldYouRatherHandler: GameHandler = {
     maxPlayers: 12,
     defaultRounds: 8,
 
-    createInitialState(settings: Record<string, any>): Record<string, any> {
+    createInitialState(settings: Record<string, unknown>): Record<string, unknown> {
         return {
             prompts: shuffleArray([...WYR_PROMPTS]),
             promptIndex: 0,
@@ -106,7 +106,8 @@ export const wouldYouRatherHandler: GameHandler = {
     },
 
     onRoundStart(state: GameState): GameState {
-        const { prompts, promptIndex } = state.gameData;
+        const prompts = state.gameData.prompts as WYRPrompt[];
+        const promptIndex = state.gameData.promptIndex as number;
         const prompt = prompts[promptIndex % prompts.length];
 
         state.gameData.currentPrompt = prompt;
@@ -114,21 +115,21 @@ export const wouldYouRatherHandler: GameHandler = {
         state.gameData.phase = 'voting';
         state.gameData.promptIndex = promptIndex + 1;
         state.gameData.roundResults = null;
-        state.timerDuration = state.gameData.timerDuration;
+        state.timerDuration = state.gameData.timerDuration as number;
 
         return state;
     },
 
-    handleAction(state: GameState, playerId: string, action: string, payload: any): GameState {
+    handleAction(state: GameState, playerId: string, action: string, payload: Record<string, unknown>): GameState {
         if (action === 'vote') {
             // Only allow voting during voting phase
             if (state.gameData.phase !== 'voting') return state;
             // Don't allow changing votes
-            if (state.gameData.votes[playerId] !== undefined) return state;
+            if ((state.gameData.votes as Record<string, string>)[playerId] !== undefined) return state;
             // Validate vote
             if (payload.choice !== 'A' && payload.choice !== 'B') return state;
 
-            state.gameData.votes[playerId] = payload.choice;
+            (state.gameData.votes as Record<string, string>)[playerId] = payload.choice as string;
         } else if (action === 'end_debate') {
             // Host can end debate early
             const player = state.players.find(p => p.id === playerId);
@@ -143,11 +144,11 @@ export const wouldYouRatherHandler: GameHandler = {
     isRoundOver(state: GameState): boolean {
         // Round is over when all connected players have voted
         const connectedPlayers = state.players.filter(p => p.isConnected);
-        const allVoted = connectedPlayers.every(p => state.gameData.votes[p.id] !== undefined);
+        const allVoted = connectedPlayers.every(p => (state.gameData.votes as Record<string, string>)[p.id] !== undefined);
         return allVoted;
     },
 
-    getRoundResults(state: GameState): { scores: Record<string, number>; summary: any } {
+    getRoundResults(state: GameState): { scores: Record<string, number>; summary: Record<string, unknown> } {
         const votes = state.gameData.votes as Record<string, 'A' | 'B'>;
         const prompt = state.gameData.currentPrompt as WYRPrompt;
         const scores: Record<string, number> = {};

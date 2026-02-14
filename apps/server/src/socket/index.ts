@@ -1,11 +1,59 @@
 import { Server as SocketServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
+import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { logger } from '../utils/logger.js';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { Redis } from 'ioredis';
 import { setupGameSocketHandlers } from './gameHandlers.js';
 import { activeSpaces, SpaceRoom } from '../routes/spaces.js';
+
+// ============================================
+// Zod Validation Schemas for Socket Events
+// ============================================
+
+const messageSchema = z.object({
+    conversationId: z.string().min(1),
+    content: z.string().min(1).max(5000),
+    mediaUrl: z.string().url().optional(),
+    mediaType: z.enum(['IMAGE', 'VIDEO', 'AUDIO', 'FILE']).optional(),
+});
+
+const messageReadSchema = z.object({
+    conversationId: z.string().min(1),
+    messageId: z.string().min(1),
+});
+
+const presenceSchema = z.enum(['online', 'away', 'busy']);
+
+const callInitiateSchema = z.object({
+    callId: z.string().min(1),
+    userId: z.string().min(1),
+    type: z.enum(['audio', 'video']),
+    offer: z.record(z.unknown()).optional(),
+});
+
+const callAnswerSchema = z.object({
+    callId: z.string().min(1),
+    answer: z.record(z.unknown()),
+});
+
+const callEndSchema = z.object({
+    callId: z.string().min(1),
+});
+
+const callGetOfferSchema = z.object({
+    callId: z.string().min(1),
+});
+
+const iceCandidateSchema = z.object({
+    userId: z.string().min(1),
+    candidate: z.record(z.unknown()),
+});
+
+const typingSchema = z.object({
+    conversationId: z.string().min(1),
+});
 
 interface AuthenticatedSocket extends Socket {
     userId?: string;
@@ -15,7 +63,7 @@ interface AuthenticatedSocket extends Socket {
 const connectedUsers = new Map<string, Set<string>>(); // userId -> Set<socketId>
 
 // Active WebRTC calls: callId -> { from, to, offer, createdAt }
-const activeCalls = new Map<string, { from: string; to: string; offer?: any; createdAt: number }>();
+const activeCalls = new Map<string, { from: string; to: string; offer?: Record<string, unknown>; createdAt: number }>();
 
 // Socket-level rate limiting
 const socketRateLimits = new Map<string, { count: number; resetAt: number }>();
@@ -194,12 +242,13 @@ export const setupSocketHandlers = (io: SocketServer) => {
         });
 
         // Handle new messages (with rate limiting and size validation)
-        socket.on('message:send', async (data: {
-            conversationId: string;
-            content: string;
-            mediaUrl?: string;
-            mediaType?: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'FILE';
-        }) => {
+        socket.on('message:send', async (rawData: unknown) => {
+            const parsed = messageSchema.safeParse(rawData);
+            if (!parsed.success) {
+                socket.emit('error', { message: 'Invalid message payload' });
+                return;
+            }
+            const data = parsed.data;
             try {
                 // Rate limit check
                 if (!checkSocketRateLimit(userId)) {
@@ -290,7 +339,13 @@ export const setupSocketHandlers = (io: SocketServer) => {
         });
 
         // Handle typing indicators (rate limited)
-        socket.on('typing:start', (conversationId: string) => {
+        socket.on('typing:start', (rawData: unknown) => {
+            const parsed = typingSchema.safeParse(rawData);
+            if (!parsed.success) {
+                socket.emit('error', { message: 'Invalid typing payload' });
+                return;
+            }
+            const { conversationId } = parsed.data;
             if (!checkSocketRateLimit(userId)) return;
             socket.to(`conversation:${conversationId}`).emit('typing:start', {
                 userId,
@@ -299,7 +354,13 @@ export const setupSocketHandlers = (io: SocketServer) => {
             });
         });
 
-        socket.on('typing:stop', (conversationId: string) => {
+        socket.on('typing:stop', (rawData: unknown) => {
+            const parsed = typingSchema.safeParse(rawData);
+            if (!parsed.success) {
+                socket.emit('error', { message: 'Invalid typing payload' });
+                return;
+            }
+            const { conversationId } = parsed.data;
             socket.to(`conversation:${conversationId}`).emit('typing:stop', {
                 userId,
                 conversationId,
@@ -307,7 +368,13 @@ export const setupSocketHandlers = (io: SocketServer) => {
         });
 
         // Handle read receipts
-        socket.on('message:read', async (data: { conversationId: string; messageId: string }) => {
+        socket.on('message:read', async (rawData: unknown) => {
+            const parsed = messageReadSchema.safeParse(rawData);
+            if (!parsed.success) {
+                socket.emit('error', { message: 'Invalid message read payload' });
+                return;
+            }
+            const data = parsed.data;
             try {
                 await prisma.conversationParticipant.update({
                     where: {
@@ -330,7 +397,13 @@ export const setupSocketHandlers = (io: SocketServer) => {
         });
 
         // Handle presence updates
-        socket.on('presence:update', async (status: 'online' | 'away' | 'busy') => {
+        socket.on('presence:update', async (rawData: unknown) => {
+            const parsed = presenceSchema.safeParse(rawData);
+            if (!parsed.success) {
+                socket.emit('error', { message: 'Invalid presence payload' });
+                return;
+            }
+            const status = parsed.data;
             try {
                 await prisma.user.update({
                     where: { id: userId },
@@ -344,7 +417,13 @@ export const setupSocketHandlers = (io: SocketServer) => {
         });
 
         // === WebRTC Call Signaling ===
-        socket.on('call:initiate', async (data: { callId: string; userId: string; type: 'audio' | 'video'; offer: any }) => {
+        socket.on('call:initiate', async (rawData: unknown) => {
+            const parsed = callInitiateSchema.safeParse(rawData);
+            if (!parsed.success) {
+                socket.emit('error', { message: 'Invalid call initiate payload' });
+                return;
+            }
+            const data = parsed.data;
             const { callId, userId: targetUserId, type, offer } = data;
 
             // Authorization: caller and callee must have a follow relationship (connection)
@@ -401,7 +480,13 @@ export const setupSocketHandlers = (io: SocketServer) => {
             }
         });
 
-        socket.on('call:answer', async (data: { callId: string; answer: any }) => {
+        socket.on('call:answer', async (rawData: unknown) => {
+            const parsed = callAnswerSchema.safeParse(rawData);
+            if (!parsed.success) {
+                socket.emit('error', { message: 'Invalid call answer payload' });
+                return;
+            }
+            const data = parsed.data;
             const call = activeCalls.get(data.callId);
             if (call) {
                 // Fetch answerer info so the caller can display it
@@ -435,14 +520,26 @@ export const setupSocketHandlers = (io: SocketServer) => {
             }
         });
 
-        socket.on('call:get-offer', (data: { callId: string }, callback: (offer: any) => void) => {
+        socket.on('call:get-offer', (rawData: unknown, callback: (offer: Record<string, unknown> | undefined) => void) => {
+            const parsed = callGetOfferSchema.safeParse(rawData);
+            if (!parsed.success) {
+                socket.emit('error', { message: 'Invalid call get-offer payload' });
+                return;
+            }
+            const data = parsed.data;
             const call = activeCalls.get(data.callId);
             if (call?.offer && typeof callback === 'function') {
                 callback(call.offer);
             }
         });
 
-        socket.on('call:ice-candidate', (data: { userId: string; candidate: any }) => {
+        socket.on('call:ice-candidate', (rawData: unknown) => {
+            const parsed = iceCandidateSchema.safeParse(rawData);
+            if (!parsed.success) {
+                socket.emit('error', { message: 'Invalid ICE candidate payload' });
+                return;
+            }
+            const data = parsed.data;
             const targetSockets = connectedUsers.get(data.userId);
             if (targetSockets) {
                 targetSockets.forEach(socketId => {
@@ -464,7 +561,13 @@ export const setupSocketHandlers = (io: SocketServer) => {
             }
         });
 
-        socket.on('call:end', (data: { callId: string }) => {
+        socket.on('call:end', (rawData: unknown) => {
+            const parsed = callEndSchema.safeParse(rawData);
+            if (!parsed.success) {
+                socket.emit('error', { message: 'Invalid call end payload' });
+                return;
+            }
+            const data = parsed.data;
             const call = activeCalls.get(data.callId);
             if (call) {
                 // Notify both parties
@@ -931,7 +1034,7 @@ export const setupSocketHandlers = (io: SocketServer) => {
     });
 
     // Utility function to send to user
-    const sendToUser = (userId: string, event: string, data: any) => {
+    const sendToUser = (userId: string, event: string, data: unknown) => {
         io.to(`user:${userId}`).emit(event, data);
     };
 

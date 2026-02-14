@@ -935,7 +935,7 @@ export default function CreateScreen() {
             if (!raw) return;
             try {
                 const draft = JSON.parse(raw) as { content: string; communityId?: string; timestamp: number };
-                if (Date.now() - draft.timestamp < 24 * 60 * 60 * 1000 && draft.content) {
+                if (draft && Date.now() - draft.timestamp < 24 * 60 * 60 * 1000 && draft.content) {
                     setContent(draft.content);
                 }
             } catch {

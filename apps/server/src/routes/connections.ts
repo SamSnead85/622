@@ -103,46 +103,77 @@ router.get('/', async (req: AuthRequest, res, next) => {
         const cursor = req.query.cursor as string | undefined;
         const search = req.query.search as string | undefined;
 
-        // Build search filter
-        const searchFilter = search
-            ? `AND (u."displayName" ILIKE ${'%' + search + '%'} OR u."username" ILIKE ${'%' + search + '%'})`
-            : '';
-
         // Use raw query for efficient mutual-follow detection with cursor pagination
         // We order by the Follow.createdAt of the outgoing follow to get "connectedSince"
-        const cursorFilter = cursor
-            ? `AND f1."createdAt" < (SELECT "createdAt" FROM "Follow" WHERE "followerId" = '${userId}' AND "followingId" = '${cursor}')`
-            : '';
-
-        const connections = await prisma.$queryRawUnsafe<Array<{
+        type ConnectionRow = {
             id: string;
             username: string;
             displayName: string;
             avatarUrl: string | null;
             isVerified: boolean;
             connectedSince: Date;
-        }>>(
-            `SELECT u.id, u.username, u."displayName", u."avatarUrl", u."isVerified",
-                    GREATEST(f1."createdAt", f2."createdAt") as "connectedSince"
-             FROM "User" u
-             INNER JOIN "Follow" f1 ON f1."followerId" = $1 AND f1."followingId" = u.id
-             INNER JOIN "Follow" f2 ON f2."followerId" = u.id AND f2."followingId" = $1
-             WHERE 1=1
-             ${search ? `AND (u."displayName" ILIKE $2 OR u."username" ILIKE $2)` : ''}
-             ${cursor ? `AND GREATEST(f1."createdAt", f2."createdAt") < (
-                 SELECT GREATEST(fa."createdAt", fb."createdAt")
-                 FROM "Follow" fa
-                 INNER JOIN "Follow" fb ON fb."followerId" = fa."followingId" AND fb."followingId" = $1
-                 WHERE fa."followerId" = $1 AND fa."followingId" = ${search ? '$3' : '$2'}
-             )` : ''}
-             ORDER BY "connectedSince" DESC
-             LIMIT ${limit + 1}`,
-            ...[
-                userId,
-                ...(search ? [`%${search}%`] : []),
-                ...(cursor ? [cursor] : []),
-            ]
-        );
+        };
+
+        const fetchLimit = limit + 1;
+        let connections: ConnectionRow[];
+
+        if (search && cursor) {
+            const searchPattern = `%${search}%`;
+            connections = await prisma.$queryRaw<ConnectionRow[]>`
+                SELECT u.id, u.username, u."displayName", u."avatarUrl", u."isVerified",
+                       GREATEST(f1."createdAt", f2."createdAt") as "connectedSince"
+                FROM "User" u
+                INNER JOIN "Follow" f1 ON f1."followerId" = ${userId} AND f1."followingId" = u.id
+                INNER JOIN "Follow" f2 ON f2."followerId" = u.id AND f2."followingId" = ${userId}
+                WHERE (u."displayName" ILIKE ${searchPattern} OR u."username" ILIKE ${searchPattern})
+                AND GREATEST(f1."createdAt", f2."createdAt") < (
+                    SELECT GREATEST(fa."createdAt", fb."createdAt")
+                    FROM "Follow" fa
+                    INNER JOIN "Follow" fb ON fb."followerId" = fa."followingId" AND fb."followingId" = ${userId}
+                    WHERE fa."followerId" = ${userId} AND fa."followingId" = ${cursor}
+                )
+                ORDER BY "connectedSince" DESC
+                LIMIT ${fetchLimit}
+            `;
+        } else if (search) {
+            const searchPattern = `%${search}%`;
+            connections = await prisma.$queryRaw<ConnectionRow[]>`
+                SELECT u.id, u.username, u."displayName", u."avatarUrl", u."isVerified",
+                       GREATEST(f1."createdAt", f2."createdAt") as "connectedSince"
+                FROM "User" u
+                INNER JOIN "Follow" f1 ON f1."followerId" = ${userId} AND f1."followingId" = u.id
+                INNER JOIN "Follow" f2 ON f2."followerId" = u.id AND f2."followingId" = ${userId}
+                WHERE (u."displayName" ILIKE ${searchPattern} OR u."username" ILIKE ${searchPattern})
+                ORDER BY "connectedSince" DESC
+                LIMIT ${fetchLimit}
+            `;
+        } else if (cursor) {
+            connections = await prisma.$queryRaw<ConnectionRow[]>`
+                SELECT u.id, u.username, u."displayName", u."avatarUrl", u."isVerified",
+                       GREATEST(f1."createdAt", f2."createdAt") as "connectedSince"
+                FROM "User" u
+                INNER JOIN "Follow" f1 ON f1."followerId" = ${userId} AND f1."followingId" = u.id
+                INNER JOIN "Follow" f2 ON f2."followerId" = u.id AND f2."followingId" = ${userId}
+                WHERE GREATEST(f1."createdAt", f2."createdAt") < (
+                    SELECT GREATEST(fa."createdAt", fb."createdAt")
+                    FROM "Follow" fa
+                    INNER JOIN "Follow" fb ON fb."followerId" = fa."followingId" AND fb."followingId" = ${userId}
+                    WHERE fa."followerId" = ${userId} AND fa."followingId" = ${cursor}
+                )
+                ORDER BY "connectedSince" DESC
+                LIMIT ${fetchLimit}
+            `;
+        } else {
+            connections = await prisma.$queryRaw<ConnectionRow[]>`
+                SELECT u.id, u.username, u."displayName", u."avatarUrl", u."isVerified",
+                       GREATEST(f1."createdAt", f2."createdAt") as "connectedSince"
+                FROM "User" u
+                INNER JOIN "Follow" f1 ON f1."followerId" = ${userId} AND f1."followingId" = u.id
+                INNER JOIN "Follow" f2 ON f2."followerId" = u.id AND f2."followingId" = ${userId}
+                ORDER BY "connectedSince" DESC
+                LIMIT ${fetchLimit}
+            `;
+        }
 
         const hasMore = connections.length > limit;
         const items = connections.slice(0, limit);
@@ -508,26 +539,24 @@ router.get('/degree/:userId', async (req: AuthRequest, res, next) => {
         const myConnectionIds = await getConnectionIds(userId);
         if (myConnectionIds.length > 0) {
             // Find which of my connections are also connected to the target
-            const bridgeUsers = await prisma.$queryRawUnsafe<Array<{
+            const bridgeUsers = await prisma.$queryRaw<Array<{
                 id: string;
                 displayName: string;
                 avatarUrl: string | null;
-            }>>(
-                `SELECT u.id, u."displayName", u."avatarUrl"
-                 FROM "User" u
-                 WHERE u.id = ANY($1::text[])
-                 AND EXISTS (
-                     SELECT 1 FROM "Follow" f1
-                     WHERE f1."followerId" = u.id AND f1."followingId" = $2
-                 )
-                 AND EXISTS (
-                     SELECT 1 FROM "Follow" f2
-                     WHERE f2."followerId" = $2 AND f2."followingId" = u.id
-                 )
-                 LIMIT 5`,
-                myConnectionIds,
-                targetId
-            );
+            }>>`
+                SELECT u.id, u."displayName", u."avatarUrl"
+                FROM "User" u
+                WHERE u.id = ANY(${myConnectionIds}::text[])
+                AND EXISTS (
+                    SELECT 1 FROM "Follow" f1
+                    WHERE f1."followerId" = u.id AND f1."followingId" = ${targetId}
+                )
+                AND EXISTS (
+                    SELECT 1 FROM "Follow" f2
+                    WHERE f2."followerId" = ${targetId} AND f2."followingId" = u.id
+                )
+                LIMIT 5
+            `;
 
             if (bridgeUsers.length > 0) {
                 const mutualConns = await getMutualConnectionUsers(userId, targetId, 5);
@@ -546,41 +575,37 @@ router.get('/degree/:userId', async (req: AuthRequest, res, next) => {
             // Check degree 3: connections of 2nd-degree connections
             // Get 2nd-degree connection IDs (connections of my connections, excluding me and my direct connections)
             const excludeIds = [userId, ...myConnectionIds];
-            const secondDegreeIds = await prisma.$queryRawUnsafe<{ id: string }[]>(
-                `SELECT DISTINCT u.id
-                 FROM "User" u
-                 INNER JOIN "Follow" f1 ON f1."followingId" = u.id AND f1."followerId" = ANY($1::text[])
-                 INNER JOIN "Follow" f2 ON f2."followerId" = u.id AND f2."followingId" = ANY($1::text[])
-                 WHERE u.id != ALL($2::text[])
-                 LIMIT 1000`,
-                myConnectionIds,
-                excludeIds
-            );
+            const secondDegreeIds = await prisma.$queryRaw<{ id: string }[]>`
+                SELECT DISTINCT u.id
+                FROM "User" u
+                INNER JOIN "Follow" f1 ON f1."followingId" = u.id AND f1."followerId" = ANY(${myConnectionIds}::text[])
+                INNER JOIN "Follow" f2 ON f2."followerId" = u.id AND f2."followingId" = ANY(${myConnectionIds}::text[])
+                WHERE u.id != ALL(${excludeIds}::text[])
+                LIMIT 1000
+            `;
 
             if (secondDegreeIds.length > 0) {
                 const secondDegreeIdList = secondDegreeIds.map(s => s.id);
 
                 // Check if any 2nd-degree connection is connected to the target
-                const thirdDegreeBridge = await prisma.$queryRawUnsafe<Array<{
+                const thirdDegreeBridge = await prisma.$queryRaw<Array<{
                     id: string;
                     displayName: string;
                     avatarUrl: string | null;
-                }>>(
-                    `SELECT u.id, u."displayName", u."avatarUrl"
-                     FROM "User" u
-                     WHERE u.id = ANY($1::text[])
-                     AND EXISTS (
-                         SELECT 1 FROM "Follow" f1
-                         WHERE f1."followerId" = u.id AND f1."followingId" = $2
-                     )
-                     AND EXISTS (
-                         SELECT 1 FROM "Follow" f2
-                         WHERE f2."followerId" = $2 AND f2."followingId" = u.id
-                     )
-                     LIMIT 3`,
-                    secondDegreeIdList,
-                    targetId
-                );
+                }>>`
+                    SELECT u.id, u."displayName", u."avatarUrl"
+                    FROM "User" u
+                    WHERE u.id = ANY(${secondDegreeIdList}::text[])
+                    AND EXISTS (
+                        SELECT 1 FROM "Follow" f1
+                        WHERE f1."followerId" = u.id AND f1."followingId" = ${targetId}
+                    )
+                    AND EXISTS (
+                        SELECT 1 FROM "Follow" f2
+                        WHERE f2."followerId" = ${targetId} AND f2."followingId" = u.id
+                    )
+                    LIMIT 3
+                `;
 
                 if (thirdDegreeBridge.length > 0) {
                     res.json({
@@ -610,36 +635,33 @@ router.get('/degree/:userId', async (req: AuthRequest, res, next) => {
 async function getMutualConnectionUsers(
     userIdA: string,
     userIdB: string,
-    limit: number
+    maxResults: number
 ): Promise<Array<{ id: string; displayName: string; avatarUrl: string | null }>> {
-    return prisma.$queryRawUnsafe<Array<{
+    return prisma.$queryRaw<Array<{
         id: string;
         displayName: string;
         avatarUrl: string | null;
-    }>>(
-        `SELECT u.id, u."displayName", u."avatarUrl"
-         FROM "User" u
-         WHERE EXISTS (
-             SELECT 1 FROM "Follow" f1
-             WHERE f1."followerId" = $1 AND f1."followingId" = u.id
-         )
-         AND EXISTS (
-             SELECT 1 FROM "Follow" f2
-             WHERE f2."followerId" = u.id AND f2."followingId" = $1
-         )
-         AND EXISTS (
-             SELECT 1 FROM "Follow" f3
-             WHERE f3."followerId" = $2 AND f3."followingId" = u.id
-         )
-         AND EXISTS (
-             SELECT 1 FROM "Follow" f4
-             WHERE f4."followerId" = u.id AND f4."followingId" = $2
-         )
-         LIMIT $3`,
-        userIdA,
-        userIdB,
-        limit
-    );
+    }>>`
+        SELECT u.id, u."displayName", u."avatarUrl"
+        FROM "User" u
+        WHERE EXISTS (
+            SELECT 1 FROM "Follow" f1
+            WHERE f1."followerId" = ${userIdA} AND f1."followingId" = u.id
+        )
+        AND EXISTS (
+            SELECT 1 FROM "Follow" f2
+            WHERE f2."followerId" = u.id AND f2."followingId" = ${userIdA}
+        )
+        AND EXISTS (
+            SELECT 1 FROM "Follow" f3
+            WHERE f3."followerId" = ${userIdB} AND f3."followingId" = u.id
+        )
+        AND EXISTS (
+            SELECT 1 FROM "Follow" f4
+            WHERE f4."followerId" = u.id AND f4."followingId" = ${userIdB}
+        )
+        LIMIT ${maxResults}
+    `;
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -657,43 +679,65 @@ router.get('/mutual/:userId', async (req: AuthRequest, res, next) => {
         }
 
         // Get mutual connections: users connected to BOTH me and the target
-        const cursorClause = cursor
-            ? `AND u.id > $4`
-            : '';
-
-        const params: unknown[] = [userId, targetId, limit + 1];
-        if (cursor) params.push(cursor);
-
-        const mutualConnections = await prisma.$queryRawUnsafe<Array<{
+        type MutualConnectionRow = {
             id: string;
             username: string;
             displayName: string;
             avatarUrl: string | null;
             isVerified: boolean;
-        }>>(
-            `SELECT u.id, u.username, u."displayName", u."avatarUrl", u."isVerified"
-             FROM "User" u
-             WHERE EXISTS (
-                 SELECT 1 FROM "Follow" f1
-                 WHERE f1."followerId" = $1 AND f1."followingId" = u.id
-             )
-             AND EXISTS (
-                 SELECT 1 FROM "Follow" f2
-                 WHERE f2."followerId" = u.id AND f2."followingId" = $1
-             )
-             AND EXISTS (
-                 SELECT 1 FROM "Follow" f3
-                 WHERE f3."followerId" = $2 AND f3."followingId" = u.id
-             )
-             AND EXISTS (
-                 SELECT 1 FROM "Follow" f4
-                 WHERE f4."followerId" = u.id AND f4."followingId" = $2
-             )
-             ${cursorClause}
-             ORDER BY u.id ASC
-             LIMIT $3`,
-            ...params
-        );
+        };
+
+        const fetchLimit = limit + 1;
+        let mutualConnections: MutualConnectionRow[];
+
+        if (cursor) {
+            mutualConnections = await prisma.$queryRaw<MutualConnectionRow[]>`
+                SELECT u.id, u.username, u."displayName", u."avatarUrl", u."isVerified"
+                FROM "User" u
+                WHERE EXISTS (
+                    SELECT 1 FROM "Follow" f1
+                    WHERE f1."followerId" = ${userId} AND f1."followingId" = u.id
+                )
+                AND EXISTS (
+                    SELECT 1 FROM "Follow" f2
+                    WHERE f2."followerId" = u.id AND f2."followingId" = ${userId}
+                )
+                AND EXISTS (
+                    SELECT 1 FROM "Follow" f3
+                    WHERE f3."followerId" = ${targetId} AND f3."followingId" = u.id
+                )
+                AND EXISTS (
+                    SELECT 1 FROM "Follow" f4
+                    WHERE f4."followerId" = u.id AND f4."followingId" = ${targetId}
+                )
+                AND u.id > ${cursor}
+                ORDER BY u.id ASC
+                LIMIT ${fetchLimit}
+            `;
+        } else {
+            mutualConnections = await prisma.$queryRaw<MutualConnectionRow[]>`
+                SELECT u.id, u.username, u."displayName", u."avatarUrl", u."isVerified"
+                FROM "User" u
+                WHERE EXISTS (
+                    SELECT 1 FROM "Follow" f1
+                    WHERE f1."followerId" = ${userId} AND f1."followingId" = u.id
+                )
+                AND EXISTS (
+                    SELECT 1 FROM "Follow" f2
+                    WHERE f2."followerId" = u.id AND f2."followingId" = ${userId}
+                )
+                AND EXISTS (
+                    SELECT 1 FROM "Follow" f3
+                    WHERE f3."followerId" = ${targetId} AND f3."followingId" = u.id
+                )
+                AND EXISTS (
+                    SELECT 1 FROM "Follow" f4
+                    WHERE f4."followerId" = u.id AND f4."followingId" = ${targetId}
+                )
+                ORDER BY u.id ASC
+                LIMIT ${fetchLimit}
+            `;
+        }
 
         const hasMore = mutualConnections.length > limit;
         const items = mutualConnections.slice(0, limit);
@@ -721,31 +765,29 @@ router.get('/suggestions', async (req: AuthRequest, res, next) => {
 
         if (myConnectionIds.length === 0) {
             // No connections yet — suggest popular users from shared communities
-            const communitySuggestions = await prisma.$queryRawUnsafe<Array<{
+            const communitySuggestions = await prisma.$queryRaw<Array<{
                 id: string;
                 username: string;
                 displayName: string;
                 avatarUrl: string | null;
                 isVerified: boolean;
                 mutualConnectionsCount: number;
-            }>>(
-                `SELECT DISTINCT u.id, u.username, u."displayName", u."avatarUrl", u."isVerified",
-                        0 as "mutualConnectionsCount"
-                 FROM "User" u
-                 INNER JOIN "CommunityMember" cm1 ON cm1."userId" = u.id
-                 INNER JOIN "CommunityMember" cm2 ON cm2."communityId" = cm1."communityId" AND cm2."userId" = $1
-                 WHERE u.id != $1
-                 AND u."isBanned" = false
-                 AND NOT EXISTS (
-                     SELECT 1 FROM "Block" b
-                     WHERE (b."blockerId" = $1 AND b."blockedId" = u.id)
-                        OR (b."blockerId" = u.id AND b."blockedId" = $1)
-                 )
-                 ORDER BY u."lastActiveAt" DESC
-                 LIMIT $2`,
-                userId,
-                limit
-            );
+            }>>`
+                SELECT DISTINCT u.id, u.username, u."displayName", u."avatarUrl", u."isVerified",
+                       0 as "mutualConnectionsCount"
+                FROM "User" u
+                INNER JOIN "CommunityMember" cm1 ON cm1."userId" = u.id
+                INNER JOIN "CommunityMember" cm2 ON cm2."communityId" = cm1."communityId" AND cm2."userId" = ${userId}
+                WHERE u.id != ${userId}
+                AND u."isBanned" = false
+                AND NOT EXISTS (
+                    SELECT 1 FROM "Block" b
+                    WHERE (b."blockerId" = ${userId} AND b."blockedId" = u.id)
+                       OR (b."blockerId" = u.id AND b."blockedId" = ${userId})
+                )
+                ORDER BY u."lastActiveAt" DESC
+                LIMIT ${limit}
+            `;
 
             res.json({ suggestions: communitySuggestions });
             return;
@@ -783,7 +825,7 @@ router.get('/suggestions', async (req: AuthRequest, res, next) => {
         const excludeIds = [userId, ...myConnectionIds, ...blockedIds, ...pendingIds];
 
         // Find 2nd-degree connections (friends of friends) ranked by mutual connection count
-        const suggestions = await prisma.$queryRawUnsafe<Array<{
+        const suggestions = await prisma.$queryRaw<Array<{
             id: string;
             username: string;
             displayName: string;
@@ -791,30 +833,26 @@ router.get('/suggestions', async (req: AuthRequest, res, next) => {
             isVerified: boolean;
             mutualConnectionsCount: number;
             sharedCommunities: number;
-        }>>(
-            `SELECT u.id, u.username, u."displayName", u."avatarUrl", u."isVerified",
-                    COUNT(DISTINCT bridge.id) as "mutualConnectionsCount",
-                    COALESCE(shared_comm.cnt, 0) as "sharedCommunities"
-             FROM "User" u
-             INNER JOIN "Follow" f1 ON f1."followingId" = u.id AND f1."followerId" = ANY($1::text[])
-             INNER JOIN "Follow" f2 ON f2."followerId" = u.id AND f2."followingId" = ANY($1::text[])
-             INNER JOIN "User" bridge ON bridge.id = f1."followerId"
-             LEFT JOIN LATERAL (
-                 SELECT COUNT(*)::int as cnt
-                 FROM "CommunityMember" cm1
-                 INNER JOIN "CommunityMember" cm2 ON cm2."communityId" = cm1."communityId" AND cm2."userId" = $2
-                 WHERE cm1."userId" = u.id
-             ) shared_comm ON true
-             WHERE u.id != ALL($3::text[])
-             AND u."isBanned" = false
-             GROUP BY u.id, u.username, u."displayName", u."avatarUrl", u."isVerified", shared_comm.cnt
-             ORDER BY "mutualConnectionsCount" DESC, "sharedCommunities" DESC, u."lastActiveAt" DESC
-             LIMIT $4`,
-            myConnectionIds,
-            userId,
-            excludeIds,
-            limit
-        );
+        }>>`
+            SELECT u.id, u.username, u."displayName", u."avatarUrl", u."isVerified",
+                   COUNT(DISTINCT bridge.id) as "mutualConnectionsCount",
+                   COALESCE(shared_comm.cnt, 0) as "sharedCommunities"
+            FROM "User" u
+            INNER JOIN "Follow" f1 ON f1."followingId" = u.id AND f1."followerId" = ANY(${myConnectionIds}::text[])
+            INNER JOIN "Follow" f2 ON f2."followerId" = u.id AND f2."followingId" = ANY(${myConnectionIds}::text[])
+            INNER JOIN "User" bridge ON bridge.id = f1."followerId"
+            LEFT JOIN LATERAL (
+                SELECT COUNT(*)::int as cnt
+                FROM "CommunityMember" cm1
+                INNER JOIN "CommunityMember" cm2 ON cm2."communityId" = cm1."communityId" AND cm2."userId" = ${userId}
+                WHERE cm1."userId" = u.id
+            ) shared_comm ON true
+            WHERE u.id != ALL(${excludeIds}::text[])
+            AND u."isBanned" = false
+            GROUP BY u.id, u.username, u."displayName", u."avatarUrl", u."isVerified", shared_comm.cnt
+            ORDER BY "mutualConnectionsCount" DESC, "sharedCommunities" DESC, u."lastActiveAt" DESC
+            LIMIT ${limit}
+        `;
 
         // Convert bigint counts to numbers
         const formattedSuggestions = suggestions.map(s => ({

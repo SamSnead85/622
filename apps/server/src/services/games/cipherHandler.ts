@@ -69,7 +69,7 @@ export const cipherHandler: GameHandler = {
     maxPlayers: 10,
     defaultRounds: 1, // One full game per round
 
-    createInitialState(settings: Record<string, any>): Record<string, any> {
+    createInitialState(settings: Record<string, unknown>): Record<string, unknown> {
         return {
             gridSize: 25,
             teamAWordsCount: 9,
@@ -128,7 +128,7 @@ export const cipherHandler: GameHandler = {
         state.gameData.winner = null;
         state.gameData.trapHit = false;
         state.gameData.phase = 'spymaster_clue'; // 'spymaster_clue' | 'team_guess'
-        state.timerDuration = state.gameData.timerDuration;
+        state.timerDuration = state.gameData.timerDuration as number;
 
         // Give spymasters the full grid
         state.gameData[`_player_${spymasterA}`] = {
@@ -157,10 +157,16 @@ export const cipherHandler: GameHandler = {
         return state;
     },
 
-    handleAction(state: GameState, playerId: string, action: string, payload: any): GameState {
+    handleAction(state: GameState, playerId: string, action: string, payload: Record<string, unknown>): GameState {
         if (state.gameData.gameOver) return state;
 
-        const { currentTeam, teamA, teamB, spymasterA, spymasterB, grid, publicGrid } = state.gameData;
+        const currentTeam = state.gameData.currentTeam as string;
+        const teamA = state.gameData.teamA as string[];
+        const teamB = state.gameData.teamB as string[];
+        const spymasterA = state.gameData.spymasterA as string;
+        const spymasterB = state.gameData.spymasterB as string;
+        const grid = state.gameData.grid as GridWord[];
+        const publicGrid = state.gameData.publicGrid as Array<{ word: string; revealed: boolean; team: string | null }>;
         const currentSpymaster = currentTeam === 'A' ? spymasterA : spymasterB;
         const currentTeamMembers = currentTeam === 'A' ? teamA : teamB;
 
@@ -180,19 +186,19 @@ export const cipherHandler: GameHandler = {
             // Only current team guessers (not spymaster) can guess
             if (!currentTeamMembers.includes(playerId)) return state;
             if (playerId === currentSpymaster) return state;
-            if (state.gameData.guessesRemaining <= 0) return state;
+            if ((state.gameData.guessesRemaining as number) <= 0) return state;
 
             const { wordIndex } = payload;
             if (typeof wordIndex !== 'number' || wordIndex < 0 || wordIndex >= 25) return state;
 
-            const gridWord = grid[wordIndex] as GridWord;
+            const gridWord = grid[wordIndex];
             if (gridWord.revealed) return state; // Already revealed
 
             // Reveal the word
             gridWord.revealed = true;
             publicGrid[wordIndex].revealed = true;
             publicGrid[wordIndex].team = gridWord.team;
-            state.gameData.guessesRemaining--;
+            state.gameData.guessesRemaining = (state.gameData.guessesRemaining as number) - 1;
 
             if (gridWord.team === 'trap') {
                 // Hit the trap! Instant loss
@@ -203,19 +209,19 @@ export const cipherHandler: GameHandler = {
             } else if (gridWord.team === currentTeam) {
                 // Correct guess!
                 if (currentTeam === 'A') {
-                    state.gameData.teamARevealed++;
+                    state.gameData.teamARevealed = (state.gameData.teamARevealed as number) + 1;
                 } else {
-                    state.gameData.teamBRevealed++;
+                    state.gameData.teamBRevealed = (state.gameData.teamBRevealed as number) + 1;
                 }
 
                 // Check win condition
-                if (state.gameData.teamARevealed >= state.gameData.teamAWordsCount) {
+                if ((state.gameData.teamARevealed as number) >= (state.gameData.teamAWordsCount as number)) {
                     state.gameData.gameOver = true;
                     state.gameData.winner = 'A';
-                } else if (state.gameData.teamBRevealed >= state.gameData.teamBWordsCount) {
+                } else if ((state.gameData.teamBRevealed as number) >= (state.gameData.teamBWordsCount as number)) {
                     state.gameData.gameOver = true;
                     state.gameData.winner = 'B';
-                } else if (state.gameData.guessesRemaining <= 0) {
+                } else if ((state.gameData.guessesRemaining as number) <= 0) {
                     // No more guesses, switch team
                     state.gameData.currentTeam = currentTeam === 'A' ? 'B' : 'A';
                     state.gameData.clue = null;
@@ -233,16 +239,16 @@ export const cipherHandler: GameHandler = {
             } else {
                 // Opponent's word! Gives them a reveal + end turn
                 if (gridWord.team === 'A') {
-                    state.gameData.teamARevealed++;
+                    state.gameData.teamARevealed = (state.gameData.teamARevealed as number) + 1;
                 } else {
-                    state.gameData.teamBRevealed++;
+                    state.gameData.teamBRevealed = (state.gameData.teamBRevealed as number) + 1;
                 }
 
                 // Check if this accidentally completed the opponent's set
-                if (state.gameData.teamARevealed >= state.gameData.teamAWordsCount) {
+                if ((state.gameData.teamARevealed as number) >= (state.gameData.teamAWordsCount as number)) {
                     state.gameData.gameOver = true;
                     state.gameData.winner = 'A';
-                } else if (state.gameData.teamBRevealed >= state.gameData.teamBWordsCount) {
+                } else if ((state.gameData.teamBRevealed as number) >= (state.gameData.teamBWordsCount as number)) {
                     state.gameData.gameOver = true;
                     state.gameData.winner = 'B';
                 } else {
@@ -271,8 +277,12 @@ export const cipherHandler: GameHandler = {
         return state.gameData.gameOver === true;
     },
 
-    getRoundResults(state: GameState): { scores: Record<string, number>; summary: any } {
-        const { winner, teamA, teamB, grid, trapHit } = state.gameData;
+    getRoundResults(state: GameState): { scores: Record<string, number>; summary: Record<string, unknown> } {
+        const winner = state.gameData.winner as string;
+        const teamA = state.gameData.teamA as string[];
+        const teamB = state.gameData.teamB as string[];
+        const grid = state.gameData.grid as GridWord[];
+        const trapHit = state.gameData.trapHit as boolean;
         const scores: Record<string, number> = {};
 
         const winningTeam = winner === 'A' ? teamA : teamB;

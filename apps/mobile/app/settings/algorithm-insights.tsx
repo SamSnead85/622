@@ -152,7 +152,8 @@ export default function AlgorithmInsightsScreen() {
             try {
                 const raw = await AsyncStorage.getItem(STORAGE_KEY);
                 if (raw) {
-                    const parsed = JSON.parse(raw) as Partial<FeedWeights>;
+                    let parsed: Partial<FeedWeights>;
+                    try { parsed = JSON.parse(raw); } catch { return; }
                     setWeights({
                         family: parsed.family ?? DEFAULT_WEIGHTS.family,
                         communities: parsed.communities ?? DEFAULT_WEIGHTS.communities,

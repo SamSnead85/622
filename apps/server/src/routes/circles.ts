@@ -1,6 +1,7 @@
 import { Router, Response, NextFunction } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
+import { safeParseInt } from '../utils/validation.js';
 
 const router = Router();
 
@@ -8,7 +9,7 @@ const router = Router();
 router.get('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const userId = req.userId!;
-        const skip = parseInt(req.query.skip as string) || 0;
+        const skip = safeParseInt(req.query.skip, 0, 0, 10000);
         const memberships = await prisma.communityMember.findMany({
             where: { userId },
             include: {

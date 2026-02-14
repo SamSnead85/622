@@ -73,7 +73,7 @@ export const wavelengthHandler: GameHandler = {
     maxPlayers: 12,
     defaultRounds: 10,
 
-    createInitialState(settings: Record<string, any>): Record<string, any> {
+    createInitialState(settings: Record<string, unknown>): Record<string, unknown> {
         return {
             spectrums: shuffleArray([...SPECTRUM_PAIRS]),
             topics: shuffleArray([...CLUE_TOPICS]),
@@ -92,7 +92,11 @@ export const wavelengthHandler: GameHandler = {
     },
 
     onRoundStart(state: GameState): GameState {
-        const { spectrums, topics, spectrumIndex, topicIndex, psychicIndex } = state.gameData;
+        const spectrums = state.gameData.spectrums as SpectrumPair[];
+        const topics = state.gameData.topics as string[];
+        const spectrumIndex = state.gameData.spectrumIndex as number;
+        const topicIndex = state.gameData.topicIndex as number;
+        const psychicIndex = state.gameData.psychicIndex as number;
 
         // Pick spectrum and topic
         const spectrum = spectrums[spectrumIndex % spectrums.length];
@@ -114,7 +118,7 @@ export const wavelengthHandler: GameHandler = {
         state.gameData.spectrumIndex = spectrumIndex + 1;
         state.gameData.topicIndex = topicIndex + 1;
         state.gameData.psychicIndex = psychicIndex + 1;
-        state.timerDuration = state.gameData.timerDuration;
+        state.timerDuration = state.gameData.timerDuration as number;
 
         // Give psychic the target position privately
         state.gameData[`_player_${psychic.id}`] = {
@@ -127,7 +131,7 @@ export const wavelengthHandler: GameHandler = {
         return state;
     },
 
-    handleAction(state: GameState, playerId: string, action: string, payload: any): GameState {
+    handleAction(state: GameState, playerId: string, action: string, payload: Record<string, unknown>): GameState {
         if (action === 'give_clue') {
             // Only psychic can give clue
             if (playerId !== state.gameData.psychicId) return state;
@@ -144,12 +148,12 @@ export const wavelengthHandler: GameHandler = {
             // Must have a clue first
             if (state.gameData.clue === null) return state;
             // Don't allow changing guesses
-            if (state.gameData.guesses[playerId] !== undefined) return state;
+            if ((state.gameData.guesses as Record<string, number>)[playerId] !== undefined) return state;
 
-            const { position } = payload;
+            const position = payload.position;
             if (typeof position !== 'number' || position < 0 || position > 100) return state;
 
-            state.gameData.guesses[playerId] = position;
+            (state.gameData.guesses as Record<string, number>)[playerId] = position;
         }
 
         return state;
@@ -160,13 +164,13 @@ export const wavelengthHandler: GameHandler = {
         if (state.gameData.clue === null) return false;
 
         const guessers = state.players.filter(p => p.id !== state.gameData.psychicId && p.isConnected);
-        const allGuessed = guessers.every(p => state.gameData.guesses[p.id] !== undefined);
+        const allGuessed = guessers.every(p => (state.gameData.guesses as Record<string, number>)[p.id] !== undefined);
 
         return allGuessed;
     },
 
-    getRoundResults(state: GameState): { scores: Record<string, number>; summary: any } {
-        const targetPosition = state.gameData._secret_targetPosition;
+    getRoundResults(state: GameState): { scores: Record<string, number>; summary: Record<string, unknown> } {
+        const targetPosition = state.gameData._secret_targetPosition as number;
         const guesses = state.gameData.guesses as Record<string, number>;
         const scores: Record<string, number> = {};
 
@@ -204,7 +208,7 @@ export const wavelengthHandler: GameHandler = {
 
         // Psychic gets average of others' scores
         const guesserCount = Object.keys(guesses).length;
-        scores[state.gameData.psychicId] = guesserCount > 0 ? Math.round(totalCloseness / guesserCount) : 0;
+        scores[state.gameData.psychicId as string] = guesserCount > 0 ? Math.round(totalCloseness / guesserCount) : 0;
 
         const psychic = state.players.find(p => p.id === state.gameData.psychicId);
 

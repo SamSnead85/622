@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { rateLimiters } from '../middleware/rateLimit.js';
+import { safeParseInt } from '../utils/validation.js';
 
 const router = Router();
 
@@ -51,8 +52,8 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
             return res.status(403).json({ error: 'Forbidden' });
         }
 
-        const page = Math.max(1, parseInt(req.query.page as string) || 1);
-        const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const page = safeParseInt(req.query.page, 1, 1, 10000);
+        const limit = safeParseInt(req.query.limit, 50, 1, 100);
         const skip = (page - 1) * limit;
 
         const [reports, total] = await Promise.all([

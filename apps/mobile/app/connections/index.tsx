@@ -390,7 +390,7 @@ function MyCircleTab() {
         <Animated.View entering={FadeInDown.delay(index * 40).duration(300).springify()}>
             <ConnectionCard
                 user={item.user}
-                onPress={() => router.push(`/profile/${item.user.username}` as any)}
+                onPress={() => router.push(`/profile/${item.user?.username}` as any)}
                 rightElement={
                     <View style={styles.circleRight}>
                         {item.mutualCount != null && item.mutualCount > 0 && (
@@ -402,7 +402,7 @@ function MyCircleTab() {
                         <TouchableOpacity
                             onPress={() => handleRemove(item)}
                             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                            accessibilityLabel={`Remove ${item.user.displayName}`}
+                            accessibilityLabel={`Remove ${item.user?.displayName}`}
                         >
                             <Ionicons name="ellipsis-horizontal" size={18} color={c.text.muted} />
                         </TouchableOpacity>
@@ -578,7 +578,7 @@ function RequestsTab() {
             <Animated.View entering={FadeInDown.delay(index * 40).duration(300).springify()}>
                 <ConnectionCard
                     user={item.user}
-                    onPress={() => router.push(`/profile/${item.user.username}` as any)}
+                    onPress={() => router.push(`/profile/${item.user?.username}` as any)}
                     rightElement={
                         <View style={styles.requestActions}>
                             {item.mutualCount != null && item.mutualCount > 0 && (
@@ -596,13 +596,13 @@ function RequestsTab() {
                                             style={styles.declineBtn}
                                             onPress={() => handleDecline(item)}
                                             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                                            accessibilityLabel={`Decline ${item.user.displayName}`}
+                                            accessibilityLabel={`Decline ${item.user?.displayName}`}
                                         >
                                             <Ionicons name="close" size={18} color={colors.coral[400]} />
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             onPress={() => handleAccept(item)}
-                                            accessibilityLabel={`Accept ${item.user.displayName}`}
+                                            accessibilityLabel={`Accept ${item.user?.displayName}`}
                                             activeOpacity={0.8}
                                         >
                                             <LinearGradient
@@ -636,7 +636,7 @@ function RequestsTab() {
             <Animated.View entering={FadeInDown.delay(index * 40).duration(300).springify()}>
                 <ConnectionCard
                     user={item.user}
-                    onPress={() => router.push(`/profile/${item.user.username}` as any)}
+                    onPress={() => router.push(`/profile/${item.user?.username}` as any)}
                     rightElement={
                         <View style={styles.sentRight}>
                             <Text style={[styles.sentStatus, { color: c.text.muted }]}>
@@ -649,7 +649,7 @@ function RequestsTab() {
                                     style={[styles.cancelBtn, { borderColor: c.border.subtle }]}
                                     onPress={() => handleCancelSent(item)}
                                     activeOpacity={0.7}
-                                    accessibilityLabel={`Cancel request to ${item.user.displayName}`}
+                                    accessibilityLabel={`Cancel request to ${item.user?.displayName}`}
                                 >
                                     <Text style={[styles.cancelBtnText, { color: colors.coral[400] }]}>Cancel</Text>
                                 </TouchableOpacity>
@@ -782,33 +782,33 @@ function DiscoverTab() {
     }, []);
 
     const renderItem = useCallback(({ item, index }: { item: Suggestion; index: number }) => {
-        const isConnecting = connectingIds.has(item.user.id);
-        const isConnected = connectedIds.has(item.user.id);
+        const isConnecting = connectingIds.has(item.user?.id);
+        const isConnected = connectedIds.has(item.user?.id);
 
         return (
             <Animated.View entering={FadeInDown.delay(index * 40).duration(300).springify()}>
                 <TouchableOpacity
                     style={[styles.suggestionCard, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}
-                    onPress={() => router.push(`/profile/${item.user.username}` as any)}
+                    onPress={() => router.push(`/profile/${item.user?.username}` as any)}
                     activeOpacity={0.7}
                     accessibilityRole="button"
-                    accessibilityLabel={`${item.user.displayName}, ${item.degree}nd degree connection`}
+                    accessibilityLabel={`${item.user?.displayName}, ${item.degree}nd degree connection`}
                 >
                     <View style={styles.suggestionTop}>
-                        <Avatar uri={item.user.avatarUrl} name={item.user.displayName || '?'} customSize={56} />
+                        <Avatar uri={item.user?.avatarUrl} name={item.user?.displayName || '?'} customSize={56} />
                         <DegreeBadge degree={item.degree} />
                     </View>
 
                     <Text style={[styles.suggestionName, { color: c.text.primary }]} numberOfLines={1}>
-                        {item.user.displayName}
+                        {item.user?.displayName}
                     </Text>
-                    {item.user.isVerified && (
+                    {item.user?.isVerified && (
                         <View style={styles.verifiedRow}>
                             <Ionicons name="checkmark-circle" size={12} color={colors.gold[500]} />
                         </View>
                     )}
                     <Text style={[styles.suggestionUsername, { color: c.text.muted }]} numberOfLines={1}>
-                        @{item.user.username}
+                        @{item.user?.username}
                     </Text>
 
                     {item.mutualCount > 0 && (
@@ -837,7 +837,7 @@ function DiscoverTab() {
                             onPress={() => handleConnect(item)}
                             disabled={isConnecting}
                             activeOpacity={0.8}
-                            accessibilityLabel={`Connect with ${item.user.displayName}`}
+                            accessibilityLabel={`Connect with ${item.user?.displayName}`}
                         >
                             <LinearGradient
                                 colors={[colors.gold[500], colors.gold[600]]}

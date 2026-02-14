@@ -9,6 +9,7 @@ import { sendAlert } from '../services/alerting.js';
 import { logger } from '../utils/logger.js';
 import { propagateVouchStrike } from '../services/trustChainService.js';
 import { rateLimiters } from '../middleware/rateLimit.js';
+import { safeParseInt } from '../utils/validation.js';
 
 const router = Router();
 
@@ -36,9 +37,10 @@ const requireSuperAdmin = (req: AuthRequest, res: any, next: any) => {
 // GET /api/v1/admin/users — List all users with filtering
 router.get('/users', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const { search, role, status, page = '1', limit = '20' } = req.query;
-        const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-        const take = parseInt(limit as string);
+        const { search, role, status } = req.query;
+        const page = safeParseInt(req.query.page, 1, 1, 10000);
+        const take = safeParseInt(req.query.limit, 20, 1, 100);
+        const skip = (page - 1) * take;
 
         const where: Record<string, unknown> = {};
         if (search) {
@@ -84,7 +86,7 @@ router.get('/users', authenticate, requireAdmin, async (req: AuthRequest, res, n
             prisma.user.count({ where }),
         ]);
 
-        res.json({ users, total, page: parseInt(page as string), totalPages: Math.ceil(total / take) });
+        res.json({ users, total, page, totalPages: Math.ceil(total / take) });
     } catch (error) {
         next(error);
     }
@@ -298,8 +300,8 @@ router.delete('/strikes/:id', authenticate, requireAdmin, rateLimiters.general, 
 // GET /api/v1/admin/strikes — List all active strikes
 router.get('/strikes', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const page = Math.max(1, parseInt(req.query.page as string) || 1);
-        const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const page = safeParseInt(req.query.page, 1, 1, 10000);
+        const limit = safeParseInt(req.query.limit, 50, 1, 100);
         const skip = (page - 1) * limit;
 
         const where = { isActive: true };
@@ -331,9 +333,9 @@ router.get('/strikes', authenticate, requireAdmin, async (req: AuthRequest, res,
 // GET /api/v1/admin/posts — List posts for moderation
 router.get('/posts', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const { page = '1', limit = '20' } = req.query;
-        const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-        const take = parseInt(limit as string);
+        const page = safeParseInt(req.query.page, 1, 1, 10000);
+        const take = safeParseInt(req.query.limit, 20, 1, 100);
+        const skip = (page - 1) * take;
 
         const [posts, total] = await Promise.all([
             prisma.post.findMany({
@@ -348,7 +350,7 @@ router.get('/posts', authenticate, requireAdmin, async (req: AuthRequest, res, n
             prisma.post.count(),
         ]);
 
-        res.json({ posts, total, page: parseInt(page as string), totalPages: Math.ceil(total / take) });
+        res.json({ posts, total, page, totalPages: Math.ceil(total / take) });
     } catch (error) {
         next(error);
     }
@@ -370,8 +372,8 @@ router.delete('/posts/:id', authenticate, requireAdmin, rateLimiters.general, as
 // GET /api/v1/admin/reports — List pending reports
 router.get('/reports', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const page = Math.max(1, parseInt(req.query.page as string) || 1);
-        const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+        const page = safeParseInt(req.query.page, 1, 1, 10000);
+        const limit = safeParseInt(req.query.limit, 50, 1, 100);
         const skip = (page - 1) * limit;
 
         const VALID_REPORT_STATUSES = ['PENDING', 'REVIEWING', 'RESOLVED', 'DISMISSED'] as const;
@@ -456,7 +458,7 @@ router.get('/stats', authenticate, requireAdmin, async (req: AuthRequest, res, n
 // GET /api/v1/admin/threats — Recent threat events
 router.get('/threats', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+        const limit = safeParseInt(req.query.limit, 50, 1, 200);
         const threats = getRecentThreats(limit);
         res.json({ threats, count: threats.length });
     } catch (error) {
@@ -490,8 +492,8 @@ router.get('/threats/summary', authenticate, requireAdmin, async (req: AuthReque
 // GET /api/v1/admin/security/audit-log — Security audit log
 router.get('/security/audit-log', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-        const offset = parseInt(req.query.offset as string) || 0;
+        const limit = safeParseInt(req.query.limit, 50, 1, 200);
+        const offset = safeParseInt(req.query.offset, 0, 0, 10000);
         const action = req.query.action as string | undefined;
         const severity = req.query.severity as string | undefined;
 
@@ -615,8 +617,8 @@ router.post('/threats/action', authenticate, requireAdmin, rateLimiters.general,
 // GET /api/v1/admin/moderation-queue — Posts held for review
 router.get('/moderation-queue', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
     try {
-        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-        const offset = parseInt(req.query.offset as string) || 0;
+        const limit = safeParseInt(req.query.limit, 20, 1, 100);
+        const offset = safeParseInt(req.query.offset, 0, 0, 10000);
 
         const [posts, total] = await Promise.all([
             prisma.post.findMany({

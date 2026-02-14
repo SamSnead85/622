@@ -75,14 +75,14 @@ export const triviaHandler: GameHandler = {
     maxPlayers: 20,
     defaultRounds: 10,
 
-    createInitialState(settings: Record<string, any>): Record<string, any> {
+    createInitialState(settings: Record<string, unknown>): Record<string, unknown> {
         const category = settings.category || 'all';
         let questions = category === 'all'
             ? [...QUESTION_BANK]
             : QUESTION_BANK.filter(q => q.category === category);
 
         questions = shuffleArray(questions);
-        const numQuestions = settings.rounds || 10;
+        const numQuestions = (settings.rounds as number) || 10;
         questions = questions.slice(0, numQuestions);
 
         return {
@@ -96,7 +96,7 @@ export const triviaHandler: GameHandler = {
     },
 
     onRoundStart(state: GameState): GameState {
-        const { questions } = state.gameData;
+        const questions = state.gameData.questions as TriviaQuestion[];
         const questionIndex = state.round - 1;
 
         if (questionIndex >= questions.length) {
@@ -104,7 +104,7 @@ export const triviaHandler: GameHandler = {
             return state;
         }
 
-        const question = questions[questionIndex];
+        const question = questions[questionIndex] as TriviaQuestion;
         state.gameData.currentQuestionIndex = questionIndex;
         state.gameData.currentQuestion = {
             question: question.question,
@@ -115,20 +115,20 @@ export const triviaHandler: GameHandler = {
         state.gameData._private_correctIndex = question.correctIndex;
         state.gameData.answers = {};
         state.gameData.questionStartedAt = Date.now();
-        state.timerDuration = state.gameData.timerDuration;
+        state.timerDuration = state.gameData.timerDuration as number;
 
         return state;
     },
 
-    handleAction(state: GameState, playerId: string, action: string, payload: any): GameState {
+    handleAction(state: GameState, playerId: string, action: string, payload: Record<string, unknown>): GameState {
         if (action === 'answer') {
-            const { answerIndex } = payload;
+            const answerIndex = payload.answerIndex;
             if (typeof answerIndex !== 'number' || answerIndex < 0 || answerIndex > 3) return state;
 
             // Don't allow changing answers
-            if (state.gameData.answers[playerId]) return state;
+            if ((state.gameData.answers as Record<string, unknown>)[playerId]) return state;
 
-            state.gameData.answers[playerId] = {
+            (state.gameData.answers as Record<string, { answerIndex: number; timestamp: number }>)[playerId] = {
                 answerIndex,
                 timestamp: Date.now(),
             };
@@ -138,12 +138,12 @@ export const triviaHandler: GameHandler = {
 
     isRoundOver(state: GameState): boolean {
         const connectedPlayers = state.players.filter(p => p.isConnected);
-        const allAnswered = connectedPlayers.every(p => state.gameData.answers[p.id]);
-        const timedOut = Date.now() - state.gameData.questionStartedAt > (state.gameData.timerDuration * 1000 + 1000);
+        const allAnswered = connectedPlayers.every(p => (state.gameData.answers as Record<string, unknown>)[p.id]);
+        const timedOut = Date.now() - (state.gameData.questionStartedAt as number) > ((state.gameData.timerDuration as number) * 1000 + 1000);
         return allAnswered || timedOut;
     },
 
-    getRoundResults(state: GameState): { scores: Record<string, number>; summary: any } {
+    getRoundResults(state: GameState): { scores: Record<string, number>; summary: Record<string, unknown> } {
         const correctIndex = state.gameData._private_correctIndex;
         const answers = state.gameData.answers as Record<string, { answerIndex: number; timestamp: number }>;
         const scores: Record<string, number> = {};
@@ -154,7 +154,7 @@ export const triviaHandler: GameHandler = {
         // First pass: find fastest correct answer
         for (const [playerId, answer] of Object.entries(answers)) {
             if (answer.answerIndex === correctIndex) {
-                const responseTime = answer.timestamp - state.gameData.questionStartedAt;
+                const responseTime = answer.timestamp - (state.gameData.questionStartedAt as number);
                 if (responseTime < fastestCorrectTime) {
                     fastestCorrectTime = responseTime;
                     fastestPlayerId = playerId;
@@ -181,13 +181,13 @@ export const triviaHandler: GameHandler = {
             }
         }
 
-        const question = state.gameData.questions[state.gameData.currentQuestionIndex];
+        const question = (state.gameData.questions as TriviaQuestion[])[state.gameData.currentQuestionIndex as number];
 
         return {
             scores,
             summary: {
                 correctIndex,
-                correctAnswer: question.options[correctIndex],
+                correctAnswer: question.options[correctIndex as number],
                 question: question.question,
                 answers,
                 fastestPlayer: fastestPlayerId,
@@ -196,6 +196,6 @@ export const triviaHandler: GameHandler = {
     },
 
     isGameOver(state: GameState): boolean {
-        return state.round >= state.totalRounds || state.round >= state.gameData.questions.length;
+        return state.round >= state.totalRounds || state.round >= (state.gameData.questions as TriviaQuestion[]).length;
     },
 };

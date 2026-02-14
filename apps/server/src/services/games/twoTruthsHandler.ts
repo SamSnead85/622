@@ -91,7 +91,7 @@ export const twoTruthsHandler: GameHandler = {
     maxPlayers: 8,
     defaultRounds: 0, // Set dynamically based on player count
 
-    createInitialState(settings: Record<string, any>): Record<string, any> {
+    createInitialState(settings: Record<string, unknown>): Record<string, unknown> {
         return {
             premadeSets: shuffleArray([...PREMADE_SETS]),
             premadeIndex: 0,
@@ -128,10 +128,11 @@ export const twoTruthsHandler: GameHandler = {
         state.gameData.guesses = {};
         state.gameData.phase = 'storytelling';
         state.gameData.revealData = null;
-        state.timerDuration = state.gameData.timerDuration;
+        state.timerDuration = state.gameData.timerDuration as number;
 
         // Send the next premade set index so the storyteller can use "random prompt"
-        const { premadeSets, premadeIndex } = state.gameData;
+        const premadeSets = state.gameData.premadeSets as StatementSet[];
+        const premadeIndex = state.gameData.premadeIndex as number;
         const nextPremade = premadeSets[premadeIndex % premadeSets.length];
 
         // Store storyteller-specific private data
@@ -152,7 +153,7 @@ export const twoTruthsHandler: GameHandler = {
         return state;
     },
 
-    handleAction(state: GameState, playerId: string, action: string, payload: any): GameState {
+    handleAction(state: GameState, playerId: string, action: string, payload: Record<string, unknown>): GameState {
         const { storytellerId } = state.gameData;
 
         if (action === 'truths:submit') {
@@ -176,7 +177,7 @@ export const twoTruthsHandler: GameHandler = {
             state.gameData.phase = 'guessing';
 
             // Advance premade index for next time
-            state.gameData.premadeIndex = (state.gameData.premadeIndex || 0) + 1;
+            state.gameData.premadeIndex = ((state.gameData.premadeIndex as number) || 0) + 1;
 
             return state;
         }
@@ -187,12 +188,12 @@ export const twoTruthsHandler: GameHandler = {
             // Can't guess before statements are submitted
             if (state.gameData.phase !== 'guessing') return state;
             // Can't change guess
-            if (state.gameData.guesses[playerId] !== undefined) return state;
+            if ((state.gameData.guesses as Record<string, number>)[playerId] !== undefined) return state;
 
             const { guessIndex } = payload as { guessIndex: number };
             if (typeof guessIndex !== 'number' || guessIndex < 0 || guessIndex > 2) return state;
 
-            state.gameData.guesses[playerId] = guessIndex;
+            (state.gameData.guesses as Record<string, number>)[playerId] = guessIndex;
 
             return state;
         }
@@ -210,13 +211,13 @@ export const twoTruthsHandler: GameHandler = {
             p => p.id !== state.gameData.storytellerId && p.isConnected
         );
         const allGuessed = guessers.every(
-            p => state.gameData.guesses[p.id] !== undefined
+            p => (state.gameData.guesses as Record<string, number>)[p.id] !== undefined
         );
 
         return allGuessed;
     },
 
-    getRoundResults(state: GameState): { scores: Record<string, number>; summary: any } {
+    getRoundResults(state: GameState): { scores: Record<string, number>; summary: Record<string, unknown> } {
         const lieIndex = state.gameData._secret_lieIndex as number;
         const guesses = state.gameData.guesses as Record<string, number>;
         const storytellerId = state.gameData.storytellerId as string;

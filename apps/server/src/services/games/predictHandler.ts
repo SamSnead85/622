@@ -59,7 +59,7 @@ export const predictHandler: GameHandler = {
     maxPlayers: 12,
     defaultRounds: 0, // Will be set to number of players
 
-    createInitialState(settings: Record<string, any>): Record<string, any> {
+    createInitialState(settings: Record<string, unknown>): Record<string, unknown> {
         return {
             questions: shuffleArray([...PREDICTION_QUESTIONS]),
             questionIndex: 0,
@@ -67,7 +67,7 @@ export const predictHandler: GameHandler = {
             currentSubjectId: null,
             currentQuestion: null,
             _private_subjectAnswer: null,
-            predictions: {} as Record<string, any>,
+            predictions: {} as Record<string, unknown>,
             phase: 'waiting', // 'subject_answering' | 'predicting' | 'reveal'
             timerDuration: settings.timerSeconds || 20,
         };
@@ -83,7 +83,8 @@ export const predictHandler: GameHandler = {
         const subject = state.players[subjectIndex];
 
         // Pick a question
-        const { questions, questionIndex } = state.gameData;
+        const questions = state.gameData.questions as PredictionQuestion[];
+        const questionIndex = state.gameData.questionIndex as number;
         const question = questions[questionIndex % questions.length];
 
         // Fill in player name in template
@@ -99,7 +100,7 @@ export const predictHandler: GameHandler = {
         state.gameData.predictions = {};
         state.gameData.phase = 'subject_answering';
         state.gameData.questionIndex = questionIndex + 1;
-        state.timerDuration = state.gameData.timerDuration;
+        state.timerDuration = state.gameData.timerDuration as number;
 
         // Store subject-specific data privately
         state.gameData[`_player_${subject.id}`] = {
@@ -110,7 +111,7 @@ export const predictHandler: GameHandler = {
         return state;
     },
 
-    handleAction(state: GameState, playerId: string, action: string, payload: any): GameState {
+    handleAction(state: GameState, playerId: string, action: string, payload: Record<string, unknown>): GameState {
         const { currentSubjectId } = state.gameData;
 
         if (action === 'subject_answer') {
@@ -124,9 +125,9 @@ export const predictHandler: GameHandler = {
             // Subject cannot predict
             if (playerId === currentSubjectId) return state;
             // Don't allow changing predictions
-            if (state.gameData.predictions[playerId] !== undefined) return state;
+            if ((state.gameData.predictions as Record<string, unknown>)[playerId] !== undefined) return state;
 
-            state.gameData.predictions[playerId] = payload.prediction;
+            (state.gameData.predictions as Record<string, unknown>)[playerId] = payload.prediction;
         }
 
         return state;
@@ -136,15 +137,15 @@ export const predictHandler: GameHandler = {
         if (state.gameData._private_subjectAnswer === null) return false;
 
         const predictors = state.players.filter(p => p.id !== state.gameData.currentSubjectId && p.isConnected);
-        const allPredicted = predictors.every(p => state.gameData.predictions[p.id] !== undefined);
+        const allPredicted = predictors.every(p => (state.gameData.predictions as Record<string, unknown>)[p.id] !== undefined);
 
         return allPredicted;
     },
 
-    getRoundResults(state: GameState): { scores: Record<string, number>; summary: any } {
+    getRoundResults(state: GameState): { scores: Record<string, number>; summary: Record<string, unknown> } {
         const subjectAnswer = state.gameData._private_subjectAnswer;
-        const predictions = state.gameData.predictions as Record<string, any>;
-        const question = state.gameData.currentQuestion;
+        const predictions = state.gameData.predictions as Record<string, unknown>;
+        const question = state.gameData.currentQuestion as PredictionQuestion & { template: string };
         const scores: Record<string, number> = {};
 
         for (const player of state.players) {
@@ -159,7 +160,7 @@ export const predictHandler: GameHandler = {
                 continue;
             }
 
-            if (question.type === 'scale') {
+            if (question && question.type === 'scale') {
                 const diff = Math.abs(Number(prediction) - Number(subjectAnswer));
                 if (diff === 0) {
                     scores[player.id] = 100; // Exact match

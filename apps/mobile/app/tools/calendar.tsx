@@ -162,7 +162,9 @@ export default function CalendarScreen() {
         (async () => {
             try {
                 const stored = await AsyncStorage.getItem(STORAGE_KEY);
-                if (stored) setEvents(JSON.parse(stored));
+                if (stored) {
+                    try { setEvents(JSON.parse(stored)); } catch { /* corrupted data — start fresh */ }
+                }
             } catch { /* storage read failure — start fresh */ }
         })();
     }, []);

@@ -22,8 +22,8 @@ export interface GameState {
     hostId: string;
     round: number;
     totalRounds: number;
-    settings: Record<string, any>;
-    gameData: Record<string, any>; // game-specific state
+    settings: Record<string, unknown>;
+    gameData: Record<string, unknown>; // game-specific state
     roundStartedAt?: number;
     timerDuration?: number; // seconds
 }
@@ -33,11 +33,11 @@ export interface GameHandler {
     minPlayers: number;
     maxPlayers: number;
     defaultRounds: number;
-    createInitialState(settings: Record<string, any>): Record<string, any>;
+    createInitialState(settings: Record<string, unknown>): Record<string, unknown>;
     onRoundStart(state: GameState): GameState;
-    handleAction(state: GameState, playerId: string, action: string, payload: any): GameState;
+    handleAction(state: GameState, playerId: string, action: string, payload: Record<string, unknown>): GameState;
     isRoundOver(state: GameState): boolean;
-    getRoundResults(state: GameState): { scores: Record<string, number>; summary: any };
+    getRoundResults(state: GameState): { scores: Record<string, number>; summary: Record<string, unknown> };
     isGameOver(state: GameState): boolean;
 }
 
@@ -72,7 +72,7 @@ function generateCode(): string {
 // Game Lifecycle
 // ============================================
 
-export function createGame(type: string, hostPlayer: { userId?: string; name: string; avatarUrl?: string }, settings: Record<string, any> = {}): GameState {
+export function createGame(type: string, hostPlayer: { userId?: string; name: string; avatarUrl?: string }, settings: Record<string, unknown> = {}): GameState {
     const handler = gameHandlers.get(type);
     if (!handler) throw new Error(`Unknown game type: ${type}`);
 
@@ -94,7 +94,7 @@ export function createGame(type: string, hostPlayer: { userId?: string; name: st
         }],
         hostId,
         round: 0,
-        totalRounds: settings.rounds || handler.defaultRounds,
+        totalRounds: (settings.rounds as number) || handler.defaultRounds,
         settings,
         gameData: handler.createInitialState(settings),
     };
@@ -156,7 +156,7 @@ export function startGame(code: string, requesterId: string): GameState {
     return newState;
 }
 
-export function handleGameAction(code: string, playerId: string, action: string, payload: any): { state: GameState; roundEnded: boolean; gameEnded: boolean; roundResults?: any } {
+export function handleGameAction(code: string, playerId: string, action: string, payload: Record<string, unknown>): { state: GameState; roundEnded: boolean; gameEnded: boolean; roundResults?: { scores: Record<string, number>; summary: Record<string, unknown> } } {
     const state = activeGames.get(code);
     if (!state) throw new Error('Game not found');
     if (state.status !== 'playing') throw new Error('Game is not in progress');
@@ -168,7 +168,7 @@ export function handleGameAction(code: string, playerId: string, action: string,
 
     let roundEnded = false;
     let gameEnded = false;
-    let roundResults: { scores: Record<string, number>; summary: unknown } | undefined = undefined;
+    let roundResults: { scores: Record<string, number>; summary: Record<string, unknown> } | undefined = undefined;
 
     if (handler.isRoundOver(newState)) {
         roundEnded = true;

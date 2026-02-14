@@ -75,7 +75,8 @@ export default function BoycottScannerScreen() {
             try {
                 const cached = await AsyncStorage.getItem(BOYCOTT_CACHE_KEY);
                 if (cached) {
-                    const { data } = JSON.parse(cached);
+                    let data: any;
+                    try { ({ data } = JSON.parse(cached)); } catch { data = null; }
                     if (Array.isArray(data) && data.length > 0) {
                         setBrands(data);
                         // Don't show error — we have stale data

@@ -138,7 +138,9 @@ export default function ToolsHub() {
         (async () => {
             try {
                 const stored = await AsyncStorage.getItem(RECENT_TOOLS_KEY);
-                if (stored) setRecentTools(JSON.parse(stored));
+                if (stored) {
+                    try { setRecentTools(JSON.parse(stored)); } catch { /* corrupted data */ }
+                }
             } catch { /* ignore */ }
         })();
     }, []);

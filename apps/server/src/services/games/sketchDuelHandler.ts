@@ -159,7 +159,7 @@ export const sketchDuelHandler: GameHandler = {
     maxPlayers: 8,
     defaultRounds: 0, // Will be set based on player count
 
-    createInitialState(settings: Record<string, any>): Record<string, any> {
+    createInitialState(settings: Record<string, unknown>): Record<string, unknown> {
         return {
             words: shuffleArray([...WORD_BANK]),
             wordIndex: 0,
@@ -189,7 +189,8 @@ export const sketchDuelHandler: GameHandler = {
         const artist = state.players[artistIndex];
 
         // Pick a word
-        const { words, wordIndex } = state.gameData;
+        const words = state.gameData.words as DrawWord[];
+        const wordIndex = state.gameData.wordIndex as number;
         const wordEntry = words[wordIndex % words.length];
 
         // Generate hint (letter count with spaces preserved)
@@ -209,7 +210,7 @@ export const sketchDuelHandler: GameHandler = {
         state.gameData.phase = 'drawing';
         state.gameData.roundScores = {};
         state.gameData.wordIndex = wordIndex + 1;
-        state.timerDuration = state.gameData.timerDuration;
+        state.timerDuration = state.gameData.timerDuration as number;
 
         // Store artist-specific data (the word to draw)
         state.gameData[`_player_${artist.id}`] = {
@@ -223,8 +224,9 @@ export const sketchDuelHandler: GameHandler = {
         return state;
     },
 
-    handleAction(state: GameState, playerId: string, action: string, payload: any): GameState {
-        const { artistId, _private_currentWord } = state.gameData;
+    handleAction(state: GameState, playerId: string, action: string, payload: Record<string, unknown>): GameState {
+        const artistId = state.gameData.artistId as string;
+        const _private_currentWord = state.gameData._private_currentWord as string;
 
         if (action === 'sketch:draw') {
             // Only the artist can draw
@@ -232,12 +234,14 @@ export const sketchDuelHandler: GameHandler = {
             if (state.gameData.phase !== 'drawing') return state;
 
             // Validate stroke data
-            const stroke = payload?.stroke;
-            if (!stroke || !Array.isArray(stroke.points) || stroke.points.length === 0) return state;
+            const stroke = payload?.stroke as Record<string, unknown> | undefined;
+            if (!stroke) return state;
+            const strokePoints = stroke.points;
+            if (!Array.isArray(strokePoints) || strokePoints.length === 0) return state;
 
             // Sanitize stroke data
             const sanitizedStroke = {
-                points: stroke.points.slice(0, 500).map((p: any) => ({
+                points: (strokePoints as Array<Record<string, unknown>>).slice(0, 500).map((p) => ({
                     x: typeof p.x === 'number' ? p.x : 0,
                     y: typeof p.y === 'number' ? p.y : 0,
                 })),
@@ -245,7 +249,7 @@ export const sketchDuelHandler: GameHandler = {
                 width: typeof stroke.width === 'number' ? Math.min(Math.max(stroke.width, 1), 20) : 3,
             };
 
-            state.gameData.strokes = [...state.gameData.strokes, sanitizedStroke];
+            state.gameData.strokes = [...(state.gameData.strokes as Array<unknown>), sanitizedStroke];
             return state;
 
         } else if (action === 'sketch:clear') {
@@ -265,8 +269,8 @@ export const sketchDuelHandler: GameHandler = {
             if (!guessText || guessText.length > 100) return state;
 
             // Check if player already guessed correctly
-            const alreadyCorrect = state.gameData.correctGuessers.some(
-                (g: { playerId: string }) => g.playerId === playerId,
+            const alreadyCorrect = (state.gameData.correctGuessers as Array<{ playerId: string }>).some(
+                (g) => g.playerId === playerId,
             );
             if (alreadyCorrect) return state;
 
@@ -274,7 +278,7 @@ export const sketchDuelHandler: GameHandler = {
             const playerName = player?.name || 'Player';
 
             // Check if guess is correct
-            const isCorrect = normalizeGuess(guessText) === normalizeGuess(_private_currentWord);
+            const isCorrect = normalizeGuess(guessText) === normalizeGuess(_private_currentWord as string);
 
             // Add to guesses feed (for chat display)
             const guess = {
@@ -284,12 +288,12 @@ export const sketchDuelHandler: GameHandler = {
                 isCorrect,
                 timestamp: Date.now(),
             };
-            state.gameData.guesses = [...state.gameData.guesses, guess];
+            state.gameData.guesses = [...(state.gameData.guesses as Array<unknown>), guess];
 
             if (isCorrect) {
-                const order = state.gameData.correctGuessers.length + 1;
+                const order = (state.gameData.correctGuessers as Array<unknown>).length + 1;
                 state.gameData.correctGuessers = [
-                    ...state.gameData.correctGuessers,
+                    ...(state.gameData.correctGuessers as Array<unknown>),
                     { playerId, playerName, order, timestamp: Date.now() },
                 ];
 
@@ -305,8 +309,9 @@ export const sketchDuelHandler: GameHandler = {
                 // Artist gets +5 per correct guesser
                 const artistScore = 5;
 
-                state.gameData.roundScores[playerId] = (state.gameData.roundScores[playerId] || 0) + guesserScore;
-                state.gameData.roundScores[artistId] = (state.gameData.roundScores[artistId] || 0) + artistScore;
+                const roundScores = state.gameData.roundScores as Record<string, number>;
+                roundScores[playerId] = (roundScores[playerId] || 0) + guesserScore;
+                roundScores[artistId] = (roundScores[artistId] || 0) + artistScore;
 
                 logger.info(`Sketch Duel [${state.code}]: ${playerName} guessed correctly (order: ${order}, +${guesserScore}pts)`);
             }
@@ -331,16 +336,16 @@ export const sketchDuelHandler: GameHandler = {
             p => p.id !== state.gameData.artistId && p.isConnected,
         );
         const allGuessed = nonArtistPlayers.length > 0 && nonArtistPlayers.every(
-            p => state.gameData.correctGuessers.some(
-                (g: { playerId: string }) => g.playerId === p.id,
+            p => (state.gameData.correctGuessers as Array<{ playerId: string }>).some(
+                (g) => g.playerId === p.id,
             ),
         );
 
         return allGuessed;
     },
 
-    getRoundResults(state: GameState): { scores: Record<string, number>; summary: any } {
-        const scores: Record<string, number> = { ...state.gameData.roundScores };
+    getRoundResults(state: GameState): { scores: Record<string, number>; summary: Record<string, unknown> } {
+        const scores: Record<string, number> = { ...(state.gameData.roundScores as Record<string, number>) };
 
         // Ensure all players have a score entry
         for (const player of state.players) {
@@ -358,7 +363,7 @@ export const sketchDuelHandler: GameHandler = {
                 category: state.gameData.currentCategory,
                 artist: artist ? { id: artist.id, name: artist.name } : null,
                 correctGuessers: state.gameData.correctGuessers,
-                totalGuesses: state.gameData.guesses.length,
+                totalGuesses: (state.gameData.guesses as Array<unknown>).length,
             },
         };
     },

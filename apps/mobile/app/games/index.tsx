@@ -80,7 +80,9 @@ type AchievementProgress = Record<string, number>;
 async function getAchievementProgress(): Promise<AchievementProgress> {
     try {
         const data = await AsyncStorage.getItem(ACHIEVEMENTS_KEY);
-        if (data) return JSON.parse(data);
+        if (data) {
+            try { return JSON.parse(data); } catch { /* corrupted data */ }
+        }
     } catch { /* non-critical */ }
     return {};
 }
@@ -213,7 +215,9 @@ const games: GameDef[] = [
 async function getRecentlyPlayed(): Promise<string[]> {
     try {
         const data = await AsyncStorage.getItem(RECENTLY_PLAYED_KEY);
-        if (data) return JSON.parse(data);
+        if (data) {
+            try { return JSON.parse(data); } catch { /* corrupted data */ }
+        }
     } catch { /* non-critical */ }
     return [];
 }

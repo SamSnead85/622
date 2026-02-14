@@ -36,7 +36,7 @@ export const infiltratorHandler: GameHandler = {
     maxPlayers: 10,
     defaultRounds: 3,
 
-    createInitialState(settings: Record<string, any>): Record<string, any> {
+    createInitialState(settings: Record<string, unknown>): Record<string, unknown> {
         return {
             words: shuffleArray([...SECRET_WORDS]),
             wordIndex: 0,
@@ -59,7 +59,8 @@ export const infiltratorHandler: GameHandler = {
     },
 
     onRoundStart(state: GameState): GameState {
-        const { words, wordIndex } = state.gameData;
+        const words = state.gameData.words as string[];
+        const wordIndex = state.gameData.wordIndex as number;
         const secretWord = words[wordIndex % words.length];
 
         // Pick random infiltrator
@@ -75,7 +76,7 @@ export const infiltratorHandler: GameHandler = {
         state.gameData.votes = {};
         state.gameData.infiltratorGuess = null;
         state.gameData.phase = 'questioning';
-        state.timerDuration = state.gameData.timerDuration;
+        state.timerDuration = state.gameData.timerDuration as number;
 
         // Create ask order (cycle through players)
         const askOrder = shuffleArray(connectedPlayers.map(p => p.id));
@@ -107,7 +108,7 @@ export const infiltratorHandler: GameHandler = {
         return state;
     },
 
-    handleAction(state: GameState, playerId: string, action: string, payload: any): GameState {
+    handleAction(state: GameState, playerId: string, action: string, payload: Record<string, unknown>): GameState {
         const { phase, _secret_infiltratorId } = state.gameData;
 
         if (action === 'ask_question' && phase === 'questioning') {
@@ -133,19 +134,19 @@ export const infiltratorHandler: GameHandler = {
             state.gameData.currentAnswer = answer;
 
             // Record the Q&A
-            state.gameData.questions.push({
-                askerId: state.gameData.currentAskerId,
-                targetId: state.gameData.currentTargetId,
-                question: state.gameData.currentQuestion,
+            (state.gameData.questions as Array<{ askerId: string; targetId: string; question: string; answer: string }>).push({
+                askerId: state.gameData.currentAskerId as string,
+                targetId: state.gameData.currentTargetId as string,
+                question: state.gameData.currentQuestion as string,
                 answer,
             });
 
             // Move to next questioner
-            state.gameData.askIndex++;
+            state.gameData.askIndex = (state.gameData.askIndex as number) + 1;
             const totalQuestionsPerRound = state.players.filter(p => p.isConnected).length;
-            const totalQuestionsNeeded = totalQuestionsPerRound * state.gameData.totalQuestionRounds;
+            const totalQuestionsNeeded = totalQuestionsPerRound * (state.gameData.totalQuestionRounds as number);
 
-            if (state.gameData.questions.length >= totalQuestionsNeeded) {
+            if ((state.gameData.questions as Array<unknown>).length >= totalQuestionsNeeded) {
                 // All question rounds done, move to voting
                 state.gameData.phase = 'voting';
                 state.gameData.currentAskerId = null;
@@ -154,7 +155,8 @@ export const infiltratorHandler: GameHandler = {
                 state.gameData.currentAnswer = null;
             } else {
                 // Next questioner
-                const nextAskerId = state.gameData.askOrder[state.gameData.askIndex % state.gameData.askOrder.length];
+                const askOrder = state.gameData.askOrder as string[];
+                const nextAskerId = askOrder[(state.gameData.askIndex as number) % askOrder.length];
                 state.gameData.currentAskerId = nextAskerId;
                 state.gameData.currentTargetId = null;
                 state.gameData.currentQuestion = null;
@@ -169,16 +171,16 @@ export const infiltratorHandler: GameHandler = {
             if (suspectedId === playerId) return state;
 
             // Allow changing votes during voting phase
-            state.gameData.votes[playerId] = suspectedId;
+            (state.gameData.votes as Record<string, string>)[playerId] = suspectedId;
 
             // Check if all connected players have voted
             const connectedPlayers = state.players.filter(p => p.isConnected);
-            const allVoted = connectedPlayers.every(p => state.gameData.votes[p.id]);
+            const allVoted = connectedPlayers.every(p => (state.gameData.votes as Record<string, string>)[p.id]);
 
             if (allVoted) {
                 // Tally votes
                 const voteCounts: Record<string, number> = {};
-                for (const votedId of Object.values(state.gameData.votes) as string[]) {
+                for (const votedId of Object.values(state.gameData.votes as Record<string, string>)) {
                     voteCounts[votedId] = (voteCounts[votedId] || 0) + 1;
                 }
 
@@ -215,11 +217,11 @@ export const infiltratorHandler: GameHandler = {
         return state.gameData.phase === 'reveal';
     },
 
-    getRoundResults(state: GameState): { scores: Record<string, number>; summary: any } {
-        const secretWord = state.gameData._secret_secretWord;
-        const infiltratorId = state.gameData._secret_infiltratorId;
+    getRoundResults(state: GameState): { scores: Record<string, number>; summary: Record<string, unknown> } {
+        const secretWord = state.gameData._secret_secretWord as string;
+        const infiltratorId = state.gameData._secret_infiltratorId as string;
         const votes = state.gameData.votes as Record<string, string>;
-        const infiltratorGuess = state.gameData.infiltratorGuess;
+        const infiltratorGuess = state.gameData.infiltratorGuess as string | null;
         const scores: Record<string, number> = {};
 
         // Tally votes
@@ -238,7 +240,7 @@ export const infiltratorHandler: GameHandler = {
         }
 
         const infiltratorCaught = mostVotedId === infiltratorId;
-        const infiltratorGuessedWord = infiltratorGuess &&
+        const infiltratorGuessedWord = infiltratorGuess != null &&
             infiltratorGuess.toLowerCase().trim() === secretWord.toLowerCase().trim();
 
         for (const player of state.players) {

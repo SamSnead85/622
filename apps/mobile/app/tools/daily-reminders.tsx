@@ -348,11 +348,15 @@ export default function DailyRemindersScreen() {
                     AsyncStorage.getItem(STORAGE_KEYS.HISTORY),
                 ]);
 
-                if (enabledStr !== null) setReminderEnabled(JSON.parse(enabledStr));
-                if (timeStr) setReminderTime(JSON.parse(timeStr));
-                if (catStr) setReminderCategory(catStr as Category);
-                if (favsStr) setFavorites(JSON.parse(favsStr));
-                if (histStr) setHistory(JSON.parse(histStr));
+                try {
+                    if (enabledStr !== null) setReminderEnabled(JSON.parse(enabledStr));
+                    if (timeStr) setReminderTime(JSON.parse(timeStr));
+                    if (catStr) setReminderCategory(catStr as Category);
+                    if (favsStr) setFavorites(JSON.parse(favsStr));
+                    if (histStr) setHistory(JSON.parse(histStr));
+                } catch {
+                    // Corrupted storage data — use defaults
+                }
             } catch {
                 // Ignore storage read errors
             } finally {

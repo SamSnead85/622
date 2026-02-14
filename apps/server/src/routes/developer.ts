@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { prisma } from '../db/client.js';
@@ -371,8 +371,14 @@ router.post('/oauth/token', rateLimiters.auth, async (req, res, next) => {
 // Authenticated via API key or OAuth token
 // ============================================
 
+// Extended request interface for API-authenticated requests
+interface ApiAuthRequest extends AuthRequest {
+    apiApp?: { id: string; name: string; ownerId: string };
+    apiScopes?: string[];
+}
+
 // API key / OAuth middleware
-async function authenticateApi(req: AuthRequest, res: any, next: any) {
+async function authenticateApi(req: AuthRequest, res: Response, next: NextFunction) {
     const authHeader = req.headers.authorization;
     const apiKeyHeader = req.headers['x-api-key'] as string;
 
@@ -393,8 +399,8 @@ async function authenticateApi(req: AuthRequest, res: any, next: any) {
             await prisma.apiKey.update({ where: { id: key.id }, data: { lastUsedAt: new Date(), requestCount: { increment: 1 } } });
             await prisma.developerApp.update({ where: { id: key.appId }, data: { lastUsedAt: new Date(), requestCount: { increment: 1 } } });
 
-            (req as any).apiApp = key.app;
-            (req as any).apiScopes = key.scopes.split(',');
+            (req as ApiAuthRequest).apiApp = key.app;
+            (req as ApiAuthRequest).apiScopes = key.scopes.split(',');
             return next();
         }
 
@@ -411,8 +417,8 @@ async function authenticateApi(req: AuthRequest, res: any, next: any) {
             }
 
             req.userId = oauthToken.userId;
-            (req as any).apiApp = oauthToken.app;
-            (req as any).apiScopes = oauthToken.scopes.split(',');
+            (req as ApiAuthRequest).apiApp = oauthToken.app;
+            (req as ApiAuthRequest).apiScopes = oauthToken.scopes.split(',');
             return next();
         }
 
@@ -424,7 +430,7 @@ async function authenticateApi(req: AuthRequest, res: any, next: any) {
 
 // Helper to check scopes
 function requireScope(scope: string) {
-    return (req: any, res: any, next: any) => {
+    return (req: ApiAuthRequest, res: Response, next: NextFunction) => {
         const scopes = req.apiScopes || [];
         if (!scopes.includes(scope) && !scopes.includes('all')) {
             return res.status(403).json({ error: `Insufficient scope. Required: ${scope}` });

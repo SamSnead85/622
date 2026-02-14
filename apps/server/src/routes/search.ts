@@ -157,7 +157,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
                 followingIds = new Set(follows.map((f) => f.followingId));
             }
 
-            results.users = (users as any[]).map((u) => ({
+            results.users = (users as Array<{ id: string; username: string; displayName: string; avatarUrl: string | null; bio: string | null; isVerified: boolean; _count: { followers: number; posts: number } }>).map((u) => ({
                 ...u,
                 followersCount: u._count?.followers ?? 0,
                 isFollowing: followingIds.has(u.id),

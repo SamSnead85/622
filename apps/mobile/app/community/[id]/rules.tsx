@@ -104,7 +104,9 @@ const storageKey = (communityId: string) => `@community-rules-${communityId}`;
 async function loadRulesFromStorage(communityId: string): Promise<CommunityRulesData> {
     try {
         const raw = await AsyncStorage.getItem(storageKey(communityId));
-        if (raw) return { ...DEFAULT_DATA, ...JSON.parse(raw) };
+        if (raw) {
+            try { return { ...DEFAULT_DATA, ...JSON.parse(raw) }; } catch { /* corrupted data */ }
+        }
     } catch {
         // ignore parse errors
     }
