@@ -7,6 +7,7 @@ import { blockIP, getClientIP, logSecurityEvent, SecurityEvents } from '../servi
 import { recordBan } from '../services/evasionDetection.js';
 import { sendAlert } from '../services/alerting.js';
 import { logger } from '../utils/logger.js';
+import { propagateVouchStrike } from '../services/trustChainService.js';
 
 const router = Router();
 
@@ -260,6 +261,11 @@ router.post('/users/:id/strike', authenticate, requireAdmin, async (req: AuthReq
             });
             autoSuspended = true;
         }
+
+        // ── Reputation bonding: propagate vouch strike to inviter ──
+        propagateVouchStrike(req.params.id).catch((err) =>
+            logger.warn('[Admin] Vouch strike propagation failed (non-blocking):', { error: err?.message || err })
+        );
 
         res.json({ success: true, strike, autoSuspended });
     } catch (error) {

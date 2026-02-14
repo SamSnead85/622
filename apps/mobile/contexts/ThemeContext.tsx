@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors as darkColors, lightColors, shadows, lightShadows } from '@zerog/ui';
+import { colors as darkColors, warmDarkColors, lightColors, shadows, warmDarkShadows, lightShadows } from '@zerog/ui';
 
-type ThemeMode = 'light' | 'dark' | 'system';
+type ThemeMode = 'light' | 'dark' | 'warm' | 'system';
 
 interface ThemeContextType {
     mode: ThemeMode;
@@ -16,21 +16,21 @@ interface ThemeContextType {
 const THEME_KEY = '@0g-theme-mode';
 
 const ThemeContext = createContext<ThemeContextType>({
-    mode: 'light',
-    isDark: false,
-    colors: { ...lightColors, background: lightColors.obsidian[900] },
-    shadows: lightShadows,
+    mode: 'warm',
+    isDark: true,
+    colors: { ...warmDarkColors, background: warmDarkColors.obsidian[900] },
+    shadows: warmDarkShadows,
     setMode: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const systemScheme = useColorScheme();
-    const [mode, setModeState] = useState<ThemeMode>('light');
+    const [mode, setModeState] = useState<ThemeMode>('warm');
     const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
         AsyncStorage.getItem(THEME_KEY).then((stored) => {
-            if (stored === 'light' || stored === 'dark' || stored === 'system') {
+            if (stored === 'light' || stored === 'dark' || stored === 'warm' || stored === 'system') {
                 setModeState(stored);
             }
             setIsReady(true);
@@ -42,13 +42,29 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         AsyncStorage.setItem(THEME_KEY, newMode).catch(() => {});
     }, []);
 
-    const isDark = mode === 'system' ? systemScheme !== 'light' : mode === 'dark';
-    const baseColors = isDark ? darkColors : lightColors;
+    // Resolve the effective theme
+    const resolvedMode = mode === 'system'
+        ? (systemScheme === 'light' ? 'light' : 'warm')  // System dark → warm dark (the signature 0G experience)
+        : mode;
+
+    const isDark = resolvedMode !== 'light';
+
+    const baseColors = resolvedMode === 'light'
+        ? lightColors
+        : resolvedMode === 'warm'
+            ? warmDarkColors
+            : darkColors;
+
     const themeColors = useMemo(() => ({
         ...baseColors,
         background: baseColors.obsidian[900],
     }), [baseColors]);
-    const themeShadows = isDark ? shadows : lightShadows;
+
+    const themeShadows = resolvedMode === 'light'
+        ? lightShadows
+        : resolvedMode === 'warm'
+            ? warmDarkShadows
+            : shadows;
 
     if (!isReady) {
         return null;
@@ -61,7 +77,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-const fallbackColors = { ...lightColors, background: lightColors.obsidian[900] };
+const fallbackColors = { ...warmDarkColors, background: warmDarkColors.obsidian[900] };
 
 export const useTheme = () => {
     const ctx = useContext(ThemeContext);

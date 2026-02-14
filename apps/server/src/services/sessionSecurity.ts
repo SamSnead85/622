@@ -5,14 +5,12 @@
  * Device fingerprinting, location tracking, and anomaly detection
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db/client.js';
 import crypto from 'crypto';
 import { Request } from 'express';
 import { logSecurityEvent, SecurityEvents } from './security.js';
 import { logger } from '../utils/logger.js';
 import { cache } from './cache/RedisCache.js';
-
-const prisma = new PrismaClient();
 
 // ============================================
 // SESSION FINGERPRINTING

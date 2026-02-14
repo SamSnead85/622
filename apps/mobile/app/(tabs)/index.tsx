@@ -40,6 +40,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { GlassCard, ErrorBoundary } from '../../components';
+import { MediaCarousel } from '../../components/MediaCarousel';
 import { useFeedStore, useAuthStore, useNotificationsStore, Post } from '../../stores';
 import { SkeletonFeed } from '../../components/SkeletonPost';
 import { useNetworkQuality } from '../../hooks/useNetworkQuality';
@@ -766,10 +767,19 @@ const FeedPostCard = memo(
                     {/* Post content */}
                     {post.content ? <ReadMoreText text={post.content} /> : null}
 
-                    {/* Media */}
-                    {post.mediaUrl && (
+                    {/* Media — Carousel, Reel, Video, or Image */}
+                    {(post.media && post.media.length > 0) ? (
                         <View style={styles.mediaContainer}>
-                            {post.mediaType === 'VIDEO' ? (
+                            <MediaCarousel
+                                media={post.media}
+                                showCounter
+                                showDots
+                                borderRadius={0}
+                            />
+                        </View>
+                    ) : post.mediaUrl ? (
+                        <View style={styles.mediaContainer}>
+                            {post.mediaType === 'VIDEO' || post.mediaType === 'REEL' ? (
                                 <FeedVideoPlayer
                                     uri={post.mediaUrl}
                                     thumbnailUrl={post.thumbnailUrl}
@@ -799,7 +809,7 @@ const FeedPostCard = memo(
                                 />
                             )}
                         </View>
-                    )}
+                    ) : null}
 
                     {/* Actions bar */}
                     <View style={styles.actionsBar}>
@@ -1862,7 +1872,8 @@ export default function FeedScreen() {
                     {[
                         { icon: 'paper-plane-outline' as const, label: 'Invite', route: '/invite-contacts', color: c.azure[500] },
                         { icon: 'game-controller-outline' as const, label: 'Games', route: '/games', color: c.emerald[500] },
-                        { icon: 'radio-outline' as const, label: 'Go Live', route: '/campfire', color: c.coral[500] },
+                        { icon: 'play-circle-outline' as const, label: 'Reels', route: '/reels', color: c.coral[500] },
+                        { icon: 'radio-outline' as const, label: 'Go Live', route: '/campfire', color: c.emerald[500] },
                         { icon: 'call-outline' as const, label: 'Calls', route: '/call', color: c.gold[500] },
                         { icon: 'mic-outline' as const, label: 'Spaces', route: '/spaces', color: c.amber[500] },
                     ].map((item) => (
@@ -2049,7 +2060,7 @@ export default function FeedScreen() {
                 accessibilityRole="header"
                 accessibilityLabel="ZeroG Home"
             >
-                <Text style={[styles.headerBrandName, { color: c.text.primary }]}>ZeroG</Text>
+                <Text style={[styles.headerBrandName, { color: c.gold[500], textShadowColor: c.gold[500] + '40', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 }]}>0G</Text>
                 <View style={styles.headerActions}>
                     <TouchableOpacity
                         style={styles.headerBtn}
@@ -2057,7 +2068,7 @@ export default function FeedScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={notifUnreadCount > 0 ? `Notifications, ${notifUnreadCount} unread` : 'Notifications'}
                     >
-                        <Ionicons name="heart-outline" size={24} color={c.text.primary} />
+                        <Ionicons name="heart-outline" size={24} color={c.text.secondary} />
                         {notifUnreadCount > 0 && (
                             <View style={styles.headerBadge}>
                                 <Text style={styles.headerBadgeText}>{notifUnreadCount > 99 ? '99+' : notifUnreadCount}</Text>
@@ -2070,7 +2081,7 @@ export default function FeedScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="Messages"
                     >
-                        <Ionicons name="paper-plane-outline" size={24} color={c.text.primary} />
+                        <Ionicons name="paper-plane-outline" size={24} color={c.text.secondary} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -2172,11 +2183,10 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.sm,
     },
     headerBrandName: {
-        fontSize: 28,
+        fontSize: 30,
         fontWeight: '700',
-        fontStyle: 'italic',
-        letterSpacing: -0.5,
-        fontFamily: 'Inter-Bold',
+        letterSpacing: -1,
+        fontFamily: 'SpaceGrotesk-Bold',
     },
     headerActions: { flexDirection: 'row', gap: spacing.xs },
     headerBtn: {

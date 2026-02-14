@@ -862,6 +862,7 @@ export default function CreateScreen() {
 
     const textInputRef = useRef<TextInput>(null);
     const scrollRef = useRef<ScrollView>(null);
+    const successTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
     // --- Core State ---
     const [content, setContent] = useState('');
@@ -969,6 +970,13 @@ export default function CreateScreen() {
             textInputRef.current?.focus();
         }, 300);
         return () => clearTimeout(timer);
+    }, []);
+
+    // --- Cleanup success timer on unmount ---
+    useEffect(() => {
+        return () => {
+            if (successTimerRef.current) clearTimeout(successTimerRef.current);
+        };
     }, []);
 
     // ============================================
@@ -1375,53 +1383,82 @@ export default function CreateScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         try {
-            let uploadedMediaUrl: string | undefined;
-            let uploadedMediaType: string | undefined;
+            const uploadedItems: Array<{ url: string; type: string; thumbnailUrl?: string; duration?: number }> = [];
+            let primaryMediaUrl: string | undefined;
+            let primaryMediaType: string | undefined;
 
-            // Upload first media item (primary)
+            // Upload ALL media items
             if (mediaItems.length > 0) {
-                setUploadProgress(10);
-                const result = await uploadSingleMedia(
-                    mediaItems[0],
-                    0,
-                    (progress) => setUploadProgress(10 + progress * 70),
-                );
+                setUploadProgress(5);
+                const progressPerItem = 75 / mediaItems.length;
 
-                if (!result) {
-                    const hasErrors = mediaItems.some(m => m.uploadError);
-                    if (hasErrors) {
-                        Alert.alert(
-                            'Upload Failed',
-                            'Some media failed to upload. Would you like to retry?',
-                            [
-                                { text: 'Cancel', style: 'cancel', onPress: () => setIsPublishing(false) },
-                                { text: 'Retry', onPress: () => handlePublish() },
-                            ]
-                        );
-                        return;
+                for (let i = 0; i < mediaItems.length; i++) {
+                    const result = await uploadSingleMedia(
+                        mediaItems[i],
+                        i,
+                        (progress) => setUploadProgress(5 + (i * progressPerItem) + progress * progressPerItem),
+                    );
+
+                    if (!result) {
+                        const hasErrors = mediaItems.some(m => m.uploadError);
+                        if (hasErrors) {
+                            Alert.alert(
+                                'Upload Failed',
+                                `Media ${i + 1} of ${mediaItems.length} failed to upload. Would you like to retry?`,
+                                [
+                                    { text: 'Cancel', style: 'cancel', onPress: () => setIsPublishing(false) },
+                                    { text: 'Retry', onPress: () => handlePublish() },
+                                ]
+                            );
+                            return;
+                        }
+                    } else {
+                        uploadedItems.push(result);
                     }
-                } else {
-                    uploadedMediaUrl = result.url;
-                    uploadedMediaType = result.type;
+                }
+
+                // Primary media = first item (for backwards compatibility)
+                if (uploadedItems.length > 0) {
+                    primaryMediaUrl = uploadedItems[0].url;
+                    primaryMediaType = uploadedItems[0].type;
                 }
                 setUploadProgress(80);
             }
 
+            // Determine post type
+            let postType: string;
+            if (uploadedItems.length > 1) {
+                // Multiple items = carousel
+                postType = 'CAROUSEL';
+            } else if (primaryMediaType === 'VIDEO') {
+                postType = 'VIDEO';
+            } else if (primaryMediaType === 'IMAGE') {
+                postType = 'IMAGE';
+            } else if (showPoll) {
+                postType = 'POLL';
+            } else {
+                postType = 'TEXT';
+            }
+
             const postData: Record<string, any> = {
                 caption: content.trim(),
-                type: uploadedMediaType === 'VIDEO'
-                    ? 'VIDEO'
-                    : uploadedMediaType === 'IMAGE'
-                        ? 'IMAGE'
-                        : showPoll
-                            ? 'POLL'
-                            : 'TEXT',
+                type: postType,
                 visibility,
             };
-            if (uploadedMediaUrl) postData.mediaUrl = uploadedMediaUrl;
+            if (primaryMediaUrl) postData.mediaUrl = primaryMediaUrl;
             if (selectedCommunity) postData.communityId = selectedCommunity.id;
             if (linkUrl.trim()) postData.linkUrl = linkUrl.trim();
             if (locationName) postData.location = locationName;
+
+            // Send all media items for carousel/multi-media posts
+            if (uploadedItems.length > 1) {
+                postData.mediaItems = uploadedItems.map((item, idx) => ({
+                    mediaUrl: item.url,
+                    thumbnailUrl: item.thumbnailUrl,
+                    type: item.type === 'VIDEO' ? 'VIDEO' : 'IMAGE',
+                    duration: item.duration,
+                }));
+            }
 
             // Add poll data
             if (showPoll) {
@@ -1445,7 +1482,8 @@ export default function CreateScreen() {
 
             // Show success animation
             setShowSuccess(true);
-            const timer = setTimeout(() => {
+            if (successTimerRef.current) clearTimeout(successTimerRef.current);
+            successTimerRef.current = setTimeout(() => {
                 setContent('');
                 setMediaItems([]);
                 setUploadProgress(0);
@@ -1458,7 +1496,6 @@ export default function CreateScreen() {
                 setLocationName(null);
                 router.push('/(tabs)');
             }, 1200);
-            return () => clearTimeout(timer);
         } catch (error: unknown) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             Alert.alert(

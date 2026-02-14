@@ -5,9 +5,7 @@
  * Handles word filtering, explicit content detection, and content rating
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../db/client.js';
 
 // Common explicit/profane words for basic filtering
 // This is a minimal set - real implementation would use more comprehensive lists

@@ -47,6 +47,21 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
                         comments: true,
                     },
                 },
+                media: {
+                    select: {
+                        id: true,
+                        mediaUrl: true,
+                        thumbnailUrl: true,
+                        type: true,
+                        position: true,
+                        aspectRatio: true,
+                        duration: true,
+                        width: true,
+                        height: true,
+                        altText: true,
+                    },
+                    orderBy: { position: 'asc' },
+                },
             },
         });
 
@@ -58,6 +73,82 @@ router.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
                 ...post,
                 likesCount: post._count.likes,
                 commentsCount: post._count.comments,
+            })),
+            nextCursor: hasMore ? results[results.length - 1]?.id : null,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/posts/reels — Full-screen vertical video feed
+router.get('/reels', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+        const { cursor, limit: rawLimit } = req.query;
+        const limit = clampLimit(rawLimit as string, 10, 30);
+
+        const reels = await prisma.post.findMany({
+            where: {
+                type: { in: ['REEL', 'VIDEO'] },
+                isPublic: true,
+                deletedAt: null,
+                visible: true,
+                mediaUrl: { not: null },
+            },
+            take: limit + 1,
+            ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
+            orderBy: [
+                { createdAt: 'desc' },
+            ],
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true,
+                        isVerified: true,
+                    },
+                },
+                music: {
+                    select: {
+                        id: true,
+                        title: true,
+                        artist: true,
+                        coverUrl: true,
+                    },
+                },
+                _count: {
+                    select: {
+                        likes: true,
+                        comments: true,
+                        shares: true,
+                    },
+                },
+                media: {
+                    select: {
+                        id: true,
+                        mediaUrl: true,
+                        thumbnailUrl: true,
+                        type: true,
+                        position: true,
+                        aspectRatio: true,
+                        duration: true,
+                    },
+                    orderBy: { position: 'asc' },
+                },
+            },
+        });
+
+        const hasMore = reels.length > limit;
+        const results = hasMore ? reels.slice(0, -1) : reels;
+
+        res.json({
+            reels: results.map((reel) => ({
+                ...reel,
+                likesCount: reel._count.likes,
+                commentsCount: reel._count.comments,
+                sharesCount: reel._count.shares,
             })),
             nextCursor: hasMore ? results[results.length - 1]?.id : null,
         });
@@ -228,6 +319,21 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
                             direction: true,
                         },
                         take: 1,
+                    },
+                    media: {
+                        select: {
+                            id: true,
+                            mediaUrl: true,
+                            thumbnailUrl: true,
+                            type: true,
+                            position: true,
+                            aspectRatio: true,
+                            duration: true,
+                            width: true,
+                            height: true,
+                            altText: true,
+                        },
+                        orderBy: { position: 'asc' },
                     },
                 },
             });
@@ -538,22 +644,35 @@ router.get('/:postId', optionalAuth, async (req: AuthRequest, res, next) => {
 // POST /api/v1/posts
 router.post('/', authenticate, async (req: AuthRequest, res, next) => {
     try {
+        const mediaItemSchema = z.object({
+            mediaUrl: z.string().url(),
+            thumbnailUrl: z.string().url().optional(),
+            type: z.enum(['IMAGE', 'VIDEO']).default('IMAGE'),
+            aspectRatio: z.string().optional(),
+            duration: z.number().optional(),
+            width: z.number().optional(),
+            height: z.number().optional(),
+            altText: z.string().max(500).optional(),
+        });
+
         const createSchema = z.object({
-            type: z.enum(['IMAGE', 'VIDEO', 'TEXT', 'POLL', 'RALLY']),
+            type: z.enum(['IMAGE', 'VIDEO', 'TEXT', 'POLL', 'RALLY', 'CAROUSEL', 'REEL']),
             caption: z.string().max(2200).optional(),
             mediaUrl: z.string().url().optional(),
             thumbnailUrl: z.string().url().optional(),
-            mediaCropY: z.number().min(0).max(100).optional(), // Vertical crop position 0-100
-            mediaAspectRatio: z.enum(['16:9', '4:3', '1:1', '4:5', 'original']).optional(),
+            mediaCropY: z.number().min(0).max(100).optional(),
+            mediaAspectRatio: z.enum(['16:9', '4:3', '1:1', '4:5', '9:16', 'original']).optional(),
             duration: z.number().optional(),
             musicId: z.string().optional(),
             communityId: z.string().optional(),
             isPublic: z.boolean().optional(),
-            topicIds: z.array(z.string()).max(3).optional(), // Max 3 topics
+            topicIds: z.array(z.string()).max(3).optional(),
+            // Multi-media support (carousels, reels with cover images)
+            mediaItems: z.array(mediaItemSchema).max(10).optional(),
         });
 
         const data = createSchema.parse(req.body);
-        const { topicIds, ...postData } = data;
+        const { topicIds, mediaItems, ...postData } = data;
 
         // === Content filter enforcement (server-side, defense-in-depth) ===
         if (data.communityId && data.caption) {
@@ -706,18 +825,43 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             },
         });
 
-        // Process hashtags
-        for (const tag of hashtags) {
-            const tagName = tag.slice(1).toLowerCase();
-
-            const hashtag = await prisma.hashtag.upsert({
-                where: { name: tagName },
-                update: { usageCount: { increment: 1 } },
-                create: { name: tagName, usageCount: 1 },
+        // Process hashtags - batched to avoid N+1 queries
+        if (hashtags.length > 0) {
+            const hashtagOps = hashtags.map(tag => {
+                const tagName = tag.slice(1).toLowerCase();
+                return prisma.hashtag.upsert({
+                    where: { name: tagName },
+                    update: { usageCount: { increment: 1 } },
+                    create: { name: tagName, usageCount: 1 },
+                });
             });
+            const upsertedHashtags = await prisma.$transaction(hashtagOps);
 
-            await prisma.postHashtag.create({
-                data: { postId: post.id, hashtagId: hashtag.id },
+            // Batch create postHashtag links
+            await prisma.postHashtag.createMany({
+                data: upsertedHashtags.map(h => ({
+                    postId: post.id,
+                    hashtagId: h.id,
+                })),
+                skipDuplicates: true,
+            });
+        }
+
+        // Process multi-media items (carousels, reels with multiple slides)
+        if (mediaItems && mediaItems.length > 0) {
+            await prisma.postMedia.createMany({
+                data: mediaItems.map((item, index) => ({
+                    postId: post.id,
+                    mediaUrl: item.mediaUrl,
+                    thumbnailUrl: item.thumbnailUrl,
+                    type: item.type,
+                    position: index,
+                    aspectRatio: item.aspectRatio,
+                    duration: item.duration,
+                    width: item.width,
+                    height: item.height,
+                    altText: item.altText,
+                })),
             });
         }
 

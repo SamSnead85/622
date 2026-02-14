@@ -1,10 +1,9 @@
-import { PrismaClient, MigrationPlatform, MigrationStatus, PostType } from '@prisma/client';
+import { MigrationPlatform, MigrationStatus, PostType } from '@prisma/client';
+import { prisma } from '../../db/client.js';
 import { randomUUID } from 'crypto';
 import { InstagramParser } from './parsers/InstagramParser.js';
 import { TikTokParser } from './parsers/TikTokParser.js';
 import { WhatsAppParser } from './parsers/WhatsAppParser.js';
-
-const prisma = new PrismaClient();
 
 export interface MigrationResult {
     migrationId: string;

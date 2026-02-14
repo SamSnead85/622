@@ -5,9 +5,8 @@
  * LinkedIn-style connection request system
  */
 
-import { PrismaClient, ConnectionStatus } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { ConnectionStatus } from '@prisma/client';
+import { prisma } from '../db/client.js';
 
 // ============================================
 // SEND CONNECTION REQUEST

@@ -3,27 +3,11 @@
  * Production-grade database helpers for scalability
  */
 
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+import { prisma } from '../db/client.js';
 
-// ============================================
-// SINGLETON PRISMA CLIENT
-// ============================================
-
-const globalForPrisma = globalThis as unknown as {
-    prisma: PrismaClient | undefined;
-};
-
-export const prisma =
-    globalForPrisma.prisma ??
-    new PrismaClient({
-        log: process.env.NODE_ENV === 'development'
-            ? ['query', 'error', 'warn']
-            : ['error'],
-    });
-
-if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.prisma = prisma;
-}
+// Re-export the shared prisma instance from db/client.ts
+export { prisma };
 
 // ============================================
 // PAGINATION HELPERS

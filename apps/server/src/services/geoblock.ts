@@ -5,10 +5,9 @@
  * Handles IP geolocation and country-based access control
  */
 
-import { PrismaClient, GeoBlockType } from '@prisma/client';
+import { GeoBlockType } from '@prisma/client';
+import { prisma } from '../db/client.js';
 import geoip from 'geoip-lite';
-
-const prisma = new PrismaClient();
 
 export interface GeoLocation {
     ip: string;

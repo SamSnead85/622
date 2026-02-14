@@ -329,10 +329,17 @@ router.get('/audit-log', authenticate, async (req: Request, res: Response, next:
  * GET /admin/security/lookup/:ip
  * Look up geolocation for an IP
  */
-router.get('/lookup/:ip', authenticate, (req: Request, res: Response) => {
-    const { ip } = req.params;
-    const geo = getGeoFromIP(ip);
-    res.json(geo);
+router.get('/lookup/:ip', authenticate, (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { ip } = req.params;
+        if (!ip || !/^[\d.a-fA-F:]+$/.test(ip)) {
+            return res.status(400).json({ error: 'Invalid IP address format' });
+        }
+        const geo = getGeoFromIP(ip);
+        res.json(geo);
+    } catch (error) {
+        next(error);
+    }
 });
 
 export default router;

@@ -5,9 +5,7 @@
  * Real-time user presence and online counts
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../db/client.js';
 
 // In-memory cache for fast reads (sync with DB periodically)
 const presenceCache = new Map<string, { isOnline: boolean; lastSeen: Date; page?: string }>();

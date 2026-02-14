@@ -1,14 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { PrismaClient, SocialPlatform, CrossPostDirection, CrossPostStatus } from '@prisma/client';
+import { SocialPlatform, CrossPostDirection, CrossPostStatus } from '@prisma/client';
 import { z } from 'zod';
+import { prisma } from '../db/client.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
-const prisma = new PrismaClient();
-
-// ── Types ──
-interface AuthRequest extends Request {
-    user?: { id: string; username: string };
-}
 
 // ── Validation Schemas ──
 const connectAccountSchema = z.object({
@@ -52,7 +48,7 @@ const batchCrossPostSchema = z.object({
 // GET /api/v1/social/accounts
 // List all connected social accounts for the user
 // ============================================
-router.get('/accounts', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/accounts', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Authentication required' });
 
@@ -86,7 +82,7 @@ router.get('/accounts', async (req: AuthRequest, res: Response, next: NextFuncti
 // POST /api/v1/social/accounts
 // Connect a new social platform account
 // ============================================
-router.post('/accounts', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/accounts', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Authentication required' });
 
@@ -149,7 +145,7 @@ router.post('/accounts', async (req: AuthRequest, res: Response, next: NextFunct
 // PATCH /api/v1/social/accounts/:id
 // Update connected account settings
 // ============================================
-router.patch('/accounts/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.patch('/accounts/:id', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Authentication required' });
 
@@ -179,7 +175,7 @@ router.patch('/accounts/:id', async (req: AuthRequest, res: Response, next: Next
 // DELETE /api/v1/social/accounts/:id
 // Disconnect a social platform account
 // ============================================
-router.delete('/accounts/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.delete('/accounts/:id', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Authentication required' });
 
@@ -201,7 +197,7 @@ router.delete('/accounts/:id', async (req: AuthRequest, res: Response, next: Nex
 // POST /api/v1/social/accounts/:id/sync
 // Trigger a manual sync for a connected account
 // ============================================
-router.post('/accounts/:id/sync', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/accounts/:id/sync', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Authentication required' });
 
@@ -237,7 +233,7 @@ router.post('/accounts/:id/sync', async (req: AuthRequest, res: Response, next: 
 // POST /api/v1/social/crosspost
 // Import a single post from an external platform
 // ============================================
-router.post('/crosspost', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/crosspost', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Authentication required' });
 
@@ -312,7 +308,7 @@ router.post('/crosspost', async (req: AuthRequest, res: Response, next: NextFunc
 // POST /api/v1/social/crosspost/batch
 // Batch import multiple posts from an external platform
 // ============================================
-router.post('/crosspost/batch', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/crosspost/batch', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Authentication required' });
 
@@ -516,7 +512,7 @@ router.get('/platforms', async (_req: Request, res: Response) => {
 // GET /api/v1/social/feed
 // Get a unified feed of cross-posted content
 // ============================================
-router.get('/feed', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/feed', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Authentication required' });
 
@@ -579,7 +575,7 @@ router.get('/feed', async (req: AuthRequest, res: Response, next: NextFunction) 
 // GET /api/v1/social/stats
 // Get aggregated stats for connected accounts
 // ============================================
-router.get('/stats', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/stats', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Authentication required' });
 

@@ -482,9 +482,10 @@ export default function SettingsScreen() {
                     <View style={[styles.card, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
                         <View style={styles.appearanceRow}>
                             {([
+                                { key: 'warm' as const, icon: 'flame-outline' as const, label: 'Warm' },
                                 { key: 'light' as const, icon: 'sunny-outline' as const, label: 'Light' },
                                 { key: 'dark' as const, icon: 'moon-outline' as const, label: 'Dark' },
-                                { key: 'system' as const, icon: 'phone-portrait-outline' as const, label: 'System' },
+                                { key: 'system' as const, icon: 'phone-portrait-outline' as const, label: 'Auto' },
                             ]).map((opt) => {
                                 const isActive = themeMode === opt.key;
                                 return (

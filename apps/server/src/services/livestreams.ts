@@ -6,12 +6,10 @@
  */
 
 import {
-    PrismaClient,
     StreamPlatform,
     SuggestionStatus
 } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../db/client.js';
 
 // ============================================
 // STREAM URL PARSER

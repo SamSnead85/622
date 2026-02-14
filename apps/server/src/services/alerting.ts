@@ -14,10 +14,8 @@
  * - CRITICAL: immediate webhook + email + in-app notification to all admins
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db/client.js';
 import { logger } from '../utils/logger.js';
-
-const prisma = new PrismaClient();
 
 export type AlertSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 

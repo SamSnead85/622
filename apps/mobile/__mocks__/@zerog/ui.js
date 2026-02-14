@@ -232,13 +232,18 @@ const animation = {
 
 const theme = { colors, spacing, borderRadius, typography, shadows, animation };
 
+const warmDarkColors = { ...colors };
+const warmDarkShadows = { ...shadows };
+
 module.exports = {
     colors,
+    warmDarkColors,
     lightColors,
     spacing,
     borderRadius,
     typography,
     shadows,
+    warmDarkShadows,
     lightShadows,
     animation,
     theme,

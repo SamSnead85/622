@@ -10,10 +10,9 @@
  *   3 = Trusted   — 30+ days, 10+ approved posts. Full capabilities. Reports carry more weight.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db/client.js';
 import { logger } from '../utils/logger.js';
-
-const prisma = new PrismaClient();
+import { allocateInvites } from './trustChainService.js';
 
 // ============================================
 // TRUST LEVEL CAPABILITIES
@@ -233,13 +232,25 @@ export async function evaluatePromotion(userId: string): Promise<{
 
         logger.info(`[Trust] User ${userId} promoted from level ${oldLevel} to ${newLevel}`);
 
+        // ── Vouched Entry: Unlock/upgrade invite allocation on promotion ──
+        try {
+            await allocateInvites(userId, newLevel);
+        } catch (err) {
+            logger.warn('[Trust] Invite allocation update failed (non-blocking):', err);
+        }
+
         // Send notification about trust level upgrade
         const levelNames = ['New', 'Verified', 'Established', 'Trusted'];
+        const inviteMessage = newLevel === 1
+            ? ' You can now vouch for others to join 0G.'
+            : newLevel >= 2
+                ? ' Your weekly vouch allocation has increased.'
+                : '';
         await prisma.notification.create({
             data: {
                 userId,
                 type: 'SYSTEM',
-                message: `Your account has been upgraded to "${levelNames[newLevel]}" status! You now have access to more features.`,
+                message: `Your account has been upgraded to "${levelNames[newLevel]}" status! You now have access to more features.${inviteMessage}`,
             },
         }).catch(() => { /* intentionally swallowed: trust upgrade notification is best-effort */ });
 

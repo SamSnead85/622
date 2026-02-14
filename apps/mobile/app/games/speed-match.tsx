@@ -392,6 +392,14 @@ function ColorRushGame({
     const [flashColor, setFlashColor] = useState<string | null>(null);
     const shakeX = useSharedValue(0);
     const wordScale = useSharedValue(1);
+    const flashTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+    // Cleanup flash timer on unmount
+    useEffect(() => {
+        return () => {
+            if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+        };
+    }, []);
 
     const nextChallenge = useCallback(() => {
         setChallenge(generateColorChallenge());
@@ -410,7 +418,8 @@ function ColorRushGame({
                 setFlashColor(colors.emerald[500]);
                 const speedBonus = 10; // base 10, fast bonus in parent
                 onScore(speedBonus);
-                setTimeout(() => setFlashColor(null), 200);
+                if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+                flashTimerRef.current = setTimeout(() => setFlashColor(null), 200);
                 nextChallenge();
             } else {
                 // Wrong
@@ -424,7 +433,8 @@ function ColorRushGame({
                     withTiming(0, { duration: 40 }),
                 );
                 onWrong();
-                setTimeout(() => setFlashColor(null), 200);
+                if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+                flashTimerRef.current = setTimeout(() => setFlashColor(null), 200);
                 nextChallenge();
             }
         },
@@ -684,6 +694,14 @@ function MathBlitzGame({
     const [flashColor, setFlashColor] = useState<string | null>(null);
     const shakeX = useSharedValue(0);
     const equationScale = useSharedValue(1);
+    const flashTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+    // Cleanup flash timer on unmount
+    useEffect(() => {
+        return () => {
+            if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+        };
+    }, []);
 
     const nextChallenge = useCallback(() => {
         setChallenge(generateMathChallenge(questionsAnswered));
@@ -700,7 +718,8 @@ function MathBlitzGame({
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 setFlashColor(colors.emerald[500]);
                 onScore(10);
-                setTimeout(() => setFlashColor(null), 200);
+                if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+                flashTimerRef.current = setTimeout(() => setFlashColor(null), 200);
                 nextChallenge();
             } else {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -713,7 +732,8 @@ function MathBlitzGame({
                     withTiming(0, { duration: 40 }),
                 );
                 onWrong();
-                setTimeout(() => setFlashColor(null), 200);
+                if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+                flashTimerRef.current = setTimeout(() => setFlashColor(null), 200);
                 nextChallenge();
             }
         },
@@ -841,9 +861,9 @@ function ResultsView({
                                 <Ionicons name="podium" size={18} color={colors.azure[500]} />
                             </View>
                             <Text style={styles.resultsStatValue}>
-                                {score >= (highScores[selectedMode] || 0) ? '🏆' : `#${Math.min(score > 0 ? Math.max(1, Math.ceil(100 / Math.max(1, score))) : 99, 99)}`}
+                                {score >= highScore ? '🏆' : `#${Math.min(score > 0 ? Math.max(1, Math.ceil(100 / Math.max(1, score))) : 99, 99)}`}
                             </Text>
-                            <Text style={styles.resultsStatLabel}>Personal Best</Text>
+                            <Text style={styles.resultsStatLabel}>Rank</Text>
                         </View>
                     </View>
                 </GlassCard>

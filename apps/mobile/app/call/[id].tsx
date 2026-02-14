@@ -64,6 +64,16 @@ export default function CallScreen() {
     // Timer
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+    // Refs for router.back() timeouts (prevent memory leaks on unmount)
+    const navigationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Cleanup navigation timer on unmount
+    useEffect(() => {
+        return () => {
+            if (navigationTimerRef.current) clearTimeout(navigationTimerRef.current);
+        };
+    }, []);
+
     // ============================================
     // Animations
     // ============================================
@@ -132,19 +142,22 @@ export default function CallScreen() {
         const unsubRejected = socketManager.on('call:rejected', () => {
             setCallState('rejected');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            setTimeout(() => router.back(), 2000);
+            if (navigationTimerRef.current) clearTimeout(navigationTimerRef.current);
+            navigationTimerRef.current = setTimeout(() => router.back(), 2000);
         });
 
         const unsubEnded = socketManager.on('call:ended', () => {
             setCallState('ended');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            setTimeout(() => router.back(), 1500);
+            if (navigationTimerRef.current) clearTimeout(navigationTimerRef.current);
+            navigationTimerRef.current = setTimeout(() => router.back(), 1500);
         });
 
         const unsubUnavailable = socketManager.on('call:unavailable', () => {
             setCallState('unavailable');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            setTimeout(() => router.back(), 2000);
+            if (navigationTimerRef.current) clearTimeout(navigationTimerRef.current);
+            navigationTimerRef.current = setTimeout(() => router.back(), 2000);
         });
 
         const unsubMute = socketManager.on('call:mute', (data: { muted: boolean }) => {
@@ -189,14 +202,16 @@ export default function CallScreen() {
         Vibration.cancel();
         socketManager.rejectCall(callId);
         setCallState('rejected');
-        setTimeout(() => router.back(), 500);
+        if (navigationTimerRef.current) clearTimeout(navigationTimerRef.current);
+        navigationTimerRef.current = setTimeout(() => router.back(), 500);
     }, [callId]);
 
     const handleEndCall = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         socketManager.endCall(callId);
         setCallState('ended');
-        setTimeout(() => router.back(), 500);
+        if (navigationTimerRef.current) clearTimeout(navigationTimerRef.current);
+        navigationTimerRef.current = setTimeout(() => router.back(), 500);
     }, [callId]);
 
     const handleToggleMute = useCallback(() => {

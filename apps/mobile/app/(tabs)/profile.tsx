@@ -212,6 +212,10 @@ export default function ProfileScreen() {
     const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
     const [loadedTabs, setLoadedTabs] = useState<Set<ProfileTab>>(new Set(['posts']));
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [chainInfo, setChainInfo] = useState<{
+        degree: number;
+        foundingCreator: { username: string; displayName: string } | null;
+    } | null>(null);
     const flatListRef = useRef<FlatList>(null);
 
     // Animated tab indicator
@@ -337,6 +341,21 @@ export default function ProfileScreen() {
     useEffect(() => {
         if (user?.id) loadUserPosts();
     }, [user?.id, loadUserPosts]);
+
+    // ── Load trust chain info ──
+    useEffect(() => {
+        if (!user?.id) return;
+        apiFetch<any>(`/api/v1/trustchain/me`)
+            .then((data) => {
+                if (data.inChain) {
+                    setChainInfo({
+                        degree: data.degree,
+                        foundingCreator: data.foundingCreator || null,
+                    });
+                }
+            })
+            .catch(() => { /* non-critical: chain info is optional display */ });
+    }, [user?.id]);
 
     useEffect(() => {
         if (loadedTabs.has(activeTab)) return;
@@ -504,6 +523,22 @@ export default function ProfileScreen() {
                         )}
                     </View>
                     <Text style={[styles.username, { color: c.text.muted }]}>@{user.username || 'unknown'}</Text>
+
+                    {/* Trust Chain Badge */}
+                    {chainInfo && chainInfo.foundingCreator && chainInfo.degree > 0 && (
+                        <Animated.View
+                            entering={FadeIn.delay(300).duration(400)}
+                            style={[styles.chainBadge, { backgroundColor: c.gold[500] + '12', borderColor: c.gold[500] + '25' }]}
+                        >
+                            <Ionicons name="link" size={12} color={c.gold[500]} />
+                            <Text style={[styles.chainBadgeText, { color: c.text.secondary }]}>
+                                {chainInfo.degree === 1 ? '1st' : chainInfo.degree === 2 ? '2nd' : chainInfo.degree === 3 ? '3rd' : `${chainInfo.degree}th`} degree from{' '}
+                                <Text style={{ color: c.gold[500], fontWeight: '600' }}>
+                                    @{chainInfo.foundingCreator.username}
+                                </Text>
+                            </Text>
+                        </Animated.View>
+                    )}
                 </Animated.View>
 
                 {/* Bio */}
@@ -926,7 +961,8 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 22,
         fontWeight: '700',
-        letterSpacing: -0.3,
+        letterSpacing: -0.5,
+        fontFamily: 'SpaceGrotesk-Bold',
         fontFamily: 'Inter-Bold',
     },
     headerChevron: {
@@ -1073,6 +1109,22 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         color: colors.text.muted,
         marginTop: spacing.xxs,
+    },
+    chainBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        marginTop: 6,
+        paddingVertical: 4,
+        paddingHorizontal: 10,
+        borderRadius: 20,
+        borderWidth: 1,
+        alignSelf: 'flex-start',
+    },
+    chainBadgeText: {
+        fontSize: 12,
+        fontFamily: 'Inter',
+        lineHeight: 16,
     },
 
     // ── Bio ──────────────────────────────────────────────

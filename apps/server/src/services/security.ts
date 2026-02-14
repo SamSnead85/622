@@ -5,13 +5,12 @@
  * Platform-wide security policies, IP blocking, rate limiting, and audit logging
  */
 
-import { PrismaClient, ThreatLevel, SecurityPolicyType, Prisma } from '@prisma/client';
+import { ThreatLevel, SecurityPolicyType, Prisma } from '@prisma/client';
+import { prisma } from '../db/client.js';
 import { Request, Response, NextFunction } from 'express';
 import { getGeoFromIP, isPlatformGeoBlocked } from './geoblock.js';
 import { logger } from '../utils/logger.js';
 import { cache } from './cache/RedisCache.js';
-
-const prisma = new PrismaClient();
 
 // Rate limit store — uses Redis via cache service for multi-instance support
 // Falls back to in-memory Map if Redis is unavailable

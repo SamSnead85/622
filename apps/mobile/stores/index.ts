@@ -153,6 +153,19 @@ export interface CrossPostInfo {
     direction: 'INBOUND' | 'OUTBOUND' | 'BIDIRECTIONAL';
 }
 
+export interface PostMediaItem {
+    id: string;
+    mediaUrl: string;
+    thumbnailUrl?: string | null;
+    type: 'IMAGE' | 'VIDEO';
+    position: number;
+    aspectRatio?: string | null;
+    duration?: number | null;
+    width?: number | null;
+    height?: number | null;
+    altText?: string | null;
+}
+
 export interface Post {
     id: string;
     content: string;
@@ -177,6 +190,7 @@ export interface Post {
     eventLocation?: string;
     type?: string;
     crossPost?: CrossPostInfo;  // Present if post was imported from another platform
+    media?: PostMediaItem[];    // Multi-media items (carousels, reels)
 }
 
 export interface Comment {
@@ -218,7 +232,7 @@ interface AuthState {
 
     initialize: () => Promise<void>;
     login: (email: string, password: string) => Promise<void>;
-    signup: (email: string, password: string, displayName: string) => Promise<void>;
+    signup: (email: string, password: string, displayName: string, accessCode?: string) => Promise<void>;
     appleLogin: (identityToken: string, fullName?: { givenName?: string; familyName?: string } | null) => Promise<void>;
     googleLogin: (tokenOrAccessToken: string, userInfo?: { email: string; name?: string; picture?: string; sub?: string }) => Promise<void>;
     logout: () => Promise<void>;
@@ -310,7 +324,7 @@ export const useAuthStore = create<AuthState>()(
         }
     },
 
-    signup: async (email, password, displayName) => {
+    signup: async (email, password, displayName, accessCode) => {
         set({ isLoading: true, error: null });
         try {
             // Generate a temporary username from displayName for initial signup
@@ -325,7 +339,7 @@ export const useAuthStore = create<AuthState>()(
                     password,
                     displayName,
                     username: tempUsername,
-                    accessCode: 'MOBILE_BETA', // Default access code for mobile signups
+                    accessCode: accessCode || '',
                 }),
             });
 
@@ -555,6 +569,7 @@ export function mapApiPost(raw: any): Post {
         eventLocation: raw.eventLocation,
         type: raw.type,
         crossPost: raw.crossPost ?? undefined,
+        media: raw.media ?? undefined,
     };
 }
 

@@ -7,7 +7,7 @@ import { useNotificationsStore } from '../../stores';
 import { useTheme } from '../../contexts/ThemeContext';
 
 // ============================================
-// Tab Icon — clean, minimal, Instagram-style
+// Tab Icon — warm neon glow on active
 // ============================================
 
 interface TabIconProps {
@@ -22,13 +22,15 @@ function TabIcon({ iconName, iconNameFocused, focused, badge }: TabIconProps) {
 
     return (
         <View style={styles.tabIconContainer}>
-            <Ionicons
-                name={focused ? iconNameFocused : iconName}
-                size={24}
-                color={focused ? c.text.primary : c.text.muted}
-            />
+            <View style={focused ? [styles.activeGlow, { shadowColor: c.gold[500] }] : undefined}>
+                <Ionicons
+                    name={focused ? iconNameFocused : iconName}
+                    size={24}
+                    color={focused ? c.gold[500] : c.text.muted}
+                />
+            </View>
             {badge != null && badge > 0 && (
-                <View style={styles.badge}>
+                <View style={[styles.badge, { backgroundColor: c.amber[500] }]}>
                     <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
                 </View>
             )}
@@ -54,11 +56,11 @@ export default function TabLayout() {
                     {
                         paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
                         backgroundColor: c.background,
-                        borderTopColor: c.border.subtle,
+                        borderTopColor: c.gold[500] + '15',
                     },
                 ],
                 tabBarShowLabel: false,
-                tabBarActiveTintColor: c.text.primary,
+                tabBarActiveTintColor: c.gold[500],
                 tabBarInactiveTintColor: c.text.muted,
                 tabBarHideOnKeyboard: true,
             }}
@@ -140,11 +142,15 @@ const styles = StyleSheet.create({
         minWidth: 48,
         minHeight: 44,
     },
+    activeGlow: {
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+    },
     badge: {
         position: 'absolute',
         top: -4,
         right: -8,
-        backgroundColor: colors.coral[500],
         borderRadius: 10,
         minWidth: 18,
         height: 18,

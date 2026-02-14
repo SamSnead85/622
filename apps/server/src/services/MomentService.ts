@@ -1,6 +1,5 @@
-import { PrismaClient, MomentType } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { MomentType } from '@prisma/client';
+import { prisma } from '../db/client.js';
 
 // 24 hours in milliseconds
 const MOMENT_DURATION_MS = 24 * 60 * 60 * 1000;

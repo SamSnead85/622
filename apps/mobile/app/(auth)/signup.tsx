@@ -40,7 +40,7 @@ import Animated, {
 import { typography, spacing } from '@zerog/ui';
 import { BackButton, BrandLogo } from '../../components';
 import { useAuthStore } from '../../stores';
-import { apiFetch } from '../../lib/api';
+import { apiFetch, API } from '../../lib/api';
 import { useTheme } from '../../contexts/ThemeContext';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -292,6 +292,10 @@ export default function SignupScreen() {
     const googleLogin = useAuthStore((s) => s.googleLogin);
     const isLoading = useAuthStore((s) => s.isLoading);
 
+    const [inviteCode, setInviteCode] = useState('');
+    const [inviteValid, setInviteValid] = useState<boolean | null>(null);
+    const [inviterInfo, setInviterInfo] = useState<{ username: string; displayName: string; avatarUrl?: string } | null>(null);
+    const [inviteValidating, setInviteValidating] = useState(false);
     const [displayName, setDisplayName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -299,9 +303,55 @@ export default function SignupScreen() {
     const [generalError, setGeneralError] = useState<string | null>(null);
     const [googleLoading, setGoogleLoading] = useState(false);
 
+    const nameRef = useRef<TextInput>(null);
     const emailRef = useRef<TextInput>(null);
     const passwordRef = useRef<TextInput>(null);
     const scrollRef = useRef<ScrollView>(null);
+
+    // ---- Validate invite code on blur ----
+    const validateInviteCode = useCallback(async (code: string) => {
+        if (!code.trim()) {
+            setInviteValid(null);
+            setInviterInfo(null);
+            return;
+        }
+        setInviteValidating(true);
+        try {
+            const res = await apiFetch<{ valid: boolean; sender?: { username: string; displayName: string; avatarUrl?: string } }>(
+                `/api/v1/invite/validate/${code.trim().toUpperCase()}`,
+                { method: 'POST' },
+            );
+            if (res.valid && res.sender) {
+                setInviteValid(true);
+                setInviterInfo(res.sender);
+                if (errors.inviteCode) setErrors((e) => ({ ...e, inviteCode: '' }));
+            } else {
+                setInviteValid(false);
+                setInviterInfo(null);
+            }
+        } catch {
+            // Also try validating as an access code
+            try {
+                const res2 = await apiFetch<{ valid: boolean; type?: string }>(
+                    `/api/v1/auth/validate-code`,
+                    { method: 'POST', body: JSON.stringify({ code: code.trim().toUpperCase() }) },
+                );
+                if (res2.valid) {
+                    setInviteValid(true);
+                    setInviterInfo(null); // Access code, no specific inviter
+                    if (errors.inviteCode) setErrors((e) => ({ ...e, inviteCode: '' }));
+                } else {
+                    setInviteValid(false);
+                    setInviterInfo(null);
+                }
+            } catch {
+                setInviteValid(false);
+                setInviterInfo(null);
+            }
+        } finally {
+            setInviteValidating(false);
+        }
+    }, [errors.inviteCode]);
 
     const buttonScale = useSharedValue(1);
     const animatedButtonStyle = useAnimatedStyle(() => ({
@@ -400,6 +450,12 @@ export default function SignupScreen() {
     const validateForm = useCallback(() => {
         const newErrors: Record<string, string> = {};
 
+        if (!inviteCode.trim()) {
+            newErrors.inviteCode = 'Invite code is required';
+        } else if (inviteValid === false) {
+            newErrors.inviteCode = 'Invalid or expired invite code';
+        }
+
         if (!displayName.trim()) newErrors.displayName = 'Name is required';
         else if (displayName.trim().length < 2) newErrors.displayName = 'Name must be at least 2 characters';
 
@@ -419,7 +475,7 @@ export default function SignupScreen() {
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    }, [displayName, email, password, passwordStrength.level]);
+    }, [inviteCode, inviteValid, displayName, email, password, passwordStrength.level]);
 
     // ---- Email/Password Signup ----
     const handleSignup = useCallback(async () => {
@@ -437,7 +493,7 @@ export default function SignupScreen() {
                 withSpring(1, { damping: 15 }),
             );
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            await signup(email.trim(), password, displayName.trim());
+            await signup(email.trim(), password, displayName.trim(), inviteCode.trim());
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             // Navigate to email verification before username
             router.replace('/(auth)/verify-email' as any);
@@ -507,8 +563,61 @@ export default function SignupScreen() {
                         </Animated.View>
                     )}
 
-                    {/* Form — Name, Email, Password */}
+                    {/* Form — Invite Code, Name, Email, Password */}
                     <View style={styles.form}>
+                        <AnimatedField
+                            label="Invite Code"
+                            placeholder="Enter your invite code"
+                            value={inviteCode}
+                            onChangeText={(text) => {
+                                setInviteCode(text.toUpperCase());
+                                if (errors.inviteCode) setErrors((e) => ({ ...e, inviteCode: '' }));
+                                if (generalError) setGeneralError(null);
+                                setInviteValid(null);
+                                setInviterInfo(null);
+                            }}
+                            error={errors.inviteCode}
+                            hint={inviteValidating ? 'Validating...' : undefined}
+                            autoCapitalize="characters"
+                            autoComplete="off"
+                            returnKeyType="next"
+                            onSubmitEditing={() => {
+                                validateInviteCode(inviteCode);
+                                nameRef.current?.focus();
+                            }}
+                            icon="ticket-outline"
+                            delay={80}
+                            colors={c}
+                            isDark={isDark}
+                            rightElement={
+                                inviteValid === true ? (
+                                    <View style={{ paddingRight: 12 }}>
+                                        <Ionicons name="checkmark-circle" size={20} color={c.emerald[500]} />
+                                    </View>
+                                ) : inviteValid === false ? (
+                                    <View style={{ paddingRight: 12 }}>
+                                        <Ionicons name="close-circle" size={20} color={c.coral[500]} />
+                                    </View>
+                                ) : null
+                            }
+                        />
+
+                        {/* Inviter preview card */}
+                        {inviterInfo && inviteValid && (
+                            <Animated.View
+                                entering={FadeIn.duration(300)}
+                                style={[styles.inviterCard, { backgroundColor: c.surface.glass, borderColor: c.gold[500] + '30' }]}
+                            >
+                                <Ionicons name="shield-checkmark" size={16} color={c.gold[500]} />
+                                <Text style={[styles.inviterText, { color: c.text.secondary }]}>
+                                    Vouched for by{' '}
+                                    <Text style={{ color: c.gold[500], fontWeight: '600' }}>
+                                        @{inviterInfo.username}
+                                    </Text>
+                                </Text>
+                            </Animated.View>
+                        )}
+
                         <AnimatedField
                             label="Name"
                             placeholder="Your name"
@@ -523,6 +632,7 @@ export default function SignupScreen() {
                             autoComplete="name"
                             returnKeyType="next"
                             onSubmitEditing={() => emailRef.current?.focus()}
+                            inputRef={nameRef}
                             icon="person-outline"
                             delay={100}
                             colors={c}
@@ -696,6 +806,21 @@ export default function SignupScreen() {
                         </TouchableOpacity>
                     </Animated.View>
 
+                    {/* Request Access Link */}
+                    <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.requestAccessContainer}>
+                        <Text style={[styles.loginText, { color: c.text.secondary }]}>Don't have an invite? </Text>
+                        <TouchableOpacity
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                router.push('/(auth)/request-access' as any);
+                            }}
+                            accessibilityRole="link"
+                            accessibilityLabel="Request access to 0G"
+                        >
+                            <Text style={[styles.loginLink, { color: c.gold[500] }]}>Request access</Text>
+                        </TouchableOpacity>
+                    </Animated.View>
+
                     {/* Terms */}
                     <Animated.View entering={FadeIn.delay(420).duration(300)}>
                         <Text style={[styles.terms, { color: c.text.muted }]}>
@@ -792,7 +917,7 @@ const styles = StyleSheet.create({
     // ---- Submit — gold gradient, matches login ----
     submitButton: {
         marginTop: spacing.md,
-        shadowColor: c.gold[500],
+        shadowColor: '#FFB020',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 12,
@@ -850,11 +975,33 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-SemiBold',
     },
 
+    // ---- Inviter Card ----
+    inviterCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingVertical: 10,
+        paddingHorizontal: spacing.md,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginBottom: spacing.md,
+        marginTop: -spacing.xs,
+    },
+    inviterText: {
+        fontSize: typography.fontSize.sm,
+        fontFamily: 'Inter',
+    },
+
     // ---- Login Link ----
     loginContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         marginTop: spacing.xl,
+    },
+    requestAccessContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: spacing.sm,
     },
     loginText: { fontSize: typography.fontSize.base },
     loginLink: {

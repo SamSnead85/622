@@ -20,6 +20,7 @@ import { checkForEvasion } from '../services/evasionDetection.js';
 import { recordSignupTime } from '../services/botDetection.js';
 import { sendAlert } from '../services/alerting.js';
 import { evaluatePromotion } from '../services/trustService.js';
+import { createChainForNewUser } from '../services/trustChainService.js';
 
 // Apple JWKS endpoint for verifying Apple Sign-In tokens
 const APPLE_JWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
@@ -34,7 +35,7 @@ const signupSchema = z.object({
     displayName: z.string().min(1).max(50).optional(),
     groupOnly: z.boolean().optional(),
     primaryCommunityId: z.string().optional(),
-    accessCode: z.string().optional(),
+    accessCode: z.string().min(1, 'Invite code is required'),
 });
 
 const earlyAccessSchema = z.object({
@@ -166,11 +167,16 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
             throw new AppError('Too many signup attempts. Please try again later.', 429);
         }
 
-        // Validate access code (optional — track usage if provided)
-        let codeRecord: any = null;
-        if (accessCode) {
-            codeRecord = await prisma.accessCode.findUnique({ where: { code: accessCode.trim().toUpperCase() } });
-            // If code is provided but invalid, just ignore it — don't block signup
+        // ── Vouched Entry: Validate access code (REQUIRED) ──
+        const codeRecord = await prisma.accessCode.findUnique({ where: { code: accessCode.trim().toUpperCase() } });
+        if (!codeRecord || !codeRecord.isActive) {
+            throw new AppError('Invalid invite code. 0G is invite-only — request access at /request-access', 403);
+        }
+        if (codeRecord.expiresAt && codeRecord.expiresAt < new Date()) {
+            throw new AppError('This invite code has expired. Request a new one.', 403);
+        }
+        if (codeRecord.maxUses > 0 && codeRecord.useCount >= codeRecord.maxUses) {
+            throw new AppError('This invite code has already been used.', 403);
         }
 
         // Check if email or username exists
@@ -211,17 +217,15 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
             },
         });
 
-        // Increment access code usage (if a valid code was provided)
-        if (codeRecord?.id && codeRecord.isActive) {
-            await prisma.accessCode.update({
-                where: { id: codeRecord.id },
-                data: { useCount: { increment: 1 } },
-            }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err })); // non-blocking
-        }
+        // Increment access code usage
+        await prisma.accessCode.update({
+            where: { id: codeRecord.id },
+            data: { useCount: { increment: 1 } },
+        }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
 
         // ── Founding Creator auto-elevation ──
         // If the access code is a founding_creator code, auto-create CreatorProfile and elevate trust
-        const isFoundingCreator = codeRecord?.type === 'founding_creator' && codeRecord.isActive;
+        const isFoundingCreator = codeRecord.type === 'founding_creator';
         if (isFoundingCreator) {
             const { default: crypto } = await import('crypto');
             const referralCode = `FC${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
@@ -251,6 +255,52 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
             }).catch((err) => logger.warn('[Auth] Founding creator elevation failed:', { error: err?.message || err }));
 
             logger.info(`[Auth] Founding creator signed up: userId=${user.id}, username=${user.username}`);
+        }
+
+        // ── Trust Chain: Create InviteChain record ──
+        // Links this user to the person who invited them and traces back to a founding creator.
+        try {
+            if (isFoundingCreator) {
+                // Founding creators are the root of their chain (degree 0)
+                await createChainForNewUser(user.id, null, -1, user.id);
+
+                // Auto-create a Rally page for the founding creator
+                await prisma.rally.create({
+                    data: {
+                        creatorId: user.id,
+                        slug: user.username.toLowerCase(),
+                        title: `Join ${displayName || user.username} on 0G`,
+                        weeklyAllocation: 250,
+                    },
+                }).catch((err) => logger.warn('[Auth] Rally page creation failed:', { error: err?.message || err }));
+            } else if (codeRecord.createdById) {
+                // Look up the inviter's chain to determine degree
+                const inviterChain = await prisma.inviteChain.findUnique({
+                    where: { userId: codeRecord.createdById },
+                });
+                if (inviterChain) {
+                    await createChainForNewUser(
+                        user.id,
+                        codeRecord.createdById,
+                        inviterChain.degree,
+                        inviterChain.foundingCreatorId,
+                    );
+                } else {
+                    // Inviter has no chain (legacy user) — create chain with inviter as pseudo-root
+                    await createChainForNewUser(user.id, codeRecord.createdById, 0, codeRecord.createdById);
+                }
+            } else {
+                // Admin-generated code with no specific creator — admin is the root
+                const admins = await prisma.user.findMany({
+                    where: { role: { in: ['ADMIN', 'SUPERADMIN'] } },
+                    select: { id: true },
+                    take: 1,
+                });
+                const rootId = admins[0]?.id || user.id;
+                await createChainForNewUser(user.id, null, 0, rootId);
+            }
+        } catch (chainErr) {
+            logger.error('[Auth] InviteChain creation failed (non-blocking):', chainErr);
         }
 
         // Generate device fingerprint for session tracking and evasion detection

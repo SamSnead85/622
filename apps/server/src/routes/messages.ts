@@ -141,16 +141,35 @@ router.get('/conversations', authenticate, async (req: AuthRequest, res, next) =
         });
 
         // Fetch accurate unread counts per conversation using each participant's lastReadAt
+        // Optimized: fetch all messages in one query, then count in memory to avoid N+1
         const unreadCountsPerConversation = new Map<string, number>();
-        for (const cp of conversations) {
-            const count = await prisma.message.count({
+        if (conversations.length > 0) {
+            const conversationIds = conversations.map(cp => cp.conversationId);
+            const participantMap = new Map<string, Date>();
+            conversations.forEach(cp => {
+                participantMap.set(cp.conversationId, cp.lastReadAt);
+            });
+
+            // Fetch all unread messages for all conversations in one query
+            const unreadMessages = await prisma.message.findMany({
                 where: {
-                    conversationId: cp.conversationId,
+                    conversationId: { in: conversationIds },
                     senderId: { not: req.userId },
-                    createdAt: { gt: cp.lastReadAt },
+                },
+                select: {
+                    conversationId: true,
+                    createdAt: true,
                 },
             });
-            unreadCountsPerConversation.set(cp.conversationId, count);
+
+            // Count unread messages per conversation based on each participant's lastReadAt
+            unreadMessages.forEach(msg => {
+                const lastReadAt = participantMap.get(msg.conversationId);
+                if (lastReadAt && msg.createdAt > lastReadAt) {
+                    const currentCount = unreadCountsPerConversation.get(msg.conversationId) || 0;
+                    unreadCountsPerConversation.set(msg.conversationId, currentCount + 1);
+                }
+            });
         }
 
         const result = conversations.map((cp) => {

@@ -44,6 +44,7 @@ import growthRouter from './routes/growth.js';
 import { spacesRouter } from './routes/spaces.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import socialRouter from './routes/social.js';
+import trustchainRouter from './routes/trustchain.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 import { validateEnvironment } from './utils/validateEnv.js';
@@ -365,6 +366,7 @@ app.use('/api/v1/creators', creatorsRouter);
 app.use('/api/v1/growth', growthRouter);
 app.use('/api/v1/spaces', spacesRouter);
 app.use('/api/v1/social', socialRouter);
+app.use('/api/v1/trustchain', trustchainRouter);
 
 
 // Sentry error handler (must be before custom error handler)

@@ -101,12 +101,19 @@ import { SkipLinks } from '@/components/a11y/SkipLinks';
 import { LiveRegionProvider } from '@/components/a11y/LiveRegion';
 import { I18nProvider } from '@/components/layout/RTLProvider';
 import { ToastProvider } from '@/components/Toast';
-import { Inter } from 'next/font/google';
+import { Inter, Space_Grotesk } from 'next/font/google';
 
 const inter = Inter({
     subsets: ['latin', 'latin-ext'],
     variable: '--font-inter',
     display: 'swap',
+});
+
+const spaceGrotesk = Space_Grotesk({
+    subsets: ['latin'],
+    variable: '--font-display',
+    display: 'swap',
+    weight: ['400', '500', '600', '700'],
 });
 
 export default function RootLayout({
@@ -115,7 +122,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" className={`dark ${inter.variable}`}>
+        <html lang="en" className={`dark ${inter.variable} ${spaceGrotesk.variable}`}>
             <head>
                 <script
                     type="application/ld+json"

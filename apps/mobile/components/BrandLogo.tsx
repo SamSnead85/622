@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface BrandLogoProps {
@@ -14,18 +14,35 @@ const FONT_SIZE = {
 
 export function BrandLogo({ size = 'standard' }: BrandLogoProps) {
     const { colors } = useTheme();
+    const fontSize = FONT_SIZE[size];
 
     return (
-        <Text style={[styles.logo, { fontSize: FONT_SIZE[size], color: colors.gold[500] }]}>
-            0G
-        </Text>
+        <View style={styles.container}>
+            <Text
+                style={[
+                    styles.logo,
+                    {
+                        fontSize,
+                        color: colors.gold[500],
+                        textShadowColor: colors.gold[500] + '60',
+                        textShadowOffset: { width: 0, height: 0 },
+                        textShadowRadius: size === 'hero' ? 20 : 12,
+                    },
+                ]}
+            >
+                0G
+            </Text>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
+    container: {
+        alignItems: 'center',
+    },
     logo: {
-        fontFamily: 'Inter-Bold',
-        fontWeight: '800',
+        fontFamily: 'SpaceGrotesk-Bold',
+        fontWeight: '700',
         letterSpacing: -1.5,
     },
 });

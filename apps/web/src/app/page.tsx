@@ -19,17 +19,17 @@ import { GlobeIcon, VoteIcon, HeartIcon, VideoIcon, UnlockIcon, ShieldIcon, CpuI
 function AmbientBackground() {
     return (
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-            {/* Deep space base — rich dark with subtle blue undertone */}
-            <div className="absolute inset-0 bg-[#020208]" />
+            {/* Deep warm base — rich dark charcoal */}
+            <div className="absolute inset-0 bg-[#0A0806]" />
 
-            {/* Layer 1: Liquid metal mesh gradient — slow morphing aurora */}
+            {/* Layer 1: Warm neon mesh gradient — amber and pink aurora */}
             <motion.div
                 className="absolute inset-0"
                 style={{
                     background: `
-                        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(212,175,55,0.08) 0%, transparent 60%),
-                        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(120,119,198,0.06) 0%, transparent 50%),
-                        radial-gradient(ellipse 70% 60% at 50% 80%, rgba(212,175,55,0.05) 0%, transparent 55%)
+                        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(255,176,32,0.10) 0%, transparent 60%),
+                        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(255,51,102,0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse 70% 60% at 50% 80%, rgba(255,224,102,0.05) 0%, transparent 55%)
                     `,
                 }}
                 animate={{
@@ -38,11 +38,11 @@ function AmbientBackground() {
                 transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
             />
 
-            {/* Layer 2: Primary liquid metal blob — gold, top-left drift */}
+            {/* Layer 2: Primary warm blob — amber neon, top-left drift */}
             <motion.div
                 className="absolute -top-[20%] -left-[10%] w-[900px] h-[900px]"
                 style={{
-                    background: 'radial-gradient(ellipse at center, rgba(212,175,55,0.14) 0%, rgba(212,175,55,0.04) 40%, transparent 70%)',
+                    background: 'radial-gradient(ellipse at center, rgba(255,176,32,0.14) 0%, rgba(255,176,32,0.04) 40%, transparent 70%)',
                     filter: 'blur(80px)',
                 }}
                 animate={{
@@ -54,11 +54,11 @@ function AmbientBackground() {
                 transition={{ duration: 30, repeat: Infinity, ease: 'easeInOut' }}
             />
 
-            {/* Layer 3: Secondary liquid metal blob — cool violet, bottom-right drift */}
+            {/* Layer 3: Secondary blob — hot pink, bottom-right drift */}
             <motion.div
                 className="absolute -bottom-[15%] -right-[10%] w-[1000px] h-[800px]"
                 style={{
-                    background: 'radial-gradient(ellipse at center, rgba(100,100,220,0.10) 0%, rgba(80,80,180,0.03) 45%, transparent 70%)',
+                    background: 'radial-gradient(ellipse at center, rgba(255,51,102,0.10) 0%, rgba(255,51,102,0.03) 45%, transparent 70%)',
                     filter: 'blur(100px)',
                 }}
                 animate={{
@@ -70,11 +70,11 @@ function AmbientBackground() {
                 transition={{ duration: 35, repeat: Infinity, ease: 'easeInOut' }}
             />
 
-            {/* Layer 4: Accent liquid blob — warm rose-gold, center drift */}
+            {/* Layer 4: Accent warm yellow blob — center drift */}
             <motion.div
                 className="absolute top-[30%] left-[40%] w-[700px] h-[700px]"
                 style={{
-                    background: 'radial-gradient(ellipse at center, rgba(200,160,80,0.07) 0%, rgba(180,140,60,0.02) 40%, transparent 65%)',
+                    background: 'radial-gradient(ellipse at center, rgba(255,224,102,0.07) 0%, rgba(255,204,51,0.02) 40%, transparent 65%)',
                     filter: 'blur(90px)',
                 }}
                 animate={{
@@ -157,7 +157,23 @@ function AmbientBackground() {
                 }}
             />
 
-            {/* Layer 11: Floating particle field — subtle dots drifting upward */}
+            {/* Layer 11: Perspective grid — futuristic depth floor */}
+            <div
+                className="absolute inset-0 opacity-[0.03]"
+                style={{
+                    backgroundImage: `
+                        linear-gradient(rgba(124,143,255,0.4) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(124,143,255,0.4) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '80px 80px',
+                    maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.8) 60%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.8) 60%, transparent 100%)',
+                    transform: 'perspective(500px) rotateX(45deg) scale(2)',
+                    transformOrigin: 'center 60%',
+                }}
+            />
+
+            {/* Layer 12: Floating particle field — subtle dots drifting upward */}
             <div className="absolute inset-0 overflow-hidden">
                 {Array.from({ length: 40 }).map((_, i) => (
                     <div
@@ -186,11 +202,11 @@ function AmbientBackground() {
 function Wordmark() {
     return (
         <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/90 to-white/70 flex items-center justify-center">
-                <span className="text-black font-bold text-lg tracking-tight">0G</span>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FFB020] to-[#FFCC33] flex items-center justify-center shadow-[0_0_20px_rgba(255,176,32,0.3)]">
+                <span className="text-[#1A1412] font-bold text-lg tracking-tight font-display">0G</span>
             </div>
-            <span className="text-white/80 font-light tracking-[0.2em] text-sm uppercase hidden sm:block">
-                ZeroG
+            <span className="text-[#FFF5E6]/80 font-display font-bold tracking-tight text-lg hidden sm:block">
+                0G
             </span>
         </div>
     );
@@ -212,7 +228,7 @@ function Navigation() {
     return (
         <motion.nav
             className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
-                ? 'bg-[#020208]/80 backdrop-blur-2xl border-b border-white/[0.06] py-4 shadow-[0_4px_30px_rgba(0,0,0,0.3)]'
+                ? 'bg-[#0A0806]/80 backdrop-blur-2xl border-b border-white/[0.06] py-4 shadow-[0_4px_30px_rgba(0,0,0,0.3)]'
                 : 'bg-transparent py-6'
                 }`}
             initial={{ y: -100, opacity: 0 }}
@@ -323,7 +339,7 @@ function HeroSection() {
                 <div className="absolute inset-0 bg-gradient-to-r from-[#020208]/90 via-transparent to-[#020208]/90 z-10" />
                 <div className="absolute inset-0 bg-black/30 z-10" />
                 {/* Liquid metal sheen across hero */}
-                <div className="absolute inset-0 z-10 bg-gradient-to-br from-[#7C8FFF]/[0.03] via-transparent to-[#4040A0]/[0.03]" />
+                <div className="absolute inset-0 z-10 bg-gradient-to-br from-[#FFB020]/[0.03] via-transparent to-[#4040A0]/[0.03]" />
 
                 {/* Rotating Hero Images - Smooth 2s crossfade to eliminate black gaps */}
                 {heroImages.map((img, index) => (
@@ -339,84 +355,168 @@ function HeroSection() {
                 ))}
             </motion.div>
 
-            {/* Hero Content */}
+            {/* Hero Content — Centered, Leonardo.ai-inspired layout */}
             <motion.div
-                className="relative z-20 h-full flex flex-col justify-center"
+                className="relative z-20 h-full flex flex-col items-center justify-center text-center"
                 style={{ opacity }}
             >
-                <div className="max-w-7xl mx-auto px-6 lg:px-8 w-full">
-                    {/* Eyebrow */}
+                <div className="max-w-4xl mx-auto px-6 lg:px-8 w-full flex flex-col items-center">
+                    {/* Eyebrow Badge — compact */}
                     <motion.div
-                        initial={{ opacity: 0, y: 30 }}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.5 }}
-                        className="mb-8"
+                        className="mb-6"
                     >
-                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            <span className="text-white/60 text-xs tracking-widest uppercase font-light">
-                                Privacy-first communication for families &amp; communities
+                        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <span className="text-white/60 text-[11px] tracking-widest uppercase font-light">
+                                Privacy-first social platform
                             </span>
                         </span>
                     </motion.div>
 
-                    {/* Main Headline */}
+                    {/* Main Headline — centered, impactful */}
                     <motion.h1
-                        className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-light text-white leading-[1.05] tracking-tight max-w-5xl"
-                        initial={{ opacity: 0, y: 50 }}
+                        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold font-display text-[#FFF5E6] leading-[1.08] tracking-tight"
+                        initial={{ opacity: 0, y: 40 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1, delay: 0.7 }}
                     >
-                        They sell your data.
+                        The people&apos;s
                         <br />
-                        <span className="bg-gradient-to-r from-[#7C8FFF] via-[#99AAFF] to-[#7C8FFF] bg-clip-text text-transparent">
-                            We protect it.
+                        <span className="bg-gradient-to-r from-[#FFB020] via-[#FFCC33] to-[#FF3366] bg-clip-text text-transparent">
+                            network.
                         </span>
                     </motion.h1>
 
-                    {/* Sub-headline */}
+                    {/* Sub-headline — revolutionary manifesto */}
                     <motion.p
-                        className="mt-8 text-lg md:text-xl text-white/40 max-w-xl font-light leading-relaxed"
-                        initial={{ opacity: 0, y: 30 }}
+                        className="mt-5 text-base md:text-lg text-[#FFF5E6]/40 max-w-lg font-light leading-relaxed"
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 1 }}
                     >
-                        Private groups for your family. Encrypted messaging that no one can read.
-                        Video calls, live streaming, and community tools — all without ads, tracking, or algorithms.
-                        The platform you deserve.
+                        No ads. No algorithms. No compromise. Built by the community, for the community.
                     </motion.p>
 
-                    {/* CTAs */}
+                    {/* Search / Prompt Bar — Leonardo.ai style */}
                     <motion.div
-                        className="mt-12 flex flex-col sm:flex-row items-start gap-4"
-                        initial={{ opacity: 0, y: 30 }}
+                        className="mt-10 w-full max-w-xl relative"
+                        initial={{ opacity: 0, y: 20, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.8, delay: 1.15 }}
+                    >
+                        {/* Pulsing warm glow ring behind prompt bar */}
+                        <motion.div
+                            className="absolute -inset-3 rounded-3xl pointer-events-none"
+                            style={{
+                                background: 'radial-gradient(ellipse at center, rgba(255,176,32,0.12) 0%, transparent 70%)',
+                                filter: 'blur(20px)',
+                            }}
+                            animate={{
+                                opacity: [0.3, 0.7, 0.3],
+                                scale: [0.98, 1.02, 0.98],
+                            }}
+                            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                        />
+                        <Link href="/signup" className="block group relative">
+                            <div className="relative flex items-center gap-3 px-5 py-4 rounded-2xl bg-[#FFB020]/[0.04] border border-[#FFB020]/[0.08] backdrop-blur-xl hover:border-[#FFB020]/30 hover:bg-[#FFB020]/[0.06] transition-all duration-500 shadow-[0_0_40px_-10px_rgba(255,176,32,0.08)] hover:shadow-[0_0_60px_-10px_rgba(255,176,32,0.18)]">
+                                {/* Search icon */}
+                                <svg className="w-5 h-5 text-[#FFF5E6]/30 group-hover:text-[#FFB020]/60 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                </svg>
+                                <span className="text-[#FFF5E6]/30 text-sm font-light flex-1 text-left">Join the movement</span>
+                                {/* Arrow / Enter icon */}
+                                <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-[#FFB020]/20 flex items-center justify-center group-hover:bg-[#FFB020]/30 transition-colors">
+                                    <svg className="w-4 h-4 text-[#FFB020]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </Link>
+                    </motion.div>
+
+                    {/* Feature Icons Row — horizontal, Leonardo-style */}
+                    <motion.div
+                        className="mt-8 flex items-center justify-center gap-6 sm:gap-8"
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 1.2 }}
+                        transition={{ duration: 0.8, delay: 1.35 }}
+                    >
+                        {[
+                            { label: 'Feed', badge: null, icon: (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                                </svg>
+                            )},
+                            { label: 'Communities', badge: null, icon: (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                                </svg>
+                            )},
+                            { label: 'Messages', badge: null, icon: (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                                </svg>
+                            )},
+                            { label: 'Live', badge: 'NEW', icon: (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25z" />
+                                </svg>
+                            )},
+                            { label: 'Games', badge: 'BETA', icon: (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.959.221-.29.349-.634.349-1.003 0-1.036-1.007-1.875-2.25-1.875s-2.25.84-2.25 1.875c0 .369.128.713.349 1.003.215.283.401.604.401.959v0a.64.64 0 01-.657.643 48.491 48.491 0 01-4.163-.3c-1.18-.143-2.224-.632-2.995-1.37A2.503 2.503 0 002.25 7.5v.75a2.25 2.25 0 002.25 2.25h1.086c.527 0 1.039.1 1.52.291l.406.161a2.25 2.25 0 002.476 0l.406-.161c.481-.191.993-.291 1.52-.291h.214a2.25 2.25 0 002.476 0l.406-.161c.481-.191.993-.291 1.52-.291H18a2.25 2.25 0 002.25-2.25V7.5a2.503 2.503 0 00-1.135-2.085c-.771.738-1.815 1.227-2.995 1.37a48.491 48.491 0 01-4.163.3.64.64 0 01-.657-.643v0zM12 12.75c-2.472 0-4.9.184-7.274.54-1.454.217-2.476 1.482-2.476 2.916v.384a4.104 4.104 0 012.585.364l.406.161a4.5 4.5 0 004.118 0l.406-.161a4.104 4.104 0 013.91 0l.406.161a4.5 4.5 0 004.118 0l.406-.161a4.104 4.104 0 012.585-.364v-.384c0-1.434-1.022-2.7-2.476-2.917A49.138 49.138 0 0012 12.75z" />
+                                </svg>
+                            )},
+                        ].map((feature, i) => (
+                            <motion.div
+                                key={feature.label}
+                                className="flex flex-col items-center gap-1.5 group cursor-default"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 1.45 + i * 0.08 }}
+                            >
+                                <div className="relative">
+                                    <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white/40 group-hover:text-[#FFB020] group-hover:border-[#FFB020]/20 group-hover:bg-[#FFB020]/[0.06] transition-all duration-300">
+                                        {feature.icon}
+                                    </div>
+                                    {feature.badge && (
+                                        <span className="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full bg-[#FFB020] text-[7px] font-bold text-white tracking-wider leading-none">
+                                            {feature.badge}
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="text-[10px] text-white/30 font-light tracking-wide group-hover:text-white/50 transition-colors">{feature.label}</span>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+
+                    {/* Compact CTAs */}
+                    <motion.div
+                        className="mt-10 flex items-center gap-4"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 1.55 }}
                     >
                         <Link
                             href="/signup"
-                            className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/95 transition-all hover:scale-[1.03] shadow-[0_0_30px_rgba(212,175,55,0.2)] hover:shadow-[0_0_50px_rgba(212,175,55,0.35)]"
+                            className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/95 transition-all hover:scale-[1.03] shadow-[0_0_30px_rgba(124,143,255,0.15)] hover:shadow-[0_0_50px_rgba(124,143,255,0.3)]"
                         >
                             Get Started Free
-                            <svg
-                                className="w-4 h-4 transition-transform group-hover:translate-x-1"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                            <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                             </svg>
                         </Link>
                         <a
                             href="#vision"
-                            className="inline-flex items-center gap-2 px-6 py-4 text-white/50 hover:text-white transition-colors text-sm font-light"
+                            className="inline-flex items-center gap-2 px-4 py-3 text-white/40 hover:text-white/70 transition-colors text-sm font-light"
                         >
-                            <span className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center">
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </span>
                             Learn more
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+                            </svg>
                         </a>
                     </motion.div>
                 </div>
@@ -459,10 +559,10 @@ function StatsSection() {
             {/* Liquid glass divider effect */}
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent" />
             <div className="absolute top-0 left-0 right-0 h-px overflow-hidden">
-                <div className="h-full w-full bg-gradient-to-r from-transparent via-[#7C8FFF]/30 to-transparent" style={{ animation: 'shimmerLine 4s ease-in-out infinite' }} />
+                <div className="h-full w-full bg-gradient-to-r from-transparent via-[#FFB020]/30 to-transparent" style={{ animation: 'shimmerLine 4s ease-in-out infinite' }} />
             </div>
             <div className="absolute bottom-0 left-0 right-0 h-px overflow-hidden">
-                <div className="h-full w-full bg-gradient-to-r from-transparent via-[#7C8FFF]/30 to-transparent" style={{ animation: 'shimmerLine 4s ease-in-out infinite', animationDelay: '2s' }} />
+                <div className="h-full w-full bg-gradient-to-r from-transparent via-[#FFB020]/30 to-transparent" style={{ animation: 'shimmerLine 4s ease-in-out infinite', animationDelay: '2s' }} />
             </div>
 
             <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
@@ -478,12 +578,238 @@ function StatsSection() {
                             <div className="relative inline-block">
                                 <p className="text-4xl md:text-5xl font-light text-white mb-2 relative z-10">{stat.value}</p>
                                 {/* Subtle glow behind stat value */}
-                                <div className="absolute inset-0 blur-2xl bg-[#7C8FFF]/10 rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                <div className="absolute inset-0 blur-2xl bg-[#FFB020]/10 rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                             </div>
                             <p className="text-sm text-white/40 tracking-wide">{stat.label}</p>
                         </motion.div>
                     ))}
                 </div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
+// FEATURED CONTENT SHOWCASE
+// Horizontal scrolling community cards
+// ============================================
+const featuredCommunities = [
+    { title: 'Travel & Adventure', members: '12.4K', image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&h=800&fit=crop&q=80' },
+    { title: 'Photography', members: '8.7K', image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=600&h=800&fit=crop&q=80' },
+    { title: 'Wellness & Mindfulness', members: '15.2K', image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&h=800&fit=crop&q=80' },
+    { title: 'Music Creators', members: '6.9K', image: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600&h=800&fit=crop&q=80' },
+    { title: 'Tech & Innovation', members: '21.3K', image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=800&fit=crop&q=80' },
+    { title: 'Culinary Arts', members: '9.1K', image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&h=800&fit=crop&q=80' },
+];
+
+function FeaturedContentSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-80px' });
+
+    return (
+        <section ref={ref} className="relative py-24 md:py-32 overflow-hidden">
+            {/* Top divider */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
+            <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
+                {/* Section Header */}
+                <motion.div
+                    className="flex items-end justify-between mb-10"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.7 }}
+                >
+                    <div>
+                        <p className="text-[#FFB020]/60 text-xs tracking-[0.4em] uppercase mb-3 font-light">Discover</p>
+                        <h2 className="text-2xl md:text-4xl font-light text-white">Featured Communities</h2>
+                    </div>
+                    <Link
+                        href="/signup"
+                        className="hidden sm:inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-[#FFB020] transition-colors font-light"
+                    >
+                        View More
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
+                    </Link>
+                </motion.div>
+
+                {/* Horizontal Scrolling Cards */}
+                <div className="flex gap-5 overflow-x-auto pb-4 -mx-6 px-6 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                    {featuredCommunities.map((community, i) => (
+                        <motion.div
+                            key={community.title}
+                            className="flex-shrink-0 w-[220px] sm:w-[250px] snap-start"
+                            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                            animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+                            transition={{ duration: 0.6, delay: i * 0.08 }}
+                        >
+                            <div className="group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer">
+                                {/* Card Image */}
+                                <Image
+                                    src={community.image}
+                                    alt={community.title}
+                                    fill
+                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                />
+                                {/* Dark gradient overlay */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                {/* Hover glow */}
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 shadow-[inset_0_0_60px_rgba(124,143,255,0.15)]" />
+                                {/* Border glow on hover */}
+                                <div className="absolute inset-0 rounded-2xl border border-white/[0.06] group-hover:border-[#FFB020]/30 transition-colors duration-500" />
+
+                                {/* Glass overlay at bottom */}
+                                <div className="absolute bottom-0 left-0 right-0 p-4">
+                                    <div className="backdrop-blur-md bg-white/[0.06] rounded-xl p-3 border border-white/[0.08]">
+                                        <h3 className="text-white text-sm font-medium truncate">{community.title}</h3>
+                                        <div className="flex items-center gap-1.5 mt-1">
+                                            <svg className="w-3 h-3 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                                            </svg>
+                                            <span className="text-white/40 text-xs font-light">{community.members} members</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// ============================================
+// PLATFORM SHOWCASE SECTION
+// Feature grid with animated border glow
+// ============================================
+const platformFeatures = [
+    {
+        title: 'Encrypted Messages',
+        description: 'End-to-end encryption that no one can read — not even us.',
+        icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+        ),
+    },
+    {
+        title: 'Live Streaming',
+        description: 'Go live to your community with ultra-low latency video.',
+        icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25z" />
+            </svg>
+        ),
+    },
+    {
+        title: 'Communities',
+        description: 'Private, contained groups where members stay invisible to outsiders.',
+        icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+            </svg>
+        ),
+    },
+    {
+        title: 'Content Feed',
+        description: 'No algorithm. You choose what you see, in the order you want.',
+        icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+            </svg>
+        ),
+    },
+    {
+        title: 'Audio Spaces',
+        description: 'Drop-in audio rooms for live conversations with your community.',
+        icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+            </svg>
+        ),
+    },
+    {
+        title: 'Developer API',
+        description: 'Build on top of ZeroG with our open, privacy-respecting API.',
+        icon: (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+            </svg>
+        ),
+    },
+];
+
+function PlatformShowcaseSection() {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: '-80px' });
+
+    return (
+        <section ref={ref} className="relative py-24 md:py-32 overflow-hidden">
+            {/* Top divider */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
+            <div className="max-w-5xl mx-auto px-6 lg:px-8 relative">
+                {/* Section Header */}
+                <motion.div
+                    className="text-center mb-14"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.8 }}
+                >
+                    <p className="text-[#FFB020]/60 text-xs tracking-[0.4em] uppercase mb-4 font-light">Everything Built In</p>
+                    <h2 className="text-3xl md:text-5xl font-light text-white">
+                        One platform.{' '}
+                        <span className="bg-gradient-to-r from-[#FFB020] via-[#FFCC33] to-[#FFB020] bg-clip-text text-transparent">
+                            Everything you need.
+                        </span>
+                    </h2>
+                </motion.div>
+
+                {/* Feature Grid with animated border glow container */}
+                <motion.div
+                    className="relative rounded-3xl p-px overflow-hidden"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                >
+                    {/* Animated gradient border */}
+                    <div
+                        className="absolute inset-0 rounded-3xl"
+                        style={{
+                            background: 'linear-gradient(135deg, rgba(124,143,255,0.3), rgba(124,143,255,0.05), rgba(153,170,255,0.2), rgba(124,143,255,0.05), rgba(124,143,255,0.3))',
+                            backgroundSize: '300% 300%',
+                            animation: 'borderGlow 6s ease-in-out infinite',
+                        }}
+                    />
+
+                    {/* Inner container */}
+                    <div className="relative rounded-3xl bg-[#0A0806]/95 backdrop-blur-xl p-6 md:p-10">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+                            {platformFeatures.map((feature, i) => (
+                                <motion.div
+                                    key={feature.title}
+                                    className="group relative p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-[#FFB020]/20 hover:bg-white/[0.04] transition-all duration-500"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                                    transition={{ duration: 0.5, delay: 0.3 + i * 0.08 }}
+                                >
+                                    {/* Hover glow */}
+                                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-[#FFB020]/[0.04] to-transparent" />
+
+                                    <div className="relative">
+                                        <div className="w-10 h-10 rounded-xl bg-[#FFB020]/[0.08] border border-[#FFB020]/[0.12] flex items-center justify-center text-[#FFB020]/70 group-hover:text-[#FFB020] group-hover:bg-[#FFB020]/[0.12] transition-all duration-300 mb-4">
+                                            {feature.icon}
+                                        </div>
+                                        <h3 className="text-white text-sm font-medium mb-1.5">{feature.title}</h3>
+                                        <p className="text-white/35 text-xs leading-relaxed font-light">{feature.description}</p>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </motion.div>
             </div>
         </section>
     );
@@ -531,7 +857,7 @@ function WhySwitchSection() {
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                     transition={{ duration: 0.8 }}
                 >
-                    <p className="text-[#7C8FFF]/60 text-xs tracking-[0.4em] uppercase mb-4 font-light">Why People Are Switching</p>
+                    <p className="text-[#FFB020]/60 text-xs tracking-[0.4em] uppercase mb-4 font-light">Why People Are Switching</p>
                     <h2 className="text-3xl md:text-5xl font-light text-white max-w-3xl mx-auto">
                         You already know something is{' '}
                         <span className="text-white/40">wrong</span>.
@@ -560,12 +886,12 @@ function WhySwitchSection() {
                             </div>
                             {/* The solution */}
                             <div className="p-6 bg-emerald-500/[0.02] relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-br from-[#7C8FFF]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-[#FFB020]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 <div className="flex items-center gap-2 mb-3 relative">
-                                    <svg className="w-4 h-4 text-[#7C8FFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <svg className="w-4 h-4 text-[#FFB020]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                     </svg>
-                                    <span className="text-[#7C8FFF] text-xs font-medium uppercase tracking-wider">0G Instead</span>
+                                    <span className="text-[#FFB020] text-xs font-medium uppercase tracking-wider">0G Instead</span>
                                 </div>
                                 <p className="text-white/60 text-sm leading-relaxed relative">{item.solution}</p>
                             </div>
@@ -589,7 +915,7 @@ function WhySwitchSection() {
                         <div key={item.label} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center">
                             <p className="text-white font-medium text-sm mb-2">{item.label}</p>
                             <p className="text-red-400/50 text-[11px] line-through mb-1">{item.them}</p>
-                            <p className="text-[#7C8FFF] text-xs font-medium">{item.us}</p>
+                            <p className="text-[#FFB020] text-xs font-medium">{item.us}</p>
                         </div>
                     ))}
                 </motion.div>
@@ -633,7 +959,7 @@ function VisionSection() {
 
                     <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-white leading-tight">
                         Everything WhatsApp,{' '}
-                        <span className="bg-gradient-to-r from-[#7C8FFF] to-[#99AAFF] bg-clip-text text-transparent">Instagram</span>,
+                        <span className="bg-gradient-to-r from-[#FFB020] to-[#FFCC33] bg-clip-text text-transparent">Instagram</span>,
                         <br className="hidden md:block" />
                         and TikTok{' '}
                         <span className="bg-gradient-to-r from-white/60 to-white/30 bg-clip-text text-transparent">should have been</span>.
@@ -643,7 +969,7 @@ function VisionSection() {
                         {[
                             {
                                 Icon: ShieldIcon,
-                                color: 'from-[#7C8FFF] to-[#6070EE]',
+                                color: 'from-[#FFB020] to-[#E09000]',
                                 title: 'Private by Default',
                                 description: 'Your family group is invisible to everyone else. No public profile required. No strangers can find you. Stay private, or join the community when you\'re ready.',
                             },
@@ -754,8 +1080,8 @@ function StoryTellersSection() {
                             Vote on what stories matter. Collectively sponsor journalists and creators to go
                             share truth with the world. The community is the curator.
                         </p>
-                        <div className="mt-6 flex items-center gap-2 text-[#7C8FFF] text-sm">
-                            <span className="w-2 h-2 rounded-full bg-[#7C8FFF]" />
+                        <div className="mt-6 flex items-center gap-2 text-[#FFB020] text-sm">
+                            <span className="w-2 h-2 rounded-full bg-[#FFB020]" />
                             Collective action
                         </div>
                     </motion.div>
@@ -847,7 +1173,7 @@ function FullCapabilitiesSection() {
     return (
         <section id="platform" ref={ref} className="relative py-32 md:py-48">
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] rounded-full bg-[#7C8FFF]/[0.02] blur-[150px]" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] rounded-full bg-[#FFB020]/[0.02] blur-[150px]" />
             </div>
             <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
                 <motion.div
@@ -856,7 +1182,7 @@ function FullCapabilitiesSection() {
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                     transition={{ duration: 0.8 }}
                 >
-                    <p className="text-[#7C8FFF]/60 text-xs tracking-[0.4em] uppercase mb-4 font-light">Complete Platform</p>
+                    <p className="text-[#FFB020]/60 text-xs tracking-[0.4em] uppercase mb-4 font-light">Complete Platform</p>
                     <h2 className="text-4xl md:text-5xl lg:text-6xl font-light text-white mb-6">
                         Everything you need.
                         <br />
@@ -872,7 +1198,7 @@ function FullCapabilitiesSection() {
                     {capabilities.map((cap, i) => (
                         <motion.div
                             key={cap.title}
-                            className="group relative bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 hover:border-[#7C8FFF]/20 transition-all duration-500 hover:bg-white/[0.04] hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.15)]"
+                            className="group relative bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 hover:border-[#FFB020]/20 transition-all duration-500 hover:bg-white/[0.04] hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.15)]"
                             initial={{ opacity: 0, y: 30 }}
                             animate={isInView ? { opacity: 1, y: 0 } : {}}
                             transition={{ duration: 0.5, delay: i * 0.05 }}
@@ -880,7 +1206,7 @@ function FullCapabilitiesSection() {
                             <div className="w-10 h-10 rounded-lg border border-white/[0.08] flex items-center justify-center text-white/40 mb-4">
                                 {cap.icon}
                             </div>
-                            <h3 className="text-white font-medium text-lg mb-2 group-hover:text-[#7C8FFF] transition-colors">{cap.title}</h3>
+                            <h3 className="text-white font-medium text-lg mb-2 group-hover:text-[#FFB020] transition-colors">{cap.title}</h3>
                             <p className="text-white/40 text-sm leading-relaxed">{cap.desc}</p>
                         </motion.div>
                     ))}
@@ -1034,7 +1360,7 @@ const community = await fetch(
       name: 'My Organization',
       description: 'Built with the 0G API',
       isPublic: false,
-      brandColor: '#7C8FFF'
+      brandColor: '#FFB020'
     })
   }
 );`}
@@ -1048,7 +1374,7 @@ const community = await fetch(
                         transition={{ duration: 0.8, delay: 0.2 }}
                         className="md:order-2"
                     >
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#7C8FFF]/10 border border-[#7C8FFF]/20 text-[#7C8FFF] text-xs font-medium mb-6">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FFB020]/10 border border-[#FFB020]/20 text-[#FFB020] text-xs font-medium mb-6">
                             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
                             Developer Platform
                         </div>
@@ -1078,7 +1404,7 @@ const community = await fetch(
                             Designed for AI agents, no-code app builders, agentic dev tools, streaming platforms, podcast tools,
                             and any third-party wanting to programmatically create communities and content on 0G.
                         </p>
-                        <Link href="/developers" className="inline-flex items-center gap-2 text-[#7C8FFF] text-sm font-medium hover:underline">
+                        <Link href="/developers" className="inline-flex items-center gap-2 text-[#FFB020] text-sm font-medium hover:underline">
                             Explore Developer Portal
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                         </Link>
@@ -1463,7 +1789,7 @@ function PressSection() {
             title: 'ZeroG: The Digital Sovereignty Revolution',
             quote: 'A bold new platform challenging the surveillance economy with community-driven governance and true data ownership.',
             url: 'https://vibecio.com/article/zerog-digital-sovereignty-revolution',
-            gradient: 'from-[#7C8FFF] to-[#6070EE]',
+            gradient: 'from-[#FFB020] to-[#E09000]',
         },
     ];
 
@@ -1509,7 +1835,7 @@ function PressSection() {
                                     </svg>
                                 </div>
 
-                                <h3 className="text-xl md:text-2xl font-light text-white mb-3 group-hover:text-[#7C8FFF] transition-colors">
+                                <h3 className="text-xl md:text-2xl font-light text-white mb-3 group-hover:text-[#FFB020] transition-colors">
                                     {item.title}
                                 </h3>
 
@@ -1517,7 +1843,7 @@ function PressSection() {
                                     &ldquo;{item.quote}&rdquo;
                                 </p>
 
-                                <p className="mt-4 text-[#7C8FFF] text-sm font-medium group-hover:underline">
+                                <p className="mt-4 text-[#FFB020] text-sm font-medium group-hover:underline">
                                     Read the full article →
                                 </p>
                             </div>
@@ -1569,7 +1895,7 @@ function ManifestoSection() {
         <section ref={ref} className="relative py-32 md:py-40">
             {/* Subtle gradient accent */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[1px] bg-gradient-to-r from-transparent via-[#7C8FFF]/20 to-transparent" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[1px] bg-gradient-to-r from-transparent via-[#FFB020]/20 to-transparent" />
             </div>
 
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -1582,7 +1908,7 @@ function ManifestoSection() {
                     <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-6 font-light">Our Manifesto</p>
                     <h2 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.15] mb-8">
                         Social media was a{' '}
-                        <span className="bg-gradient-to-r from-[#7C8FFF] to-[#6070EE] bg-clip-text text-transparent">
+                        <span className="bg-gradient-to-r from-[#FFB020] to-[#E09000] bg-clip-text text-transparent">
                             revolution
                         </span>{' '}
                         that got{' '}
@@ -1608,10 +1934,10 @@ function ManifestoSection() {
                             transition={{ duration: 0.5, delay: i * 0.1 }}
                         >
                             <div className="md:col-span-1">
-                                <span className="text-[#7C8FFF]/40 text-sm font-mono">{p.number}</span>
+                                <span className="text-[#FFB020]/40 text-sm font-mono">{p.number}</span>
                             </div>
                             <div className="md:col-span-3">
-                                <h3 className="text-white font-medium text-lg group-hover:text-[#7C8FFF] transition-colors">
+                                <h3 className="text-white font-medium text-lg group-hover:text-[#FFB020] transition-colors">
                                     {p.title}
                                 </h3>
                             </div>
@@ -1626,14 +1952,14 @@ function ManifestoSection() {
 
                 {/* Digital Sovereignty callout */}
                 <motion.div
-                    className="mt-16 p-8 md:p-12 rounded-3xl bg-gradient-to-br from-[#7C8FFF]/5 to-[#6070EE]/5 border border-[#7C8FFF]/10 relative overflow-hidden"
+                    className="mt-16 p-8 md:p-12 rounded-3xl bg-gradient-to-br from-[#FFB020]/5 to-[#E09000]/5 border border-[#FFB020]/10 relative overflow-hidden"
                     initial={{ opacity: 0, y: 30 }}
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                     transition={{ duration: 0.8, delay: 0.6 }}
                 >
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#7C8FFF]/5 rounded-full blur-[100px]" />
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFB020]/5 rounded-full blur-[100px]" />
                     <div className="relative">
-                        <p className="text-[#7C8FFF] text-xs tracking-[0.3em] uppercase font-medium mb-4">Digital Sovereignty</p>
+                        <p className="text-[#FFB020] text-xs tracking-[0.3em] uppercase font-medium mb-4">Digital Sovereignty</p>
                         <h3 className="text-2xl md:text-3xl font-light text-white mb-4 leading-snug max-w-2xl">
                             In the age of AI and mass surveillance, owning your digital identity isn&apos;t a luxury — it&apos;s a right.
                         </h3>
@@ -1645,7 +1971,7 @@ function ManifestoSection() {
                             href="https://vibecio.com/article/zerog-digital-sovereignty-revolution"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-[#7C8FFF] text-sm font-medium hover:underline"
+                            className="inline-flex items-center gap-2 text-[#FFB020] text-sm font-medium hover:underline"
                         >
                             Read about the Digital Sovereignty Revolution
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1671,8 +1997,8 @@ function CTASection() {
         <section id="community" ref={ref} className="relative py-32 md:py-48 overflow-hidden">
             {/* Dramatic radial glow */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-[#7C8FFF]/[0.04] blur-[150px]" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-[#7C8FFF]/[0.08] blur-[80px]" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-[#FFB020]/[0.04] blur-[150px]" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-[#FFB020]/[0.08] blur-[80px]" />
             </div>
             <div className="max-w-4xl mx-auto px-6 lg:px-8 text-center relative z-10">
                 <motion.div
@@ -1685,7 +2011,7 @@ function CTASection() {
                     <h2 className="text-4xl md:text-6xl lg:text-7xl font-light text-white leading-tight mb-8">
                         Your family deserves
                         <br />
-                        <span className="bg-gradient-to-r from-[#7C8FFF] via-[#99AAFF] to-[#7C8FFF] bg-clip-text text-transparent">
+                        <span className="bg-gradient-to-r from-[#FFB020] via-[#FFCC33] to-[#FFB020] bg-clip-text text-transparent">
                             better than this.
                         </span>
                     </h2>
@@ -1842,17 +2168,19 @@ export default function HomePage() {
 
     if (!mounted) {
         return (
-            <div className="min-h-screen bg-[#020208] flex items-center justify-center">
+            <div className="min-h-screen bg-[#0A0806] flex items-center justify-center">
                 <div className="w-10 h-10 border border-white/20 border-t-white/80 rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <main className="min-h-screen bg-[#020208] text-white overflow-x-hidden">
+        <main className="min-h-screen bg-[#0A0806] text-[#FFF5E6] overflow-x-hidden">
             <AmbientBackground />
             <Navigation />
             <HeroSection />
+            <FeaturedContentSection />
+            <PlatformShowcaseSection />
             <WhySwitchSection />
             <VisionSection />
             <StoryTellersSection />

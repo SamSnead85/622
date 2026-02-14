@@ -7,11 +7,9 @@
  * rejected — this wastes the attacker's time without teaching them to evade.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db/client.js';
 import { cache } from './cache/RedisCache.js';
 import { logger } from '../utils/logger.js';
-
-const prisma = new PrismaClient();
 
 // Known disposable email domains (auto-flagged on signup)
 const DISPOSABLE_EMAIL_DOMAINS = new Set([

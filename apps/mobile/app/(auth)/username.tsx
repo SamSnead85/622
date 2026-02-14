@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     continueButton: {
         borderRadius: 14,
         overflow: 'hidden',
-        shadowColor: c.gold[500],
+        shadowColor: '#FFB020',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 12,

@@ -22,7 +22,7 @@
     --og-amber: #F59E0B;
     --og-amber-light: #FBBF24;
     --og-amber-dark: #D97706;
-    --og-gold: #7C8FFF;
+    --og-gold: #FFB020;
     --og-gold-light: #E8C547;
     --og-gold-dark: #B8942A;
 
@@ -30,9 +30,9 @@
     --og-rose-light: #FB7185;
     --og-rose-dark: #E11D48;
 
-    --og-violet: #6070EE;
-    --og-violet-light: #99AAFF;
-    --og-violet-dark: #9A7A24;
+    --og-violet: #FF3366;
+    --og-violet-light: #FF6B8A;
+    --og-violet-dark: #E0204D;
 
     /* Desert & Earth Tones */
     --og-sand: #C2A06A;
@@ -47,15 +47,15 @@
     --og-info: #3B82F6;
 
     /* Neutral Palette - Premium Dark with warm undertones */
-    --og-void: #030305;
-    --og-obsidian: #050508;
-    --og-charcoal: #0a0a0f;
-    --og-slate: #1a1a25;
-    --og-steel: #2a2a3a;
-    --og-silver: #4a4a5a;
-    --og-mist: #8a8a9a;
-    --og-cloud: #cacad0;
-    --og-snow: #fafaff;
+    --og-void: #0A0806;
+    --og-obsidian: #12100E;
+    --og-charcoal: #1A1412;
+    --og-slate: #221C18;
+    --og-steel: #2A231E;
+    --og-silver: #5E5445;
+    --og-mist: #8C7A60;
+    --og-cloud: #BFA882;
+    --og-snow: #FFF5E6;
 
     /* ============================================
      GRADIENTS - Signature 0G Look
@@ -66,9 +66,9 @@
     --gradient-brand-vertical: linear-gradient(180deg, var(--og-gold) 0%, var(--og-amber) 30%, var(--og-rose) 70%, var(--og-violet) 100%);
     --gradient-brand-radial: radial-gradient(circle, var(--og-gold) 0%, var(--og-amber) 30%, var(--og-rose) 60%, var(--og-violet) 100%);
 
-    --gradient-sunset: linear-gradient(135deg, #7C8FFF 0%, #F59E0B 25%, #F43F5E 50%, #6070EE 75%, #1a1a40 100%);
-    --gradient-desert: linear-gradient(180deg, #C2A06A 0%, #B87333 50%, #6070EE 100%);
-    --gradient-night-sky: linear-gradient(180deg, #030305 0%, #1a1a40 50%, #2a2a5a 100%);
+    --gradient-sunset: linear-gradient(135deg, #FFB020 0%, #FFCC33 25%, #FF3366 50%, #FF6B8A 75%, #1A1412 100%);
+    --gradient-desert: linear-gradient(180deg, #FFB020 0%, #E09000 50%, #1A1412 100%);
+    --gradient-night-sky: linear-gradient(180deg, #0A0806 0%, #1A1412 50%, #221C18 100%);
 
     --gradient-amber: linear-gradient(135deg, var(--og-amber-light) 0%, var(--og-amber-dark) 100%);
     --gradient-rose: linear-gradient(135deg, var(--og-rose-light) 0%, var(--og-rose-dark) 100%);
@@ -89,7 +89,7 @@
      ============================================ */
 
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-display: 'Outfit', var(--font-sans);
+    --font-display: 'Space Grotesk', var(--font-sans);
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
     --font-arabic: 'Noto Naskh Arabic', 'Traditional Arabic', serif;
 
@@ -165,11 +165,11 @@
     --radius-full: 9999px;
 
     /* Border Colors */
-    --border-subtle: rgba(255, 255, 255, 0.05);
-    --border-default: rgba(255, 255, 255, 0.10);
-    --border-strong: rgba(255, 255, 255, 0.20);
-    --border-gold: rgba(212, 175, 55, 0.30);
-    --border-brand: rgba(245, 158, 11, 0.30);
+    --border-subtle: rgba(255, 176, 32, 0.06);
+    --border-default: rgba(255, 176, 32, 0.12);
+    --border-strong: rgba(255, 176, 32, 0.22);
+    --border-gold: rgba(255, 176, 32, 0.30);
+    --border-brand: rgba(255, 176, 32, 0.30);
 
     /* ============================================
      SHADOWS & ELEVATION
@@ -279,21 +279,21 @@
 
 /* Glass Effects */
 .glass {
-    background: rgba(10, 10, 15, 0.6);
+    background: rgba(26, 20, 18, 0.6);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--border-subtle);
 }
 
 .glass-strong {
-    background: rgba(10, 10, 15, 0.8);
+    background: rgba(26, 20, 18, 0.8);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border-default);
 }
 
 .glass-gold {
-    background: rgba(212, 175, 55, 0.05);
+    background: rgba(255, 176, 32, 0.05);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--border-gold);
@@ -466,7 +466,7 @@
 }
 
 .shimmer {
-    background: linear-gradient(90deg, transparent 0%, rgba(212, 175, 55, 0.1) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 176, 32, 0.1) 50%, transparent 100%);
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
 }

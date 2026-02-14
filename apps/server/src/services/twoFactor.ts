@@ -5,11 +5,9 @@
  * TOTP-based 2FA with backup codes
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db/client.js';
 import crypto from 'crypto';
 import * as OTPAuth from 'otpauth';
-
-const prisma = new PrismaClient();
 
 // TOTP configuration
 const TOTP_CONFIG = {

@@ -6,13 +6,11 @@
  */
 
 import {
-    PrismaClient,
     BulletinType,
     BulletinCategory,
     Prisma
 } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../db/client.js';
 
 // ============================================
 // TYPES

@@ -123,6 +123,13 @@ model User {
   culturalProfile            String                    @default("standard") // standard | muslim | custom
   customGreeting             String?                   // User-defined greeting (for "custom" profile)
 
+  // ── Trust Chain (Vouched Entry System) ──
+  inviteChain                InviteChain?              @relation("UserChain")
+  invitedChainMembers        InviteChain[]             @relation("InvitedByChain")
+  foundedChainMembers        InviteChain[]             @relation("FoundingCreatorChain")
+  rally                      Rally?
+  vouchStrikes               Int                       @default(0) // strikes from invitees' bad behavior
+
   @@index([username])
   @@index([displayName])
   @@index([email])
@@ -373,6 +380,7 @@ model Post {
   shares       Share[]
   crossPosts   CrossPost[]
   analytics    PostAnalytics[]
+  media        PostMedia[]     // Multi-media support (carousels, mixed media)
 
   @@index([userId])
   @@index([userId, createdAt(sort: Desc)]) // Author's posts by date (feed queries)
@@ -1531,6 +1539,37 @@ enum PostType {
   TEXT
   POLL
   RALLY
+  CAROUSEL  // Multi-image/video swipeable post (up to 10 slides)
+  REEL      // Short-form vertical video (15-90 seconds, full-screen)
+}
+
+// ============================================
+// POST MEDIA — Individual media items within a post
+// Enables carousels (multiple images/videos per post)
+// ============================================
+model PostMedia {
+  id           String        @id @default(uuid())
+  postId       String
+  mediaUrl     String        // URL to the media file
+  thumbnailUrl String?       // Video thumbnail or compressed preview
+  type         PostMediaType @default(IMAGE)
+  position     Int           @default(0) // Order within the carousel (0-indexed)
+  aspectRatio  String?       // "16:9" | "4:3" | "1:1" | "4:5" | "9:16"
+  duration     Int?          // Video duration in seconds
+  width        Int?          // Original width in pixels
+  height       Int?          // Original height in pixels
+  altText      String?       // Accessibility description
+  createdAt    DateTime      @default(now())
+
+  post         Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, position])
+  @@index([postId])
+}
+
+enum PostMediaType {
+  IMAGE
+  VIDEO
 }
 
 enum RSVPStatus {
@@ -2353,4 +2392,94 @@ model BannedEmailDomain {
   createdAt   DateTime    @default(now())
 
   @@index([domain])
+}
+
+// ============================================
+// Vouched Entry System — Trust Chain
+// Every user is traceable back to a founding creator
+// through a chain of vouches (invites).
+// ============================================
+
+model InviteChain {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  invitedById         String?              // null for founding creators (degree 0)
+  foundingCreatorId   String               // the root of this user's trust chain
+  degree              Int                  // 0 = founding creator, 1 = invited by FC, etc.
+  weeklyAllocation    Int      @default(0) // base vouches per week for this user
+  invitesUsedThisWeek Int      @default(0) // resets every Monday
+  totalInvitesSent    Int      @default(0)
+  weekResetAt         DateTime @default(now()) // when the weekly counter last reset
+  isUnlocked          Boolean  @default(false) // unlocked when trust level >= 1
+  createdAt           DateTime @default(now())
+
+  user              User     @relation("UserChain", fields: [userId], references: [id], onDelete: Cascade)
+  invitedBy         User?    @relation("InvitedByChain", fields: [invitedById], references: [id])
+  foundingCreator   User     @relation("FoundingCreatorChain", fields: [foundingCreatorId], references: [id])
+
+  @@index([userId])
+  @@index([invitedById])
+  @@index([foundingCreatorId])
+  @@index([degree])
+}
+
+// ============================================
+// Rally Pages — Creator-scale invite mechanism
+// Creators share a branded URL; followers apply to join.
+// ============================================
+
+model Rally {
+  id               String             @id @default(uuid())
+  creatorId        String             @unique
+  slug             String             @unique    // "mehdi" -> 0gravity.ai/rally/mehdi
+  title            String?                       // "Join Mehdi on 0G"
+  description      String?                       // Custom welcome message
+  weeklyAllocation Int                @default(250)
+  approvedThisWeek Int                @default(0)
+  totalApproved    Int                @default(0)
+  weekResetAt      DateTime           @default(now())
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  creator          User               @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  applications     RallyApplication[]
+
+  @@index([slug])
+  @@index([creatorId])
+}
+
+model RallyApplication {
+  id          String    @id @default(uuid())
+  rallyId     String
+  email       String
+  displayName String
+  statement   String?                          // "Why do you want to join?"
+  status      String    @default("pending")    // pending | approved | rejected | expired
+  accessCode  String?   @unique                // generated on approval
+  approvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  rally       Rally     @relation(fields: [rallyId], references: [id], onDelete: Cascade)
+
+  @@unique([rallyId, email])                   // one application per email per rally
+  @@index([rallyId, status])
+  @@index([email])
+}
+
+// ============================================
+// Access Requests — For people without an invite
+// Admin reviews and approves/rejects.
+// ============================================
+
+model AccessRequest {
+  id          String    @id @default(uuid())
+  email       String    @unique
+  displayName String
+  reason      String?                          // "Why do you want to join 0G?"
+  status      String    @default("pending")    // pending | approved | rejected
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  accessCode  String?   @unique                // generated on approval
+  createdAt   DateTime  @default(now())
+
+  @@index([status])
+  @@index([email])
 }

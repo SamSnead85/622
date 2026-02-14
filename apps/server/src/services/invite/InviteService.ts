@@ -1,8 +1,7 @@
-import { PrismaClient, InviteStatus, InviteMethod } from '@prisma/client';
+import { InviteStatus, InviteMethod } from '@prisma/client';
+import { prisma } from '../../db/client.js';
 import { randomBytes } from 'crypto';
 import { logger } from '../../utils/logger.js';
-
-const prisma = new PrismaClient();
 
 // Email configuration (uses Resend SDK when RESEND_API_KEY is set)
 interface EmailConfig {

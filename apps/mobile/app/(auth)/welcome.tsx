@@ -1,9 +1,9 @@
 // ============================================
-// Welcome Screen — Clean, minimal, theme-aware
-// Single screen: logo, tagline, CTAs
+// Welcome Screen — Revolutionary warm, bold
+// "The people's network."
 // ============================================
 
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,14 +15,14 @@ import Animated, {
     FadeInDown,
     FadeIn,
 } from 'react-native-reanimated';
-import { typography, spacing } from '@zerog/ui';
+import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { BrandLogo } from '../../components';
 
 export default function WelcomeScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { colors, isDark } = useTheme();
+    const { colors: c, isDark } = useTheme();
 
     const handleCreateAccount = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -36,7 +36,10 @@ export default function WelcomeScreen() {
 
     return (
         <LinearGradient
-            colors={[colors.background, isDark ? '#0F0F18' : '#F8F9FC', colors.background]}
+            colors={isDark
+                ? [c.background, c.obsidian[700], c.background]
+                : [c.background, c.obsidian[700], c.background]
+            }
             locations={[0, 0.5, 1]}
             style={[
                 styles.container,
@@ -53,12 +56,41 @@ export default function WelcomeScreen() {
 
             {/* Tagline */}
             <Animated.View entering={FadeInUp.delay(400).duration(600)} style={styles.taglineSection}>
-                <Text style={[styles.tagline, { color: colors.text.primary }]}>
-                    Social without{'\n'}the surveillance.
+                <Text style={[styles.tagline, { color: c.text.primary }]}>
+                    The people's{'\n'}network.
                 </Text>
-                <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
-                    Private communities, encrypted messaging, and a feed that works for you — not advertisers. Built for people who refuse to be the product.
+                <Text style={[styles.subtitle, { color: c.text.secondary }]}>
+                    No ads. No algorithms. No compromise.{'\n'}
+                    Built by the community, for the community.
                 </Text>
+            </Animated.View>
+
+            {/* Value Proposition Pills */}
+            <Animated.View entering={FadeInUp.delay(500).duration(500)} style={styles.valuePropSection}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.valuePropScroll}
+                >
+                    {([
+                        { icon: 'lock-closed' as const, title: 'End-to-end encrypted', desc: 'Not even we can read your messages' },
+                        { icon: 'options' as const, title: 'You own your algorithm', desc: 'Chronological, curated, or custom' },
+                        { icon: 'shield-checkmark' as const, title: 'Invite-only community', desc: 'Every member vouched for' },
+                        { icon: 'eye-off' as const, title: 'No ads. No tracking.', desc: 'Your attention is not for sale' },
+                    ]).map((item, index) => (
+                        <Animated.View
+                            key={item.title}
+                            entering={FadeInUp.delay(550 + index * 80).duration(400)}
+                            style={[styles.valuePill, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}
+                        >
+                            <View style={[styles.valuePillIcon, { backgroundColor: c.gold[500] + '15' }]}>
+                                <Ionicons name={item.icon} size={16} color={c.gold[500]} />
+                            </View>
+                            <Text style={[styles.valuePillTitle, { color: c.text.primary }]}>{item.title}</Text>
+                            <Text style={[styles.valuePillDesc, { color: c.text.muted }]}>{item.desc}</Text>
+                        </Animated.View>
+                    ))}
+                </ScrollView>
             </Animated.View>
 
             {/* Spacer */}
@@ -79,21 +111,21 @@ export default function WelcomeScreen() {
                     accessibilityLabel="Create account"
                 >
                     <LinearGradient
-                        colors={[colors.gold[400], colors.gold[600]]}
+                        colors={[c.gold[400], c.gold[600]]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.primaryGradient}
                     >
                         <Text style={styles.primaryButtonText}>
-                            Create account
+                            Join the movement
                         </Text>
                     </LinearGradient>
                 </Pressable>
 
                 <View style={styles.dividerRow}>
-                    <View style={[styles.dividerLine, { backgroundColor: colors.border.subtle }]} />
-                    <Text style={[styles.dividerText, { color: colors.text.muted }]}>Or</Text>
-                    <View style={[styles.dividerLine, { backgroundColor: colors.border.subtle }]} />
+                    <View style={[styles.dividerLine, { backgroundColor: c.border.subtle }]} />
+                    <Text style={[styles.dividerText, { color: c.text.muted }]}>Or</Text>
+                    <View style={[styles.dividerLine, { backgroundColor: c.border.subtle }]} />
                 </View>
 
                 <Pressable
@@ -101,8 +133,8 @@ export default function WelcomeScreen() {
                     style={({ pressed }) => [
                         styles.secondaryButton,
                         {
-                            backgroundColor: colors.surface.glass,
-                            borderColor: colors.border.subtle,
+                            backgroundColor: c.surface.glass,
+                            borderColor: c.border.default,
                             opacity: pressed ? 0.85 : 1,
                             transform: [{ scale: pressed ? 0.98 : 1 }],
                         },
@@ -110,7 +142,7 @@ export default function WelcomeScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Log in to existing account"
                 >
-                    <Text style={[styles.secondaryButtonText, { color: colors.text.primary }]}>
+                    <Text style={[styles.secondaryButtonText, { color: c.text.primary }]}>
                         Log in
                     </Text>
                 </Pressable>
@@ -118,12 +150,12 @@ export default function WelcomeScreen() {
 
             {/* Footer */}
             <Animated.View entering={FadeIn.delay(900).duration(400)} style={styles.footer}>
-                <Text style={[styles.termsText, { color: colors.text.muted }]}>
+                <Text style={[styles.termsText, { color: c.text.muted }]}>
                     By signing up, you agree to our{' '}
-                    <Text style={[styles.termsLink, { color: colors.gold[500] }]}>Terms</Text>,{' '}
-                    <Text style={[styles.termsLink, { color: colors.gold[500] }]}>Rules & Policies</Text>
+                    <Text style={[styles.termsLink, { color: c.gold[500] }]}>Terms</Text>,{' '}
+                    <Text style={[styles.termsLink, { color: c.gold[500] }]}>Rules & Policies</Text>
                     , and{' '}
-                    <Text style={[styles.termsLink, { color: colors.gold[500] }]}>Privacy Policy</Text>.
+                    <Text style={[styles.termsLink, { color: c.gold[500] }]}>Privacy Policy</Text>.
                 </Text>
 
                 <Pressable
@@ -135,8 +167,8 @@ export default function WelcomeScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Explore Prayer Times, Qibla, and more tools"
                 >
-                    <Ionicons name="compass-outline" size={14} color={colors.text.muted} />
-                    <Text style={[styles.toolsLinkText, { color: colors.text.muted }]}>
+                    <Ionicons name="compass-outline" size={14} color={c.text.muted} />
+                    <Text style={[styles.toolsLinkText, { color: c.text.muted }]}>
                         Explore Prayer Times & Qibla
                     </Text>
                 </Pressable>
@@ -163,16 +195,52 @@ const styles = StyleSheet.create({
     },
     tagline: {
         fontSize: 38,
-        fontWeight: '800',
+        fontWeight: '700',
         letterSpacing: -1.5,
         lineHeight: 46,
-        fontFamily: 'Inter-Bold',
+        fontFamily: 'SpaceGrotesk-Bold',
     },
     subtitle: {
         fontSize: typography.fontSize.base,
         lineHeight: 22,
         marginTop: spacing.lg,
         maxWidth: 300,
+        fontFamily: 'Inter',
+    },
+
+    // ---- Value Proposition Pills ----
+    valuePropSection: {
+        paddingTop: 28,
+    },
+    valuePropScroll: {
+        paddingHorizontal: spacing.xl,
+        gap: 10,
+    },
+    valuePill: {
+        width: 150,
+        paddingVertical: 14,
+        paddingHorizontal: 14,
+        borderRadius: 14,
+        borderWidth: 1,
+    },
+    valuePillIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+    },
+    valuePillTitle: {
+        fontSize: 13,
+        fontWeight: '700',
+        fontFamily: 'SpaceGrotesk-Bold',
+        lineHeight: 17,
+        marginBottom: 3,
+    },
+    valuePillDesc: {
+        fontSize: 11,
+        lineHeight: 15,
         fontFamily: 'Inter',
     },
 
@@ -188,24 +256,24 @@ const styles = StyleSheet.create({
     },
     primaryButton: {
         overflow: 'hidden',
-        borderRadius: 14,
-        shadowColor: colors.gold[500],
+        borderRadius: 16,
+        shadowColor: '#FFB020',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
+        shadowOpacity: 0.3,
+        shadowRadius: 14,
         elevation: 4,
     },
     primaryGradient: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 15,
-        borderRadius: 14,
+        paddingVertical: 16,
+        borderRadius: 16,
     },
     primaryButtonText: {
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
-        color: '#FFFFFF',
-        fontFamily: 'Inter-Bold',
+        color: '#1A1412',
+        fontFamily: 'SpaceGrotesk-Bold',
     },
     dividerRow: {
         flexDirection: 'row',
@@ -224,7 +292,7 @@ const styles = StyleSheet.create({
     },
     secondaryButton: {
         height: 52,
-        borderRadius: 14,
+        borderRadius: 16,
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
@@ -232,7 +300,7 @@ const styles = StyleSheet.create({
     secondaryButtonText: {
         fontSize: typography.fontSize.base,
         fontWeight: '600',
-        fontFamily: 'Inter-SemiBold',
+        fontFamily: 'SpaceGrotesk-SemiBold',
     },
 
     // ---- Footer ----

@@ -9,54 +9,61 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                // === VOID - The infinite canvas ===
+                // === VOID - Deep warm canvas ===
                 void: {
-                    DEFAULT: '#000000', // Pure Black
-                    elevated: '#0A0A0F', // Deepest Navy/Black
-                    surface: '#12121A', // Card Surface
+                    DEFAULT: '#0A0806',
+                    elevated: '#1A1412',
+                    surface: '#221C18',
                 },
 
-                // === GOLD - Premium accent system ===
+                // === NEON - Warm accent system ===
                 aurora: {
-                    violet: '#6070EE',
-                    'violet-bright': '#99AAFF',
-                    cyan: '#7C8FFF', // 0G Gold
-                    'cyan-bright': '#99AAFF', // Gold Light
-                    rose: '#F43F5E',
-                    'rose-bright': '#FB7185',
+                    amber: '#FFB020',
+                    'amber-bright': '#FFCC33',
+                    pink: '#FF3366',
+                    'pink-bright': '#FF6B8A',
+                    yellow: '#FFE066',
+                    'yellow-bright': '#FFF0AA',
+                    // Legacy aliases for backward compat
+                    violet: '#FFB020',
+                    'violet-bright': '#FFCC33',
+                    cyan: '#FFB020',
+                    'cyan-bright': '#FFCC33',
+                    rose: '#FF3366',
+                    'rose-bright': '#FF6B8A',
                 },
 
                 // === EMBER - Warm accent ===
                 ember: {
-                    DEFAULT: '#F4A300',
-                    bright: '#FFBA33',
+                    DEFAULT: '#FFB020',
+                    bright: '#FFCC33',
                 },
 
-                // === GLASS - Layered surfaces ===
+                // === GLASS - Warm-tinted surfaces ===
                 glass: {
-                    ultra: 'rgba(255, 255, 255, 0.02)',
-                    light: 'rgba(255, 255, 255, 0.04)',
-                    medium: 'rgba(255, 255, 255, 0.06)',
-                    heavy: 'rgba(255, 255, 255, 0.10)',
-                    border: 'rgba(255, 255, 255, 0.08)',
-                    'border-bright': 'rgba(255, 255, 255, 0.15)',
+                    ultra: 'rgba(255, 176, 32, 0.02)',
+                    light: 'rgba(255, 176, 32, 0.04)',
+                    medium: 'rgba(255, 176, 32, 0.06)',
+                    heavy: 'rgba(255, 176, 32, 0.10)',
+                    border: 'rgba(255, 176, 32, 0.08)',
+                    'border-bright': 'rgba(255, 176, 32, 0.18)',
                 },
 
-                // === LEGACY GRAYS (for compatibility) ===
+                // === LEGACY GRAYS (warm-tinted) ===
                 gray: {
-                    50: '#fafafa',
-                    100: '#f5f5f5',
-                    200: '#e5e5e5',
-                    300: '#d4d4d4',
-                    400: '#a3a3a3',
-                    500: '#737373',
-                    600: '#525252',
-                    700: '#404040',
-                    800: '#262626',
-                    850: '#1a1a1a',
-                    900: '#171717',
-                    925: '#111111',
-                    950: '#0a0a0a',
+                    50: '#FFF8F0',
+                    100: '#FFF3E6',
+                    200: '#FFEDD5',
+                    300: '#FFE0B2',
+                    400: '#BFA882',
+                    500: '#8C7A60',
+                    600: '#5E5445',
+                    700: '#3D352E',
+                    800: '#2A231E',
+                    850: '#221C18',
+                    900: '#1A1412',
+                    925: '#12100E',
+                    950: '#0A0806',
                 },
             },
             fontFamily: {
@@ -69,7 +76,7 @@ module.exports = {
                     'sans-serif',
                 ],
                 display: [
-                    'var(--font-inter, Inter)',
+                    'var(--font-display, Space Grotesk)',
                     '-apple-system',
                     'BlinkMacSystemFont',
                     'sans-serif',
@@ -129,6 +136,7 @@ module.exports = {
                 'pulse-glow': 'pulseGlow 3s ease-in-out infinite',
                 'aurora-shift': 'auroraShift 15s ease infinite',
                 'shimmer': 'shimmer 2s linear infinite',
+                'neon-flicker': 'neonFlicker 3s ease-in-out infinite',
 
                 // === PARTICLES ===
                 'particle-1': 'particleFloat 15s ease-in-out infinite',
@@ -167,12 +175,19 @@ module.exports = {
                     },
                     '50%': {
                         backgroundPosition: '100% 50%',
-                        filter: 'hue-rotate(30deg)',
+                        filter: 'hue-rotate(15deg)',
                     },
                 },
                 shimmer: {
                     '0%': { backgroundPosition: '-200% 0' },
                     '100%': { backgroundPosition: '200% 0' },
+                },
+                neonFlicker: {
+                    '0%, 100%': { opacity: '1' },
+                    '5%': { opacity: '0.85' },
+                    '10%': { opacity: '1' },
+                    '50%': { opacity: '0.95' },
+                    '55%': { opacity: '1' },
                 },
                 particleFloat: {
                     '0%, 100%': {
@@ -208,17 +223,21 @@ module.exports = {
                 '4xl': '80px',
             },
             boxShadow: {
-                'glow-violet': '0 0 40px rgba(184, 148, 45, 0.4)',
-                'glow-cyan': '0 0 40px rgba(212, 175, 55, 0.4)',
-                'glow-rose': '0 0 40px rgba(244, 63, 94, 0.4)',
-                'glow-ember': '0 0 40px rgba(245, 158, 11, 0.4)',
-                'glass': '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
-                'card': '0 4px 24px rgba(0, 0, 0, 0.3)',
-                'elevated': '0 16px 48px rgba(0, 0, 0, 0.5)',
+                'glow-amber': '0 0 40px rgba(255, 176, 32, 0.4)',
+                'glow-pink': '0 0 40px rgba(255, 51, 102, 0.4)',
+                'glow-yellow': '0 0 40px rgba(255, 224, 102, 0.3)',
+                // Legacy aliases
+                'glow-violet': '0 0 40px rgba(255, 176, 32, 0.4)',
+                'glow-cyan': '0 0 40px rgba(255, 176, 32, 0.4)',
+                'glow-rose': '0 0 40px rgba(255, 51, 102, 0.4)',
+                'glow-ember': '0 0 40px rgba(255, 176, 32, 0.4)',
+                'glass': '0 8px 32px rgba(10, 8, 6, 0.4), inset 0 1px 0 rgba(255, 176, 32, 0.05)',
+                'card': '0 4px 24px rgba(10, 8, 6, 0.3)',
+                'elevated': '0 16px 48px rgba(10, 8, 6, 0.5)',
             },
             backgroundImage: {
                 'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-                'aurora': 'linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(184, 148, 45, 0.1), rgba(244, 63, 94, 0.05))',
+                'aurora': 'linear-gradient(135deg, rgba(255, 176, 32, 0.15), rgba(255, 51, 102, 0.1), rgba(255, 224, 102, 0.05))',
             },
         },
     },

@@ -1,38 +1,42 @@
 // ============================================
-// 0G Design System
-// Dual-theme: Premium dark + Crystal-clear light
-// Primary accent: Indigo-blue — modern, professional, bright
-// Gold retained only for verification badges & special marks
+// 0G Design System — "The People's Network"
+// Revolutionary activist soul, retro-warm neon skin
+// Three modes: Dark, Warm Dark (default), Light
+// Primary accent: Amber neon — warm gold glow
+// Secondary accent: Hot pink — protest energy
 // ============================================
 
+// ============================================
+// DARK MODE — True dark, warm-tinted accents
+// ============================================
 export const colors = {
     // Core Obsidian Palette (Dark)
     obsidian: {
         900: '#0A0A0B',
-        800: '#121214',
-        700: '#1A1A1D',
-        600: '#232328',
-        500: '#2D2D32',
-        400: '#3D3D44',
-        300: '#4D4D56',
+        800: '#12110F',
+        700: '#1C1916',
+        600: '#26221E',
+        500: '#302B26',
+        400: '#3D3630',
+        300: '#4D453D',
     },
 
-    // Primary Accent — Bright Electric Blue
+    // Primary Accent — Amber Neon (warm gold glow)
     gold: {
-        500: '#7C8FFF',       // Bright blue — vivid on dark, crisp on light
-        400: '#99AAFF',       // Lighter — hover/active states
-        300: '#B8C4FF',       // Lightest — subtle highlights, badges
-        600: '#6070EE',       // Deeper — pressed states
-        700: '#4F5FDD',       // Darkest — strong emphasis
+        500: '#FFB020',       // Amber neon — like a warm neon sign
+        400: '#FFCC33',       // Lighter — hover/active states
+        300: '#FFE066',       // Lightest — highlights, sparks
+        600: '#E09000',       // Deeper — pressed states
+        700: '#C07800',       // Darkest — strong emphasis
     },
 
-    // Secondary Accent — Bright Violet
+    // Secondary Accent — Hot Pink (protest energy)
     amber: {
-        500: '#A78BFA',
-        400: '#C4B5FD',
-        300: '#DDD6FE',
-        600: '#8B5CF6',
-        700: '#7C3AED',
+        500: '#FF3366',
+        400: '#FF6B8A',
+        300: '#FF99B3',
+        600: '#E0204D',
+        700: '#C01040',
     },
 
     // Semantic Colors
@@ -54,89 +58,180 @@ export const colors = {
         300: '#93C5FD',
     },
 
-    // Badge/Verification Gold — only for verified badges
+    // Badge/Verification Gold
     badge: {
         gold: '#D4AF37',
         goldLight: '#E5C158',
     },
 
-    // Text Colors
+    // Text Colors — warm-tinted whites
     text: {
-        primary: '#FAFAFA',
-        secondary: '#A0A0A8',
-        muted: '#6B6B75',
-        inverse: '#0A0A0B',
+        primary: '#F5F0E8',
+        secondary: '#A89E90',
+        muted: '#6B6258',
+        inverse: '#1A1412',
     },
 
-    // Surface & Border Colors
+    // Surface & Border Colors — warm-tinted glass
     surface: {
-        glass: 'rgba(255, 255, 255, 0.04)',
-        glassHover: 'rgba(255, 255, 255, 0.07)',
-        glassActive: 'rgba(255, 255, 255, 0.10)',
+        glass: 'rgba(255, 176, 32, 0.04)',
+        glassHover: 'rgba(255, 176, 32, 0.07)',
+        glassActive: 'rgba(255, 176, 32, 0.10)',
         overlay: 'rgba(0, 0, 0, 0.7)',
         overlayLight: 'rgba(0, 0, 0, 0.4)',
         overlayMedium: 'rgba(0, 0, 0, 0.6)',
         overlayHeavy: 'rgba(0, 0, 0, 0.8)',
-        goldSubtle: 'rgba(124, 143, 255, 0.10)',
-        goldLight: 'rgba(124, 143, 255, 0.15)',
-        goldMedium: 'rgba(124, 143, 255, 0.20)',
-        goldStrong: 'rgba(124, 143, 255, 0.35)',
-        goldFaded: 'rgba(124, 143, 255, 0.05)',
+        goldSubtle: 'rgba(255, 176, 32, 0.10)',
+        goldLight: 'rgba(255, 176, 32, 0.15)',
+        goldMedium: 'rgba(255, 176, 32, 0.20)',
+        goldStrong: 'rgba(255, 176, 32, 0.35)',
+        goldFaded: 'rgba(255, 176, 32, 0.05)',
         coralSubtle: 'rgba(239, 68, 68, 0.1)',
         azureSubtle: 'rgba(59, 130, 246, 0.12)',
     },
 
     border: {
-        subtle: 'rgba(255, 255, 255, 0.08)',
-        default: 'rgba(255, 255, 255, 0.12)',
-        strong: 'rgba(255, 255, 255, 0.20)',
+        subtle: 'rgba(255, 176, 32, 0.08)',
+        default: 'rgba(255, 176, 32, 0.12)',
+        strong: 'rgba(255, 176, 32, 0.20)',
     },
 
-    // Gradients
+    // Gradients — warm amber-to-pink
     gradients: {
-        goldShine: ['#7C8FFF', '#99AAFF', '#7C8FFF'],
-        obsidianFade: ['#0A0A0B', '#1A1A1D'],
-        glassOverlay: ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)'],
+        goldShine: ['#FFB020', '#FFCC33', '#FFB020'],
+        obsidianFade: ['#0A0A0B', '#1C1916'],
+        glassOverlay: ['rgba(255, 176, 32, 0.08)', 'rgba(255, 176, 32, 0.02)'],
     },
 } as const;
 
-// Dark theme alias (same as `colors`)
+// Dark theme alias
 export const darkColors = colors;
 
 // ============================================
-// 0G Crystal Light Theme
-// Liquid-glass clarity — bright, airy, futuristically clean
-// Primary accent: Indigo-blue — crisp on white backgrounds
+// WARM DARK MODE — Deep warm charcoal, full neon
+// The signature 0G experience — like a warm room at night
 // ============================================
-
-export const lightColors = {
-    // Crystal Surface Palette (light equivalents of obsidian)
+export const warmDarkColors = {
     obsidian: {
-        900: '#FFFFFF',       // Primary background — pure white
-        800: '#FAFBFC',       // Slightly off-white for depth
-        700: '#F3F4F6',       // Card backgrounds, secondary surfaces
-        600: '#E5E7EB',       // Dividers, inactive elements
-        500: '#D1D5DB',       // Borders, disabled states
-        400: '#9CA3AF',       // Muted icons
-        300: '#6B7280',       // Secondary text weight
+        900: '#1A1412',       // Deep warm charcoal — not pure black
+        800: '#221C18',
+        700: '#2A231E',
+        600: '#332C26',
+        500: '#3D352E',
+        400: '#4D4438',
+        300: '#5E5445',
     },
 
-    // Primary Accent — Bright Blue (deeper on white for contrast)
+    // Primary Accent — Amber Neon (full warmth)
     gold: {
-        500: '#5B6BF0',       // Rich blue — readable on white
-        400: '#7C8FFF',       // Brighter — hover/links
-        300: '#99AAFF',       // Lightest — subtle highlights
-        600: '#4F5FDD',       // Deeper — pressed
-        700: '#4050CC',       // Darkest — strong emphasis
+        500: '#FFB020',
+        400: '#FFCC33',
+        300: '#FFE066',
+        600: '#E09000',
+        700: '#C07800',
     },
 
-    // Secondary Accent — Bright Violet
+    // Secondary Accent — Hot Pink
     amber: {
-        500: '#8B5CF6',
-        400: '#A78BFA',
-        300: '#C4B5FD',
-        600: '#7C3AED',
-        700: '#6D28D9',
+        500: '#FF3366',
+        400: '#FF6B8A',
+        300: '#FF99B3',
+        600: '#E0204D',
+        700: '#C01040',
+    },
+
+    coral: {
+        500: '#EF4444',
+        400: '#F87171',
+        300: '#FCA5A5',
+    },
+
+    emerald: {
+        500: '#10B981',
+        400: '#34D399',
+        300: '#6EE7B7',
+    },
+
+    azure: {
+        500: '#3B82F6',
+        400: '#60A5FA',
+        300: '#93C5FD',
+    },
+
+    badge: {
+        gold: '#D4AF37',
+        goldLight: '#E5C158',
+    },
+
+    // Text — warm white, cozy
+    text: {
+        primary: '#FFF5E6',
+        secondary: '#BFB09E',
+        muted: '#7A6E60',
+        inverse: '#1A1412',
+    },
+
+    // Surfaces — warm-tinted, cozy glass
+    surface: {
+        glass: 'rgba(255, 176, 32, 0.05)',
+        glassHover: 'rgba(255, 176, 32, 0.08)',
+        glassActive: 'rgba(255, 176, 32, 0.12)',
+        overlay: 'rgba(10, 8, 6, 0.7)',
+        overlayLight: 'rgba(10, 8, 6, 0.4)',
+        overlayMedium: 'rgba(10, 8, 6, 0.6)',
+        overlayHeavy: 'rgba(10, 8, 6, 0.8)',
+        goldSubtle: 'rgba(255, 176, 32, 0.10)',
+        goldLight: 'rgba(255, 176, 32, 0.15)',
+        goldMedium: 'rgba(255, 176, 32, 0.22)',
+        goldStrong: 'rgba(255, 176, 32, 0.38)',
+        goldFaded: 'rgba(255, 176, 32, 0.06)',
+        coralSubtle: 'rgba(239, 68, 68, 0.1)',
+        azureSubtle: 'rgba(59, 130, 246, 0.12)',
+    },
+
+    border: {
+        subtle: 'rgba(255, 176, 32, 0.10)',
+        default: 'rgba(255, 176, 32, 0.15)',
+        strong: 'rgba(255, 176, 32, 0.25)',
+    },
+
+    gradients: {
+        goldShine: ['#FFB020', '#FFCC33', '#FFE066'],
+        obsidianFade: ['#1A1412', '#2A231E'],
+        glassOverlay: ['rgba(255, 176, 32, 0.10)', 'rgba(255, 176, 32, 0.03)'],
+    },
+} as const;
+
+// ============================================
+// LIGHT MODE — Warm cream, deeper accents
+// ============================================
+export const lightColors = {
+    obsidian: {
+        900: '#FFF8F0',       // Warm cream — not sterile white
+        800: '#FFF3E6',
+        700: '#FFEDD5',
+        600: '#FFE0B2',
+        500: '#FFD699',
+        400: '#BFA882',
+        300: '#8C7A60',
+    },
+
+    // Primary Accent — Deeper amber for readability on cream
+    gold: {
+        500: '#E09000',
+        400: '#FFB020',
+        300: '#FFCC33',
+        600: '#C07800',
+        700: '#A06000',
+    },
+
+    // Secondary Accent — Deeper pink
+    amber: {
+        500: '#E02050',
+        400: '#FF3366',
+        300: '#FF6B8A',
+        600: '#C01040',
+        700: '#A00830',
     },
 
     coral: {
@@ -157,52 +252,53 @@ export const lightColors = {
         300: '#60A5FA',
     },
 
-    // Badge/Verification Gold
     badge: {
         gold: '#B8942D',
         goldLight: '#D4AF37',
     },
 
-    // Text — high contrast, crisp readability
+    // Text — warm dark, high contrast on cream
     text: {
-        primary: '#111827',
-        secondary: '#4B5563',
-        muted: '#9CA3AF',
-        inverse: '#FFFFFF',
+        primary: '#2A1A0A',
+        secondary: '#5C4A38',
+        muted: '#9C8A78',
+        inverse: '#FFF8F0',
     },
 
-    // Surfaces — clean, airy, minimal opacity tricks
+    // Surfaces — warm-tinted
     surface: {
-        glass: 'rgba(0, 0, 0, 0.02)',
-        glassHover: 'rgba(0, 0, 0, 0.04)',
-        glassActive: 'rgba(0, 0, 0, 0.06)',
-        overlay: 'rgba(0, 0, 0, 0.5)',
-        overlayLight: 'rgba(0, 0, 0, 0.15)',
-        overlayMedium: 'rgba(0, 0, 0, 0.35)',
-        overlayHeavy: 'rgba(0, 0, 0, 0.6)',
-        goldSubtle: 'rgba(91, 107, 240, 0.06)',
-        goldLight: 'rgba(91, 107, 240, 0.10)',
-        goldMedium: 'rgba(91, 107, 240, 0.14)',
-        goldStrong: 'rgba(91, 107, 240, 0.22)',
-        goldFaded: 'rgba(91, 107, 240, 0.03)',
+        glass: 'rgba(160, 96, 0, 0.03)',
+        glassHover: 'rgba(160, 96, 0, 0.06)',
+        glassActive: 'rgba(160, 96, 0, 0.09)',
+        overlay: 'rgba(42, 26, 10, 0.5)',
+        overlayLight: 'rgba(42, 26, 10, 0.15)',
+        overlayMedium: 'rgba(42, 26, 10, 0.35)',
+        overlayHeavy: 'rgba(42, 26, 10, 0.6)',
+        goldSubtle: 'rgba(224, 144, 0, 0.08)',
+        goldLight: 'rgba(224, 144, 0, 0.12)',
+        goldMedium: 'rgba(224, 144, 0, 0.16)',
+        goldStrong: 'rgba(224, 144, 0, 0.25)',
+        goldFaded: 'rgba(224, 144, 0, 0.04)',
         coralSubtle: 'rgba(239, 68, 68, 0.06)',
         azureSubtle: 'rgba(37, 99, 235, 0.06)',
     },
 
-    // Borders — crisp hairlines
     border: {
-        subtle: 'rgba(0, 0, 0, 0.06)',
-        default: 'rgba(0, 0, 0, 0.10)',
-        strong: 'rgba(0, 0, 0, 0.18)',
+        subtle: 'rgba(160, 96, 0, 0.08)',
+        default: 'rgba(160, 96, 0, 0.12)',
+        strong: 'rgba(160, 96, 0, 0.20)',
     },
 
-    // Gradients — cool, luminous
     gradients: {
-        goldShine: ['#5B6BF0', '#7C8FFF', '#5B6BF0'],
-        obsidianFade: ['#FFFFFF', '#F3F4F6'],
-        glassOverlay: ['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.6)'],
+        goldShine: ['#E09000', '#FFB020', '#E09000'],
+        obsidianFade: ['#FFF8F0', '#FFEDD5'],
+        glassOverlay: ['rgba(255, 248, 240, 0.9)', 'rgba(255, 248, 240, 0.6)'],
     },
 } as const;
+
+// ============================================
+// SPACING, BORDER RADIUS, TYPOGRAPHY
+// ============================================
 
 export const spacing = {
     xxs: 2,
@@ -218,11 +314,11 @@ export const spacing = {
 
 export const borderRadius = {
     none: 0,
-    sm: 4,
-    md: 8,
-    lg: 12,
-    xl: 16,
-    '2xl': 24,
+    sm: 6,
+    md: 12,
+    lg: 16,
+    xl: 20,
+    '2xl': 28,
     full: 9999,
 } as const;
 
@@ -230,6 +326,7 @@ export const typography = {
     // Font Families
     fontFamily: {
         sans: 'Inter',
+        display: 'SpaceGrotesk',
         mono: 'JetBrains Mono',
     },
 
@@ -270,31 +367,35 @@ export const typography = {
     },
 } as const;
 
+// ============================================
+// SHADOWS — warm-tinted
+// ============================================
+
 export const shadows = {
     none: 'none',
     sm: {
-        shadowColor: '#000',
+        shadowColor: '#1A1412',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.3,
         shadowRadius: 2,
         elevation: 2,
     },
     md: {
-        shadowColor: '#000',
+        shadowColor: '#1A1412',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.4,
         shadowRadius: 8,
         elevation: 4,
     },
     lg: {
-        shadowColor: '#000',
+        shadowColor: '#1A1412',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.5,
         shadowRadius: 16,
         elevation: 8,
     },
     glow: {
-        shadowColor: '#7C8FFF',
+        shadowColor: '#FFB020',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.4,
         shadowRadius: 14,
@@ -302,32 +403,65 @@ export const shadows = {
     },
 } as const;
 
-// Light-mode shadows — softer, more diffused for that airy feel
+// Warm dark shadows — slightly warmer glow
+export const warmDarkShadows = {
+    none: 'none',
+    sm: {
+        shadowColor: '#0A0806',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.35,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    md: {
+        shadowColor: '#0A0806',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.45,
+        shadowRadius: 10,
+        elevation: 4,
+    },
+    lg: {
+        shadowColor: '#0A0806',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.55,
+        shadowRadius: 18,
+        elevation: 8,
+    },
+    glow: {
+        shadowColor: '#FFB020',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 16,
+        elevation: 0,
+    },
+} as const;
+
+// Light-mode shadows — softer, warm-tinted
 export const lightShadows = {
     none: 'none',
     sm: {
-        shadowColor: '#000',
+        shadowColor: '#8C6A30',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.06,
         shadowRadius: 3,
         elevation: 1,
     },
     md: {
-        shadowColor: '#000',
+        shadowColor: '#8C6A30',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 8,
         elevation: 3,
     },
     lg: {
-        shadowColor: '#000',
+        shadowColor: '#8C6A30',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.10,
         shadowRadius: 16,
         elevation: 5,
     },
     glow: {
-        shadowColor: '#6070EE',
+        shadowColor: '#E09000',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.25,
         shadowRadius: 14,
@@ -336,7 +470,6 @@ export const lightShadows = {
 } as const;
 
 export const animation = {
-    // Durations
     duration: {
         instant: 100,
         fast: 200,
@@ -344,7 +477,6 @@ export const animation = {
         slow: 500,
     },
 
-    // Easing curves
     easing: {
         easeOut: 'cubic-bezier(0.0, 0.0, 0.2, 1)',
         easeIn: 'cubic-bezier(0.4, 0.0, 1, 1)',
