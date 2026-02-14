@@ -430,6 +430,24 @@ export default function UserProfileScreen() {
         }
     }, [profile]);
 
+    const handleMessage = useCallback(async () => {
+        if (!profile) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        try {
+            const data = await apiFetch<{ conversation: { id: string } }>(
+                API.conversations,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ participantIds: [profile.id] }),
+                }
+            );
+            router.push(`/messages/${data.conversation.id}` as any);
+        } catch {
+            // Fallback — navigate with user ID
+            router.push(`/messages/${profile.id}` as any);
+        }
+    }, [profile, router]);
+
     const loadLikedPosts = useCallback(async () => {
         if (!profile?.id) return;
         try {
@@ -672,6 +690,18 @@ export default function UserProfileScreen() {
                             onPress={handleFollow}
                         />
                     </View>
+
+                    {profile.isFollowing && (
+                        <TouchableOpacity
+                            style={styles.messageBtn}
+                            activeOpacity={0.8}
+                            onPress={handleMessage}
+                            accessibilityRole="button"
+                            accessibilityLabel="Send message"
+                        >
+                            <Ionicons name="chatbubble-outline" size={18} color={colors.gold[500]} />
+                        </TouchableOpacity>
+                    )}
 
                     <TouchableOpacity
                         style={styles.shareBtn}
@@ -1079,6 +1109,19 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         fontWeight: '600',
         color: colors.text.secondary,
+    },
+    messageBtn: {
+        width: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.surface.goldFaded,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '30',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
     },
     shareBtn: {
         width: 48,
