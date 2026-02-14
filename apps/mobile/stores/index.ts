@@ -368,6 +368,7 @@ export const useAuthStore = create<AuthState>()(
             set({
                 user,
                 isAuthenticated: true,
+                isInitialized: true,
                 isLoading: false,
             });
         } catch (error: unknown) {
@@ -407,6 +408,7 @@ export const useAuthStore = create<AuthState>()(
             set({
                 user,
                 isAuthenticated: true,
+                isInitialized: true,
                 isLoading: false,
             });
         } catch (error: unknown) {
@@ -439,6 +441,7 @@ export const useAuthStore = create<AuthState>()(
             set({
                 user,
                 isAuthenticated: true,
+                isInitialized: true,
                 isLoading: false,
             });
         } catch (error: unknown) {
@@ -472,6 +475,7 @@ export const useAuthStore = create<AuthState>()(
             set({
                 user,
                 isAuthenticated: true,
+                isInitialized: true,
                 isLoading: false,
             });
         } catch (error: unknown) {
