@@ -2077,11 +2077,16 @@ export default function FeedScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.headerBtn}
-                        onPress={() => router.push('/messages' as any)}
+                        onPress={() => router.push('/(tabs)/messages' as any)}
                         accessibilityRole="button"
-                        accessibilityLabel="Messages"
+                        accessibilityLabel={`Messages${unreadMessages > 0 ? `, ${unreadMessages} unread` : ''}`}
                     >
                         <Ionicons name="paper-plane-outline" size={24} color={c.text.secondary} />
+                        {unreadMessages > 0 && (
+                            <View style={styles.headerBadge}>
+                                <Text style={styles.headerBadgeText}>{unreadMessages > 99 ? '99+' : unreadMessages}</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </View>
             </View>

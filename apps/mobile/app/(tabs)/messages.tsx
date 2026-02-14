@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     TextInput,
     RefreshControl,
+    ScrollView,
     Platform,
     Alert,
 } from 'react-native';
@@ -18,13 +19,14 @@ import * as Haptics from 'expo-haptics';
 import Animated, {
     FadeInDown,
     FadeIn,
+    FadeInRight,
     useSharedValue,
     useAnimatedStyle,
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { colors, spacing } from '@zerog/ui';
+import { colors, spacing, typography } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthStore } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
@@ -56,7 +58,42 @@ interface Conversation {
     isArchived?: boolean;
 }
 
+interface OnlineConnection {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string;
+}
+
 type FilterTab = 'all' | 'unread';
+
+// ============================================
+// Online Now Avatar
+// ============================================
+
+const OnlineAvatar = memo(({ user, onPress, index }: { user: OnlineConnection; onPress: () => void; index: number }) => {
+    const { colors: c } = useTheme();
+    return (
+        <Animated.View entering={FadeInRight.delay(index * 50).duration(200)}>
+            <TouchableOpacity
+                style={styles.onlineItem}
+                onPress={onPress}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`Message ${user.displayName}`}
+            >
+                <View style={styles.onlineAvatarWrap}>
+                    <Avatar uri={user.avatarUrl} name={user.displayName} customSize={52} />
+                    <View style={[styles.onlineRing, { borderColor: colors.emerald[500] }]} />
+                    <View style={[styles.onlineBadge, { borderColor: c.obsidian[900] }]} />
+                </View>
+                <Text style={[styles.onlineName, { color: c.text.secondary }]} numberOfLines={1}>
+                    {(user.displayName || '').split(' ')[0]}
+                </Text>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+});
 
 // ============================================
 // Conversation Row
@@ -136,6 +173,7 @@ export default function MessagesTab() {
     const user = useAuthStore((s) => s.user);
 
     const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [onlineConnections, setOnlineConnections] = useState<OnlineConnection[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [fetchError, setFetchError] = useState(false);
@@ -156,16 +194,27 @@ export default function MessagesTab() {
             setIsLoading(false);
             setIsRefreshing(false);
         }
-    }, [apiFetch]);
+    }, []);
+
+    const fetchOnlineConnections = useCallback(async () => {
+        try {
+            const data = await apiFetch<{ users: OnlineConnection[] }>('/api/v1/users/connections?online=true&limit=20');
+            setOnlineConnections(data?.users || []);
+        } catch {
+            // Silently fail — online strip just won't show
+        }
+    }, []);
 
     useEffect(() => {
         fetchConversations();
-    }, [fetchConversations]);
+        fetchOnlineConnections();
+    }, [fetchConversations, fetchOnlineConnections]);
 
     useFocusEffect(
         useCallback(() => {
             fetchConversations(true);
-        }, [fetchConversations])
+            fetchOnlineConnections();
+        }, [fetchConversations, fetchOnlineConnections])
     );
 
     const filteredConversations = useMemo(() => {
@@ -197,7 +246,25 @@ export default function MessagesTab() {
 
     const handleConversationPress = useCallback((conv: Conversation) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        router.push(`/messages/${conv.participant.id}` as any);
+        router.push(`/messages/${conv.id}` as any);
+    }, [router]);
+
+    const handleOnlinePress = useCallback(async (connection: OnlineConnection) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        try {
+            // Find or create conversation with this user
+            const data = await apiFetch<{ conversation: { id: string } }>(
+                API.conversations,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ participantIds: [connection.id] }),
+                }
+            );
+            router.push(`/messages/${data.conversation.id}` as any);
+        } catch {
+            // Fallback — navigate with user ID
+            router.push(`/messages/${connection.id}` as any);
+        }
     }, [router]);
 
     const renderConversation = useCallback(({ item, index }: { item: Conversation; index: number }) => (
@@ -238,11 +305,44 @@ export default function MessagesTab() {
         );
     };
 
+    const listHeader = useMemo(() => (
+        <>
+            {/* Online Now */}
+            {onlineConnections.length > 0 && (
+                <View style={styles.onlineSection}>
+                    <Text style={[styles.onlineSectionTitle, { color: c.text.muted }]}>ONLINE NOW</Text>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.onlineList}
+                    >
+                        {onlineConnections.map((conn, idx) => (
+                            <OnlineAvatar
+                                key={conn.id}
+                                user={conn}
+                                onPress={() => handleOnlinePress(conn)}
+                                index={idx}
+                            />
+                        ))}
+                    </ScrollView>
+                </View>
+            )}
+        </>
+    ), [onlineConnections, c.text.muted, handleOnlinePress]);
+
     return (
         <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
                 <Text style={[styles.headerTitle, { color: c.text.primary }]}>Messages</Text>
+                <TouchableOpacity
+                    style={[styles.newChatBtn, { backgroundColor: c.surface.glass }]}
+                    onPress={() => router.push('/messages/new' as any)}
+                    accessibilityRole="button"
+                    accessibilityLabel="New message"
+                >
+                    <Ionicons name="create-outline" size={20} color={colors.gold[500]} />
+                </TouchableOpacity>
             </View>
 
             {/* Search bar */}
@@ -284,6 +384,7 @@ export default function MessagesTab() {
 
             {/* Conversation list */}
             <FlatList
+                ListHeaderComponent={listHeader}
                 data={filteredConversations}
                 renderItem={renderConversation}
                 keyExtractor={(item) => item.id}
@@ -302,16 +403,6 @@ export default function MessagesTab() {
                 showsVerticalScrollIndicator={false}
             />
 
-            {/* New message FAB */}
-            <TouchableOpacity
-                style={[styles.newMessageFab, { bottom: insets.bottom + 16 }]}
-                onPress={() => router.push('/messages/new' as any)}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="New message"
-            >
-                <Ionicons name="create-outline" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
         </View>
     );
 }
@@ -336,20 +427,65 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         letterSpacing: -0.3,
     },
-    newMessageFab: {
-        position: 'absolute',
-        right: 20,
-        width: 52,
-        height: 52,
-        borderRadius: 26,
-        backgroundColor: colors.gold[500],
+    newChatBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: colors.gold[500],
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
+    },
+
+    // ── Online Now ──
+    onlineSection: {
+        paddingTop: spacing.xs,
+        paddingBottom: spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border.subtle,
+        marginBottom: spacing.xs,
+    },
+    onlineSectionTitle: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '700',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+        paddingHorizontal: spacing.lg,
+        marginBottom: spacing.sm,
+    },
+    onlineList: {
+        paddingHorizontal: spacing.md,
+        gap: 4,
+    },
+    onlineItem: {
+        alignItems: 'center',
+        width: 68,
+    },
+    onlineAvatarWrap: {
+        position: 'relative',
+        marginBottom: 4,
+    },
+    onlineRing: {
+        position: 'absolute',
+        top: -2,
+        left: -2,
+        right: -2,
+        bottom: -2,
+        borderRadius: 28,
+        borderWidth: 2,
+    },
+    onlineBadge: {
+        position: 'absolute',
+        bottom: 1,
+        right: 1,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: colors.emerald[500],
+        borderWidth: 2,
+    },
+    onlineName: {
+        fontSize: 11,
+        fontWeight: '500',
+        textAlign: 'center',
     },
     searchBar: {
         flexDirection: 'row',

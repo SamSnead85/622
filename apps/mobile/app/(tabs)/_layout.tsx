@@ -1,10 +1,13 @@
+import { useState, useEffect, useCallback } from 'react';
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
 import { colors } from '@zerog/ui';
 import { useNotificationsStore } from '../../stores';
 import { useTheme } from '../../contexts/ThemeContext';
+import { apiFetch, API } from '../../lib/api';
 
 // ============================================
 // Tab Icon — warm neon glow on active
@@ -45,7 +48,23 @@ function TabIcon({ iconName, iconNameFocused, focused, badge }: TabIconProps) {
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
     const { colors: c } = useTheme();
-    const unreadCount = useNotificationsStore((s) => s.unreadCount);
+    const unreadNotifs = useNotificationsStore((s) => s.unreadCount);
+    const [unreadMessages, setUnreadMessages] = useState(0);
+
+    const fetchUnreadMessages = useCallback(async () => {
+        try {
+            const data = await apiFetch<{ conversations: Array<{ unreadCount: number }> }>(API.conversations);
+            const total = (data?.conversations || []).reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
+            setUnreadMessages(total);
+        } catch {
+            // Silently fail — badge just won't update
+        }
+    }, []);
+
+    // Refresh unread count when any tab gains focus
+    useFocusEffect(useCallback(() => {
+        fetchUnreadMessages();
+    }, [fetchUnreadMessages]));
 
     return (
         <Tabs
@@ -74,7 +93,20 @@ export default function TabLayout() {
                             iconName="home-outline"
                             iconNameFocused="home"
                             focused={focused}
-                            badge={unreadCount}
+                        />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="messages"
+                options={{
+                    tabBarAccessibilityLabel: 'Messages tab',
+                    tabBarIcon: ({ focused }) => (
+                        <TabIcon
+                            iconName="chatbubble-outline"
+                            iconNameFocused="chatbubble"
+                            focused={focused}
+                            badge={unreadMessages}
                         />
                     ),
                 }}
@@ -119,7 +151,6 @@ export default function TabLayout() {
                 }}
             />
             {/* Hidden tabs — still routable but not in tab bar */}
-            <Tabs.Screen name="messages" options={{ href: null }} />
             <Tabs.Screen name="create" options={{ href: null }} />
         </Tabs>
     );
