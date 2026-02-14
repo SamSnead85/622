@@ -343,7 +343,7 @@ export default function WavelengthGameScreen() {
                                     accessibilityLabel={`Target position at ${targetPosition}`}
                                 >
                                     <View style={styles.targetDot}>
-                                        <Ionicons name="star" size={12} color="#FFFFFF" />
+                                        <Ionicons name="star" size={12} color={colors.text.primary} />
                                     </View>
                                 </Animated.View>
                             )}

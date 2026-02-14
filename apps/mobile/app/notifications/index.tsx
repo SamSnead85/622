@@ -636,9 +636,10 @@ export default function NotificationsScreen() {
                     }
                     ListEmptyComponent={
                         <EmptyState
-                            icon="notifications-off-outline"
-                            title="No new notifications"
-                            message="No new notifications. We'll let you know when someone interacts with your content."
+                            icon="notifications-outline"
+                            iconSize={64}
+                            title="All Caught Up"
+                            message="You'll see notifications when people interact with you"
                             iconColor={colors.text.muted}
                         />
                     }

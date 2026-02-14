@@ -29,8 +29,11 @@ import Animated, {
     withTiming,
     withSequence,
     withRepeat,
+    withSpring,
     interpolate,
     Easing,
+    useDerivedValue,
+    runOnJS,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
@@ -109,6 +112,47 @@ function CountdownOverlay({ onComplete }: { onComplete: () => void }) {
 }
 
 // ============================================
+// Animated Player Score
+// ============================================
+
+function AnimatedPlayerScore({ score }: { score: number }) {
+    const [displayValue, setDisplayValue] = React.useState(score);
+    const animatedValue = useSharedValue(score);
+    const scaleAnim = useSharedValue(1);
+
+    useDerivedValue(() => {
+        const val = Math.round(animatedValue.value);
+        runOnJS(setDisplayValue)(val);
+    });
+
+    React.useEffect(() => {
+        if (score !== Math.round(animatedValue.value)) {
+            scaleAnim.value = withSequence(
+                withSpring(1.25, { damping: 8, stiffness: 400 }),
+                withSpring(1, { damping: 12 }),
+            );
+            animatedValue.value = withSpring(score, {
+                damping: 15,
+                stiffness: 120,
+            });
+        }
+    }, [score, animatedValue, scaleAnim]);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scaleAnim.value }],
+    }));
+
+    if (score === 0) return null;
+
+    return (
+        <Animated.View style={[styles.playerScoreBadge, animatedStyle]}>
+            <Ionicons name="star" size={10} color={colors.gold[500]} />
+            <Text style={styles.playerScoreText}>{displayValue}</Text>
+        </Animated.View>
+    );
+}
+
+// ============================================
 // Player Row Component
 // ============================================
 
@@ -158,9 +202,12 @@ function PlayerRow({ player, index }: PlayerRowProps) {
                         </Text>
                     </View>
                 </View>
-                {!player.isConnected && (
-                    <Ionicons name="cloud-offline-outline" size={18} color={colors.text.muted} />
-                )}
+                <View style={styles.playerRowRight}>
+                    <AnimatedPlayerScore score={player.score} />
+                    {!player.isConnected && (
+                        <Ionicons name="cloud-offline-outline" size={18} color={colors.text.muted} />
+                    )}
+                </View>
             </GlassCard>
         </Animated.View>
     );
@@ -954,6 +1001,28 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.xs,
         color: colors.text.muted,
         marginTop: 2,
+    },
+    playerRowRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    playerScoreBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+        backgroundColor: colors.gold[500] + '15',
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '25',
+    },
+    playerScoreText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+        color: colors.gold[400],
     },
 
     // ---- Avatar Grid ----

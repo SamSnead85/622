@@ -27,6 +27,9 @@ export default function GamesLayout() {
             <Stack.Screen name="word-blitz" />
             <Stack.Screen name="emoji-charades/[code]" />
             <Stack.Screen name="sketch-duel/[code]" />
+            <Stack.Screen name="family-feud/[code]" />
+            <Stack.Screen name="wheel-of-fortune/[code]" />
+            <Stack.Screen name="party-setup" options={{ headerShown: false }} />
         </Stack>
     );
 }

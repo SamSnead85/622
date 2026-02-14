@@ -15,14 +15,16 @@ import {
     ScrollView,
     RefreshControl,
     Dimensions,
+    Share,
 } from 'react-native';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { colors, typography, spacing } from '@zerog/ui';
+import { colors, typography, spacing, shadows } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useCommunitiesStore, useAuthStore, Community } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
@@ -33,6 +35,8 @@ import { ErrorBoundary } from '../../components';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 3) / 2;
+const FEATURED_CARD_WIDTH = SCREEN_WIDTH - 48;
+const FEATURED_CARD_HEIGHT = 180;
 
 // ============================================
 // Types & Constants
@@ -57,7 +61,7 @@ const CATEGORY_GRADIENTS: Record<string, [string, string]> = {
     business: [colors.azure[500], colors.azure[400]],
     tech: [colors.emerald[500], colors.emerald[400]],
     culture: [colors.coral[500], colors.coral[400]],
-    family: ['#9B59B6', '#C39BD3'],
+    family: [colors.coral[500], colors.coral[300]],
     education: [colors.azure[500], colors.azure[300]],
     health: [colors.emerald[500], colors.emerald[300]],
     default: [colors.obsidian[600], colors.obsidian[500]],
@@ -88,6 +92,12 @@ function getCoverGradient(community: Community): [string, string] {
 // ============================================
 // Community Card (Grid Item)
 // ============================================
+
+const MOCK_AVATARS = [
+    'https://i.pravatar.cc/40?img=1',
+    'https://i.pravatar.cc/40?img=2',
+    'https://i.pravatar.cc/40?img=3',
+];
 
 const CommunityCard = memo(function CommunityCard({ community, onPress, onJoin }: {
     community: Community;
@@ -135,9 +145,9 @@ const CommunityCard = memo(function CommunityCard({ community, onPress, onJoin }
                         end={{ x: 1, y: 1 }}
                     />
                 )}
-                {/* Subtle bottom fade */}
+                {/* Gradient overlay for text readability */}
                 <LinearGradient
-                    colors={['transparent', colors.surface.overlayLight]}
+                    colors={['transparent', colors.surface.overlayMedium]}
                     style={styles.cardCoverFade}
                 />
             </View>
@@ -175,38 +185,85 @@ const CommunityCard = memo(function CommunityCard({ community, onPress, onJoin }
 
                 {/* Bottom row */}
                 <View style={styles.cardFooter}>
-                    <Text style={styles.cardMembers}>
-                        {formatCount(community.membersCount)} Members
-                    </Text>
-                    {isMember ? (
-                        <View style={[styles.accessBadge, styles.accessBadgeGreen]}>
-                            <Text style={[styles.accessBadgeText, styles.accessBadgeTextGreen]}>Joined</Text>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.cardMembers}>
+                            {formatCount(community.membersCount)} Members
+                        </Text>
+                        {/* Activity indicator */}
+                        <View style={styles.activityRow}>
+                            <View style={styles.activeDot} />
+                            <Text style={styles.activeText}>Active now</Text>
                         </View>
-                    ) : isPending ? (
-                        <View style={[styles.accessBadge, { backgroundColor: colors.obsidian[600] }]}>
-                            <Text style={[styles.accessBadgeText, { color: colors.text.muted }]}>Requested</Text>
-                        </View>
-                    ) : (
+                    </View>
+                    <View style={styles.cardFooterActions}>
                         <TouchableOpacity
-                            style={[
-                                styles.accessBadge,
-                                isApprovalRequired ? styles.accessBadgeAmber : styles.accessBadgeGreen,
-                            ]}
                             onPress={() => {
-                                // Set flag so parent TouchableOpacity skips navigation
                                 joinTappedRef.current = true;
-                                onJoin?.();
+                                Share.share({ message: `Join ${community.name} on 0G! https://0gravity.ai/community/${community.id}` });
                             }}
+                            style={{ padding: 4 }}
                             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            accessibilityLabel={`Share ${community.name}`}
                         >
-                            <Text style={[
-                                styles.accessBadgeText,
-                                isApprovalRequired ? styles.accessBadgeTextAmber : styles.accessBadgeTextGreen,
-                            ]}>
-                                {isApprovalRequired ? 'Request' : 'Join'}
-                            </Text>
+                            <Ionicons name="share-outline" size={18} color={colors.text.muted} />
                         </TouchableOpacity>
-                    )}
+                        {isMember ? (
+                            <View style={[styles.accessBadge, styles.accessBadgeGreen]}>
+                                <Text style={[styles.accessBadgeText, styles.accessBadgeTextGreen]}>Joined</Text>
+                            </View>
+                        ) : isPending ? (
+                            <View style={[styles.accessBadge, { backgroundColor: colors.obsidian[600] }]}>
+                                <Text style={[styles.accessBadgeText, { color: colors.text.muted }]}>Requested</Text>
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                style={[
+                                    styles.accessBadge,
+                                    styles.accessBadgeJoinProminent,
+                                    isApprovalRequired ? styles.accessBadgeAmber : styles.accessBadgeGreen,
+                                ]}
+                                onPress={() => {
+                                    // Set flag so parent TouchableOpacity skips navigation
+                                    joinTappedRef.current = true;
+                                    onJoin?.();
+                                }}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                                <Ionicons
+                                    name={isApprovalRequired ? 'lock-open-outline' : 'add-circle-outline'}
+                                    size={12}
+                                    color={isApprovalRequired ? colors.amber[400] : colors.emerald[400]}
+                                />
+                                <Text style={[
+                                    styles.accessBadgeText,
+                                    isApprovalRequired ? styles.accessBadgeTextAmber : styles.accessBadgeTextGreen,
+                                ]}>
+                                    {isApprovalRequired ? 'Request' : 'Join'}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                </View>
+
+                {/* Member avatar stack */}
+                <View style={styles.avatarStack}>
+                    {MOCK_AVATARS.map((uri, i) => (
+                        <Image
+                            key={`avatar-${i}`}
+                            source={{ uri }}
+                            style={[
+                                styles.stackAvatar,
+                                { marginLeft: i === 0 ? 0 : -8, zIndex: 3 - i },
+                            ]}
+                            contentFit="cover"
+                            placeholder={IMAGE_PLACEHOLDER.blurhash}
+                            transition={IMAGE_PLACEHOLDER.transition}
+                            cachePolicy="memory-disk"
+                        />
+                    ))}
+                    <Text style={styles.stackMore}>
+                        +{Math.max((community.membersCount || 0) - 3, 0)}
+                    </Text>
                 </View>
             </View>
         </TouchableOpacity>
@@ -291,26 +348,55 @@ function TabSwitcher({ active, onChange }: {
 // Empty State
 // ============================================
 
-function EmptyState({ tab, searchActive }: { tab: TabKey; searchActive: boolean }) {
-    const icon = searchActive ? 'search-outline' : tab === 'discover' ? 'compass-outline' : 'heart-outline';
+function EmptyState({ tab, searchActive, onSwitchToDiscover, onCreateCommunity }: {
+    tab: TabKey;
+    searchActive: boolean;
+    onSwitchToDiscover?: () => void;
+    onCreateCommunity?: () => void;
+}) {
+    const icon: keyof typeof Ionicons.glyphMap = searchActive
+        ? 'search-outline'
+        : tab === 'discover'
+            ? 'compass-outline'
+            : 'people-outline';
     const title = searchActive
         ? 'No matches found'
         : tab === 'discover'
             ? 'Communities are on the way'
-            : 'Find your people';
+            : 'No Communities Yet';
     const subtitle = searchActive
         ? 'Try different keywords or browse by category'
         : tab === 'discover'
             ? 'Be the first to start a community and bring people together!'
-            : 'Explore and join communities that match your interests';
+            : 'Join a community or create your own';
 
     return (
         <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
-                <Ionicons name={icon} size={36} color={colors.text.muted} />
+                <Ionicons name={icon} size={tab === 'my-groups' && !searchActive ? 64 : 36} color={colors.text.muted} />
             </View>
             <Text style={styles.emptyTitle}>{title}</Text>
             <Text style={styles.emptySubtitle}>{subtitle}</Text>
+            {tab === 'my-groups' && !searchActive && (
+                <View style={styles.emptyActions}>
+                    <TouchableOpacity
+                        style={[styles.emptyActionBtn, styles.emptyActionBtnPrimary]}
+                        onPress={onSwitchToDiscover}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="compass-outline" size={16} color={colors.text.primary} />
+                        <Text style={styles.emptyActionBtnPrimaryText}>Discover Communities</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.emptyActionBtn, styles.emptyActionBtnSecondary]}
+                        onPress={onCreateCommunity}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="add-circle-outline" size={16} color={colors.gold[400]} />
+                        <Text style={styles.emptyActionBtnSecondaryText}>Create Community</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
         </View>
     );
 }
@@ -608,26 +694,54 @@ export default function CommunitiesScreen() {
     // Grid Render
     // ============================================
 
-    const renderGridItem = useCallback(({ item }: { item: Community }) => (
-        <CommunityCard
-            community={item}
-            onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push(`/community/${item.id}`);
-            }}
-            onJoin={() => handleJoin(item.id, item.approvalRequired)}
-        />
+    // Recommended communities: top 5 by member count from discover list
+    const recommendedCommunities = useMemo(() => {
+        return [...discoverList]
+            .sort((a, b) => (b.membersCount || 0) - (a.membersCount || 0))
+            .slice(0, 5);
+    }, [discoverList]);
+
+    const renderGridItem = useCallback(({ item, index }: { item: Community; index: number }) => (
+        <Animated.View entering={FadeInDown.delay(Math.min(index * 60, 300)).duration(300)}>
+            <CommunityCard
+                community={item}
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push(`/community/${item.id}`);
+                }}
+                onJoin={() => handleJoin(item.id, item.approvalRequired)}
+            />
+        </Animated.View>
     ), [router, handleJoin]);
 
     const renderEmpty = () => {
         if (isLoadingActive) {
             return (
-                <View style={styles.loadingWrap}>
-                    <ActivityIndicator size="large" color={colors.gold[500]} />
+                <View style={{ paddingHorizontal: spacing.lg, gap: spacing.lg, paddingTop: spacing.lg }}>
+                    {[0, 1, 2, 3, 4, 5].map(i => (
+                        <Animated.View
+                            key={i}
+                            entering={FadeIn.delay(i * 80).duration(300)}
+                            style={{
+                                height: 120,
+                                borderRadius: 14,
+                                backgroundColor: c.surface.glass,
+                                borderWidth: 1,
+                                borderColor: c.border.subtle,
+                            }}
+                        />
+                    ))}
                 </View>
             );
         }
-        return <EmptyState tab={activeTab} searchActive={!!debouncedQuery.trim()} />;
+        return (
+            <EmptyState
+                tab={activeTab}
+                searchActive={!!debouncedQuery.trim()}
+                onSwitchToDiscover={() => setActiveTab('discover')}
+                onCreateCommunity={() => router.push('/community/create')}
+            />
+        );
     };
 
     // ============================================
@@ -650,7 +764,7 @@ export default function CommunitiesScreen() {
                         style={styles.createBtn}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            setShowCreateModal(true);
+                            router.push('/community/create');
                         }}
                         activeOpacity={0.8}
                         accessibilityRole="button"
@@ -707,43 +821,160 @@ export default function CommunitiesScreen() {
                 contentContainerStyle={[styles.gridContent, { paddingBottom: insets.bottom + 24 }]}
                 showsVerticalScrollIndicator={false}
                 ListHeaderComponent={activeTab === 'discover' && !debouncedQuery.trim() ? (
-                    featuredLoading ? (
-                        <ActivityIndicator size="small" color={colors.gold[500]} style={{ padding: 20 }} />
-                    ) : featuredCommunities.length > 0 ? (
-                        <View style={styles.featuredSection}>
-                            <View style={styles.featuredHeader}>
-                                <Ionicons name="star" size={16} color={colors.gold[500]} />
-                                <Text style={styles.featuredTitle}>Featured Communities</Text>
+                    <View>
+                        {/* ─── Featured Hero Section ─── */}
+                        {featuredLoading ? (
+                            <ActivityIndicator size="small" color={c.gold[500]} style={{ padding: 20 }} />
+                        ) : featuredCommunities.length > 0 ? (
+                            <View style={styles.featuredSection}>
+                                <View style={styles.featuredHeader}>
+                                    <Ionicons name="star" size={16} color={c.gold[500]} />
+                                    <Text style={[styles.featuredTitle, { color: c.text.primary }]}>Featured Communities</Text>
+                                </View>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.md }}
+                                    decelerationRate="fast"
+                                    snapToInterval={FEATURED_CARD_WIDTH + spacing.md}
+                                    snapToAlignment="start"
+                                >
+                                    {featuredCommunities.map((item, index) => (
+                                        <Animated.View
+                                            key={`featured-${item.id}`}
+                                            entering={FadeInDown.delay(Math.min(index * 80, 400)).duration(350)}
+                                        >
+                                            <TouchableOpacity
+                                                style={styles.featuredCard}
+                                                onPress={() => {
+                                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                    router.push(`/community/${item.id}`);
+                                                }}
+                                                activeOpacity={0.85}
+                                            >
+                                                {item.coverUrl || item.avatarUrl ? (
+                                                    <Image
+                                                        source={{ uri: item.coverUrl || item.avatarUrl }}
+                                                        style={styles.featuredCover}
+                                                        placeholder={IMAGE_PLACEHOLDER.blurhash}
+                                                        transition={IMAGE_PLACEHOLDER.transition}
+                                                        contentFit="cover"
+                                                        cachePolicy="memory-disk"
+                                                    />
+                                                ) : (
+                                                    <LinearGradient
+                                                        colors={getCoverGradient(item)}
+                                                        style={styles.featuredCover}
+                                                        start={{ x: 0, y: 0 }}
+                                                        end={{ x: 1, y: 1 }}
+                                                    />
+                                                )}
+                                                <LinearGradient
+                                                    colors={['transparent', 'rgba(0,0,0,0.35)', 'rgba(0,0,0,0.75)']}
+                                                    style={styles.featuredOverlay}
+                                                >
+                                                    <View style={styles.featuredOverlayContent}>
+                                                        <View style={{ flex: 1 }}>
+                                                            <Text style={[styles.featuredName, { color: c.text.primary }]} numberOfLines={1}>
+                                                                {item.name}
+                                                            </Text>
+                                                            <View style={styles.featuredMeta}>
+                                                                <Text style={[styles.featuredMembers, { color: c.text.secondary }]}>
+                                                                    {formatCount(item.membersCount || 0)} members
+                                                                </Text>
+                                                                <View style={styles.featuredActiveBadge}>
+                                                                    <View style={styles.featuredActiveDot} />
+                                                                    <Text style={styles.featuredActiveText}>Active now</Text>
+                                                                </View>
+                                                            </View>
+                                                        </View>
+                                                        {!item.role && (
+                                                            <TouchableOpacity
+                                                                style={styles.featuredJoinBtn}
+                                                                onPress={() => handleJoin(item.id, item.approvalRequired)}
+                                                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                                            >
+                                                                <Text style={styles.featuredJoinText}>Join</Text>
+                                                            </TouchableOpacity>
+                                                        )}
+                                                    </View>
+                                                </LinearGradient>
+                                            </TouchableOpacity>
+                                        </Animated.View>
+                                    ))}
+                                </ScrollView>
                             </View>
-                            <FlatList
-                                horizontal
-                                data={featuredCommunities}
-                                keyExtractor={(item) => `featured-${item.id}`}
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.md }}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        style={styles.featuredCard}
-                                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/community/${item.id}`); }}
-                                        activeOpacity={0.85}
-                                    >
-                                        <Image
-                                            source={{ uri: item.coverUrl || item.avatarUrl }}
-                                            style={styles.featuredCover}
-                                            placeholder={IMAGE_PLACEHOLDER.blurhash}
-                                            transition={IMAGE_PLACEHOLDER.transition}
-                                            contentFit="cover"
-                                            cachePolicy="memory-disk"
-                                        />
-                                        <LinearGradient colors={['transparent', colors.surface.overlay]} style={styles.featuredOverlay}>
-                                            <Text style={styles.featuredName} numberOfLines={1}>{item.name}</Text>
-                                            <Text style={styles.featuredMembers}>{formatCount(item.membersCount || item.memberCount || 0)} members</Text>
-                                        </LinearGradient>
+                        ) : null}
+
+                        {/* ─── Recommended for You Section ─── */}
+                        {recommendedCommunities.length > 0 && (
+                            <View style={styles.recommendedSection}>
+                                <View style={styles.recommendedHeader}>
+                                    <Text style={[styles.recommendedTitle, { color: c.text.primary }]}>Recommended for You</Text>
+                                    <TouchableOpacity>
+                                        <Text style={[styles.recommendedSeeAll, { color: c.gold[500] }]}>See All</Text>
                                     </TouchableOpacity>
-                                )}
-                            />
-                        </View>
-                    ) : null
+                                </View>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.md }}
+                                >
+                                    {recommendedCommunities.map((item, index) => (
+                                        <Animated.View
+                                            key={`rec-${item.id}`}
+                                            entering={FadeInDown.delay(Math.min(index * 60, 300)).duration(300)}
+                                        >
+                                            <TouchableOpacity
+                                                style={styles.recommendedCard}
+                                                onPress={() => {
+                                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                    router.push(`/community/${item.id}`);
+                                                }}
+                                                activeOpacity={0.85}
+                                            >
+                                                <View style={styles.recommendedCoverWrap}>
+                                                    {item.coverUrl || item.avatarUrl ? (
+                                                        <Image
+                                                            source={{ uri: item.coverUrl || item.avatarUrl }}
+                                                            style={StyleSheet.absoluteFill}
+                                                            contentFit="cover"
+                                                            placeholder={IMAGE_PLACEHOLDER.blurhash}
+                                                            transition={IMAGE_PLACEHOLDER.transition}
+                                                            cachePolicy="memory-disk"
+                                                        />
+                                                    ) : (
+                                                        <LinearGradient
+                                                            colors={getCoverGradient(item)}
+                                                            style={StyleSheet.absoluteFill}
+                                                            start={{ x: 0, y: 0 }}
+                                                            end={{ x: 1, y: 1 }}
+                                                        />
+                                                    )}
+                                                    <LinearGradient
+                                                        colors={['transparent', colors.surface.overlayMedium]}
+                                                        style={styles.recommendedCoverFade}
+                                                    />
+                                                </View>
+                                                <View style={styles.recommendedBody}>
+                                                    <Text style={[styles.recommendedName, { color: c.text.primary }]} numberOfLines={1}>
+                                                        {item.name}
+                                                    </Text>
+                                                    <Text style={[styles.recommendedMembers, { color: c.text.secondary }]}>
+                                                        {formatCount(item.membersCount || 0)} members
+                                                    </Text>
+                                                    <View style={styles.activityRow}>
+                                                        <View style={styles.activeDot} />
+                                                        <Text style={styles.activeText}>Active now</Text>
+                                                    </View>
+                                                </View>
+                                            </TouchableOpacity>
+                                        </Animated.View>
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        )}
+                    </View>
                 ) : null}
                 ListEmptyComponent={renderEmpty}
                 refreshControl={
@@ -906,15 +1137,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border.subtle,
         overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
-        elevation: 2,
+        ...shadows.md,
     },
     cardCover: {
         width: '100%',
-        height: 130,
+        height: CARD_WIDTH / 2, // 2:1 aspect ratio
         position: 'relative',
         overflow: 'hidden',
         borderTopLeftRadius: 15,
@@ -925,13 +1152,13 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        height: 40,
+        height: 60,
     },
 
     // Avatar
     cardAvatarWrap: {
         position: 'absolute',
-        top: 130 - 18, // overlap the cover by half the avatar
+        top: (CARD_WIDTH / 2) - 18, // overlap the cover by half the avatar
         right: spacing.sm,
         zIndex: 2,
     },
@@ -981,10 +1208,23 @@ const styles = StyleSheet.create({
         color: colors.text.secondary,
         fontWeight: '500',
     },
+    cardFooterActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
     accessBadge: {
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 6,
+    },
+    accessBadgeJoinProminent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
     },
     accessBadgeGreen: {
         backgroundColor: colors.emerald[500] + '20',
@@ -1031,6 +1271,40 @@ const styles = StyleSheet.create({
         color: colors.text.muted,
         textAlign: 'center',
         lineHeight: 20,
+    },
+    emptyActions: {
+        marginTop: spacing.lg,
+        gap: spacing.sm,
+        width: '100%',
+        alignItems: 'center',
+    },
+    emptyActionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.xl,
+        borderRadius: 14,
+        minWidth: 220,
+    },
+    emptyActionBtnPrimary: {
+        backgroundColor: colors.gold[500],
+    },
+    emptyActionBtnPrimaryText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.primary,
+    },
+    emptyActionBtnSecondary: {
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '30',
+    },
+    emptyActionBtnSecondaryText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.gold[400],
     },
 
     // Loading
@@ -1120,6 +1394,44 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
 
+    // ─── Activity Indicators ─────────────────
+    activityRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 4,
+    },
+    activeDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: colors.emerald[500],
+    },
+    activeText: {
+        fontSize: 11,
+        color: colors.text.muted,
+    },
+
+    // ─── Member Avatar Stack ─────────────────
+    avatarStack: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: spacing.sm,
+    },
+    stackAvatar: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 1.5,
+        borderColor: colors.surface.glass,
+    },
+    stackMore: {
+        fontSize: 10,
+        color: colors.text.muted,
+        marginLeft: 4,
+        fontWeight: '500',
+    },
+
     // ─── Featured Section ─────────────────────
     featuredSection: {
         marginBottom: spacing.lg,
@@ -1138,18 +1450,14 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
     },
     featuredCard: {
-        width: 200,
-        height: 120,
-        borderRadius: 14,
+        width: FEATURED_CARD_WIDTH,
+        height: FEATURED_CARD_HEIGHT,
+        borderRadius: 16,
         overflow: 'hidden',
         backgroundColor: colors.surface.glass,
         borderWidth: 1,
         borderColor: colors.border.subtle,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
+        ...shadows.lg,
     },
     featuredCover: {
         width: '100%',
@@ -1160,16 +1468,117 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        padding: spacing.md,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.md,
+        justifyContent: 'flex-end',
+    },
+    featuredOverlayContent: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
     },
     featuredName: {
-        fontSize: typography.fontSize.base,
+        fontSize: typography.fontSize.lg,
         fontWeight: '700',
         color: colors.text.primary,
+    },
+    featuredMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginTop: 4,
     },
     featuredMembers: {
         fontSize: typography.fontSize.xs,
         color: colors.text.secondary,
-        marginTop: 2,
+    },
+    featuredActiveBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: colors.emerald[500] + '25',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+    },
+    featuredActiveDot: {
+        width: 5,
+        height: 5,
+        borderRadius: 2.5,
+        backgroundColor: colors.emerald[400],
+    },
+    featuredActiveText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: colors.emerald[400],
+    },
+    featuredJoinBtn: {
+        backgroundColor: colors.gold[500],
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs + 2,
+        borderRadius: 10,
+        marginLeft: spacing.sm,
+    },
+    featuredJoinText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '700',
+        color: colors.text.inverse,
+    },
+
+    // ─── Recommended for You ──────────────────
+    recommendedSection: {
+        marginBottom: spacing.lg,
+    },
+    recommendedHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+    },
+    recommendedTitle: {
+        fontSize: typography.fontSize.md,
+        fontWeight: '700',
+        color: colors.text.primary,
+    },
+    recommendedSeeAll: {
+        fontSize: typography.fontSize.sm,
+        color: colors.gold[500],
+        fontWeight: '600',
+    },
+    recommendedCard: {
+        width: 160,
+        borderRadius: 14,
+        overflow: 'hidden',
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        ...shadows.sm,
+    },
+    recommendedCoverWrap: {
+        width: '100%',
+        height: 80,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    recommendedCoverFade: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 30,
+    },
+    recommendedBody: {
+        padding: spacing.sm,
+    },
+    recommendedName: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '700',
+        color: colors.text.primary,
+        marginBottom: 2,
+    },
+    recommendedMembers: {
+        fontSize: 11,
+        color: colors.text.secondary,
     },
 });

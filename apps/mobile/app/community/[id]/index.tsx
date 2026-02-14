@@ -42,6 +42,7 @@ import { ScreenHeader, LoadingView, CommunityInviteSheet, Avatar } from '../../.
 import { showError, showSuccess } from '../../../stores/toastStore';
 import { formatCount, timeAgo } from '../../../lib/utils';
 import { socketManager } from '../../../lib/socket';
+import BulletinBoard from './bulletin';
 
 // ============================================
 // Constants
@@ -107,7 +108,7 @@ interface ChatMessage {
     mediaType?: string;
 }
 
-type TabKey = 'feed' | 'classroom' | 'calendar' | 'members' | 'about';
+type TabKey = 'feed' | 'classroom' | 'calendar' | 'bulletin' | 'members' | 'about';
 
 // ============================================
 // Tab definitions
@@ -117,6 +118,7 @@ const TABS: { key: TabKey; label: string; icon: keyof typeof Ionicons.glyphMap }
     { key: 'feed', label: 'Feed', icon: 'chatbubbles-outline' },
     { key: 'classroom', label: 'Classroom', icon: 'school-outline' },
     { key: 'calendar', label: 'Events', icon: 'calendar-outline' },
+    { key: 'bulletin', label: 'Bulletin', icon: 'clipboard-outline' },
     { key: 'members', label: 'Members', icon: 'people-outline' },
     { key: 'about', label: 'About', icon: 'information-circle-outline' },
 ];
@@ -210,17 +212,27 @@ const PostCard = memo(function PostCard({
     );
 });
 
+const ROLE_BADGE_CONFIG: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string; label: string }> = {
+    admin: { icon: 'shield-checkmark', color: colors.gold[500], bg: colors.gold[500] + '20', label: 'Admin' },
+    moderator: { icon: 'shield-half-outline', color: colors.azure[400], bg: colors.azure[400] + '20', label: 'Moderator' },
+    member: { icon: 'person-outline', color: colors.text.muted, bg: colors.surface.glass, label: 'Member' },
+};
+
 const MemberCard = memo(function MemberCard({
     member,
     isAdmin,
+    isCurrentUser,
     onPress,
     onManage,
 }: {
     member: MemberPreview;
     isAdmin: boolean;
+    isCurrentUser?: boolean;
     onPress: () => void;
     onManage?: () => void;
 }) {
+    const roleCfg = ROLE_BADGE_CONFIG[member.role || 'member'] || ROLE_BADGE_CONFIG.member;
+
     return (
         <TouchableOpacity
             style={styles.memberCard}
@@ -233,21 +245,34 @@ const MemberCard = memo(function MemberCard({
                 size="md"
             />
             <View style={styles.memberInfo}>
-                <Text style={styles.memberName}>{member.displayName}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.memberName}>{member.displayName}</Text>
+                    {/* Role badge for all roles */}
+                    <View style={[styles.memberRoleBadge, { backgroundColor: roleCfg.bg }]}>
+                        <Ionicons name={roleCfg.icon} size={10} color={roleCfg.color} />
+                        <Text style={[styles.memberRoleText, { color: roleCfg.color }]}>{roleCfg.label}</Text>
+                    </View>
+                </View>
                 {member.username && (
                     <Text style={styles.memberUsername}>@{member.username}</Text>
                 )}
-                {member.role && member.role !== 'member' && (
-                    <View style={styles.memberRoleBadge}>
-                        <Ionicons
-                            name="shield-checkmark"
-                            size={10}
-                            color={colors.gold[500]}
-                        />
-                        <Text style={styles.memberRoleText}>{member.role}</Text>
-                    </View>
-                )}
             </View>
+            {/* Connect button for non-current-user, non-admin-manage rows */}
+            {!isCurrentUser && !onManage && (
+                <TouchableOpacity
+                    style={styles.connectBtn}
+                    onPress={() => {
+                        if (member.username) {
+                            onPress();
+                        }
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityLabel={`Connect with ${member.displayName}`}
+                >
+                    <Ionicons name="person-add-outline" size={14} color={colors.gold[500]} />
+                    <Text style={styles.connectBtnText}>Connect</Text>
+                </TouchableOpacity>
+            )}
             {isAdmin && onManage && (
                 <TouchableOpacity
                     onPress={onManage}
@@ -407,6 +432,7 @@ export default function CommunityDetailScreen() {
     const [allMembers, setAllMembers] = useState<MemberPreview[]>([]);
     const [membersLoading, setMembersLoading] = useState(false);
     const [membersError, setMembersError] = useState<string | null>(null);
+    const [memberSearch, setMemberSearch] = useState('');
     const [rules, setRules] = useState<CommunityRule[]>([]);
     const [rulesLoading, setRulesLoading] = useState(false);
     const [rulesError, setRulesError] = useState<string | null>(null);
@@ -741,6 +767,31 @@ export default function CommunityDetailScreen() {
         });
     }, [posts, activePostFilter]);
 
+    // ── Sorted & Filtered Members ──────────────────────────────
+    const ROLE_SORT_ORDER: Record<string, number> = { admin: 0, moderator: 1, member: 2 };
+    const sortedFilteredMembers = useMemo(() => {
+        let list = [...allMembers];
+        // Sort: admins first, then moderators, then by join date
+        list.sort((a, b) => {
+            const roleA = ROLE_SORT_ORDER[a.role || 'member'] ?? 2;
+            const roleB = ROLE_SORT_ORDER[b.role || 'member'] ?? 2;
+            if (roleA !== roleB) return roleA - roleB;
+            // Secondary sort by joinedAt (earliest first)
+            if (a.joinedAt && b.joinedAt) return new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime();
+            return 0;
+        });
+        // Filter by search
+        if (memberSearch.trim()) {
+            const q = memberSearch.trim().toLowerCase();
+            list = list.filter(
+                (m) =>
+                    m.displayName.toLowerCase().includes(q) ||
+                    (m.username && m.username.toLowerCase().includes(q)),
+            );
+        }
+        return list;
+    }, [allMembers, memberSearch]);
+
     // ── Join / Leave ──────────────────────────────
     const handleJoinLeave = useCallback(async () => {
         if (!community) return;
@@ -786,7 +837,16 @@ export default function CommunityDetailScreen() {
                 setCommunity((c) =>
                     c ? { ...c, role: 'member', membersCount: c.membersCount + 1 } : c,
                 );
-                showSuccess('Welcome to the community!');
+                // Show welcome onboarding alert with suggested first actions
+                Alert.alert(
+                    `Welcome to ${community.name}!`,
+                    'Here are some things you can do:',
+                    [
+                        { text: 'Browse Feed', onPress: () => setActiveTab('feed') },
+                        { text: 'See Bulletin', onPress: () => setActiveTab('bulletin') },
+                        { text: 'Got it', style: 'cancel' },
+                    ],
+                );
             }
         } catch {
             showError('Action failed, please try again');
@@ -1086,6 +1146,19 @@ export default function CommunityDetailScreen() {
 
     const renderFeedTab = () => (
         <View>
+            {/* Quick Post Bar */}
+            {community.role && (
+                <TouchableOpacity
+                    style={styles.quickPost}
+                    onPress={() => router.push(`/(tabs)/create?communityId=${communityId}` as any)}
+                    activeOpacity={0.7}
+                >
+                    <Avatar size="sm" uri={currentUser?.avatarUrl} name={currentUser?.displayName} />
+                    <Text style={styles.quickPostText}>Share something with the group...</Text>
+                    <Ionicons name="create-outline" size={18} color={colors.gold[500]} />
+                </TouchableOpacity>
+            )}
+
             {/* Post Type Filter Pills */}
             <Animated.ScrollView
                 horizontal
@@ -1268,6 +1341,26 @@ export default function CommunityDetailScreen() {
 
         return (
             <View>
+                {/* Member Search Bar */}
+                <View style={styles.memberSearchBar}>
+                    <Ionicons name="search" size={16} color={colors.text.muted} />
+                    <TextInput
+                        placeholder="Search members..."
+                        placeholderTextColor={colors.text.muted}
+                        style={styles.memberSearchInput}
+                        value={memberSearch}
+                        onChangeText={setMemberSearch}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        returnKeyType="search"
+                    />
+                    {memberSearch.length > 0 && (
+                        <TouchableOpacity onPress={() => setMemberSearch('')} hitSlop={8}>
+                            <Ionicons name="close-circle" size={16} color={colors.text.muted} />
+                        </TouchableOpacity>
+                    )}
+                </View>
+
                 {/* Pending Join Requests — Admin only */}
                 {canModerate && joinRequests.length > 0 && (
                     <View style={{ marginBottom: spacing.lg }}>
@@ -1345,24 +1438,34 @@ export default function CommunityDetailScreen() {
                 <Text style={styles.memberCount}>
                     {formatCount(community.membersCount)} member{community.membersCount !== 1 ? 's' : ''}
                 </Text>
-                {allMembers.map((member, index) => (
-                    <Animated.View key={member.id} entering={FadeInDown.delay(index * 50).duration(250)}>
-                        <MemberCard
-                            member={member}
-                            isAdmin={canModerate}
-                            onPress={() => {
-                                if (member.username) {
-                                    router.push(`/profile/${member.username}` as any);
+                {sortedFilteredMembers.length === 0 && memberSearch.trim() ? (
+                    <View style={{ alignItems: 'center', paddingVertical: spacing.xl }}>
+                        <Ionicons name="search-outline" size={32} color={colors.text.muted} />
+                        <Text style={{ fontSize: typography.fontSize.sm, color: colors.text.muted, marginTop: spacing.sm }}>
+                            No members match "{memberSearch}"
+                        </Text>
+                    </View>
+                ) : (
+                    sortedFilteredMembers.map((member, index) => (
+                        <Animated.View key={member.id} entering={FadeInDown.delay(Math.min(index * 50, 300)).duration(250)}>
+                            <MemberCard
+                                member={member}
+                                isAdmin={canModerate}
+                                isCurrentUser={member.id === currentUser?.id}
+                                onPress={() => {
+                                    if (member.username) {
+                                        router.push(`/profile/${member.username}` as any);
+                                    }
+                                }}
+                                onManage={
+                                    canModerate && member.id !== currentUser?.id
+                                        ? () => handleManageMember(member)
+                                        : undefined
                                 }
-                            }}
-                            onManage={
-                                canModerate && member.id !== currentUser?.id
-                                    ? () => handleManageMember(member)
-                                    : undefined
-                            }
-                        />
-                    </Animated.View>
-                ))}
+                            />
+                        </Animated.View>
+                    ))
+                )}
             </View>
         );
     };
@@ -2118,6 +2221,9 @@ export default function CommunityDetailScreen() {
                                     </TouchableOpacity>
                                 </View>
                             )}
+                            {activeTab === 'bulletin' && (
+                                <BulletinBoard communityId={communityId} />
+                            )}
                             {activeTab === 'members' && renderMembersTab()}
                             {activeTab === 'about' && renderAboutTab()}
                         </View>
@@ -2455,6 +2561,25 @@ const styles = StyleSheet.create({
         minHeight: 200,
     },
 
+    // ── Quick Post Bar ──────────────────
+    quickPost: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        backgroundColor: colors.surface.glass,
+        borderRadius: 14,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm + 2,
+        marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    quickPostText: {
+        flex: 1,
+        fontSize: typography.fontSize.base,
+        color: colors.text.muted,
+    },
+
     // ── Post Filter Pills ──────────────────
     postFilterContainer: {
         marginBottom: spacing.md,
@@ -2564,6 +2689,24 @@ const styles = StyleSheet.create({
     },
 
     // ── Members Tab ──────────────────
+    memberSearchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface.glass,
+        borderRadius: 12,
+        paddingHorizontal: spacing.md,
+        paddingVertical: Platform.OS === 'ios' ? 10 : 6,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        marginBottom: spacing.md,
+        gap: spacing.sm,
+    },
+    memberSearchInput: {
+        flex: 1,
+        fontSize: typography.fontSize.base,
+        color: colors.text.primary,
+        paddingVertical: 0,
+    },
     memberCount: {
         fontSize: typography.fontSize.sm,
         color: colors.text.muted,
@@ -2594,14 +2737,32 @@ const styles = StyleSheet.create({
     memberRoleBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
-        marginTop: 4,
+        gap: 3,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
     },
     memberRoleText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: colors.gold[500],
+        textTransform: 'capitalize',
+    },
+    connectBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: colors.surface.goldSubtle,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 6,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '30',
+    },
+    connectBtnText: {
         fontSize: typography.fontSize.xs,
         fontWeight: '600',
         color: colors.gold[500],
-        textTransform: 'capitalize',
     },
 
     // ── Rules Tab ──────────────────

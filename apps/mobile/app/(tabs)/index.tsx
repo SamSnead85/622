@@ -2730,7 +2730,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 3,
     },
     headerBadgeText: {
-        color: '#fff',
+        color: colors.text.inverse,
         fontSize: 9,
         fontWeight: '700',
     },

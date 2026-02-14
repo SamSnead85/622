@@ -30,6 +30,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTheme } from '../contexts/ThemeContext';
 import { typography, spacing } from '@zerog/ui';
+import { IMAGE_PLACEHOLDER } from '../lib/imagePlaceholder';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -191,7 +192,7 @@ const ImageSlide = memo(({ item, width: slideWidth, height: slideHeight }: {
                 source={{ uri: item.mediaUrl }}
                 style={[styles.slideMedia, { width: slideWidth, height: slideHeight }]}
                 contentFit="cover"
-                placeholder={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined}
+                placeholder={item.thumbnailUrl ? { uri: item.thumbnailUrl } : IMAGE_PLACEHOLDER.blurhash}
                 transition={200}
                 cachePolicy="memory-disk"
                 accessibilityLabel={item.altText || 'Post image'}

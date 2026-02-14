@@ -16,7 +16,7 @@ import Animated, {
     FadeInDown,
     FadeIn,
 } from 'react-native-reanimated';
-import { typography, spacing } from '@zerog/ui';
+import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -73,7 +73,7 @@ export default function WelcomeScreen() {
 
                     {/* Headline — one powerful line */}
                     <Animated.View entering={FadeInUp.delay(400).duration(600)}>
-                        <Text style={[styles.headline, { color: c.text.primary }]}>
+                        <Text style={[styles.headline, { color: c.text.primary }]} accessibilityRole="header">
                             Social without{'\n'}the surveillance.
                         </Text>
                     </Animated.View>
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
         borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
+        shadowColor: colors.obsidian[900],
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,

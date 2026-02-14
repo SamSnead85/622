@@ -14,6 +14,7 @@ import {
     Pressable,
     Dimensions,
     Alert,
+    RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -199,6 +200,11 @@ const games: GameDef[] = [
     { type: 'trivia', name: 'Rapid Fire', icon: 'flash' as const, desc: 'Fast-paced trivia blitz', players: '2-8', color: colors.amber[500], isNew: false, category: 'brain' },
     { type: 'speed-match', name: 'Speed Match', icon: 'speedometer' as const, desc: 'Color Rush, Memory, Math — how fast are you?', players: '1-2', color: colors.coral[500], isNew: false, category: 'brain' },
     { type: 'word-blitz', name: 'Word Blitz', icon: 'text' as const, desc: 'Daily word puzzle + race mode', players: '1-2', color: colors.emerald[500], isNew: false, category: 'brain' },
+
+    // Game Night — host-as-display party games for in-person gatherings
+    { type: 'jeopardy', name: 'Jeopardy!', icon: 'help-circle' as const, desc: 'Classic quiz show — host reads, players buzz in', players: '2-12', color: colors.azure[400], isNew: true, category: 'party' },
+    { type: 'wheel-of-fortune', name: 'Wheel of Fortune', icon: 'sync-circle' as const, desc: 'Spin, guess letters, solve the puzzle', players: '2-8', color: colors.emerald[400], isNew: true, category: 'party' },
+    { type: 'family-feud', name: 'Family Feud', icon: 'people-circle' as const, desc: 'Team vs team — name the top answers!', players: '4-16', color: colors.coral[400], isNew: true, category: 'party' },
 
     // Strategy Games — deeper thinking
     { type: 'cipher', name: 'Cipher', icon: 'grid' as const, desc: 'Strategic word deduction', players: '4-8', color: colors.gold[500], isNew: false, category: 'strategy' },
@@ -431,7 +437,7 @@ function GameCard({ game, index, onPlay }: GameCardProps) {
     }, [glowOpacity]);
 
     const handlePressIn = useCallback(() => {
-        scale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
+        scale.value = withSpring(0.97, { damping: 15, stiffness: 300 });
     }, [scale]);
 
     const handlePressOut = useCallback(() => {
@@ -467,7 +473,7 @@ function GameCard({ game, index, onPlay }: GameCardProps) {
                 onPress={handlePlay}
                 style={animatedCardStyle}
                 accessibilityRole="button"
-                accessibilityLabel={`Play ${game.name}. ${game.players} players.`}
+                accessibilityLabel={`Play ${game.name}, ${game.players} players. ${game.desc}`}
             >
                 <GlassCard style={styles.gameCard} padding="md">
                     {/* Gradient accent strip */}
@@ -668,7 +674,7 @@ function HeroSection() {
 
     return (
         <Animated.View
-            entering={FadeInDown.delay(60).duration(600)}
+            entering={FadeInDown.delay(60).duration(500)}
             style={styles.heroSection}
         >
             {/* Background pattern dots */}
@@ -723,12 +729,24 @@ export default function GamesHubScreen() {
     const [isCreating, setIsCreating] = useState(false);
     const [activeCategory, setActiveCategory] = useState<GameCategory | null>(null);
     const [showPlayWithFriend, setShowPlayWithFriend] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
     const inputRef = useRef<TextInput>(null);
 
     const filteredGames = useMemo(() => {
         if (!activeCategory) return games;
         return games.filter(g => g.category === activeCategory);
     }, [activeCategory]);
+
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true);
+        // Re-load stats and achievements from storage
+        await Promise.all([
+            AsyncStorage.getItem('@game-stats'),
+            getAchievementProgress(),
+            getRecentlyPlayed(),
+        ]);
+        setRefreshing(false);
+    }, []);
 
     // ---- Auth state for guest flow ----
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -818,9 +836,33 @@ export default function GamesHubScreen() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        tintColor={colors.gold[400]}
+                    />
+                }
             >
                 {/* ---- Hero Section ---- */}
                 <HeroSection />
+
+                {/* ---- Game Night Banner ---- */}
+                <Animated.View entering={FadeInDown.delay(70).duration(500)}>
+                    <TouchableOpacity
+                        style={[styles.gameNightBanner, { backgroundColor: c.surface.goldSubtle, borderColor: c.gold[500] }]}
+                        onPress={() => router.push('/games/party-setup')}
+                        activeOpacity={0.8}
+                    >
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: typography.fontSize.lg, fontWeight: '800', color: c.gold[400] }}>Game Night</Text>
+                            <Text style={{ fontSize: typography.fontSize.sm, color: c.text.secondary, marginTop: 2 }}>
+                                Jeopardy, Wheel of Fortune, Family Feud — cast to TV!
+                            </Text>
+                        </View>
+                        <Ionicons name="tv-outline" size={36} color={c.gold[500]} />
+                    </TouchableOpacity>
+                </Animated.View>
 
                 {/* ---- Achievements ---- */}
                 <AchievementsSection />
@@ -1075,6 +1117,17 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.sm,
+    },
+
+    // ---- Game Night Banner ----
+    gameNightBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.md,
+        borderRadius: 14,
+        borderWidth: 1,
+        marginBottom: spacing.md,
+        gap: spacing.sm,
     },
 
     // ---- Achievements ----

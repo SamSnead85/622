@@ -323,10 +323,11 @@ export default function MessagesTab() {
         return (
             <EmptyState
                 icon="chatbubbles-outline"
-                title="Your inbox is waiting"
-                message="Connect with friends and family through private, meaningful conversations."
-                actionLabel="Find People"
-                onAction={() => router.push('/(tabs)/search' as any)}
+                iconSize={64}
+                title="Start a Conversation"
+                message="Message your connections to get started"
+                actionLabel="Find Connections"
+                onAction={() => router.push('/connections' as any)}
             />
         );
     };

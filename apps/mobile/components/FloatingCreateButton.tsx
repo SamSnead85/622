@@ -20,6 +20,7 @@ import Animated, {
     FadeOut,
     SlideInDown,
     SlideOutDown,
+    ZoomIn,
 } from 'react-native-reanimated';
 import { colors, spacing } from '@zerog/ui';
 import { useTheme } from '../contexts/ThemeContext';
@@ -108,6 +109,7 @@ export default function FloatingCreateButton({ bottomOffset = 80 }: FloatingCrea
         <>
             {/* FAB Button */}
             <Animated.View
+                entering={ZoomIn.springify().damping(12)}
                 style={[
                     styles.fabContainer,
                     { bottom: bottomOffset },

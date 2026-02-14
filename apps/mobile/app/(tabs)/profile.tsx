@@ -9,8 +9,10 @@ import {
     Platform,
     RefreshControl,
     Share,
+    Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,7 +35,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar, LoadingView, EmptyState, SkeletonGrid } from '../../components';
 import { useAuthStore, Post, mapApiPost } from '../../stores';
-import { apiFetch, API } from '../../lib/api';
+import { apiFetch, apiUpload, API } from '../../lib/api';
 import { showError } from '../../stores/toastStore';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { formatCount } from '../../lib/utils';
@@ -472,6 +474,73 @@ export default function ProfileScreen() {
                         </LinearGradient>
                     )}
                 </Animated.View>
+
+                {/* Cover Photo Edit Button */}
+                <TouchableOpacity
+                    style={{
+                        position: 'absolute',
+                        top: 12,
+                        right: 12,
+                        zIndex: 10,
+                        backgroundColor: colors.surface.overlay,
+                        borderRadius: 20,
+                        width: 40,
+                        height: 40,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderWidth: 1,
+                        borderColor: colors.border.subtle,
+                    }}
+                    onPress={() => {
+                        Alert.alert(
+                            'Cover Photo',
+                            'Choose an option',
+                            [
+                                {
+                                    text: 'Upload Photo',
+                                    onPress: async () => {
+                                        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                                        if (!perm.granted) {
+                                            Alert.alert('Permission needed', 'Please allow photo access to change your cover.');
+                                            return;
+                                        }
+                                        const result = await ImagePicker.launchImageLibraryAsync({
+                                            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                                            allowsEditing: true,
+                                            aspect: [3, 1],
+                                            quality: 0.85,
+                                        });
+                                        if (!result.canceled && result.assets?.[0]) {
+                                            try {
+                                                await apiUpload(API.uploadCover, result.assets[0].uri, 'image/jpeg', 'cover.jpg');
+                                                await refreshUser();
+                                            } catch {
+                                                // Upload failed — non-critical
+                                            }
+                                        }
+                                    },
+                                },
+                                {
+                                    text: 'Remove',
+                                    style: 'destructive',
+                                    onPress: async () => {
+                                        try {
+                                            await apiFetch('/api/v1/users/me', { method: 'PATCH', body: JSON.stringify({ coverUrl: null }) });
+                                            await refreshUser();
+                                        } catch {
+                                            // Remove failed — non-critical
+                                        }
+                                    },
+                                },
+                                { text: 'Cancel', style: 'cancel' },
+                            ],
+                        );
+                    }}
+                    activeOpacity={0.7}
+                    accessibilityLabel="Edit cover photo"
+                >
+                    <Ionicons name="camera" size={20} color={colors.text.primary} />
+                </TouchableOpacity>
 
                 {/* Gradient overlay for text readability */}
                 <Animated.View style={[styles.coverGradientOverlay, coverOverlayStyle]}>

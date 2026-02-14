@@ -31,6 +31,8 @@ const KNOWN_GAME_TYPES = [
     'emoji-charades',
     'would-you-rather',
     'sketch-duel',
+    'wheel-of-fortune',
+    'jeopardy',
 ];
 
 export default function GameRoomScreen() {

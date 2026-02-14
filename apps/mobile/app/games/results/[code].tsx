@@ -3,7 +3,7 @@
 // Shows winner celebration, full leaderboard
 // ============================================
 
-import React, { useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -31,6 +31,8 @@ import Animated, {
     Easing,
     interpolate,
     SharedValue,
+    runOnJS,
+    useDerivedValue,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors, typography, spacing } from '@zerog/ui';
@@ -127,6 +129,46 @@ function ConfettiParticle({ index }: { index: number }) {
 }
 
 // ============================================
+// Animated Score Counter
+// ============================================
+
+function AnimatedScoreCounter({
+    target,
+    delay: animDelay = 0,
+    duration = 1200,
+    style,
+}: {
+    target: number;
+    delay?: number;
+    duration?: number;
+    style?: any;
+}) {
+    const [displayValue, setDisplayValue] = useState(0);
+    const animatedValue = useSharedValue(0);
+
+    useDerivedValue(() => {
+        const val = Math.round(animatedValue.value);
+        runOnJS(setDisplayValue)(val);
+    });
+
+    useEffect(() => {
+        animatedValue.value = withDelay(
+            animDelay,
+            withTiming(target, {
+                duration,
+                easing: Easing.out(Easing.cubic),
+            }),
+        );
+    }, [target, animDelay, duration, animatedValue]);
+
+    return (
+        <Text style={style}>
+            {displayValue.toLocaleString()}
+        </Text>
+    );
+}
+
+// ============================================
 // Podium Place Card
 // ============================================
 
@@ -215,9 +257,12 @@ function PodiumCard({ player, rank }: PodiumCardProps) {
             </Text>
 
             <View style={styles.podiumScoreContainer}>
-                <Text style={[styles.podiumScore, { color: config.color }]}>
-                    {player.score.toLocaleString()}
-                </Text>
+                <AnimatedScoreCounter
+                    target={player.score}
+                    delay={config.delay + 400}
+                    duration={1200}
+                    style={[styles.podiumScore, { color: config.color }]}
+                />
                 <Text style={styles.podiumScoreLabel}>pts</Text>
             </View>
 
@@ -258,7 +303,12 @@ function RankingRow({ player, rank, index }: RankingRowProps) {
                     />
                     <Text style={styles.rankingName} numberOfLines={1}>{player.name}</Text>
                 </View>
-                <Text style={styles.rankingScore}>{player.score.toLocaleString()}</Text>
+                <AnimatedScoreCounter
+                    target={player.score}
+                    delay={800 + index * 60}
+                    duration={1000}
+                    style={styles.rankingScore}
+                />
             </GlassCard>
         </Animated.View>
     );
@@ -477,10 +527,13 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xl,
     },
     winnerText: {
-        fontSize: typography.fontSize['2xl'],
+        fontSize: typography.fontSize['3xl'],
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
         color: colors.gold[400],
+        textShadowColor: colors.gold[500] + '40',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 12,
     },
 
     // ---- Podium ----
