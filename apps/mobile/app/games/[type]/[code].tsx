@@ -29,6 +29,8 @@ const KNOWN_GAME_TYPES = [
     'cipher',
     'predict',
     'emoji-charades',
+    'would-you-rather',
+    'sketch-duel',
 ];
 
 export default function GameRoomScreen() {

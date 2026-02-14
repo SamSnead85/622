@@ -26,6 +26,7 @@ export default function GamesLayout() {
             <Stack.Screen name="speed-match" />
             <Stack.Screen name="word-blitz" />
             <Stack.Screen name="emoji-charades/[code]" />
+            <Stack.Screen name="sketch-duel/[code]" />
         </Stack>
     );
 }

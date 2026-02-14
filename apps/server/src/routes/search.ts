@@ -143,7 +143,26 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
                     },
                 }),
             ]);
-            results.users = users;
+
+            // Enrich with isFollowing status for the current user
+            let followingIds = new Set<string>();
+            if (req.userId && Array.isArray(users) && users.length > 0) {
+                const follows = await prisma.follow.findMany({
+                    where: {
+                        followerId: req.userId,
+                        followingId: { in: users.map((u) => u.id) },
+                    },
+                    select: { followingId: true },
+                });
+                followingIds = new Set(follows.map((f) => f.followingId));
+            }
+
+            results.users = (users as any[]).map((u) => ({
+                ...u,
+                followersCount: u._count?.followers ?? 0,
+                isFollowing: followingIds.has(u.id),
+                isOwnProfile: u.id === req.userId,
+            }));
             counts.users = userCount;
         }
 

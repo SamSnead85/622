@@ -67,6 +67,8 @@ interface SearchResult {
     membersCount?: number;
     followersCount?: number;
     isVerified?: boolean;
+    isFollowing?: boolean;
+    isOwnProfile?: boolean;
 }
 
 type FilterTab = 'all' | 'people' | 'communities' | 'posts' | 'hashtags';
@@ -283,13 +285,16 @@ const SuggestionItem = memo(({ text, onPress, index }: {
 // Search Result Row (memoized)
 // ============================================
 
-const SearchResultRow = memo(({ item, index, onPress }: {
+const SearchResultRow = memo(({ item, index, onPress, onFollow }: {
     item: SearchResult;
     index: number;
     onPress: (item: SearchResult) => void;
+    onFollow?: (item: SearchResult) => void;
 }) => {
     const typeIcon = getTypeIcon(item.type);
     const typeColor = getTypeColor(item.type);
+    const isUser = item.type === 'user';
+    const showFollowBtn = isUser && !item.isOwnProfile && onFollow;
 
     return (
         <Animated.View entering={FadeInDown.duration(250).delay(Math.min(index * 40, 400))}>
@@ -343,19 +348,43 @@ const SearchResultRow = memo(({ item, index, onPress }: {
                     ) : null}
                 </View>
 
-                {/* Type badge */}
-                <View style={[styles.resultTypeBadge, { backgroundColor: typeColor + '15' }]}>
-                    <Ionicons name={typeIcon} size={12} color={typeColor} />
-                    <Text style={[styles.resultTypeText, { color: typeColor }]}>
-                        {item.type === 'user' ? 'Person' : item.type.charAt(0).toUpperCase() + item.type.slice(1)}
-                    </Text>
-                </View>
+                {/* Follow button for users, type badge for others */}
+                {showFollowBtn ? (
+                    <TouchableOpacity
+                        style={[
+                            styles.followBtn,
+                            item.isFollowing && styles.followBtnFollowing,
+                        ]}
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            onFollow(item);
+                        }}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                        <Text style={[
+                            styles.followBtnText,
+                            item.isFollowing && styles.followBtnTextFollowing,
+                        ]}>
+                            {item.isFollowing ? 'Following' : 'Follow'}
+                        </Text>
+                    </TouchableOpacity>
+                ) : !isUser ? (
+                    <View style={[styles.resultTypeBadge, { backgroundColor: typeColor + '15' }]}>
+                        <Ionicons name={typeIcon} size={12} color={typeColor} />
+                        <Text style={[styles.resultTypeText, { color: typeColor }]}>
+                            {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                        </Text>
+                    </View>
+                ) : null}
             </Pressable>
         </Animated.View>
     );
 }, (prev, next) =>
     prev.item.id === next.item.id &&
     prev.item.type === next.item.type &&
+    prev.item.isFollowing === next.item.isFollowing &&
     prev.index === next.index
 );
 
@@ -635,6 +664,8 @@ export default function SearchScreen() {
                         description: u.bio,
                         followersCount: u.followersCount ?? u._count?.followers ?? 0,
                         isVerified: u.isVerified,
+                        isFollowing: u.isFollowing ?? false,
+                        isOwnProfile: u.isOwnProfile ?? false,
                     });
                 });
             }
@@ -829,6 +860,31 @@ export default function SearchScreen() {
         }
     }, [router, doSearch]);
 
+    const handleFollowFromSearch = useCallback(async (item: SearchResult) => {
+        if (item.type !== 'user') return;
+        const wasFollowing = item.isFollowing;
+        // Optimistic update
+        setResults((prev) =>
+            prev.map((r) =>
+                r.id === item.id ? { ...r, isFollowing: !wasFollowing } : r
+            )
+        );
+        try {
+            if (wasFollowing) {
+                await apiFetch(`/api/v1/users/${item.id}/follow`, { method: 'DELETE' });
+            } else {
+                await apiFetch(`/api/v1/users/${item.id}/follow`, { method: 'POST' });
+            }
+        } catch {
+            // Revert on failure
+            setResults((prev) =>
+                prev.map((r) =>
+                    r.id === item.id ? { ...r, isFollowing: wasFollowing } : r
+                )
+            );
+        }
+    }, []);
+
     const handleSuggestedPress = useCallback((item: SuggestedItem) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         if (item.type === 'user') {
@@ -907,8 +963,8 @@ export default function SearchScreen() {
     // ============================================
 
     const renderResult = useCallback(({ item, index }: { item: SearchResult; index: number }) => (
-        <SearchResultRow item={item} index={index} onPress={handleResultPress} />
-    ), [handleResultPress]);
+        <SearchResultRow item={item} index={index} onPress={handleResultPress} onFollow={handleFollowFromSearch} />
+    ), [handleResultPress, handleFollowFromSearch]);
 
     const resultKeyExtractor = useCallback((item: SearchResult) => `${item.type}-${item.id}`, []);
 
@@ -2044,6 +2100,29 @@ const styles = StyleSheet.create({
     resultTypeText: {
         fontSize: typography.fontSize.xs,
         fontWeight: '600',
+    },
+
+    // Follow button in search results
+    followBtn: {
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderRadius: 16,
+        backgroundColor: colors.gold[500],
+        minWidth: 76,
+        alignItems: 'center',
+    },
+    followBtnFollowing: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: colors.border.default,
+    },
+    followBtnText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '700',
+        color: colors.text.inverse,
+    },
+    followBtnTextFollowing: {
+        color: colors.text.secondary,
     },
 
     // Skeleton
