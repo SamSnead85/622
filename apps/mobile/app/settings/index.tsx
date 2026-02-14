@@ -124,6 +124,7 @@ export default function SettingsScreen() {
     const [editBio, setEditBio] = useState(user?.bio || '');
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const [isUploadingCover, setIsUploadingCover] = useState(false);
     const [showLanguagePicker, setShowLanguagePicker] = useState(false);
     const [currentLang, setCurrentLang] = useState(i18next.language || 'en');
     const currentLanguageName = SUPPORTED_LANGUAGES.find((l) => l.code === currentLang)?.nativeName || 'English';
@@ -138,7 +139,7 @@ export default function SettingsScreen() {
     const settingsSections = useMemo(() => [
         { key: 'profile', keywords: ['profile', 'name', 'bio', 'avatar', 'photo', 'picture'] },
         { key: 'appearance', keywords: ['appearance', 'theme', 'dark', 'light', 'mode', 'color', 'display'] },
-        { key: 'account', keywords: ['edit profile', 'name', 'bio', 'avatar', 'password', 'security', '2fa', 'email', 'account'] },
+        { key: 'account', keywords: ['edit profile', 'name', 'bio', 'avatar', 'cover', 'background', 'banner', 'photo', 'password', 'security', '2fa', 'email', 'account'] },
         { key: 'cultural', keywords: ['cultural', 'greeting', 'muslim', 'standard', 'custom', 'deen', 'prayer', 'qibla', 'quran'] },
         { key: 'privacy', keywords: ['privacy', 'private', 'public', 'community', 'visible', 'invisible', 'mode'] },
         { key: 'language', keywords: ['language', 'data', 'import', 'whatsapp', 'instagram', 'tiktok', 'export'] },
@@ -214,6 +215,34 @@ export default function SettingsScreen() {
             setIsUploadingAvatar(false);
         }
     }, [refreshUser]);
+
+    const handlePickCover = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert(t('settings.permissionRequired'), 'We need access to your photos to update your cover image.');
+            return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [3, 1],
+            quality: 0.85,
+        });
+        if (result.canceled || !result.assets?.[0]) return;
+
+        setIsUploadingCover(true);
+        try {
+            await apiUpload(API.uploadCover, result.assets[0].uri, 'image/jpeg', 'cover.jpg');
+            await refreshUser();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {
+            Alert.alert('Upload Failed', 'Failed to upload cover image. Please try again.');
+            showError('Could not upload cover image');
+        } finally {
+            setIsUploadingCover(false);
+        }
+    }, [refreshUser, t]);
 
     const handleCulturalProfileChange = async (profile: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -547,6 +576,41 @@ export default function SettingsScreen() {
                         {/* Inline Profile Editor */}
                         {showProfileEditor && (
                             <View style={styles.profileEditor}>
+                                {/* Cover Photo */}
+                                <TouchableOpacity
+                                    style={styles.coverEditor}
+                                    onPress={handlePickCover}
+                                    disabled={isUploadingCover}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Cover photo"
+                                    accessibilityHint="Tap to change your background cover image"
+                                    activeOpacity={0.8}
+                                >
+                                    {user?.coverUrl ? (
+                                        <Image
+                                            source={{ uri: user.coverUrl }}
+                                            style={styles.editCover}
+                                            transition={200}
+                                            cachePolicy="memory-disk"
+                                        />
+                                    ) : (
+                                        <LinearGradient
+                                            colors={[colors.surface.glassHover, colors.surface.glass]}
+                                            style={styles.editCover}
+                                        >
+                                            <Ionicons name="image-outline" size={28} color={colors.text.muted} />
+                                            <Text style={styles.coverPlaceholderText}>Add cover photo</Text>
+                                        </LinearGradient>
+                                    )}
+                                    <View style={styles.coverEditBadge}>
+                                        {isUploadingCover ? (
+                                            <ActivityIndicator size="small" color={colors.text.primary} />
+                                        ) : (
+                                            <Ionicons name="camera" size={14} color={colors.text.primary} />
+                                        )}
+                                    </View>
+                                </TouchableOpacity>
+
                                 {/* Avatar */}
                                 <TouchableOpacity style={styles.avatarEditor} onPress={handlePickAvatar} disabled={isUploadingAvatar} accessibilityRole="button" accessibilityLabel="Your profile photo" accessibilityHint="Tap to change your avatar">
                                     {user?.avatarUrl ? (
@@ -1267,6 +1331,42 @@ const styles = StyleSheet.create({
         padding: spacing.lg,
         borderBottomWidth: 1,
         borderBottomColor: colors.border.subtle,
+    },
+    coverEditor: {
+        position: 'relative',
+        marginBottom: spacing.md,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    editCover: {
+        width: '100%',
+        height: 100,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    coverPlaceholderText: {
+        fontSize: typography.fontSize.xs,
+        color: colors.text.muted,
+        marginTop: 4,
+        fontWeight: '500',
+    },
+    coverEditBadge: {
+        position: 'absolute',
+        bottom: 8,
+        right: 8,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.gold[500],
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: colors.obsidian[900],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
     },
     avatarEditor: {
         alignSelf: 'center',
