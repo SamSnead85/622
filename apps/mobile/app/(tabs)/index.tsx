@@ -16,6 +16,7 @@ import {
     ScrollView,
     AccessibilityInfo,
     Image as RNImage,
+    Modal,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -111,7 +112,7 @@ function AvatarGlow({ type, size }: { type: 'online' | 'active' | 'verified' | '
 // Active Contacts Strip — replaces Intent Hub
 // Horizontal scroll of online/active people
 // ============================================
-const CONTACT_AVATAR_SIZE = 44;
+const CONTACT_AVATAR_SIZE = 64;
 
 function ActiveContactBubble({
     avatarUrl,
@@ -201,8 +202,8 @@ function ActiveContactBubble({
                         </View>
                     )}
                 </View>
-                <Text style={styles.contactName} numberOfLines={1}>
-                    {isUser ? 'You' : (name.split(' ')[0] || name || 'U').slice(0, 8)}
+                <Text style={[styles.contactName, { color: c.text.secondary }]} numberOfLines={1}>
+                    {isUser ? 'Your story' : (name.split(' ')[0] || name || 'U').slice(0, 10)}
                 </Text>
             </Pressable>
         </Animated.View>
@@ -783,7 +784,7 @@ const FeedPostCard = memo(
                                                   aspectRatio:
                                                       parseFloat(post.mediaAspectRatio) || 1,
                                               }
-                                            : { aspectRatio: 1.5 },
+                                            : { aspectRatio: 4 / 5 },
                                     ]}
                                     contentFit="cover"
                                     placeholder={IMAGE_PLACEHOLDER.blurhash}
@@ -812,7 +813,7 @@ const FeedPostCard = memo(
                         >
                             <Ionicons
                                 name={post.isLiked ? 'heart' : 'heart-outline'}
-                                size={20}
+                                size={24}
                                 color={post.isLiked ? colors.coral[500] : colors.text.secondary}
                             />
                             <Text style={styles.actionCount}>
@@ -829,7 +830,7 @@ const FeedPostCard = memo(
                         >
                             <Ionicons
                                 name="chatbubble-outline"
-                                size={18}
+                                size={22}
                                 color={colors.text.secondary}
                             />
                             <Text style={styles.actionCount}>
@@ -850,7 +851,7 @@ const FeedPostCard = memo(
                         >
                             <Ionicons
                                 name="arrow-redo-outline"
-                                size={18}
+                                size={22}
                                 color={colors.text.secondary}
                             />
                             <Text style={styles.actionCount}>
@@ -903,7 +904,7 @@ const FeedPostCard = memo(
                         >
                             <Ionicons
                                 name={post.isSaved ? 'bookmark' : 'bookmark-outline'}
-                                size={18}
+                                size={22}
                                 color={post.isSaved ? colors.gold[500] : colors.text.secondary}
                             />
                         </TouchableOpacity>
@@ -1406,6 +1407,7 @@ export default function FeedScreen() {
     const activeVideoIdRef = useRef<string | null>(null);
     const [screenFocused, setScreenFocused] = useState(true);
     const [unreadMessages, setUnreadMessages] = useState(0);
+    const [showMoreMenu, setShowMoreMenu] = useState(false);
 
     // Seed content & checklist state
     const [seedDismissed, setSeedDismissed] = useState(true); // hidden until loaded
@@ -1854,41 +1856,7 @@ export default function FeedScreen() {
                 {/* Stories strip — compact, stories only */}
                 <ActiveContactsStrip onCreatePress={() => router.push('/create' as any)} />
 
-                {/* Engagement Quick-Access Row — differentiator from competitors */}
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.engagementStrip}
-                >
-                    {[
-                        { icon: 'paper-plane-outline' as const, label: 'Invite', route: '/invite-contacts', color: c.azure[500] },
-                        { icon: 'game-controller-outline' as const, label: 'Games', route: '/games', color: c.emerald[500] },
-                        { icon: 'play-circle-outline' as const, label: 'Reels', route: '/reels', color: c.coral[500] },
-                        { icon: 'radio-outline' as const, label: 'Go Live', route: '/campfire', color: c.emerald[500] },
-                        { icon: 'mic-outline' as const, label: 'Spaces', route: '/spaces', color: c.amber[500] },
-                    ].map((item) => (
-                        <TouchableOpacity
-                            key={item.label}
-                            style={[styles.engagementBtn, { backgroundColor: c.surface.glassHover }]}
-                            onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                router.push(item.route as any);
-                            }}
-                            activeOpacity={0.7}
-                            accessibilityRole="button"
-                            accessibilityLabel={item.label}
-                        >
-                            <View style={[styles.engagementIconWrap, { backgroundColor: item.color + '15' }]}>
-                                <Ionicons name={item.icon} size={18} color={item.color} />
-                                {/* Security badge overlay */}
-                                <View style={[styles.engagementShield, { backgroundColor: c.background }]}>
-                                    <Ionicons name="shield-checkmark" size={8} color={c.emerald[500]} />
-                                </View>
-                            </View>
-                            <Text style={[styles.engagementLabel, { color: c.text.secondary }]}>{item.label}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
+                {/* Feed type tabs */}
 
                 {/* First Post CTA — prominent card when user has 0 posts */}
                 {showFirstPostCTA && (
@@ -2078,6 +2046,17 @@ export default function FeedScreen() {
                             </View>
                         )}
                     </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.headerBtn}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setShowMoreMenu(true);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="More options"
+                    >
+                        <Ionicons name="add-circle-outline" size={24} color={c.text.secondary} />
+                    </TouchableOpacity>
                 </View>
             </View>
 
@@ -2143,6 +2122,51 @@ export default function FeedScreen() {
                     scrollIndicatorInsets={{ right: 1 }}
                 />
             </ErrorBoundary>
+
+            {/* Quick Actions Dropdown Menu */}
+            <Modal
+                visible={showMoreMenu}
+                transparent
+                animationType="fade"
+                statusBarTranslucent
+                onRequestClose={() => setShowMoreMenu(false)}
+            >
+                <Pressable
+                    style={styles.menuOverlay}
+                    onPress={() => setShowMoreMenu(false)}
+                >
+                    <Animated.View
+                        entering={FadeInDown.duration(200).springify().damping(18)}
+                        style={[styles.menuDropdown, { backgroundColor: c.surface.glass, borderColor: c.border.subtle, top: insets.top + 52 }]}
+                    >
+                        {[
+                            { icon: 'game-controller-outline' as const, label: 'Games', route: '/games', color: c.emerald[500] },
+                            { icon: 'play-circle-outline' as const, label: 'Reels', route: '/reels', color: c.coral[500] },
+                            { icon: 'radio-outline' as const, label: 'Go Live', route: '/campfire', color: c.emerald[500] },
+                            { icon: 'mic-outline' as const, label: 'Spaces', route: '/spaces', color: c.amber[500] },
+                            { icon: 'paper-plane-outline' as const, label: 'Invite Friends', route: '/invite-contacts', color: c.azure[500] },
+                            { icon: 'compass-outline' as const, label: 'Tools', route: '/tools', color: c.gold[500] },
+                        ].map((item, idx) => (
+                            <TouchableOpacity
+                                key={item.label}
+                                style={[styles.menuItem, idx > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border.subtle }]}
+                                onPress={() => {
+                                    setShowMoreMenu(false);
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    router.push(item.route as any);
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.menuItemIcon, { backgroundColor: item.color + '15' }]}>
+                                    <Ionicons name={item.icon} size={20} color={item.color} />
+                                </View>
+                                <Text style={[styles.menuItemLabel, { color: c.text.primary }]}>{item.label}</Text>
+                                <Ionicons name="chevron-forward" size={16} color={c.text.muted} />
+                            </TouchableOpacity>
+                        ))}
+                    </Animated.View>
+                </Pressable>
+            </Modal>
 
         </View>
     );
@@ -2222,7 +2246,7 @@ const styles = StyleSheet.create({
     },
     contactBubble: {
         alignItems: 'center',
-        width: 68,
+        width: 80,
     },
     contactAvatarWrap: {
         position: 'relative',
@@ -2265,10 +2289,10 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
     },
     contactName: {
-        fontSize: 11,
-        color: colors.text.secondary,
+        fontSize: 10,
         fontFamily: 'Inter-Medium',
         textAlign: 'center',
+        marginTop: 4,
     },
     onlineDot: {
         position: 'absolute',
@@ -2372,15 +2396,16 @@ const styles = StyleSheet.create({
         borderRadius: 1,
     },
 
-    // Post card — borderless, edge-to-edge for liquid-smooth scrolling
+    // Post card — borderless, edge-to-edge like Instagram
     postCard: {
         marginBottom: 0,
         overflow: 'hidden',
         position: 'relative',
-        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     postSpacer: {
-        height: 8,
+        height: 4,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border.subtle,
     },
     heartOverlay: {
         position: 'absolute',
@@ -2452,16 +2477,14 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.sm,
     },
 
-    // Media
+    // Media — full-width, edge-to-edge like Instagram
     mediaContainer: {
         width: '100%',
-        marginHorizontal: spacing.xs,
     },
     mediaImage: {
         width: '100%',
-        aspectRatio: 1.5,
+        aspectRatio: 4 / 5,
         backgroundColor: colors.obsidian[700],
-        borderRadius: 2,
         overflow: 'hidden',
     },
     videoPlayerContainer: {
@@ -2503,15 +2526,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
 
-    // Actions — compact for cleaner look
+    // Actions — Instagram-style, clean
     actionsBar: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: spacing.md,
-        paddingVertical: 6,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: colors.border.subtle,
-        marginTop: spacing.xs,
+        paddingVertical: 10,
     },
     actionsSpacer: {
         flex: 1,
@@ -2827,5 +2847,44 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface.glassHover,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+
+    // ─── Quick Actions Dropdown Menu ────────────
+    menuOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    menuDropdown: {
+        position: 'absolute',
+        right: spacing.md,
+        borderRadius: 16,
+        borderWidth: 1,
+        overflow: 'hidden',
+        width: 220,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 12,
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        gap: 12,
+    },
+    menuItemIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    menuItemLabel: {
+        flex: 1,
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        fontFamily: 'Inter-SemiBold',
     },
 });
