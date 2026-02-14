@@ -640,6 +640,7 @@ export const API = {
     // Messages
     conversations: '/api/v1/messages/conversations',
     messages: (conversationId: string) => `/api/v1/messages/conversations/${conversationId}`,
+    sendMessage: (conversationId: string) => `/api/v1/messages/conversations/${conversationId}/messages`,
 
     // Feed Preferences (Algorithm Mixer)
     feedPreferences: '/api/v1/users/preferences/feed',

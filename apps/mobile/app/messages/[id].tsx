@@ -333,7 +333,7 @@ export default function ConversationScreen() {
             });
 
             // Also persist via REST
-            const data = await apiFetch<{ message: { id: string } }>(API.messages(id as string), {
+            const data = await apiFetch<{ message: { id: string } }>(API.sendMessage(id as string), {
                 method: 'POST',
                 body: JSON.stringify({ content: text }),
             });
@@ -364,11 +364,11 @@ export default function ConversationScreen() {
             const prevMessage = index > 0 ? messages[index - 1] : undefined;
             const nextMessage = index < messages.length - 1 ? messages[index + 1] : undefined;
             const showDate = shouldShowDateSeparator(item, prevMessage);
-            // Show tail if next message is from a different sender or is the last message
             const showTail = !nextMessage || nextMessage.senderId !== item.senderId;
+            const isRecent = index >= messages.length - 3;
 
             return (
-                <>
+                <View>
                     {showDate && (
                         <View style={styles.dateSeparator}>
                             <View style={[styles.dateLine, { backgroundColor: c.border.subtle }]} />
@@ -378,7 +378,7 @@ export default function ConversationScreen() {
                             <View style={[styles.dateLine, { backgroundColor: c.border.subtle }]} />
                         </View>
                     )}
-                    <Animated.View entering={index > messages.length - 3 ? FadeInDown.duration(150) : undefined}>
+                    <Animated.View entering={isRecent ? FadeInDown.duration(150) : undefined}>
                         <MessageBubble
                             message={item}
                             isOwn={item.senderId === user?.id}
@@ -386,7 +386,7 @@ export default function ConversationScreen() {
                             c={c}
                         />
                     </Animated.View>
-                </>
+                </View>
             );
         },
         [c, user?.id, messages],
@@ -460,10 +460,12 @@ export default function ConversationScreen() {
                         <FlatList
                             ref={flatListRef}
                             data={messages}
+                            extraData={messages.length}
                             renderItem={renderMessage}
                             keyExtractor={(item) => item.id}
                             contentContainerStyle={[
                                 styles.messagesList,
+                                messages.length === 0 && styles.emptyList,
                                 { paddingBottom: spacing.md },
                             ]}
                             showsVerticalScrollIndicator={false}
@@ -606,7 +608,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
         paddingTop: spacing.md,
         flexGrow: 1,
-        justifyContent: 'flex-end',
+    },
+    emptyList: {
+        flex: 1,
+        justifyContent: 'center',
     },
     bubbleRow: {
         marginBottom: 2,

@@ -213,19 +213,51 @@ router.get('/conversations/:conversationId', authenticate, async (req: AuthReque
         const { conversationId } = req.params;
         const { cursor, limit = '50' } = req.query;
 
-        // Verify user is participant
-        const participant = await prisma.conversationParticipant.findUnique({
+        // Verify user is participant and get conversation details
+        const conversationParticipant = await prisma.conversationParticipant.findUnique({
             where: {
                 conversationId_userId: {
                     conversationId,
                     userId: req.userId!,
                 },
             },
+            include: {
+                conversation: {
+                    include: {
+                        participants: {
+                            include: {
+                                user: {
+                                    select: {
+                                        id: true,
+                                        username: true,
+                                        displayName: true,
+                                        avatarUrl: true,
+                                        lastActiveAt: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
         });
 
-        if (!participant) {
+        if (!conversationParticipant) {
             throw new AppError('Conversation not found', 404);
         }
+
+        // Extract the other participant(s) for the client
+        const otherParticipants = conversationParticipant.conversation.participants
+            .filter((p) => p.userId !== req.userId)
+            .map((p) => ({
+                id: p.user.id,
+                username: p.user.username,
+                displayName: p.user.displayName,
+                avatarUrl: p.user.avatarUrl,
+                isOnline: p.user.lastActiveAt
+                    ? Date.now() - new Date(p.user.lastActiveAt).getTime() < 5 * 60 * 1000
+                    : false,
+            }));
 
         const messages = await prisma.message.findMany({
             where: { conversationId },
@@ -258,9 +290,15 @@ router.get('/conversations/:conversationId', authenticate, async (req: AuthReque
         const hasMore = messages.length > parseInt(limit as string);
         const results = hasMore ? messages.slice(0, -1) : messages;
 
+        // For DMs, return the single other participant; for groups, return the first
+        const participant = otherParticipants[0] || null;
+
         res.json({
             messages: results.reverse(),
             nextCursor: hasMore ? results[0].id : null,
+            participant,
+            isGroup: conversationParticipant.conversation.isGroup,
+            groupName: conversationParticipant.conversation.groupName,
         });
     } catch (error) {
         next(error);
