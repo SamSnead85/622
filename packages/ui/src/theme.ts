@@ -1,42 +1,44 @@
 // ============================================
 // 0G Design System — "The People's Network"
-// Revolutionary activist soul, retro-warm neon skin
-// Three modes: Dark, Warm Dark (default), Light
-// Primary accent: Amber neon — warm gold glow
-// Secondary accent: Hot pink — protest energy
+// Three modes: Dark (blue/black metallic), Warm Dark, Light
+// Dark: Blue accent on metallic glass black — the signature 0G look
+// Warm: Amber neon on warm charcoal — cozy night mode
+// Light: Cool slate — clean daytime reading
 // ============================================
 
 // ============================================
-// DARK MODE — True dark, warm-tinted accents
+// DARK MODE — Blue & Black Metallic Glass
+// The original 0G identity: electric blue on deep black
+// with metallic glass surfaces and cool-tinted depth
 // ============================================
 export const colors = {
-    // Core Obsidian Palette (Dark)
+    // Core Obsidian Palette — true black with cool blue undertone
     obsidian: {
-        900: '#0A0A0B',
-        800: '#12110F',
-        700: '#1C1916',
-        600: '#26221E',
-        500: '#302B26',
-        400: '#3D3630',
-        300: '#4D453D',
+        900: '#06080C',       // Near-black with blue undertone
+        800: '#0C1018',       // Deep navy-black
+        700: '#141A24',       // Elevated surface
+        600: '#1C2430',       // Card backgrounds
+        500: '#24303E',       // Muted fills
+        400: '#344050',       // Disabled states
+        300: '#485668',       // Heavier muted
     },
 
-    // Primary Accent — Amber Neon (warm gold glow)
+    // Primary Accent — Electric Blue (the 0G signature)
     gold: {
-        500: '#FFB020',       // Amber neon — like a warm neon sign
-        400: '#FFCC33',       // Lighter — hover/active states
-        300: '#FFE066',       // Lightest — highlights, sparks
-        600: '#E09000',       // Deeper — pressed states
-        700: '#C07800',       // Darkest — strong emphasis
+        500: '#4A90FF',       // Electric blue — primary brand color
+        400: '#6AABFF',       // Lighter — hover/active
+        300: '#8EC5FF',       // Lightest — highlights
+        600: '#2A70E0',       // Deeper — pressed states
+        700: '#1A58C0',       // Darkest — strong emphasis
     },
 
-    // Secondary Accent — Hot Pink (protest energy)
+    // Secondary Accent — Cyan/Teal (complementary energy)
     amber: {
-        500: '#FF3366',
-        400: '#FF6B8A',
-        300: '#FF99B3',
-        600: '#E0204D',
-        700: '#C01040',
+        500: '#00D4FF',
+        400: '#40E0FF',
+        300: '#80ECFF',
+        600: '#00B0D4',
+        700: '#0090AA',
     },
 
     // Semantic Colors
@@ -58,49 +60,49 @@ export const colors = {
         300: '#93C5FD',
     },
 
-    // Badge/Verification Gold
+    // Badge/Verification
     badge: {
-        gold: '#D4AF37',
-        goldLight: '#E5C158',
+        gold: '#4A90FF',
+        goldLight: '#6AABFF',
     },
 
-    // Text Colors — warm-tinted whites
+    // Text Colors — cool white on dark
     text: {
-        primary: '#F5F0E8',
-        secondary: '#A89E90',
-        muted: '#6B6258',
-        inverse: '#1A1412',
+        primary: '#E8EDF5',
+        secondary: '#8896AA',
+        muted: '#556070',
+        inverse: '#06080C',
     },
 
-    // Surface & Border Colors — warm-tinted glass
+    // Surface & Border Colors — blue-tinted metallic glass
     surface: {
-        glass: 'rgba(255, 176, 32, 0.04)',
-        glassHover: 'rgba(255, 176, 32, 0.07)',
-        glassActive: 'rgba(255, 176, 32, 0.10)',
+        glass: 'rgba(74, 144, 255, 0.04)',
+        glassHover: 'rgba(74, 144, 255, 0.07)',
+        glassActive: 'rgba(74, 144, 255, 0.10)',
         overlay: 'rgba(0, 0, 0, 0.7)',
         overlayLight: 'rgba(0, 0, 0, 0.4)',
         overlayMedium: 'rgba(0, 0, 0, 0.6)',
         overlayHeavy: 'rgba(0, 0, 0, 0.8)',
-        goldSubtle: 'rgba(255, 176, 32, 0.10)',
-        goldLight: 'rgba(255, 176, 32, 0.15)',
-        goldMedium: 'rgba(255, 176, 32, 0.20)',
-        goldStrong: 'rgba(255, 176, 32, 0.35)',
-        goldFaded: 'rgba(255, 176, 32, 0.05)',
+        goldSubtle: 'rgba(74, 144, 255, 0.10)',
+        goldLight: 'rgba(74, 144, 255, 0.15)',
+        goldMedium: 'rgba(74, 144, 255, 0.20)',
+        goldStrong: 'rgba(74, 144, 255, 0.35)',
+        goldFaded: 'rgba(74, 144, 255, 0.05)',
         coralSubtle: 'rgba(239, 68, 68, 0.1)',
         azureSubtle: 'rgba(59, 130, 246, 0.12)',
     },
 
     border: {
-        subtle: 'rgba(255, 176, 32, 0.08)',
-        default: 'rgba(255, 176, 32, 0.12)',
-        strong: 'rgba(255, 176, 32, 0.20)',
+        subtle: 'rgba(74, 144, 255, 0.08)',
+        default: 'rgba(74, 144, 255, 0.14)',
+        strong: 'rgba(74, 144, 255, 0.22)',
     },
 
-    // Gradients — warm amber-to-pink
+    // Gradients — blue metallic
     gradients: {
-        goldShine: ['#FFB020', '#FFCC33', '#FFB020'],
-        obsidianFade: ['#0A0A0B', '#1C1916'],
-        glassOverlay: ['rgba(255, 176, 32, 0.08)', 'rgba(255, 176, 32, 0.02)'],
+        goldShine: ['#4A90FF', '#6AABFF', '#4A90FF'],
+        obsidianFade: ['#06080C', '#141A24'],
+        glassOverlay: ['rgba(74, 144, 255, 0.08)', 'rgba(74, 144, 255, 0.02)'],
     },
 } as const;
 
@@ -376,28 +378,28 @@ export const typography = {
 export const shadows = {
     none: 'none',
     sm: {
-        shadowColor: '#1A1412',
+        shadowColor: '#000810',
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.35,
         shadowRadius: 2,
         elevation: 2,
     },
     md: {
-        shadowColor: '#1A1412',
+        shadowColor: '#000810',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
+        shadowOpacity: 0.45,
         shadowRadius: 8,
         elevation: 4,
     },
     lg: {
-        shadowColor: '#1A1412',
+        shadowColor: '#000810',
         shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.5,
+        shadowOpacity: 0.55,
         shadowRadius: 16,
         elevation: 8,
     },
     glow: {
-        shadowColor: '#FFB020',
+        shadowColor: '#4A90FF',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.4,
         shadowRadius: 14,

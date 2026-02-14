@@ -16,16 +16,16 @@ interface ThemeContextType {
 const THEME_KEY = '@0g-theme-mode';
 
 const ThemeContext = createContext<ThemeContextType>({
-    mode: 'warm',
+    mode: 'dark',
     isDark: true,
-    colors: { ...warmDarkColors, background: warmDarkColors.obsidian[900] },
-    shadows: warmDarkShadows,
+    colors: { ...darkColors, background: darkColors.obsidian[900] },
+    shadows: shadows,
     setMode: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const systemScheme = useColorScheme();
-    const [mode, setModeState] = useState<ThemeMode>('warm');
+    const [mode, setModeState] = useState<ThemeMode>('dark');
     const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
@@ -44,7 +44,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     // Resolve the effective theme
     const resolvedMode = mode === 'system'
-        ? (systemScheme === 'light' ? 'light' : 'warm')  // System dark → warm dark (the signature 0G experience)
+        ? (systemScheme === 'light' ? 'light' : 'dark')  // System dark → blue/black metallic (the signature 0G look)
         : mode;
 
     const isDark = resolvedMode !== 'light';
@@ -77,7 +77,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-const fallbackColors = { ...warmDarkColors, background: warmDarkColors.obsidian[900] };
+const fallbackColors = { ...darkColors, background: darkColors.obsidian[900] };
 
 export const useTheme = () => {
     const ctx = useContext(ThemeContext);

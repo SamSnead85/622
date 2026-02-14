@@ -564,6 +564,112 @@ router.get('/feed', authenticate, async (req: AuthRequest, res, next) => {
     }
 });
 
+// ============================================
+// IMPORTANT: Named routes MUST come before /:postId to avoid being
+// matched as a postId parameter by Express.
+// ============================================
+
+// GET /api/v1/posts/saved - List saved posts for current user
+router.get('/saved', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { cursor, limit: rawLimit } = req.query;
+        const limit = clampLimit(rawLimit as string, 20, 50);
+
+        const saves = await prisma.save.findMany({
+            where: { userId: req.userId! },
+            take: limit + 1,
+            ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
+            orderBy: { createdAt: 'desc' },
+            include: {
+                post: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                username: true,
+                                displayName: true,
+                                avatarUrl: true,
+                                isVerified: true,
+                            },
+                        },
+                        _count: {
+                            select: { likes: true, comments: true, shares: true },
+                        },
+                    },
+                },
+            },
+        });
+
+        const hasMore = saves.length > limit;
+        const results = hasMore ? saves.slice(0, -1) : saves;
+
+        res.json({
+            posts: results.map((s) => ({
+                ...s.post,
+                likesCount: s.post._count.likes,
+                commentsCount: s.post._count.comments,
+                sharesCount: s.post._count.shares,
+                isSaved: true,
+                savedAt: s.createdAt,
+            })),
+            nextCursor: hasMore ? results[results.length - 1].id : null,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/v1/posts/feed/stats - Content source breakdown
+router.get('/feed/stats', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const userId = req.userId!;
+
+        const following = await prisma.follow.findMany({
+            where: { followerId: userId },
+            select: { followingId: true },
+        });
+        const followingIds = new Set(following.map(f => f.followingId));
+
+        const recentPosts = await prisma.post.findMany({
+            where: { isPublic: true, deletedAt: null },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+            select: { userId: true, type: true },
+        });
+
+        let fromFollowing = 0;
+        let fromDiscovery = 0;
+        const typeBreakdown: Record<string, number> = {};
+
+        for (const post of recentPosts) {
+            if (followingIds.has(post.userId)) {
+                fromFollowing++;
+            } else {
+                fromDiscovery++;
+            }
+            typeBreakdown[post.type] = (typeBreakdown[post.type] || 0) + 1;
+        }
+
+        const total = recentPosts.length || 1;
+
+        res.json({
+            sources: {
+                following: { count: fromFollowing, percentage: Math.round((fromFollowing / total) * 100) },
+                discovery: { count: fromDiscovery, percentage: Math.round((fromDiscovery / total) * 100) },
+            },
+            contentTypes: Object.fromEntries(
+                Object.entries(typeBreakdown).map(([type, count]) => [
+                    type,
+                    { count, percentage: Math.round((count / total) * 100) },
+                ])
+            ),
+            totalAnalyzed: recentPosts.length,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // GET /api/v1/posts/:postId
 router.get('/:postId', optionalAuth, async (req: AuthRequest, res, next) => {
     try {
@@ -1171,11 +1277,19 @@ router.post('/:postId/like', authenticate, async (req: AuthRequest, res, next) =
             throw new AppError('Post not found', 404);
         }
 
-        await prisma.like.create({
-            data: {
+        // Use upsert to prevent duplicate-key errors on rapid double-taps
+        await prisma.like.upsert({
+            where: {
+                userId_postId: {
+                    userId: req.userId!,
+                    postId,
+                },
+            },
+            create: {
                 userId: req.userId!,
                 postId,
             },
+            update: {}, // Already liked — no-op
         });
 
         // Queue notification asynchronously (doesn't block response)
@@ -1215,66 +1329,26 @@ router.delete('/:postId/like', authenticate, async (req: AuthRequest, res, next)
     }
 });
 
-// GET /api/v1/posts/saved - List saved posts for current user
-router.get('/saved', authenticate, async (req: AuthRequest, res, next) => {
-    try {
-        const { cursor, limit: rawLimit } = req.query;
-        const limit = clampLimit(rawLimit as string, 20, 50);
-
-        const saves = await prisma.save.findMany({
-            where: { userId: req.userId! },
-            take: limit + 1,
-            ...(cursor && { cursor: { id: cursor as string }, skip: 1 }),
-            orderBy: { createdAt: 'desc' },
-            include: {
-                post: {
-                    include: {
-                        user: {
-                            select: {
-                                id: true,
-                                username: true,
-                                displayName: true,
-                                avatarUrl: true,
-                                isVerified: true,
-                            },
-                        },
-                        _count: {
-                            select: { likes: true, comments: true, shares: true },
-                        },
-                    },
-                },
-            },
-        });
-
-        const hasMore = saves.length > limit;
-        const results = hasMore ? saves.slice(0, -1) : saves;
-
-        res.json({
-            posts: results.map((s) => ({
-                ...s.post,
-                likesCount: s.post._count.likes,
-                commentsCount: s.post._count.comments,
-                sharesCount: s.post._count.shares,
-                isSaved: true,
-                savedAt: s.createdAt,
-            })),
-            nextCursor: hasMore ? results[results.length - 1].id : null,
-        });
-    } catch (error) {
-        next(error);
-    }
-});
+// NOTE: /saved route moved above /:postId to prevent Express from matching "saved" as a postId
 
 // POST /api/v1/posts/:postId/save
 router.post('/:postId/save', authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
 
-        await prisma.save.create({
-            data: {
+        // Use upsert to prevent duplicate-key errors on rapid double-taps
+        await prisma.save.upsert({
+            where: {
+                userId_postId: {
+                    userId: req.userId!,
+                    postId,
+                },
+            },
+            create: {
                 userId: req.userId!,
                 postId,
             },
+            update: {}, // Already saved — no-op
         });
 
         res.json({ saved: true });
@@ -1438,59 +1512,7 @@ router.post('/:postId/comments', authenticate, async (req: AuthRequest, res, nex
     }
 });
 
-// GET /api/v1/posts/feed/stats - Content source breakdown
-router.get('/feed/stats', authenticate, async (req: AuthRequest, res, next) => {
-    try {
-        const userId = req.userId!;
-
-        // Get following IDs
-        const following = await prisma.follow.findMany({
-            where: { followerId: userId },
-            select: { followingId: true },
-        });
-        const followingIds = new Set(following.map(f => f.followingId));
-
-        // Get recent feed posts (last 50)
-        const recentPosts = await prisma.post.findMany({
-            where: { isPublic: true, deletedAt: null },
-            orderBy: { createdAt: 'desc' },
-            take: 50,
-            select: { userId: true, type: true },
-        });
-
-        // Calculate source breakdown
-        let fromFollowing = 0;
-        let fromDiscovery = 0;
-        const typeBreakdown: Record<string, number> = {};
-
-        for (const post of recentPosts) {
-            if (followingIds.has(post.userId)) {
-                fromFollowing++;
-            } else {
-                fromDiscovery++;
-            }
-            typeBreakdown[post.type] = (typeBreakdown[post.type] || 0) + 1;
-        }
-
-        const total = recentPosts.length || 1;
-
-        res.json({
-            sources: {
-                following: { count: fromFollowing, percentage: Math.round((fromFollowing / total) * 100) },
-                discovery: { count: fromDiscovery, percentage: Math.round((fromDiscovery / total) * 100) },
-            },
-            contentTypes: Object.fromEntries(
-                Object.entries(typeBreakdown).map(([type, count]) => [
-                    type,
-                    { count, percentage: Math.round((count / total) * 100) },
-                ])
-            ),
-            totalAnalyzed: recentPosts.length,
-        });
-    } catch (error) {
-        next(error);
-    }
-});
+// NOTE: /feed/stats route moved above /:postId to prevent Express from matching "feed" as a postId
 
 // PATCH /api/v1/posts/:postId/pin - Toggle pin on a post (owner only)
 router.patch('/:postId/pin', authenticate, async (req: AuthRequest, res, next) => {

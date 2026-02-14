@@ -3,7 +3,7 @@
 // Search for users and start a new conversation
 // ============================================
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -14,6 +14,7 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
+    Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -47,6 +48,13 @@ export default function NewMessageScreen() {
     const [results, setResults] = useState<UserResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
+
+    // Cleanup search timeout on unmount to prevent state updates on unmounted component
+    useEffect(() => {
+        return () => {
+            if (searchTimeout.current) clearTimeout(searchTimeout.current);
+        };
+    }, []);
 
     const handleSearch = useCallback((text: string) => {
         setQuery(text);
@@ -88,8 +96,7 @@ export default function NewMessageScreen() {
             );
             router.replace(`/messages/${data.conversation.id}` as any);
         } catch {
-            // If conversation creation fails, navigate to messages with the user id
-            router.replace(`/messages/${selectedUser.id}` as any);
+            Alert.alert('Error', 'Could not start a conversation. Please try again.');
         }
     }, [router]);
 

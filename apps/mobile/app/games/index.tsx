@@ -189,7 +189,6 @@ const games: GameDef[] = [
     { type: 'sketch-duel', name: 'Sketch Duel', icon: 'brush' as const, desc: 'Draw it, guess it, laugh about it', players: '3-8', color: colors.emerald[400], isNew: true, category: 'party' },
     { type: 'emoji-charades', name: 'Emoji Charades', icon: 'happy' as const, desc: 'Describe with emojis, guess the phrase!', players: '3-8', color: colors.amber[500], isNew: false, category: 'party' },
     { type: 'predict', name: 'Predict', icon: 'people' as const, desc: 'Guess what others think', players: '3-8', color: colors.azure[500], isNew: false, category: 'party' },
-    { type: 'would-you-rather', name: 'Would You Rather', icon: 'swap-horizontal' as const, desc: 'Pick a side, debate it out!', players: '2-12', color: colors.coral[500], isNew: true, category: 'party' },
     { type: 'wavelength', name: 'Wavelength', icon: 'radio' as const, desc: 'Read minds on a spectrum', players: '2-8', color: colors.emerald[500], isNew: false, category: 'party' },
     { type: 'infiltrator', name: 'Infiltrator', icon: 'eye-off' as const, desc: 'Find the hidden spy', players: '4-8', color: colors.coral[500], isNew: false, category: 'party' },
 

@@ -893,6 +893,10 @@ export default function CreateScreen() {
     const [activeSuggestionType, setActiveSuggestionType] = useState<'hashtag' | 'mention' | null>(null);
     const [cursorPosition, setCursorPosition] = useState(0);
 
+    // --- Publish retry limit ---
+    const publishRetryCount = useRef(0);
+    const MAX_PUBLISH_RETRIES = 3;
+
     // --- Publish button animation with idle pulse ---
     const publishScale = useSharedValue(1);
     const publishGlow = useSharedValue(1);
@@ -1402,14 +1406,20 @@ export default function CreateScreen() {
                     if (!result) {
                         const hasErrors = mediaItems.some(m => m.uploadError);
                         if (hasErrors) {
-                            Alert.alert(
-                                'Upload Failed',
-                                `Media ${i + 1} of ${mediaItems.length} failed to upload. Would you like to retry?`,
-                                [
-                                    { text: 'Cancel', style: 'cancel', onPress: () => setIsPublishing(false) },
-                                    { text: 'Retry', onPress: () => handlePublish() },
-                                ]
-                            );
+                            if (publishRetryCount.current >= MAX_PUBLISH_RETRIES) {
+                                publishRetryCount.current = 0;
+                                Alert.alert('Upload Failed', `Media upload failed after ${MAX_PUBLISH_RETRIES} attempts. Please try again later.`);
+                                setIsPublishing(false);
+                            } else {
+                                Alert.alert(
+                                    'Upload Failed',
+                                    `Media ${i + 1} of ${mediaItems.length} failed to upload. Would you like to retry? (${MAX_PUBLISH_RETRIES - publishRetryCount.current} attempts remaining)`,
+                                    [
+                                        { text: 'Cancel', style: 'cancel', onPress: () => { setIsPublishing(false); publishRetryCount.current = 0; } },
+                                        { text: 'Retry', onPress: () => { publishRetryCount.current++; handlePublish(); } },
+                                    ]
+                                );
+                            }
                             return;
                         }
                     } else {
@@ -1498,14 +1508,19 @@ export default function CreateScreen() {
             }, 1200);
         } catch (error: unknown) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert(
-                'Publishing Failed',
-                error instanceof Error ? error.message : 'Failed to publish post. Please try again.',
-                [
-                    { text: 'OK', style: 'cancel' },
-                    { text: 'Retry', onPress: () => handlePublish() },
-                ]
-            );
+            if (publishRetryCount.current >= MAX_PUBLISH_RETRIES) {
+                publishRetryCount.current = 0;
+                Alert.alert('Publishing Failed', `Failed after ${MAX_PUBLISH_RETRIES} attempts. Please try again later.`);
+            } else {
+                Alert.alert(
+                    'Publishing Failed',
+                    error instanceof Error ? error.message : 'Failed to publish post. Please try again.',
+                    [
+                        { text: 'OK', style: 'cancel', onPress: () => { publishRetryCount.current = 0; } },
+                        { text: 'Retry', onPress: () => { publishRetryCount.current++; handlePublish(); } },
+                    ]
+                );
+            }
         } finally {
             setIsPublishing(false);
             setUploadProgress(0);

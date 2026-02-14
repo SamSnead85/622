@@ -11,51 +11,48 @@
 :root {
     /* ============================================
      BRAND COLORS - 0G Identity
-     Colors inspired by:
-     - Desert gold (amber) - the sands of Arabia
-     - Rose water (rose) - traditional perfumery
-     - Lapis lazuli (deep blue-violet) - precious stone of ancient trade
-     - Midnight sky - stars that guided travelers
+     Blue & Black Metallic — Premium, Secure, Exclusive
+     Electric blue on deep black with metallic glass
      ============================================ */
 
     /* Primary Gradient Colors */
-    --og-amber: #F59E0B;
-    --og-amber-light: #FBBF24;
-    --og-amber-dark: #D97706;
-    --og-gold: #FFB020;
-    --og-gold-light: #E8C547;
-    --og-gold-dark: #B8942A;
+    --og-amber: #4A90FF;
+    --og-amber-light: #6AABFF;
+    --og-amber-dark: #2A70E0;
+    --og-gold: #4A90FF;
+    --og-gold-light: #6AABFF;
+    --og-gold-dark: #1A58C0;
 
-    --og-rose: #F43F5E;
-    --og-rose-light: #FB7185;
-    --og-rose-dark: #E11D48;
+    --og-rose: #8B5CF6;
+    --og-rose-light: #A78BFA;
+    --og-rose-dark: #7C3AED;
 
-    --og-violet: #FF3366;
-    --og-violet-light: #FF6B8A;
-    --og-violet-dark: #E0204D;
+    --og-violet: #8B5CF6;
+    --og-violet-light: #A78BFA;
+    --og-violet-dark: #6D28D9;
 
-    /* Desert & Earth Tones */
-    --og-sand: #C2A06A;
-    --og-terracotta: #B87333;
-    --og-olive: #556B2F;
-    --og-deep-teal: #004D4D;
+    /* Cool Tones */
+    --og-sand: #6B7A8A;
+    --og-terracotta: #485668;
+    --og-olive: #344050;
+    --og-deep-teal: #00B0D4;
 
     /* Semantic Colors */
     --og-success: #10B981;
-    --og-warning: #F59E0B;
+    --og-warning: #FFB020;
     --og-error: #EF4444;
     --og-info: #3B82F6;
 
-    /* Neutral Palette - Premium Dark with warm undertones */
-    --og-void: #0A0806;
-    --og-obsidian: #12100E;
-    --og-charcoal: #1A1412;
-    --og-slate: #221C18;
-    --og-steel: #2A231E;
-    --og-silver: #5E5445;
-    --og-mist: #8C7A60;
-    --og-cloud: #BFA882;
-    --og-snow: #FFF5E6;
+    /* Neutral Palette - Premium Dark with cool blue undertones */
+    --og-void: #06080C;
+    --og-obsidian: #08101A;
+    --og-charcoal: #0C1018;
+    --og-slate: #141A24;
+    --og-steel: #1C2430;
+    --og-silver: #485668;
+    --og-mist: #6B7A8A;
+    --og-cloud: #8896AA;
+    --og-snow: #E8EDF5;
 
     /* ============================================
      GRADIENTS - Signature 0G Look
@@ -66,19 +63,19 @@
     --gradient-brand-vertical: linear-gradient(180deg, var(--og-gold) 0%, var(--og-amber) 30%, var(--og-rose) 70%, var(--og-violet) 100%);
     --gradient-brand-radial: radial-gradient(circle, var(--og-gold) 0%, var(--og-amber) 30%, var(--og-rose) 60%, var(--og-violet) 100%);
 
-    --gradient-sunset: linear-gradient(135deg, #FFB020 0%, #FFCC33 25%, #FF3366 50%, #FF6B8A 75%, #1A1412 100%);
-    --gradient-desert: linear-gradient(180deg, #FFB020 0%, #E09000 50%, #1A1412 100%);
-    --gradient-night-sky: linear-gradient(180deg, #0A0806 0%, #1A1412 50%, #221C18 100%);
+    --gradient-sunset: linear-gradient(135deg, #4A90FF 0%, #6AABFF 25%, #8B5CF6 50%, #A78BFA 75%, #06080C 100%);
+    --gradient-desert: linear-gradient(180deg, #4A90FF 0%, #2A70E0 50%, #06080C 100%);
+    --gradient-night-sky: linear-gradient(180deg, #06080C 0%, #0C1018 50%, #141A24 100%);
 
     --gradient-amber: linear-gradient(135deg, var(--og-amber-light) 0%, var(--og-amber-dark) 100%);
     --gradient-rose: linear-gradient(135deg, var(--og-rose-light) 0%, var(--og-rose-dark) 100%);
     --gradient-violet: linear-gradient(135deg, var(--og-violet-light) 0%, var(--og-violet-dark) 100%);
     --gradient-gold: linear-gradient(135deg, var(--og-gold-light) 0%, var(--og-gold-dark) 100%);
 
-    --gradient-glow-amber: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
-    --gradient-glow-rose: radial-gradient(circle, rgba(244, 63, 94, 0.12) 0%, transparent 70%);
-    --gradient-glow-violet: radial-gradient(circle, rgba(184, 148, 45, 0.10) 0%, transparent 70%);
-    --gradient-glow-gold: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+    --gradient-glow-amber: radial-gradient(circle, rgba(74, 144, 255, 0.15) 0%, transparent 70%);
+    --gradient-glow-rose: radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%);
+    --gradient-glow-violet: radial-gradient(circle, rgba(139, 92, 246, 0.10) 0%, transparent 70%);
+    --gradient-glow-gold: radial-gradient(circle, rgba(74, 144, 255, 0.15) 0%, transparent 70%);
 
     /* Card & Surface Gradients */
     --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
@@ -165,11 +162,11 @@
     --radius-full: 9999px;
 
     /* Border Colors */
-    --border-subtle: rgba(255, 176, 32, 0.06);
-    --border-default: rgba(255, 176, 32, 0.12);
-    --border-strong: rgba(255, 176, 32, 0.22);
-    --border-gold: rgba(255, 176, 32, 0.30);
-    --border-brand: rgba(255, 176, 32, 0.30);
+    --border-subtle: rgba(74, 144, 255, 0.06);
+    --border-default: rgba(74, 144, 255, 0.14);
+    --border-strong: rgba(74, 144, 255, 0.22);
+    --border-gold: rgba(74, 144, 255, 0.30);
+    --border-brand: rgba(74, 144, 255, 0.30);
 
     /* ============================================
      SHADOWS & ELEVATION
@@ -182,11 +179,11 @@
     --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 
     /* Glow Shadows - Brand */
-    --glow-amber: 0 0 20px rgba(245, 158, 11, 0.3), 0 0 40px rgba(245, 158, 11, 0.1);
-    --glow-rose: 0 0 20px rgba(244, 63, 94, 0.3), 0 0 40px rgba(244, 63, 94, 0.1);
-    --glow-violet: 0 0 20px rgba(184, 148, 45, 0.3), 0 0 40px rgba(184, 148, 45, 0.1);
-    --glow-gold: 0 0 20px rgba(212, 175, 55, 0.4), 0 0 40px rgba(212, 175, 55, 0.2);
-    --glow-brand: 0 0 30px rgba(212, 175, 55, 0.2), 0 0 60px rgba(245, 158, 11, 0.15), 0 0 90px rgba(184, 148, 45, 0.1);
+    --glow-amber: 0 0 20px rgba(74, 144, 255, 0.3), 0 0 40px rgba(74, 144, 255, 0.1);
+    --glow-rose: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.1);
+    --glow-violet: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.1);
+    --glow-gold: 0 0 20px rgba(74, 144, 255, 0.4), 0 0 40px rgba(74, 144, 255, 0.2);
+    --glow-brand: 0 0 30px rgba(74, 144, 255, 0.2), 0 0 60px rgba(139, 92, 246, 0.15), 0 0 90px rgba(0, 212, 255, 0.1);
 
     /* ============================================
      TRANSITIONS & ANIMATIONS
@@ -279,21 +276,21 @@
 
 /* Glass Effects */
 .glass {
-    background: rgba(26, 20, 18, 0.6);
+    background: rgba(12, 16, 24, 0.6);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--border-subtle);
 }
 
 .glass-strong {
-    background: rgba(26, 20, 18, 0.8);
+    background: rgba(12, 16, 24, 0.8);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border-default);
 }
 
 .glass-gold {
-    background: rgba(255, 176, 32, 0.05);
+    background: rgba(74, 144, 255, 0.05);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--border-gold);
@@ -394,7 +391,7 @@
     }
 
     50% {
-        box-shadow: 0 0 40px rgba(212, 175, 55, 0.4), 0 0 80px rgba(245, 158, 11, 0.3), 0 0 120px rgba(184, 148, 45, 0.2);
+        box-shadow: 0 0 40px rgba(74, 144, 255, 0.4), 0 0 80px rgba(139, 92, 246, 0.3), 0 0 120px rgba(0, 212, 255, 0.2);
         opacity: 0.9;
     }
 }
@@ -466,7 +463,7 @@
 }
 
 .shimmer {
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 176, 32, 0.1) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(74, 144, 255, 0.1) 50%, transparent 100%);
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
 }
@@ -503,7 +500,7 @@
 
 /* 8-Pointed Star Pattern Background */
 .bg-islamic-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg stroke='%23D4AF37' stroke-width='0.5' stroke-opacity='0.05'%3E%3Cpolygon points='30,5 35,15 45,15 38,22 40,32 30,27 20,32 22,22 15,15 25,15'/%3E%3Ccircle cx='30' cy='30' r='12'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg stroke='%234A90FF' stroke-width='0.5' stroke-opacity='0.05'%3E%3Cpolygon points='30,5 35,15 45,15 38,22 40,32 30,27 20,32 22,22 15,15 25,15'/%3E%3Ccircle cx='30' cy='30' r='12'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* Arabesque Border Pattern */

@@ -186,7 +186,7 @@ export function isTokenExpired(token: string): boolean {
     const payload = decodeJwtPayload(token);
     if (!payload?.exp) return false; // No exp claim — assume valid
     const nowSeconds = Math.floor(Date.now() / 1000);
-    return payload.exp < nowSeconds - 60; // 60s buffer for clock skew
+    return payload.exp < nowSeconds + 60; // Proactively expire 60s early to trigger refresh before actual expiry
 }
 
 /**
@@ -209,11 +209,22 @@ async function fetchWithTimeout(
     timeoutMs: number = REQUEST_TIMEOUT_MS
 ): Promise<Response> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    let didTimeout = false;
+    const timeoutId = setTimeout(() => {
+        didTimeout = true;
+        controller.abort();
+    }, timeoutMs);
 
-    // If caller provided a signal, chain it
-    if (options.signal) {
-        options.signal.addEventListener('abort', () => controller.abort());
+    // If caller provided a signal, chain it so caller can cancel too
+    const callerSignal = options.signal;
+    if (callerSignal) {
+        if (callerSignal.aborted) {
+            clearTimeout(timeoutId);
+            const err = new Error('Request was cancelled');
+            err.name = 'AbortError';
+            throw err;
+        }
+        callerSignal.addEventListener('abort', () => controller.abort());
     }
 
     try {
@@ -221,7 +232,13 @@ async function fetchWithTimeout(
         return res;
     } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError') {
-            throw new Error('Request timed out. Please check your connection and try again.');
+            if (didTimeout) {
+                throw new Error('Request timed out. Please check your connection and try again.');
+            }
+            // Caller-initiated abort — re-throw as AbortError so callers can detect it
+            const abortErr = new Error('Request was cancelled');
+            abortErr.name = 'AbortError';
+            throw abortErr;
         }
         // Network failure (no connection, DNS failure, etc.)
         throw new Error('No internet connection. Please check your network and try again.');

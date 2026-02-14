@@ -9,6 +9,7 @@ import {
     FlatList,
     Platform,
     Share,
+    Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -447,8 +448,7 @@ export default function UserProfileScreen() {
             );
             router.push(`/messages/${data.conversation.id}` as any);
         } catch {
-            // Fallback — navigate with user ID
-            router.push(`/messages/${profile.id}` as any);
+            Alert.alert('Error', 'Could not start a conversation. Please try again.');
         }
     }, [profile, router]);
 

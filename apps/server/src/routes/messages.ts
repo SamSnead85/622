@@ -459,6 +459,12 @@ router.post('/conversations/:conversationId/messages', authenticate, async (req:
             })),
         });
 
+        // Broadcast via socket for real-time delivery to other participants
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`conversation:${conversationId}`).emit('message:new', message);
+        }
+
         res.status(201).json({ message });
     } catch (error) {
         next(error);

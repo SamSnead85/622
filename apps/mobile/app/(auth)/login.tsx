@@ -40,7 +40,7 @@ import Animated, {
 import { typography, spacing } from '@zerog/ui';
 import { BackButton, BrandLogo } from '../../components';
 import { useAuthStore } from '../../stores';
-import { apiFetch } from '../../lib/api';
+import { apiFetch, API } from '../../lib/api';
 import { useTheme } from '../../contexts/ThemeContext';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -155,6 +155,9 @@ export default function LoginScreen() {
     }, []);
 
     // ---- Biometric authentication ----
+    // Biometric auth verifies the user's identity locally, then validates the
+    // stored token with the server. This bypasses the initialize() guard since
+    // we're already on the login screen (isInitialized is true).
     const handleBiometricAuth = useCallback(async () => {
         try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -165,12 +168,31 @@ export default function LoginScreen() {
             });
             if (result.success) {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                const { initialize } = useAuthStore.getState();
-                await initialize();
-                const isAuth = useAuthStore.getState().isAuthenticated;
-                if (isAuth) {
-                    router.replace('/(tabs)');
-                } else {
+                // Validate the stored token directly with the server
+                try {
+                    const data = await apiFetch<any>(API.me);
+                    if (data?.user || data?.id) {
+                        const user = data.user || data;
+                        useAuthStore.setState({
+                            user: {
+                                id: user.id,
+                                username: user.username,
+                                displayName: user.displayName || user.username,
+                                email: user.email || '',
+                                avatarUrl: user.avatarUrl || null,
+                                isPrivate: user.isPrivate ?? true,
+                                isVerified: user.isVerified ?? false,
+                            },
+                            isAuthenticated: true,
+                            isInitialized: true,
+                            isLoading: false,
+                        });
+                        router.replace('/(tabs)');
+                    } else {
+                        setShowBiometric(false);
+                        setGeneralError('Your session has expired. Please sign in with your password.');
+                    }
+                } catch {
                     setShowBiometric(false);
                     setGeneralError('Your session has expired. Please sign in with your password.');
                 }

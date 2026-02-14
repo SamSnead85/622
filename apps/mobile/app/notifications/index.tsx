@@ -111,6 +111,7 @@ function getNotificationMessage(item: Notification): string {
         case 'COMMENT': return `${name} commented on your post`;
         case 'MENTION': return `${name} mentioned you`;
         case 'SHARE': return `${name} shared your post`;
+        case 'MESSAGE': return `${name} sent you a message`;
         case 'COMMUNITY_INVITE': return `${name} invited you to a community`;
         case 'POST': return `${name} published a new post`;
         default: return item.content || item.message || 'New notification';
@@ -128,6 +129,7 @@ function getNotificationIcon(type: string): { name: keyof typeof Ionicons.glyphM
         case 'FOLLOW': return { name: 'person-add', color: colors.emerald[500] };
         case 'MENTION': return { name: 'at', color: colors.gold[500] };
         case 'SHARE': return { name: 'arrow-redo', color: colors.amber[500] };
+        case 'MESSAGE': return { name: 'chatbubble', color: colors.azure[500] };
         case 'COMMUNITY_INVITE': return { name: 'people', color: colors.azure[400] };
         case 'POST': return { name: 'document-text', color: colors.gold[400] };
         case 'SYSTEM': return { name: 'information-circle', color: colors.text.muted };
@@ -395,7 +397,10 @@ export default function NotificationsScreen() {
     const handlePress = useCallback(
         (notif: Notification) => {
             if (!notif.isRead) markAsRead(notif.id);
-            if (notif.postId) {
+            if (notif.type === 'MESSAGE' && notif.targetId) {
+                // Navigate to the conversation (targetId is conversationId)
+                router.push(`/messages/${notif.targetId}` as any);
+            } else if (notif.postId) {
                 router.push(`/post/${notif.postId}`);
             } else if (notif.type === 'FOLLOW') {
                 // Navigate to profile — prefer username, fall back to ID

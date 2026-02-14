@@ -260,10 +260,16 @@ export const useAuthStore = create<AuthState>()(
         // The persist middleware rehydrates from AsyncStorage asynchronously.
         // We must wait for it to complete so get().user and get().isAuthenticated
         // reflect the persisted values, not the initial defaults.
+        // Safety: timeout after 3 seconds to prevent infinite hang if rehydration fails.
         if (!(get() as any)._hasHydrated) {
             await new Promise<void>((resolve) => {
+                const startTime = Date.now();
                 const check = () => {
                     if ((useAuthStore.getState() as any)._hasHydrated) {
+                        resolve();
+                    } else if (Date.now() - startTime > 3000) {
+                        // Rehydration timed out — proceed as unauthenticated
+                        devError('Zustand rehydration timed out after 3s — proceeding without persisted state');
                         resolve();
                     } else {
                         setTimeout(check, 20);
@@ -312,11 +318,13 @@ export const useAuthStore = create<AuthState>()(
                 } catch (error) {
                     // Network error — keep the user logged in with cached data.
                     // They'll get fresh data when connectivity returns.
-                    const isAuthError = error instanceof Error &&
-                        (error as any).status === 401;
-                    if (isAuthError) {
+                    const status = error instanceof Error ? (error as any).status : undefined;
+                    if (status === 401 || status === 403) {
                         await removeToken();
-                        set({ user: null, isAuthenticated: false, error: 'Your session has expired. Please log in again.' });
+                        const msg = status === 403
+                            ? 'Your account has been suspended. Please contact support.'
+                            : 'Your session has expired. Please log in again.';
+                        set({ user: null, isAuthenticated: false, error: msg });
                     }
                     // For network/timeout errors: do nothing — user stays logged in
                 }
@@ -360,9 +368,10 @@ export const useAuthStore = create<AuthState>()(
                 body: JSON.stringify({ email, password }),
             });
 
-            if (data.token) {
-                await saveToken(data.token);
+            if (!data.token) {
+                throw new Error('Login succeeded but no authentication token was returned. Please try again.');
             }
+            await saveToken(data.token);
 
             const user = normalizeUser((data.user || data) as RawUserResponse);
             set({
@@ -388,7 +397,7 @@ export const useAuthStore = create<AuthState>()(
             const tempUsername = displayName
                 .toLowerCase()
                 .replace(/[^a-z0-9]/g, '')
-                .substring(0, 20) + Math.floor(Math.random() * 999);
+                .substring(0, 20) + Math.floor(Math.random() * 99999);
             const data = await apiFetch<AuthApiResponse>(API.signup, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -400,9 +409,10 @@ export const useAuthStore = create<AuthState>()(
                 }),
             });
 
-            if (data.token) {
-                await saveToken(data.token);
+            if (!data.token) {
+                throw new Error('Signup succeeded but no authentication token was returned. Please try again.');
             }
+            await saveToken(data.token);
 
             const user = normalizeUser((data.user || data) as RawUserResponse);
             set({
@@ -433,9 +443,10 @@ export const useAuthStore = create<AuthState>()(
                 body: JSON.stringify({ identityToken, displayName }),
             });
 
-            if (data.token) {
-                await saveToken(data.token);
+            if (!data.token) {
+                throw new Error('Apple sign-in succeeded but no authentication token was returned.');
             }
+            await saveToken(data.token);
 
             const user = normalizeUser((data.user || data) as RawUserResponse);
             set({
@@ -467,9 +478,10 @@ export const useAuthStore = create<AuthState>()(
                 body: JSON.stringify(body),
             });
 
-            if (data.token) {
-                await saveToken(data.token);
+            if (!data.token) {
+                throw new Error('Google sign-in succeeded but no authentication token was returned.');
             }
+            await saveToken(data.token);
 
             const user = normalizeUser((data.user || data) as RawUserResponse);
             set({
@@ -493,8 +505,11 @@ export const useAuthStore = create<AuthState>()(
         set({
             user: null,
             isAuthenticated: false,
+            isInitialized: false,
             error: null,
         });
+        // Disconnect socket to prevent stale events for logged-out user
+        try { socketManager.disconnect(); } catch { /* ignore */ }
         // Reset all other stores on logout
         useFeedStore.getState().reset();
         useCommunitiesStore.getState().reset();
@@ -575,11 +590,11 @@ export const useAuthStore = create<AuthState>()(
 // and refresh fails, this triggers a logout with a message.
 // ============================================
 
-setSessionExpiredHandler(() => {
+setSessionExpiredHandler(async () => {
     const state = useAuthStore.getState();
     if (state.isAuthenticated) {
-        state.logout();
-        // Set error message so the login screen can display it
+        await state.logout();
+        // Set error message AFTER logout completes so it's not overwritten
         useAuthStore.setState({ error: 'Your session has expired. Please log in again.' });
     }
 });
@@ -958,7 +973,7 @@ interface CommunitiesState {
     fetchCommunities: (force?: boolean) => Promise<void>;
     joinCommunity: (communityId: string) => Promise<void>;
     leaveCommunity: (communityId: string) => Promise<void>;
-    createCommunity: (name: string, description: string, isPrivate: boolean) => Promise<Community>;
+    createCommunity: (name: string, description: string, isPrivate: boolean, approvalRequired?: boolean) => Promise<Community>;
     reset: () => void;
 }
 
@@ -1049,10 +1064,10 @@ export const useCommunitiesStore = create<CommunitiesState>()(
         }
     },
 
-    createCommunity: async (name, description, isPrivate) => {
+    createCommunity: async (name, description, isPrivate, approvalRequired) => {
         const data = await apiFetch<any>(API.communities, {
             method: 'POST',
-            body: JSON.stringify({ name, description, isPublic: !isPrivate }),
+            body: JSON.stringify({ name, description, isPublic: !isPrivate, approvalRequired }),
         });
         const community = data.community || data;
         // Deduplicate: don't add if already exists (race with fetchCommunities)

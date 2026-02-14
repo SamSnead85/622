@@ -410,8 +410,8 @@ export default function SettingsScreen() {
                             await refreshUser();
                             Alert.alert('Privacy Updated', 'You\'re now in private-only mode. Only your groups will see your activity.');
                         } catch {
-                            Alert.alert('Leave Failed', 'Failed to leave community.');
-                            showError('Could not delete account');
+                            Alert.alert('Leave Failed', 'Failed to update privacy settings.');
+                            showError('Could not update privacy settings');
                         } finally {
                             setIsLeavingCommunity(false);
                         }
@@ -511,9 +511,9 @@ export default function SettingsScreen() {
                     <View style={[styles.card, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}>
                         <View style={styles.appearanceRow}>
                             {([
+                                { key: 'dark' as const, icon: 'moon-outline' as const, label: 'Dark' },
                                 { key: 'warm' as const, icon: 'flame-outline' as const, label: 'Warm' },
                                 { key: 'light' as const, icon: 'sunny-outline' as const, label: 'Light' },
-                                { key: 'dark' as const, icon: 'moon-outline' as const, label: 'Dark' },
                                 { key: 'system' as const, icon: 'phone-portrait-outline' as const, label: 'Auto' },
                             ]).map((opt) => {
                                 const isActive = themeMode === opt.key;

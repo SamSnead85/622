@@ -80,8 +80,8 @@ export const metadata: Metadata = {
     },
     other: {
         'application-name': 'ZeroG',
-        'msapplication-TileColor': '#000000',
-        'theme-color': '#000000',
+        'msapplication-TileColor': '#06080C',
+        'theme-color': '#06080C',
         'mobile-web-app-capable': 'yes',
     },
 };
@@ -91,7 +91,7 @@ export const viewport: Viewport = {
     initialScale: 1,
     maximumScale: 5,
     userScalable: true,
-    themeColor: '#000000',
+    themeColor: '#06080C',
 };
 
 import { GlobalMessageListener } from '@/components/GlobalMessageListener';
@@ -183,7 +183,7 @@ export default function RootLayout({
                     }}
                 />
             </head>
-            <body className={`bg-black text-gray-50 antialiased ${inter.className}`}>
+            <body className={`bg-void text-gray-50 antialiased ${inter.className}`}>
                 <SkipLinks />
                 <ErrorBoundary>
                     <Providers>

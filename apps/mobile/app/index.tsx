@@ -133,7 +133,7 @@ export default function SplashIndex() {
     // Still initializing — show animated splash
     return (
         <LinearGradient
-            colors={['#0A0A0B', '#0F0F18', '#0A0A0B']}
+            colors={['#06080C', '#0C1420', '#06080C']}
             style={styles.container}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}

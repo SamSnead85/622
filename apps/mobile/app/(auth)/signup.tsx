@@ -454,10 +454,13 @@ export default function SignupScreen() {
             newErrors.inviteCode = 'Invite code is required';
         } else if (inviteValid === false) {
             newErrors.inviteCode = 'Invalid or expired invite code';
+        } else if (inviteValid === null) {
+            newErrors.inviteCode = 'Please wait for invite code validation';
         }
 
         if (!displayName.trim()) newErrors.displayName = 'Name is required';
         else if (displayName.trim().length < 2) newErrors.displayName = 'Name must be at least 2 characters';
+        else if (displayName.trim().length > 50) newErrors.displayName = 'Name must be 50 characters or less';
 
         if (!email.trim()) {
             newErrors.email = 'Email is required';

@@ -178,6 +178,7 @@ export default function ConversationScreen() {
     const flatListRef = useRef<FlatList>(null);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const localTypingRef = useRef(false);
+    const isNearBottomRef = useRef(true);
 
     // ---- Load conversation data ----
     const loadConversation = useCallback(async () => {
@@ -227,15 +228,21 @@ export default function ConversationScreen() {
             }
         });
 
+        let typingAutoExpireTimer: ReturnType<typeof setTimeout> | null = null;
+
         const unsubTypingStart = socketManager.on('typing:start', (data) => {
             if (data.conversationId === conversationId && data.userId !== user?.id) {
                 setIsTyping(true);
+                // Auto-expire typing indicator after 5s in case typing:stop is lost
+                if (typingAutoExpireTimer) clearTimeout(typingAutoExpireTimer);
+                typingAutoExpireTimer = setTimeout(() => setIsTyping(false), 5000);
             }
         });
 
         const unsubTypingStop = socketManager.on('typing:stop', (data) => {
             if (data.conversationId === conversationId && data.userId !== user?.id) {
                 setIsTyping(false);
+                if (typingAutoExpireTimer) clearTimeout(typingAutoExpireTimer);
             }
         });
 
@@ -256,6 +263,7 @@ export default function ConversationScreen() {
             unsubTypingStart();
             unsubTypingStop();
             unsubRead();
+            if (typingAutoExpireTimer) clearTimeout(typingAutoExpireTimer);
             socketManager.leaveConversation(conversationId);
             // Stop typing if we were
             if (localTypingRef.current) {
@@ -326,13 +334,9 @@ export default function ConversationScreen() {
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
 
         try {
-            // Send via socket for real-time delivery
-            socketManager.sendMessage({
-                conversationId: id as string,
-                content: text,
-            });
-
-            // Also persist via REST
+            // Persist via REST — the server broadcasts `message:new` to the other
+            // participant via socket, so we don't need to send via socket separately.
+            // This prevents double-persisting the message in the database.
             const data = await apiFetch<{ message: { id: string } }>(API.sendMessage(id as string), {
                 method: 'POST',
                 body: JSON.stringify({ content: text }),
@@ -428,7 +432,7 @@ export default function ConversationScreen() {
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.flex}
-                keyboardVerticalOffset={0}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
                 {isLoading ? (
                     <View style={styles.centered}>
@@ -469,9 +473,18 @@ export default function ConversationScreen() {
                                 { paddingBottom: spacing.md },
                             ]}
                             showsVerticalScrollIndicator={false}
-                            onContentSizeChange={() =>
-                                flatListRef.current?.scrollToEnd({ animated: true })
-                            }
+                            onScroll={({ nativeEvent }) => {
+                                const { contentOffset, contentSize, layoutMeasurement } = nativeEvent;
+                                const distanceFromBottom = contentSize.height - contentOffset.y - layoutMeasurement.height;
+                                isNearBottomRef.current = distanceFromBottom < 150;
+                            }}
+                            scrollEventThrottle={100}
+                            onContentSizeChange={() => {
+                                // Only auto-scroll if user is near the bottom (not reading history)
+                                if (isNearBottomRef.current) {
+                                    flatListRef.current?.scrollToEnd({ animated: true });
+                                }
+                            }}
                             ListEmptyComponent={
                                 <View style={styles.centered}>
                                     <Animated.View entering={FadeIn.duration(400)}>

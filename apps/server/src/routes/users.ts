@@ -598,22 +598,33 @@ router.post('/:userId/follow', authenticate, async (req: AuthRequest, res, next)
             throw new AppError('User not found', 404);
         }
 
-        await prisma.follow.create({
-            data: {
+        // Use upsert to prevent duplicate-key errors on rapid double-taps
+        const follow = await prisma.follow.upsert({
+            where: {
+                followerId_followingId: {
+                    followerId: req.userId!,
+                    followingId: userId,
+                },
+            },
+            create: {
                 followerId: req.userId!,
                 followingId: userId,
             },
+            update: {}, // Already following — no-op
         });
 
-        // Create notification
-        await prisma.notification.create({
-            data: {
-                userId: userId,
-                type: 'FOLLOW',
-                actorId: req.userId,
-                message: `started following you`,
-            },
-        });
+        // Only send notification if this is a new follow (createdAt within last 5 seconds)
+        const isNew = Date.now() - new Date(follow.createdAt).getTime() < 5000;
+        if (isNew) {
+            await prisma.notification.create({
+                data: {
+                    userId: userId,
+                    type: 'FOLLOW',
+                    actorId: req.userId,
+                    message: `started following you`,
+                },
+            });
+        }
 
         res.json({ following: true });
     } catch (error) {

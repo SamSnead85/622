@@ -295,6 +295,7 @@ const SearchResultRow = memo(({ item, index, onPress, onFollow }: {
     const typeColor = getTypeColor(item.type);
     const isUser = item.type === 'user';
     const showFollowBtn = isUser && !item.isOwnProfile && onFollow;
+    const followTappedRef = useRef(false);
 
     return (
         <Animated.View entering={FadeInDown.duration(250).delay(Math.min(index * 40, 400))}>
@@ -303,7 +304,13 @@ const SearchResultRow = memo(({ item, index, onPress, onFollow }: {
                     styles.resultRow,
                     pressed && styles.resultRowPressed,
                 ]}
-                onPress={() => onPress(item)}
+                onPress={() => {
+                    if (followTappedRef.current) {
+                        followTappedRef.current = false;
+                        return;
+                    }
+                    onPress(item);
+                }}
             >
                 {/* Avatar */}
                 <View style={styles.resultAvatarWrap}>
@@ -355,8 +362,8 @@ const SearchResultRow = memo(({ item, index, onPress, onFollow }: {
                             styles.followBtn,
                             item.isFollowing && styles.followBtnFollowing,
                         ]}
-                        onPress={(e) => {
-                            e.stopPropagation();
+                        onPress={() => {
+                            followTappedRef.current = true;
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             onFollow(item);
                         }}

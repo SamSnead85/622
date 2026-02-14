@@ -158,6 +158,9 @@ const io = new SocketServer(httpServer, {
     pingInterval: 25000,
 });
 
+// Share io instance with Express routes so they can broadcast events
+app.set('io', io);
+
 // Middleware
 app.use(helmet({
     hsts: {

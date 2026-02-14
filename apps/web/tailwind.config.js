@@ -9,61 +9,63 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                // === VOID - Deep warm canvas ===
+                // === VOID - Deep blue-black canvas ===
                 void: {
-                    DEFAULT: '#0A0806',
-                    elevated: '#1A1412',
-                    surface: '#221C18',
+                    DEFAULT: '#06080C',
+                    elevated: '#0C1018',
+                    surface: '#141A24',
                 },
 
-                // === NEON - Warm accent system ===
+                // === NEON - Blue accent system ===
                 aurora: {
-                    amber: '#FFB020',
-                    'amber-bright': '#FFCC33',
-                    pink: '#FF3366',
-                    'pink-bright': '#FF6B8A',
-                    yellow: '#FFE066',
-                    'yellow-bright': '#FFF0AA',
+                    blue: '#4A90FF',
+                    'blue-bright': '#6AABFF',
+                    cyan: '#00D4FF',
+                    'cyan-bright': '#40E0FF',
+                    violet: '#8B5CF6',
+                    'violet-bright': '#A78BFA',
                     // Legacy aliases for backward compat
-                    violet: '#FFB020',
-                    'violet-bright': '#FFCC33',
-                    cyan: '#FFB020',
-                    'cyan-bright': '#FFCC33',
-                    rose: '#FF3366',
-                    'rose-bright': '#FF6B8A',
+                    amber: '#4A90FF',
+                    'amber-bright': '#6AABFF',
+                    pink: '#8B5CF6',
+                    'pink-bright': '#A78BFA',
+                    yellow: '#00D4FF',
+                    'yellow-bright': '#40E0FF',
+                    rose: '#8B5CF6',
+                    'rose-bright': '#A78BFA',
                 },
 
-                // === EMBER - Warm accent ===
+                // === EMBER - Primary accent ===
                 ember: {
-                    DEFAULT: '#FFB020',
-                    bright: '#FFCC33',
+                    DEFAULT: '#4A90FF',
+                    bright: '#6AABFF',
                 },
 
-                // === GLASS - Warm-tinted surfaces ===
+                // === GLASS - Blue-tinted metallic surfaces ===
                 glass: {
-                    ultra: 'rgba(255, 176, 32, 0.02)',
-                    light: 'rgba(255, 176, 32, 0.04)',
-                    medium: 'rgba(255, 176, 32, 0.06)',
-                    heavy: 'rgba(255, 176, 32, 0.10)',
-                    border: 'rgba(255, 176, 32, 0.08)',
-                    'border-bright': 'rgba(255, 176, 32, 0.18)',
+                    ultra: 'rgba(74, 144, 255, 0.02)',
+                    light: 'rgba(74, 144, 255, 0.04)',
+                    medium: 'rgba(74, 144, 255, 0.06)',
+                    heavy: 'rgba(74, 144, 255, 0.10)',
+                    border: 'rgba(74, 144, 255, 0.08)',
+                    'border-bright': 'rgba(74, 144, 255, 0.18)',
                 },
 
-                // === LEGACY GRAYS (warm-tinted) ===
+                // === GRAYS (cool-tinted) ===
                 gray: {
-                    50: '#FFF8F0',
-                    100: '#FFF3E6',
-                    200: '#FFEDD5',
-                    300: '#FFE0B2',
-                    400: '#BFA882',
-                    500: '#8C7A60',
-                    600: '#5E5445',
-                    700: '#3D352E',
-                    800: '#2A231E',
-                    850: '#221C18',
-                    900: '#1A1412',
-                    925: '#12100E',
-                    950: '#0A0806',
+                    50: '#E8EDF5',
+                    100: '#D0D8E8',
+                    200: '#B0BCCC',
+                    300: '#8896AA',
+                    400: '#6B7A8A',
+                    500: '#556070',
+                    600: '#485668',
+                    700: '#344050',
+                    800: '#1C2430',
+                    850: '#141A24',
+                    900: '#0C1018',
+                    925: '#08101A',
+                    950: '#06080C',
                 },
             },
             fontFamily: {
@@ -223,21 +225,22 @@ module.exports = {
                 '4xl': '80px',
             },
             boxShadow: {
-                'glow-amber': '0 0 40px rgba(255, 176, 32, 0.4)',
-                'glow-pink': '0 0 40px rgba(255, 51, 102, 0.4)',
-                'glow-yellow': '0 0 40px rgba(255, 224, 102, 0.3)',
+                'glow-blue': '0 0 40px rgba(74, 144, 255, 0.4)',
+                'glow-cyan': '0 0 40px rgba(0, 212, 255, 0.3)',
+                'glow-violet': '0 0 40px rgba(139, 92, 246, 0.4)',
                 // Legacy aliases
-                'glow-violet': '0 0 40px rgba(255, 176, 32, 0.4)',
-                'glow-cyan': '0 0 40px rgba(255, 176, 32, 0.4)',
-                'glow-rose': '0 0 40px rgba(255, 51, 102, 0.4)',
-                'glow-ember': '0 0 40px rgba(255, 176, 32, 0.4)',
-                'glass': '0 8px 32px rgba(10, 8, 6, 0.4), inset 0 1px 0 rgba(255, 176, 32, 0.05)',
-                'card': '0 4px 24px rgba(10, 8, 6, 0.3)',
-                'elevated': '0 16px 48px rgba(10, 8, 6, 0.5)',
+                'glow-amber': '0 0 40px rgba(74, 144, 255, 0.4)',
+                'glow-pink': '0 0 40px rgba(139, 92, 246, 0.4)',
+                'glow-yellow': '0 0 40px rgba(0, 212, 255, 0.3)',
+                'glow-rose': '0 0 40px rgba(139, 92, 246, 0.4)',
+                'glow-ember': '0 0 40px rgba(74, 144, 255, 0.4)',
+                'glass': '0 8px 32px rgba(0, 8, 16, 0.4), inset 0 1px 0 rgba(74, 144, 255, 0.05)',
+                'card': '0 4px 24px rgba(0, 8, 16, 0.3)',
+                'elevated': '0 16px 48px rgba(0, 8, 16, 0.5)',
             },
             backgroundImage: {
                 'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-                'aurora': 'linear-gradient(135deg, rgba(255, 176, 32, 0.15), rgba(255, 51, 102, 0.1), rgba(255, 224, 102, 0.05))',
+                'aurora': 'linear-gradient(135deg, rgba(74, 144, 255, 0.15), rgba(139, 92, 246, 0.1), rgba(0, 212, 255, 0.05))',
             },
         },
     },

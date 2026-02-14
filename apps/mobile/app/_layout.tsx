@@ -358,6 +358,9 @@ function RootLayoutInner() {
             }
         };
 
+        // Only process deep links after auth state has settled
+        if (!isInitialized) return;
+
         // Check if app was opened with a deep link
         Linking.getInitialURL().then((url) => {
             if (url) handleDeepLink({ url });
@@ -366,7 +369,7 @@ function RootLayoutInner() {
         // Listen for new deep links while app is open
         const subscription = Linking.addEventListener('url', handleDeepLink);
         return () => subscription.remove();
-    }, [isAuthenticated]);
+    }, [isAuthenticated, isInitialized]);
 
     // ============================================
     // Render
@@ -439,6 +442,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         // Fallback — overridden at runtime by theme's c.obsidian[900]
-        backgroundColor: '#0A0A0B',
+        backgroundColor: '#06080C',
     },
 });

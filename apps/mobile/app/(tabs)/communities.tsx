@@ -97,12 +97,21 @@ const CommunityCard = memo(function CommunityCard({ community, onPress, onJoin }
     const isApprovalRequired = community.approvalRequired === true;
     const isMember = !!community.role;
     const isPending = community.requestStatus === 'pending';
+    // Flag to prevent parent onPress from firing when join button is tapped
+    const joinTappedRef = useRef(false);
 
     return (
         <TouchableOpacity
             style={styles.card}
             activeOpacity={0.88}
-            onPress={onPress}
+            onPress={() => {
+                // Skip navigation if the join button was just tapped
+                if (joinTappedRef.current) {
+                    joinTappedRef.current = false;
+                    return;
+                }
+                onPress();
+            }}
             accessibilityRole="button"
             accessibilityLabel={`${community.name}, ${formatCount(community.membersCount)} members`}
         >
@@ -182,8 +191,9 @@ const CommunityCard = memo(function CommunityCard({ community, onPress, onJoin }
                                 styles.accessBadge,
                                 isApprovalRequired ? styles.accessBadgeAmber : styles.accessBadgeGreen,
                             ]}
-                            onPress={(e) => {
-                                e.stopPropagation?.();
+                            onPress={() => {
+                                // Set flag so parent TouchableOpacity skips navigation
+                                joinTappedRef.current = true;
                                 onJoin?.();
                             }}
                             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -338,7 +348,7 @@ function CreateCommunityModal({ visible, onClose, onCreate }: {
         }
         setIsCreating(true);
         try {
-            await createCommunity(name.trim(), description.trim(), isPrivate);
+            await createCommunity(name.trim(), description.trim(), isPrivate, approvalRequired);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             onClose();
             onCreate();

@@ -185,8 +185,29 @@ export default function MessagesTab() {
         if (!silent) setIsLoading(true);
         setFetchError(false);
         try {
-            const data = await apiFetch<{ conversations: Conversation[] }>(API.conversations);
-            setConversations(data?.conversations || []);
+            const data = await apiFetch<{ conversations: any[] }>(API.conversations);
+            // Server returns `participants` (array), normalize to `participant` (singular) for DMs
+            const normalized: Conversation[] = (data?.conversations || []).map((conv: any) => {
+                const participant = conv.participant || (conv.participants && conv.participants[0]) || {
+                    id: '',
+                    username: 'Unknown',
+                    displayName: 'Unknown User',
+                };
+                // Derive isOnline from lastActiveAt if available (within last 5 minutes)
+                if (!participant.isOnline && participant.lastActiveAt) {
+                    const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+                    participant.isOnline = new Date(participant.lastActiveAt).getTime() > fiveMinAgo;
+                }
+                return {
+                    id: conv.id,
+                    participant,
+                    lastMessage: conv.lastMessage || undefined,
+                    unreadCount: conv.unreadCount || 0,
+                    isPinned: conv.isPinned,
+                    isArchived: conv.isArchived,
+                };
+            });
+            setConversations(normalized);
         } catch (err) {
             setFetchError(true);
             if (__DEV__) console.warn('Failed to load conversations:', err);
@@ -262,8 +283,8 @@ export default function MessagesTab() {
             );
             router.push(`/messages/${data.conversation.id}` as any);
         } catch {
-            // Fallback — navigate with user ID
-            router.push(`/messages/${connection.id}` as any);
+            // Show error instead of navigating with a user ID (which would 404)
+            Alert.alert('Connection Error', 'Could not start a conversation. Please try again.');
         }
     }, [router]);
 

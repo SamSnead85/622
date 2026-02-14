@@ -24,8 +24,7 @@ export function BrandLogo({ size = 'standard' }: BrandLogoProps) {
     const markSize = MARK_SIZE[size];
     const borderRadius = size === 'hero' ? 20 : size === 'standard' ? 16 : 12;
 
-    // In light mode, use a dark mark with inverse text for contrast
-    // In dark mode, use the gold glow effect
+    // In light mode, use a dark rounded mark with inverse text for contrast
     if (!isDark) {
         return (
             <View style={[styles.mark, { width: markSize, height: markSize, borderRadius, backgroundColor: colors.text.primary }]}>
@@ -36,6 +35,8 @@ export function BrandLogo({ size = 'standard' }: BrandLogoProps) {
         );
     }
 
+    // In dark mode, use the brand accent color with glow effect
+    // Blue glow in dark mode, amber glow in warm mode
     return (
         <View style={styles.container}>
             <Text
@@ -44,9 +45,9 @@ export function BrandLogo({ size = 'standard' }: BrandLogoProps) {
                     {
                         fontSize,
                         color: colors.gold[500],
-                        textShadowColor: colors.gold[500] + '60',
+                        textShadowColor: colors.gold[400] + '50',
                         textShadowOffset: { width: 0, height: 0 },
-                        textShadowRadius: size === 'hero' ? 20 : 12,
+                        textShadowRadius: size === 'hero' ? 24 : 14,
                     },
                 ]}
             >
