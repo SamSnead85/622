@@ -217,6 +217,8 @@ export default function ProfileScreen() {
         foundingCreator: { username: string; displayName: string } | null;
     } | null>(null);
     const flatListRef = useRef<FlatList>(null);
+    const hasAnimated = useRef(false);
+    const initialUserId = useRef(user?.id);
 
     // Animated tab indicator
     const tabIndicatorX = useSharedValue(0);
@@ -304,9 +306,10 @@ export default function ProfileScreen() {
     }, [user?.displayName, user?.username]);
 
     // ── Data Loading ─────────────────────────────────────
-    const loadUserPosts = useCallback(async () => {
+    const loadUserPosts = useCallback(async (showLoading = false) => {
         if (!user?.id) { setIsLoading(false); return; }
         setLoadError(null);
+        if (showLoading) setIsLoading(true);
         try {
             const data = await apiFetch<any>(`${API.userPosts(user.id)}?limit=50`);
             const rawPosts = data.posts || data.data || [];
@@ -314,7 +317,7 @@ export default function ProfileScreen() {
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : 'Failed to load posts';
             setLoadError(msg);
-            showError(msg);
+            if (showLoading) showError(msg);
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
@@ -338,9 +341,13 @@ export default function ProfileScreen() {
         } catch { showError("Couldn't load saved posts"); }
     }, []);
 
+    // Only load posts on initial mount or if user ID actually changes (e.g. account switch)
     useEffect(() => {
-        if (user?.id) loadUserPosts();
-    }, [user?.id, loadUserPosts]);
+        if (!user?.id) return;
+        if (initialUserId.current === user.id && userPosts.length > 0) return;
+        initialUserId.current = user.id;
+        loadUserPosts(true);
+    }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Load trust chain info ──
     useEffect(() => {
@@ -367,8 +374,9 @@ export default function ProfileScreen() {
     const handleRefresh = useCallback(async () => {
         setIsRefreshing(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        lastRefreshRef.current = Date.now();
         await refreshUser();
-        await loadUserPosts();
+        await loadUserPosts(false); // Don't show loading spinner on pull-to-refresh
         if (loadedTabs.has('likes')) loadLikedPosts();
         if (loadedTabs.has('saved')) loadSavedPosts();
     }, [refreshUser, loadUserPosts, loadLikedPosts, loadSavedPosts, loadedTabs]);
@@ -379,10 +387,16 @@ export default function ProfileScreen() {
         loadUserPosts();
     }, [loadUserPosts]);
 
-    // Refresh profile data when screen gains focus
+    // Refresh profile data when screen gains focus — debounced to avoid flicker
+    const lastRefreshRef = useRef(0);
     useFocusEffect(
         useCallback(() => {
-            if (user?.id) refreshUser();
+            const now = Date.now();
+            // Only refresh if at least 30 seconds since last refresh
+            if (user?.id && now - lastRefreshRef.current > 30_000) {
+                lastRefreshRef.current = now;
+                refreshUser();
+            }
         }, [user?.id, refreshUser])
     );
 
@@ -416,8 +430,18 @@ export default function ProfileScreen() {
     }
 
     // ── Header ───────────────────────────────────────────
-    const renderHeader = () => (
-        <View>
+    // Only play entering animations on the very first render
+    const entering = useCallback((delay: number) => {
+        if (hasAnimated.current) return undefined;
+        return FadeInDown.delay(delay).duration(400).springify().damping(18);
+    }, []);
+
+    const renderHeader = () => {
+        // Mark animations as done after first render
+        const onLayout = () => { hasAnimated.current = true; };
+
+        return (
+        <View onLayout={onLayout}>
             {/* Cover Photo with Parallax */}
             <Animated.View style={styles.coverArea}>
                 <Animated.View style={[styles.coverImageWrap, coverAnimStyle]}>
@@ -469,7 +493,7 @@ export default function ProfileScreen() {
             <View style={styles.profileContent}>
                 {/* Avatar */}
                 <Animated.View
-                    entering={FadeInDown.delay(100).duration(400).springify().damping(18)}
+                    entering={entering(100)}
                     style={styles.avatarSection}
                 >
                     <View style={styles.avatarWrapper}>
@@ -494,7 +518,7 @@ export default function ProfileScreen() {
 
                 {/* User Info */}
                 <Animated.View
-                    entering={FadeInDown.delay(180).duration(400).springify().damping(18)}
+                    entering={entering(180)}
                     style={styles.userInfo}
                 >
                     <View style={styles.nameRow}>
@@ -527,7 +551,7 @@ export default function ProfileScreen() {
                     {/* Trust Chain Badge */}
                     {chainInfo && chainInfo.foundingCreator && chainInfo.degree > 0 && (
                         <Animated.View
-                            entering={FadeIn.delay(300).duration(400)}
+                            entering={entering(300)}
                             style={[styles.chainBadge, { backgroundColor: c.gold[500] + '12', borderColor: c.gold[500] + '25' }]}
                         >
                             <Ionicons name="link" size={12} color={c.gold[500]} />
@@ -544,7 +568,7 @@ export default function ProfileScreen() {
                 {/* Bio */}
                 {user.bio ? (
                     <Animated.View
-                        entering={FadeInDown.delay(240).duration(400).springify().damping(18)}
+                        entering={entering(240)}
                         style={styles.bioSection}
                     >
                         <Text style={[styles.bio, { color: c.text.secondary }]}>{user.bio}</Text>
@@ -562,7 +586,7 @@ export default function ProfileScreen() {
                     </Animated.View>
                 ) : (
                     <Animated.View
-                        entering={FadeInDown.delay(240).duration(400).springify().damping(18)}
+                        entering={entering(240)}
                     >
                         <TouchableOpacity
                             style={styles.addBioBtn}
@@ -580,7 +604,7 @@ export default function ProfileScreen() {
 
                 {/* Privacy Badge */}
                 <Animated.View
-                    entering={FadeInDown.delay(280).duration(400).springify().damping(18)}
+                    entering={entering(280)}
                     style={styles.privacyBadge}
                 >
                     <Ionicons
@@ -595,7 +619,7 @@ export default function ProfileScreen() {
 
                 {/* Stats */}
                 <Animated.View
-                    entering={FadeInDown.delay(320).duration(400).springify().damping(18)}
+                    entering={entering(320)}
                 >
                     <LinearGradient
                         colors={[colors.surface.glassHover, colors.surface.glass]}
@@ -611,7 +635,7 @@ export default function ProfileScreen() {
 
                 {/* Action Buttons */}
                 <Animated.View
-                    entering={FadeInDown.delay(380).duration(400).springify().damping(18)}
+                    entering={entering(380)}
                     style={styles.profileActions}
                 >
                     <TouchableOpacity
@@ -671,7 +695,7 @@ export default function ProfileScreen() {
                     const nextItems = completion.nextSteps.slice(0, 3);
                     return (
                         <Animated.View
-                            entering={FadeInDown.delay(420).duration(400).springify()}
+                            entering={entering(420)}
                             style={[profileCompletionStyles.container, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}
                         >
                             <View style={profileCompletionStyles.header}>
@@ -723,7 +747,7 @@ export default function ProfileScreen() {
 
                 {/* Premium Segmented Tabs */}
                 <Animated.View
-                    entering={FadeInDown.delay(440).duration(400).springify().damping(18)}
+                    entering={entering(440)}
                     style={styles.tabContainer}
                 >
                     {/* Active indicator */}
@@ -766,6 +790,7 @@ export default function ProfileScreen() {
             </View>
         </View>
     );
+    };
 
     // ── Empty & Loading States ───────────────────────────
     const emptyConfig = useMemo(() => ({

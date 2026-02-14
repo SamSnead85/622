@@ -533,13 +533,12 @@ export const useAuthStore = create<AuthState>()(
             if (rawUser?.id) {
                 const currentUser = get().user;
                 const normalized = normalizeUser(rawUser);
-                // Merge with current user to preserve any local-only state
-                set({
-                    user: {
-                        ...currentUser,
-                        ...normalized,
-                    },
-                });
+                // Only update if data actually changed — avoids unnecessary re-renders
+                const merged = { ...currentUser, ...normalized };
+                const hasChanged = !currentUser || JSON.stringify(currentUser) !== JSON.stringify(merged);
+                if (hasChanged) {
+                    set({ user: merged });
+                }
             }
         } catch (error) {
             // Silently fail — user might be offline
