@@ -256,23 +256,77 @@ export const useAuthStore = create<AuthState>()(
         if (get().isInitialized || get().isLoading) return;
         set({ isLoading: true });
 
+        // ── Step 0: Wait for Zustand persist rehydration ──
+        // The persist middleware rehydrates from AsyncStorage asynchronously.
+        // We must wait for it to complete so get().user and get().isAuthenticated
+        // reflect the persisted values, not the initial defaults.
+        if (!(get() as any)._hasHydrated) {
+            await new Promise<void>((resolve) => {
+                const check = () => {
+                    if ((useAuthStore.getState() as any)._hasHydrated) {
+                        resolve();
+                    } else {
+                        setTimeout(check, 20);
+                    }
+                };
+                check();
+            });
+        }
+
+        // ── Step 1: Check for a stored token ──
+        let token: string | null = null;
         try {
-            // Wrap AsyncStorage read in its own try/catch — storage can throw on corrupt data
-            let token: string | null = null;
-            try {
-                token = await getToken();
-            } catch (storageError) {
-                devError('Failed to read token from storage:', storageError);
-                set({ isInitialized: true, isAuthenticated: false, isLoading: false });
-                return;
-            }
+            token = await getToken();
+        } catch (storageError) {
+            devError('Failed to read token from storage:', storageError);
+            set({ isInitialized: true, isAuthenticated: false, isLoading: false });
+            return;
+        }
 
-            if (!token) {
-                set({ isInitialized: true, isAuthenticated: false, isLoading: false });
-                return;
-            }
+        if (!token) {
+            set({ isInitialized: true, isAuthenticated: false, isLoading: false });
+            return;
+        }
 
-            // We have a token — try to validate it with the server
+        // ── Step 2: We have a token — trust persisted state immediately ──
+        // If Zustand rehydrated a user from the last session, let the user
+        // into the app RIGHT NOW (like Instagram/TikTok). We'll validate
+        // the token with the server in the background.
+        const { user: persistedUser, isAuthenticated: wasAuthenticated } = get();
+        if (wasAuthenticated && persistedUser) {
+            // Instant entry — no loading screen, no network wait
+            set({ isInitialized: true, isLoading: false });
+
+            // Background validation — silently refresh user data
+            (async () => {
+                try {
+                    const data = await apiFetch<AuthApiResponse>(API.me);
+                    if (data.user || data.id) {
+                        const freshUser = normalizeUser((data.user || data) as RawUserResponse);
+                        set({ user: { ...persistedUser, ...freshUser } });
+                    } else {
+                        // Server says token is invalid — log out
+                        await removeToken();
+                        set({ user: null, isAuthenticated: false, error: 'Your session has expired. Please log in again.' });
+                    }
+                } catch (error) {
+                    // Network error — keep the user logged in with cached data.
+                    // They'll get fresh data when connectivity returns.
+                    const isAuthError = error instanceof Error &&
+                        (error as any).status === 401;
+                    if (isAuthError) {
+                        await removeToken();
+                        set({ user: null, isAuthenticated: false, error: 'Your session has expired. Please log in again.' });
+                    }
+                    // For network/timeout errors: do nothing — user stays logged in
+                }
+            })();
+            return;
+        }
+
+        // ── Step 3: Token exists but no persisted user (first launch after
+        //    install, or AsyncStorage was cleared). Must validate with server. ──
+        try {
             const data = await apiFetch<AuthApiResponse>(API.me);
             if (data.user || data.id) {
                 const user = normalizeUser((data.user || data) as RawUserResponse);
@@ -287,28 +341,12 @@ export const useAuthStore = create<AuthState>()(
                 set({ isInitialized: true, isAuthenticated: false, isLoading: false });
             }
         } catch (error) {
-            // Determine if this is a network/timeout error vs an auth rejection
-            const isNetwork = error instanceof TypeError ||
-                (error instanceof Error && (
-                    error.message.toLowerCase().includes('network') ||
-                    error.message.toLowerCase().includes('timeout') ||
-                    error.message.toLowerCase().includes('fetch') ||
-                    error.message.toLowerCase().includes('aborted') ||
-                    error.message.toLowerCase().includes('internet')
-                ));
-
-            // If we have a persisted user from a previous session and this is
-            // a network error, trust the cached state so the user isn't kicked
-            // to the welcome screen every time they reopen without connectivity.
-            const { user: persistedUser, isAuthenticated: wasAuthenticated } = get();
-            if (isNetwork && wasAuthenticated && persistedUser) {
-                set({ isInitialized: true, isLoading: false });
-                return;
-            }
-
-            // Genuine auth failure (401, invalid token, etc.) — clear credentials
-            if (!isNetwork) {
-                try { await removeToken(); } catch { /* storage write failed, ignore */ }
+            // No persisted user to fall back to — but don't clear the token
+            // on network errors so the user can retry
+            const isAuthError = error instanceof Error &&
+                (error as any).status === 401;
+            if (isAuthError) {
+                try { await removeToken(); } catch { /* ignore */ }
             }
             set({ isInitialized: true, isAuthenticated: false, isLoading: false });
         }
@@ -462,9 +500,10 @@ export const useAuthStore = create<AuthState>()(
         useGameStore.getState().reset();
         // Clear in-memory API response cache
         clearApiCache();
-        // Clear persisted store data from AsyncStorage
+        // Clear ALL persisted store data from AsyncStorage (including auth)
         try {
             await AsyncStorage.multiRemove([
+                'auth-storage',
                 'feed-storage',
                 'communities-storage',
                 'notifications-storage',
@@ -514,6 +553,15 @@ export const useAuthStore = create<AuthState>()(
                 user: state.user,
                 isAuthenticated: state.isAuthenticated,
             }),
+            onRehydrateStorage: () => {
+                return (_state, error) => {
+                    if (error) {
+                        devError('Auth store rehydration failed:', error);
+                    }
+                    // Mark rehydration as complete so initialize() can trust persisted state
+                    useAuthStore.setState({ _hasHydrated: true } as any);
+                };
+            },
         }
     )
 );

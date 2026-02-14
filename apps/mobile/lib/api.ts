@@ -7,7 +7,7 @@
 import * as SecureStore from 'expo-secure-store';
 
 const TOKEN_KEY = '0g_token';
-const REQUEST_TIMEOUT_MS = 10_000;
+const REQUEST_TIMEOUT_MS = 20_000;
 
 // ============================================
 // Dev-only logging (replaces bare console.log)
@@ -324,20 +324,19 @@ export const apiFetch = async <T = any>(
 
     let token = await getToken();
 
-    // Pre-check: if token is expired, try refreshing before making the request
+    // Pre-check: if token looks expired locally, try refreshing first.
+    // If refresh fails, still proceed with the existing token — let the
+    // server make the final decision. This prevents aggressive logouts
+    // when the refresh endpoint is temporarily unreachable.
     if (token && isTokenExpired(token) && !_isRetry) {
         devWarn('Token expired locally, attempting refresh before request');
         const newToken = await attemptTokenRefresh();
         if (newToken) {
             token = newToken;
-        } else {
-            // Refresh failed — clear token and notify session expired
-            await removeToken();
-            if (_onSessionExpired) _onSessionExpired();
-            const err: any = new Error('Your session has expired. Please log in again.');
-            err.status = 401;
-            throw err;
         }
+        // If refresh failed, proceed with the old token anyway.
+        // The server will return 401 if it's truly invalid, and the
+        // retry logic below will handle it.
     }
 
     const headers: Record<string, string> = {
