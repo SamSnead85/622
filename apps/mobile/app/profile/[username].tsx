@@ -637,9 +637,10 @@ export default function UserProfileScreen() {
         try {
             await apiFetch(API.connectionRequest(profile.id), { method: 'POST' });
             showSuccess('Connection request sent');
-        } catch {
+        } catch (e: unknown) {
             setConnectionStatus('none');
-            showError('Could not send request');
+            const msg = e instanceof Error ? e.message : 'Could not send request';
+            showError(msg);
         }
     }, [profile]);
 
@@ -1100,17 +1101,15 @@ export default function UserProfileScreen() {
                         c={c}
                     />
 
-                    {connectionStatus === 'connected' && (
-                        <TouchableOpacity
-                            style={styles.messageBtn}
-                            activeOpacity={0.8}
-                            onPress={handleMessage}
-                            accessibilityRole="button"
-                            accessibilityLabel="Send message"
-                        >
-                            <Ionicons name="chatbubble-outline" size={18} color={colors.gold[500]} />
-                        </TouchableOpacity>
-                    )}
+                    <TouchableOpacity
+                        style={styles.messageBtn}
+                        activeOpacity={0.8}
+                        onPress={handleMessage}
+                        accessibilityRole="button"
+                        accessibilityLabel="Send message"
+                    >
+                        <Ionicons name="chatbubble-outline" size={18} color={colors.gold[500]} />
+                    </TouchableOpacity>
 
                     {connectionStatus === 'connected' && (
                         <TouchableOpacity
