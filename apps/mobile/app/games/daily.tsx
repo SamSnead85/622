@@ -684,6 +684,7 @@ export default function DailyChallengeScreen() {
     const [showScorePopup, setShowScorePopup] = useState(false);
     const [correctStreak, setCorrectStreak] = useState(0);
 
+    const isMountedRef = useRef(true);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const scorePopupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -724,6 +725,15 @@ export default function DailyChallengeScreen() {
     }, []);
 
     // ============================================
+    // Mount guard for async callbacks
+    // ============================================
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
+    // ============================================
     // Timer Logic
     // ============================================
 
@@ -731,6 +741,7 @@ export default function DailyChallengeScreen() {
         if (gamePhase !== 'playing' || showResult || !currentQuestion) return;
 
         timerRef.current = setInterval(() => {
+            if (!isMountedRef.current) return;
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     if (timerRef.current) clearInterval(timerRef.current);
@@ -795,7 +806,10 @@ export default function DailyChallengeScreen() {
             setLastPoints(points);
             setShowScorePopup(true);
             if (scorePopupTimerRef.current) clearTimeout(scorePopupTimerRef.current);
-            scorePopupTimerRef.current = setTimeout(() => setShowScorePopup(false), 1600);
+            scorePopupTimerRef.current = setTimeout(() => {
+                if (!isMountedRef.current) return;
+                setShowScorePopup(false);
+            }, 1600);
 
             setAnswers((prev) => {
                 const next = [...prev];

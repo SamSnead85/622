@@ -57,6 +57,7 @@ interface MediaCarouselProps {
     onSlideChange?: (index: number) => void;
     onDoubleTap?: () => void;
     borderRadius?: number;
+    isScreenFocused?: boolean;
 }
 
 // ── Pagination Dots ────────────────────────────────────
@@ -111,11 +112,12 @@ PaginationDots.displayName = 'PaginationDots';
 
 // ── Video Slide ────────────────────────────────────────
 
-const VideoSlide = memo(({ item, isActive, width: slideWidth, height: slideHeight }: {
+const VideoSlide = memo(({ item, isActive, width: slideWidth, height: slideHeight, isScreenFocused = true }: {
     item: MediaItem;
     isActive: boolean;
     width: number;
     height: number;
+    isScreenFocused?: boolean;
 }) => {
     const { colors: c } = useTheme();
     const [isMuted, setIsMuted] = useState(true);
@@ -125,14 +127,14 @@ const VideoSlide = memo(({ item, isActive, width: slideWidth, height: slideHeigh
         p.muted = true;
     });
 
-    // Auto-play/pause based on visibility
+    // Auto-play/pause based on visibility AND screen focus
     React.useEffect(() => {
-        if (isActive) {
+        if (isActive && isScreenFocused) {
             player.play();
         } else {
             player.pause();
         }
-    }, [isActive, player]);
+    }, [isActive, isScreenFocused, player]);
 
     React.useEffect(() => {
         player.muted = isMuted;
@@ -210,6 +212,7 @@ function MediaCarouselInner({
     showDots = true,
     onSlideChange,
     borderRadius = 0,
+    isScreenFocused = true,
 }: MediaCarouselProps) {
     const { colors: c } = useTheme();
     const [activeIndex, setActiveIndex] = useState(0);
@@ -246,6 +249,7 @@ function MediaCarouselInner({
                     isActive={index === activeIndex}
                     width={width}
                     height={computedHeight}
+                    isScreenFocused={isScreenFocused}
                 />
             );
         }
@@ -256,7 +260,7 @@ function MediaCarouselInner({
                 height={computedHeight}
             />
         );
-    }, [activeIndex, width, computedHeight]);
+    }, [activeIndex, width, computedHeight, isScreenFocused]);
 
     const keyExtractor = useCallback((item: MediaItem) => item.id, []);
 
@@ -268,7 +272,7 @@ function MediaCarouselInner({
         if (item.type === 'VIDEO') {
             return (
                 <View style={[{ borderRadius, overflow: 'hidden' }]}>
-                    <VideoSlide item={item} isActive width={width} height={computedHeight} />
+                    <VideoSlide item={item} isActive width={width} height={computedHeight} isScreenFocused={isScreenFocused} />
                 </View>
             );
         }

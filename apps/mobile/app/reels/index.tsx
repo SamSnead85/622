@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -394,6 +394,15 @@ export default function ReelsScreen() {
     useEffect(() => {
         loadReels();
     }, [loadReels]);
+
+    // Pause all reel videos when navigating away from this screen
+    useFocusEffect(
+        useCallback(() => {
+            return () => {
+                setActiveIndex(-1);
+            };
+        }, [])
+    );
 
     const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
         if (viewableItems.length > 0 && viewableItems[0].index != null) {

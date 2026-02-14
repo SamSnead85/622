@@ -956,6 +956,7 @@ export default function WordBlitzScreen() {
     const [opponentRow, setOpponentRow] = useState(0);
     const [opponentSolved, setOpponentSolved] = useState(false);
 
+    const isMountedRef = useRef(true);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const statsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1033,6 +1034,15 @@ export default function WordBlitzScreen() {
     }, [isRaceMode]);
 
     // ============================================
+    // Mount guard for async callbacks
+    // ============================================
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
+    // ============================================
     // Cleanup all timers on unmount
     // ============================================
 
@@ -1069,6 +1079,7 @@ export default function WordBlitzScreen() {
 
         const unsubs = [
             socketManager.on('game:update', (data: Record<string, unknown>) => {
+                if (!isMountedRef.current) return;
                 if (data?.type === 'progress' && data.playerId !== user?.id) {
                     setOpponentRow(data.row ?? 0);
                 }

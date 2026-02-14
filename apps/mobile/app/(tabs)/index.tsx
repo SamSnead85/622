@@ -760,6 +760,7 @@ const FeedPostCard = memo(
                                 showCounter
                                 showDots
                                 borderRadius={0}
+                                isScreenFocused={screenFocused}
                             />
                         </View>
                     ) : post.mediaUrl ? (
@@ -1403,6 +1404,7 @@ export default function FeedScreen() {
     );
     const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
     const activeVideoIdRef = useRef<string | null>(null);
+    const [screenFocused, setScreenFocused] = useState(true);
     const [unreadMessages, setUnreadMessages] = useState(0);
 
     // Seed content & checklist state
@@ -1616,11 +1618,16 @@ export default function FeedScreen() {
         return () => clearInterval(interval);
     }, [isLoading, isRefreshing, fetchFeed, feedType, feedView]);
 
-    // Scroll to top when screen gains focus (e.g. tab re-tapped)
+    // Pause all videos when navigating away from the feed screen
+    // (prevents audio/video bleeding into game screens, profiles, etc.)
     useFocusEffect(
         useCallback(() => {
-            // Only scroll if already at top or user re-focuses
-            return () => {};
+            setScreenFocused(true);
+            return () => {
+                setScreenFocused(false);
+                activeVideoIdRef.current = null;
+                setActiveVideoId(null);
+            };
         }, [])
     );
 

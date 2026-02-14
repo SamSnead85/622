@@ -329,6 +329,7 @@ export default function TriviaScreen() {
     const [showCelebration, setShowCelebration] = useState(false);
     const [streak, setStreak] = useState(0);
 
+    const isMountedRef = useRef(true);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const celebrationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -358,6 +359,7 @@ export default function TriviaScreen() {
         if (showResult || !currentQuestion) return;
 
         timerRef.current = setInterval(() => {
+            if (!isMountedRef.current) return;
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     if (timerRef.current) clearInterval(timerRef.current);
@@ -393,7 +395,10 @@ export default function TriviaScreen() {
             setShowCelebration(true);
             setStreak((s) => s + 1);
             if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
-            celebrationTimeoutRef.current = setTimeout(() => setShowCelebration(false), 800);
+            celebrationTimeoutRef.current = setTimeout(() => {
+                if (!isMountedRef.current) return;
+                setShowCelebration(false);
+            }, 800);
 
             timeoutRef.current = setTimeout(() => {
                 setScorePopup({ points: 0, visible: false });
@@ -410,6 +415,15 @@ export default function TriviaScreen() {
         }
         previousScore.current = myScore;
     }, [myScore, showResult, hasAnswered]);
+
+    // ============================================
+    // Mount guard for async callbacks
+    // ============================================
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     // ============================================
     // Cleanup all timers on unmount

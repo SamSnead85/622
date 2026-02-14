@@ -414,6 +414,7 @@ export default function SketchDuelScreen() {
     // ---- Animation Values ----
     const correctFlashOpacity = useSharedValue(0);
 
+    const isMountedRef = useRef(true);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const guessInputRef = useRef<TextInput>(null);
 
@@ -579,6 +580,7 @@ export default function SketchDuelScreen() {
         setTimeLeft(TIMER_DURATION);
 
         timerRef.current = setInterval(() => {
+            if (!isMountedRef.current) return;
             setTimeLeft((prev) => {
                 const next = prev - 1;
                 if (next <= 0) {
@@ -597,6 +599,12 @@ export default function SketchDuelScreen() {
         return clearTimer;
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [phase, round]);
+
+    // Mount guard for async callbacks
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     // Cleanup timer on unmount
     useEffect(() => {

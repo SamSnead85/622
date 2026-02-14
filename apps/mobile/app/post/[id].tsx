@@ -24,7 +24,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -219,6 +219,16 @@ function PostVideoPlayer({ uri }: { uri: string }) {
         p.muted = true;
         p.play();
     });
+
+    // Pause video when navigating away, resume when returning
+    useFocusEffect(
+        useCallback(() => {
+            player.play();
+            return () => {
+                player.pause();
+            };
+        }, [player])
+    );
 
     const toggleMute = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

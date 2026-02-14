@@ -935,6 +935,13 @@ export default function SpeedMatchScreen() {
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Refs to avoid stale closures in timer callbacks
+    const scoreRef = useRef(score);
+    const questionsRef = useRef(questionsAnswered);
+    const endGameRef = useRef<(finalScore: number) => void>();
+    useEffect(() => { scoreRef.current = score; }, [score]);
+    useEffect(() => { questionsRef.current = questionsAnswered; }, [questionsAnswered]);
+
     // Load high scores
     useEffect(() => {
         async function loadScores() {
@@ -996,10 +1003,13 @@ export default function SpeedMatchScreen() {
         timerRef.current = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
-                    if (timerRef.current) clearInterval(timerRef.current);
+                    if (timerRef.current) {
+                        clearInterval(timerRef.current);
+                        timerRef.current = null;
+                    }
                     setIsActive(false);
-                    // End game
-                    endGame(score);
+                    // Use refs to avoid stale closure — scoreRef always has the latest score
+                    endGameRef.current?.(scoreRef.current);
                     return 0;
                 }
                 return prev - 1;
@@ -1007,9 +1017,11 @@ export default function SpeedMatchScreen() {
         }, 1000);
 
         return () => {
-            if (timerRef.current) clearInterval(timerRef.current);
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isActive, gameMode]);
 
     // Pattern Memory starts immediately
@@ -1023,7 +1035,10 @@ export default function SpeedMatchScreen() {
     const endGame = useCallback(
         async (finalScore: number) => {
             setIsActive(false);
-            if (timerRef.current) clearInterval(timerRef.current);
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
 
             const currentHigh = highScores[gameMode];
             const newHigh = finalScore > currentHigh;
@@ -1045,14 +1060,17 @@ export default function SpeedMatchScreen() {
                 socketManager.sendGameAction(params.code, 'score_update', {
                     type: 'score_update',
                     score: finalScore,
-                    correct: questionsAnswered,
+                    correct: questionsRef.current,
                 });
             }
 
             setPhase('results');
         },
-        [highScores, gameMode, isMultiplayer, params.code, questionsAnswered],
+        [highScores, gameMode, isMultiplayer, params.code],
     );
+
+    // Keep endGame ref current so timer callback always calls the latest version
+    useEffect(() => { endGameRef.current = endGame; }, [endGame]);
 
     // ---- Score handlers ----
     const handleScore = useCallback(

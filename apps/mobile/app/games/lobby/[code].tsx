@@ -342,12 +342,19 @@ export default function LobbyScreen() {
     const [isJoining, setIsJoining] = useState(false);
     const [showInvite, setShowInvite] = useState(false);
     const [socketConnected, setSocketConnected] = useState(socketManager.isConnected);
+    const isMountedRef = useRef(true);
     const socketCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const roomCode = (code || '').toUpperCase();
     const { players, isHost, status, gameType, error } = gameStore;
     const minPlayers = MIN_PLAYERS[gameType || 'trivia'] || 2;
     const canStart = players.filter((p) => p.isConnected).length >= minPlayers;
+
+    // ---- Mount guard for async callbacks ----
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     // ---- Join game on mount (supports guest players) ----
     // Waits for socket to connect before attempting to join.
@@ -377,7 +384,10 @@ export default function LobbyScreen() {
             joinAttemptRef.current += 1;
             if (joinAttemptRef.current < 4) {
                 // Retry after 2s
-                joinTimerRef.current = setTimeout(() => attemptJoin(), 2000);
+                joinTimerRef.current = setTimeout(() => {
+                    if (!isMountedRef.current) return;
+                    attemptJoin();
+                }, 2000);
                 return;
             }
             setIsJoining(false);
@@ -410,6 +420,7 @@ export default function LobbyScreen() {
     // ---- Socket connection status ----
     useEffect(() => {
         socketCheckRef.current = setInterval(() => {
+            if (!isMountedRef.current) return;
             setSocketConnected(socketManager.isConnected);
         }, 3000);
         return () => {

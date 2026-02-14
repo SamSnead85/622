@@ -562,6 +562,7 @@ export default function EmojiCharadesScreen() {
     // For local simulation (host generates phrases)
     const shuffledPhrases = useRef<Phrase[]>(shuffleArray(PHRASES));
 
+    const isMountedRef = useRef(true);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const handleRoundEndRef = useRef<(() => void) | null>(null);
     const latestGuessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -625,7 +626,10 @@ export default function EmojiCharadesScreen() {
                             handleMyCorrectGuess(cg.score);
                         }
                         if (latestGuessTimerRef.current) clearTimeout(latestGuessTimerRef.current);
-                        latestGuessTimerRef.current = setTimeout(() => setLatestCorrectGuess(null), 3000);
+                        latestGuessTimerRef.current = setTimeout(() => {
+                            if (!isMountedRef.current) return;
+                            setLatestCorrectGuess(null);
+                        }, 3000);
                     }
                     // Phrase for describer
                     if (gd.phrase && gd.describerId === myUserId) {
@@ -681,6 +685,7 @@ export default function EmojiCharadesScreen() {
         setRoundState((prev) => ({ ...prev, timeLeft: TIMER_DURATION }));
 
         timerRef.current = setInterval(() => {
+            if (!isMountedRef.current) return;
             setRoundState((prev) => {
                 const newTime = prev.timeLeft - 1;
                 if (newTime <= 0) {
@@ -816,6 +821,7 @@ export default function EmojiCharadesScreen() {
 
             if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
             flashTimerRef.current = setTimeout(() => {
+                if (!isMountedRef.current) return;
                 setShowCorrectFlash(false);
                 setScorePopupData({ points: 0, visible: false });
             }, 2000);
@@ -861,7 +867,10 @@ export default function EmojiCharadesScreen() {
                 handleMyCorrectGuess(score);
                 setLatestCorrectGuess(cg);
                 if (latestGuessTimerRef.current) clearTimeout(latestGuessTimerRef.current);
-                latestGuessTimerRef.current = setTimeout(() => setLatestCorrectGuess(null), 3000);
+                latestGuessTimerRef.current = setTimeout(() => {
+                    if (!isMountedRef.current) return;
+                    setLatestCorrectGuess(null);
+                }, 3000);
 
                 // Update local scores
                 setLocalScores((prev) => ({
@@ -896,6 +905,7 @@ export default function EmojiCharadesScreen() {
 
             if (scorePopupTimerRef.current) clearTimeout(scorePopupTimerRef.current);
             scorePopupTimerRef.current = setTimeout(() => {
+                if (!isMountedRef.current) return;
                 setScorePopupData({ points: 0, visible: false });
             }, 2500);
         }
@@ -904,11 +914,15 @@ export default function EmojiCharadesScreen() {
         if (gameStore.isHost) {
             if (nextRoundTimerRef.current) clearTimeout(nextRoundTimerRef.current);
             nextRoundTimerRef.current = setTimeout(() => {
+                if (!isMountedRef.current) return;
                 if (round < totalRounds) {
                     setRound((r) => r + 1);
                     setPhase('waiting');
                     if (nextRoundTimerRef.current) clearTimeout(nextRoundTimerRef.current);
-                    nextRoundTimerRef.current = setTimeout(() => startNextRound(), 800);
+                    nextRoundTimerRef.current = setTimeout(() => {
+                        if (!isMountedRef.current) return;
+                        startNextRound();
+                    }, 800);
                 } else {
                     // Game ended
                     gameStore.setGameEnded({
@@ -927,6 +941,12 @@ export default function EmojiCharadesScreen() {
 
     // Keep ref in sync so the interval always calls the latest version
     handleRoundEndRef.current = handleRoundEnd;
+
+    // ---- Mount guard for async callbacks ----
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     // ---- Cleanup all setTimeout refs on unmount ----
     useEffect(() => {
