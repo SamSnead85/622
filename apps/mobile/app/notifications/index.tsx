@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     RefreshControl,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,6 +22,7 @@ import { apiFetch, API } from '../../lib/api';
 import { timeAgo } from '../../lib/utils';
 import { ScreenHeader, EmptyState } from '../../components';
 import SkeletonList from '../../components/SkeletonList';
+import { AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
 
 // ============================================
 // Types
@@ -84,6 +86,34 @@ function groupByDate(notifications: Notification[]): DateSection[] {
     return order
         .filter((title) => groups.has(title))
         .map((title) => ({ title, data: groups.get(title)! }));
+}
+
+// ============================================
+// Notification icon mapping
+// ============================================
+
+// ============================================
+// Build readable notification message from data
+// ============================================
+
+function getNotificationMessage(item: Notification): string {
+    // If the API already provides a good message, use it
+    if (item.message && item.message !== 'New notification' && !item.message.startsWith('someone')) {
+        return item.message;
+    }
+
+    const name = item.actorUsername ? `@${item.actorUsername}` : 'Someone';
+
+    switch (item.type) {
+        case 'FOLLOW': return `${name} started following you`;
+        case 'LIKE': return `${name} liked your post`;
+        case 'COMMENT': return `${name} commented on your post`;
+        case 'MENTION': return `${name} mentioned you`;
+        case 'SHARE': return `${name} shared your post`;
+        case 'COMMUNITY_INVITE': return `${name} invited you to a community`;
+        case 'POST': return `${name} published a new post`;
+        default: return item.content || item.message || 'New notification';
+    }
 }
 
 // ============================================
@@ -197,7 +227,7 @@ const NotificationItem = memo(({ item, index, onPress, onReply, onFollowBack, on
                         }}
                         activeOpacity={0.7}
                         accessibilityRole="button"
-                        accessibilityLabel={`${!item.isRead ? 'Unread: ' : ''}${item.message || item.content || 'New notification'}, ${timeAgo(item.createdAt)}`}
+                        accessibilityLabel={`${!item.isRead ? 'Unread: ' : ''}${getNotificationMessage(item)}, ${timeAgo(item.createdAt)}`}
                         accessibilityActions={[{ name: 'markRead', label: 'Mark as read' }]}
                         onAccessibilityAction={(event) => {
                             if (event.nativeEvent.actionName === 'markRead') {
@@ -205,15 +235,31 @@ const NotificationItem = memo(({ item, index, onPress, onReply, onFollowBack, on
                             }
                         }}
                     >
-                        <View style={[styles.notifIconContainer, !item.isRead && styles.notifIconUnread]}>
-                            <Ionicons name={iconInfo.name} size={20} color={iconInfo.color} />
-                        </View>
+                        {/* Avatar or icon */}
+                        {item.actorAvatarUrl ? (
+                            <View style={styles.notifAvatarWrap}>
+                                <Image
+                                    source={{ uri: item.actorAvatarUrl }}
+                                    style={styles.notifAvatar}
+                                    placeholder={AVATAR_PLACEHOLDER.blurhash}
+                                    transition={150}
+                                    cachePolicy="memory-disk"
+                                />
+                                <View style={[styles.notifIconBadge, { backgroundColor: iconInfo.color }]}>
+                                    <Ionicons name={iconInfo.name} size={10} color="#FFFFFF" />
+                                </View>
+                            </View>
+                        ) : (
+                            <View style={[styles.notifIconContainer, !item.isRead && styles.notifIconUnread]}>
+                                <Ionicons name={iconInfo.name} size={20} color={iconInfo.color} />
+                            </View>
+                        )}
                         <View style={styles.notifContent}>
                             <Text
                                 style={[styles.notifMessage, !item.isRead && styles.notifMessageUnread]}
                                 numberOfLines={2}
                             >
-                                {item.message || item.content || 'New notification'}
+                                {getNotificationMessage(item)}
                             </Text>
                             <View style={styles.notifMeta}>
                                 <Text style={styles.notifTime}>{timeAgo(item.createdAt)}</Text>
@@ -348,8 +394,15 @@ export default function NotificationsScreen() {
             if (!notif.isRead) markAsRead(notif.id);
             if (notif.postId) {
                 router.push(`/post/${notif.postId}`);
-            } else if (notif.type === 'FOLLOW' && notif.actorUsername) {
-                router.push(`/profile/${notif.actorUsername}`);
+            } else if (notif.type === 'FOLLOW') {
+                // Navigate to profile — prefer username, fall back to ID
+                if (notif.actorUsername) {
+                    router.push(`/profile/${notif.actorUsername}` as any);
+                } else if (notif.actorId) {
+                    router.push(`/profile/${notif.actorId}` as any);
+                }
+            } else if (notif.actorUsername) {
+                router.push(`/profile/${notif.actorUsername}` as any);
             }
         },
         [markAsRead, router],
@@ -592,6 +645,26 @@ const styles = StyleSheet.create({
     },
     notifUnread: {
         backgroundColor: colors.surface.goldFaded,
+    },
+    notifAvatarWrap: {
+        position: 'relative',
+    },
+    notifAvatar: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+    },
+    notifIconBadge: {
+        position: 'absolute',
+        bottom: -2,
+        right: -2,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: colors.obsidian[900],
     },
     notifIconContainer: {
         width: 44,
