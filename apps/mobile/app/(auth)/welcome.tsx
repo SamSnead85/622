@@ -3,7 +3,7 @@
 // "The people's network."
 // ============================================
 
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -49,123 +49,131 @@ export default function WelcomeScreen() {
                 },
             ]}
         >
-            {/* Logo */}
-            <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.logoSection}>
-                <BrandLogo size="hero" />
-            </Animated.View>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                bounces={true}
+                keyboardShouldPersistTaps="handled"
+            >
+                {/* Logo */}
+                <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.logoSection}>
+                    <BrandLogo size="hero" />
+                </Animated.View>
 
-            {/* Tagline */}
-            <Animated.View entering={FadeInUp.delay(400).duration(600)} style={styles.taglineSection}>
-                <Text style={[styles.tagline, { color: c.text.primary }]}>
-                    Your data.{'\n'}Your rules.{'\n'}Your community.
-                </Text>
-                <Text style={[styles.subtitle, { color: c.text.secondary }]}>
-                    A social network that doesn't spy on you,{'\n'}
-                    sell your attention, or manipulate your feed.
-                </Text>
-            </Animated.View>
+                {/* Tagline */}
+                <Animated.View entering={FadeInUp.delay(400).duration(600)} style={styles.taglineSection}>
+                    <Text style={[styles.tagline, { color: c.text.primary }]}>
+                        Your data.{'\n'}Your rules.{'\n'}Your community.
+                    </Text>
+                    <Text style={[styles.subtitle, { color: c.text.secondary }]}>
+                        A social network that doesn't spy on you,{'\n'}
+                        sell your attention, or manipulate your feed.
+                    </Text>
+                </Animated.View>
 
-            {/* Value Propositions — stacked, always visible */}
-            <Animated.View entering={FadeInUp.delay(550).duration(500)} style={styles.valuePropSection}>
-                {([
-                    { icon: 'lock-closed' as const, text: 'End-to-end encrypted — we can\'t read your messages' },
-                    { icon: 'eye-off' as const, text: 'Zero ads, zero tracking, zero data selling' },
-                    { icon: 'shield-checkmark' as const, text: 'Invite-only — every member is vouched for' },
-                    { icon: 'options' as const, text: 'You control the algorithm, not the other way around' },
-                ]).map((item, index) => (
-                    <Animated.View
-                        key={item.text}
-                        entering={FadeInUp.delay(600 + index * 70).duration(350)}
-                        style={styles.valueRow}
+                {/* Value Propositions — stacked, always visible */}
+                <Animated.View entering={FadeInUp.delay(550).duration(500)} style={styles.valuePropSection}>
+                    {([
+                        { icon: 'lock-closed' as const, text: 'End-to-end encrypted — we can\'t read your messages' },
+                        { icon: 'eye-off' as const, text: 'Zero ads, zero tracking, zero data selling' },
+                        { icon: 'shield-checkmark' as const, text: 'Invite-only — every member is vouched for' },
+                        { icon: 'options' as const, text: 'You control the algorithm, not the other way around' },
+                    ]).map((item, index) => (
+                        <Animated.View
+                            key={item.text}
+                            entering={FadeInUp.delay(600 + index * 70).duration(350)}
+                            style={styles.valueRow}
+                        >
+                            <View style={[styles.valueIcon, { backgroundColor: c.gold[500] + '15' }]}>
+                                <Ionicons name={item.icon} size={15} color={c.gold[500]} />
+                            </View>
+                            <Text style={[styles.valueText, { color: c.text.secondary }]}>{item.text}</Text>
+                        </Animated.View>
+                    ))}
+                </Animated.View>
+
+                {/* Spacer */}
+                <View style={styles.spacer} />
+
+                {/* CTAs */}
+                <Animated.View entering={FadeInUp.delay(600).duration(500)} style={styles.ctaSection}>
+                    <Pressable
+                        onPress={handleCreateAccount}
+                        style={({ pressed }) => [
+                            styles.primaryButton,
+                            {
+                                opacity: pressed ? 0.9 : 1,
+                                transform: [{ scale: pressed ? 0.98 : 1 }],
+                            },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Create account"
                     >
-                        <View style={[styles.valueIcon, { backgroundColor: c.gold[500] + '15' }]}>
-                            <Ionicons name={item.icon} size={15} color={c.gold[500]} />
-                        </View>
-                        <Text style={[styles.valueText, { color: c.text.secondary }]}>{item.text}</Text>
-                    </Animated.View>
-                ))}
-            </Animated.View>
+                        <LinearGradient
+                            colors={[c.gold[400], c.gold[600]]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.primaryGradient}
+                        >
+                            <Text style={styles.primaryButtonText}>
+                                Get started
+                            </Text>
+                        </LinearGradient>
+                    </Pressable>
 
-            {/* Spacer */}
-            <View style={styles.spacer} />
+                    <View style={styles.dividerRow}>
+                        <View style={[styles.dividerLine, { backgroundColor: c.border.subtle }]} />
+                        <Text style={[styles.dividerText, { color: c.text.muted }]}>Or</Text>
+                        <View style={[styles.dividerLine, { backgroundColor: c.border.subtle }]} />
+                    </View>
 
-            {/* CTAs */}
-            <Animated.View entering={FadeInUp.delay(600).duration(500)} style={styles.ctaSection}>
-                <Pressable
-                    onPress={handleCreateAccount}
-                    style={({ pressed }) => [
-                        styles.primaryButton,
-                        {
-                            opacity: pressed ? 0.9 : 1,
-                            transform: [{ scale: pressed ? 0.98 : 1 }],
-                        },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Create account"
-                >
-                    <LinearGradient
-                        colors={[c.gold[400], c.gold[600]]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.primaryGradient}
+                    <Pressable
+                        onPress={handleLogin}
+                        style={({ pressed }) => [
+                            styles.secondaryButton,
+                            {
+                                backgroundColor: c.surface.glass,
+                                borderColor: c.border.default,
+                                opacity: pressed ? 0.85 : 1,
+                                transform: [{ scale: pressed ? 0.98 : 1 }],
+                            },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Log in to existing account"
                     >
-                        <Text style={styles.primaryButtonText}>
-                            Get started
+                        <Text style={[styles.secondaryButtonText, { color: c.text.primary }]}>
+                            Log in
                         </Text>
-                    </LinearGradient>
-                </Pressable>
+                    </Pressable>
+                </Animated.View>
 
-                <View style={styles.dividerRow}>
-                    <View style={[styles.dividerLine, { backgroundColor: c.border.subtle }]} />
-                    <Text style={[styles.dividerText, { color: c.text.muted }]}>Or</Text>
-                    <View style={[styles.dividerLine, { backgroundColor: c.border.subtle }]} />
-                </View>
-
-                <Pressable
-                    onPress={handleLogin}
-                    style={({ pressed }) => [
-                        styles.secondaryButton,
-                        {
-                            backgroundColor: c.surface.glass,
-                            borderColor: c.border.default,
-                            opacity: pressed ? 0.85 : 1,
-                            transform: [{ scale: pressed ? 0.98 : 1 }],
-                        },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Log in to existing account"
-                >
-                    <Text style={[styles.secondaryButtonText, { color: c.text.primary }]}>
-                        Log in
+                {/* Footer */}
+                <Animated.View entering={FadeIn.delay(900).duration(400)} style={styles.footer}>
+                    <Text style={[styles.termsText, { color: c.text.muted }]}>
+                        By signing up, you agree to our{' '}
+                        <Text style={[styles.termsLink, { color: c.gold[500] }]}>Terms</Text>,{' '}
+                        <Text style={[styles.termsLink, { color: c.gold[500] }]}>Rules & Policies</Text>
+                        , and{' '}
+                        <Text style={[styles.termsLink, { color: c.gold[500] }]}>Privacy Policy</Text>.
                     </Text>
-                </Pressable>
-            </Animated.View>
 
-            {/* Footer */}
-            <Animated.View entering={FadeIn.delay(900).duration(400)} style={styles.footer}>
-                <Text style={[styles.termsText, { color: c.text.muted }]}>
-                    By signing up, you agree to our{' '}
-                    <Text style={[styles.termsLink, { color: c.gold[500] }]}>Terms</Text>,{' '}
-                    <Text style={[styles.termsLink, { color: c.gold[500] }]}>Rules & Policies</Text>
-                    , and{' '}
-                    <Text style={[styles.termsLink, { color: c.gold[500] }]}>Privacy Policy</Text>.
-                </Text>
-
-                <Pressable
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        router.push('/tools' as any);
-                    }}
-                    style={styles.toolsLink}
-                    accessibilityRole="button"
-                    accessibilityLabel="Explore Prayer Times, Qibla, and more tools"
-                >
-                    <Ionicons name="compass-outline" size={14} color={c.text.muted} />
-                    <Text style={[styles.toolsLinkText, { color: c.text.muted }]}>
-                        Explore Prayer Times & Qibla
-                    </Text>
-                </Pressable>
-            </Animated.View>
+                    <Pressable
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.push('/tools' as any);
+                        }}
+                        style={styles.toolsLink}
+                        accessibilityRole="button"
+                        accessibilityLabel="Explore Prayer Times, Qibla, and more tools"
+                    >
+                        <Ionicons name="compass-outline" size={14} color={c.text.muted} />
+                        <Text style={[styles.toolsLinkText, { color: c.text.muted }]}>
+                            Explore Prayer Times & Qibla
+                        </Text>
+                    </Pressable>
+                </Animated.View>
+            </ScrollView>
         </LinearGradient>
     );
 }
@@ -173,6 +181,12 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
     },
 
     // ---- Logo ----
@@ -229,6 +243,7 @@ const styles = StyleSheet.create({
     // ---- Spacer ----
     spacer: {
         flex: 1,
+        minHeight: 24,
     },
 
     // ---- CTAs ----

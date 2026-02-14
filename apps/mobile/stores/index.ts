@@ -272,6 +272,7 @@ export const useAuthStore = create<AuthState>()(
                 return;
             }
 
+            // We have a token — try to validate it with the server
             const data = await apiFetch<AuthApiResponse>(API.me);
             if (data.user || data.id) {
                 const user = normalizeUser((data.user || data) as RawUserResponse);
@@ -286,9 +287,26 @@ export const useAuthStore = create<AuthState>()(
                 set({ isInitialized: true, isAuthenticated: false, isLoading: false });
             }
         } catch (error) {
-            // Don't clear token on network errors — user might be offline
+            // Determine if this is a network/timeout error vs an auth rejection
             const isNetwork = error instanceof TypeError ||
-                (error instanceof Error && error.message.toLowerCase().includes('network'));
+                (error instanceof Error && (
+                    error.message.toLowerCase().includes('network') ||
+                    error.message.toLowerCase().includes('timeout') ||
+                    error.message.toLowerCase().includes('fetch') ||
+                    error.message.toLowerCase().includes('aborted') ||
+                    error.message.toLowerCase().includes('internet')
+                ));
+
+            // If we have a persisted user from a previous session and this is
+            // a network error, trust the cached state so the user isn't kicked
+            // to the welcome screen every time they reopen without connectivity.
+            const { user: persistedUser, isAuthenticated: wasAuthenticated } = get();
+            if (isNetwork && wasAuthenticated && persistedUser) {
+                set({ isInitialized: true, isLoading: false });
+                return;
+            }
+
+            // Genuine auth failure (401, invalid token, etc.) — clear credentials
             if (!isNetwork) {
                 try { await removeToken(); } catch { /* storage write failed, ignore */ }
             }
