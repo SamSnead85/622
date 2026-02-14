@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { rateLimiters } from '../middleware/rateLimit.js';
+import { safeParseInt } from '../utils/validation.js';
 
 const router = Router();
 
@@ -518,7 +519,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res: Response, next: 
         if (!req.user) return res.status(401).json({ error: 'Authentication required' });
 
         const cursor = req.query.cursor as string | undefined;
-        const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+        const limit = safeParseInt(req.query.limit, 20, 1, 100);
         const platform = req.query.platform as string | undefined;
 
         const whereClause: Record<string, unknown> = {

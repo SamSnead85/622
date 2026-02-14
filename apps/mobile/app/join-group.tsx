@@ -154,7 +154,7 @@ export default function JoinGroupScreen() {
                 // If it looks like a UUID, fetch directly as a community ID
                 if (communityId) {
                     const data = await apiFetch<any>(`${API.communities}/${communityId}`);
-                    const community = data.community || data;
+                    const community = data?.community || data;
                     setCommunityInfo({
                         id: community.id,
                         name: community.name || name || 'Community',
@@ -168,7 +168,7 @@ export default function JoinGroupScreen() {
                     // For now, use the name param as fallback
                     try {
                         const data = await apiFetch<any>(`${API.communities}/invite/${code}`);
-                        const community = data.community || data;
+                        const community = data?.community || data;
                         setCommunityInfo({
                             id: community.id,
                             name: community.name || name || 'Community',

@@ -141,7 +141,7 @@ export default function CommunityRulesScreen() {
         try {
             // Check role
             const communityData = await apiFetch<any>(API.community(communityId));
-            const comm = communityData.community || communityData;
+            const comm = communityData?.community || communityData;
             const role = comm.role as string | null;
             setIsAdmin(role === 'admin' || role === 'moderator');
         } catch {

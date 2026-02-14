@@ -172,7 +172,7 @@ export default function GovernanceScreen() {
         if (!communityId) return;
         try {
             const data = await apiFetch<any>(API.proposals(communityId));
-            const list = data.proposals || data || [];
+            const list = data?.proposals || data || [];
             setProposals(Array.isArray(list) ? list : []);
         } catch {
             showError('Could not load proposals');

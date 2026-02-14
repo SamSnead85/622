@@ -486,14 +486,14 @@ export default function CommunityDetailScreen() {
         if (!communityId) return;
         try {
             const data = await apiFetch<any>(API.community(communityId));
-            const communityData = data.community || data;
+            const communityData = data?.community || data;
             setCommunity(communityData);
             setFeedError(null);
             try {
                 const postsData = await apiFetch<any>(
                     `${API.posts}?communityId=${communityId}&limit=20`,
                 );
-                const rawPosts = postsData.posts || postsData.data || [];
+                const rawPosts = postsData?.posts || postsData?.data || [];
                 setPosts(
                     (Array.isArray(rawPosts) ? rawPosts : []).map(mapApiPost),
                 );
@@ -505,7 +505,7 @@ export default function CommunityDetailScreen() {
                 const membersData = await apiFetch<{ members?: { userId?: string; id?: string; user?: { avatarUrl?: string; displayName?: string; username?: string }; role?: string; createdAt?: string }[] }>(
                     API.communityMembers(communityId),
                 );
-                const membersList = membersData.members || [];
+                const membersList = membersData?.members || [];
                 const previews = (Array.isArray(membersList) ? membersList : [])
                     .slice(0, 5)
                     .map((m: { userId?: string; id?: string; user?: { avatarUrl?: string; displayName?: string; username?: string }; role?: string; createdAt?: string }) => ({
@@ -540,7 +540,7 @@ export default function CommunityDetailScreen() {
         setMembersError(null);
         try {
             const data = await apiFetch<{ members?: { userId?: string; id?: string; user?: { avatarUrl?: string; displayName?: string; username?: string }; role?: string; createdAt?: string }[] }>(API.communityMembers(communityId));
-            const membersList = data.members || [];
+            const membersList = data?.members || [];
             setAllMembers(
                 (Array.isArray(membersList) ? membersList : []).map((m: { userId?: string; id?: string; user?: { avatarUrl?: string; displayName?: string; username?: string }; role?: string; createdAt?: string }) => ({
                     id: m.userId || m.id,
@@ -567,7 +567,7 @@ export default function CommunityDetailScreen() {
             const data = await apiFetch<any>(
                 `${API.community(communityId)}/rules`,
             );
-            const rulesList = data.rules || data || [];
+            const rulesList = data?.rules || data || [];
             setRules(Array.isArray(rulesList) ? rulesList : []);
         } catch (e: unknown) {
             // If 404, there are simply no rules — not an error
@@ -640,7 +640,7 @@ export default function CommunityDetailScreen() {
                     body: JSON.stringify({ content }),
                 },
             );
-            const msg = data.message || data;
+            const msg = data?.message || data;
             setChatMessages((prev) => [...prev, msg]);
             if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
             scrollTimeoutRef.current = setTimeout(() => {
@@ -664,9 +664,9 @@ export default function CommunityDetailScreen() {
 
         unsubs.push(
             socketManager.on('message:new', (msg: Record<string, unknown>) => {
-                if (msg.communityId === communityId || msg.conversationId) {
+                if (msg?.communityId === communityId || msg?.conversationId) {
                     setChatMessages((prev) => {
-                        if (prev.some((m) => m.id === msg.id)) return prev;
+                        if (prev.some((m) => m.id === msg?.id)) return prev;
                         return [...prev, msg];
                     });
                     if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
@@ -679,9 +679,9 @@ export default function CommunityDetailScreen() {
 
         unsubs.push(
             socketManager.on('typing:start', (data: Record<string, unknown>) => {
-                if (data.username) {
+                if (data?.username) {
                     setTypingUsers((prev) =>
-                        prev.includes(data.username) ? prev : [...prev, data.username],
+                        prev.includes(data.username as string) ? prev : [...prev, data.username as string],
                     );
                 }
             }),
@@ -689,7 +689,7 @@ export default function CommunityDetailScreen() {
 
         unsubs.push(
             socketManager.on('typing:stop', (data: Record<string, unknown>) => {
-                setTypingUsers((prev) => prev.filter((u) => u !== data.username));
+                setTypingUsers((prev) => prev.filter((u) => u !== data?.username));
             }),
         );
 

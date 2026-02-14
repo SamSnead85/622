@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { AuthRequest, authenticate } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
 import { logger } from '../utils/logger.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 // ============================================
 // AUDIO SPACES — In-memory room management
@@ -142,6 +143,9 @@ function serializeSpacePreview(space: SpaceRoom) {
 // ============================================
 
 export const spacesRouter = Router();
+
+// Apply rate limiting to all routes
+spacesRouter.use(rateLimiters.general);
 
 // ---- Create a new space ----
 spacesRouter.post('/create', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {

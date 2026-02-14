@@ -165,7 +165,7 @@ export default function ImportScreen() {
             setImportStatus('processing');
 
             // Poll for migration status
-            pollMigrationStatus(data.migrationId || data.id);
+            pollMigrationStatus(data?.migrationId || data?.id);
         } catch (error) {
             setImportStatus('failed');
             Alert.alert('Import Failed', 'Could not upload the file. Please try again.');
@@ -184,19 +184,19 @@ export default function ImportScreen() {
             try {
                 const data = await apiFetch<any>(`/api/v1/migration/${migrationId}/status`);
 
-                if (data.status === 'COMPLETED') {
+                if (data?.status === 'COMPLETED') {
                     setImportStatus('complete');
                     setProgressDetail('');
                     setImportResult({
                         migrationId,
                         status: data.status,
-                        stats: data.stats,
+                        stats: data?.stats,
                     });
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     return;
                 }
 
-                if (data.status === 'FAILED') {
+                if (data?.status === 'FAILED') {
                     setImportStatus('failed');
                     setProgressDetail('');
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -208,9 +208,9 @@ export default function ImportScreen() {
                 setProgress(Math.min(95, (attempts / maxAttempts) * 100));
 
                 // Show progress details from server if available
-                if (data.currentStep) {
+                if (data?.currentStep) {
                     setProgressDetail(data.currentStep);
-                } else if (data.stats) {
+                } else if (data?.stats) {
                     const s = data.stats;
                     if (s.postsImported !== undefined && s.postsTotal) {
                         setProgressDetail(`Importing posts... (${s.postsImported}/${s.postsTotal})`);

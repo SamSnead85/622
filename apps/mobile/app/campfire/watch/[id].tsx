@@ -266,14 +266,14 @@ export default function StreamViewerScreen() {
 
         // Listen for chat messages
         const unsubChat = socketManager.on('stream:chat', (data: Record<string, unknown>) => {
-            if (data.streamId !== id) return;
+            if (data?.streamId !== id) return;
             const msg: ChatMessage = {
-                id: data.id || `${Date.now()}-${Math.random()}`,
-                userId: data.userId,
-                username: data.username,
-                displayName: data.displayName || data.username,
-                avatarUrl: data.avatarUrl,
-                content: data.content || data.message,
+                id: (data?.id as string) || `${Date.now()}-${Math.random()}`,
+                userId: data?.userId as string,
+                username: data?.username as string,
+                displayName: (data?.displayName || data?.username) as string,
+                avatarUrl: data?.avatarUrl as string | undefined,
+                content: (data?.content || data?.message) as string,
                 type: 'chat',
                 timestamp: Date.now(),
             };
@@ -282,21 +282,21 @@ export default function StreamViewerScreen() {
 
         // Listen for reactions
         const unsubReaction = socketManager.on('stream:reaction', (data: Record<string, unknown>) => {
-            if (data.streamId !== id) return;
-            addFloatingReaction(data.emoji || '🔥');
+            if (data?.streamId !== id) return;
+            addFloatingReaction((data?.emoji as string) || '🔥');
         });
 
         // Listen for gifts
         const unsubGift = socketManager.on('stream:gift', (data: Record<string, unknown>) => {
-            if (data.streamId !== id) return;
+            if (data?.streamId !== id) return;
             const msg: ChatMessage = {
                 id: `gift-${Date.now()}-${Math.random()}`,
-                userId: data.userId,
-                username: data.username,
-                displayName: data.displayName || data.username,
+                userId: data?.userId as string,
+                username: data?.username as string,
+                displayName: (data?.displayName || data?.username) as string,
                 content: '',
                 type: 'gift',
-                giftType: data.giftType,
+                giftType: data?.giftType as string,
                 timestamp: Date.now(),
             };
             setChatMessages((prev) => [...prev.slice(-100), msg]);
@@ -304,13 +304,13 @@ export default function StreamViewerScreen() {
 
         // Listen for viewer count updates
         const unsubViewers = socketManager.on('stream:viewers', (data: Record<string, unknown>) => {
-            if (data.streamId !== id) return;
-            setViewerCount(data.count || 0);
+            if (data?.streamId !== id) return;
+            setViewerCount((data?.count as number) || 0);
         });
 
         // Listen for stream ending
         const unsubEnd = socketManager.on('stream:ended', (data: Record<string, unknown>) => {
-            if (data.streamId !== id) return;
+            if (data?.streamId !== id) return;
             setChatMessages((prev) => [
                 ...prev,
                 {

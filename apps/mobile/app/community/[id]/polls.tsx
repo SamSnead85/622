@@ -192,7 +192,7 @@ function CreatePollModal({
                     expiresIn,
                 }),
             });
-            const newPoll: Poll = data.poll || data;
+            const newPoll: Poll = data?.poll || data;
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             onCreated(newPoll);
             resetForm();
@@ -426,7 +426,7 @@ export default function CommunityPollsScreen() {
         if (!communityId) return;
         try {
             const data = await apiFetch<any>(API.communityPolls(communityId));
-            const list = data.polls || data || [];
+            const list = data?.polls || data || [];
             setPolls(Array.isArray(list) ? list : []);
         } catch {
             showError('Could not load polls');

@@ -381,42 +381,42 @@ export default function SpaceRoomScreen() {
     // ---- Socket event listeners ----
     useEffect(() => {
         const unsubUpdate = socketManager.on('space:update', (data: Record<string, unknown>) => {
-            if (data.spaceId === id) {
+            if (data?.spaceId === id) {
                 setSpace((prev) => {
                     if (!prev) return prev;
                     return {
                         ...prev,
-                        speakers: data.speakers || prev.speakers,
-                        listeners: data.listeners || prev.listeners,
-                        speakerCount: data.speakerCount ?? prev.speakerCount,
-                        listenerCount: data.listenerCount ?? prev.listenerCount,
-                        speakRequests: data.speakRequests || prev.speakRequests,
+                        speakers: (data?.speakers as Speaker[]) || prev.speakers,
+                        listeners: (data?.listeners as Listener[]) || prev.listeners,
+                        speakerCount: (data?.speakerCount as number) ?? prev.speakerCount,
+                        listenerCount: (data?.listenerCount as number) ?? prev.listenerCount,
+                        speakRequests: (data?.speakRequests as SpeakRequest[]) || prev.speakRequests,
                     };
                 });
             }
         });
 
         const unsubMute = socketManager.on('space:mute-update', (data: Record<string, unknown>) => {
-            if (data.spaceId === id) {
+            if (data?.spaceId === id) {
                 setSpace((prev) => {
                     if (!prev) return prev;
                     return {
                         ...prev,
                         speakers: prev.speakers.map((s) =>
-                            s.userId === data.userId ? { ...s, isMuted: data.muted } : s,
+                            s.userId === data?.userId ? { ...s, isMuted: data?.muted as boolean } : s,
                         ),
                     };
                 });
-                if (data.userId === userId) {
-                    setIsMuted(data.muted);
+                if (data?.userId === userId) {
+                    setIsMuted(data?.muted as boolean);
                 }
             }
         });
 
         const unsubReaction = socketManager.on('space:reaction', (data: Record<string, unknown>) => {
-            if (data.spaceId !== id) return;
+            if (data?.spaceId !== id) return;
             const reactionId = `${Date.now()}-${reactionCounter.current++}`;
-            setReactions((prev) => [...prev.slice(-15), { id: reactionId, emoji: data.emoji, username: data.username }]);
+            setReactions((prev) => [...prev.slice(-15), { id: reactionId, emoji: (data?.emoji as string) || '🔥', username: (data?.username as string) || '' }]);
             // Auto-remove after animation (ref-based for cleanup)
             reactionTimeoutRef.current = setTimeout(() => {
                 setReactions((prev) => prev.filter((r) => r.id !== reactionId));
@@ -424,14 +424,14 @@ export default function SpaceRoomScreen() {
         });
 
         const unsubEnded = socketManager.on('space:ended', (data: Record<string, unknown>) => {
-            if (data.spaceId === id) {
+            if (data?.spaceId === id) {
                 setIsEnded(true);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             }
         });
 
         const unsubPromoted = socketManager.on('space:promoted', (data: Record<string, unknown>) => {
-            if (data.spaceId === id) {
+            if (data?.spaceId === id) {
                 setHasRequestedSpeak(false);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 fetchSpace(); // Refresh to get updated role
@@ -439,7 +439,7 @@ export default function SpaceRoomScreen() {
         });
 
         const unsubSpeakReq = socketManager.on('space:speak-request', (data: Record<string, unknown>) => {
-            if (data.spaceId === id && isHost) {
+            if (data?.spaceId === id && isHost) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 fetchSpace(); // Refresh to show the request
             }
