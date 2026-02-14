@@ -1373,7 +1373,7 @@ export default function SearchScreen() {
                 style={styles.retryBtn}
                 onPress={retrySearch}
             >
-                <Ionicons name="refresh" size={16} color="#FFFFFF" />
+                <Ionicons name="refresh" size={16} color={colors.text.inverse} />
                 <Text style={styles.retryBtnText}>Try Again</Text>
             </TouchableOpacity>
         </Animated.View>
@@ -1703,7 +1703,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
         zIndex: 20,
         marginTop: -2,
-        shadowColor: '#000',
+        shadowColor: colors.obsidian[900],
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
@@ -1814,7 +1814,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         borderWidth: 1,
         borderColor: colors.border.subtle,
-        shadowColor: '#000',
+        shadowColor: colors.obsidian[900],
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.06,
         shadowRadius: 4,
@@ -1869,7 +1869,7 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
         minHeight: 100,
         justifyContent: 'center',
-        shadowColor: '#000',
+        shadowColor: colors.obsidian[900],
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 8,
@@ -1904,7 +1904,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: colors.border.subtle,
-        shadowColor: '#000',
+        shadowColor: colors.obsidian[900],
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 8,
@@ -2241,7 +2241,7 @@ const styles = StyleSheet.create({
     retryBtnText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 
     // Offline Banner

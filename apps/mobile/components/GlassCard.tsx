@@ -39,7 +39,7 @@ const RADIUS_MAP = {
     xl: 24,
 };
 
-export function GlassCard({
+function GlassCard({
     children,
     style,
     padding = 'md',
@@ -84,8 +84,10 @@ export function GlassCard({
     );
 }
 
+const MemoizedGlassCard = React.memo(GlassCard);
+export { MemoizedGlassCard as GlassCard };
+export default MemoizedGlassCard;
+
 const styles = StyleSheet.create({
     card: {},
 });
-
-export default GlassCard;

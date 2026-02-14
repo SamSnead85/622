@@ -235,7 +235,7 @@ export function CommunityInviteSheet({
                                 accessibilityRole="button"
                                 accessibilityLabel="Share community invite"
                             >
-                                <Ionicons name="share-social" size={20} color="#FFFFFF" />
+                                <Ionicons name="share-social" size={20} color={colors.text.inverse} />
                                 <Text style={styles.shareButtonText}>Share Invite Link</Text>
                             </TouchableOpacity>
                         </Animated.View>
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 
     // ---- Guest Access Note ----

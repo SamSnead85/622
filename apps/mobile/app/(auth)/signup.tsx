@@ -510,7 +510,7 @@ export default function SignupScreen() {
 
     return (
         <LinearGradient
-            colors={[c.background, isDark ? '#0F0F18' : '#F8F9FC', c.background]}
+            colors={[c.background, isDark ? c.obsidian[800] : c.obsidian[900], c.background]}
             locations={[0, 0.5, 1]}
             style={styles.container}
         >
@@ -721,7 +721,7 @@ export default function SignupScreen() {
                                 onPress={handleSignup}
                                 disabled={isLoading}
                                 activeOpacity={0.85}
-                                style={[styles.submitButton, isLoading && { opacity: 0.85 }]}
+                                style={[styles.submitButton, { shadowColor: c.gold[500] }, isLoading && { opacity: 0.85 }]}
                                 accessibilityRole="button"
                                 accessibilityLabel={isLoading ? 'Creating account' : 'Create account'}
                             >
@@ -757,8 +757,8 @@ export default function SignupScreen() {
                             {Platform.OS === 'ios' && (
                                 <TouchableOpacity
                                     style={[styles.socialButton, {
-                                        backgroundColor: isDark ? '#FFFFFF' : '#000000',
-                                        borderColor: isDark ? '#FFFFFF' : '#000000',
+                                        backgroundColor: isDark ? c.text.primary : c.text.inverse,
+                                        borderColor: isDark ? c.text.primary : c.text.inverse,
                                     }]}
                                     onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleAppleSignup(); }}
                                     activeOpacity={0.7}
@@ -920,7 +920,7 @@ const styles = StyleSheet.create({
     // ---- Submit — gold gradient, matches login ----
     submitButton: {
         marginTop: spacing.md,
-        shadowColor: '#FFB020',
+        // shadowColor set dynamically via theme — see inline styles if needed
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 12,
@@ -936,7 +936,6 @@ const styles = StyleSheet.create({
     submitButtonText: {
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
-        color: '#FFFFFF',
         fontFamily: 'Inter-Bold',
     },
     loadingRow: {

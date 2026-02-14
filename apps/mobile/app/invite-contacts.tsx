@@ -252,7 +252,7 @@ export default function InviteContactsScreen() {
                                     borderColor: item.selected ? c.gold[500] : c.border.default,
                                 },
                             ]}>
-                                {item.selected && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                                {item.selected && <Ionicons name="checkmark" size={14} color={c.text.inverse} />}
                             </View>
                         </TouchableOpacity>
                     )}

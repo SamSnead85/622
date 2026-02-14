@@ -406,7 +406,7 @@ export default function MessagesScreen() {
     const loadConversations = async () => {
         try {
             const data = await apiFetch<any>(API.conversations);
-            const convos = data.conversations || data.data || [];
+            const convos = data?.conversations || data?.data || [];
             if (isMountedRef.current) {
                 setConversations(Array.isArray(convos) ? convos : []);
                 setLoadError(false);

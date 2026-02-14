@@ -233,6 +233,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
 router.get('/trending', async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const trending = await prisma.hashtag.findMany({
+            select: { id: true, name: true, usageCount: true },
             orderBy: { usageCount: 'desc' },
             take: 20,
         });

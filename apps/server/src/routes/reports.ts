@@ -3,6 +3,7 @@ import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ const createReportSchema = z.object({
 // POST /api/v1/reports
 // Submit a report
 // ============================================
-router.post('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const input = createReportSchema.parse(req.body);
 
@@ -78,7 +79,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
 // PUT /api/v1/reports/:id
 // Update report status (Admin only)
 // ============================================
-router.put('/:id', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.put('/:id', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPERADMIN') {
             return res.status(403).json({ error: 'Forbidden' });

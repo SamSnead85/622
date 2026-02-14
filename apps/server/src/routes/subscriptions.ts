@@ -4,8 +4,11 @@ import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { logger } from '../utils/logger.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
+
+router.use(rateLimiters.general);
 
 // ── Helpers ────────────────────────────────────────────
 

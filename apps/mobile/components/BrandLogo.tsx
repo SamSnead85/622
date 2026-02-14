@@ -18,7 +18,7 @@ const MARK_SIZE = {
     compact: 40,
 } as const;
 
-export function BrandLogo({ size = 'standard' }: BrandLogoProps) {
+function BrandLogoComponent({ size = 'standard' }: BrandLogoProps) {
     const { colors, isDark } = useTheme();
     const fontSize = FONT_SIZE[size];
     const markSize = MARK_SIZE[size];
@@ -56,6 +56,8 @@ export function BrandLogo({ size = 'standard' }: BrandLogoProps) {
         </View>
     );
 }
+
+export const BrandLogo = React.memo(BrandLogoComponent);
 
 const styles = StyleSheet.create({
     container: {

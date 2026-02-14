@@ -286,7 +286,7 @@ function SpeakRequestCard({
                 style={styles.approveBtn}
                 activeOpacity={0.7}
             >
-                <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                <Ionicons name="checkmark" size={16} color={colors.text.inverse} />
             </TouchableOpacity>
         </Animated.View>
     );
@@ -318,6 +318,7 @@ export default function SpaceRoomScreen() {
     const [isEnded, setIsEnded] = useState(false);
 
     const reactionCounter = useRef(0);
+    const reactionTimeoutRef = useRef<NodeJS.Timeout>();
 
     // Derived state
     const isHost = space?.hostId === userId;
@@ -337,7 +338,7 @@ export default function SpaceRoomScreen() {
                     setIsEnded(true);
                 }
                 // Sync mute state for current user
-                const me = data.space.speakers.find((s) => s.userId === userId);
+                const me = data.space?.speakers?.find((s) => s.userId === userId);
                 if (me) setIsMuted(me.isMuted);
             }
         } catch (err: unknown) {
@@ -358,7 +359,7 @@ export default function SpaceRoomScreen() {
                 if (data?.space) {
                     setSpace(data.space);
                     if (data.space.status === 'ended') setIsEnded(true);
-                    const me = data.space.speakers.find((s) => s.userId === userId);
+                    const me = data.space?.speakers?.find((s) => s.userId === userId);
                     if (me) setIsMuted(me.isMuted);
                 }
                 setIsLoading(false);
@@ -416,8 +417,8 @@ export default function SpaceRoomScreen() {
             if (data.spaceId !== id) return;
             const reactionId = `${Date.now()}-${reactionCounter.current++}`;
             setReactions((prev) => [...prev.slice(-15), { id: reactionId, emoji: data.emoji, username: data.username }]);
-            // Auto-remove after animation
-            setTimeout(() => {
+            // Auto-remove after animation (ref-based for cleanup)
+            reactionTimeoutRef.current = setTimeout(() => {
                 setReactions((prev) => prev.filter((r) => r.id !== reactionId));
             }, 3000);
         });
@@ -451,6 +452,7 @@ export default function SpaceRoomScreen() {
             unsubEnded();
             unsubPromoted();
             unsubSpeakReq();
+            if (reactionTimeoutRef.current) clearTimeout(reactionTimeoutRef.current);
         };
     }, [id, userId, isHost, fetchSpace]);
 
@@ -575,7 +577,7 @@ export default function SpaceRoomScreen() {
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
             <LinearGradient
-                colors={[colors.obsidian[900], '#0D0D10', colors.obsidian[900]]}
+                colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
                 style={StyleSheet.absoluteFill}
             />
 
@@ -762,7 +764,7 @@ export default function SpaceRoomScreen() {
                                 <Ionicons
                                     name={isMuted ? 'mic-off' : 'mic'}
                                     size={24}
-                                    color={isMuted ? colors.text.muted : '#FFFFFF'}
+                                    color={isMuted ? colors.text.muted : colors.text.inverse}
                                 />
                             </TouchableOpacity>
                         )}
@@ -830,9 +832,9 @@ const styles = StyleSheet.create({
     },
     headerCenter: {
         flexDirection: 'row', alignItems: 'center', gap: 6,
-        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+        backgroundColor: colors.emerald[500] + '1F',
         paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
-        borderRadius: 8, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.25)',
+        borderRadius: 8, borderWidth: 1, borderColor: colors.emerald[500] + '40',
     },
     headerLiveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.emerald[500] },
     headerLiveText: { fontSize: 10, fontWeight: '800', color: colors.emerald[400], letterSpacing: 1 },
@@ -978,9 +980,9 @@ const styles = StyleSheet.create({
     },
     leaveBtn: {
         flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-        backgroundColor: 'rgba(255, 107, 107, 0.12)', paddingHorizontal: spacing.lg,
+        backgroundColor: colors.coral[500] + '1F', paddingHorizontal: spacing.lg,
         paddingVertical: spacing.md, borderRadius: 24,
-        borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.2)',
+        borderWidth: 1, borderColor: colors.coral[500] + '33',
     },
     leaveBtnText: { fontSize: typography.fontSize.sm, fontWeight: '700', color: colors.coral[400] },
     centerControls: { flexDirection: 'row', gap: spacing.md },

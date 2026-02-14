@@ -134,9 +134,9 @@ export default function HalalScannerScreen() {
                             disabled={!barcode.trim() || isScanning}
                         >
                             {isScanning ? (
-                                <ActivityIndicator size="small" color="#FFFFFF" />
+                                <ActivityIndicator size="small" color={colors.text.inverse} />
                             ) : (
-                                <Ionicons name="search" size={20} color="#FFFFFF" />
+                                <Ionicons name="search" size={20} color={colors.text.inverse} />
                             )}
                         </TouchableOpacity>
                     </View>
@@ -155,7 +155,7 @@ export default function HalalScannerScreen() {
                             onPress={() => lastScannedCode && lookupProduct(lastScannedCode)}
                             activeOpacity={0.7}
                         >
-                            <Ionicons name="refresh" size={16} color="#FFFFFF" />
+                            <Ionicons name="refresh" size={16} color={colors.text.inverse} />
                             <Text style={styles.retryBtnText}>Retry</Text>
                         </TouchableOpacity>
                     </Animated.View>
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     retryBtnText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 
     tipCard: {

@@ -10,6 +10,7 @@ import { prisma } from '../db/client.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { logger } from '../utils/logger.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 import {
     getChainInfo,
     getDegreesFromUser,
@@ -19,6 +20,8 @@ import {
 } from '../services/trustChainService.js';
 
 const router = Router();
+
+router.use(rateLimiters.general);
 
 // ============================================
 // AUTHENTICATED ENDPOINTS

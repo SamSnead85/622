@@ -207,6 +207,7 @@ router.get('/blocked', authenticate, async (req: AuthRequest, res, next) => {
         const blocks = await prisma.block.findMany({
             where: { blockerId: req.userId! },
             orderBy: { createdAt: 'desc' },
+            take: 100,
             include: {
                 blocked: {
                     select: {
@@ -373,7 +374,7 @@ router.get('/:username', optionalAuth, async (req: AuthRequest, res, next) => {
 });
 
 // PUT /api/v1/users/profile
-router.put('/profile', authenticate, async (req: AuthRequest, res, next) => {
+router.put('/profile', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const updateSchema = z.object({
             username: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/).optional(),
@@ -419,7 +420,7 @@ router.put('/profile', authenticate, async (req: AuthRequest, res, next) => {
 // ── Privacy-First: Community Opt-In & Public Profile Management ──
 
 // POST /api/v1/users/community-opt-in - Join (or leave) the larger community
-router.post('/community-opt-in', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/community-opt-in', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const schema = z.object({
             optIn: z.boolean(),
@@ -480,7 +481,7 @@ router.post('/community-opt-in', authenticate, async (req: AuthRequest, res, nex
 });
 
 // PUT /api/v1/users/public-profile - Update public persona
-router.put('/public-profile', authenticate, async (req: AuthRequest, res, next) => {
+router.put('/public-profile', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const schema = z.object({
             usePublicProfile: z.boolean().optional(),
@@ -527,7 +528,7 @@ router.put('/public-profile', authenticate, async (req: AuthRequest, res, next) 
 });
 
 // PUT /api/v1/users/feed-view - Switch between private and community feed
-router.put('/feed-view', authenticate, async (req: AuthRequest, res, next) => {
+router.put('/feed-view', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const schema = z.object({
             view: z.enum(['private', 'community']),
@@ -557,7 +558,7 @@ router.put('/feed-view', authenticate, async (req: AuthRequest, res, next) => {
 });
 
 // PUT /api/v1/users/:userId - Admin update user
-router.put('/:userId', authenticate, async (req: AuthRequest, res, next) => {
+router.put('/:userId', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { userId } = req.params;
         const userRole = req.user?.role;
@@ -623,6 +624,7 @@ router.post('/:userId/follow', rateLimiters.general, authenticate, async (req: A
 
         const targetUser = await prisma.user.findUnique({
             where: { id: userId },
+            select: { id: true },
         });
 
         if (!targetUser) {
@@ -850,7 +852,7 @@ router.get('/:userId/posts', optionalAuth, async (req: AuthRequest, res, next) =
 });
 
 // POST /api/v1/users/:id/wave - Send a wave/greeting or live stream invite
-router.post('/:id/wave', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/:id/wave', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { id } = req.params;
         const senderId = req.userId!;
@@ -919,7 +921,7 @@ router.post('/:id/wave', authenticate, async (req: AuthRequest, res, next) => {
 // ── Block / Unblock / Report (App Store requirement) ──
 
 // POST /api/v1/users/:userId/block — Block a user
-router.post('/:userId/block', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/:userId/block', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { userId } = req.params;
         const blockerId = req.userId!;
@@ -928,7 +930,7 @@ router.post('/:userId/block', authenticate, async (req: AuthRequest, res, next) 
             throw new AppError('Cannot block yourself', 400);
         }
 
-        const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+        const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
         if (!targetUser) {
             throw new AppError('User not found', 404);
         }
@@ -975,7 +977,7 @@ router.post('/:userId/block', authenticate, async (req: AuthRequest, res, next) 
 });
 
 // DELETE /api/v1/users/:userId/block — Unblock a user
-router.delete('/:userId/block', authenticate, async (req: AuthRequest, res, next) => {
+router.delete('/:userId/block', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { userId } = req.params;
         const blockerId = req.userId!;
@@ -998,7 +1000,7 @@ router.delete('/:userId/block', authenticate, async (req: AuthRequest, res, next
 });
 
 // POST /api/v1/users/:userId/report — Report a user
-router.post('/:userId/report', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/:userId/report', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { userId } = req.params;
         const reporterId = req.userId!;
@@ -1013,7 +1015,7 @@ router.post('/:userId/report', authenticate, async (req: AuthRequest, res, next)
         });
         const { reason, details } = reportSchema.parse(req.body);
 
-        const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+        const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
         if (!targetUser) {
             throw new AppError('User not found', 404);
         }

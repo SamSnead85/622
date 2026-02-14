@@ -267,7 +267,7 @@ export default function CreateSpaceScreen() {
                                 style={styles.createButton}
                             >
                                 {isCreating ? (
-                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                    <ActivityIndicator size="small" color={colors.text.inverse} />
                                 ) : (
                                     <>
                                         <Ionicons
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface.glass, borderWidth: 1, borderColor: colors.border.subtle,
     },
     topicChipActive: {
-        backgroundColor: 'rgba(244, 163, 0, 0.12)', borderColor: colors.amber[500] + '40',
+        backgroundColor: colors.amber[500] + '1F', borderColor: colors.amber[500] + '40',
     },
     topicChipText: { fontSize: typography.fontSize.sm, fontWeight: '600', color: colors.text.muted },
     topicChipTextActive: { color: colors.amber[400] },
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     countChipActive: {
-        backgroundColor: 'rgba(244, 163, 0, 0.12)', borderColor: colors.amber[500] + '40',
+        backgroundColor: colors.amber[500] + '1F', borderColor: colors.amber[500] + '40',
     },
     countChipText: { fontSize: typography.fontSize.lg, fontWeight: '700', color: colors.text.muted },
     countChipTextActive: { color: colors.amber[400] },
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     },
     createButtonText: {
         fontSize: typography.fontSize.lg, fontWeight: '700', fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
     createButtonTextDisabled: { color: colors.text.muted },
 });

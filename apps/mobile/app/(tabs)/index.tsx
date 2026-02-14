@@ -2503,7 +2503,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
         paddingVertical: 6,
         borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: 'rgba(255,255,255,0.04)',
+        borderTopColor: colors.border.subtle,
         marginTop: spacing.xs,
     },
     actionsSpacer: {

@@ -596,7 +596,7 @@ function ResultsView({ score, correctCount, streak, answers, onShare, onBack }: 
                         end={{ x: 1, y: 0 }}
                         style={styles.shareButton}
                     >
-                        <Ionicons name="share-outline" size={20} color="#FFFFFF" />
+                        <Ionicons name="share-outline" size={20} color={colors.text.inverse} />
                         <Text style={styles.shareButtonText}>Share Score</Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -1282,7 +1282,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize['2xl'],
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 
     // ---- Options ----
@@ -1308,7 +1308,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     optionLabelTextActive: {
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
     optionLabelText: {
         fontSize: typography.fontSize.sm,
@@ -1543,7 +1543,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 
     // ---- Actions ----

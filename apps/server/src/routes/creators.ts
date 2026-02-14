@@ -3,8 +3,11 @@ import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
 import crypto from 'crypto';
 import { logger } from '../utils/logger.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
+
+router.use(rateLimiters.general);
 
 const requireAdmin = (req: AuthRequest, res: any, next: any) => {
     if (!req.user || (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN')) {

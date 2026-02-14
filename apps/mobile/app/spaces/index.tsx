@@ -161,7 +161,7 @@ function HeroSection({ liveCount }: { liveCount: number }) {
                         colors={[colors.amber[500], colors.gold[500]]}
                         style={styles.heroIconBg}
                     >
-                        <Ionicons name="mic" size={20} color="#FFFFFF" />
+                        <Ionicons name="mic" size={20} color={colors.text.inverse} />
                     </LinearGradient>
                     {liveCount > 0 && (
                         <View style={styles.heroLiveBadge}>
@@ -444,7 +444,7 @@ export default function SpacesScreen() {
                     end={{ x: 1, y: 0 }}
                     style={styles.headerBtnGradient}
                 >
-                    <Ionicons name="add" size={16} color="#FFFFFF" />
+                    <Ionicons name="add" size={16} color={colors.text.inverse} />
                 </LinearGradient>
             </TouchableOpacity>
         ),
@@ -487,7 +487,7 @@ export default function SpacesScreen() {
                             <View style={styles.startBannerContent}>
                                 <View style={styles.startBannerLeft}>
                                     <View style={styles.startBannerIcon}>
-                                        <Ionicons name="mic" size={22} color="#FFFFFF" />
+                                        <Ionicons name="mic" size={22} color={colors.text.inverse} />
                                     </View>
                                     <View>
                                         <Text style={styles.startBannerTitle}>Start a Space</Text>
@@ -496,7 +496,7 @@ export default function SpacesScreen() {
                                         </Text>
                                     </View>
                                 </View>
-                                <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+                                <Ionicons name="chevron-forward" size={20} color={colors.text.inverse} />
                             </View>
                         </LinearGradient>
                     </TouchableOpacity>
@@ -621,9 +621,9 @@ const styles = StyleSheet.create({
     heroIconBg: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     heroLiveBadge: {
         flexDirection: 'row', alignItems: 'center', gap: 4,
-        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+        backgroundColor: colors.emerald[500] + '26',
         paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
-        borderRadius: 8, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.3)',
+        borderRadius: 8, borderWidth: 1, borderColor: colors.emerald[500] + '4D',
     },
     heroLiveText: { fontSize: typography.fontSize.xs, fontWeight: '700', color: colors.emerald[400], letterSpacing: 1 },
     heroTitle: {
@@ -640,10 +640,10 @@ const styles = StyleSheet.create({
     startBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     startBannerIcon: {
         width: 40, height: 40, borderRadius: 12,
-        backgroundColor: 'rgba(0,0,0,0.15)', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.surface.overlayLight, alignItems: 'center', justifyContent: 'center',
     },
-    startBannerTitle: { fontSize: typography.fontSize.lg, fontWeight: '700', fontFamily: 'Inter-Bold', color: '#FFFFFF' },
-    startBannerSubtitle: { fontSize: typography.fontSize.xs, color: '#FFFFFF', opacity: 0.7 },
+    startBannerTitle: { fontSize: typography.fontSize.lg, fontWeight: '700', fontFamily: 'Inter-Bold', color: colors.text.inverse },
+    startBannerSubtitle: { fontSize: typography.fontSize.xs, color: colors.text.inverse, opacity: 0.7 },
 
     topicChips: { flexDirection: 'row', gap: spacing.sm, paddingBottom: spacing.lg },
     filterChip: {
@@ -651,7 +651,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md, paddingVertical: 8, borderRadius: 10,
         backgroundColor: colors.surface.glass, borderWidth: 1, borderColor: colors.border.subtle,
     },
-    filterChipActive: { backgroundColor: 'rgba(244, 163, 0, 0.1)', borderColor: colors.amber[500] + '30' },
+    filterChipActive: { backgroundColor: colors.amber[500] + '1A', borderColor: colors.amber[500] + '30' },
     filterChipText: { fontSize: typography.fontSize.sm, fontWeight: '600', color: colors.text.muted },
     filterChipTextActive: { color: colors.amber[400] },
 

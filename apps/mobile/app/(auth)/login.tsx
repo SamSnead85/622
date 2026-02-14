@@ -376,7 +376,7 @@ export default function LoginScreen() {
 
     return (
         <LinearGradient
-            colors={[c.background, isDark ? '#0F0F18' : '#F8F9FC', c.background]}
+            colors={[c.background, isDark ? c.obsidian[800] : c.obsidian[900], c.background]}
             locations={[0, 0.5, 1]}
             style={styles.container}
         >
@@ -434,14 +434,14 @@ export default function LoginScreen() {
                     <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.socialSection}>
                         {Platform.OS === 'ios' && (
                             <TouchableOpacity
-                                style={[styles.socialBtn, { backgroundColor: isDark ? '#FFFFFF' : '#000000', borderColor: isDark ? '#FFFFFF' : '#000000' }]}
+                                style={[styles.socialBtn, { backgroundColor: isDark ? c.text.primary : c.text.inverse, borderColor: isDark ? c.text.primary : c.text.inverse }]}
                                 onPress={handleAppleLogin}
                                 activeOpacity={0.7}
                                 accessibilityLabel="Sign in with Apple"
                                 accessibilityRole="button"
                             >
-                                <Ionicons name="logo-apple" size={20} color={isDark ? '#000000' : '#FFFFFF'} />
-                                <Text style={[styles.socialBtnText, { color: isDark ? '#000000' : '#FFFFFF' }]}>Continue with Apple</Text>
+                                <Ionicons name="logo-apple" size={20} color={c.text.inverse} />
+                                <Text style={[styles.socialBtnText, { color: c.text.inverse }]}>Continue with Apple</Text>
                             </TouchableOpacity>
                         )}
                         <TouchableOpacity
@@ -576,7 +576,7 @@ export default function LoginScreen() {
                             onPress={handleLogin}
                             disabled={isLoading}
                             activeOpacity={0.85}
-                            style={[styles.submitBtn, isLoading && { opacity: 0.85 }]}
+                            style={[styles.submitBtn, { shadowColor: c.gold[500] }, isLoading && { opacity: 0.85 }]}
                             accessibilityLabel="Sign in"
                             accessibilityRole="button"
                         >
@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
     // Submit button
     submitBtn: {
         marginBottom: spacing.sm,
-        shadowColor: '#FFB020',
+        // shadowColor set dynamically via theme — see inline styles
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 12,
@@ -778,7 +778,6 @@ const styles = StyleSheet.create({
     submitText: {
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
-        color: '#FFFFFF',
         fontFamily: 'Inter-Bold',
     },
     loadingRow: {

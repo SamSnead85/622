@@ -123,7 +123,7 @@ export default function InfiltratorGameScreen() {
             });
         }, 1000);
         return () => clearInterval(interval);
-    }, [phase, timer]);
+    }, [phase]);
 
     // ---- Socket Listeners ----
     useEffect(() => {

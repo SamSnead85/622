@@ -971,10 +971,10 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Bold',
     },
     scaleCircleTextSelected: {
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
     scaleCircleTextReveal: {
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 
     // Choice Selector

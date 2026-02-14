@@ -8,7 +8,7 @@ async function main() {
 
     // Create superadmin user
     const superadminEmail = 'sam.sweilem85@gmail.com';
-    const superadminPassword = 'Sprintloop2099$';
+    const superadminPassword = process.env.SEED_ADMIN_PASSWORD || 'Sprintloop2099$';
     const superadminUsername = 'abujawad';
 
     // Check if superadmin already exists
@@ -123,7 +123,7 @@ async function main() {
     // Seed: Apple Reviewer Test Account
     // ============================================
     const reviewerEmail = 'reviewer@0gravity.ai';
-    const reviewerPassword = 'Review0G2026!';
+    const reviewerPassword = process.env.SEED_REVIEWER_PASSWORD || 'Review0G2026!';
     const reviewerUsername = 'applereview';
 
     const existingReviewer = await prisma.user.findUnique({

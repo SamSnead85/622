@@ -3,8 +3,11 @@ import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
 import crypto from 'crypto';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
+
+router.use(rateLimiters.general);
 
 // Optional auth — sets req.user if token present, continues otherwise
 const optionalAuth = (req: AuthRequest, res: any, next: any) => {

@@ -7,6 +7,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 import {
     logSecurityEvent,
     SecurityEvents,
@@ -73,7 +74,7 @@ router.get('/policies', authenticate, async (req: Request, res: Response, next: 
  * POST /admin/security/policies/initialize
  * Initialize default security policies
  */
-router.post('/policies/initialize', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/policies/initialize', authenticate, rateLimiters.auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user?.id;
         await initializeSecurityPolicies(userId);
@@ -96,7 +97,7 @@ router.post('/policies/initialize', authenticate, async (req: Request, res: Resp
  * PUT /admin/security/policies/:id
  * Update a security policy
  */
-router.put('/policies/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+router.put('/policies/:id', authenticate, rateLimiters.auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const { isActive, config } = req.body;
@@ -139,7 +140,7 @@ router.get('/geo-blocks', authenticate, async (req: Request, res: Response, next
  * POST /admin/security/geo-blocks
  * Add a platform-wide geo-block
  */
-router.post('/geo-blocks', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/geo-blocks', authenticate, rateLimiters.auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { countryCode, countryName, reason, blockType, expiresAt } = req.body;
         const userId = (req as any).user?.id;
@@ -175,7 +176,7 @@ router.post('/geo-blocks', authenticate, async (req: Request, res: Response, nex
  * DELETE /admin/security/geo-blocks/:id
  * Remove a geo-block
  */
-router.delete('/geo-blocks/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/geo-blocks/:id', authenticate, rateLimiters.auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const userId = (req as any).user?.id;
@@ -228,7 +229,7 @@ router.get('/blocked-ips', authenticate, async (req: Request, res: Response, nex
  * POST /admin/security/blocked-ips
  * Block an IP address
  */
-router.post('/blocked-ips', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/blocked-ips', authenticate, rateLimiters.auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { ipAddress, reason, threatLevel, expiresAt } = req.body;
         const userId = (req as any).user?.id;
@@ -264,7 +265,7 @@ router.post('/blocked-ips', authenticate, async (req: Request, res: Response, ne
  * DELETE /admin/security/blocked-ips/:ip
  * Unblock an IP address
  */
-router.delete('/blocked-ips/:ip', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/blocked-ips/:ip', authenticate, rateLimiters.auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { ip } = req.params;
         const userId = (req as any).user?.id;

@@ -12,7 +12,7 @@ interface GrainOverlayProps {
     opacity?: number;
 }
 
-export function GrainOverlay({ opacity = 0.03 }: GrainOverlayProps) {
+function GrainOverlay({ opacity = 0.03 }: GrainOverlayProps) {
     return (
         <View style={[styles.overlay, { opacity }]} pointerEvents="none">
             <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
@@ -32,11 +32,13 @@ export function GrainOverlay({ opacity = 0.03 }: GrainOverlayProps) {
     );
 }
 
+const MemoizedGrainOverlay = React.memo(GrainOverlay);
+export { MemoizedGrainOverlay as GrainOverlay };
+export default MemoizedGrainOverlay;
+
 const styles = StyleSheet.create({
     overlay: {
         ...StyleSheet.absoluteFillObject,
         zIndex: 1,
     },
 });
-
-export default GrainOverlay;

@@ -876,7 +876,7 @@ function StatsModal({
                                 colors={[colors.gold[500], colors.gold[600]]}
                                 style={styles.shareButtonGradient}
                             >
-                                <Ionicons name="share-outline" size={20} color="#FFFFFF" />
+                                <Ionicons name="share-outline" size={20} color={colors.text.inverse} />
                                 <Text style={styles.shareButtonText}>Share Results</Text>
                             </LinearGradient>
                         </TouchableOpacity>
@@ -1773,7 +1773,7 @@ const styles = StyleSheet.create({
     shareButtonText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
         fontFamily: 'Inter-Bold',
     },
 });

@@ -63,11 +63,11 @@ const COVER_HEIGHT = CARD_WIDTH * (9 / 16);
 const LEVEL_OPTIONS = [0, 1, 2, 3, 4, 5, 10, 15, 20];
 
 const GRADIENT_PRESETS: [string, string][] = [
-    ['#1a1a2e', '#16213e'],
-    ['#0f0c29', '#302b63'],
-    ['#1c1c3c', '#2d2d5e'],
-    ['#141e30', '#243b55'],
-    ['#0d1117', '#1a2332'],
+    [colors.obsidian[800], colors.obsidian[700]],
+    [colors.obsidian[900], colors.obsidian[700]],
+    [colors.obsidian[800], colors.obsidian[600]],
+    [colors.obsidian[800], colors.obsidian[700]],
+    [colors.obsidian[900], colors.obsidian[800]],
 ];
 
 // ============================================
@@ -118,14 +118,14 @@ function CourseCard({
                             <Ionicons
                                 name="school-outline"
                                 size={48}
-                                color="rgba(255,255,255,0.12)"
+                                color={colors.text.inverse + '1F'}
                             />
                         </LinearGradient>
                     )}
 
                     {/* Glass overlay at bottom for text */}
                     <LinearGradient
-                        colors={['transparent', 'rgba(0,0,0,0.75)', 'rgba(0,0,0,0.92)']}
+                        colors={['transparent', colors.obsidian[900] + 'BF', colors.obsidian[900] + 'EB']}
                         locations={[0, 0.5, 1]}
                         style={styles.coverOverlay}
                     >
@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         marginBottom: spacing.lg,
         borderWidth: 1,
-        backgroundColor: 'rgba(255,255,255,0.02)',
+        backgroundColor: colors.surface.glass,
     },
     coverContainer: {
         width: '100%',
@@ -705,7 +705,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.sm,
         paddingVertical: 3,
         borderRadius: 6,
-        backgroundColor: 'rgba(212, 175, 55, 0.12)',
+        backgroundColor: colors.gold[500] + '1F',
         marginBottom: spacing.sm,
     },
     modulesText: {
@@ -716,14 +716,14 @@ const styles = StyleSheet.create({
     courseTitle: {
         fontSize: typography.fontSize.xl,
         fontWeight: '700',
-        color: '#FAFAFA',
+        color: colors.text.inverse,
         lineHeight: 26,
         marginBottom: 4,
         fontFamily: 'Inter-Bold',
     },
     courseDesc: {
         fontSize: typography.fontSize.sm,
-        color: 'rgba(255,255,255,0.65)',
+        color: colors.text.secondary,
         lineHeight: 18,
     },
 
@@ -738,9 +738,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.sm,
         paddingVertical: 4,
         borderRadius: 8,
-        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+        backgroundColor: colors.emerald[500] + '26',
         borderWidth: 1,
-        borderColor: 'rgba(16, 185, 129, 0.3)',
+        borderColor: colors.emerald[500] + '4D',
     },
     completeText: {
         fontSize: 11,
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
     // Locked overlay
     lockedOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(10, 10, 11, 0.7)',
+        backgroundColor: colors.obsidian[900] + 'B3',
         alignItems: 'center',
         justifyContent: 'center',
         backdropFilter: 'blur(8px)',
@@ -763,16 +763,16 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: colors.surface.glass,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.12)',
+        borderColor: colors.border.subtle,
     },
     lockedText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '600',
-        color: 'rgba(255,255,255,0.7)',
+        color: colors.text.secondary,
         letterSpacing: 0.5,
     },
 
@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
         right: spacing.xl,
         borderRadius: 30,
         overflow: 'hidden',
-        shadowColor: '#7C8FFF',
+        shadowColor: colors.gold[500],
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.35,
         shadowRadius: 12,

@@ -475,7 +475,7 @@ export default function ProfileScreen() {
                 {/* Gradient overlay for text readability */}
                 <Animated.View style={[styles.coverGradientOverlay, coverOverlayStyle]}>
                     <LinearGradient
-                        colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.6)', colors.obsidian[900]]}
+                        colors={['transparent', colors.surface.overlayLight, colors.surface.overlay, colors.obsidian[900]]}
                         locations={[0, 0.3, 0.65, 1]}
                         style={StyleSheet.absoluteFill}
                     />

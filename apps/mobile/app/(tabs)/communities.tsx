@@ -136,7 +136,7 @@ const CommunityCard = memo(function CommunityCard({ community, onPress, onJoin }
                 )}
                 {/* Subtle bottom fade */}
                 <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.35)']}
+                    colors={['transparent', colors.surface.overlayLight]}
                     style={styles.cardCoverFade}
                 />
             </View>
@@ -733,7 +733,7 @@ export default function CommunitiesScreen() {
                                             contentFit="cover"
                                             cachePolicy="memory-disk"
                                         />
-                                        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.featuredOverlay}>
+                                        <LinearGradient colors={['transparent', colors.surface.overlay]} style={styles.featuredOverlay}>
                                             <Text style={styles.featuredName} numberOfLines={1}>{item.name}</Text>
                                             <Text style={styles.featuredMembers}>{formatCount(item.membersCount || item.memberCount || 0)} members</Text>
                                         </LinearGradient>

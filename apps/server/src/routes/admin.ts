@@ -8,6 +8,7 @@ import { recordBan } from '../services/evasionDetection.js';
 import { sendAlert } from '../services/alerting.js';
 import { logger } from '../utils/logger.js';
 import { propagateVouchStrike } from '../services/trustChainService.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
 
@@ -132,7 +133,7 @@ router.get('/users/:id', authenticate, requireAdmin, async (req: AuthRequest, re
 });
 
 // POST /api/v1/admin/users/:id/suspend — Suspend a user
-router.post('/users/:id/suspend', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+router.post('/users/:id/suspend', authenticate, requireAdmin, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const suspendSchema = z.object({
             duration: z.number().int().positive().max(8760).optional().default(24), // max 1 year in hours
@@ -155,7 +156,7 @@ router.post('/users/:id/suspend', authenticate, requireAdmin, async (req: AuthRe
 });
 
 // POST /api/v1/admin/users/:id/unsuspend — Lift suspension
-router.post('/users/:id/unsuspend', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+router.post('/users/:id/unsuspend', authenticate, requireAdmin, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const user = await prisma.user.update({
             where: { id: req.params.id },
@@ -169,7 +170,7 @@ router.post('/users/:id/unsuspend', authenticate, requireAdmin, async (req: Auth
 });
 
 // POST /api/v1/admin/users/:id/ban — Ban a user
-router.post('/users/:id/ban', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+router.post('/users/:id/ban', authenticate, requireAdmin, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const user = await prisma.user.update({
             where: { id: req.params.id },
@@ -183,7 +184,7 @@ router.post('/users/:id/ban', authenticate, requireAdmin, async (req: AuthReques
 });
 
 // POST /api/v1/admin/users/:id/unban — Unban a user
-router.post('/users/:id/unban', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+router.post('/users/:id/unban', authenticate, requireAdmin, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const user = await prisma.user.update({
             where: { id: req.params.id },
@@ -197,7 +198,7 @@ router.post('/users/:id/unban', authenticate, requireAdmin, async (req: AuthRequ
 });
 
 // POST /api/v1/admin/users/:id/role — Change user role (SUPERADMIN only)
-router.post('/users/:id/role', authenticate, requireSuperAdmin, async (req: AuthRequest, res, next) => {
+router.post('/users/:id/role', authenticate, requireSuperAdmin, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const { role } = req.body;
         if (!['USER', 'MODERATOR', 'ADMIN', 'SUPERADMIN'].includes(role)) {
@@ -219,7 +220,7 @@ router.post('/users/:id/role', authenticate, requireSuperAdmin, async (req: Auth
 // ============================================
 
 // POST /api/v1/admin/users/:id/strike — Issue a strike
-router.post('/users/:id/strike', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+router.post('/users/:id/strike', authenticate, requireAdmin, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const strikeSchema = z.object({
             reason: z.string().min(1).max(500),
@@ -232,8 +233,9 @@ router.post('/users/:id/strike', authenticate, requireAdmin, async (req: AuthReq
             ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
             : null;
 
-        const [strike] = await prisma.$transaction([
-            prisma.userStrike.create({
+        let autoSuspended = false;
+        const strike = await prisma.$transaction(async (tx) => {
+            const newStrike = await tx.userStrike.create({
                 data: {
                     userId: req.params.id,
                     issuedById: req.user!.id,
@@ -241,26 +243,23 @@ router.post('/users/:id/strike', authenticate, requireAdmin, async (req: AuthReq
                     postId: postId || null,
                     expiresAt,
                 },
-            }),
-            prisma.user.update({
+            });
+            const updatedUser = await tx.user.update({
                 where: { id: req.params.id },
                 data: { strikeCount: { increment: 1 } },
-            }),
-        ]);
-
-        // Check if auto-suspend threshold reached (3 strikes)
-        const updatedUser = await prisma.user.findUnique({
-            where: { id: req.params.id },
-            select: { strikeCount: true },
-        });
-        let autoSuspended = false;
-        if (updatedUser && updatedUser.strikeCount >= 3) {
-            await prisma.user.update({
-                where: { id: req.params.id },
-                data: { suspendedUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
             });
-            autoSuspended = true;
-        }
+
+            // Check if auto-suspend threshold reached (3 strikes)
+            if (updatedUser.strikeCount >= 3) {
+                await tx.user.update({
+                    where: { id: req.params.id },
+                    data: { suspendedUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+                });
+                autoSuspended = true;
+            }
+
+            return newStrike;
+        });
 
         // ── Reputation bonding: propagate vouch strike to inviter ──
         propagateVouchStrike(req.params.id).catch((err) =>
@@ -274,7 +273,7 @@ router.post('/users/:id/strike', authenticate, requireAdmin, async (req: AuthReq
 });
 
 // DELETE /api/v1/admin/strikes/:id — Remove a strike
-router.delete('/strikes/:id', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+router.delete('/strikes/:id', authenticate, requireAdmin, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const strike = await prisma.userStrike.findUnique({ where: { id: req.params.id } });
         if (!strike) return res.status(404).json({ error: 'Strike not found' });
@@ -356,7 +355,7 @@ router.get('/posts', authenticate, requireAdmin, async (req: AuthRequest, res, n
 });
 
 // DELETE /api/v1/admin/posts/:id — Delete a post
-router.delete('/posts/:id', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+router.delete('/posts/:id', authenticate, requireAdmin, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         await prisma.post.update({
             where: { id: req.params.id },
@@ -402,7 +401,7 @@ router.get('/reports', authenticate, requireAdmin, async (req: AuthRequest, res,
 });
 
 // POST /api/v1/admin/reports/:id/resolve — Resolve a report
-router.post('/reports/:id/resolve', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+router.post('/reports/:id/resolve', authenticate, requireAdmin, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const { action, notes } = req.body; // action: 'dismiss' | 'warn' | 'strike' | 'remove'
         const report = await prisma.report.update({
@@ -517,7 +516,7 @@ router.get('/security/audit-log', authenticate, requireAdmin, async (req: AuthRe
 });
 
 // POST /api/v1/admin/threats/action — Take action on a threat
-router.post('/threats/action', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+router.post('/threats/action', authenticate, requireAdmin, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const schema = z.object({
             action: z.enum(['ban_user', 'shadow_ban', 'block_ip', 'dismiss', 'approve_post']),

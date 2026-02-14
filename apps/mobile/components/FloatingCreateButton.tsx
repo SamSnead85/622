@@ -70,6 +70,9 @@ export default function FloatingCreateButton({ bottomOffset = 80 }: FloatingCrea
     const { colors: c } = useTheme();
     const [isOpen, setIsOpen] = useState(false);
     const scale = useSharedValue(1);
+    const navTimeoutRef = useRef<NodeJS.Timeout>();
+
+    useEffect(() => () => { if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current); }, []);
 
     const handlePress = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -84,7 +87,7 @@ export default function FloatingCreateButton({ bottomOffset = 80 }: FloatingCrea
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setIsOpen(false);
         // Small delay for sheet dismiss animation
-        setTimeout(() => {
+        navTimeoutRef.current = setTimeout(() => {
             router.push(option.route as any);
         }, 200);
     }, [router]);
@@ -121,7 +124,7 @@ export default function FloatingCreateButton({ bottomOffset = 80 }: FloatingCrea
                     accessibilityLabel="Create new content"
                     accessibilityHint="Opens creation menu for posts, stories, and polls"
                 >
-                    <Ionicons name="add" size={26} color="#FFFFFF" />
+                    <Ionicons name="add" size={26} color={colors.text.inverse} />
                 </TouchableOpacity>
             </Animated.View>
 
@@ -210,7 +213,7 @@ const styles = StyleSheet.create({
     },
     overlayBg: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: colors.surface.overlay,
     },
     sheet: {
         position: 'absolute',

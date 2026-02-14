@@ -47,7 +47,7 @@ router.get('/apps', authenticate, async (req: AuthRequest, res, next) => {
 });
 
 // POST /api/v1/developer/apps - Create new app
-router.post('/apps', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/apps', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const schema = z.object({
             name: z.string().min(2).max(60),
@@ -107,7 +107,7 @@ router.post('/apps', authenticate, async (req: AuthRequest, res, next) => {
 });
 
 // PUT /api/v1/developer/apps/:appId - Update app
-router.put('/apps/:appId', authenticate, async (req: AuthRequest, res, next) => {
+router.put('/apps/:appId', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { appId } = req.params;
 
@@ -138,7 +138,7 @@ router.put('/apps/:appId', authenticate, async (req: AuthRequest, res, next) => 
 });
 
 // DELETE /api/v1/developer/apps/:appId - Delete app
-router.delete('/apps/:appId', authenticate, async (req: AuthRequest, res, next) => {
+router.delete('/apps/:appId', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { appId } = req.params;
 
@@ -157,7 +157,7 @@ router.delete('/apps/:appId', authenticate, async (req: AuthRequest, res, next) 
 // ============================================
 
 // POST /api/v1/developer/apps/:appId/keys - Create new API key
-router.post('/apps/:appId/keys', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/apps/:appId/keys', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { appId } = req.params;
         const { name, scopes } = req.body;
@@ -194,7 +194,7 @@ router.post('/apps/:appId/keys', authenticate, async (req: AuthRequest, res, nex
 });
 
 // DELETE /api/v1/developer/apps/:appId/keys/:keyId - Revoke key
-router.delete('/apps/:appId/keys/:keyId', authenticate, async (req: AuthRequest, res, next) => {
+router.delete('/apps/:appId/keys/:keyId', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { appId, keyId } = req.params;
 
@@ -213,7 +213,7 @@ router.delete('/apps/:appId/keys/:keyId', authenticate, async (req: AuthRequest,
 // ============================================
 
 // POST /api/v1/developer/apps/:appId/webhooks - Create webhook
-router.post('/apps/:appId/webhooks', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/apps/:appId/webhooks', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { appId } = req.params;
 
@@ -253,7 +253,7 @@ router.post('/apps/:appId/webhooks', authenticate, async (req: AuthRequest, res,
 });
 
 // DELETE /api/v1/developer/apps/:appId/webhooks/:webhookId
-router.delete('/apps/:appId/webhooks/:webhookId', authenticate, async (req: AuthRequest, res, next) => {
+router.delete('/apps/:appId/webhooks/:webhookId', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { appId, webhookId } = req.params;
 
@@ -513,7 +513,7 @@ router.get('/public/posts', authenticateApi, requireScope('read'), async (req: A
 
 // ---- PUBLIC API: Create Community (write scope) ----
 
-router.post('/public/communities', authenticateApi, requireScope('write'), async (req: AuthRequest, res, next) => {
+router.post('/public/communities', rateLimiters.general, authenticateApi, requireScope('write'), async (req: AuthRequest, res, next) => {
     try {
         if (!req.userId) throw new AppError('OAuth token with user context required for write operations', 403);
 
@@ -551,7 +551,7 @@ router.post('/public/communities', authenticateApi, requireScope('write'), async
 
 // ---- PUBLIC API: Create Post (write scope) ----
 
-router.post('/public/posts', authenticateApi, requireScope('write'), async (req: AuthRequest, res, next) => {
+router.post('/public/posts', rateLimiters.general, authenticateApi, requireScope('write'), async (req: AuthRequest, res, next) => {
     try {
         if (!req.userId) throw new AppError('OAuth token with user context required', 403);
 

@@ -33,6 +33,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { ScreenHeader } from '../../components';
 import { GlassCard } from '../../components';
 import { apiFetch, API, clearApiCache } from '../../lib/api';
@@ -169,7 +170,7 @@ function HeroSection({ liveCount }: { liveCount: number }) {
                         colors={[colors.coral[500], colors.amber[500]]}
                         style={styles.heroIconBg}
                     >
-                        <Ionicons name="flame" size={20} color="#FFFFFF" />
+                        <Ionicons name="flame" size={20} color={colors.text.inverse} />
                     </LinearGradient>
                     {liveCount > 0 && (
                         <View style={styles.heroLiveBadge}>
@@ -265,7 +266,7 @@ function StreamCard({ stream, index }: { stream: LiveStream; index: number }) {
 
                         {/* Gradient overlay */}
                         <LinearGradient
-                            colors={['transparent', 'rgba(0,0,0,0.6)']}
+                            colors={['transparent', colors.surface.overlay]}
                             style={styles.thumbnailOverlay}
                         />
                     </View>
@@ -275,7 +276,7 @@ function StreamCard({ stream, index }: { stream: LiveStream; index: number }) {
                         <View style={styles.streamerRow}>
                             {stream.user?.avatarUrl ? (
                                 <Image
-                                    source={{ uri: stream.user.avatarUrl }}
+                                    source={{ uri: stream.user?.avatarUrl }}
                                     style={styles.streamerAvatar}
                                     placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4"
                                     transition={200}
@@ -529,7 +530,7 @@ export default function CampfireScreen() {
                             <View style={styles.goLiveBannerContent}>
                                 <View style={styles.goLiveBannerLeft}>
                                     <View style={styles.goLiveBannerIcon}>
-                                        <Ionicons name="radio" size={22} color="#FFFFFF" />
+                                        <Ionicons name="radio" size={22} color={colors.text.inverse} />
                                     </View>
                                     <View>
                                         <Text style={styles.goLiveBannerTitle}>Go Live</Text>
@@ -538,7 +539,7 @@ export default function CampfireScreen() {
                                         </Text>
                                     </View>
                                 </View>
-                                <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+                                <Ionicons name="chevron-forward" size={20} color={colors.text.inverse} />
                             </View>
                         </LinearGradient>
                     </TouchableOpacity>
@@ -744,12 +745,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: 'rgba(255, 68, 68, 0.15)',
+        backgroundColor: colors.coral[500] + '26',
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xs,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: 'rgba(255, 68, 68, 0.3)',
+        borderColor: colors.coral[500] + '4D',
     },
     heroLiveText: {
         fontSize: typography.fontSize.xs,
@@ -793,7 +794,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 12,
-        backgroundColor: 'rgba(0,0,0,0.15)',
+        backgroundColor: colors.surface.overlay,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -801,11 +802,11 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
     goLiveBannerSubtitle: {
         fontSize: typography.fontSize.xs,
-        color: '#FFFFFF',
+        color: colors.text.inverse,
         opacity: 0.7,
     },
 
@@ -827,7 +828,7 @@ const styles = StyleSheet.create({
         borderColor: colors.border.subtle,
     },
     filterChipActive: {
-        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+        backgroundColor: colors.coral[500] + '1A',
         borderColor: colors.coral[500] + '30',
     },
     filterChipText: {
@@ -907,7 +908,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: 'rgba(255, 0, 0, 0.85)',
+        backgroundColor: colors.coral[500] + 'D9',
         paddingHorizontal: 6,
         paddingVertical: 3,
         borderRadius: 4,
@@ -925,7 +926,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 3,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: colors.surface.overlay,
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 4,
@@ -1007,7 +1008,7 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        backgroundColor: colors.surface.overlayLight,
     },
     vodInfo: {
         flex: 1,

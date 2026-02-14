@@ -31,6 +31,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { ScreenHeader } from '../../components';
 import { GlassCard } from '../../components';
 import { apiFetch, API } from '../../lib/api';
@@ -264,7 +265,7 @@ export default function GoLiveScreen() {
                                 end={{ x: 1, y: 0 }}
                                 style={styles.viewStreamGradient}
                             >
-                                <Ionicons name="eye" size={20} color="#FFFFFF" />
+                                <Ionicons name="eye" size={20} color={colors.text.inverse} />
                                 <Text style={styles.viewStreamText}>View Your Stream</Text>
                             </LinearGradient>
                         </TouchableOpacity>
@@ -426,7 +427,7 @@ export default function GoLiveScreen() {
                                     <ActivityIndicator size="small" color={colors.text.primary} />
                                 ) : (
                                     <>
-                                        <Ionicons name="radio" size={22} color="#FFFFFF" />
+                                        <Ionicons name="radio" size={22} color={colors.text.inverse} />
                                         <Text style={styles.goLiveBtnText}>Go Live</Text>
                                     </>
                                 )}
@@ -531,7 +532,7 @@ const styles = StyleSheet.create({
         borderColor: colors.border.subtle,
     },
     categoryOptionActive: {
-        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+        backgroundColor: colors.coral[500] + '1A',
         borderColor: colors.coral[500] + '40',
     },
     categoryOptionText: {
@@ -601,7 +602,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.xl,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 
     // ---- Success State ----
@@ -736,6 +737,6 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 });

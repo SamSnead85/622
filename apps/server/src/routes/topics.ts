@@ -25,6 +25,7 @@ router.get('/', async (req, res, next) => {
                 color: true,
                 postCount: true,
             },
+            take: 100,
         });
 
         res.json({ topics });

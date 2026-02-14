@@ -281,7 +281,11 @@ export default function MessagesTab() {
                     body: JSON.stringify({ participantIds: [connection.id] }),
                 }
             );
-            router.push(`/messages/${data.conversation.id}` as any);
+            if (data?.conversation?.id) {
+                router.push(`/messages/${data.conversation.id}` as any);
+            } else {
+                Alert.alert('Error', 'Could not start a conversation. Please try again.');
+            }
         } catch {
             // Show error instead of navigating with a user ID (which would 404)
             Alert.alert('Connection Error', 'Could not start a conversation. Please try again.');

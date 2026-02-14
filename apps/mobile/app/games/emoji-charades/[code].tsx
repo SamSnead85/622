@@ -1459,7 +1459,7 @@ const styles = StyleSheet.create({
     },
     phraseHint: {
         fontSize: typography.fontSize.sm,
-        color: 'rgba(255,255,255,0.7)',
+        color: colors.text.secondary,
         textAlign: 'center',
         fontStyle: 'italic',
     },
@@ -1583,7 +1583,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize['2xl'],
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 
     // ---- Emoji Picker ----

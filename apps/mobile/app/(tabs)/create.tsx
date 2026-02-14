@@ -233,7 +233,7 @@ function SuccessAnimation() {
             ))}
             <Animated.View entering={BounceIn.duration(500)} style={checkStyle}>
                 <View style={styles.successCircle}>
-                    <Ionicons name="checkmark" size={48} color="#FFFFFF" />
+                    <Ionicons name="checkmark" size={48} color={colors.text.inverse} />
                 </View>
             </Animated.View>
             <Animated.Text entering={FadeIn.delay(400).duration(300)} style={styles.successText}>
@@ -1599,14 +1599,14 @@ export default function CreateScreen() {
                             )}
                             {isPublishing ? (
                                 <View style={styles.publishingRow}>
-                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                        <ActivityIndicator size="small" color={colors.text.inverse} />
                                     <Text style={styles.publishingText}>
                                         {uploadProgress > 0 ? `${Math.round(uploadProgress)}%` : ''}
                                     </Text>
                                 </View>
                             ) : (
                                 <View style={styles.publishContentRow}>
-                                    <Ionicons name="send" size={14} color={canPublish ? '#FFFFFF' : colors.text.muted} />
+                                    <Ionicons name="send" size={14} color={canPublish ? colors.text.inverse : colors.text.muted} />
                                     <Text
                                         style={[
                                             styles.publishText,
@@ -1889,7 +1889,7 @@ const styles = StyleSheet.create({
     publishText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
         fontFamily: 'Inter-Bold',
     },
     publishTextDisabled: {
@@ -1903,7 +1903,7 @@ const styles = StyleSheet.create({
     publishingText: {
         fontSize: typography.fontSize.xs,
         fontWeight: '600',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 
     // Progress Bar
@@ -2344,14 +2344,14 @@ const styles = StyleSheet.create({
     },
     mediaUploadOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        backgroundColor: colors.surface.overlay,
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 14,
         gap: 4,
     },
     mediaErrorOverlay: {
-        backgroundColor: 'rgba(255,80,80,0.15)',
+        backgroundColor: colors.coral[500] + '26',
     },
     mediaUploadProgressText: {
         fontSize: 10,
@@ -2382,7 +2382,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: spacing.xs,
         left: spacing.xs,
-        backgroundColor: 'rgba(16,185,129,0.2)',
+        backgroundColor: colors.emerald[500] + '33',
         paddingHorizontal: 5,
         paddingVertical: 2,
         borderRadius: borderRadius.sm,
@@ -2413,7 +2413,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: 3,
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: colors.surface.glass,
         borderRadius: 1.5,
     },
     mediaProgressBarFill: {
@@ -2424,7 +2424,7 @@ const styles = StyleSheet.create({
     mediaRetryBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: colors.surface.glass,
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 10,
@@ -2455,7 +2455,7 @@ const styles = StyleSheet.create({
         width: 4,
         height: 4,
         borderRadius: 2,
-        backgroundColor: 'rgba(255,255,255,0.4)',
+        backgroundColor: colors.text.inverse + '66',
     },
     formatBtnTextStrike: {
         fontSize: 14,

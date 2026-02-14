@@ -50,7 +50,7 @@ interface AvatarProps {
     label?: string;
 }
 
-export function Avatar({
+function Avatar({
     uri,
     name,
     size = 'md',
@@ -105,6 +105,10 @@ export function Avatar({
     );
 }
 
+const MemoizedAvatar = React.memo(Avatar);
+export { MemoizedAvatar as Avatar };
+export default MemoizedAvatar;
+
 const styles = StyleSheet.create({
     placeholder: {
         backgroundColor: colors.surface.glassHover,
@@ -117,5 +121,3 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Bold',
     },
 });
-
-export default Avatar;

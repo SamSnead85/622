@@ -472,7 +472,9 @@ export default function SettingsScreen() {
                         activeOpacity={0.8}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            router.push(`/profile/${user?.id}` as any);
+                            if (user?.id) {
+                                router.push(`/profile/${user.id}` as any);
+                            }
                         }}
                         accessibilityRole="button"
                         accessibilityLabel="View your profile"

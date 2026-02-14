@@ -3,8 +3,11 @@ import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
 import { registerExpoPushToken, removeExpoPushToken } from '../services/notifications/ExpoPushService.js';
 import { logger } from '../utils/logger.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
+
+router.use(rateLimiters.general);
 
 // ============================================
 // Expo Push Token Registration (Mobile)

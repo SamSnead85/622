@@ -410,7 +410,7 @@ export default function ResultsScreen() {
                             end={{ x: 1, y: 0 }}
                             style={styles.playAgainGradient}
                         >
-                            <Ionicons name="refresh" size={20} color="#FFFFFF" />
+                            <Ionicons name="refresh" size={20} color={colors.text.inverse} />
                             <Text style={styles.playAgainText}>Play Again</Text>
                         </LinearGradient>
                     </TouchableOpacity>
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
     shareResultsButton: {
         flexDirection: 'row',

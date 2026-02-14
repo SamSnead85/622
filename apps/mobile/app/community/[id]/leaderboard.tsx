@@ -128,7 +128,7 @@ function PodiumMember({
                 ]}
             >
                 <Image
-                    source={{ uri: entry.user.avatarUrl }}
+                    source={{ uri: entry.user?.avatarUrl }}
                     style={[
                         styles.podiumAvatar,
                         { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
@@ -146,7 +146,7 @@ function PodiumMember({
 
             {/* Name */}
             <Text style={[styles.podiumName, isCenter && styles.podiumNameCenter]} numberOfLines={1}>
-                {entry.user.displayName}
+                {entry.user?.displayName || 'Unknown'}
             </Text>
 
             {/* Level badge */}
@@ -193,7 +193,7 @@ function LeaderboardRow({
 
                 {/* Avatar */}
                 <Image
-                    source={{ uri: entry.user.avatarUrl }}
+                    source={{ uri: entry.user?.avatarUrl }}
                     style={styles.rowAvatar}
                     placeholder={AVATAR_PLACEHOLDER.blurhash}
                     transition={AVATAR_PLACEHOLDER.transition}
@@ -203,7 +203,7 @@ function LeaderboardRow({
                 {/* Name + Level */}
                 <View style={styles.rowInfo}>
                     <Text style={styles.rowName} numberOfLines={1}>
-                        {entry.user.displayName}
+                        {entry.user?.displayName || 'Unknown'}
                         {isCurrentUser && (
                             <Text style={styles.rowYouTag}> (You)</Text>
                         )}
@@ -331,7 +331,7 @@ export default function LeaderboardScreen() {
             <View style={styles.podiumSection}>
                 {/* Decorative glow behind podium */}
                 <LinearGradient
-                    colors={['rgba(212, 175, 55, 0.08)', 'transparent']}
+                    colors={[colors.gold[500] + '14', 'transparent']}
                     style={styles.podiumGlow}
                     start={{ x: 0.5, y: 0 }}
                     end={{ x: 0.5, y: 1 }}
@@ -622,24 +622,24 @@ const styles = StyleSheet.create({
     },
     podiumBlockFirst: {
         height: 60,
-        backgroundColor: 'rgba(212, 175, 55, 0.15)',
+        backgroundColor: MEDAL_COLORS.gold + '26',
         borderWidth: 1,
         borderBottomWidth: 0,
-        borderColor: 'rgba(212, 175, 55, 0.25)',
+        borderColor: MEDAL_COLORS.gold + '40',
     },
     podiumBlockSecond: {
         height: 44,
-        backgroundColor: 'rgba(192, 192, 192, 0.10)',
+        backgroundColor: MEDAL_COLORS.silver + '1A',
         borderWidth: 1,
         borderBottomWidth: 0,
-        borderColor: 'rgba(192, 192, 192, 0.20)',
+        borderColor: MEDAL_COLORS.silver + '33',
     },
     podiumBlockThird: {
         height: 32,
-        backgroundColor: 'rgba(205, 127, 50, 0.10)',
+        backgroundColor: MEDAL_COLORS.bronze + '1A',
         borderWidth: 1,
         borderBottomWidth: 0,
-        borderColor: 'rgba(205, 127, 50, 0.20)',
+        borderColor: MEDAL_COLORS.bronze + '33',
     },
     podiumBlockText: {
         fontSize: typography.fontSize.lg,
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.sm,
         paddingVertical: 2,
         borderWidth: 1,
-        borderColor: 'rgba(212, 175, 55, 0.15)',
+        borderColor: colors.gold[500] + '26',
         marginTop: spacing.xs,
     },
     levelBadgeSmall: {

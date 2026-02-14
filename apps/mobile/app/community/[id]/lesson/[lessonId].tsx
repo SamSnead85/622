@@ -405,23 +405,23 @@ export default function LessonViewerScreen() {
                             activeOpacity={0.7}
                         >
                             <View style={styles.videoBackBtnBg}>
-                                <Ionicons name="chevron-back" size={22} color="#FAFAFA" />
+                                <Ionicons name="chevron-back" size={22} color={themeColors.text.inverse} />
                             </View>
                         </TouchableOpacity>
                     </Animated.View>
                 ) : (
                     <Animated.View entering={FadeIn.duration(400)}>
                         <LinearGradient
-                            colors={['#1a1a2e', '#16213e', '#0d1117']}
+                            colors={[themeColors.obsidian[800], themeColors.obsidian[700], themeColors.obsidian[900]]}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={styles.heroSection}
                         >
-                            <View style={styles.heroIconContainer}>
+                            <View style={[styles.heroIconContainer, { backgroundColor: themeColors.gold[500] + '14', borderColor: themeColors.gold[500] + '26' }]}>
                                 <Ionicons
                                     name="book-outline"
                                     size={40}
-                                    color="rgba(212, 175, 55, 0.4)"
+                                    color={themeColors.gold[500] + '66'}
                                 />
                             </View>
                             <Text style={styles.heroTitle} numberOfLines={3}>
@@ -483,7 +483,7 @@ export default function LessonViewerScreen() {
                                 </Text>
                             </View>
                             {completed && (
-                                <View style={[styles.metaBadge, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
+                                <View style={[styles.metaBadge, { backgroundColor: themeColors.emerald[500] + '1A' }]}>
                                     <Ionicons name="checkmark-circle" size={13} color={themeColors.emerald[400]} />
                                     <Text style={[styles.metaBadgeText, { color: themeColors.emerald[400] }]}>
                                         Completed
@@ -592,7 +592,7 @@ export default function LessonViewerScreen() {
                 />
 
                 {completed ? (
-                    <View style={[styles.completedBanner, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
+                    <View style={[styles.completedBanner, { backgroundColor: themeColors.emerald[500] + '1A' }]}>
                         <Ionicons name="checkmark-circle" size={22} color={themeColors.emerald[400]} />
                         <Text style={[styles.completedText, { color: themeColors.emerald[400] }]}>
                             Lesson Completed
@@ -696,7 +696,7 @@ const styles = StyleSheet.create({
     videoContainer: {
         width: SCREEN_WIDTH,
         height: VIDEO_HEIGHT,
-        backgroundColor: '#000',
+        backgroundColor: colors.obsidian[900],
     },
     videoPlayer: {
         width: '100%',
@@ -711,11 +711,11 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+        backgroundColor: colors.surface.overlay,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.12)',
+        borderColor: colors.surface.glass,
     },
 
     // Hero (no-video fallback)
@@ -731,18 +731,16 @@ const styles = StyleSheet.create({
         width: 72,
         height: 72,
         borderRadius: 36,
-        backgroundColor: 'rgba(212, 175, 55, 0.08)',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: spacing.lg,
         borderWidth: 1,
-        borderColor: 'rgba(212, 175, 55, 0.15)',
     },
     heroTitle: {
         fontSize: typography.fontSize['2xl'],
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FAFAFA',
+        color: colors.text.inverse,
         textAlign: 'center',
         lineHeight: typography.fontSize['2xl'] * typography.lineHeight.tight,
         marginBottom: spacing.md,
@@ -754,7 +752,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.xs,
         borderRadius: 8,
-        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+        backgroundColor: colors.gold[500] + '1A',
     },
     heroDurationText: {
         fontSize: typography.fontSize.xs,
@@ -877,7 +875,7 @@ const styles = StyleSheet.create({
     completeBtn: {
         borderRadius: 16,
         overflow: 'hidden',
-        shadowColor: '#7C8FFF',
+        shadowColor: colors.gold[500],
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
@@ -905,7 +903,7 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: 'rgba(16, 185, 129, 0.25)',
+        borderColor: colors.emerald[500] + '40',
     },
     completedText: {
         fontSize: typography.fontSize.base,

@@ -136,7 +136,7 @@ export default function MomentCreateScreen() {
                                     colors={[colors.gold[400], colors.gold[600]]}
                                     style={styles.pickerBtnGradient}
                                 >
-                                    <Ionicons name="camera" size={24} color="#FFFFFF" />
+                                    <Ionicons name="camera" size={24} color={colors.text.inverse} />
                                     <Text style={styles.pickerBtnText}>Camera</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -246,10 +246,10 @@ export default function MomentCreateScreen() {
                                         style={styles.postBtnGradient}
                                     >
                                         {posting ? (
-                                            <ActivityIndicator size="small" color="#FFFFFF" />
+                                            <ActivityIndicator size="small" color={colors.text.inverse} />
                                         ) : (
                                             <>
-                                                <Ionicons name="send" size={16} color="#FFFFFF" />
+                                                <Ionicons name="send" size={16} color={colors.text.inverse} />
                                                 <Text style={styles.postBtnText}>Share</Text>
                                             </>
                                         )}
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     },
     pickerBtnText: {
         fontSize: typography.fontSize.base, fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
     pickerBtnOutline: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     },
     postBtnText: {
         fontSize: typography.fontSize.base, fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 
     // Toolbar
@@ -456,10 +456,10 @@ const styles = StyleSheet.create({
     },
     textOverlayText: {
         fontSize: 28,
-        color: '#FFFFFF',
+        color: colors.text.inverse,
         textAlign: 'center',
         paddingHorizontal: spacing.xl,
-        textShadowColor: 'rgba(0,0,0,0.75)',
+        textShadowColor: colors.surface.overlay,
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 6,
     },
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
     // Text input modal
     textModalContainer: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.7)',
+        backgroundColor: colors.surface.overlay,
         justifyContent: 'center',
         paddingHorizontal: spacing.xl,
     },
@@ -535,6 +535,6 @@ const styles = StyleSheet.create({
     textModalDoneText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 });

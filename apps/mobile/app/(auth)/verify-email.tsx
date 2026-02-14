@@ -156,7 +156,7 @@ export default function VerifyEmailScreen() {
 
     return (
         <LinearGradient
-            colors={[c.background, isDark ? '#0F0F18' : '#F8F9FC', c.background]}
+            colors={[c.background, isDark ? c.obsidian[800] : c.obsidian[900], c.background]}
             locations={[0, 0.5, 1]}
             style={[styles.container, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 20 }]}
         >
@@ -233,6 +233,7 @@ export default function VerifyEmailScreen() {
                     activeOpacity={0.85}
                     style={[
                         styles.verifyButton,
+                        { shadowColor: c.gold[500] },
                         (isVerifying || success || code.join('').length !== OTP_LENGTH) && { opacity: 0.5 },
                     ]}
                     accessibilityRole="button"
@@ -357,7 +358,7 @@ const styles = StyleSheet.create({
     verifyButton: {
         borderRadius: 14,
         overflow: 'hidden',
-        shadowColor: '#FFB020',
+        // shadowColor set dynamically via theme — see inline styles
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 12,
@@ -372,7 +373,6 @@ const styles = StyleSheet.create({
     verifyButtonText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700' as const,
-        color: '#FFFFFF',
     },
     resendWrap: {
         alignItems: 'center',

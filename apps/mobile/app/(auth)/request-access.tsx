@@ -240,7 +240,7 @@ export default function RequestAccessScreen() {
                                 onPress={handleSubmit}
                                 disabled={isLoading}
                                 activeOpacity={0.85}
-                                style={[styles.submitButton, isLoading && { opacity: 0.85 }]}
+                                style={[styles.submitButton, { shadowColor: c.gold[500] }, isLoading && { opacity: 0.85 }]}
                             >
                                 <LinearGradient
                                     colors={isLoading ? [c.gold[600], c.gold[700]] : [c.gold[400], c.gold[600]]}
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
 
     submitButton: {
         marginTop: spacing.sm,
-        shadowColor: '#FFB020',
+        // shadowColor set dynamically via theme — see inline styles
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 12,
@@ -373,7 +373,6 @@ const styles = StyleSheet.create({
     submitText: {
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
-        color: '#FFFFFF',
         fontFamily: 'SpaceGrotesk-Bold',
     },
     loadingRow: {

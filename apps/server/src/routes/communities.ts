@@ -266,6 +266,7 @@ router.post('/:communityId/join', authenticate, async (req: AuthRequest, res, ne
 
         const community = await prisma.community.findUnique({
             where: { id: communityId },
+            select: { id: true, approvalRequired: true, isPublic: true, memberCount: true },
         });
 
         if (!community) {
@@ -311,12 +312,14 @@ router.post('/:communityId/join', authenticate, async (req: AuthRequest, res, ne
                 }
             }
 
-            await prisma.communityJoinRequest.create({
-                data: {
+            await prisma.communityJoinRequest.upsert({
+                where: { communityId_userId: { communityId, userId: req.userId! } },
+                create: {
                     communityId,
                     userId: req.userId!,
                     message: req.body.message || null,
                 },
+                update: {},
             });
 
             return res.json({ status: 'pending', message: 'Your request to join has been sent to the admin.' });
@@ -324,12 +327,10 @@ router.post('/:communityId/join', authenticate, async (req: AuthRequest, res, ne
 
         // Open community — join directly
         await prisma.$transaction([
-            prisma.communityMember.create({
-                data: {
-                    userId: req.userId!,
-                    communityId,
-                    role: 'MEMBER',
-                },
+            prisma.communityMember.upsert({
+                where: { userId_communityId: { userId: req.userId!, communityId } },
+                create: { userId: req.userId!, communityId, role: 'MEMBER' },
+                update: {},
             }),
             prisma.community.update({
                 where: { id: communityId },
@@ -746,7 +747,7 @@ router.delete('/:communityId', authenticate, async (req: AuthRequest, res, next)
         }
 
         // Check if creator
-        const community = await prisma.community.findUnique({ where: { id: communityId } });
+        const community = await prisma.community.findUnique({ where: { id: communityId }, select: { id: true, creatorId: true } });
         if (community?.creatorId !== req.userId) {
             throw new AppError('Only the creator can delete the community', 403);
         }
@@ -981,6 +982,8 @@ router.get('/:communityId/statuses', authenticate, async (req: AuthRequest, res,
                     { expiresAt: { gt: new Date() } },
                 ],
             },
+            select: { id: true, userId: true, communityId: true, emoji: true, text: true, expiresAt: true, createdAt: true },
+            take: 100,
         });
 
         // Get user data for statuses
@@ -1168,17 +1171,15 @@ router.post('/:communityId/polls/:pollId/vote', authenticate, async (req: AuthRe
             throw new AppError('This poll only allows one vote', 400);
         }
 
-        // Remove previous votes
-        await prisma.pollVote.deleteMany({ where: { pollId, userId: req.userId! } });
-
-        // Cast new votes
-        await prisma.$transaction(
-            optionIds.map((optionId: string) =>
-                prisma.pollVote.create({
+        // Remove previous votes and cast new ones atomically
+        await prisma.$transaction(async (tx) => {
+            await tx.pollVote.deleteMany({ where: { pollId, userId: req.userId! } });
+            for (const optionId of optionIds as string[]) {
+                await tx.pollVote.create({
                     data: { pollId, optionId, userId: req.userId! },
-                })
-            )
-        );
+                });
+            }
+        });
 
         res.json({ voted: true });
     } catch (error) {
@@ -1274,7 +1275,9 @@ router.get('/:communityId/albums/:albumId/photos', authenticate, async (req: Aut
 
         const photos = await prisma.albumPhoto.findMany({
             where: { albumId },
+            select: { id: true, albumId: true, userId: true, url: true, caption: true, createdAt: true },
             orderBy: { createdAt: 'desc' },
+            take: 100,
         });
 
         const userIds = [...new Set(photos.map(p => p.userId))];
@@ -1572,6 +1575,7 @@ router.get('/:communityId/moderation', authenticate, async (req: AuthRequest, re
         const communityPosts = await prisma.post.findMany({
             where: { communityId },
             select: { id: true },
+            take: 10000,
         });
         const postIds = communityPosts.map(p => p.id);
 
@@ -1659,7 +1663,9 @@ router.get('/:communityId/filters', authenticate, async (req: AuthRequest, res, 
 
         const filters = await prisma.contentFilter.findMany({
             where: { communityId },
+            select: { id: true, communityId: true, type: true, pattern: true, action: true, isActive: true, createdById: true, hitCount: true, createdAt: true, updatedAt: true },
             orderBy: { createdAt: 'desc' },
+            take: 100,
         });
 
         res.json({ filters });
@@ -1809,6 +1815,7 @@ router.post('/:communityId/check-content', authenticate, async (req: AuthRequest
 
         const filters = await prisma.contentFilter.findMany({
             where: { communityId, isActive: true },
+            select: { id: true, type: true, pattern: true, action: true },
         });
 
         const matches: Array<{ filterId: string; type: string; action: string; pattern: string }> = [];
@@ -1949,8 +1956,10 @@ router.post('/:communityId/requests/:requestId/approve', authenticate, async (re
                 where: { id: requestId },
                 data: { status: 'approved', reviewedAt: new Date(), reviewedBy: req.userId },
             }),
-            prisma.communityMember.create({
-                data: { userId: request.userId, communityId, role: 'MEMBER' },
+            prisma.communityMember.upsert({
+                where: { userId_communityId: { userId: request.userId, communityId } },
+                create: { userId: request.userId, communityId, role: 'MEMBER' },
+                update: {},
             }),
             prisma.community.update({
                 where: { id: communityId },

@@ -40,6 +40,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { apiFetch, API } from '../../../lib/api';
 import { socketManager } from '../../../lib/socket';
 import { useAuthStore } from '../../../stores';
@@ -602,7 +603,7 @@ export default function StreamViewerScreen() {
                         <View style={styles.streamerInfo}>
                             {stream.user?.avatarUrl ? (
                                 <Image
-                                    source={{ uri: stream.user.avatarUrl }}
+                                    source={{ uri: stream.user?.avatarUrl }}
                                     style={styles.streamerAvatar}
                                     placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4"
                                     transition={200}
@@ -762,7 +763,7 @@ const styles = StyleSheet.create({
     videoContainer: {
         width: SCREEN_WIDTH,
         aspectRatio: 16 / 9,
-        backgroundColor: '#000',
+        backgroundColor: colors.obsidian[900],
         position: 'relative',
     },
     video: {
@@ -777,7 +778,7 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: colors.surface.overlay,
         gap: spacing.sm,
     },
     noVideoText: {
@@ -797,7 +798,7 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: colors.surface.overlay,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -810,7 +811,7 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
         color: colors.text.primary,
-        textShadowColor: 'rgba(0,0,0,0.8)',
+        textShadowColor: colors.obsidian[900] + 'CC',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 4,
     },
@@ -824,7 +825,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        backgroundColor: colors.surface.overlay,
         paddingHorizontal: spacing.sm,
         paddingVertical: 3,
         borderRadius: 6,
@@ -841,7 +842,7 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
     },
     topCategoryBadge: {
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: colors.surface.glass,
         paddingHorizontal: spacing.sm,
         paddingVertical: 3,
         borderRadius: 6,
@@ -925,7 +926,7 @@ const styles = StyleSheet.create({
     followBtnText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
     followBtnTextActive: {
         color: colors.text.primary,

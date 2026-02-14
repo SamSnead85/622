@@ -154,7 +154,7 @@ const VARIANT_STYLES = {
             backgroundColor: colors.gold[500],
         } as ViewStyle,
         text: {
-            color: '#FFFFFF',
+            color: colors.text.inverse,
         } as TextStyle,
         iconColor: colors.obsidian[900],
         spinnerColor: colors.obsidian[900],

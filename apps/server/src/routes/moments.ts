@@ -2,8 +2,11 @@ import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { momentService } from '../services/MomentService.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
+
+router.use(rateLimiters.general);
 
 // Validation schemas
 const createMomentSchema = z.object({

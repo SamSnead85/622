@@ -9,6 +9,7 @@ import {
     Text,
     StyleSheet,
     ScrollView,
+    FlatList,
     TouchableOpacity,
     TextInput,
     Alert,
@@ -187,7 +188,7 @@ const CHAT_COLORS = [
 function LobbyChat({ players, roomCode }: { players: { id: string; name: string }[]; roomCode: string }) {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputText, setInputText] = useState('');
-    const chatScrollRef = useRef<ScrollView>(null);
+    const chatScrollRef = useRef<FlatList<ChatMessage>>(null);
     const playerColorMap = useRef<Record<string, string>>({});
 
     const getPlayerColor = useCallback((playerId: string) => {
@@ -211,10 +212,10 @@ function LobbyChat({ players, roomCode }: { players: { id: string; name: string 
         return () => unsub();
     }, []);
 
-    // Auto-scroll on new messages
+    // Auto-scroll on new messages (FlatList is inverted, so scrollToOffset(0) shows newest)
     useEffect(() => {
         if (messages.length > 0) {
-            const timer = setTimeout(() => chatScrollRef.current?.scrollToEnd({ animated: true }), 50);
+            const timer = setTimeout(() => chatScrollRef.current?.scrollToOffset({ offset: 0, animated: true }), 50);
             return () => clearTimeout(timer);
         }
     }, [messages.length]);
@@ -247,21 +248,23 @@ function LobbyChat({ players, roomCode }: { players: { id: string; name: string 
                     <Ionicons name="chatbubble-ellipses-outline" size={14} color={colors.text.muted} />
                     <Text style={styles.chatHeaderText}>Lobby Chat</Text>
                 </View>
-                <ScrollView
+                <FlatList
                     ref={chatScrollRef}
-                    style={styles.chatMessages}
-                    showsVerticalScrollIndicator={false}
-                >
-                    {messages.length === 0 && (
-                        <Text style={styles.chatEmpty}>Say hi while you wait...</Text>
-                    )}
-                    {messages.map(msg => (
-                        <View key={msg.id} style={styles.chatMsg}>
+                    data={messages}
+                    keyExtractor={(item, index) => item.id || index.toString()}
+                    renderItem={({ item: msg }) => (
+                        <View style={styles.chatMsg}>
                             <Text style={[styles.chatMsgName, { color: msg.color }]}>{msg.playerName}</Text>
                             <Text style={styles.chatMsgText}>{msg.text}</Text>
                         </View>
-                    ))}
-                </ScrollView>
+                    )}
+                    ListEmptyComponent={
+                        <Text style={styles.chatEmpty}>Say hi while you wait...</Text>
+                    }
+                    inverted
+                    style={styles.chatMessages}
+                    showsVerticalScrollIndicator={false}
+                />
                 <View style={styles.chatInputRow}>
                     <TextInput
                         style={styles.chatInput}

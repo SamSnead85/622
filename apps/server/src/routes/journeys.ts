@@ -3,8 +3,11 @@ import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
+
+router.use(rateLimiters.general);
 
 // Validation schemas
 const createJourneySchema = z.object({
@@ -238,12 +241,11 @@ router.post('/:id/like', authenticate, async (req: AuthRequest, res, next) => {
             });
             res.json({ liked: false });
         } else {
-            // Like
-            await prisma.like.create({
-                data: {
-                    userId: req.userId!,
-                    postId: id,
-                },
+            // Like — upsert to prevent duplicate-key errors on rapid double-taps
+            await prisma.like.upsert({
+                where: { userId_postId: { userId: req.userId!, postId: id } },
+                create: { userId: req.userId!, postId: id },
+                update: {},
             });
             res.json({ liked: true });
         }

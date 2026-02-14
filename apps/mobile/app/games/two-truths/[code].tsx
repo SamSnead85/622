@@ -722,7 +722,7 @@ export default function TwoTruthsScreen() {
                                             <Ionicons
                                                 name="send"
                                                 size={18}
-                                                color={canSubmit ? '#FFFFFF' : colors.text.muted}
+                                                color={canSubmit ? colors.text.primary : colors.text.muted}
                                             />
                                             <Text
                                                 style={[
@@ -1242,7 +1242,7 @@ const styles = StyleSheet.create({
     submitButtonText: {
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.primary,
         fontFamily: 'Inter-Bold',
     },
     submitButtonTextDisabled: {

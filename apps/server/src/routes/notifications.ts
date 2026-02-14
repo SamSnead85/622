@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db/client.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
 
@@ -68,7 +69,7 @@ router.get('/', authenticate, async (req: AuthRequest, res, next) => {
 // PUT /api/v1/notifications/:id/read
 // Mark single notification as read
 // ============================================
-router.put('/:id/read', authenticate, async (req: AuthRequest, res, next) => {
+router.put('/:id/read', authenticate, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const { id } = req.params;
 
@@ -90,7 +91,7 @@ router.put('/:id/read', authenticate, async (req: AuthRequest, res, next) => {
 // PUT /api/v1/notifications/read-all
 // Mark all notifications as read
 // ============================================
-router.put('/read-all', authenticate, async (req: AuthRequest, res, next) => {
+router.put('/read-all', authenticate, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         await prisma.notification.updateMany({
             where: {
@@ -110,7 +111,7 @@ router.put('/read-all', authenticate, async (req: AuthRequest, res, next) => {
 // DELETE /api/v1/notifications/:id
 // Delete a notification
 // ============================================
-router.delete('/:id', authenticate, async (req: AuthRequest, res, next) => {
+router.delete('/:id', authenticate, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const { id } = req.params;
 

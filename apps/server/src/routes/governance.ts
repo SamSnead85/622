@@ -1,6 +1,7 @@
 import { Router, Response, NextFunction } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
 
@@ -8,7 +9,8 @@ const router = Router();
 router.get('/:communityId/proposals', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { communityId } = req.params;
-        const { status } = req.query;
+        const { status, skip: rawSkip } = req.query;
+        const skip = parseInt(rawSkip as string) || 0;
 
         const proposals = await prisma.proposal.findMany({
             where: {
@@ -20,6 +22,8 @@ router.get('/:communityId/proposals', authenticate, async (req: AuthRequest, res
                 _count: { select: { votes: true } },
             },
             orderBy: { createdAt: 'desc' },
+            take: 50,
+            skip,
         });
 
         // Auto-expire proposals
@@ -40,7 +44,7 @@ router.get('/:communityId/proposals', authenticate, async (req: AuthRequest, res
 });
 
 // Create proposal
-router.post('/:communityId/proposals', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/:communityId/proposals', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { communityId } = req.params;
         const { title, description, type, targetData, quorum, expiresInDays } = req.body;
@@ -85,7 +89,7 @@ router.post('/:communityId/proposals', authenticate, async (req: AuthRequest, re
 });
 
 // Vote on a proposal
-router.post('/proposals/:proposalId/vote', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/proposals/:proposalId/vote', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { proposalId } = req.params;
         const { vote } = req.body; // true = for, false = against
@@ -114,49 +118,52 @@ router.post('/proposals/:proposalId/vote', authenticate, async (req: AuthRequest
             return;
         }
 
-        // Create or update vote
+        // Create or update vote — wrapped in transaction for atomicity
         const existing = await prisma.proposalVote.findUnique({
             where: { proposalId_userId: { proposalId, userId: req.userId! } },
         });
 
-        if (existing) {
-            if (existing.vote === vote) {
-                res.json({ message: 'Vote unchanged' });
-                return;
-            }
-            await prisma.proposalVote.update({
-                where: { id: existing.id },
-                data: { vote },
-            });
-            // Update counts
-            await prisma.proposal.update({
-                where: { id: proposalId },
-                data: {
-                    votesFor: { increment: vote ? 1 : -1 },
-                    votesAgainst: { increment: vote ? -1 : 1 },
-                },
-            });
-        } else {
-            await prisma.proposalVote.create({
-                data: { proposalId, userId: req.userId!, vote },
-            });
-            await prisma.proposal.update({
-                where: { id: proposalId },
-                data: vote
-                    ? { votesFor: { increment: 1 } }
-                    : { votesAgainst: { increment: 1 } },
-            });
+        if (existing && existing.vote === vote) {
+            res.json({ message: 'Vote unchanged' });
+            return;
         }
 
-        // Check if quorum reached
-        const updated = await prisma.proposal.findUnique({ where: { id: proposalId } });
-        if (updated && (updated.votesFor + updated.votesAgainst >= updated.quorum)) {
-            const status = updated.votesFor > updated.votesAgainst ? 'PASSED' : 'REJECTED';
-            await prisma.proposal.update({
-                where: { id: proposalId },
-                data: { status, resolvedAt: new Date() },
-            });
-        }
+        await prisma.$transaction(async (tx) => {
+            if (existing) {
+                await tx.proposalVote.update({
+                    where: { id: existing.id },
+                    data: { vote },
+                });
+                // Update counts
+                await tx.proposal.update({
+                    where: { id: proposalId },
+                    data: {
+                        votesFor: { increment: vote ? 1 : -1 },
+                        votesAgainst: { increment: vote ? -1 : 1 },
+                    },
+                });
+            } else {
+                await tx.proposalVote.create({
+                    data: { proposalId, userId: req.userId!, vote },
+                });
+                await tx.proposal.update({
+                    where: { id: proposalId },
+                    data: vote
+                        ? { votesFor: { increment: 1 } }
+                        : { votesAgainst: { increment: 1 } },
+                });
+            }
+
+            // Check if quorum reached
+            const updated = await tx.proposal.findUnique({ where: { id: proposalId } });
+            if (updated && (updated.votesFor + updated.votesAgainst >= updated.quorum)) {
+                const status = updated.votesFor > updated.votesAgainst ? 'PASSED' : 'REJECTED';
+                await tx.proposal.update({
+                    where: { id: proposalId },
+                    data: { status, resolvedAt: new Date() },
+                });
+            }
+        });
 
         res.json({ success: true });
     } catch (error) {
@@ -202,7 +209,7 @@ router.get('/:communityId/moderation-log', authenticate, async (req: AuthRequest
 });
 
 // Create moderation log entry
-router.post('/:communityId/moderation-log', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/:communityId/moderation-log', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { communityId } = req.params;
         const { action, targetType, targetId, reason } = req.body;

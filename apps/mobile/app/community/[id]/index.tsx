@@ -1300,7 +1300,7 @@ export default function CommunityDetailScreen() {
                                     overflow: 'hidden',
                                 }}>
                                     {req.user?.avatarUrl ? (
-                                        <Image source={{ uri: req.user.avatarUrl }} style={{ width: 40, height: 40 }} contentFit="cover" />
+                                        <Image source={{ uri: req.user?.avatarUrl }} style={{ width: 40, height: 40 }} contentFit="cover" />
                                     ) : (
                                         <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text.secondary }}>
                                             {(req.user?.displayName || '?').charAt(0).toUpperCase()}

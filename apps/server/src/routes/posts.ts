@@ -1020,7 +1020,7 @@ router.post('/', rateLimiters.createPost, authenticate, async (req: AuthRequest,
 });
 
 // DELETE /api/v1/posts/:postId (soft delete - preserves data)
-router.delete('/:postId', authenticate, async (req: AuthRequest, res, next) => {
+router.delete('/:postId', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
 
@@ -1056,7 +1056,7 @@ router.delete('/:postId', authenticate, async (req: AuthRequest, res, next) => {
 });
 
 // PUT /api/v1/posts/:postId - Edit post (owner only)
-router.put('/:postId', authenticate, async (req: AuthRequest, res, next) => {
+router.put('/:postId', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
 
@@ -1104,7 +1104,7 @@ router.put('/:postId', authenticate, async (req: AuthRequest, res, next) => {
 });
 
 // POST /api/v1/posts/:postId/rsvp - Mark "I'm In"
-router.post('/:postId/rsvp', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/:postId/rsvp', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
         const statusSchema = z.object({
@@ -1158,7 +1158,7 @@ router.post('/:postId/rsvp', authenticate, async (req: AuthRequest, res, next) =
 });
 
 // DELETE /api/v1/posts/:postId/rsvp - Remove RSVP
-router.delete('/:postId/rsvp', authenticate, async (req: AuthRequest, res, next) => {
+router.delete('/:postId/rsvp', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
 
@@ -1182,7 +1182,7 @@ router.delete('/:postId/rsvp', authenticate, async (req: AuthRequest, res, next)
 });
 
 // PUT /api/v1/posts/:postId/comments/:commentId - Edit comment
-router.put('/:postId/comments/:commentId', authenticate, async (req: AuthRequest, res, next) => {
+router.put('/:postId/comments/:commentId', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { commentId } = req.params;
 
@@ -1230,7 +1230,7 @@ router.put('/:postId/comments/:commentId', authenticate, async (req: AuthRequest
 });
 
 // DELETE /api/v1/posts/:postId/comments/:commentId - Delete comment
-router.delete('/:postId/comments/:commentId', authenticate, async (req: AuthRequest, res, next) => {
+router.delete('/:postId/comments/:commentId', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId, commentId } = req.params;
 
@@ -1266,7 +1266,7 @@ router.delete('/:postId/comments/:commentId', authenticate, async (req: AuthRequ
 });
 
 // POST /api/v1/posts/:postId/like
-router.post('/:postId/like', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/:postId/like', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
 
@@ -1311,7 +1311,7 @@ router.post('/:postId/like', authenticate, async (req: AuthRequest, res, next) =
 });
 
 // DELETE /api/v1/posts/:postId/like
-router.delete('/:postId/like', authenticate, async (req: AuthRequest, res, next) => {
+router.delete('/:postId/like', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
 
@@ -1333,7 +1333,7 @@ router.delete('/:postId/like', authenticate, async (req: AuthRequest, res, next)
 // NOTE: /saved route moved above /:postId to prevent Express from matching "saved" as a postId
 
 // POST /api/v1/posts/:postId/save
-router.post('/:postId/save', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/:postId/save', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
 
@@ -1359,7 +1359,7 @@ router.post('/:postId/save', authenticate, async (req: AuthRequest, res, next) =
 });
 
 // DELETE /api/v1/posts/:postId/save
-router.delete('/:postId/save', authenticate, async (req: AuthRequest, res, next) => {
+router.delete('/:postId/save', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
 
@@ -1516,7 +1516,7 @@ router.post('/:postId/comments', rateLimiters.createComment, authenticate, async
 // NOTE: /feed/stats route moved above /:postId to prevent Express from matching "feed" as a postId
 
 // PATCH /api/v1/posts/:postId/pin - Toggle pin on a post (owner only)
-router.patch('/:postId/pin', authenticate, async (req: AuthRequest, res, next) => {
+router.patch('/:postId/pin', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
         const post = await prisma.post.findUnique({ where: { id: postId } });
@@ -1543,7 +1543,7 @@ router.patch('/:postId/pin', authenticate, async (req: AuthRequest, res, next) =
 });
 
 // PUT /api/v1/posts/reorder - Reorder user's own posts (set sortOrder for multiple posts)
-router.put('/reorder', authenticate, async (req: AuthRequest, res, next) => {
+router.put('/reorder', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const reorderSchema = z.object({
             posts: z.array(z.object({

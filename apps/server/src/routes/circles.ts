@@ -8,6 +8,7 @@ const router = Router();
 router.get('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const userId = req.userId!;
+        const skip = parseInt(req.query.skip as string) || 0;
         const memberships = await prisma.communityMember.findMany({
             where: { userId },
             include: {
@@ -24,6 +25,8 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
                 },
             },
             orderBy: { joinedAt: 'desc' },
+            take: 50,
+            skip,
         });
 
         const circles = memberships.map(m => ({

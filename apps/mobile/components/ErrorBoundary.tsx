@@ -48,15 +48,13 @@ export class ErrorBoundary extends Component<Props, State> {
             // Sentry not available — fall through to console logging
         }
 
-        // Always log to console for debugging (dev & prod)
-        console.error(
-            `[ErrorBoundary${this.props.screenName ? ` - ${this.props.screenName}` : ''}]`,
-            error,
-            errorInfo.componentStack
-        );
-
-        // In dev, also log the full stack for quick debugging
+        // Only log to console in development to avoid leaking stack traces in production
         if (__DEV__) {
+            console.error(
+                `[ErrorBoundary${this.props.screenName ? ` - ${this.props.screenName}` : ''}]`,
+                error,
+                errorInfo.componentStack
+            );
             console.error('[ErrorBoundary] Full error stack:', error.stack);
         }
     }
@@ -88,7 +86,7 @@ export class ErrorBoundary extends Component<Props, State> {
                         </ScrollView>
                     )}
                     <TouchableOpacity style={styles.retryButton} onPress={this.handleRestart} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Restart">
-                        <Ionicons name="refresh" size={18} color="#FFFFFF" />
+                        <Ionicons name="refresh" size={18} color={colors.text.inverse} />
                         <Text style={styles.retryText}>Restart</Text>
                     </TouchableOpacity>
                 </View>
@@ -156,7 +154,7 @@ const styles = StyleSheet.create({
     retryText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 });
 

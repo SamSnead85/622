@@ -131,7 +131,7 @@ export default function UsernameScreen() {
 
     return (
         <LinearGradient
-            colors={[c.background, isDark ? '#0F0F18' : '#F8F9FC', c.background]}
+            colors={[c.background, isDark ? c.obsidian[800] : c.obsidian[900], c.background]}
             locations={[0, 0.5, 1]}
             style={styles.container}
         >
@@ -241,7 +241,7 @@ export default function UsernameScreen() {
                             onPress={handleContinue}
                             disabled={!isAvailable || loading}
                             activeOpacity={0.85}
-                            style={[styles.continueButton, (!isAvailable || loading) && { opacity: 0.5 }]}
+                            style={[styles.continueButton, { shadowColor: c.gold[500] }, (!isAvailable || loading) && { opacity: 0.5 }]}
                             accessibilityRole="button"
                             accessibilityLabel={loading ? 'Setting up your profile' : 'Sign up'}
                         >
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     continueButton: {
         borderRadius: 14,
         overflow: 'hidden',
-        shadowColor: '#FFB020',
+        // shadowColor set dynamically via theme — see inline styles
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 12,
@@ -373,7 +373,6 @@ const styles = StyleSheet.create({
     continueButtonText: {
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
-        color: '#FFFFFF',
         fontFamily: 'Inter-Bold',
     },
     skipButton: {

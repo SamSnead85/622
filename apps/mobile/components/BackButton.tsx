@@ -25,7 +25,7 @@ interface BackButtonProps {
     label?: string;
 }
 
-export function BackButton({
+function BackButton({
     onPress,
     icon = 'chevron-back',
     size = 24,
@@ -51,6 +51,10 @@ export function BackButton({
     );
 }
 
+const MemoizedBackButton = React.memo(BackButton);
+export { MemoizedBackButton as BackButton };
+export default MemoizedBackButton;
+
 const styles = StyleSheet.create({
     button: {
         width: 44,
@@ -60,5 +64,3 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
 });
-
-export default BackButton;

@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Bold',
     },
     optionLabelTextActive: {
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
     optionText: {
         flex: 1,
@@ -876,7 +876,7 @@ const styles = StyleSheet.create({
     scorePopupText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
         fontFamily: 'Inter-Bold',
     },
 

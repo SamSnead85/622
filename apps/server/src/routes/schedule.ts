@@ -2,6 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const createScheduledPostSchema = z.object({
     type: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'POLL', 'RALLY']).optional().default('TEXT'),
@@ -16,7 +17,7 @@ const createScheduledPostSchema = z.object({
 const router = Router();
 
 // Create scheduled post
-router.post('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const data = createScheduledPostSchema.parse(req.body);
 
@@ -66,7 +67,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
 });
 
 // Cancel scheduled post
-router.delete('/:id', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.delete('/:id', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
 

@@ -1,27 +1,18 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { inviteService } from '../services/invite/InviteService.js';
 import { prisma } from '../db/client.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
 
-// Auth request type
-interface AuthRequest extends Request {
-    user?: { id: string };
-}
-
-// Middleware to ensure user is authenticated
-const requireAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-        return res.status(401).json({ error: 'Authentication required' });
-    }
-    next();
-};
+router.use(rateLimiters.general);
 
 /**
  * GET /api/invite
  * Get user's sent invites
  */
-router.get('/', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const invites = await inviteService.getUserInvites(req.user!.id);
         const remaining = await inviteService.getRemainingInvites(req.user!.id);
@@ -36,7 +27,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response, next: NextF
  * POST /api/invite/email
  * Send an email invite
  */
-router.post('/email', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/email', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { email, message } = req.body;
 
@@ -66,7 +57,7 @@ router.post('/email', requireAuth, async (req: AuthRequest, res: Response, next:
  * POST /api/invite/link
  * Create a shareable invite link
  */
-router.post('/link', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/link', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { code, url } = await inviteService.createInviteLink(req.user!.id);
         res.json({ code, url });
@@ -79,7 +70,7 @@ router.post('/link', requireAuth, async (req: AuthRequest, res: Response, next: 
  * POST /api/invite/bulk
  * Send invites to multiple pending connections
  */
-router.post('/bulk', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/bulk', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { connectionIds, message } = req.body;
 
@@ -108,7 +99,7 @@ router.post('/bulk', requireAuth, async (req: AuthRequest, res: Response, next: 
  * Send SMS invites to multiple phone numbers (max 20)
  * Used by the contact picker invite flow
  */
-router.post('/sms-bulk', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/sms-bulk', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { phones, message } = req.body;
 
@@ -142,7 +133,7 @@ router.post('/sms-bulk', requireAuth, async (req: AuthRequest, res: Response, ne
  * GET /api/invite/connections
  * Get pending connections that can be invited
  */
-router.get('/connections', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/connections', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { status, platform } = req.query;
 
@@ -230,7 +221,7 @@ router.post('/validate/:code', async (req: Request, res: Response, next: NextFun
  * POST /api/invite/complete/:code
  * Mark invite as completed when user joins
  */
-router.post('/complete/:code', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/complete/:code', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const success = await inviteService.handleReferralJoin(
             req.params.code,

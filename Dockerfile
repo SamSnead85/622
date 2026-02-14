@@ -58,4 +58,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
 EXPOSE 8080
 
 # Start server first (so health checks pass), then run migration in background
-CMD sh -c "node dist/index.js & SERVER_PID=\$! && sleep 5 && (npx prisma db push --accept-data-loss --skip-generate 2>/dev/null || true) && wait \$SERVER_PID"
+CMD sh -c "node dist/index.js & SERVER_PID=\$! && sleep 5 && (npx prisma migrate deploy 2>/dev/null || true) && wait \$SERVER_PID"

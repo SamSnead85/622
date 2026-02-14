@@ -2,6 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const feedPreferencesSchema = z.object({
     recencyWeight: z.number().min(0).max(100).optional(),
@@ -37,7 +38,7 @@ router.get('/feed', authenticate, async (req: AuthRequest, res: Response, next: 
 });
 
 // Update feed preferences
-router.put('/feed', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.put('/feed', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const data = feedPreferencesSchema.parse(req.body);
 

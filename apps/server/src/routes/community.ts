@@ -8,6 +8,7 @@
 import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 // Services
 import * as bulletinService from '../services/bulletin.js';
@@ -16,6 +17,7 @@ import * as livestreamService from '../services/livestreams.js';
 import * as presenceService from '../services/presence.js';
 
 const router = Router();
+router.use(rateLimiters.general);
 
 // ============================================
 // BULLETIN BOARD ROUTES

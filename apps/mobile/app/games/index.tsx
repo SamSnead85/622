@@ -609,14 +609,14 @@ function QuickPlayButton({ onPress }: { onPress: () => void }) {
                         <View style={styles.quickPlayContent}>
                             <View style={styles.quickPlayLeft}>
                                 <View style={styles.quickPlayIconCircle}>
-                                    <Ionicons name="shuffle" size={22} color="#FFFFFF" />
+                                    <Ionicons name="shuffle" size={22} color={colors.text.primary} />
                                 </View>
                                 <View>
                                     <Text style={styles.quickPlayTitle}>Quick Play</Text>
                                     <Text style={styles.quickPlaySubtitle}>Jump into a random game</Text>
                                 </View>
                             </View>
-                            <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+                            <Ionicons name="chevron-forward" size={20} color={colors.text.primary} />
                         </View>
                     </LinearGradient>
                 </Animated.View>
@@ -692,7 +692,7 @@ function HeroSection() {
                         colors={[colors.gold[500], colors.gold[400]]}
                         style={styles.heroIconBg}
                     >
-                        <Ionicons name="game-controller" size={20} color="#FFFFFF" />
+                        <Ionicons name="game-controller" size={20} color={colors.text.primary} />
                     </LinearGradient>
                     <View style={styles.heroLiveBadge}>
                         <Animated.View style={[styles.heroLiveDot, liveDotStyle]} />
@@ -935,7 +935,7 @@ export default function GamesHubScreen() {
                                             colors={[colors.azure[500], colors.azure[400]]}
                                             style={styles.dailyFireBg}
                                         >
-                                            <Ionicons name="school" size={20} color="#FFFFFF" />
+                                            <Ionicons name="school" size={20} color={colors.text.primary} />
                                         </LinearGradient>
                                         <View>
                                             <Text style={styles.practiceTitle}>Solo Practice</Text>
@@ -1242,11 +1242,11 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
+        color: colors.text.primary,
     },
     quickPlaySubtitle: {
         fontSize: typography.fontSize.xs,
-        color: '#FFFFFF',
+        color: colors.text.primary,
         opacity: 0.7,
     },
 
@@ -1360,7 +1360,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
+        color: colors.text.primary,
     },
     joinButtonTextDisabled: {
         color: colors.text.muted,

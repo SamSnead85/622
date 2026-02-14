@@ -452,7 +452,11 @@ export default function UserProfileScreen() {
                     body: JSON.stringify({ participantIds: [profile.id] }),
                 }
             );
-            router.push(`/messages/${data.conversation.id}` as any);
+            if (data?.conversation?.id) {
+                router.push(`/messages/${data.conversation.id}` as any);
+            } else {
+                Alert.alert('Error', 'Could not start a conversation. Please try again.');
+            }
         } catch {
             Alert.alert('Error', 'Could not start a conversation. Please try again.');
         }

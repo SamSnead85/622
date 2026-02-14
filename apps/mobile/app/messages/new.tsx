@@ -94,7 +94,11 @@ export default function NewMessageScreen() {
                     body: JSON.stringify({ participantIds: [selectedUser.id] }),
                 }
             );
-            router.replace(`/messages/${data.conversation.id}` as any);
+            if (data?.conversation?.id) {
+                router.replace(`/messages/${data.conversation.id}` as any);
+            } else {
+                Alert.alert('Error', 'Could not start a conversation. Please try again.');
+            }
         } catch {
             Alert.alert('Error', 'Could not start a conversation. Please try again.');
         }

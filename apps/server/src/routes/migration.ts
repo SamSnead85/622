@@ -1,8 +1,10 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import multer from 'multer';
 import path from 'path';
 import { migrationService } from '../services/migration/MigrationService.js';
 import { MigrationPlatform } from '@prisma/client';
+import { rateLimiters } from '../middleware/rateLimit.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -31,24 +33,11 @@ const upload = multer({
     },
 });
 
-// Auth middleware type (from your existing auth)
-interface AuthRequest extends Request {
-    user?: { id: string };
-}
-
-// Middleware to ensure user is authenticated
-const requireAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-        return res.status(401).json({ error: 'Authentication required' });
-    }
-    next();
-};
-
 /**
  * GET /api/migration
  * Get user's migration history
  */
-router.get('/', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const migrations = await migrationService.getUserMigrations(req.user!.id);
         res.json({ migrations });
@@ -61,7 +50,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response, next: NextF
  * GET /api/migration/:id
  * Get migration status by ID
  */
-router.get('/:id', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/:id', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const migration = await migrationService.getMigrationStatus(req.params.id);
 
@@ -81,7 +70,8 @@ router.get('/:id', requireAuth, async (req: AuthRequest, res: Response, next: Ne
  */
 router.post(
     '/upload',
-    requireAuth,
+    authenticate,
+    rateLimiters.general,
     upload.single('file'),
     async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {
@@ -115,7 +105,7 @@ router.post(
  * POST /api/migration/:id/cancel
  * Cancel a pending or processing migration
  */
-router.post('/:id/cancel', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/:id/cancel', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         await migrationService.cancelMigration(req.params.id, req.user!.id);
         res.json({ message: 'Migration cancelled' });
@@ -128,7 +118,7 @@ router.post('/:id/cancel', requireAuth, async (req: AuthRequest, res: Response, 
  * GET /api/migration/platforms
  * Get supported platforms with instructions
  */
-router.get('/platforms/info', async (req: Request, res: Response) => {
+router.get('/platforms/info', authenticate, async (req: AuthRequest, res: Response) => {
     const platforms = [
         {
             id: 'INSTAGRAM',

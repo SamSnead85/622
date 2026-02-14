@@ -371,11 +371,11 @@ export default function CipherGameScreen() {
                                     accessibilityLabel={`Word: ${tile.word}${isRevealed ? `, ${tile.type}` : ''}`}
                                     accessibilityState={{ disabled: !canGuess || isRevealed }}
                                 >
-                                    {isTrap && (
-                                        <View style={styles.trapIcon}>
-                                            <Ionicons name="skull" size={12} color="#FFFFFF" />
-                                        </View>
-                                    )}
+                    {isTrap && (
+                        <View style={styles.trapIcon}>
+                            <Ionicons name="skull" size={12} color={colors.text.inverse} />
+                        </View>
+                    )}
                                     <Text
                                         style={[
                                             styles.wordText,
@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     wordTextRevealed: {
-        color: '#FFFFFF',
+        color: colors.text.inverse,
         fontWeight: '700',
     },
 

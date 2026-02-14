@@ -65,7 +65,7 @@ interface CourseDetail {
 
 const COVER_HEIGHT = 220;
 
-const GRADIENT_FALLBACK: [string, string] = ['#0f0c29', '#302b63'];
+const GRADIENT_FALLBACK: [string, string] = [colors.obsidian[900], colors.obsidian[700]];
 
 // ============================================
 // Helpers
@@ -172,7 +172,7 @@ function LessonRow({
                 ]}
             >
                 {lesson.completed && (
-                    <Ionicons name="checkmark" size={12} color="#fff" />
+                    <Ionicons name="checkmark" size={12} color={colors.text.inverse} />
                 )}
             </View>
 
@@ -262,11 +262,11 @@ function ModuleAccordion({
                                 styles.moduleIndexBadge,
                                 {
                                     backgroundColor: allComplete
-                                        ? 'rgba(16, 185, 129, 0.12)'
+                                        ? themeColors.emerald[500] + '1F'
                                         : themeColors.surface.goldSubtle,
                                     borderColor: allComplete
-                                        ? 'rgba(16, 185, 129, 0.25)'
-                                        : 'rgba(212, 175, 55, 0.15)',
+                                        ? themeColors.emerald[500] + '40'
+                                        : themeColors.gold[500] + '26',
                                 },
                             ]}
                         >
@@ -476,7 +476,7 @@ export default function CourseDetailScreen() {
                             end={{ x: 1, y: 1 }}
                             style={styles.coverImage}
                         >
-                            <Ionicons name="school-outline" size={56} color="rgba(255,255,255,0.08)" />
+                            <Ionicons name="school-outline" size={56} color={colors.text.inverse + '14'} />
                         </LinearGradient>
                     )}
 
@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
 
     // ---- Overall Progress Card ----
     progressCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        backgroundColor: colors.surface.glass,
         borderRadius: 16,
         borderWidth: 1,
         padding: spacing.lg,
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
 
     // ---- Module Card ----
     moduleCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        backgroundColor: colors.surface.glass,
         borderRadius: 16,
         borderWidth: 1,
         marginBottom: spacing.md,
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
     // ---- Lessons List ----
     lessonsList: {
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.06)',
+        borderTopColor: colors.border.subtle,
     },
     lessonRow: {
         flexDirection: 'row',
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.lg,
         gap: spacing.md,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+        borderBottomColor: colors.border.subtle,
     },
     lessonCheckCircle: {
         width: 22,

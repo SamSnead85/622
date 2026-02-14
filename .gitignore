@@ -11,6 +11,11 @@ build/
 .env
 .env.local
 .env.*.local
+.env.production
+
+# Dangerous debug/fix scripts (should never be committed)
+fix-password.ts
+deep-diagnostic.ts
 
 # IDE
 .idea/

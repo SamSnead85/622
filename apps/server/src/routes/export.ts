@@ -1,11 +1,12 @@
 import { Router, Response, NextFunction } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
 
 // Request data export
-router.post('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const userId = req.userId!;
 
@@ -36,6 +37,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response, next: Nex
                     isPublic: true,
                 },
                 orderBy: { createdAt: 'desc' },
+                take: 10000,
             }),
             prisma.comment.findMany({
                 where: { userId },
@@ -46,6 +48,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response, next: Nex
                     postId: true,
                 },
                 orderBy: { createdAt: 'desc' },
+                take: 10000,
             }),
             prisma.like.findMany({
                 where: { userId },
@@ -54,6 +57,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response, next: Nex
                     createdAt: true,
                 },
                 orderBy: { createdAt: 'desc' },
+                take: 10000,
             }),
             prisma.follow.findMany({
                 where: { followingId: userId },
@@ -61,6 +65,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response, next: Nex
                     follower: { select: { username: true, displayName: true } },
                     createdAt: true,
                 },
+                take: 10000,
             }),
             prisma.follow.findMany({
                 where: { followerId: userId },
@@ -68,6 +73,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response, next: Nex
                     following: { select: { username: true, displayName: true } },
                     createdAt: true,
                 },
+                take: 10000,
             }),
             prisma.conversationParticipant.findMany({
                 where: { userId },

@@ -434,13 +434,17 @@ router.post('/signup', rateLimiters.auth, async (req, res, next) => {
                     try {
                         for (const admin of admins) {
                             // Admin follows the new user
-                            await prisma.follow.create({
-                                data: { followerId: admin.id, followingId: user.id },
+                            await prisma.follow.upsert({
+                                where: { followerId_followingId: { followerId: admin.id, followingId: user.id } },
+                                create: { followerId: admin.id, followingId: user.id },
+                                update: {},
                             }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err })); // Ignore if already following
 
                             // New user follows admin (so their feed isn't empty)
-                            await prisma.follow.create({
-                                data: { followerId: user.id, followingId: admin.id },
+                            await prisma.follow.upsert({
+                                where: { followerId_followingId: { followerId: user.id, followingId: admin.id } },
+                                create: { followerId: user.id, followingId: admin.id },
+                                update: {},
                             }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
                         }
                     } catch (followErr) {
@@ -1920,11 +1924,15 @@ router.post('/provisional-signup', async (req, res, next) => {
 
             // Auto-follow the inviter
             if (inviterId) {
-                await prisma.follow.create({
-                    data: { followerId: user.id, followingId: inviterId },
+                await prisma.follow.upsert({
+                    where: { followerId_followingId: { followerId: user.id, followingId: inviterId } },
+                    create: { followerId: user.id, followingId: inviterId },
+                    update: {},
                 }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
-                await prisma.follow.create({
-                    data: { followerId: inviterId, followingId: user.id },
+                await prisma.follow.upsert({
+                    where: { followerId_followingId: { followerId: inviterId, followingId: user.id } },
+                    create: { followerId: inviterId, followingId: user.id },
+                    update: {},
                 }).catch((err) => logger.warn('Non-critical operation failed:', { error: err?.message || err }));
             }
         }

@@ -36,7 +36,7 @@ import Animated, {
     withSequence,
     Easing,
 } from 'react-native-reanimated';
-import { typography, spacing } from '@zerog/ui';
+import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthStore } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
@@ -110,7 +110,7 @@ const ActionButton = memo(({ icon, label, count, onPress, isActive, activeColor 
                 <Ionicons
                     name={icon as any}
                     size={28}
-                    color={isActive ? (activeColor || '#FF4757') : '#FFFFFF'}
+                    color={isActive ? (activeColor || '#FF4757') : colors.text.inverse}
                 />
             </Animated.View>
             {count !== undefined && count > 0 && (
@@ -144,7 +144,7 @@ const MusicTicker = memo(({ music }: { music: ReelPost['music'] }) => {
 
     return (
         <Animated.View entering={FadeInDown.delay(300).duration(300)} style={styles.musicBar}>
-            <Ionicons name="musical-notes" size={12} color="#FFFFFF" />
+            <Ionicons name="musical-notes" size={12} color={colors.text.inverse} />
             <Text style={styles.musicText} numberOfLines={1}>
                 {music.title} — {music.artist}
             </Text>
@@ -153,7 +153,7 @@ const MusicTicker = memo(({ music }: { music: ReelPost['music'] }) => {
                     <Image source={{ uri: music.coverUrl }} style={styles.musicDiscImage} />
                 ) : (
                     <View style={[styles.musicDiscPlaceholder, { backgroundColor: c.gold[500] }]}>
-                        <Ionicons name="musical-notes" size={10} color="#FFFFFF" />
+                        <Ionicons name="musical-notes" size={10} color={colors.text.inverse} />
                     </View>
                 )}
             </Animated.View>
@@ -229,8 +229,8 @@ const ReelItem = memo(({ reel, isActive, height: itemHeight }: {
     }, [reel.id, router]);
 
     const handleProfile = useCallback(() => {
-        router.push(`/profile/${reel.user.username}` as any);
-    }, [reel.user.username, router]);
+        router.push(`/profile/${reel.user?.username}` as any);
+    }, [reel.user?.username, router]);
 
     return (
         <View style={[styles.reelContainer, { height: itemHeight }]}>
@@ -262,14 +262,14 @@ const ReelItem = memo(({ reel, isActive, height: itemHeight }: {
             {isPaused && (
                 <Animated.View entering={FadeIn.duration(150)} style={styles.pauseOverlay}>
                     <View style={styles.pauseIcon}>
-                        <Ionicons name="play" size={48} color="#FFFFFF" />
+                        <Ionicons name="play" size={48} color={colors.text.inverse} />
                     </View>
                 </Animated.View>
             )}
 
             {/* Bottom gradient */}
             <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.7)']}
+                colors={['transparent', colors.surface.overlayLight, colors.surface.glass]}
                 style={styles.bottomGradient}
                 pointerEvents="none"
             />
@@ -279,17 +279,17 @@ const ReelItem = memo(({ reel, isActive, height: itemHeight }: {
                 {/* User info */}
                 <TouchableOpacity onPress={handleProfile} style={styles.userRow} activeOpacity={0.8}>
                     <Image
-                        source={{ uri: reel.user.avatarUrl || undefined }}
+                        source={{ uri: reel.user?.avatarUrl || undefined }}
                         style={styles.avatar}
                         placeholder={AVATAR_PLACEHOLDER.blurhash}
                         transition={200}
                         cachePolicy="memory-disk"
                     />
-                    <Text style={styles.username}>@{reel.user.username}</Text>
-                    {reel.user.isVerified && (
+                    <Text style={styles.username}>@{reel.user?.username}</Text>
+                    {reel.user?.isVerified && (
                         <Ionicons name="checkmark-circle" size={14} color="#FFD700" />
                     )}
-                    {reel.user.id !== user?.id && (
+                    {reel.user?.id !== user?.id && (
                         <TouchableOpacity style={styles.followBtn}>
                             <Text style={styles.followBtnText}>Follow</Text>
                         </TouchableOpacity>
@@ -423,7 +423,7 @@ export default function ReelsScreen() {
 
     if (isLoading) {
         return (
-            <View style={[styles.screen, styles.centered, { backgroundColor: '#000' }]}>
+            <View style={[styles.screen, styles.centered, { backgroundColor: colors.obsidian[900] }]}>
                 <ActivityIndicator size="large" color={c.gold[400]} />
                 <Text style={[styles.loadingText, { color: c.text.muted }]}>Loading reels...</Text>
             </View>
@@ -432,7 +432,7 @@ export default function ReelsScreen() {
 
     if (reels.length === 0) {
         return (
-            <View style={[styles.screen, styles.centered, { backgroundColor: '#000' }]}>
+            <View style={[styles.screen, styles.centered, { backgroundColor: colors.obsidian[900] }]}>
                 <Ionicons name="videocam-outline" size={64} color={c.text.muted + '40'} />
                 <Text style={[styles.emptyTitle, { color: c.text.secondary }]}>No reels yet</Text>
                 <Text style={[styles.emptySubtitle, { color: c.text.muted }]}>
@@ -450,7 +450,7 @@ export default function ReelsScreen() {
     }
 
     return (
-        <View style={[styles.screen, { backgroundColor: '#000' }]}>
+        <View style={[styles.screen, { backgroundColor: colors.obsidian[900] }]}>
             <FlatList
                 data={reels}
                 renderItem={renderItem}
@@ -482,7 +482,7 @@ export default function ReelsScreen() {
                     hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                     style={styles.headerBackBtn}
                 >
-                    <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
+                    <Ionicons name="arrow-back" size={22} color={colors.text.inverse} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Reels</Text>
                 <TouchableOpacity
@@ -490,7 +490,7 @@ export default function ReelsScreen() {
                     hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                     style={styles.headerBackBtn}
                 >
-                    <Ionicons name="camera-outline" size={22} color="#FFFFFF" />
+                    <Ionicons name="camera-outline" size={22} color={colors.text.inverse} />
                 </TouchableOpacity>
             </View>
 
@@ -532,34 +532,34 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: 'rgba(0,0,0,0.45)',
+        backgroundColor: colors.surface.overlay,
         alignItems: 'center',
         justifyContent: 'center',
     },
     headerTitle: {
         fontSize: typography.fontSize.xl,
         fontWeight: '800',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
         letterSpacing: -0.5,
     },
     // Reel container
     reelContainer: {
         width: SCREEN_WIDTH,
         position: 'relative',
-        backgroundColor: '#000',
+        backgroundColor: colors.obsidian[900],
     },
     // Pause overlay
     pauseOverlay: {
         ...StyleSheet.absoluteFillObject,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.2)',
+        backgroundColor: colors.surface.overlayLight,
     },
     pauseIcon: {
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: colors.surface.overlay,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -589,29 +589,29 @@ const styles = StyleSheet.create({
         height: 36,
         borderRadius: 18,
         borderWidth: 2,
-        borderColor: '#FFFFFF',
+        borderColor: colors.text.inverse,
     },
     username: {
         fontSize: typography.fontSize.md,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
     followBtn: {
         paddingHorizontal: 12,
         paddingVertical: 4,
         borderRadius: 6,
         borderWidth: 1.5,
-        borderColor: '#FFFFFF',
+        borderColor: colors.text.inverse,
         marginLeft: 4,
     },
     followBtnText: {
         fontSize: typography.fontSize.xs,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
     caption: {
         fontSize: typography.fontSize.sm,
-        color: '#FFFFFF',
+        color: colors.text.inverse,
         lineHeight: 20,
         marginBottom: 8,
     },
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
     musicText: {
         flex: 1,
         fontSize: 12,
-        color: '#FFFFFF',
+        color: colors.text.inverse,
         fontWeight: '500',
     },
     musicDisc: {
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
     actionCount: {
         fontSize: 11,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
         fontVariant: ['tabular-nums'],
     },
     // Loading
@@ -700,6 +700,6 @@ const styles = StyleSheet.create({
     createBtnText: {
         fontSize: typography.fontSize.md,
         fontWeight: '700',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 });

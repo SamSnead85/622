@@ -1,11 +1,17 @@
 import { Router, Response, NextFunction } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
 
+// Block all E2E routes in production
+if (process.env.NODE_ENV === 'production') {
+    router.use((req, res) => res.status(404).json({ error: 'Not found' }));
+}
+
 // Upload key bundle
-router.post('/keys', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/keys', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { identityKey, signedPreKey, preKeySignature, oneTimePreKeys } = req.body;
 
@@ -84,7 +90,7 @@ router.get('/keys/:userId', authenticate, async (req: AuthRequest, res: Response
 });
 
 // Replenish one-time pre-keys
-router.post('/prekeys/replenish', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/prekeys/replenish', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { newPreKeys } = req.body;
 

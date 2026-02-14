@@ -3,6 +3,7 @@ import multer from 'multer';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { uploadFile, deleteFile, isValidMediaType, getMaxFileSize } from '../services/storage.js';
 import { prisma } from '../db/client.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
@@ -48,7 +49,7 @@ const upload = memoryUpload;
 // ============================================
 // UPLOAD AVATAR
 // ============================================
-router.post('/avatar', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
+router.post('/avatar', authenticate, rateLimiters.upload, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
     try {
         const file = req.file;
         if (!file) {
@@ -83,7 +84,7 @@ router.post('/avatar', authenticate, upload.single('file'), async (req: MulterRe
 // ============================================
 // UPLOAD COVER IMAGE
 // ============================================
-router.post('/cover', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
+router.post('/cover', authenticate, rateLimiters.upload, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
     try {
         const file = req.file;
         if (!file) {
@@ -118,7 +119,7 @@ router.post('/cover', authenticate, upload.single('file'), async (req: MulterReq
 // ============================================
 // UPLOAD POST MEDIA
 // ============================================
-router.post('/post', authenticate, diskUpload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
+router.post('/post', authenticate, rateLimiters.upload, diskUpload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
     try {
         const file = req.file;
         if (!file) {
@@ -183,7 +184,7 @@ router.post('/post', authenticate, diskUpload.single('file'), async (req: Multer
 // ============================================
 // UPLOAD MOMENT MEDIA
 // ============================================
-router.post('/moment', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
+router.post('/moment', authenticate, rateLimiters.upload, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
     try {
         const file = req.file;
         if (!file) {
@@ -223,7 +224,7 @@ router.post('/moment', authenticate, upload.single('file'), async (req: MulterRe
 // ============================================
 // UPLOAD MESSAGE ATTACHMENT
 // ============================================
-router.post('/message', authenticate, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
+router.post('/message', authenticate, rateLimiters.upload, upload.single('file'), async (req: MulterRequest, res: Response, next: NextFunction) => {
     try {
         const file = req.file;
         if (!file) {
@@ -269,7 +270,7 @@ router.post('/message', authenticate, upload.single('file'), async (req: MulterR
 // ============================================
 // DELETE FILE (admin only - requires ADMIN/SUPERADMIN role)
 // ============================================
-router.delete('/:key(*)', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.delete('/:key(*)', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { key } = req.params;
 

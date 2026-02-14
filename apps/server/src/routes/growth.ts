@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
 import { v4 as uuid } from 'uuid';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 // Validation schemas
 const paymentUpdateSchema = z.object({
@@ -34,7 +35,7 @@ const router = Router();
 // record with status 'invited' (created by admin).
 // This endpoint activates the invitation.
 // ============================================
-router.post('/enroll', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/enroll', authenticate, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const userId = req.user!.id;
 
@@ -182,7 +183,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
 // ============================================
 // UPDATE PAYMENT INFO
 // ============================================
-router.put('/me/payment', authenticate, async (req: AuthRequest, res, next) => {
+router.put('/me/payment', authenticate, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const userId = req.user!.id;
         const data = paymentUpdateSchema.parse(req.body);
@@ -348,7 +349,7 @@ router.get('/admin/flagged', authenticate, requireAdmin, async (req: AuthRequest
 // ============================================
 // ADMIN: APPROVE/REJECT FLAGGED REFERRAL
 // ============================================
-router.post('/admin/referrals/:id/review', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+router.post('/admin/referrals/:id/review', authenticate, requireAdmin, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const { id } = req.params;
         const { action, note } = req.body; // action: 'approve' | 'reject'
@@ -433,7 +434,7 @@ router.patch('/admin/:id', authenticate, requireAdmin, async (req: AuthRequest, 
 // Pre-creates a GrowthPartner record with status 'invited'.
 // The user can then activate via POST /enroll.
 // ============================================
-router.post('/admin/invite', authenticate, requireAdmin, async (req: AuthRequest, res, next) => {
+router.post('/admin/invite', authenticate, requireAdmin, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const { userId, username, tier } = req.body;
 

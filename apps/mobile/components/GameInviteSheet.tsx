@@ -153,7 +153,7 @@ export function GameInviteSheet({ code, gameType, visible, onClose }: GameInvite
                                                     />
                                                     {isInvited && (
                                                         <View style={styles.invitedBadge}>
-                                                            <Ionicons name="checkmark" size={10} color="#FFFFFF" />
+                                                            <Ionicons name="checkmark" size={10} color={colors.text.inverse} />
                                                         </View>
                                                     )}
                                                 </View>
@@ -228,7 +228,7 @@ export function GameInviteSheet({ code, gameType, visible, onClose }: GameInvite
                                 style={styles.shareButton}
                                 accessibilityLabel="Share game invite link"
                             >
-                                <Ionicons name="share-social" size={20} color="#FFFFFF" />
+                                <Ionicons name="share-social" size={20} color={colors.text.inverse} />
                                 <Text style={styles.shareButtonText}>Share Invite Link</Text>
                             </TouchableOpacity>
                         </Animated.View>
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
 
     // ---- Guest Note ----

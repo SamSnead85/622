@@ -172,9 +172,13 @@ function RootLayoutInner() {
 
             // Listen for incoming calls
             const unsubCall = socketManager.on('call:incoming', (data: CallIncoming) => {
+                const callerName = data?.from?.displayName ?? 'Unknown';
+                const callerId = data?.from?.id;
+                if (!callerId) return; // Can't route without a caller ID
+
                 Alert.alert(
                     data.type === 'video' ? 'Incoming Video Call' : 'Incoming Audio Call',
-                    `${data.from.displayName} is calling`,
+                    `${callerName} is calling`,
                     [
                         {
                             text: 'Decline',
@@ -185,7 +189,7 @@ function RootLayoutInner() {
                             text: 'Accept',
                             onPress: () => {
                                 router.push(
-                                    `/call/${data.from.id}?type=${data.type}&name=${encodeURIComponent(data.from.displayName)}&avatar=${encodeURIComponent(data.from.avatarUrl || '')}&incoming=true&callId=${data.callId}`
+                                    `/call/${callerId}?type=${data.type}&name=${encodeURIComponent(callerName)}&avatar=${encodeURIComponent(data?.from?.avatarUrl || '')}&incoming=true&callId=${data.callId}`
                                 );
                             },
                         },

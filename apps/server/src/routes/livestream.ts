@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 import {
     createMuxLiveStream,
     endMuxLiveStream,
@@ -176,7 +177,7 @@ router.get('/vods', optionalAuth, async (req: AuthRequest, res: Response, next: 
 // POST /api/v1/livestream/create
 // Create a new livestream with Mux integration
 // ============================================
-router.post('/create', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/create', authenticate, rateLimiters.general, async (req: AuthRequest, res, next) => {
     try {
         const input = createStreamSchema.parse(req.body);
 
@@ -360,7 +361,7 @@ router.post('/webhooks/mux', async (req, res, next) => {
 // POST /api/v1/livestream/:id/join
 // Join a livestream as viewer
 // ============================================
-router.post('/:id/join', optionalAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/:id/join', optionalAuth, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
 
@@ -396,7 +397,7 @@ router.post('/:id/join', optionalAuth, async (req: AuthRequest, res: Response, n
 // POST /api/v1/livestream/:id/leave
 // Leave a livestream
 // ============================================
-router.post('/:id/leave', optionalAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/:id/leave', optionalAuth, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
 
@@ -415,7 +416,7 @@ router.post('/:id/leave', optionalAuth, async (req: AuthRequest, res: Response, 
 // POST /api/v1/livestream/:id/end
 // End a livestream (streamer or admin only)
 // ============================================
-router.post('/:id/end', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/:id/end', authenticate, rateLimiters.general, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
 
