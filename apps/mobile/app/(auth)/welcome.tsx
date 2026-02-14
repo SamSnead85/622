@@ -1,9 +1,10 @@
 // ============================================
-// Welcome Screen — Revolutionary warm, bold
-// "The people's network."
+// Welcome Screen — Premium, minimal, exclusive
+// Inspired by Clubhouse's exclusivity, Threads' clean launch,
+// and luxury brand aesthetics (centered, breathing room, contrast)
 // ============================================
 
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,9 +16,10 @@ import Animated, {
     FadeInDown,
     FadeIn,
 } from 'react-native-reanimated';
-import { colors, typography, spacing } from '@zerog/ui';
+import { typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
-import { BrandLogo } from '../../components';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
     const router = useRouter();
@@ -34,16 +36,20 @@ export default function WelcomeScreen() {
         router.push('/(auth)/login');
     }, [router]);
 
+    // Adaptive colors that work in both modes
+    const accentColor = isDark ? c.gold[500] : c.gold[700];
+    const accentBg = isDark ? c.gold[500] : '#1A1412';
+    const accentText = isDark ? '#1A1412' : '#FFFFFF';
+    const pillBg = isDark ? c.surface.glass : 'rgba(26, 20, 18, 0.06)';
+    const pillText = isDark ? c.text.secondary : c.text.secondary;
+    const pillIcon = isDark ? c.gold[500] : c.gold[700];
+
     return (
-        <LinearGradient
-            colors={isDark
-                ? [c.background, c.obsidian[700], c.background]
-                : [c.background, c.obsidian[700], c.background]
-            }
-            locations={[0, 0.5, 1]}
+        <View
             style={[
                 styles.container,
                 {
+                    backgroundColor: c.background,
                     paddingTop: insets.top,
                     paddingBottom: insets.bottom,
                 },
@@ -56,125 +62,100 @@ export default function WelcomeScreen() {
                 bounces={true}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Logo */}
-                <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.logoSection}>
-                    <BrandLogo size="hero" />
-                </Animated.View>
+                {/* ── Top section: Logo + Headline ── */}
+                <View style={styles.heroSection}>
+                    {/* Brand mark */}
+                    <Animated.View entering={FadeIn.delay(200).duration(800)} style={styles.logoWrap}>
+                        <View style={[styles.logoMark, { backgroundColor: accentBg }]}>
+                            <Text style={[styles.logoText, { color: accentText }]}>0G</Text>
+                        </View>
+                    </Animated.View>
 
-                {/* Tagline */}
-                <Animated.View entering={FadeInUp.delay(400).duration(600)} style={styles.taglineSection}>
-                    <Text style={[styles.tagline, { color: c.text.primary }]}>
-                        Your data.{'\n'}Your rules.{'\n'}Your community.
-                    </Text>
-                    <Text style={[styles.subtitle, { color: c.text.secondary }]}>
-                        A social network that doesn't spy on you,{'\n'}
-                        sell your attention, or manipulate your feed.
-                    </Text>
-                </Animated.View>
+                    {/* Headline — one powerful line */}
+                    <Animated.View entering={FadeInUp.delay(400).duration(600)}>
+                        <Text style={[styles.headline, { color: c.text.primary }]}>
+                            Social without{'\n'}the surveillance.
+                        </Text>
+                    </Animated.View>
 
-                {/* Value Propositions — stacked, always visible */}
-                <Animated.View entering={FadeInUp.delay(550).duration(500)} style={styles.valuePropSection}>
+                    {/* Subline — one sentence */}
+                    <Animated.View entering={FadeInUp.delay(550).duration(500)}>
+                        <Text style={[styles.subline, { color: c.text.muted }]}>
+                            Private. Invite-only. Yours.
+                        </Text>
+                    </Animated.View>
+                </View>
+
+                {/* ── Trust signals — compact pills ── */}
+                <Animated.View entering={FadeInUp.delay(650).duration(500)} style={styles.trustSection}>
                     {([
-                        { icon: 'lock-closed' as const, text: 'End-to-end encrypted — we can\'t read your messages' },
-                        { icon: 'eye-off' as const, text: 'Zero ads, zero tracking, zero data selling' },
-                        { icon: 'shield-checkmark' as const, text: 'Invite-only — every member is vouched for' },
-                        { icon: 'options' as const, text: 'You control the algorithm, not the other way around' },
+                        { icon: 'lock-closed' as const, label: 'Encrypted' },
+                        { icon: 'eye-off' as const, label: 'No tracking' },
+                        { icon: 'shield-checkmark' as const, label: 'Invite-only' },
                     ]).map((item, index) => (
                         <Animated.View
-                            key={item.text}
-                            entering={FadeInUp.delay(600 + index * 70).duration(350)}
-                            style={styles.valueRow}
+                            key={item.label}
+                            entering={FadeInUp.delay(700 + index * 60).duration(300)}
+                            style={[styles.trustPill, { backgroundColor: pillBg }]}
                         >
-                            <View style={[styles.valueIcon, { backgroundColor: c.gold[500] + '15' }]}>
-                                <Ionicons name={item.icon} size={15} color={c.gold[500]} />
-                            </View>
-                            <Text style={[styles.valueText, { color: c.text.secondary }]}>{item.text}</Text>
+                            <Ionicons name={item.icon} size={13} color={pillIcon} />
+                            <Text style={[styles.trustLabel, { color: pillText }]}>{item.label}</Text>
                         </Animated.View>
                     ))}
                 </Animated.View>
 
-                {/* Spacer */}
+                {/* ── Spacer ── */}
                 <View style={styles.spacer} />
 
-                {/* CTAs */}
-                <Animated.View entering={FadeInUp.delay(600).duration(500)} style={styles.ctaSection}>
+                {/* ── CTAs ── */}
+                <Animated.View entering={FadeInUp.delay(800).duration(500)} style={styles.ctaSection}>
                     <Pressable
                         onPress={handleCreateAccount}
                         style={({ pressed }) => [
                             styles.primaryButton,
                             {
+                                backgroundColor: accentBg,
                                 opacity: pressed ? 0.9 : 1,
                                 transform: [{ scale: pressed ? 0.98 : 1 }],
                             },
                         ]}
                         accessibilityRole="button"
-                        accessibilityLabel="Create account"
+                        accessibilityLabel="Get started"
                     >
-                        <LinearGradient
-                            colors={[c.gold[400], c.gold[600]]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.primaryGradient}
-                        >
-                            <Text style={styles.primaryButtonText}>
-                                Get started
-                            </Text>
-                        </LinearGradient>
+                        <Text style={[styles.primaryButtonText, { color: accentText }]}>
+                            Get started
+                        </Text>
                     </Pressable>
-
-                    <View style={styles.dividerRow}>
-                        <View style={[styles.dividerLine, { backgroundColor: c.border.subtle }]} />
-                        <Text style={[styles.dividerText, { color: c.text.muted }]}>Or</Text>
-                        <View style={[styles.dividerLine, { backgroundColor: c.border.subtle }]} />
-                    </View>
 
                     <Pressable
                         onPress={handleLogin}
                         style={({ pressed }) => [
                             styles.secondaryButton,
                             {
-                                backgroundColor: c.surface.glass,
-                                borderColor: c.border.default,
-                                opacity: pressed ? 0.85 : 1,
+                                opacity: pressed ? 0.7 : 1,
                                 transform: [{ scale: pressed ? 0.98 : 1 }],
                             },
                         ]}
                         accessibilityRole="button"
                         accessibilityLabel="Log in to existing account"
                     >
-                        <Text style={[styles.secondaryButtonText, { color: c.text.primary }]}>
-                            Log in
+                        <Text style={[styles.secondaryButtonText, { color: c.text.secondary }]}>
+                            I already have an account
                         </Text>
                     </Pressable>
                 </Animated.View>
 
-                {/* Footer */}
-                <Animated.View entering={FadeIn.delay(900).duration(400)} style={styles.footer}>
+                {/* ── Footer ── */}
+                <Animated.View entering={FadeIn.delay(1000).duration(400)} style={styles.footer}>
                     <Text style={[styles.termsText, { color: c.text.muted }]}>
-                        By signing up, you agree to our{' '}
-                        <Text style={[styles.termsLink, { color: c.gold[500] }]}>Terms</Text>,{' '}
-                        <Text style={[styles.termsLink, { color: c.gold[500] }]}>Rules & Policies</Text>
-                        , and{' '}
-                        <Text style={[styles.termsLink, { color: c.gold[500] }]}>Privacy Policy</Text>.
+                        By continuing, you agree to our{' '}
+                        <Text style={[styles.termsLink, { color: accentColor }]}>Terms</Text>
+                        {' & '}
+                        <Text style={[styles.termsLink, { color: accentColor }]}>Privacy Policy</Text>.
                     </Text>
-
-                    <Pressable
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            router.push('/tools' as any);
-                        }}
-                        style={styles.toolsLink}
-                        accessibilityRole="button"
-                        accessibilityLabel="Explore Prayer Times, Qibla, and more tools"
-                    >
-                        <Ionicons name="compass-outline" size={14} color={c.text.muted} />
-                        <Text style={[styles.toolsLinkText, { color: c.text.muted }]}>
-                            Explore Prayer Times & Qibla
-                        </Text>
-                    </Pressable>
                 </Animated.View>
             </ScrollView>
-        </LinearGradient>
+        </View>
     );
 }
 
@@ -189,141 +170,124 @@ const styles = StyleSheet.create({
         flexGrow: 1,
     },
 
-    // ---- Logo ----
-    logoSection: {
+    // ── Hero ──
+    heroSection: {
         alignItems: 'center',
-        paddingTop: 48,
-    },
-
-    // ---- Tagline ----
-    taglineSection: {
+        paddingTop: SCREEN_HEIGHT * 0.12,
         paddingHorizontal: spacing.xl,
-        paddingTop: 40,
     },
-    tagline: {
-        fontSize: 38,
-        fontWeight: '700',
-        letterSpacing: -1.5,
-        lineHeight: 46,
-        fontFamily: 'SpaceGrotesk-Bold',
+    logoWrap: {
+        marginBottom: 40,
     },
-    subtitle: {
-        fontSize: typography.fontSize.base,
-        lineHeight: 22,
-        marginTop: spacing.lg,
-        maxWidth: 300,
-        fontFamily: 'Inter',
-    },
-
-    // ---- Value Propositions ----
-    valuePropSection: {
-        paddingTop: 28,
-        paddingHorizontal: spacing.xl,
-        gap: 14,
-    },
-    valueRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    valueIcon: {
-        width: 30,
-        height: 30,
-        borderRadius: 9,
+    logoMark: {
+        width: 72,
+        height: 72,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    valueText: {
-        flex: 1,
-        fontSize: typography.fontSize.sm,
-        lineHeight: 18,
-        fontFamily: 'Inter',
+    logoText: {
+        fontSize: 32,
+        fontWeight: '800',
+        fontFamily: 'SpaceGrotesk-Bold',
+        letterSpacing: -1,
     },
 
-    // ---- Spacer ----
+    headline: {
+        fontSize: 34,
+        fontWeight: '700',
+        letterSpacing: -1,
+        lineHeight: 40,
+        textAlign: 'center',
+        fontFamily: 'SpaceGrotesk-Bold',
+    },
+    subline: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '500',
+        letterSpacing: 2,
+        textTransform: 'uppercase',
+        textAlign: 'center',
+        marginTop: 16,
+        fontFamily: 'Inter-Medium',
+    },
+
+    // ── Trust signals ──
+    trustSection: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 8,
+        marginTop: 32,
+        paddingHorizontal: spacing.lg,
+    },
+    trustPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 20,
+    },
+    trustLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        fontFamily: 'Inter-SemiBold',
+    },
+
+    // ── Spacer ──
     spacer: {
         flex: 1,
-        minHeight: 24,
+        minHeight: 60,
     },
 
-    // ---- CTAs ----
+    // ── CTAs ──
     ctaSection: {
-        paddingHorizontal: spacing.xl,
-        paddingBottom: spacing.lg,
+        paddingHorizontal: 28,
+        gap: 14,
     },
     primaryButton: {
-        overflow: 'hidden',
-        borderRadius: 16,
-        shadowColor: '#FFB020',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 14,
-        elevation: 4,
-    },
-    primaryGradient: {
+        height: 56,
+        borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 16,
-        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 4,
     },
     primaryButtonText: {
-        fontSize: typography.fontSize.lg,
+        fontSize: 17,
         fontWeight: '700',
-        color: '#1A1412',
         fontFamily: 'SpaceGrotesk-Bold',
-    },
-    dividerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: spacing.md,
-        paddingHorizontal: spacing.xl,
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-    },
-    dividerText: {
-        fontSize: typography.fontSize.sm,
-        marginHorizontal: spacing.md,
-        fontFamily: 'Inter',
+        letterSpacing: 0.3,
     },
     secondaryButton: {
-        height: 52,
-        borderRadius: 16,
-        borderWidth: 1,
+        height: 56,
+        borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
     },
     secondaryButtonText: {
-        fontSize: typography.fontSize.base,
+        fontSize: 15,
         fontWeight: '600',
-        fontFamily: 'SpaceGrotesk-SemiBold',
+        fontFamily: 'Inter-SemiBold',
     },
 
-    // ---- Footer ----
+    // ── Footer ──
     footer: {
         paddingHorizontal: spacing.xl,
-        paddingBottom: spacing.xl,
+        paddingTop: 20,
+        paddingBottom: 16,
         alignItems: 'center',
     },
     termsText: {
-        fontSize: typography.fontSize.xs,
+        fontSize: 12,
         textAlign: 'center',
         lineHeight: 18,
         fontFamily: 'Inter',
     },
     termsLink: {
-        fontFamily: 'Inter-Medium',
-    },
-    toolsLink: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        marginTop: spacing.md,
-        paddingVertical: spacing.xs,
-    },
-    toolsLinkText: {
-        fontSize: typography.fontSize.xs,
-        fontFamily: 'Inter-Medium',
+        fontFamily: 'Inter-SemiBold',
+        fontWeight: '600',
     },
 });
