@@ -2,6 +2,7 @@ import { InviteStatus, InviteMethod } from '@prisma/client';
 import { prisma } from '../../db/client.js';
 import { randomBytes } from 'crypto';
 import { logger } from '../../utils/logger.js';
+import { AppError } from '../../middleware/errorHandler.js';
 
 // Email configuration (uses Resend SDK when RESEND_API_KEY is set)
 interface EmailConfig {
@@ -530,7 +531,7 @@ export class InviteService {
             logger.info(`[InviteService] SMS sent to ${to}`);
         } catch (importError) {
             logger.error('[InviteService] Failed to load twilio SDK. Install with: npm install twilio');
-            throw new Error('SMS service unavailable — twilio SDK not installed');
+            throw new AppError('SMS service unavailable — twilio SDK not installed', 502);
         }
     }
 }

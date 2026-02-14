@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { logger } from '../utils/logger.js';
+import { AppError } from '../middleware/errorHandler.js';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -20,7 +21,7 @@ export const uploadImage = async (
     } = {}
 ) => {
     if (!process.env.CLOUDINARY_CLOUD_NAME) {
-        throw new Error('Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET');
+        throw new AppError('Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET', 500);
     }
 
     return new Promise((resolve, reject) => {
@@ -71,7 +72,7 @@ export const uploadVideo = async (
     } = {}
 ): Promise<any> => {
     if (!process.env.CLOUDINARY_CLOUD_NAME) {
-        throw new Error('Cloudinary not configured');
+        throw new AppError('Cloudinary not configured', 500);
     }
 
     return new Promise((resolve, reject) => {

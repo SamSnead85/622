@@ -10,6 +10,7 @@ import {
     SuggestionStatus
 } from '@prisma/client';
 import { prisma } from '../db/client.js';
+import { AppError } from '../middleware/errorHandler.js';
 
 // ============================================
 // STREAM URL PARSER
@@ -79,7 +80,7 @@ export async function suggestStream(params: {
     const parsed = parseStreamUrl(params.url);
 
     if (!parsed) {
-        throw new Error('Unsupported stream URL. Supported: YouTube, Twitch, Facebook');
+        throw new AppError('Unsupported stream URL. Supported: YouTube, Twitch, Facebook', 400);
     }
 
     // Check for duplicate
@@ -92,7 +93,7 @@ export async function suggestStream(params: {
     });
 
     if (existing) {
-        throw new Error('This stream has already been suggested');
+        throw new AppError('This stream has already been suggested', 400);
     }
 
     return prisma.liveStreamSuggestion.create({

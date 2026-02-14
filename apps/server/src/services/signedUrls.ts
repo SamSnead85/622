@@ -6,10 +6,11 @@
  */
 
 import crypto from 'crypto';
+import { AppError } from '../middleware/errorHandler.js';
 
 const SIGNING_SECRET = process.env.URL_SIGNING_SECRET;
 if (!SIGNING_SECRET && process.env.NODE_ENV === 'production') {
-    throw new Error('URL_SIGNING_SECRET environment variable is required in production');
+    throw new AppError('URL_SIGNING_SECRET environment variable is required in production', 500);
 }
 const signingSecret = SIGNING_SECRET || 'dev-fallback-key-not-for-production';
 

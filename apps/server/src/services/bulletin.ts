@@ -1,5 +1,7 @@
 "use strict";
 
+import { AppError } from '../middleware/errorHandler.js';
+
 /**
  * BULLETIN SERVICE
  * Community Command Center - Bulletin Board Operations
@@ -258,7 +260,7 @@ export async function updateBulletin(id: string, authorId: string, updates: Upda
     });
 
     if (!bulletin) {
-        throw new Error('Bulletin not found or unauthorized');
+        throw new AppError('Bulletin not found or unauthorized', 404);
     }
 
     return prisma.bulletinPost.update({
@@ -290,7 +292,7 @@ export async function deleteBulletin(id: string, authorId: string, isAdmin: bool
         });
 
         if (!bulletin) {
-            throw new Error('Bulletin not found or unauthorized');
+            throw new AppError('Bulletin not found or unauthorized', 404);
         }
     }
 

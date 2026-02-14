@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger.js';
+import { AppError } from '../middleware/errorHandler.js';
 
 // ============================================
 // Types
@@ -74,7 +75,7 @@ function generateCode(): string {
 
 export function createGame(type: string, hostPlayer: { userId?: string; name: string; avatarUrl?: string }, settings: Record<string, unknown> = {}): GameState {
     const handler = gameHandlers.get(type);
-    if (!handler) throw new Error(`Unknown game type: ${type}`);
+    if (!handler) throw new AppError(`Unknown game type: ${type}`, 400);
 
     const code = generateCode();
     const hostId = hostPlayer.userId || `guest_${Date.now()}`;
@@ -106,12 +107,12 @@ export function createGame(type: string, hostPlayer: { userId?: string; name: st
 
 export function joinGame(code: string, player: { userId?: string; name: string; avatarUrl?: string }): GameState {
     const state = activeGames.get(code);
-    if (!state) throw new Error('Game not found');
-    if (state.status !== 'lobby') throw new Error('Game already started');
+    if (!state) throw new AppError('Game not found', 404);
+    if (state.status !== 'lobby') throw new AppError('Game already started', 400);
 
     const handler = gameHandlers.get(state.type);
-    if (!handler) throw new Error('Invalid game type');
-    if (state.players.length >= handler.maxPlayers) throw new Error('Game is full');
+    if (!handler) throw new AppError('Invalid game type', 400);
+    if (state.players.length >= handler.maxPlayers) throw new AppError('Game is full', 400);
 
     const playerId = player.userId || `guest_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
@@ -139,12 +140,12 @@ export function joinGame(code: string, player: { userId?: string; name: string; 
 
 export function startGame(code: string, requesterId: string): GameState {
     const state = activeGames.get(code);
-    if (!state) throw new Error('Game not found');
-    if (state.hostId !== requesterId) throw new Error('Only the host can start the game');
+    if (!state) throw new AppError('Game not found', 404);
+    if (state.hostId !== requesterId) throw new AppError('Only the host can start the game', 403);
 
     const handler = gameHandlers.get(state.type);
-    if (!handler) throw new Error('Invalid game type');
-    if (state.players.length < handler.minPlayers) throw new Error(`Need at least ${handler.minPlayers} players`);
+    if (!handler) throw new AppError('Invalid game type', 400);
+    if (state.players.length < handler.minPlayers) throw new AppError(`Need at least ${handler.minPlayers} players`, 400);
 
     state.status = 'playing';
     state.round = 1;
@@ -158,11 +159,11 @@ export function startGame(code: string, requesterId: string): GameState {
 
 export function handleGameAction(code: string, playerId: string, action: string, payload: Record<string, unknown>): { state: GameState; roundEnded: boolean; gameEnded: boolean; roundResults?: { scores: Record<string, number>; summary: Record<string, unknown> } } {
     const state = activeGames.get(code);
-    if (!state) throw new Error('Game not found');
-    if (state.status !== 'playing') throw new Error('Game is not in progress');
+    if (!state) throw new AppError('Game not found', 404);
+    if (state.status !== 'playing') throw new AppError('Game is not in progress', 400);
 
     const handler = gameHandlers.get(state.type);
-    if (!handler) throw new Error('Invalid game type');
+    if (!handler) throw new AppError('Invalid game type', 400);
 
     const newState = handler.handleAction(state, playerId, action, payload);
 

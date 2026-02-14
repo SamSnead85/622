@@ -5,6 +5,7 @@
 
 import Mux from '@mux/mux-node';
 import { logger } from '../utils/logger.js';
+import { AppError } from '../middleware/errorHandler.js';
 
 // ============================================
 // CLIENT INITIALIZATION
@@ -18,7 +19,7 @@ function getClient(): Mux {
         const tokenSecret = process.env.MUX_TOKEN_SECRET;
 
         if (!tokenId || !tokenSecret) {
-            throw new Error('MUX_TOKEN_ID and MUX_TOKEN_SECRET must be set in environment variables');
+            throw new AppError('MUX_TOKEN_ID and MUX_TOKEN_SECRET must be set in environment variables', 500);
         }
 
         muxClient = new Mux({
@@ -64,7 +65,7 @@ export async function createMuxLiveStream(options?: {
 
     const playbackId = liveStream.playback_ids?.[0]?.id;
     if (!playbackId) {
-        throw new Error('Mux did not return a playback ID');
+        throw new AppError('Mux did not return a playback ID', 502);
     }
 
     logger.info(`Mux live stream created: ${liveStream.id} (playback: ${playbackId})`);

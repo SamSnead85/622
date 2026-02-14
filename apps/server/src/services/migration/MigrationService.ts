@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { InstagramParser } from './parsers/InstagramParser.js';
 import { TikTokParser } from './parsers/TikTokParser.js';
 import { WhatsAppParser } from './parsers/WhatsAppParser.js';
+import { AppError } from '../../middleware/errorHandler.js';
 
 export interface MigrationResult {
     migrationId: string;
@@ -74,7 +75,7 @@ export class MigrationService {
         });
 
         if (!migration) {
-            throw new Error('Migration not found');
+            throw new AppError('Migration not found', 404);
         }
 
         // Update status to processing
@@ -156,7 +157,7 @@ export class MigrationService {
             case 'WHATSAPP':
                 return WhatsAppParser.parse(filePath);
             default:
-                throw new Error(`Platform ${platform} not yet supported`);
+                throw new AppError(`Platform ${platform} not yet supported`, 400);
         }
     }
 
@@ -289,7 +290,7 @@ export class MigrationService {
         });
 
         if (!migration) {
-            throw new Error('Migration not found or cannot be cancelled');
+            throw new AppError('Migration not found or cannot be cancelled', 404);
         }
 
         await prisma.migration.update({

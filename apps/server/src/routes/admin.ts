@@ -1,4 +1,5 @@
 import { Router, Response, NextFunction } from 'express';
+import { AppError } from '../middleware/errorHandler.js';
 import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
@@ -532,7 +533,7 @@ router.post('/threats/action', authenticate, requireAdmin, rateLimiters.general,
 
         switch (data.action) {
             case 'ban_user': {
-                if (!data.userId) throw new Error('userId required for ban_user');
+                if (!data.userId) throw new AppError('userId required for ban_user', 400);
                 const user = await prisma.user.update({
                     where: { id: data.userId },
                     data: { isBanned: true },
@@ -563,7 +564,7 @@ router.post('/threats/action', authenticate, requireAdmin, rateLimiters.general,
                 break;
             }
             case 'shadow_ban': {
-                if (!data.userId) throw new Error('userId required for shadow_ban');
+                if (!data.userId) throw new AppError('userId required for shadow_ban', 400);
                 const user = await prisma.user.update({
                     where: { id: data.userId },
                     data: { isShadowBanned: true },
@@ -584,7 +585,7 @@ router.post('/threats/action', authenticate, requireAdmin, rateLimiters.general,
                 break;
             }
             case 'block_ip': {
-                if (!data.ip) throw new Error('ip required for block_ip');
+                if (!data.ip) throw new AppError('ip required for block_ip', 400);
                 await blockIP({
                     ipAddress: data.ip,
                     reason: data.reason || 'Blocked by admin',
@@ -596,7 +597,7 @@ router.post('/threats/action', authenticate, requireAdmin, rateLimiters.general,
                 break;
             }
             case 'approve_post': {
-                if (!data.postId) throw new Error('postId required for approve_post');
+                if (!data.postId) throw new AppError('postId required for approve_post', 400);
                 await prisma.post.update({
                     where: { id: data.postId },
                     data: { visible: true },

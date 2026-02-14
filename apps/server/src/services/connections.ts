@@ -7,6 +7,7 @@
 
 import { ConnectionStatus } from '@prisma/client';
 import { prisma } from '../db/client.js';
+import { AppError } from '../middleware/errorHandler.js';
 
 // ============================================
 // SEND CONNECTION REQUEST
@@ -19,7 +20,7 @@ export async function sendConnectionRequest(
 ) {
     // Prevent self-connection
     if (senderId === receiverId) {
-        throw new Error('Cannot send connection request to yourself');
+        throw new AppError('Cannot send connection request to yourself', 400);
     }
 
     // Check if already connected (follow relationship exists)
@@ -33,7 +34,7 @@ export async function sendConnectionRequest(
     });
 
     if (existingFollow) {
-        throw new Error('Already connected with this user');
+        throw new AppError('Already connected with this user', 400);
     }
 
     // Check for existing request
@@ -48,10 +49,10 @@ export async function sendConnectionRequest(
 
     if (existingRequest) {
         if (existingRequest.status === 'PENDING') {
-            throw new Error('A connection request is already pending');
+            throw new AppError('A connection request is already pending', 400);
         }
         if (existingRequest.status === 'BLOCKED') {
-            throw new Error('Unable to send connection request');
+            throw new AppError('Unable to send connection request', 403);
         }
     }
 
@@ -120,7 +121,7 @@ export async function respondToConnectionRequest(
     });
 
     if (!request) {
-        throw new Error('Request not found or already processed');
+        throw new AppError('Request not found or already processed', 404);
     }
 
     // Update request status
@@ -235,7 +236,7 @@ export async function cancelConnectionRequest(requestId: string, senderId: strin
     });
 
     if (!request) {
-        throw new Error('Request not found or cannot be cancelled');
+        throw new AppError('Request not found or cannot be cancelled', 404);
     }
 
     return prisma.connectionRequest.delete({

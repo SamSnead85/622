@@ -8,6 +8,7 @@
 import { prisma } from '../db/client.js';
 import crypto from 'crypto';
 import * as OTPAuth from 'otpauth';
+import { AppError } from '../middleware/errorHandler.js';
 
 // TOTP configuration
 const TOTP_CONFIG = {
@@ -53,7 +54,7 @@ function verifyCode(secret: string, code: string, email: string): boolean {
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 if (!ENCRYPTION_KEY && process.env.NODE_ENV === 'production') {
-    throw new Error('ENCRYPTION_KEY environment variable is required in production');
+    throw new AppError('ENCRYPTION_KEY environment variable is required in production', 500);
 }
 const key = ENCRYPTION_KEY || 'dev-fallback-key-not-for-production-x';
 const ALGORITHM = 'aes-256-gcm';
@@ -111,11 +112,11 @@ export async function generateTOTPSecret(userId: string): Promise<TOTPSetupResul
     });
 
     if (!user) {
-        throw new Error('User not found');
+        throw new AppError('User not found', 404);
     }
 
     if (user.twoFactorEnabled) {
-        throw new Error('2FA is already enabled. Disable it first to set up again.');
+        throw new AppError('2FA is already enabled. Disable it first to set up again.', 400);
     }
 
     // Generate secret
@@ -150,11 +151,11 @@ export async function verifyAndEnable2FA(userId: string, code: string): Promise<
     });
 
     if (!user || !user.twoFactorSecret) {
-        throw new Error('2FA setup not started. Generate a secret first.');
+        throw new AppError('2FA setup not started. Generate a secret first.', 400);
     }
 
     if (user.twoFactorEnabled) {
-        throw new Error('2FA is already enabled.');
+        throw new AppError('2FA is already enabled.', 400);
     }
 
     const secret = decrypt(user.twoFactorSecret);
@@ -208,7 +209,7 @@ export async function verifyTOTPCode(userId: string, code: string): Promise<bool
     });
 
     if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
-        throw new Error('2FA is not enabled for this user');
+        throw new AppError('2FA is not enabled for this user', 400);
     }
 
     const secret = decrypt(user.twoFactorSecret);
@@ -225,7 +226,7 @@ export async function useBackupCode(userId: string, code: string): Promise<boole
     });
 
     if (!user || !user.twoFactorEnabled) {
-        throw new Error('2FA is not enabled for this user');
+        throw new AppError('2FA is not enabled for this user', 400);
     }
 
     const normalizedCode = code.toUpperCase().replace(/\s/g, '');

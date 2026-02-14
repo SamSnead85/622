@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import { AppError } from '../middleware/errorHandler.js';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -23,9 +24,10 @@ const SERVER_URL = (() => {
     const url = process.env.SERVER_URL;
     if (url) return url;
     if (process.env.NODE_ENV === 'production' && STORAGE_PROVIDER === 'local') {
-        throw new Error(
+        throw new AppError(
             'FATAL: SERVER_URL must be set in production when using local storage. ' +
-            'File URLs will be broken without it. Example: https://your-server.up.railway.app'
+            'File URLs will be broken without it. Example: https://your-server.up.railway.app',
+            500
         );
     }
     return `http://localhost:${process.env.PORT || 5180}`;
@@ -186,7 +188,7 @@ export async function uploadFile(
     if (STORAGE_PROVIDER === 'supabase') {
         const supabase = getSupabaseClient();
         if (!supabase) {
-            throw new Error('Supabase client not initialized. Check SUPABASE_URL and SUPABASE_SERVICE_KEY.');
+            throw new AppError('Supabase client not initialized. Check SUPABASE_URL and SUPABASE_SERVICE_KEY.', 500);
         }
 
         logger.info('[Storage] Uploading to Supabase:', { bucket: BUCKET, key, mimeType, size: sanitizedBuffer.length });
@@ -201,7 +203,7 @@ export async function uploadFile(
 
         if (error) {
             logger.error('[Storage] Supabase upload failed:', error);
-            throw new Error(`Storage upload failed: ${error.message}`);
+            throw new AppError(`Storage upload failed: ${error.message}`, 502);
         }
 
         logger.info('[Storage] Supabase upload successful:', key);
@@ -215,7 +217,7 @@ export async function uploadFile(
 
     // Priority 4: S3-compatible storage (S3, R2)
     if (!s3Client) {
-        throw new Error('S3 client not initialized');
+        throw new AppError('S3 client not initialized', 500);
     }
 
     logger.info('[Storage] Uploading to S3:', { bucket: BUCKET, key, mimeType, size: sanitizedBuffer.length });
@@ -230,7 +232,7 @@ export async function uploadFile(
         logger.info('[Storage] S3 upload successful:', key);
     } catch (s3Error: unknown) {
         logger.error('[Storage] S3 upload failed:', s3Error);
-        throw new Error(`Storage upload failed: ${s3Error instanceof Error ? s3Error.message : 'Unknown S3 error'}`);
+        throw new AppError(`Storage upload failed: ${s3Error instanceof Error ? s3Error.message : 'Unknown S3 error'}`, 502);
     }
 
     return {

@@ -7,6 +7,7 @@
 
 import crypto from 'crypto';
 import { logger } from '../utils/logger.js';
+import { AppError } from '../middleware/errorHandler.js';
 
 // ============================================
 // CONFIGURATION
@@ -24,9 +25,10 @@ function getEncryptionKey(): Buffer {
     if (!key) {
         // In production: hard fail. Data encrypted with a random key is permanently lost on restart.
         if (process.env.NODE_ENV === 'production') {
-            throw new Error(
+            throw new AppError(
                 'FATAL: ENCRYPTION_KEY is not set. Cannot start in production without a stable encryption key. ' +
-                'Generate one with: openssl rand -hex 32'
+                'Generate one with: openssl rand -hex 32',
+                500
             );
         }
         // In development: use a deterministic dev-only key so data survives restarts
@@ -78,7 +80,7 @@ export function decryptField(encryptedText: string): string {
         const [ivHex, authTagHex, encrypted] = encryptedText.split(':');
 
         if (!ivHex || !authTagHex || !encrypted) {
-            throw new Error('Invalid encrypted format');
+            throw new AppError('Invalid encrypted format', 400);
         }
 
         const iv = Buffer.from(ivHex, 'hex');
@@ -93,7 +95,7 @@ export function decryptField(encryptedText: string): string {
         return decrypted;
     } catch (error) {
         logger.error('Decryption failed:', error);
-        throw new Error('Failed to decrypt field');
+        throw new AppError('Failed to decrypt field', 500);
     }
 }
 

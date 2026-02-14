@@ -1,5 +1,6 @@
 import { MomentType } from '@prisma/client';
 import { prisma } from '../db/client.js';
+import { AppError } from '../middleware/errorHandler.js';
 
 // 24 hours in milliseconds
 const MOMENT_DURATION_MS = 24 * 60 * 60 * 1000;
@@ -250,7 +251,7 @@ export class MomentService {
         });
 
         if (!moment) {
-            throw new Error('Moment not found or not authorized');
+            throw new AppError('Moment not found or not authorized', 404);
         }
 
         return prisma.momentView.findMany({
@@ -278,7 +279,7 @@ export class MomentService {
         });
 
         if (!moment) {
-            throw new Error('Moment not found or not authorized');
+            throw new AppError('Moment not found or not authorized', 404);
         }
 
         return prisma.moment.delete({
