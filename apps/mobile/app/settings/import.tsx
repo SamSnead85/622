@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { apiFetch, API_URL, getToken } from '../../lib/api';
 import { ScreenHeader } from '../../components';
 
@@ -95,6 +96,7 @@ const PLATFORMS = [
 ];
 
 export default function ImportScreen() {
+    const { colors: c } = useTheme();
     const router = useRouter();
     const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
     const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
@@ -397,8 +399,8 @@ export default function ImportScreen() {
                                         colors={[colors.gold[400], colors.gold[600]]}
                                         style={styles.uploadBtnGradient}
                                     >
-                                        <Ionicons name="cloud-upload-outline" size={22} color="#FFFFFF" />
-                                        <Text style={styles.uploadBtnText}>Select Export File</Text>
+                                        <Ionicons name="cloud-upload-outline" size={22} color={c.text.inverse} />
+                                        <Text style={[styles.uploadBtnText, { color: c.text.inverse }]}>Select Export File</Text>
                                     </LinearGradient>
                                 </TouchableOpacity>
                             </View>
@@ -570,7 +572,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    stepNumberText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
+    stepNumberText: { fontSize: 13, fontWeight: '700' },
     stepText: { flex: 1, fontSize: typography.fontSize.base, color: colors.text.secondary, lineHeight: 22, paddingTop: 3 },
 
     // Import preview
@@ -643,7 +645,7 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         borderRadius: 14,
     },
-    uploadBtnText: { fontSize: typography.fontSize.base, fontWeight: '700', color: '#FFFFFF' },
+    uploadBtnText: { fontSize: typography.fontSize.base, fontWeight: '700' },
 
     // Progress
     progressSection: { alignItems: 'center', paddingTop: 60 },
@@ -713,7 +715,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         alignItems: 'center',
     },
-    doneBtnText: { fontSize: typography.fontSize.base, fontWeight: '700', color: '#FFFFFF' },
+    doneBtnText: { fontSize: typography.fontSize.base, fontWeight: '700' },
     retryBtn: {
         backgroundColor: colors.surface.glassHover,
         paddingHorizontal: spacing.xl,

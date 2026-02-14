@@ -17,6 +17,7 @@ import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withTiming, run
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useNotificationsStore, Notification } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { timeAgo } from '../../lib/utils';
@@ -164,13 +165,14 @@ const SectionHeader = memo(({ title }: { title: string }) => (
 // Notification item component
 // ============================================
 
-const NotificationItem = memo(({ item, index, onPress, onReply, onFollowBack, onSwipeDismiss }: {
+const NotificationItem = memo(({ item, index, onPress, onReply, onFollowBack, onSwipeDismiss, c }: {
     item: Notification;
     index: number;
     onPress: (n: Notification) => void;
     onReply: (n: Notification) => void;
     onFollowBack: (n: Notification) => void;
     onSwipeDismiss: (n: Notification) => void;
+    c: ReturnType<typeof useTheme>['colors'];
 }) => {
     const iconInfo = getNotificationIcon(item.type);
     const translateX = useSharedValue(0);
@@ -246,7 +248,7 @@ const NotificationItem = memo(({ item, index, onPress, onReply, onFollowBack, on
                                     cachePolicy="memory-disk"
                                 />
                                 <View style={[styles.notifIconBadge, { backgroundColor: iconInfo.color }]}>
-                                    <Ionicons name={iconInfo.name} size={10} color="#FFFFFF" />
+                                    <Ionicons name={iconInfo.name} size={10} color={c.text.inverse} />
                                 </View>
                             </View>
                         ) : (
@@ -373,6 +375,7 @@ export default function NotificationsScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
+    const { colors: c } = useTheme();
     const { notifications, isLoading, error, fetchNotifications, markAsRead, markAllAsRead } =
         useNotificationsStore();
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -463,10 +466,11 @@ export default function NotificationsScreen() {
                     onReply={handleReply}
                     onFollowBack={handleFollowBack}
                     onSwipeDismiss={handleSwipeDismiss}
+                    c={c}
                 />
             );
         },
-        [sections, handlePress, handleReply, handleFollowBack, handleSwipeDismiss],
+        [sections, handlePress, handleReply, handleFollowBack, handleSwipeDismiss, c],
     );
 
     const renderSectionHeader = useCallback(

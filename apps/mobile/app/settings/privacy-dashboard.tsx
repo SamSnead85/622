@@ -22,6 +22,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthStore } from '../../stores';
 import { ScreenHeader, GlassCard } from '../../components';
 import { apiFetch, API } from '../../lib/api';
@@ -200,6 +201,7 @@ function DataStat({ value, label, icon }: { value: string; label: string; icon: 
 
 // ─── Main Screen ─────────────────────────────────────────────────────
 export default function PrivacyDashboardScreen() {
+    const { colors: c } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
@@ -464,15 +466,15 @@ export default function PrivacyDashboardScreen() {
                                 end={{ x: 1, y: 1 }}
                             >
                                 {isExporting ? (
-                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                    <ActivityIndicator size="small" color={c.text.inverse} />
                                 ) : (
                                     <>
                                         <Ionicons
                                             name="download-outline"
                                             size={18}
-                                            color="#FFFFFF"
+                                            color={c.text.inverse}
                                         />
-                                        <Text style={styles.exportBtnText}>Export All My Data</Text>
+                                        <Text style={[styles.exportBtnText, { color: c.text.inverse }]}>Export All My Data</Text>
                                     </>
                                 )}
                             </LinearGradient>
@@ -767,7 +769,6 @@ const styles = StyleSheet.create({
     exportBtnText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#FFFFFF',
     },
 
     // ─── Delete Link ────────────────────────────────

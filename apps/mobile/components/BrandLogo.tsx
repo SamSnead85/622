@@ -24,12 +24,12 @@ export function BrandLogo({ size = 'standard' }: BrandLogoProps) {
     const markSize = MARK_SIZE[size];
     const borderRadius = size === 'hero' ? 20 : size === 'standard' ? 16 : 12;
 
-    // In light mode, use a dark mark with white text for contrast
+    // In light mode, use a dark mark with inverse text for contrast
     // In dark mode, use the gold glow effect
     if (!isDark) {
         return (
-            <View style={[styles.mark, { width: markSize, height: markSize, borderRadius, backgroundColor: '#1A1412' }]}>
-                <Text style={[styles.markText, { fontSize: fontSize * 0.6, color: '#FFFFFF' }]}>
+            <View style={[styles.mark, { width: markSize, height: markSize, borderRadius, backgroundColor: colors.text.primary }]}>
+                <Text style={[styles.markText, { fontSize: fontSize * 0.6, color: colors.text.inverse }]}>
                     0G
                 </Text>
             </View>

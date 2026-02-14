@@ -120,9 +120,9 @@ export default function EmailSettingsScreen() {
                                         <Text style={[styles.badgeText, { color: c.gold[500] }]}>Verified</Text>
                                     </View>
                                 ) : (
-                                    <View style={[styles.badge, { backgroundColor: '#FF6B3520' }]}>
-                                        <Ionicons name="alert-circle" size={14} color="#FF6B35" />
-                                        <Text style={[styles.badgeText, { color: '#FF6B35' }]}>Unverified</Text>
+                                    <View style={[styles.badge, { backgroundColor: c.surface.coralSubtle }]}>
+                                        <Ionicons name="alert-circle" size={14} color={c.coral[500]} />
+                                        <Text style={[styles.badgeText, { color: c.coral[500] }]}>Unverified</Text>
                                     </View>
                                 )}
                             </View>
@@ -183,10 +183,10 @@ export default function EmailSettingsScreen() {
                                 activeOpacity={0.7}
                             >
                                 {isSaving ? (
-                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                    <ActivityIndicator size="small" color={c.text.inverse} />
                                 ) : (
                                     <Text style={[styles.saveBtnText, {
-                                        color: newEmail.trim() ? '#FFFFFF' : c.text.muted,
+                                        color: newEmail.trim() ? c.text.inverse : c.text.muted,
                                     }]}>
                                         Update Email
                                     </Text>
@@ -197,9 +197,9 @@ export default function EmailSettingsScreen() {
 
                     {/* Status Messages */}
                     {error && (
-                        <Animated.View entering={FadeInDown.duration(200)} style={[styles.statusCard, { backgroundColor: '#FF6B3515', borderColor: '#FF6B3530' }]}>
-                            <Ionicons name="alert-circle" size={16} color="#FF6B35" />
-                            <Text style={[styles.statusText, { color: '#FF6B35' }]}>{error}</Text>
+                        <Animated.View entering={FadeInDown.duration(200)} style={[styles.statusCard, { backgroundColor: c.surface.coralSubtle, borderColor: c.coral[500] + '30' }]}>
+                            <Ionicons name="alert-circle" size={16} color={c.coral[500]} />
+                            <Text style={[styles.statusText, { color: c.coral[500] }]}>{error}</Text>
                         </Animated.View>
                     )}
                     {success && (

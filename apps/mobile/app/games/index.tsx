@@ -36,6 +36,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { ScreenHeader } from '../../components';
 import { GlassCard } from '../../components';
 import { useGameStore, useAuthStore } from '../../stores';
@@ -707,6 +708,7 @@ function HeroSection() {
 // ============================================
 
 export default function GamesHubScreen() {
+    const { colors: c } = useTheme();
     const router = useRouter();
     const gameStore = useGameStore();
     const [roomCode, setRoomCode] = useState('');
@@ -854,8 +856,8 @@ export default function GamesHubScreen() {
                                     end={{ x: 1, y: 0 }}
                                     style={styles.joinButtonGradient}
                                 >
-                                    <Text style={[styles.joinButtonText, roomCode.length < 6 && styles.joinButtonTextDisabled]}>Go</Text>
-                                    <Ionicons name="arrow-forward" size={16} color={roomCode.length >= 6 ? '#FFFFFF' : colors.text.muted} />
+                                    <Text style={[styles.joinButtonText, roomCode.length < 6 ? styles.joinButtonTextDisabled : { color: c.text.inverse }]}>Go</Text>
+                                    <Ionicons name="arrow-forward" size={16} color={roomCode.length >= 6 ? c.text.inverse : colors.text.muted} />
                                 </LinearGradient>
                             </TouchableOpacity>
                         </View>

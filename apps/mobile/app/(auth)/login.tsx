@@ -566,11 +566,11 @@ export default function LoginScreen() {
                             >
                                 {isLoading ? (
                                     <View style={styles.loadingRow}>
-                                        <ActivityIndicator size="small" color="#FFFFFF" />
-                                        <Text style={styles.submitText}>Signing in...</Text>
+                                        <ActivityIndicator size="small" color={c.text.inverse} />
+                                        <Text style={[styles.submitText, { color: c.text.inverse }]}>Signing in...</Text>
                                     </View>
                                 ) : (
-                                    <Text style={styles.submitText}>Sign In</Text>
+                                    <Text style={[styles.submitText, { color: c.text.inverse }]}>Sign In</Text>
                                 )}
                             </LinearGradient>
                         </TouchableOpacity>

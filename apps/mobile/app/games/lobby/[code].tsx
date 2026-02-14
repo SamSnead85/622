@@ -35,6 +35,7 @@ import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { ScreenHeader, GlassCard, Avatar, LoadingView, GameInviteSheet } from '../../../components';
 import { useGameStore, useAuthStore } from '../../../stores';
 import { socketManager } from '../../../lib/socket';
@@ -327,6 +328,7 @@ function WaitingForPlayers() {
 // ============================================
 
 export default function LobbyScreen() {
+    const { colors: c } = useTheme();
     const router = useRouter();
     const { code } = useLocalSearchParams<{ code: string }>();
     const gameStore = useGameStore();
@@ -734,12 +736,12 @@ export default function LobbyScreen() {
                             <Ionicons
                                 name="play"
                                 size={20}
-                                color={canStart ? colors.obsidian[900] : colors.text.muted}
+                                color={canStart ? c.text.inverse : colors.text.muted}
                             />
                             <Text
                                 style={[
                                     styles.startButtonText,
-                                    !canStart && styles.startButtonTextDisabled,
+                                    canStart ? { color: c.text.inverse } : styles.startButtonTextDisabled,
                                 ]}
                             >
                                 {canStart ? 'Start Game' : `Need ${minPlayers}+ Players`}
@@ -1153,7 +1155,6 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
     },
     startButtonTextDisabled: {
         color: colors.text.muted,

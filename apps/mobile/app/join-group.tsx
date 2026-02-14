@@ -36,6 +36,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
 import { ScreenHeader, GlassCard } from '../components';
 import { useAuthStore } from '../stores';
+import { useTheme } from '../contexts/ThemeContext';
 import { apiFetch, API } from '../lib/api';
 
 const GUEST_NAME_KEY = '@guest-name';
@@ -117,6 +118,7 @@ export default function JoinGroupScreen() {
     const router = useRouter();
     const { code, name } = useLocalSearchParams<{ code: string; name?: string }>();
     const { user, isAuthenticated } = useAuthStore();
+    const { colors: c } = useTheme();
 
     // ---- State ----
     const [displayName, setDisplayName] = useState('');
@@ -473,18 +475,18 @@ export default function JoinGroupScreen() {
                                 ]}
                             >
                                 {isJoining ? (
-                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                    <ActivityIndicator size="small" color={c.text.inverse} />
                                 ) : (
                                     <Ionicons
                                         name="people"
                                         size={22}
-                                        color={displayName.trim() ? colors.obsidian[900] : colors.text.muted}
+                                        color={displayName.trim() ? c.text.inverse : colors.text.muted}
                                     />
                                 )}
                                 <Text
                                     style={[
                                         styles.joinButtonText,
-                                        !displayName.trim() && styles.joinButtonTextDisabled,
+                                        displayName.trim() ? { color: c.text.inverse } : styles.joinButtonTextDisabled,
                                     ]}
                                 >
                                     {isJoining ? 'Joining...' : 'Join Group'}
@@ -754,7 +756,6 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
     },
     joinButtonTextDisabled: {
         color: colors.text.muted,

@@ -438,6 +438,7 @@ export default SENTRY_DSN ? Sentry.wrap(RootLayout) : RootLayout;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1A1412',
+        // Fallback — overridden at runtime by theme's c.obsidian[900]
+        backgroundColor: '#0A0A0B',
     },
 });

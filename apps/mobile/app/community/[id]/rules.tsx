@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { apiFetch, API } from '../../../lib/api';
 import { ScreenHeader, GlassCard } from '../../../components';
 
@@ -118,6 +119,7 @@ async function saveRulesToStorage(communityId: string, data: CommunityRulesData)
 
 export default function CommunityRulesScreen() {
     const { id: communityId } = useLocalSearchParams<{ id: string }>();
+    const { colors: c } = useTheme();
     const insets = useSafeAreaInsets();
 
     const [isAdmin, setIsAdmin] = useState(false);
@@ -458,9 +460,9 @@ export default function CommunityRulesScreen() {
                             end={{ x: 1, y: 1 }}
                         >
                             {saving ? (
-                                <ActivityIndicator size="small" color="#FFFFFF" />
+                                <ActivityIndicator size="small" color={c.text.inverse} />
                             ) : (
-                                <Text style={styles.saveBtnText}>Save Rules</Text>
+                                <Text style={[styles.saveBtnText, { color: c.text.inverse }]}>Save Rules</Text>
                             )}
                         </LinearGradient>
                     </TouchableOpacity>
@@ -707,7 +709,6 @@ const styles = StyleSheet.create({
     saveBtnText: {
         fontSize: typography.fontSize.lg,
         fontWeight: '600',
-        color: '#FFFFFF',
         fontFamily: 'Inter-SemiBold',
     },
 });

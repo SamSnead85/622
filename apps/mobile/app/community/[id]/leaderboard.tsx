@@ -93,6 +93,7 @@ function PodiumMember({
     levelName: string;
     isCenter: boolean;
 }) {
+    const { colors: c } = useTheme();
     const ringColor = rank === 1 ? MEDAL_COLORS.gold : rank === 2 ? MEDAL_COLORS.silver : MEDAL_COLORS.bronze;
     const avatarSize = isCenter ? 80 : 64;
     const ringSize = avatarSize + 8;
@@ -140,7 +141,7 @@ function PodiumMember({
 
             {/* Rank badge */}
             <View style={[styles.rankBadge, { backgroundColor: ringColor }]}>
-                <Text style={styles.rankBadgeText}>{rank}</Text>
+                <Text style={[styles.rankBadgeText, { color: c.text.inverse }]}>{rank}</Text>
             </View>
 
             {/* Name */}
@@ -308,7 +309,7 @@ export default function LeaderboardScreen() {
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                             >
-                                <Text style={styles.periodPillTextActive}>{label}</Text>
+                                <Text style={[styles.periodPillTextActive, { color: c.text.inverse }]}>{label}</Text>
                             </LinearGradient>
                         ) : (
                             <Text style={styles.periodPillText}>{label}</Text>
@@ -500,7 +501,6 @@ const styles = StyleSheet.create({
     periodPillTextActive: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: '#FFFFFF',
     },
 
     // ---- Loading ----
@@ -579,7 +579,6 @@ const styles = StyleSheet.create({
     rankBadgeText: {
         fontSize: 12,
         fontWeight: '800',
-        color: '#FFFFFF',
     },
     podiumName: {
         fontSize: typography.fontSize.sm,

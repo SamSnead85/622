@@ -32,6 +32,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { ScreenHeader, GlassCard } from '../../components';
 
 const GUEST_NAME_KEY = '@guest-name';
@@ -93,6 +94,7 @@ function FloatingOrbs() {
 // ============================================
 
 export default function GuestJoinScreen() {
+    const { colors: c } = useTheme();
     const router = useRouter();
     const { code, gameType } = useLocalSearchParams<{ code: string; gameType?: string }>();
     const [guestName, setGuestName] = useState('');
@@ -284,12 +286,12 @@ export default function GuestJoinScreen() {
                                 <Ionicons
                                     name="game-controller"
                                     size={22}
-                                    color={guestName.trim() ? colors.obsidian[900] : colors.text.muted}
+                                    color={guestName.trim() ? c.text.inverse : colors.text.muted}
                                 />
                                 <Text
                                     style={[
                                         styles.joinButtonText,
-                                        !guestName.trim() && styles.joinButtonTextDisabled,
+                                        guestName.trim() ? { color: c.text.inverse } : styles.joinButtonTextDisabled,
                                     ]}
                                 >
                                     {isLoading ? 'Joining...' : 'Join Game'}
@@ -361,7 +363,7 @@ export default function GuestJoinScreen() {
                                 end={{ x: 1, y: 0 }}
                                 style={styles.signupCtaButton}
                             >
-                                <Text style={styles.signupCtaButtonText}>Sign Up</Text>
+                                <Text style={[styles.signupCtaButtonText, { color: c.text.inverse }]}>Sign Up</Text>
                             </LinearGradient>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -539,7 +541,6 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
     },
     joinButtonTextDisabled: {
         color: colors.text.muted,
@@ -608,7 +609,6 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.base,
         fontWeight: '700',
         fontFamily: 'Inter-Bold',
-        color: '#FFFFFF',
     },
     signupCtaDismiss: {
         paddingVertical: spacing.sm,

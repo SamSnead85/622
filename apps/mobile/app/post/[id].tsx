@@ -47,6 +47,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../../lib/api';
 import { timeAgo, formatCount } from '../../lib/utils';
 import { useAuthStore, mapApiPost } from '../../stores';
+import { useTheme } from '../../contexts/ThemeContext';
 import { ScreenHeader, Avatar, GlassCard, AnimatedLikeButton } from '../../components';
 import { showError } from '../../stores/toastStore';
 
@@ -432,6 +433,7 @@ export default function PostDetailScreen() {
     const { id: postId } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
+    const { colors: c } = useTheme();
     const flatListRef = useRef<FlatList>(null);
     const inputRef = useRef<TextInput>(null);
     const newCommentIds = useRef<Set<string>>(new Set());
@@ -732,8 +734,8 @@ export default function PostDetailScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="Tap to retry loading post"
                     >
-                        <Ionicons name="refresh" size={18} color="#FFFFFF" />
-                        <Text style={styles.retryButtonText}>Tap to retry</Text>
+                        <Ionicons name="refresh" size={18} color={c.text.inverse} />
+                        <Text style={[styles.retryButtonText, { color: c.text.inverse }]}>Tap to retry</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -1102,12 +1104,12 @@ export default function PostDetailScreen() {
                             style={styles.sendBtn}
                         >
                             {isSending ? (
-                                <ActivityIndicator size="small" color="#FFFFFF" />
+                                <ActivityIndicator size="small" color={c.text.inverse} />
                             ) : (
                                 <Ionicons
                                     name="arrow-up"
                                     size={18}
-                                    color="#FFFFFF"
+                                    color={c.text.inverse}
                                 />
                             )}
                         </LinearGradient>
@@ -1171,7 +1173,6 @@ const styles = StyleSheet.create({
     },
     retryButtonText: {
         fontSize: typography.fontSize.base,
-        color: '#FFFFFF',
         fontWeight: '600',
     },
 

@@ -85,7 +85,7 @@ export default function RequestAccessScreen() {
     if (isSubmitted) {
         return (
             <LinearGradient
-                colors={[c.background, isDark ? '#0F0D0A' : '#FFF8F0', c.background]}
+                colors={[c.background, isDark ? c.obsidian[300] : c.background, c.background]}
                 locations={[0, 0.5, 1]}
                 style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
             >
@@ -125,7 +125,7 @@ export default function RequestAccessScreen() {
     // ---- Form State ----
     return (
         <LinearGradient
-            colors={[c.background, isDark ? '#0F0D0A' : '#FFF8F0', c.background]}
+            colors={[c.background, isDark ? c.obsidian[300] : c.background, c.background]}
             locations={[0, 0.5, 1]}
             style={styles.container}
         >
@@ -250,11 +250,11 @@ export default function RequestAccessScreen() {
                                 >
                                     {isLoading ? (
                                         <View style={styles.loadingRow}>
-                                            <ActivityIndicator size="small" color="#FFFFFF" />
-                                            <Text style={styles.submitText}>Submitting...</Text>
+                                            <ActivityIndicator size="small" color={c.text.inverse} />
+                                            <Text style={[styles.submitText, { color: c.text.inverse }]}>Submitting...</Text>
                                         </View>
                                     ) : (
-                                        <Text style={styles.submitText}>Submit request</Text>
+                                        <Text style={[styles.submitText, { color: c.text.inverse }]}>Submit request</Text>
                                     )}
                                 </LinearGradient>
                             </TouchableOpacity>

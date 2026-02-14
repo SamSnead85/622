@@ -245,9 +245,9 @@ export default function VerifyEmailScreen() {
                         style={styles.verifyGradient}
                     >
                         {isVerifying ? (
-                            <ActivityIndicator color="#FFF" size="small" />
+                            <ActivityIndicator color={c.text.inverse} size="small" />
                         ) : (
-                            <Text style={styles.verifyButtonText}>Verify</Text>
+                            <Text style={[styles.verifyButtonText, { color: c.text.inverse }]}>Verify</Text>
                         )}
                     </LinearGradient>
                 </TouchableOpacity>

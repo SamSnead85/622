@@ -18,6 +18,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../stores';
+import { useTheme } from '../contexts/ThemeContext';
 import { apiFetch, API } from '../lib/api';
 import { GlassCard } from '../components';
 
@@ -84,6 +85,7 @@ export default function DiscoverScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((s) => s.user);
+    const { colors: c } = useTheme();
 
     // Prayer times state
     const [prayers, setPrayers] = useState<PrayerTimeData[]>([]);
@@ -391,11 +393,11 @@ export default function DiscoverScreen() {
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                     >
-                        <Text style={styles.ctaText}>Continue</Text>
+                        <Text style={[styles.ctaText, { color: c.text.inverse }]}>Continue</Text>
                         <Ionicons
                             name="arrow-forward"
                             size={20}
-                            color="#FFFFFF"
+                            color={c.text.inverse}
                             style={{ marginStart: spacing.sm }}
                         />
                     </LinearGradient>
@@ -723,7 +725,6 @@ const styles = StyleSheet.create({
     ctaText: {
         fontSize: typography.fontSize.lg,
         fontWeight: '600',
-        color: '#FFFFFF',
         fontFamily: 'Inter-SemiBold',
     },
     skipText: {

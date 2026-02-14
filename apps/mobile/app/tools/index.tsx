@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn, FadeInRight } from 'react-native-reanimated';
 import { colors, typography, spacing, shadows } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../../stores';
 import { ScreenHeader, GlassCard } from '../../components';
@@ -48,6 +49,7 @@ function ToolCard({
     delay,
     featured = false,
 }: ToolCardProps) {
+    const { colors: c } = useTheme();
     return (
         <Animated.View
             entering={FadeInDown.duration(450).delay(delay).springify().damping(18)}
@@ -74,7 +76,7 @@ function ToolCard({
                 {/* Badge */}
                 {badge && (
                     <View style={[styles.toolBadge, { backgroundColor: badgeColor || colors.gold[500] }]}>
-                        <Text style={styles.toolBadgeText}>{badge}</Text>
+                        <Text style={[styles.toolBadgeText, { color: c.text.inverse }]}>{badge}</Text>
                     </View>
                 )}
 
@@ -623,7 +625,6 @@ const styles = StyleSheet.create({
     toolBadgeText: {
         fontSize: 9,
         fontWeight: '800',
-        color: '#FFFFFF',
         letterSpacing: 0.6,
     },
 

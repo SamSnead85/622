@@ -179,8 +179,8 @@ function PlatformCard({
                         onPress={() => onConnect(platform)}
                         activeOpacity={0.8}
                     >
-                        <Ionicons name="link-outline" size={18} color="#FFFFFF" />
-                        <Text style={styles.connectBtnText}>Connect {platform.name}</Text>
+<Ionicons name="link-outline" size={18} color={c.text.inverse} />
+                                        <Text style={[styles.connectBtnText, { color: c.text.inverse }]}>Connect {platform.name}</Text>
                     </TouchableOpacity>
                 )}
 
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginTop: spacing.sm,
     },
-    connectBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+    connectBtnText: { fontSize: 14, fontWeight: '700' },
 
     // Features
     featuresRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: spacing.sm },

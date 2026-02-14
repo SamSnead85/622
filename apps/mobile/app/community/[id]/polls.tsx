@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { apiFetch, API } from '../../../lib/api';
 import { ScreenHeader, LoadingView } from '../../../components';
 import { showError } from '../../../stores/toastStore';
@@ -146,6 +147,7 @@ function CreatePollModal({
     onCreated: (poll: Poll) => void;
 }) {
     const insets = useSafeAreaInsets();
+    const { colors: c } = useTheme();
     const [question, setQuestion] = useState('');
     const [options, setOptions] = useState(['', '']);
     const [allowMultiple, setAllowMultiple] = useState(false);
@@ -324,11 +326,11 @@ function CreatePollModal({
                             style={createStyles.submitGradient}
                         >
                             {isSubmitting ? (
-                                <ActivityIndicator size="small" color={canSubmit ? '#FFFFFF' : colors.text.muted} />
+                                <ActivityIndicator size="small" color={canSubmit ? c.text.inverse : colors.text.muted} />
                             ) : (
                                 <>
-                                    <Ionicons name="bar-chart-outline" size={18} color={canSubmit ? '#FFFFFF' : colors.text.muted} />
-                                    <Text style={[createStyles.submitText, !canSubmit && createStyles.submitTextDisabled]}>
+                                    <Ionicons name="bar-chart-outline" size={18} color={canSubmit ? c.text.inverse : colors.text.muted} />
+                                    <Text style={[createStyles.submitText, canSubmit ? { color: c.text.inverse } : createStyles.submitTextDisabled]}>
                                         Create Poll
                                     </Text>
                                 </>
@@ -398,7 +400,7 @@ const createStyles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
         gap: spacing.sm, paddingVertical: spacing.md,
     },
-    submitText: { fontSize: typography.fontSize.base, fontWeight: '700', color: '#FFFFFF' },
+    submitText: { fontSize: typography.fontSize.base, fontWeight: '700' },
     submitTextDisabled: { color: colors.text.muted },
 });
 
@@ -410,6 +412,7 @@ export default function CommunityPollsScreen() {
     const router = useRouter();
     const { id: communityId } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
+    const { colors: c } = useTheme();
     const [polls, setPolls] = useState<Poll[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -526,8 +529,8 @@ export default function CommunityPollsScreen() {
                                 onPress={() => setShowCreateModal(true)}
                             >
                                 <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.createBtnGradient}>
-                                    <Ionicons name="add" size={18} color="#FFFFFF" />
-                                    <Text style={styles.createBtnText}>Create Poll</Text>
+                                    <Ionicons name="add" size={18} color={c.text.inverse} />
+                                    <Text style={[styles.createBtnText, { color: c.text.inverse }]}>Create Poll</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
                         </View>
@@ -613,6 +616,5 @@ const styles = StyleSheet.create({
     },
     createBtnText: {
         fontSize: typography.fontSize.base, fontWeight: '700',
-        color: '#FFFFFF',
     },
 });

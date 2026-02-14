@@ -730,11 +730,11 @@ export default function SignupScreen() {
                                 >
                                     {isLoading ? (
                                         <View style={styles.loadingRow}>
-                                            <ActivityIndicator size="small" color="#FFFFFF" />
-                                            <Text style={styles.submitButtonText}>Creating account...</Text>
+                                            <ActivityIndicator size="small" color={c.text.inverse} />
+                                            <Text style={[styles.submitButtonText, { color: c.text.inverse }]}>Creating account...</Text>
                                         </View>
                                     ) : (
-                                        <Text style={styles.submitButtonText}>Create Account</Text>
+                                        <Text style={[styles.submitButtonText, { color: c.text.inverse }]}>Create Account</Text>
                                     )}
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -762,8 +762,8 @@ export default function SignupScreen() {
                                     accessibilityRole="button"
                                     accessibilityLabel="Continue with Apple"
                                 >
-                                    <Ionicons name="logo-apple" size={20} color={isDark ? '#000000' : '#FFFFFF'} />
-                                    <Text style={[styles.socialButtonText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
+                                    <Ionicons name="logo-apple" size={20} color={c.text.inverse} />
+                                    <Text style={[styles.socialButtonText, { color: c.text.inverse }]}>
                                         Continue with Apple
                                     </Text>
                                 </TouchableOpacity>

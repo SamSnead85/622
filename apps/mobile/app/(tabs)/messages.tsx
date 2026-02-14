@@ -150,7 +150,7 @@ const ConversationRow = memo(({
                         </Text>
                         {hasUnread && (
                             <View style={styles.unreadBadge}>
-                                <Text style={styles.unreadBadgeText}>
+                                <Text style={[styles.unreadBadgeText, { color: c.text.inverse }]}>
                                     {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
                                 </Text>
                             </View>
@@ -599,7 +599,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 5,
     },
     unreadBadgeText: {
-        color: '#FFFFFF',
         fontSize: 11,
         fontWeight: '700',
     },

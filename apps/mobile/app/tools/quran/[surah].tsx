@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../../contexts/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScreenHeader, GlassCard } from '../../../components';
 
@@ -153,6 +154,7 @@ function AyahDiamond({ number }: { number: number }) {
 
 // ─── Main Screen ───────────────────────────────────────────────────
 export default function SurahDetailScreen() {
+    const { colors: c } = useTheme();
     const insets = useSafeAreaInsets();
     const { surah } = useLocalSearchParams<{ surah: string }>();
     const surahNumber = parseInt(surah || '1', 10);
@@ -511,9 +513,9 @@ export default function SurahDetailScreen() {
                             <Ionicons
                                 name="refresh"
                                 size={16}
-                                color="#FFFFFF"
+                                color={c.text.inverse}
                             />
-                            <Text style={styles.retryButtonText}>
+                            <Text style={[styles.retryButtonText, { color: c.text.inverse }]}>
                                 {isRetrying ? 'Retrying...' : 'Tap to Retry'}
                             </Text>
                         </TouchableOpacity>
@@ -822,6 +824,5 @@ const styles = StyleSheet.create({
     retryButtonText: {
         fontSize: typography.fontSize.sm,
         fontWeight: '700',
-        color: '#FFFFFF',
     },
 });

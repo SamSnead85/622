@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { apiFetch, API } from '../../lib/api';
 import { ScreenHeader, LoadingView } from '../../components';
@@ -90,6 +91,7 @@ const DIGEST_OPTIONS: Array<{ value: NotificationPrefs['emailDigest']; label: st
 ];
 
 export default function NotificationPrefsScreen() {
+    const { colors: c } = useTheme();
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
     const CHANNELS = getChannels(t);
@@ -371,11 +373,11 @@ export default function NotificationPrefsScreen() {
                             end={{ x: 1, y: 1 }}
                         >
                             {saving ? (
-                                <ActivityIndicator size="small" color="#FFFFFF" />
+                                <ActivityIndicator size="small" color={c.text.inverse} />
                             ) : (
                                 <>
-                                    <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
-                                    <Text style={styles.saveBtnText}>Save Preferences</Text>
+                                    <Ionicons name="checkmark-circle" size={18} color={c.text.inverse} />
+                                    <Text style={[styles.saveBtnText, { color: c.text.inverse }]}>Save Preferences</Text>
                                 </>
                             )}
                         </LinearGradient>
@@ -607,6 +609,6 @@ const styles = StyleSheet.create({
     },
     saveBtnText: {
         fontSize: typography.fontSize.lg, fontWeight: '600',
-        color: '#FFFFFF', fontFamily: 'Inter-SemiBold',
+        fontFamily: 'Inter-SemiBold',
     },
 });

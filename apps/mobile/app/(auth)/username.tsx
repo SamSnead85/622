@@ -199,12 +199,12 @@ export default function UsernameScreen() {
                                 )}
                                 {!checking && isAvailable === true && (
                                     <View style={[styles.statusDot, { backgroundColor: c.emerald[500] }]}>
-                                        <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                                        <Ionicons name="checkmark" size={14} color={c.text.inverse} />
                                     </View>
                                 )}
                                 {!checking && isAvailable === false && (
                                     <View style={[styles.statusDot, { backgroundColor: c.coral[500] }]}>
-                                        <Ionicons name="close" size={14} color="#FFFFFF" />
+                                        <Ionicons name="close" size={14} color={c.text.inverse} />
                                     </View>
                                 )}
                             </View>
@@ -252,9 +252,9 @@ export default function UsernameScreen() {
                                 style={styles.continueGradient}
                             >
                                 {loading ? (
-                                    <ActivityIndicator size="small" color="#000" />
+                                    <ActivityIndicator size="small" color={c.text.primary} />
                                 ) : (
-                                    <Text style={styles.continueButtonText}>Sign up</Text>
+                                    <Text style={[styles.continueButtonText, { color: c.text.inverse }]}>Sign up</Text>
                                 )}
                             </LinearGradient>
                         </TouchableOpacity>

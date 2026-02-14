@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { apiFetch, API } from '../../../lib/api';
 import { ScreenHeader } from '../../../components';
@@ -39,6 +40,7 @@ export default function PollCreateScreen() {
     const { id: communityId } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
+    const { colors: c } = useTheme();
 
     const [question, setQuestion] = useState('');
     const [options, setOptions] = useState(['', '']);
@@ -205,9 +207,9 @@ export default function PollCreateScreen() {
                         style={styles.saveBtnGradient}
                     >
                         {creating ? (
-                            <ActivityIndicator size="small" color="#FFFFFF" />
+                            <ActivityIndicator size="small" color={c.text.inverse} />
                         ) : (
-                            <Text style={[styles.saveBtnText, !isValid && { color: colors.text.muted }]}>
+                            <Text style={[styles.saveBtnText, { color: isValid ? c.text.inverse : colors.text.muted }]}>
                                 Create Poll
                             </Text>
                         )}
@@ -307,6 +309,6 @@ const styles = StyleSheet.create({
     },
     saveBtnText: {
         fontSize: typography.fontSize.lg, fontWeight: '600',
-        color: '#FFFFFF', fontFamily: 'Inter-SemiBold',
+        fontFamily: 'Inter-SemiBold',
     },
 });

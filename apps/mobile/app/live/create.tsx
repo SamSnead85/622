@@ -93,8 +93,8 @@ export default function GoLiveScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="Start live broadcast"
                     >
-                        <Ionicons name="radio" size={20} color="#FFFFFF" />
-                        <Text style={styles.goLiveBtnText}>Go Live</Text>
+                        <Ionicons name="radio" size={20} color={c.text.inverse} />
+                        <Text style={[styles.goLiveBtnText, { color: c.text.inverse }]}>Go Live</Text>
                     </TouchableOpacity>
                 </Animated.View>
 
@@ -185,7 +185,6 @@ const styles = StyleSheet.create({
     goLiveBtnText: {
         fontSize: typography.fontSize.lg,
         fontWeight: '700',
-        color: '#FFFFFF',
     },
     comingSoon: {
         fontSize: typography.fontSize.xs,

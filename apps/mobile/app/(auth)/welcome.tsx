@@ -37,12 +37,12 @@ export default function WelcomeScreen() {
     }, [router]);
 
     // Adaptive colors that work in both modes
-    const accentColor = isDark ? c.gold[500] : c.gold[700];
-    const accentBg = isDark ? c.gold[500] : '#1A1412';
-    const accentText = isDark ? '#1A1412' : '#FFFFFF';
-    const pillBg = isDark ? c.surface.glass : 'rgba(26, 20, 18, 0.06)';
-    const pillText = isDark ? c.text.secondary : c.text.secondary;
-    const pillIcon = isDark ? c.gold[500] : c.gold[700];
+    const accentColor = isDark ? c.gold[500] : c.gold[600];
+    const accentBg = isDark ? c.gold[500] : c.text.primary;
+    const accentText = isDark ? c.text.inverse : c.text.inverse;
+    const pillBg = c.surface.glass;
+    const pillText = c.text.secondary;
+    const pillIcon = isDark ? c.gold[500] : c.gold[500];
 
     return (
         <View

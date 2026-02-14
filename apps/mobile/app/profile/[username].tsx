@@ -176,10 +176,12 @@ const FollowButton = memo(({
     isFollowing,
     isLoading,
     onPress,
+    c,
 }: {
     isFollowing: boolean;
     isLoading: boolean;
     onPress: () => void;
+    c: ReturnType<typeof useTheme>['colors'];
 }) => {
     const scale = useSharedValue(1);
     const bgProgress = useSharedValue(isFollowing ? 1 : 0);
@@ -220,8 +222,8 @@ const FollowButton = memo(({
                     </View>
                 ) : (
                     <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.followGradient}>
-                        <Ionicons name="person-add" size={14} color="#FFFFFF" style={styles.followIconMargin} />
-                        <Text style={styles.followButtonText}>Follow</Text>
+                        <Ionicons name="person-add" size={14} color={c.text.inverse} style={styles.followIconMargin} />
+                        <Text style={[styles.followButtonText, { color: c.text.inverse }]}>Follow</Text>
                     </LinearGradient>
                 )}
             </TouchableOpacity>
@@ -234,10 +236,12 @@ const ProfileError = memo(({
     message,
     onRetry,
     onGoBack,
+    c,
 }: {
     message: string;
     onRetry: () => void;
     onGoBack: () => void;
+    c: ReturnType<typeof useTheme>['colors'];
 }) => (
     <View style={styles.errorContainer}>
         <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={StyleSheet.absoluteFill} />
@@ -253,8 +257,8 @@ const ProfileError = memo(({
                 }}
                 activeOpacity={0.8}
             >
-                <Ionicons name="refresh" size={18} color="#FFFFFF" />
-                <Text style={styles.retryButtonText}>Try Again</Text>
+                <Ionicons name="refresh" size={18} color={c.text.inverse} />
+                <Text style={[styles.retryButtonText, { color: c.text.inverse }]}>Try Again</Text>
             </TouchableOpacity>
             <TouchableOpacity
                 style={styles.goBackButton}
@@ -526,6 +530,7 @@ export default function UserProfileScreen() {
                 message={loadError}
                 onRetry={handleRetry}
                 onGoBack={() => router.back()}
+                c={c}
             />
         );
     }
@@ -688,6 +693,7 @@ export default function UserProfileScreen() {
                             isFollowing={profile.isFollowing}
                             isLoading={isFollowLoading}
                             onPress={handleFollow}
+                            c={c}
                         />
                     </View>
 
@@ -841,7 +847,6 @@ const styles = StyleSheet.create({
     retryButtonText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#FFFFFF',
     },
     goBackButton: {
         paddingHorizontal: spacing.xl,
@@ -1103,7 +1108,6 @@ const styles = StyleSheet.create({
     followButtonText: {
         fontSize: typography.fontSize.base,
         fontWeight: '700',
-        color: '#FFFFFF',
     },
     followButtonActiveText: {
         fontSize: typography.fontSize.base,

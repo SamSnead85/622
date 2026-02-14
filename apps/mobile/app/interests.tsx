@@ -17,6 +17,7 @@ import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { apiFetch, API } from '../lib/api';
 import { useAuthStore } from '../stores';
+import { useTheme } from '../contexts/ThemeContext';
 import { ScreenHeader, LoadingView, GlassCard } from '../components';
 
 interface Topic {
@@ -105,6 +106,7 @@ export default function InterestsScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const params = useLocalSearchParams<{ onboarding?: string }>();
+    const { colors: c } = useTheme();
     const isOnboarding = params.onboarding === 'true';
 
     const [topics, setTopics] = useState<Topic[]>([]);
@@ -278,7 +280,7 @@ export default function InterestsScreen() {
                                             accessibilityRole="button"
                                             accessibilityLabel="Add Faith and Spirituality topic"
                                         >
-                                            <Text style={styles.ramadanSuggestionBtnText}>Add</Text>
+                                            <Text style={[styles.ramadanSuggestionBtnText, { color: c.text.inverse }]}>Add</Text>
                                         </TouchableOpacity>
                                     </Animated.View>
                                 );
@@ -446,11 +448,11 @@ export default function InterestsScreen() {
                                     end={{ x: 1, y: 1 }}
                                 >
                                     {saving ? (
-                                        <ActivityIndicator size="small" color="#FFFFFF" />
+                                        <ActivityIndicator size="small" color={c.text.inverse} />
                                     ) : (
                                         <View style={styles.getStartedRow}>
-                                            <Text style={styles.saveBtnText}>Get Started</Text>
-                                            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={{ marginStart: spacing.sm }} />
+                                            <Text style={[styles.saveBtnText, { color: c.text.inverse }]}>Get Started</Text>
+                                            <Ionicons name="arrow-forward" size={20} color={c.text.inverse} style={{ marginStart: spacing.sm }} />
                                         </View>
                                     )}
                                 </LinearGradient>
@@ -472,9 +474,9 @@ export default function InterestsScreen() {
                                     end={{ x: 1, y: 1 }}
                                 >
                                     {saving ? (
-                                        <ActivityIndicator size="small" color="#FFFFFF" />
+                                        <ActivityIndicator size="small" color={c.text.inverse} />
                                     ) : (
-                                        <Text style={[styles.saveBtnText, selectedIds.size < 3 && { color: colors.text.muted }]}>
+                                        <Text style={[styles.saveBtnText, { color: selectedIds.size >= 3 ? c.text.inverse : colors.text.muted }]}>
                                             {selectedIds.size < 3 ? `Pick ${3 - selectedIds.size} more` : 'Save Interests'}
                                         </Text>
                                     )}
@@ -568,7 +570,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
     },
     ramadanSuggestionBtnText: {
-        fontSize: typography.fontSize.sm, fontWeight: '700', color: '#FFFFFF',
+        fontSize: typography.fontSize.sm, fontWeight: '700',
     },
     ramadanTopicHighlight: {
         borderColor: colors.gold[500] + '40',
@@ -678,7 +680,7 @@ const styles = StyleSheet.create({
     },
     saveBtnText: {
         fontSize: typography.fontSize.lg, fontWeight: '600',
-        color: '#FFFFFF', fontFamily: 'Inter-SemiBold',
+        fontFamily: 'Inter-SemiBold',
     },
     getStartedRow: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

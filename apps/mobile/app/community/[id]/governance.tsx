@@ -22,6 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { apiFetch, API } from '../../../lib/api';
 import { ScreenHeader, LoadingView } from '../../../components';
@@ -152,6 +153,7 @@ export default function GovernanceScreen() {
     const router = useRouter();
     const { id: communityId } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
+    const { colors: c } = useTheme();
     const { t } = useTranslation();
     const [proposals, setProposals] = useState<Proposal[]>([]);
     const [loading, setLoading] = useState(true);
@@ -294,8 +296,8 @@ export default function GovernanceScreen() {
                                 onPress={() => setShowCreate(true)}
                             >
                                 <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.createBtnGradient}>
-                                    <Ionicons name="add" size={18} color="#FFFFFF" />
-                                    <Text style={styles.createBtnText}>New Proposal</Text>
+                                    <Ionicons name="add" size={18} color={c.text.inverse} />
+                                    <Text style={[styles.createBtnText, { color: c.text.inverse }]}>New Proposal</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
                         </View>
@@ -380,9 +382,9 @@ export default function GovernanceScreen() {
                                 style={styles.submitBtnGradient}
                             >
                                 {creating ? (
-                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                    <ActivityIndicator size="small" color={c.text.inverse} />
                                 ) : (
-                                    <Text style={[styles.submitBtnText, !newTitle.trim() && { color: colors.text.muted }]}>
+                                    <Text style={[styles.submitBtnText, { color: newTitle.trim() ? c.text.inverse : colors.text.muted }]}>
                                         Submit Proposal
                                     </Text>
                                 )}
@@ -525,7 +527,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.md, paddingHorizontal: spacing.xl,
     },
     createBtnText: {
-        fontSize: typography.fontSize.base, fontWeight: '700', color: '#FFFFFF',
+        fontSize: typography.fontSize.base, fontWeight: '700',
     },
 
     // Mod log
@@ -587,6 +589,5 @@ const styles = StyleSheet.create({
     },
     submitBtnText: {
         fontSize: typography.fontSize.base, fontWeight: '700',
-        color: '#FFFFFF',
     },
 });

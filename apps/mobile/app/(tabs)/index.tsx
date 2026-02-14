@@ -134,6 +134,7 @@ function ActiveContactBubble({
     onLongPress?: () => void;
     index: number;
 }) {
+    const { colors: c } = useTheme();
     const scale = useSharedValue(1);
     const bounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const animStyle = useAnimatedStyle(() => ({
@@ -196,7 +197,7 @@ function ActiveContactBubble({
                     {/* Create "+" badge for user's own avatar */}
                     {isUser && (
                         <View style={styles.createBadge}>
-                            <Ionicons name="add" size={12} color="#FFFFFF" />
+                            <Ionicons name="add" size={12} color={c.text.inverse} />
                         </View>
                     )}
                 </View>
@@ -995,13 +996,14 @@ const SEED_TAG_COLORS: Record<string, string> = {
 };
 
 function SeedContentSection({ onDismiss }: { onDismiss: () => void }) {
+    const { colors: c } = useTheme();
     return (
         <Animated.View entering={FadeInDown.duration(400).delay(200)}>
             <GlassCard gold style={seedStyles.container}>
                 {/* Header with dismiss */}
                 <View style={seedStyles.header}>
                     <View style={seedStyles.logoBadge}>
-                        <Text style={seedStyles.logoText}>0G</Text>
+                        <Text style={[seedStyles.logoText, { color: c.text.inverse }]}>0G</Text>
                     </View>
                     <Text style={seedStyles.headerTitle}>From the 0G Team</Text>
                     <TouchableOpacity
@@ -1042,7 +1044,7 @@ function SeedContentSection({ onDismiss }: { onDismiss: () => void }) {
                                 </Text>
                                 <View style={seedStyles.cardFooter}>
                                     <View style={seedStyles.cardAuthorBadge}>
-                                        <Text style={seedStyles.cardAuthorBadgeText}>0G</Text>
+                                        <Text style={[seedStyles.cardAuthorBadgeText, { color: c.text.inverse }]}>0G</Text>
                                     </View>
                                     <Text style={seedStyles.cardAuthor}>{post.author}</Text>
                                 </View>
@@ -1077,7 +1079,6 @@ const seedStyles = StyleSheet.create({
     logoText: {
         fontSize: 11,
         fontWeight: '800',
-        color: '#FFFFFF',
         letterSpacing: -0.5,
     },
     headerTitle: {
@@ -1142,7 +1143,6 @@ const seedStyles = StyleSheet.create({
     cardAuthorBadgeText: {
         fontSize: 8,
         fontWeight: '800',
-        color: '#FFFFFF',
         letterSpacing: -0.3,
     },
     cardAuthor: {
@@ -1891,7 +1891,7 @@ export default function FeedScreen() {
                             <View style={[styles.engagementIconWrap, { backgroundColor: item.color + '15' }]}>
                                 <Ionicons name={item.icon} size={18} color={item.color} />
                                 {/* Security badge overlay */}
-                                <View style={styles.engagementShield}>
+                                <View style={[styles.engagementShield, { backgroundColor: c.background }]}>
                                     <Ionicons name="shield-checkmark" size={8} color={c.emerald[500]} />
                                 </View>
                             </View>
@@ -2071,7 +2071,7 @@ export default function FeedScreen() {
                         <Ionicons name="heart-outline" size={24} color={c.text.secondary} />
                         {notifUnreadCount > 0 && (
                             <View style={styles.headerBadge}>
-                                <Text style={styles.headerBadgeText}>{notifUnreadCount > 99 ? '99+' : notifUnreadCount}</Text>
+                                <Text style={[styles.headerBadgeText, { color: c.text.inverse }]}>{notifUnreadCount > 99 ? '99+' : notifUnreadCount}</Text>
                             </View>
                         )}
                     </TouchableOpacity>
@@ -2339,7 +2339,6 @@ const styles = StyleSheet.create({
         width: 14,
         height: 14,
         borderRadius: 7,
-        backgroundColor: '#FFFFFF',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -2389,7 +2388,6 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         position: 'relative',
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(255,255,255,0.06)',
     },
     postSpacer: {
         height: 8,

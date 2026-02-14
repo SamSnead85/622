@@ -228,9 +228,9 @@ export default function SecuritySettingsScreen() {
                                 accessibilityLabel="Verify email now"
                             >
                                 {isResendingVerification ? (
-                                    <ActivityIndicator size="small" color="#fff" />
+                                    <ActivityIndicator size="small" color={c.text.inverse} />
                                 ) : (
-                                    <Text style={styles.verifyButtonText}>Verify Now</Text>
+                                    <Text style={[styles.verifyButtonText, { color: c.text.inverse }]}>Verify Now</Text>
                                 )}
                             </TouchableOpacity>
                         )}
@@ -435,7 +435,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     verifyButtonText: {
-        color: '#fff',
         fontSize: typography.fontSize.sm,
         fontWeight: '600' as const,
     },

@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../../contexts/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScreenHeader } from '../../../components';
 
@@ -191,6 +192,7 @@ function SurahDiamond({ number }: { number: number }) {
 
 // ─── Main Screen ──────────────────────────────────────────────────
 export default function QuranSurahList() {
+    const { colors: c } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const [searchQuery, setSearchQuery] = useState('');
@@ -515,7 +517,7 @@ export default function QuranSurahList() {
                                         />
                                     )}
                                     <Text
-                                        style={[styles.juzTabText, active && styles.juzTabTextActive]}
+                                        style={[styles.juzTabText, active && [styles.juzTabTextActive, { color: c.text.inverse }]]}
                                     >
                                         {item.id === 0 ? 'All' : `Juz ${item.label}`}
                                     </Text>
@@ -526,7 +528,7 @@ export default function QuranSurahList() {
                 </Animated.View>
             </>
         ),
-        [selectedJuz, handleJuzPress, lastReadSurah, lastRead, readCount, showBookmarks, bookmarks, handleSurahPress, handleDeleteBookmark]
+        [selectedJuz, handleJuzPress, lastReadSurah, lastRead, readCount, showBookmarks, bookmarks, handleSurahPress, handleDeleteBookmark, c]
     );
 
     return (
@@ -828,7 +830,6 @@ const styles = StyleSheet.create({
         color: colors.text.muted,
     },
     juzTabTextActive: {
-        color: '#FFFFFF',
         fontWeight: '700',
     },
 

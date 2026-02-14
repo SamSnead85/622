@@ -34,7 +34,7 @@ function TabIcon({ iconName, iconNameFocused, focused, badge }: TabIconProps) {
             </View>
             {badge != null && badge > 0 && (
                 <View style={[styles.badge, { backgroundColor: c.amber[500] }]}>
-                    <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+                    <Text style={[styles.badgeText, { color: c.text.inverse }]}>{badge > 99 ? '99+' : badge}</Text>
                 </View>
             )}
         </View>
@@ -190,7 +190,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     badgeText: {
-        color: '#FFFFFF',
         fontSize: 10,
         fontWeight: '700',
     },

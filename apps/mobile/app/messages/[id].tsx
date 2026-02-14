@@ -99,7 +99,7 @@ function MessageBubble({
                     isFailed && { opacity: 0.5 },
                 ]}
             >
-                <Text style={[styles.bubbleText, { color: isOwn ? '#FFFFFF' : c.text.primary }]}>
+                <Text style={[styles.bubbleText, { color: isOwn ? c.text.inverse : c.text.primary }]}>
                     {message.content}
                 </Text>
                 <View style={styles.bubbleMeta}>
@@ -540,12 +540,12 @@ export default function ConversationScreen() {
                         accessibilityLabel="Send message"
                     >
                         {isSending ? (
-                            <ActivityIndicator size="small" color="#FFFFFF" />
+                            <ActivityIndicator size="small" color={c.text.inverse} />
                         ) : (
                             <Ionicons
                                 name="send"
                                 size={18}
-                                color={inputText.trim() ? '#FFFFFF' : c.text.muted}
+                                color={inputText.trim() ? c.text.inverse : c.text.muted}
                             />
                         )}
                     </TouchableOpacity>
