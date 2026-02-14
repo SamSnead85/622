@@ -22,6 +22,7 @@ import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthStore } from '../../stores';
 import { AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
+import { ScreenHeader } from '../../components';
 
 interface RecentCall {
     id: string;
@@ -144,18 +145,10 @@ export default function CallsScreen() {
     }, []);
 
     return (
-        <View style={[styles.container, { backgroundColor: c.background, paddingTop: insets.top }]}>
-            {/* Header */}
-            <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    style={styles.backBtn}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                    <Ionicons name="chevron-back" size={24} color={c.text.primary} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: c.text.primary }]}>Calls</Text>
-                <View style={styles.headerRight}>
+        <View style={[styles.container, { backgroundColor: c.background }]}>
+            <ScreenHeader
+                title="Calls"
+                rightElement={
                     <TouchableOpacity
                         style={[styles.headerAction, { backgroundColor: c.surface.glass }]}
                         onPress={() => {
@@ -165,8 +158,8 @@ export default function CallsScreen() {
                     >
                         <Ionicons name="add" size={22} color={c.gold[500]} />
                     </TouchableOpacity>
-                </View>
-            </Animated.View>
+                }
+            />
 
             {/* Encrypted badge */}
             <Animated.View entering={FadeInDown.delay(100).duration(300)} style={[styles.encryptedBadge, { backgroundColor: c.surface.glass }]}>

@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
+import { ScreenHeader } from '../../components';
 
 export default function GoLiveScreen() {
     const { colors: c } = useTheme();
@@ -33,22 +34,7 @@ export default function GoLiveScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: c.background }]}>
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    style={styles.backBtn}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Go back"
-                >
-                    <Ionicons name="chevron-back" size={24} color={c.text.primary} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: c.text.primary }]}>
-                    Go Live
-                </Text>
-                <View style={styles.backBtn} />
-            </View>
+            <ScreenHeader title="Go Live" />
 
             {/* Content */}
             <View style={styles.content}>

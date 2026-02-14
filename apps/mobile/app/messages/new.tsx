@@ -26,6 +26,7 @@ import { useAuthStore } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { useTheme } from '../../contexts/ThemeContext';
+import { ScreenHeader } from '../../components';
 
 interface UserResult {
     id: string;
@@ -126,18 +127,7 @@ export default function NewMessageScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: c.background }]}>
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    style={styles.backBtn}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                >
-                    <Ionicons name="chevron-back" size={24} color={c.text.primary} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: c.text.primary }]}>New Message</Text>
-                <View style={styles.backBtn} />
-            </View>
+            <ScreenHeader title="New Message" />
 
             {/* Search */}
             <KeyboardAvoidingView

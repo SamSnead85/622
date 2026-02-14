@@ -480,15 +480,17 @@ export default function ReelsScreen() {
                 <TouchableOpacity
                     onPress={() => router.back()}
                     hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    style={styles.headerBackBtn}
                 >
-                    <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+                    <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Reels</Text>
                 <TouchableOpacity
                     onPress={() => router.push('/(tabs)/create' as any)}
                     hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    style={styles.headerBackBtn}
                 >
-                    <Ionicons name="camera-outline" size={26} color="#FFFFFF" />
+                    <Ionicons name="camera-outline" size={22} color="#FFFFFF" />
                 </TouchableOpacity>
             </View>
 
@@ -525,6 +527,14 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
         paddingBottom: spacing.sm,
         zIndex: 10,
+    },
+    headerBackBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     headerTitle: {
         fontSize: typography.fontSize.xl,

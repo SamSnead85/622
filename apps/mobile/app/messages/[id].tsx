@@ -25,6 +25,7 @@ import { typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthStore } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
+import { ScreenHeader } from '../../components';
 
 // ============================================
 // Types
@@ -171,52 +172,19 @@ export default function ConversationScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: c.background }]}>
-            {/* Header */}
-            <View
-                style={[
-                    styles.header,
-                    { paddingTop: insets.top + 8, borderBottomColor: c.border.subtle },
-                ]}
-            >
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    style={styles.backBtn}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Go back"
-                >
-                    <Ionicons name="chevron-back" size={24} color={c.text.primary} />
-                </TouchableOpacity>
-
-                <View style={styles.headerCenter}>
-                    {participant ? (
-                        <>
-                            <Text
-                                style={[styles.headerName, { color: c.text.primary }]}
-                                numberOfLines={1}
-                            >
-                                {participant.displayName}
-                            </Text>
-                            {participant.isOnline && (
-                                <View style={styles.onlineDot} />
-                            )}
-                        </>
-                    ) : (
-                        <Text style={[styles.headerName, { color: c.text.primary }]}>
-                            Conversation
-                        </Text>
-                    )}
-                </View>
-
-                <TouchableOpacity
-                    style={styles.headerAction}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Call"
-                >
-                    <Ionicons name="call-outline" size={20} color={c.text.primary} />
-                </TouchableOpacity>
-            </View>
+            <ScreenHeader
+                title={participant?.displayName || 'Conversation'}
+                rightElement={
+                    <TouchableOpacity
+                        style={styles.headerAction}
+                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Call"
+                    >
+                        <Ionicons name="call-outline" size={20} color={c.text.primary} />
+                    </TouchableOpacity>
+                }
+            />
 
             {/* Messages */}
             <KeyboardAvoidingView
