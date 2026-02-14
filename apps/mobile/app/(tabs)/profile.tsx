@@ -10,6 +10,9 @@ import {
     RefreshControl,
     Share,
     Alert,
+    Modal,
+    Pressable,
+    StatusBar,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -215,6 +218,7 @@ export default function ProfileScreen() {
     const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
     const [loadedTabs, setLoadedTabs] = useState<Set<ProfileTab>>(new Set(['posts']));
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [viewerImage, setViewerImage] = useState<string | null>(null);
     const [chainInfo, setChainInfo] = useState<{
         degree: number;
         foundingCreator: { username: string; displayName: string } | null;
@@ -449,14 +453,20 @@ export default function ProfileScreen() {
             <Animated.View style={styles.coverArea}>
                 <Animated.View style={[styles.coverImageWrap, coverAnimStyle]}>
                     {user.coverUrl ? (
-                        <Image
-                            source={{ uri: user.coverUrl }}
-                            style={styles.coverImage}
-                            placeholder={IMAGE_PLACEHOLDER.blurhash}
-                            transition={400}
-                            cachePolicy="memory-disk"
-                            contentFit="cover"
-                        />
+                        <TouchableOpacity
+                            activeOpacity={0.9}
+                            onPress={() => setViewerImage(user.coverUrl ?? null)}
+                            accessibilityLabel="View cover photo"
+                        >
+                            <Image
+                                source={{ uri: user.coverUrl }}
+                                style={styles.coverImage}
+                                placeholder={IMAGE_PLACEHOLDER.blurhash}
+                                transition={400}
+                                cachePolicy="memory-disk"
+                                contentFit="cover"
+                            />
+                        </TouchableOpacity>
                     ) : (
                         <LinearGradient
                             colors={[colors.gold[700], colors.gold[600], colors.gold[500]]}
@@ -566,24 +576,31 @@ export default function ProfileScreen() {
                     entering={entering(100)}
                     style={styles.avatarSection}
                 >
-                    <View style={styles.avatarWrapper}>
-                        <LinearGradient
-                            colors={[colors.gold[400], colors.gold[500], colors.gold[600]]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.avatarRing}
-                        >
-                            <View style={styles.avatarInner}>
-                                <Avatar
-                                    uri={user.avatarUrl}
-                                    name={user.displayName || user.username || '?'}
-                                    customSize={AVATAR_SIZE}
-                                />
-                            </View>
-                        </LinearGradient>
-                        {/* Gold glow shadow */}
-                        <View style={styles.avatarGlow} />
-                    </View>
+                    <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={() => { if (user.avatarUrl) setViewerImage(user.avatarUrl); }}
+                        accessibilityLabel="View profile photo"
+                        accessibilityHint="Tap to view full size"
+                    >
+                        <View style={styles.avatarWrapper}>
+                            <LinearGradient
+                                colors={[colors.gold[400], colors.gold[500], colors.gold[600]]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.avatarRing}
+                            >
+                                <View style={styles.avatarInner}>
+                                    <Avatar
+                                        uri={user.avatarUrl}
+                                        name={user.displayName || user.username || '?'}
+                                        customSize={AVATAR_SIZE}
+                                    />
+                                </View>
+                            </LinearGradient>
+                            {/* Gold glow shadow */}
+                            <View style={styles.avatarGlow} />
+                        </View>
+                    </TouchableOpacity>
                 </Animated.View>
 
                 {/* User Info */}
@@ -985,6 +1002,41 @@ export default function ProfileScreen() {
                 initialNumToRender={9}
             />
         </View>
+
+        {/* Fullscreen Image Viewer */}
+        <Modal
+            visible={!!viewerImage}
+            transparent
+            animationType="fade"
+            statusBarTranslucent
+            onRequestClose={() => setViewerImage(null)}
+        >
+            <Pressable
+                style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}
+                onPress={() => setViewerImage(null)}
+            >
+                <StatusBar barStyle="light-content" />
+                <TouchableOpacity
+                    style={{ position: 'absolute', top: insets.top + 12, right: 16, zIndex: 10, padding: 8 }}
+                    onPress={() => setViewerImage(null)}
+                    accessibilityLabel="Close"
+                >
+                    <Ionicons name="close-circle" size={32} color="#fff" />
+                </TouchableOpacity>
+                {viewerImage && (
+                    <Image
+                        source={{ uri: viewerImage }}
+                        style={{ width: SCREEN_WIDTH - 32, height: SCREEN_WIDTH - 32, borderRadius: 16 }}
+                        contentFit="contain"
+                        transition={200}
+                        cachePolicy="memory-disk"
+                    />
+                )}
+                <Text style={{ color: '#fff', marginTop: 16, fontSize: 16, fontWeight: '600' }}>
+                    {user?.displayName || user?.username || ''}
+                </Text>
+            </Pressable>
+        </Modal>
         </ErrorBoundary>
     );
 }
