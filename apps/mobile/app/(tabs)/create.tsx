@@ -155,7 +155,7 @@ const MEDIA_BAR_ITEMS: MediaBarItem[] = [
     { key: 'camera', icon: 'camera-outline', label: 'Camera', color: colors.gold[400] },
     { key: 'poll', icon: 'stats-chart-outline', label: 'Poll', color: colors.coral[400] },
     { key: 'location', icon: 'location-outline', label: 'Location', color: colors.amber[400] },
-    { key: 'import', icon: 'link-outline', label: 'Import', color: colors.azure[500] },
+    // Import from connected platforms — hidden for v1.0
 ];
 
 // ============================================

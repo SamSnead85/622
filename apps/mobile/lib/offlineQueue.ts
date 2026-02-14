@@ -228,11 +228,11 @@ async function processAction(action: QueuedAction): Promise<boolean> {
             }
 
             default:
-                console.warn('Unknown offline action type:', action.type);
+                if (__DEV__) console.warn('Unknown offline action type:', action.type);
                 return true; // Remove from queue
         }
     } catch (error) {
-        console.warn('Offline action failed:', action.type, error);
+        if (__DEV__) console.warn('Offline action failed:', action.type, error);
         return false;
     }
 }

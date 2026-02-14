@@ -2021,8 +2021,12 @@ router.get('/:communityId/request-status', authenticate, async (req: AuthRequest
 
 // ============================================
 // Seed Communities (admin-only, one-time use)
+// Gated: only available when NODE_ENV !== 'production'
 // ============================================
 router.post('/seed', authenticate, async (req: AuthRequest, res, next) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({ error: 'Not found' });
+    }
     try {
         // Only allow the requesting user to be the admin
         const userId = req.userId!;

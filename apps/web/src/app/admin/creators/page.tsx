@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
+import { useAuth, AdminRoute } from '@/contexts/AuthContext';
 import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { API_URL as API } from '@/lib/api';
 
@@ -168,8 +168,8 @@ function CreatorsContent() {
 
 export default function AdminCreatorsPage() {
     return (
-        <ProtectedRoute>
+        <AdminRoute>
             <CreatorsContent />
-        </ProtectedRoute>
+        </AdminRoute>
     );
 }

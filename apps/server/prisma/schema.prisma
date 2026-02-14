@@ -129,11 +129,18 @@ model User {
   foundedChainMembers        InviteChain[]             @relation("FoundingCreatorChain")
   rally                      Rally?
   vouchStrikes               Int                       @default(0) // strikes from invitees' bad behavior
+  blocksMade                 Block[]                   @relation("BlocksMade")
+  blocksReceived             Block[]                   @relation("BlocksReceived")
+  reportsMade                UserReport[]              @relation("ReportsMade")
+  reportsReceived            UserReport[]              @relation("ReportsReceived")
 
   @@index([username])
   @@index([displayName])
   @@index([email])
   @@index([communityOptIn])
+  @@index([isBanned]) // Admin queries
+  @@index([suspendedUntil]) // Admin queries (active suspensions)
+  @@index([trustLevel]) // Trust checks
 }
 
 model UserStrike {
@@ -393,6 +400,7 @@ model Post {
   @@index([userId, deletedAt]) // User's non-deleted posts
   @@index([communityId, deletedAt, createdAt(sort: Desc)]) // Community feed with soft delete
   @@index([communityId, deletedAt, isPublic, createdAt(sort: Desc)]) // Community feed with visibility filter
+  @@index([isPublic, visible, createdAt(sort: Desc)]) // Feed queries: public + visible posts by date
 }
 
 model Music {
@@ -646,6 +654,7 @@ model CommunityMember {
   @@index([userId, communityId]) // Membership lookup by user+community
   @@index([userId, role])
   @@index([communityId, points(sort: Desc)])
+  @@index([isBanned]) // Feed queries: exclude banned members
 }
 
 model CommunityRule {
@@ -745,6 +754,7 @@ model Notification {
   @@index([actorId]) // Actor lookup optimization
   @@index([userId, type, createdAt(sort: Desc)]) // Filtered notification queries
   @@index([userId, type, actorId, targetId, createdAt]) // Deduplication queries
+  @@index([type]) // Filtered queries by notification type
 }
 
 // ============================================
@@ -945,6 +955,7 @@ model Invite {
   @@index([status])
 }
 
+// Planned for v1.1 — not yet used in production
 model Territory {
   id                        String                      @id @default(uuid())
   name                      String
@@ -983,6 +994,7 @@ model Territory {
   @@index([slug])
 }
 
+// Planned for v1.1 — not yet used in production
 model TerritoryMember {
   id          String        @id @default(uuid())
   territoryId String
@@ -999,6 +1011,7 @@ model TerritoryMember {
   @@index([territoryId])
 }
 
+// Planned for v1.1 — not yet used in production
 model TerritoryPost {
   id          String    @id @default(uuid())
   territoryId String
@@ -1189,6 +1202,7 @@ model SecurityAuditLog {
   @@index([ipAddress])
 }
 
+// Planned for v1.1 — not yet used in production
 model BulletinPost {
   id           String            @id @default(uuid())
   type         BulletinType
@@ -1220,6 +1234,7 @@ model BulletinPost {
   @@index([isPinned])
 }
 
+// Planned for v1.1 — not yet used in production
 model BulletinComment {
   id         String       @id @default(uuid())
   content    String
@@ -1233,6 +1248,7 @@ model BulletinComment {
   @@index([createdAt])
 }
 
+// Planned for v1.1 — not yet used in production
 model BulletinVote {
   id         String   @id @default(uuid())
   bulletinId String
@@ -2369,6 +2385,37 @@ model EventRSVP {
   @@unique([eventId, userId])
   @@index([eventId])
   @@index([userId])
+}
+
+// ── User Blocking & Reporting (App Store requirement) ──
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+  blocker   User     @relation("BlocksMade", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+model UserReport {
+  id         String   @id @default(cuid())
+  reporterId String
+  reportedId String
+  reason     String
+  details    String?
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  reporter   User     @relation("ReportsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+  reported   User     @relation("ReportsReceived", fields: [reportedId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([reportedId])
+  @@index([status])
 }
 
 // ── Security: Ban Evasion Prevention ──

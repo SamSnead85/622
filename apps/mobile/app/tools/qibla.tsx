@@ -124,7 +124,7 @@ export default function QiblaScreen() {
                 setLocationName('Your Location');
             }
         } catch (err) {
-            console.error('Qibla error:', err);
+            if (__DEV__) console.error('Qibla error:', err);
             setError('Could not determine your location. Please check your GPS and try again.');
         } finally {
             setIsLoading(false);

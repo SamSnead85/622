@@ -33,7 +33,7 @@ export default function Error({
                         <path d="M12 8v4M12 16h.01" strokeLinecap="round" />
                     </svg>
                 </div>
-                <h1 className="text-2xl font-bold text-white mb-2">An unexpected error occurred</h1>
+                <h1 className="text-2xl font-bold text-white mb-2">Something went wrong</h1>
                 <p className="text-white/40 text-sm mb-8">
                     We hit an unexpected error. Your data is safe — nothing was lost.
                     {error.digest && (

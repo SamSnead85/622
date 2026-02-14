@@ -229,7 +229,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response, next: Next
     }
 });
 
-// Trending endpoint — public data, no auth required
+// Trending endpoint — public data, no auth required (rate limited via router.use above)
 router.get('/trending', async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const trending = await prisma.hashtag.findMany({

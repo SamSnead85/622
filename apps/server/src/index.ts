@@ -161,6 +161,10 @@ const io = new SocketServer(httpServer, {
 // Share io instance with Express routes so they can broadcast events
 app.set('io', io);
 
+// API domain for CSP connectSrc (no hardcoded Railway URLs)
+const apiBase = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.API_URL || 'localhost:5180';
+const apiHost = apiBase.replace(/^https?:\/\//, '').split('/')[0];
+
 // Middleware
 app.use(helmet({
     hsts: {
@@ -174,7 +178,7 @@ app.use(helmet({
             scriptSrc: ["'self'", "'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://*.supabase.co", "https://lh3.googleusercontent.com"],
-            connectSrc: ["'self'", "https://caravanserver-production-d7da.up.railway.app", "wss://caravanserver-production-d7da.up.railway.app", "https://accounts.google.com", "https://appleid.apple.com"],
+            connectSrc: ["'self'", `https://${apiHost}`, `wss://${apiHost}`, "https://accounts.google.com", "https://appleid.apple.com"],
             fontSrc: ["'self'", "data:"],
             objectSrc: ["'none'"],
             mediaSrc: ["'self'", "https://res.cloudinary.com", "blob:"],

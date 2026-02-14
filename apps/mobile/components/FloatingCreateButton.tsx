@@ -57,7 +57,7 @@ const CREATE_OPTIONS = [
         label: 'Go Live',
         subtitle: 'Start a live stream or audio room',
         color: colors.coral[500],
-        route: '/live/create',
+        route: '/campfire/go-live',
     },
 ];
 

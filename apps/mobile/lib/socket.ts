@@ -209,7 +209,7 @@ class SocketManager {
 
         this.socket.on('connect_error', (error) => {
             this._isConnected = false;
-            console.warn('Socket connection error:', error.message);
+            if (__DEV__) console.warn('Socket connection error:', error.message);
         });
 
         // Forward all server events to local listeners
@@ -501,7 +501,7 @@ class SocketManager {
         // Safety: prevent listener accumulation
         const MAX_LISTENERS_PER_EVENT = 10;
         if (this.listeners[event]?.length >= MAX_LISTENERS_PER_EVENT) {
-            console.warn(`Too many listeners for ${event}, removing oldest`);
+            if (__DEV__) console.warn(`Too many listeners for ${event}, removing oldest`);
             this.listeners[event].shift();
         }
         this.listeners[event].push(callback);
@@ -527,7 +527,7 @@ class SocketManager {
             try {
                 cb(data);
             } catch (err) {
-                console.error(`Socket event handler error [${event}]:`, err);
+                if (__DEV__) console.error(`Socket event handler error [${event}]:`, err);
             }
         });
     }

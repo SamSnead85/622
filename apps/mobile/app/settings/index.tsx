@@ -566,12 +566,7 @@ export default function SettingsScreen() {
                                 setShowProfileEditor(!showProfileEditor);
                             }}
                         />
-                        <SettingRow
-                            icon="link-outline"
-                            label="Connected Accounts"
-                            description="LinkedIn, X, Instagram & more"
-                            onPress={() => router.push('/settings/connected-accounts')}
-                        />
+                        {/* Connected Accounts — hidden for v1.0, placeholder OAuth not ready */}
 
                         {/* Inline Profile Editor */}
                         {showProfileEditor && (
@@ -817,12 +812,7 @@ export default function SettingsScreen() {
                             description="Bring data from WhatsApp, Instagram, TikTok"
                             onPress={() => router.push('/settings/import' as any)}
                         />
-                        <SettingRow
-                            icon="sync-outline"
-                            label="Cross-Platform Sync"
-                            description="Import content from connected platforms"
-                            onPress={() => router.push('/settings/connected-accounts')}
-                        />
+                        {/* Cross-Platform Sync — hidden for v1.0, depends on Connected Accounts */}
                     </View>
                 </Animated.View>}
 

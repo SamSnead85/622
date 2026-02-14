@@ -440,3 +440,52 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
     return <>{children}</>;
 }
+
+// ============================================
+// ADMIN ROUTE WRAPPER
+// ============================================
+export function AdminRoute({ children }: { children: ReactNode }) {
+    const { user, isAuthenticated, isLoading } = useAuth();
+    const router = useRouter();
+    const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';
+
+    useEffect(() => {
+        if (isLoading) return;
+        if (!isAuthenticated) {
+            if (typeof window !== 'undefined') {
+                const currentPath = window.location.pathname;
+                if (!currentPath.includes('/login') && !currentPath.includes('/signup')) {
+                    sessionStorage.setItem('0g_redirect', currentPath);
+                }
+            }
+            router.push('/login?error=auth_required');
+            return;
+        }
+        if (!isAdmin) {
+            router.push('/dashboard');
+        }
+    }, [isLoading, isAuthenticated, isAdmin, router]);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-[#050508] flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    if (!isAuthenticated || !isAdmin) {
+        return (
+            <div className="min-h-screen bg-[#050508] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-3" />
+                    <p className="text-white/50 text-sm">
+                        {!isAuthenticated ? 'Redirecting to sign in...' : 'Redirecting to dashboard...'}
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    return <>{children}</>;
+}

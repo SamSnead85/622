@@ -91,7 +91,7 @@ export default function HalalScannerScreen() {
                         Haptics.NotificationFeedbackType.Warning
             );
         } catch (err) {
-            console.error('Halal scan error:', err);
+            if (__DEV__) console.error('Halal scan error:', err);
             setScanError('Failed to look up product. Check your connection and try again.');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         } finally {

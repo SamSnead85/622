@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
 
@@ -315,7 +316,7 @@ router.get('/oauth/authorize', authenticate, async (req: AuthRequest, res, next)
 
 // POST /api/v1/developer/oauth/token
 // Exchange auth code for access token
-router.post('/oauth/token', async (req, res, next) => {
+router.post('/oauth/token', rateLimiters.auth, async (req, res, next) => {
     try {
         const { grant_type, code, client_id, client_secret } = req.body;
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth, ProtectedRoute } from '@/contexts/AuthContext';
+import { useAuth, AdminRoute } from '@/contexts/AuthContext';
 import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { API_URL as API } from '@/lib/api';
 
@@ -309,8 +309,8 @@ function CampaignsContent() {
 
 export default function AdminCampaignsPage() {
     return (
-        <ProtectedRoute>
+        <AdminRoute>
             <CampaignsContent />
-        </ProtectedRoute>
+        </AdminRoute>
     );
 }

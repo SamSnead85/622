@@ -346,6 +346,21 @@ export const setupSocketHandlers = (io: SocketServer) => {
         // === WebRTC Call Signaling ===
         socket.on('call:initiate', async (data: { callId: string; userId: string; type: 'audio' | 'video'; offer: any }) => {
             const { callId, userId: targetUserId, type, offer } = data;
+
+            // Authorization: caller and callee must have a follow relationship (connection)
+            const follow = await prisma.follow.findFirst({
+                where: {
+                    OR: [
+                        { followerId: userId, followingId: targetUserId },
+                        { followerId: targetUserId, followingId: userId },
+                    ],
+                },
+            });
+            if (!follow) {
+                socket.emit('error', { message: 'You can only call users you are connected with.' });
+                return;
+            }
+
             activeCalls.set(callId, { from: userId, to: targetUserId, offer, createdAt: Date.now() });
 
             // Fetch caller info so the receiver can see who's calling

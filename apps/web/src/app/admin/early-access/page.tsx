@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ProtectedRoute, useAuth } from '@/contexts/AuthContext';
+import { AdminRoute, useAuth } from '@/contexts/AuthContext';
 import { API_URL } from '@/lib/api';
 import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 
@@ -327,8 +327,8 @@ function AdminContent() {
 
 export default function AdminEarlyAccessPage() {
     return (
-        <ProtectedRoute>
+        <AdminRoute>
             <AdminContent />
-        </ProtectedRoute>
+        </AdminRoute>
     );
 }

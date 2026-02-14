@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { AdminRoute } from '@/contexts/AuthContext';
 import { NavigationSidebar } from '@/components/dashboard/NavigationSidebar';
 import { API_URL } from '@/lib/api';
 
@@ -53,7 +54,7 @@ interface FlaggedReferral {
 // ============================================
 // MAIN PAGE
 // ============================================
-export default function AdminGrowthPartnersPage() {
+function GrowthPartnersContent() {
     const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'flagged'>('overview');
     const [loading, setLoading] = useState(true);
     const [partners, setPartners] = useState<Partner[]>([]);
@@ -429,5 +430,13 @@ export default function AdminGrowthPartnersPage() {
             </div>
             </div>
         </div>
+    );
+}
+
+export default function AdminGrowthPartnersPage() {
+    return (
+        <AdminRoute>
+            <GrowthPartnersContent />
+        </AdminRoute>
     );
 }

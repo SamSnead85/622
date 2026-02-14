@@ -5,6 +5,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
 import { logger } from '../utils/logger.js';
 import { cache } from '../services/cache/RedisCache.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
 
@@ -195,6 +196,36 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
         });
     } catch (error) {
         logger.error('[User Search] Error:', error);
+        next(error);
+    }
+});
+
+// GET /api/v1/users/blocked — List blocked users
+// NOTE: Must be defined BEFORE /:username to avoid Express matching "blocked" as a username
+router.get('/blocked', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const blocks = await prisma.block.findMany({
+            where: { blockerId: req.userId! },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                blocked: {
+                    select: {
+                        id: true,
+                        username: true,
+                        displayName: true,
+                        avatarUrl: true,
+                    },
+                },
+            },
+        });
+
+        res.json({
+            blockedUsers: blocks.map((b) => ({
+                ...b.blocked,
+                blockedAt: b.createdAt,
+            })),
+        });
+    } catch (error) {
         next(error);
     }
 });
@@ -582,7 +613,7 @@ router.put('/:userId', authenticate, async (req: AuthRequest, res, next) => {
 });
 
 // POST /api/v1/users/:userId/follow
-router.post('/:userId/follow', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/:userId/follow', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { userId } = req.params;
 
@@ -633,7 +664,7 @@ router.post('/:userId/follow', authenticate, async (req: AuthRequest, res, next)
 });
 
 // DELETE /api/v1/users/:userId/follow
-router.delete('/:userId/follow', authenticate, async (req: AuthRequest, res, next) => {
+router.delete('/:userId/follow', rateLimiters.general, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { userId } = req.params;
 
@@ -880,6 +911,125 @@ router.post('/:id/wave', authenticate, async (req: AuthRequest, res, next) => {
         }
 
         res.json({ success: true, message: 'Wave sent!' });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ── Block / Unblock / Report (App Store requirement) ──
+
+// POST /api/v1/users/:userId/block — Block a user
+router.post('/:userId/block', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { userId } = req.params;
+        const blockerId = req.userId!;
+
+        if (userId === blockerId) {
+            throw new AppError('Cannot block yourself', 400);
+        }
+
+        const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+        if (!targetUser) {
+            throw new AppError('User not found', 404);
+        }
+
+        // Create block record (upsert to avoid duplicate errors)
+        await prisma.block.upsert({
+            where: {
+                blockerId_blockedId: {
+                    blockerId,
+                    blockedId: userId,
+                },
+            },
+            create: {
+                blockerId,
+                blockedId: userId,
+            },
+            update: {}, // Already blocked — no-op
+        });
+
+        // Unfollow in both directions (non-critical, so catch errors)
+        await Promise.allSettled([
+            prisma.follow.delete({
+                where: {
+                    followerId_followingId: {
+                        followerId: blockerId,
+                        followingId: userId,
+                    },
+                },
+            }),
+            prisma.follow.delete({
+                where: {
+                    followerId_followingId: {
+                        followerId: userId,
+                        followingId: blockerId,
+                    },
+                },
+            }),
+        ]);
+
+        res.json({ blocked: true });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// DELETE /api/v1/users/:userId/block — Unblock a user
+router.delete('/:userId/block', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { userId } = req.params;
+        const blockerId = req.userId!;
+
+        await prisma.block.delete({
+            where: {
+                blockerId_blockedId: {
+                    blockerId,
+                    blockedId: userId,
+                },
+            },
+        }).catch(() => {
+            // Not blocked — no-op
+        });
+
+        res.json({ blocked: false });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// POST /api/v1/users/:userId/report — Report a user
+router.post('/:userId/report', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        const { userId } = req.params;
+        const reporterId = req.userId!;
+
+        if (userId === reporterId) {
+            throw new AppError('Cannot report yourself', 400);
+        }
+
+        const reportSchema = z.object({
+            reason: z.string().min(1).max(500),
+            details: z.string().max(2000).optional(),
+        });
+        const { reason, details } = reportSchema.parse(req.body);
+
+        const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+        if (!targetUser) {
+            throw new AppError('User not found', 404);
+        }
+
+        const report = await prisma.userReport.create({
+            data: {
+                reporterId,
+                reportedId: userId,
+                reason,
+                details: details ?? null,
+            },
+        });
+
+        logger.info('[UserReport] User reported', { reporterId, reportedId: userId, reason, reportId: report.id });
+
+        res.status(201).json({ reported: true, reportId: report.id });
     } catch (error) {
         next(error);
     }

@@ -630,6 +630,8 @@ export const API = {
     updateProfile: '/api/v1/users/profile',
     checkUsername: '/api/v1/auth/check-username',
     follow: (userId: string) => `/api/v1/users/${userId}/follow`,
+    blockUser: (userId: string) => `/api/v1/users/${userId}/block`,
+    reportUser: (userId: string) => `/api/v1/users/${userId}/report`,
     communityOptIn: '/api/v1/users/community-opt-in',
     publicProfile: '/api/v1/users/public-profile',
     feedView: '/api/v1/users/feed-view',

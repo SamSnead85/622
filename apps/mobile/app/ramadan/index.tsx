@@ -565,7 +565,7 @@ export default function RamadanHub() {
                 }
             } catch (err) {
                 if (!cancelled) {
-                    console.error('Failed to fetch prayer times:', err);
+                    if (__DEV__) console.error('Failed to fetch prayer times:', err);
                     setPrayerError('Offline — using cached data if available');
                 }
             } finally {

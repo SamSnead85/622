@@ -739,27 +739,11 @@ const FeedPostCard = memo(
                                             style={styles.verifiedBadge}
                                         />
                                     )}
-                                    {post.crossPost && (
-                                        <View style={styles.crossPostBadge}>
-                                            <Ionicons
-                                                name={
-                                                    post.crossPost.sourcePlatform === 'LINKEDIN' ? 'logo-linkedin' :
-                                                    post.crossPost.sourcePlatform === 'TWITTER' ? 'logo-twitter' :
-                                                    post.crossPost.sourcePlatform === 'INSTAGRAM' ? 'logo-instagram' :
-                                                    post.crossPost.sourcePlatform === 'FACEBOOK' ? 'logo-facebook' :
-                                                    post.crossPost.sourcePlatform === 'TIKTOK' ? 'musical-notes' :
-                                                    post.crossPost.sourcePlatform === 'YOUTUBE' ? 'logo-youtube' :
-                                                    'link'
-                                                }
-                                                size={11}
-                                                color={colors.text.muted}
-                                            />
-                                        </View>
-                                    )}
+                                    {/* Cross-post badge — hidden for v1.0 */}
                                 </View>
                                 <Text style={styles.postTime}>
                                     {timeAgo(post.createdAt)}
-                                    {post.crossPost?.sourcePlatform ? ` · via ${post.crossPost.sourcePlatform.charAt(0) + post.crossPost.sourcePlatform.slice(1).toLowerCase()}` : ''}
+                                    
                                 </Text>
                             </View>
                         </TouchableOpacity>
@@ -1874,7 +1858,6 @@ export default function FeedScreen() {
                         { icon: 'game-controller-outline' as const, label: 'Games', route: '/games', color: c.emerald[500] },
                         { icon: 'play-circle-outline' as const, label: 'Reels', route: '/reels', color: c.coral[500] },
                         { icon: 'radio-outline' as const, label: 'Go Live', route: '/campfire', color: c.emerald[500] },
-                        { icon: 'call-outline' as const, label: 'Calls', route: '/call', color: c.gold[500] },
                         { icon: 'mic-outline' as const, label: 'Spaces', route: '/spaces', color: c.amber[500] },
                     ].map((item) => (
                         <TouchableOpacity

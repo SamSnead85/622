@@ -167,7 +167,7 @@ function RootLayoutInner() {
         if (isInitialized && isAuthenticated) {
             // Connect to Socket.io
             socketManager.connect().catch((err) => {
-                console.warn('Socket connection failed:', err);
+                if (__DEV__) console.warn('Socket connection failed:', err);
             });
 
             // Listen for incoming calls
@@ -229,7 +229,7 @@ function RootLayoutInner() {
             import('../lib/notifications')
                 .then(({ registerForPushNotifications }) => {
                     registerForPushNotifications().catch((err) => {
-                        console.warn('Push notification registration failed:', err);
+                        if (__DEV__) console.warn('Push notification registration failed:', err);
                     });
                 })
                 .catch(() => {

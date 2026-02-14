@@ -11,6 +11,7 @@ import { checkContent, trackPost } from '../utils/moderation.js';
 import { logSecurityEvent, SecurityEvents, getClientIP } from '../services/security.js';
 import { trackAction, checkContentSimilarity } from '../services/botDetection.js';
 import { sendAlert } from '../services/alerting.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 const router = Router();
 
@@ -748,7 +749,7 @@ router.get('/:postId', optionalAuth, async (req: AuthRequest, res, next) => {
 });
 
 // POST /api/v1/posts
-router.post('/', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/', rateLimiters.createPost, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const mediaItemSchema = z.object({
             mediaUrl: z.string().url(),
@@ -1422,7 +1423,7 @@ router.get('/:postId/comments', optionalAuth, async (req: AuthRequest, res, next
 });
 
 // POST /api/v1/posts/:postId/comments
-router.post('/:postId/comments', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/:postId/comments', rateLimiters.createComment, authenticate, async (req: AuthRequest, res, next) => {
     try {
         const { postId } = req.params;
 

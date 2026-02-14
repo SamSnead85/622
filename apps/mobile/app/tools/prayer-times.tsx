@@ -249,7 +249,7 @@ export default function PrayerTimesScreen() {
                 throw new Error('Unexpected API response format');
             }
         } catch (err) {
-            console.error('Prayer times fetch error:', err);
+            if (__DEV__) console.error('Prayer times fetch error:', err);
             // Try to use stale cache as fallback
             try {
                 const cached = await AsyncStorage.getItem(CACHE_KEY);

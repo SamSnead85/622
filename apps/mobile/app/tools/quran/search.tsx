@@ -48,7 +48,7 @@ export default function QuranSearch() {
                 surahNumber: parseInt(r.verse_key?.split(':')[0] || '1'),
             })));
         } catch (err) {
-            console.error('Quran search error:', err);
+            if (__DEV__) console.error('Quran search error:', err);
         } finally {
             setIsSearching(false);
         }

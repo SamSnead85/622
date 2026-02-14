@@ -70,7 +70,7 @@ export default function BoycottScannerScreen() {
                 timestamp: Date.now(),
             }));
         } catch (err) {
-            console.error('Boycott data load error:', err);
+            if (__DEV__) console.error('Boycott data load error:', err);
             // Try to use cached data even if expired
             try {
                 const cached = await AsyncStorage.getItem(BOYCOTT_CACHE_KEY);

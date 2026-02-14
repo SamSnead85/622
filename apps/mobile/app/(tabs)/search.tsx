@@ -149,7 +149,7 @@ const QUICK_ACCESS_CARDS = [
     { id: 'communities', icon: 'people' as const, label: 'Communities', color: colors.azure[500], route: '/(tabs)/communities' },
     { id: 'games', icon: 'game-controller' as const, label: 'Games', color: colors.emerald[500], route: '/games' },
     { id: 'tools', icon: 'construct' as const, label: 'Tools', color: colors.gold[500], route: '/tools' },
-    { id: 'bulletin', icon: 'megaphone' as const, label: 'Bulletin', color: colors.coral[500], route: '/bulletin' },
+    { id: 'campfire', icon: 'radio' as const, label: 'Campfire', color: colors.coral[500], route: '/campfire' },
 ];
 
 const DISCOVERY_CATEGORIES = [

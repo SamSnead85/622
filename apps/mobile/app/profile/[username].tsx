@@ -10,6 +10,7 @@ import {
     Platform,
     Share,
     Alert,
+    ActionSheetIOS,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -36,7 +37,7 @@ import { apiFetch, API } from '../../lib/api';
 import { ScreenHeader, LoadingView, Avatar, EmptyState, SkeletonGrid } from '../../components';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { formatCount } from '../../lib/utils';
-import { showError } from '../../stores/toastStore';
+import { showError, showSuccess } from '../../stores/toastStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_HEIGHT = 200;
@@ -62,6 +63,7 @@ interface UserProfile {
     postsCount: number;
     isFollowing: boolean;
     isOwnProfile: boolean;
+    isBlocked?: boolean;
 }
 
 // ─── Animated Stat Counter ──────────────────────────────
@@ -291,6 +293,9 @@ export default function UserProfileScreen() {
     const [mutualFriends, setMutualFriends] = useState<{ id: string; displayName: string; avatarUrl?: string }[]>([]);
     const [mutualTotal, setMutualTotal] = useState(0);
 
+    // Block state (local override when API doesn't return it)
+    const [isBlocked, setIsBlocked] = useState(false);
+
     // Tabs
     const [likedPosts, setLikedPosts] = useState<Post[]>([]);
     const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
@@ -371,6 +376,7 @@ export default function UserProfileScreen() {
         try {
             const data = await apiFetch<any>(API.userProfile(username));
             setProfile(data);
+            setIsBlocked(data?.isBlocked ?? false);
             if (data?.id) {
                 const postsData = await apiFetch<any>(`${API.userPosts(data.id)}?limit=50`);
                 const rawPosts = postsData.posts || postsData.data || [];
@@ -451,6 +457,101 @@ export default function UserProfileScreen() {
             Alert.alert('Error', 'Could not start a conversation. Please try again.');
         }
     }, [profile, router]);
+
+    const handleBlock = useCallback(async () => {
+        if (!profile) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setIsBlocked(true);
+        try {
+            await apiFetch(API.blockUser(profile.id), { method: 'POST' });
+            showSuccess('User blocked');
+        } catch {
+            setIsBlocked(false);
+            showError('Could not block user');
+        }
+    }, [profile]);
+
+    const handleUnblock = useCallback(async () => {
+        if (!profile) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setIsBlocked(false);
+        try {
+            await apiFetch(API.blockUser(profile.id), { method: 'DELETE' });
+            showSuccess('User unblocked');
+        } catch {
+            setIsBlocked(true);
+            showError('Could not unblock user');
+        }
+    }, [profile]);
+
+    const handleReport = useCallback(async (reason: string) => {
+        if (!profile) return;
+        try {
+            await apiFetch(API.reportUser(profile.id), {
+                method: 'POST',
+                body: JSON.stringify({ reason }),
+            });
+            showSuccess('Report submitted');
+        } catch {
+            showError('Could not submit report');
+        }
+    }, [profile]);
+
+    const handleMoreOptions = useCallback(() => {
+        if (!profile) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+        const blockLabel = isBlocked ? 'Unblock User' : 'Block User';
+        const options = [blockLabel, 'Report User', 'Cancel'];
+        const cancelIndex = 2;
+        const destructiveIndex = isBlocked ? undefined : 0; // Block is destructive; Unblock is not
+
+        const handleAction = (buttonIndex: number | undefined) => {
+            if (buttonIndex === 0) {
+                if (isBlocked) {
+                    handleUnblock();
+                } else {
+                    Alert.alert(
+                        'Block User',
+                        `Block @${profile.username || 'this user'}? You won't see their posts or receive messages from them.`,
+                        [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Block', style: 'destructive', onPress: handleBlock },
+                        ]
+                    );
+                }
+            } else if (buttonIndex === 1) {
+                Alert.alert(
+                    'Report User',
+                    'Why are you reporting this user?',
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Spam', onPress: () => handleReport('Spam') },
+                        { text: 'Harassment', onPress: () => handleReport('Harassment') },
+                        { text: 'Inappropriate Content', onPress: () => handleReport('Inappropriate Content') },
+                        { text: 'Other', onPress: () => handleReport('Other') },
+                    ]
+                );
+            }
+        };
+
+        if (Platform.OS === 'ios') {
+            ActionSheetIOS.showActionSheetWithOptions(
+                {
+                    options,
+                    cancelButtonIndex: cancelIndex,
+                    ...(destructiveIndex !== undefined && { destructiveButtonIndex: destructiveIndex }),
+                },
+                handleAction
+            );
+        } else {
+            Alert.alert('Options', undefined, [
+                { text: blockLabel, style: isBlocked ? undefined : 'destructive', onPress: () => handleAction(0) },
+                { text: 'Report User', onPress: () => handleAction(1) },
+                { text: 'Cancel', style: 'cancel' },
+            ]);
+        }
+    }, [profile, isBlocked, handleBlock, handleUnblock]);
 
     const loadLikedPosts = useCallback(async () => {
         if (!profile?.id) return;
@@ -766,7 +867,20 @@ export default function UserProfileScreen() {
         <View style={styles.container}>
             <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFill} />
 
-            <ScreenHeader title={`@${profile.username || ''}`} />
+            <ScreenHeader
+                title={`@${profile.username || ''}`}
+                rightElement={
+                    <TouchableOpacity
+                        style={styles.moreBtn}
+                        onPress={handleMoreOptions}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel="More options"
+                    >
+                        <Ionicons name="ellipsis-horizontal" size={22} color={colors.text.secondary} />
+                    </TouchableOpacity>
+                }
+            />
 
             <AnimatedFlatList
                 data={postsData}
@@ -1140,6 +1254,12 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.06,
         shadowRadius: 6,
         elevation: 1,
+    },
+    moreBtn: {
+        width: 44,
+        height: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     // ── Segmented Tabs ───────────────────────────────────
