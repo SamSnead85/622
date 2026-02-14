@@ -3,7 +3,7 @@
 // "The people's network."
 // ============================================
 
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,40 +57,33 @@ export default function WelcomeScreen() {
             {/* Tagline */}
             <Animated.View entering={FadeInUp.delay(400).duration(600)} style={styles.taglineSection}>
                 <Text style={[styles.tagline, { color: c.text.primary }]}>
-                    The people's{'\n'}network.
+                    Your data.{'\n'}Your rules.{'\n'}Your community.
                 </Text>
                 <Text style={[styles.subtitle, { color: c.text.secondary }]}>
-                    No ads. No algorithms. No compromise.{'\n'}
-                    Built by the community, for the community.
+                    A social network that doesn't spy on you,{'\n'}
+                    sell your attention, or manipulate your feed.
                 </Text>
             </Animated.View>
 
-            {/* Value Proposition Pills */}
-            <Animated.View entering={FadeInUp.delay(500).duration(500)} style={styles.valuePropSection}>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.valuePropScroll}
-                >
-                    {([
-                        { icon: 'lock-closed' as const, title: 'End-to-end encrypted', desc: 'Not even we can read your messages' },
-                        { icon: 'options' as const, title: 'You own your algorithm', desc: 'Chronological, curated, or custom' },
-                        { icon: 'shield-checkmark' as const, title: 'Invite-only community', desc: 'Every member vouched for' },
-                        { icon: 'eye-off' as const, title: 'No ads. No tracking.', desc: 'Your attention is not for sale' },
-                    ]).map((item, index) => (
-                        <Animated.View
-                            key={item.title}
-                            entering={FadeInUp.delay(550 + index * 80).duration(400)}
-                            style={[styles.valuePill, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}
-                        >
-                            <View style={[styles.valuePillIcon, { backgroundColor: c.gold[500] + '15' }]}>
-                                <Ionicons name={item.icon} size={16} color={c.gold[500]} />
-                            </View>
-                            <Text style={[styles.valuePillTitle, { color: c.text.primary }]}>{item.title}</Text>
-                            <Text style={[styles.valuePillDesc, { color: c.text.muted }]}>{item.desc}</Text>
-                        </Animated.View>
-                    ))}
-                </ScrollView>
+            {/* Value Propositions — stacked, always visible */}
+            <Animated.View entering={FadeInUp.delay(550).duration(500)} style={styles.valuePropSection}>
+                {([
+                    { icon: 'lock-closed' as const, text: 'End-to-end encrypted — we can\'t read your messages' },
+                    { icon: 'eye-off' as const, text: 'Zero ads, zero tracking, zero data selling' },
+                    { icon: 'shield-checkmark' as const, text: 'Invite-only — every member is vouched for' },
+                    { icon: 'options' as const, text: 'You control the algorithm, not the other way around' },
+                ]).map((item, index) => (
+                    <Animated.View
+                        key={item.text}
+                        entering={FadeInUp.delay(600 + index * 70).duration(350)}
+                        style={styles.valueRow}
+                    >
+                        <View style={[styles.valueIcon, { backgroundColor: c.gold[500] + '15' }]}>
+                            <Ionicons name={item.icon} size={15} color={c.gold[500]} />
+                        </View>
+                        <Text style={[styles.valueText, { color: c.text.secondary }]}>{item.text}</Text>
+                    </Animated.View>
+                ))}
             </Animated.View>
 
             {/* Spacer */}
@@ -117,7 +110,7 @@ export default function WelcomeScreen() {
                         style={styles.primaryGradient}
                     >
                         <Text style={styles.primaryButtonText}>
-                            Join the movement
+                            Get started
                         </Text>
                     </LinearGradient>
                 </Pressable>
@@ -208,39 +201,28 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
     },
 
-    // ---- Value Proposition Pills ----
+    // ---- Value Propositions ----
     valuePropSection: {
         paddingTop: 28,
-    },
-    valuePropScroll: {
         paddingHorizontal: spacing.xl,
-        gap: 10,
+        gap: 14,
     },
-    valuePill: {
-        width: 150,
-        paddingVertical: 14,
-        paddingHorizontal: 14,
-        borderRadius: 14,
-        borderWidth: 1,
+    valueRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
     },
-    valuePillIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 10,
+    valueIcon: {
+        width: 30,
+        height: 30,
+        borderRadius: 9,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 8,
     },
-    valuePillTitle: {
-        fontSize: 13,
-        fontWeight: '700',
-        fontFamily: 'SpaceGrotesk-Bold',
-        lineHeight: 17,
-        marginBottom: 3,
-    },
-    valuePillDesc: {
-        fontSize: 11,
-        lineHeight: 15,
+    valueText: {
+        flex: 1,
+        fontSize: typography.fontSize.sm,
+        lineHeight: 18,
         fontFamily: 'Inter',
     },
 
