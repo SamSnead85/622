@@ -20,14 +20,4 @@ config.resolver.nodeModulesPaths = [
 // 3. Force resolving these workspace packages from the monorepo root
 config.resolver.disableHierarchicalLookup = true;
 
-// 4. Fix entry point resolution in monorepo:
-//    Expo detects the monorepo root and sets it as unstable_serverRoot,
-//    which causes Metro to look for the entry point (expo-router/entry)
-//    from the monorepo root instead of apps/mobile/. This override
-//    tells Metro the correct project root for entry resolution.
-config.server = {
-    ...config.server,
-    unstable_serverRoot: projectRoot,
-};
-
 module.exports = config;
