@@ -1,9 +1,10 @@
 // ============================================
-// GameInviteSheet — Bottom sheet with all 4 invite methods
-// Room code, QR placeholder, native share, manual code entry
+// GameInviteSheet — Bottom sheet for inviting players
+// 1. Tap online friends to invite instantly (no code needed)
+// 2. Share link to non-app friends (they just enter a username to play)
 // ============================================
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -14,38 +15,71 @@ import {
     Pressable,
     Dimensions,
     Linking,
+    ScrollView,
+    ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { showSuccess } from '../stores/toastStore';
+import { apiFetch, API } from '../lib/api';
+import { socketManager } from '../lib/socket';
+import { AVATAR_PLACEHOLDER } from '../lib/imagePlaceholder';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DEEP_LINK_BASE = 'https://0gravity.ai/game';
 
+interface Friend {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string | null;
+    isOnline?: boolean;
+}
+
 interface GameInviteSheetProps {
     code: string;
+    gameType?: string;
     visible: boolean;
     onClose: () => void;
 }
 
-export function GameInviteSheet({ code, visible, onClose }: GameInviteSheetProps) {
+export function GameInviteSheet({ code, gameType, visible, onClose }: GameInviteSheetProps) {
     const gameUrl = `${DEEP_LINK_BASE}/${code}`;
-    const shareMessage = `🎮 Join my game on 0G!\n\nRoom Code: ${code}\n\nTap to join: ${gameUrl}\n\nDon't have the app? No worries — you can play as a guest!`;
+    const shareMessage = `Join my game on 0G! Tap to play — no account needed, just pick a username:\n\n${gameUrl}`;
 
-    // ---- Copy link via share sheet ----
-    const handleCopy = useCallback(async () => {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        try {
-            await Share.share({ message: gameUrl });
-        } catch {
-            // User cancelled
+    const [friends, setFriends] = useState<Friend[]>([]);
+    const [loadingFriends, setLoadingFriends] = useState(false);
+    const [invitedIds, setInvitedIds] = useState<Set<string>>(new Set());
+
+    // ---- Load friends when sheet opens ----
+    useEffect(() => {
+        if (!visible) {
+            setInvitedIds(new Set());
+            return;
         }
-        showSuccess('Link shared!');
-    }, [gameUrl]);
+        setLoadingFriends(true);
+        apiFetch<{ users: Friend[] }>(`/api/v1/users/search?q=&limit=20`)
+            .then((data) => {
+                setFriends(data.users || []);
+            })
+            .catch(() => {
+                setFriends([]);
+            })
+            .finally(() => setLoadingFriends(false));
+    }, [visible]);
 
-    // ---- Share via native sheet ----
+    // ---- Invite a friend directly (no code needed for them) ----
+    const handleInviteFriend = useCallback((friend: Friend) => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        socketManager.sendGameInvite(code, friend.id, gameType);
+        setInvitedIds((prev) => new Set(prev).add(friend.id));
+        showSuccess(`Invited ${friend.displayName}!`);
+    }, [code, gameType]);
+
+    // ---- Share via native sheet (for non-app friends) ----
     const handleShare = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         try {
@@ -63,14 +97,12 @@ export function GameInviteSheet({ code, visible, onClose }: GameInviteSheetProps
             statusBarTranslucent
             onRequestClose={onClose}
         >
-            {/* ---- Overlay ---- */}
             <Pressable
                 style={styles.overlay}
                 onPress={onClose}
                 accessibilityRole="button"
                 accessibilityLabel="Close invite sheet"
             >
-                {/* ---- Bottom Sheet ---- */}
                 <Pressable
                     style={styles.sheet}
                     onPress={(e) => e.stopPropagation()}
@@ -89,44 +121,75 @@ export function GameInviteSheet({ code, visible, onClose }: GameInviteSheetProps
                             Invite Players
                         </Animated.Text>
 
-                        {/* ---- Room Code Section ---- */}
+                        {/* ---- Friends Section (tap to invite instantly) ---- */}
                         <Animated.View entering={FadeInDown.delay(100).duration(400)}>
-                            <TouchableOpacity
-                                onPress={handleCopy}
-                                activeOpacity={0.8}
-                                style={styles.codeSection}
-                                accessibilityRole="button"
-                                accessibilityLabel={`Room code: ${code}. Tap to copy`}
-                            >
-                                <Text style={styles.codeSectionLabel}>ROOM CODE</Text>
-                                <View style={styles.codeRow}>
-                                    <Text style={styles.codeText}>{code}</Text>
-                                    <View style={styles.copyBadge}>
-                                        <Ionicons name="copy-outline" size={16} color={colors.gold[500]} />
-                                        <Text style={styles.copyBadgeText}>Copy</Text>
-                                    </View>
+                            <Text style={styles.sectionLabel}>TAP TO INVITE</Text>
+                            {loadingFriends ? (
+                                <View style={styles.friendsLoading}>
+                                    <ActivityIndicator size="small" color={colors.gold[400]} />
                                 </View>
-                            </TouchableOpacity>
+                            ) : friends.length > 0 ? (
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={styles.friendsScroll}
+                                >
+                                    {friends.map((friend) => {
+                                        const isInvited = invitedIds.has(friend.id);
+                                        return (
+                                            <TouchableOpacity
+                                                key={friend.id}
+                                                onPress={() => !isInvited && handleInviteFriend(friend)}
+                                                activeOpacity={isInvited ? 1 : 0.7}
+                                                style={styles.friendItem}
+                                            >
+                                                <View style={styles.friendAvatarWrap}>
+                                                    <Image
+                                                        source={{ uri: friend.avatarUrl || undefined }}
+                                                        style={styles.friendAvatar}
+                                                        placeholder={AVATAR_PLACEHOLDER.blurhash}
+                                                        transition={150}
+                                                        cachePolicy="memory-disk"
+                                                    />
+                                                    {isInvited && (
+                                                        <View style={styles.invitedBadge}>
+                                                            <Ionicons name="checkmark" size={10} color="#FFFFFF" />
+                                                        </View>
+                                                    )}
+                                                </View>
+                                                <Text
+                                                    style={[
+                                                        styles.friendName,
+                                                        isInvited && styles.friendNameInvited,
+                                                    ]}
+                                                    numberOfLines={1}
+                                                >
+                                                    {friend.displayName.split(' ')[0]}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </ScrollView>
+                            ) : (
+                                <Text style={styles.noFriendsText}>
+                                    No friends found — share a link instead
+                                </Text>
+                            )}
                         </Animated.View>
 
-                        {/* ---- QR / In-Person Share Section ---- */}
-                        <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-                            <View style={styles.qrSection}>
-                                <View style={styles.qrBox}>
-                                    <Ionicons name="qr-code-outline" size={40} color={colors.gold[400]} />
-                                    <Text style={styles.qrCodeText}>{code}</Text>
-                                </View>
-                                <Text style={styles.qrHint}>Show this code to others nearby</Text>
-                            </View>
-                        </Animated.View>
+                        {/* ---- Divider ---- */}
+                        <View style={styles.divider}>
+                            <View style={styles.dividerLine} />
+                            <Text style={styles.dividerText}>or share with anyone</Text>
+                            <View style={styles.dividerLine} />
+                        </View>
 
                         {/* ---- Quick Share Buttons ---- */}
-                        <Animated.View entering={FadeInDown.delay(300).duration(400)}>
+                        <Animated.View entering={FadeInDown.delay(200).duration(400)}>
                             <View style={styles.quickShareRow}>
                                 <TouchableOpacity
                                     onPress={() => Linking.openURL(`whatsapp://send?text=${encodeURIComponent(shareMessage)}`)}
                                     activeOpacity={0.7}
-                                    accessibilityRole="button"
                                     accessibilityLabel="Share via WhatsApp"
                                 >
                                     <View style={styles.quickShareBtn}>
@@ -137,48 +200,45 @@ export function GameInviteSheet({ code, visible, onClose }: GameInviteSheetProps
                                 <TouchableOpacity
                                     onPress={() => Linking.openURL(`sms:&body=${encodeURIComponent(shareMessage)}`)}
                                     activeOpacity={0.7}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Share via Messages"
+                                    accessibilityLabel="Share via iMessage"
                                 >
                                     <View style={styles.quickShareBtn}>
                                         <Ionicons name="chatbubble-outline" size={24} color={colors.azure[500]} />
-                                        <Text style={styles.quickShareLabel}>Message</Text>
+                                        <Text style={styles.quickShareLabel}>iMessage</Text>
                                     </View>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    onPress={handleCopy}
+                                    onPress={handleShare}
                                     activeOpacity={0.7}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Copy invite link"
+                                    accessibilityLabel="More sharing options"
                                 >
                                     <View style={styles.quickShareBtn}>
-                                        <Ionicons name="copy-outline" size={24} color={colors.gold[500]} />
-                                        <Text style={styles.quickShareLabel}>Copy Link</Text>
+                                        <Ionicons name="share-outline" size={24} color={colors.gold[500]} />
+                                        <Text style={styles.quickShareLabel}>More</Text>
                                     </View>
                                 </TouchableOpacity>
                             </View>
                         </Animated.View>
 
                         {/* ---- Share Button ---- */}
-                        <Animated.View entering={FadeInDown.delay(400).duration(400)}>
+                        <Animated.View entering={FadeInDown.delay(300).duration(400)}>
                             <TouchableOpacity
                                 onPress={handleShare}
                                 activeOpacity={0.8}
                                 style={styles.shareButton}
-                                accessibilityRole="button"
-                                accessibilityLabel="Share game invite"
+                                accessibilityLabel="Share game invite link"
                             >
                                 <Ionicons name="share-social" size={20} color="#FFFFFF" />
                                 <Text style={styles.shareButtonText}>Share Invite Link</Text>
                             </TouchableOpacity>
                         </Animated.View>
 
-                        {/* ---- Manual Code Note ---- */}
-                        <Animated.View entering={FadeInDown.delay(500).duration(400)}>
+                        {/* ---- Guest Note ---- */}
+                        <Animated.View entering={FadeInDown.delay(400).duration(400)}>
                             <View style={styles.noteContainer}>
-                                <Ionicons name="keypad-outline" size={16} color={colors.text.muted} />
+                                <Ionicons name="person-outline" size={14} color={colors.text.muted} />
                                 <Text style={styles.noteText}>
-                                    Or have them type the code in the 0G Arena hub
+                                    Friends without the app can play as a guest — just a username
                                 </Text>
                             </View>
                         </Animated.View>
@@ -208,6 +268,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderBottomWidth: 0,
         borderColor: colors.border.subtle,
+        maxHeight: '80%',
     },
 
     // ---- Handle ----
@@ -230,81 +291,87 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter-Bold',
         color: colors.text.primary,
         textAlign: 'center',
-        marginBottom: spacing.lg,
+        marginBottom: spacing.md,
     },
 
-    // ---- Room Code ----
-    codeSection: {
-        backgroundColor: colors.surface.goldSubtle,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: colors.gold[500] + '20',
-        padding: spacing.lg,
-        alignItems: 'center',
-        marginBottom: spacing.lg,
-    },
-    codeSectionLabel: {
+    // ---- Section Label ----
+    sectionLabel: {
         fontSize: typography.fontSize.xs,
         fontWeight: '600',
         color: colors.text.muted,
         textTransform: 'uppercase',
-        letterSpacing: 2,
+        letterSpacing: 1.5,
         marginBottom: spacing.sm,
     },
-    codeRow: {
-        flexDirection: 'row',
+
+    // ---- Friends List ----
+    friendsLoading: {
+        paddingVertical: spacing.lg,
         alignItems: 'center',
+    },
+    friendsScroll: {
+        paddingBottom: spacing.sm,
         gap: spacing.md,
     },
-    codeText: {
-        fontSize: typography.fontSize['4xl'],
-        fontWeight: '700',
-        fontFamily: 'Inter-Bold',
-        color: colors.gold[400],
-        letterSpacing: 8,
-    },
-    copyBadge: {
-        flexDirection: 'row',
+    friendItem: {
         alignItems: 'center',
-        gap: 4,
-        backgroundColor: colors.gold[500] + '15',
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
-        borderRadius: 10,
+        width: 64,
     },
-    copyBadgeText: {
-        fontSize: typography.fontSize.xs,
-        fontWeight: '600',
-        color: colors.gold[500],
+    friendAvatarWrap: {
+        position: 'relative',
+        marginBottom: 4,
     },
-
-    // ---- QR / In-Person Share ----
-    qrSection: {
-        alignItems: 'center',
-        marginBottom: spacing.lg,
+    friendAvatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        borderWidth: 2,
+        borderColor: colors.gold[500] + '30',
     },
-    qrBox: {
-        width: SCREEN_WIDTH * 0.45,
-        aspectRatio: 1,
-        backgroundColor: colors.surface.glass,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
+    invitedBadge: {
+        position: 'absolute',
+        bottom: -2,
+        right: -2,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: colors.emerald[500],
         alignItems: 'center',
         justifyContent: 'center',
-        gap: spacing.md,
+        borderWidth: 2,
+        borderColor: colors.obsidian[800],
     },
-    qrCodeText: {
-        fontSize: typography.fontSize['2xl'],
-        fontWeight: '700',
-        fontFamily: 'Inter-Bold',
-        color: colors.text.primary,
-        letterSpacing: 6,
+    friendName: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: colors.text.secondary,
+        textAlign: 'center',
     },
-    qrHint: {
+    friendNameInvited: {
+        color: colors.emerald[500],
+    },
+    noFriendsText: {
+        fontSize: typography.fontSize.sm,
+        color: colors.text.muted,
+        textAlign: 'center',
+        paddingVertical: spacing.md,
+    },
+
+    // ---- Divider ----
+    divider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: spacing.md,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: colors.border.subtle,
+    },
+    dividerText: {
         fontSize: typography.fontSize.xs,
         color: colors.text.muted,
-        marginTop: spacing.sm,
+        marginHorizontal: spacing.md,
     },
 
     // ---- Quick Share ----
@@ -340,7 +407,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.gold[500],
         paddingVertical: spacing.md + 2,
         borderRadius: 14,
-        marginBottom: spacing.lg,
+        marginBottom: spacing.md,
         shadowColor: colors.gold[500],
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.3,
@@ -353,16 +420,17 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
     },
 
-    // ---- Manual Code Note ----
+    // ---- Guest Note ----
     noteContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: spacing.sm,
+        gap: spacing.xs,
     },
     noteText: {
-        fontSize: typography.fontSize.sm,
+        fontSize: typography.fontSize.xs,
         color: colors.text.muted,
         textAlign: 'center',
+        flex: 1,
     },
 });

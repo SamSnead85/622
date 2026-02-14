@@ -753,7 +753,7 @@ export default function LobbyScreen() {
             {showCountdown && <CountdownOverlay onComplete={handleCountdownComplete} />}
 
             {/* ---- Invite Sheet ---- */}
-            <GameInviteSheet code={roomCode} visible={showInvite} onClose={() => setShowInvite(false)} />
+            <GameInviteSheet code={roomCode} gameType={gameType} visible={showInvite} onClose={() => setShowInvite(false)} />
         </View>
     );
 }
