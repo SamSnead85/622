@@ -331,6 +331,116 @@ router.get('/:username', optionalAuth, async (req: AuthRequest, res, next) => {
             isFollowing = !!follow;
         }
 
+        // ── Connection degree & status (LinkedIn-style) ──
+        let connectionDegree: 1 | 2 | 3 | null = null;
+        let connectionStatus: 'connected' | 'pending_sent' | 'pending_received' | 'none' = 'none';
+        let mutualConnectionsCount = 0;
+
+        if (req.userId && !isOwnProfile) {
+            // Check if mutually connected (both follow each other)
+            const [followsTarget, targetFollowsMe] = await Promise.all([
+                prisma.follow.findUnique({
+                    where: { followerId_followingId: { followerId: req.userId, followingId: user.id } },
+                }),
+                prisma.follow.findUnique({
+                    where: { followerId_followingId: { followerId: user.id, followingId: req.userId } },
+                }),
+            ]);
+
+            const isMutualConnection = !!followsTarget && !!targetFollowsMe;
+
+            if (isMutualConnection) {
+                connectionDegree = 1;
+                connectionStatus = 'connected';
+            } else {
+                // Check for pending connection requests
+                const pendingRequest = await prisma.connectionRequest.findFirst({
+                    where: {
+                        OR: [
+                            { senderId: req.userId, receiverId: user.id, status: 'PENDING' },
+                            { senderId: user.id, receiverId: req.userId, status: 'PENDING' },
+                        ],
+                    },
+                });
+
+                if (pendingRequest) {
+                    connectionStatus = pendingRequest.senderId === req.userId
+                        ? 'pending_sent'
+                        : 'pending_received';
+                }
+
+                // Check degree 2: do any of MY connections also connect to this user?
+                const degree2Check = await prisma.$queryRaw<{ count: bigint }[]>`
+                    SELECT COUNT(*) as count
+                    FROM "User" bridge
+                    WHERE EXISTS (
+                        SELECT 1 FROM "Follow" f1
+                        WHERE f1."followerId" = ${req.userId} AND f1."followingId" = bridge.id
+                    )
+                    AND EXISTS (
+                        SELECT 1 FROM "Follow" f2
+                        WHERE f2."followerId" = bridge.id AND f2."followingId" = ${req.userId}
+                    )
+                    AND EXISTS (
+                        SELECT 1 FROM "Follow" f3
+                        WHERE f3."followerId" = bridge.id AND f3."followingId" = ${user.id}
+                    )
+                    AND EXISTS (
+                        SELECT 1 FROM "Follow" f4
+                        WHERE f4."followerId" = ${user.id} AND f4."followingId" = bridge.id
+                    )
+                `;
+
+                if (Number(degree2Check[0]?.count ?? 0) > 0) {
+                    connectionDegree = 2;
+                } else {
+                    // Check degree 3 (lightweight: just check existence, not full path)
+                    const degree3Check = await prisma.$queryRaw<{ found: boolean }[]>`
+                        SELECT EXISTS (
+                            SELECT 1
+                            FROM "Follow" f1
+                            INNER JOIN "Follow" f2 ON f2."followerId" = f1."followingId"
+                            INNER JOIN "Follow" f3 ON f3."followerId" = f2."followingId"
+                            INNER JOIN "Follow" f4 ON f4."followerId" = f3."followingId"
+                            INNER JOIN "Follow" f1r ON f1r."followerId" = f1."followingId" AND f1r."followingId" = ${req.userId}
+                            INNER JOIN "Follow" f2r ON f2r."followerId" = f2."followingId" AND f2r."followingId" = f1."followingId"
+                            INNER JOIN "Follow" f3r ON f3r."followerId" = ${user.id} AND f3r."followingId" = f2."followingId"
+                            WHERE f1."followerId" = ${req.userId}
+                            AND f3."followingId" = ${user.id}
+                            LIMIT 1
+                        ) as found
+                    `;
+
+                    if (degree3Check[0]?.found) {
+                        connectionDegree = 3;
+                    }
+                }
+            }
+
+            // Count mutual connections (users connected to both me and this profile)
+            const mutualResult = await prisma.$queryRaw<{ count: bigint }[]>`
+                SELECT COUNT(*) as count
+                FROM "User" u
+                WHERE EXISTS (
+                    SELECT 1 FROM "Follow" f1
+                    WHERE f1."followerId" = ${req.userId} AND f1."followingId" = u.id
+                )
+                AND EXISTS (
+                    SELECT 1 FROM "Follow" f2
+                    WHERE f2."followerId" = u.id AND f2."followingId" = ${req.userId}
+                )
+                AND EXISTS (
+                    SELECT 1 FROM "Follow" f3
+                    WHERE f3."followerId" = ${user.id} AND f3."followingId" = u.id
+                )
+                AND EXISTS (
+                    SELECT 1 FROM "Follow" f4
+                    WHERE f4."followerId" = u.id AND f4."followingId" = ${user.id}
+                )
+            `;
+            mutualConnectionsCount = Number(mutualResult[0]?.count ?? 0);
+        }
+
         // Apply public profile masking when viewed from community context
         // (if user uses public profile and viewer is not the user themselves and not a group member)
         const shouldMask = user.usePublicProfile && !isOwnProfile;
@@ -367,6 +477,9 @@ router.get('/:username', optionalAuth, async (req: AuthRequest, res, next) => {
             postsCount: user._count.posts,
             isFollowing,
             isOwnProfile,
+            connectionDegree,
+            connectionStatus,
+            mutualConnectionsCount,
         });
     } catch (error) {
         next(error);

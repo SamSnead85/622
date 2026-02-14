@@ -701,6 +701,18 @@ export const API = {
     // Users — social graph
     mutualFriends: (userId: string) => `/api/v1/users/${userId}/mutual-friends`,
 
+    // Connections (Degrees of Connection)
+    connections: '/api/v1/connections',
+    connectionRequests: '/api/v1/connections/requests',
+    connectionRequest: (userId: string) => `/api/v1/connections/request/${userId}`,
+    connectionAccept: (requestId: string) => `/api/v1/connections/accept/${requestId}`,
+    connectionDecline: (requestId: string) => `/api/v1/connections/decline/${requestId}`,
+    connectionRemove: (userId: string) => `/api/v1/connections/${userId}`,
+    connectionDegree: (userId: string) => `/api/v1/connections/degree/${userId}`,
+    connectionMutual: (userId: string) => `/api/v1/connections/mutual/${userId}`,
+    connectionSuggestions: '/api/v1/connections/suggestions',
+    connectionStats: '/api/v1/connections/stats',
+
     // Analytics
     analyticsOverview: '/api/v1/analytics/overview',
     analyticsPosts: '/api/v1/analytics/posts',

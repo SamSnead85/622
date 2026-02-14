@@ -114,6 +114,8 @@ function getNotificationMessage(item: Notification): string {
         case 'MESSAGE': return `${name} sent you a message`;
         case 'COMMUNITY_INVITE': return `${name} invited you to a community`;
         case 'POST': return `${name} published a new post`;
+        case 'CONNECTION_REQUEST': return `${name} wants to connect with you`;
+        case 'CONNECTION_ACCEPTED': return `${name} accepted your connection request`;
         default: return item.content || item.message || 'New notification';
     }
 }
@@ -132,6 +134,8 @@ function getNotificationIcon(type: string): { name: keyof typeof Ionicons.glyphM
         case 'MESSAGE': return { name: 'chatbubble', color: colors.azure[500] };
         case 'COMMUNITY_INVITE': return { name: 'people', color: colors.azure[400] };
         case 'POST': return { name: 'document-text', color: colors.gold[400] };
+        case 'CONNECTION_REQUEST': return { name: 'person-add', color: colors.gold[500] };
+        case 'CONNECTION_ACCEPTED': return { name: 'people', color: colors.emerald[500] };
         case 'SYSTEM': return { name: 'information-circle', color: colors.text.muted };
         default: return { name: 'notifications', color: colors.gold[500] };
     }
@@ -147,7 +151,7 @@ function filterNotifications(notifications: Notification[], filter: FilterTab): 
     if (filter === 'all') return notifications;
     if (filter === 'likes') return notifications.filter((n) => n.type === 'LIKE');
     if (filter === 'comments') return notifications.filter((n) => n.type === 'COMMENT');
-    if (filter === 'follows') return notifications.filter((n) => n.type === 'FOLLOW');
+    if (filter === 'follows') return notifications.filter((n) => n.type === 'FOLLOW' || n.type === 'CONNECTION_REQUEST' || n.type === 'CONNECTION_ACCEPTED');
     if (filter === 'system') return notifications.filter((n) => SYSTEM_TYPES.has(n.type));
     return notifications;
 }
@@ -283,6 +287,9 @@ const NotificationItem = memo(({ item, index, onPress, onReply, onFollowBack, on
                                 {item.type === 'FOLLOW' && item.actorId && (
                                     <FollowBackButton actorId={item.actorId} onFollowBack={() => onFollowBack(item)} />
                                 )}
+                                {item.type === 'CONNECTION_REQUEST' && item.targetId && (
+                                    <ConnectionRequestButtons targetId={item.targetId} onAction={() => onFollowBack(item)} />
+                                )}
                             </View>
                         </View>
                         {!item.isRead && <View style={styles.unreadDot} />}
@@ -330,6 +337,84 @@ const FollowBackButton = memo(({ actorId, onFollowBack }: { actorId: string; onF
             <Ionicons name="person-add-outline" size={12} color={colors.gold[400]} />
             <Text style={[styles.actionPillText, { color: colors.gold[400] }]}>Follow back</Text>
         </TouchableOpacity>
+    );
+});
+
+// ============================================
+// Connection request Accept / Decline buttons
+// ============================================
+
+const ConnectionRequestButtons = memo(({ targetId, onAction }: { targetId: string; onAction: () => void }) => {
+    const [status, setStatus] = useState<'pending' | 'accepted' | 'declined'>('pending');
+    const [loading, setLoading] = useState(false);
+
+    const handleAccept = async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setStatus('accepted'); // optimistic
+        setLoading(true);
+        try {
+            await apiFetch(API.connectionAccept(targetId), { method: 'POST' });
+            onAction();
+        } catch {
+            setStatus('pending'); // revert
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDecline = async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setStatus('declined'); // optimistic
+        setLoading(true);
+        try {
+            await apiFetch(API.connectionDecline(targetId), { method: 'POST' });
+            onAction();
+        } catch {
+            setStatus('pending'); // revert
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (status === 'accepted') {
+        return (
+            <View style={[styles.actionPill, styles.actionPillDone]}>
+                <Ionicons name="checkmark" size={12} color={colors.emerald[500]} />
+                <Text style={[styles.actionPillText, { color: colors.emerald[500] }]}>Connected</Text>
+            </View>
+        );
+    }
+
+    if (status === 'declined') {
+        return (
+            <View style={[styles.actionPill, styles.actionPillDone]}>
+                <Ionicons name="close" size={12} color={colors.text.muted} />
+                <Text style={[styles.actionPillText, { color: colors.text.muted }]}>Declined</Text>
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.connectionActions}>
+            <TouchableOpacity
+                style={[styles.actionPill, styles.acceptPill]}
+                onPress={handleAccept}
+                disabled={loading}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+                <Ionicons name="checkmark" size={12} color={colors.emerald[500]} />
+                <Text style={[styles.actionPillText, { color: colors.emerald[500] }]}>Accept</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.actionPill}
+                onPress={handleDecline}
+                disabled={loading}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+                <Ionicons name="close" size={12} color={colors.text.muted} />
+                <Text style={[styles.actionPillText, { color: colors.text.muted }]}>Decline</Text>
+            </TouchableOpacity>
+        </View>
     );
 });
 
@@ -402,7 +487,7 @@ export default function NotificationsScreen() {
                 router.push(`/messages/${notif.targetId}` as any);
             } else if (notif.postId) {
                 router.push(`/post/${notif.postId}`);
-            } else if (notif.type === 'FOLLOW') {
+            } else if (notif.type === 'FOLLOW' || notif.type === 'CONNECTION_REQUEST' || notif.type === 'CONNECTION_ACCEPTED') {
                 // Navigate to profile — prefer username, fall back to ID
                 if (notif.actorUsername) {
                     router.push(`/profile/${notif.actorUsername}` as any);
@@ -732,6 +817,13 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         backgroundColor: colors.gold[500],
         marginStart: spacing.sm,
+    },
+    connectionActions: {
+        flexDirection: 'row',
+        gap: spacing.xs,
+    },
+    acceptPill: {
+        backgroundColor: colors.emerald[500] + '15',
     },
 
     // Swipe-to-dismiss

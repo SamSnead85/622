@@ -69,6 +69,8 @@ interface SearchResult {
     isVerified?: boolean;
     isFollowing?: boolean;
     isOwnProfile?: boolean;
+    connectionDegree?: number | null;
+    isConnected?: boolean;
 }
 
 type FilterTab = 'all' | 'people' | 'communities' | 'posts' | 'hashtags';
@@ -285,16 +287,32 @@ const SuggestionItem = memo(({ text, onPress, index }: {
 // Search Result Row (memoized)
 // ============================================
 
-const SearchResultRow = memo(({ item, index, onPress, onFollow }: {
+function getDegreeSuffix(degree: number): string {
+    if (degree === 1) return '1st';
+    if (degree === 2) return '2nd';
+    if (degree === 3) return '3rd';
+    return `${degree}th`;
+}
+
+function getDegreeColor(degree: number): string {
+    if (degree === 1) return colors.emerald[500];
+    if (degree === 2) return colors.azure[500];
+    if (degree === 3) return colors.gold[500];
+    return colors.text.muted;
+}
+
+const SearchResultRow = memo(({ item, index, onPress, onFollow, onConnect }: {
     item: SearchResult;
     index: number;
     onPress: (item: SearchResult) => void;
     onFollow?: (item: SearchResult) => void;
+    onConnect?: (item: SearchResult) => void;
 }) => {
     const typeIcon = getTypeIcon(item.type);
     const typeColor = getTypeColor(item.type);
     const isUser = item.type === 'user';
     const showFollowBtn = isUser && !item.isOwnProfile && onFollow;
+    const showConnectBtn = isUser && !item.isOwnProfile && !item.isConnected && onConnect;
     const followTappedRef = useRef(false);
 
     return (
@@ -340,9 +358,19 @@ const SearchResultRow = memo(({ item, index, onPress, onFollow }: {
 
                 {/* Info */}
                 <View style={styles.resultInfo}>
-                    <Text style={styles.resultTitle} numberOfLines={1}>
-                        {item.title}
-                    </Text>
+                    <View style={styles.resultTitleRow}>
+                        <Text style={styles.resultTitle} numberOfLines={1}>
+                            {item.title}
+                        </Text>
+                        {isUser && item.connectionDegree != null && item.connectionDegree > 0 && (
+                            <View style={[styles.degreeBadge, { backgroundColor: getDegreeColor(item.connectionDegree) + '18' }]}>
+                                <Ionicons name="link" size={8} color={getDegreeColor(item.connectionDegree)} />
+                                <Text style={[styles.degreeBadgeText, { color: getDegreeColor(item.connectionDegree) }]}>
+                                    {getDegreeSuffix(item.connectionDegree)}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
                     {item.subtitle ? (
                         <Text style={styles.resultSubtitle} numberOfLines={1}>
                             {item.subtitle}
@@ -355,28 +383,51 @@ const SearchResultRow = memo(({ item, index, onPress, onFollow }: {
                     ) : null}
                 </View>
 
-                {/* Follow button for users, type badge for others */}
-                {showFollowBtn ? (
-                    <TouchableOpacity
-                        style={[
-                            styles.followBtn,
-                            item.isFollowing && styles.followBtnFollowing,
-                        ]}
-                        onPress={() => {
-                            followTappedRef.current = true;
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            onFollow(item);
-                        }}
-                        activeOpacity={0.7}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                        <Text style={[
-                            styles.followBtnText,
-                            item.isFollowing && styles.followBtnTextFollowing,
-                        ]}>
-                            {item.isFollowing ? 'Following' : 'Follow'}
-                        </Text>
-                    </TouchableOpacity>
+                {/* Action buttons for users, type badge for others */}
+                {isUser && !item.isOwnProfile ? (
+                    <View style={styles.resultActions}>
+                        {showConnectBtn ? (
+                            <TouchableOpacity
+                                style={styles.connectBtn}
+                                onPress={() => {
+                                    followTappedRef.current = true;
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    onConnect?.(item);
+                                }}
+                                activeOpacity={0.7}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                                <Ionicons name="person-add-outline" size={12} color={colors.gold[500]} />
+                                <Text style={styles.connectBtnText}>Connect</Text>
+                            </TouchableOpacity>
+                        ) : item.isConnected ? (
+                            <View style={styles.connectedBadge}>
+                                <Ionicons name="checkmark-circle" size={12} color={colors.emerald[500]} />
+                                <Text style={styles.connectedBadgeText}>Connected</Text>
+                            </View>
+                        ) : showFollowBtn ? (
+                            <TouchableOpacity
+                                style={[
+                                    styles.followBtn,
+                                    item.isFollowing && styles.followBtnFollowing,
+                                ]}
+                                onPress={() => {
+                                    followTappedRef.current = true;
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    onFollow(item);
+                                }}
+                                activeOpacity={0.7}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                                <Text style={[
+                                    styles.followBtnText,
+                                    item.isFollowing && styles.followBtnTextFollowing,
+                                ]}>
+                                    {item.isFollowing ? 'Following' : 'Follow'}
+                                </Text>
+                            </TouchableOpacity>
+                        ) : null}
+                    </View>
                 ) : !isUser ? (
                     <View style={[styles.resultTypeBadge, { backgroundColor: typeColor + '15' }]}>
                         <Ionicons name={typeIcon} size={12} color={typeColor} />
@@ -392,6 +443,8 @@ const SearchResultRow = memo(({ item, index, onPress, onFollow }: {
     prev.item.id === next.item.id &&
     prev.item.type === next.item.type &&
     prev.item.isFollowing === next.item.isFollowing &&
+    prev.item.isConnected === next.item.isConnected &&
+    prev.item.connectionDegree === next.item.connectionDegree &&
     prev.index === next.index
 );
 
@@ -673,6 +726,8 @@ export default function SearchScreen() {
                         isVerified: u.isVerified,
                         isFollowing: u.isFollowing ?? false,
                         isOwnProfile: u.isOwnProfile ?? false,
+                        connectionDegree: u.connectionDegree ?? null,
+                        isConnected: u.isConnected ?? false,
                     });
                 });
             }
@@ -892,6 +947,26 @@ export default function SearchScreen() {
         }
     }, []);
 
+    const handleConnectFromSearch = useCallback(async (item: SearchResult) => {
+        if (item.type !== 'user') return;
+        // Optimistic update — mark as connected
+        setResults((prev) =>
+            prev.map((r) =>
+                r.id === item.id ? { ...r, isConnected: true } : r
+            )
+        );
+        try {
+            await apiFetch(API.connectionRequest(item.id), { method: 'POST' });
+        } catch {
+            // Revert on failure
+            setResults((prev) =>
+                prev.map((r) =>
+                    r.id === item.id ? { ...r, isConnected: false } : r
+                )
+            );
+        }
+    }, []);
+
     const handleSuggestedPress = useCallback((item: SuggestedItem) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         if (item.type === 'user') {
@@ -970,8 +1045,8 @@ export default function SearchScreen() {
     // ============================================
 
     const renderResult = useCallback(({ item, index }: { item: SearchResult; index: number }) => (
-        <SearchResultRow item={item} index={index} onPress={handleResultPress} onFollow={handleFollowFromSearch} />
-    ), [handleResultPress, handleFollowFromSearch]);
+        <SearchResultRow item={item} index={index} onPress={handleResultPress} onFollow={handleFollowFromSearch} onConnect={handleConnectFromSearch} />
+    ), [handleResultPress, handleFollowFromSearch, handleConnectFromSearch]);
 
     const resultKeyExtractor = useCallback((item: SearchResult) => `${item.type}-${item.id}`, []);
 
@@ -2107,6 +2182,61 @@ const styles = StyleSheet.create({
     resultTypeText: {
         fontSize: typography.fontSize.xs,
         fontWeight: '600',
+    },
+
+    // Result title row with degree badge
+    resultTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+    },
+    degreeBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+        paddingHorizontal: 5,
+        paddingVertical: 1,
+        borderRadius: 6,
+    },
+    degreeBadgeText: {
+        fontSize: 9,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+    },
+    resultActions: {
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        gap: 4,
+    },
+    connectBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        backgroundColor: colors.gold[500] + '18',
+        borderWidth: 1,
+        borderColor: colors.gold[500] + '30',
+    },
+    connectBtnText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '700',
+        color: colors.gold[500],
+    },
+    connectedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 16,
+        backgroundColor: colors.emerald[500] + '12',
+    },
+    connectedBadgeText: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '600',
+        color: colors.emerald[500],
     },
 
     // Follow button in search results

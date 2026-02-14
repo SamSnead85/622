@@ -60,10 +60,15 @@ interface UserProfile {
     isPrivate: boolean;
     followersCount: number;
     followingCount: number;
+    connectionsCount?: number;
     postsCount: number;
     isFollowing: boolean;
     isOwnProfile: boolean;
     isBlocked?: boolean;
+    connectionDegree?: 1 | 2 | 3 | null;
+    connectionStatus?: 'connected' | 'pending_sent' | 'pending_received' | 'none';
+    mutualConnectionsCount?: number;
+    pendingConnectionRequestId?: string;
 }
 
 // ─── Animated Stat Counter ──────────────────────────────
@@ -234,6 +239,191 @@ const FollowButton = memo(({
     );
 });
 
+// ─── Degree Badge ────────────────────────────────────────
+const DegreeBadge = memo(({ degree, c }: { degree: 1 | 2 | 3 | null; c: ReturnType<typeof useTheme>['colors'] }) => {
+    if (!degree) return null;
+    const labels: Record<number, string> = { 1: '1st', 2: '2nd', 3: '3rd' };
+    const badgeColors: Record<number, string> = {
+        1: colors.emerald[500],     // Green for direct connections
+        2: colors.gold[500],        // Gold for 2nd degree
+        3: colors.text.secondary,   // Muted for 3rd degree
+    };
+    const borderColor = badgeColors[degree] + '40';
+    const textColor = badgeColors[degree];
+    return (
+        <View style={[styles.degreeBadge, { borderColor }]}>
+            <Text style={[styles.degreeBadgeText, { color: textColor }]}>
+                {labels[degree]}
+            </Text>
+        </View>
+    );
+});
+
+// ─── Connection Button ───────────────────────────────────
+const ConnectionButton = memo(({
+    status,
+    degree,
+    mutualCount,
+    onConnect,
+    onAccept,
+    onDecline,
+    onRemove,
+    onCancelRequest,
+    c,
+}: {
+    status: 'connected' | 'pending_sent' | 'pending_received' | 'none';
+    degree: 1 | 2 | 3 | null;
+    mutualCount: number;
+    onConnect: () => void;
+    onAccept: () => void;
+    onDecline: () => void;
+    onRemove: () => void;
+    onCancelRequest: () => void;
+    c: ReturnType<typeof useTheme>['colors'];
+}) => {
+    const scale = useSharedValue(1);
+
+    const handlePressIn = useCallback(() => {
+        scale.value = withSpring(0.95, { damping: 15 });
+    }, []);
+
+    const handlePressOut = useCallback(() => {
+        scale.value = withSpring(1, { damping: 12 });
+    }, []);
+
+    const animStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    if (status === 'connected') {
+        return (
+            <Animated.View style={[{ flex: 1 }, animStyle]}>
+                <TouchableOpacity
+                    style={styles.connectedBadge}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        if (Platform.OS === 'ios') {
+                            ActionSheetIOS.showActionSheetWithOptions(
+                                { options: ['Remove Connection', 'Cancel'], cancelButtonIndex: 1, destructiveButtonIndex: 0 },
+                                (idx) => { if (idx === 0) onRemove(); }
+                            );
+                        } else {
+                            Alert.alert('Connection', undefined, [
+                                { text: 'Remove Connection', style: 'destructive', onPress: onRemove },
+                                { text: 'Cancel', style: 'cancel' },
+                            ]);
+                        }
+                    }}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Connected"
+                >
+                    <Ionicons name="checkmark-circle" size={16} color={colors.emerald[500]} />
+                    <Text style={styles.connectedBadgeText}>Connected</Text>
+                </TouchableOpacity>
+            </Animated.View>
+        );
+    }
+
+    if (status === 'pending_sent') {
+        return (
+            <Animated.View style={[{ flex: 1 }, animStyle]}>
+                <TouchableOpacity
+                    style={styles.requestedButton}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        if (Platform.OS === 'ios') {
+                            ActionSheetIOS.showActionSheetWithOptions(
+                                { options: ['Cancel Request', 'Dismiss'], cancelButtonIndex: 1, destructiveButtonIndex: 0 },
+                                (idx) => { if (idx === 0) onCancelRequest(); }
+                            );
+                        } else {
+                            Alert.alert('Connection Request', undefined, [
+                                { text: 'Cancel Request', style: 'destructive', onPress: onCancelRequest },
+                                { text: 'Dismiss', style: 'cancel' },
+                            ]);
+                        }
+                    }}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Request sent"
+                >
+                    <Ionicons name="time-outline" size={16} color={colors.text.muted} />
+                    <Text style={styles.requestedButtonText}>Requested</Text>
+                </TouchableOpacity>
+            </Animated.View>
+        );
+    }
+
+    if (status === 'pending_received') {
+        return (
+            <View style={styles.acceptDeclineRow}>
+                <TouchableOpacity
+                    style={styles.acceptButton}
+                    onPress={onAccept}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Accept connection request"
+                >
+                    <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.acceptGradient}>
+                        <Ionicons name="checkmark" size={16} color={c.text.inverse} />
+                        <Text style={[styles.acceptButtonText, { color: c.text.inverse }]}>Accept</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.declineButton}
+                    onPress={onDecline}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Decline connection request"
+                >
+                    <Ionicons name="close" size={16} color={colors.text.muted} />
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    // status === 'none'
+    const degreeLabel = degree === 2 ? '2nd' : degree === 3 ? '3rd' : null;
+    return (
+        <View style={{ flex: 1 }}>
+            <Animated.View style={animStyle}>
+                <TouchableOpacity
+                    style={styles.connectButton}
+                    onPress={onConnect}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Send connection request"
+                >
+                    <LinearGradient colors={[colors.gold[400], colors.gold[600]]} style={styles.connectGradient}>
+                        <Ionicons name="person-add" size={14} color={c.text.inverse} style={{ marginRight: 6 }} />
+                        <Text style={[styles.connectButtonText, { color: c.text.inverse }]}>Connect</Text>
+                        {degreeLabel && (
+                            <View style={styles.connectDegreePill}>
+                                <Text style={styles.connectDegreePillText}>{degreeLabel}</Text>
+                            </View>
+                        )}
+                    </LinearGradient>
+                </TouchableOpacity>
+            </Animated.View>
+            {mutualCount > 0 && (
+                <Text style={styles.mutualConnectionsHint}>
+                    {mutualCount} mutual connection{mutualCount !== 1 ? 's' : ''}
+                </Text>
+            )}
+            {mutualCount === 0 && !degree && (
+                <Text style={styles.mutualConnectionsHint}>No mutual connections</Text>
+            )}
+        </View>
+    );
+});
+
 // ─── Error State ─────────────────────────────────────────
 const ProfileError = memo(({
     message,
@@ -289,7 +479,12 @@ export default function UserProfileScreen() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
 
-    // Mutual friends
+    // Connection state
+    const [connectionStatus, setConnectionStatus] = useState<'connected' | 'pending_sent' | 'pending_received' | 'none'>('none');
+    const [connectionDegree, setConnectionDegree] = useState<1 | 2 | 3 | null>(null);
+    const [pendingRequestId, setPendingRequestId] = useState<string | null>(null);
+
+    // Mutual connections
     const [mutualFriends, setMutualFriends] = useState<{ id: string; displayName: string; avatarUrl?: string }[]>([]);
     const [mutualTotal, setMutualTotal] = useState(0);
 
@@ -377,6 +572,9 @@ export default function UserProfileScreen() {
             const data = await apiFetch<any>(API.userProfile(username));
             setProfile(data);
             setIsBlocked(data?.isBlocked ?? false);
+            setConnectionStatus(data?.connectionStatus || 'none');
+            setConnectionDegree(data?.connectionDegree || null);
+            setPendingRequestId(data?.pendingConnectionRequestId || null);
             if (data?.id) {
                 const postsData = await apiFetch<any>(`${API.userPosts(data.id)}?limit=50`);
                 const rawPosts = postsData.posts || postsData.data || [];
@@ -424,6 +622,98 @@ export default function UserProfileScreen() {
             } : p);
         } finally {
             setIsFollowLoading(false);
+        }
+    }, [profile]);
+
+    // ── Connection Action Handlers ─────────────────────────
+    const handleConnect = useCallback(async () => {
+        if (!profile) return;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setConnectionStatus('pending_sent');
+        try {
+            await apiFetch(API.connectionRequest(profile.id), { method: 'POST' });
+            showSuccess('Connection request sent');
+        } catch {
+            setConnectionStatus('none');
+            showError('Could not send request');
+        }
+    }, [profile]);
+
+    const handleAcceptConnection = useCallback(async () => {
+        if (!profile) return;
+        const reqId = pendingRequestId;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setConnectionStatus('connected');
+        setConnectionDegree(1);
+        try {
+            if (reqId) {
+                await apiFetch(API.connectionAccept(reqId), { method: 'POST' });
+            } else {
+                // Fallback: accept via user ID endpoint
+                await apiFetch(API.connectionAccept(profile.id), { method: 'POST' });
+            }
+            showSuccess(`Connected with ${profile.displayName || profile.username}`);
+        } catch {
+            setConnectionStatus('pending_received');
+            setConnectionDegree(null);
+            showError('Could not accept request');
+        }
+    }, [profile, pendingRequestId]);
+
+    const handleDeclineConnection = useCallback(async () => {
+        if (!profile) return;
+        const reqId = pendingRequestId;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setConnectionStatus('none');
+        try {
+            if (reqId) {
+                await apiFetch(API.connectionDecline(reqId), { method: 'POST' });
+            } else {
+                await apiFetch(API.connectionDecline(profile.id), { method: 'POST' });
+            }
+        } catch {
+            setConnectionStatus('pending_received');
+            showError('Could not decline request');
+        }
+    }, [profile, pendingRequestId]);
+
+    const handleRemoveConnection = useCallback(async () => {
+        if (!profile) return;
+        Alert.alert(
+            'Remove Connection',
+            `Remove your connection with ${profile.displayName || profile.username}?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Remove',
+                    style: 'destructive',
+                    onPress: async () => {
+                        setConnectionStatus('none');
+                        setConnectionDegree(null);
+                        try {
+                            await apiFetch(API.connectionRemove(profile.id), { method: 'DELETE' });
+                            showSuccess('Connection removed');
+                        } catch {
+                            setConnectionStatus('connected');
+                            setConnectionDegree(1);
+                            showError('Could not remove connection');
+                        }
+                    },
+                },
+            ]
+        );
+    }, [profile]);
+
+    const handleCancelConnectionRequest = useCallback(async () => {
+        if (!profile) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setConnectionStatus('none');
+        try {
+            await apiFetch(API.connectionRemove(profile.id), { method: 'DELETE' });
+            showSuccess('Request cancelled');
+        } catch {
+            setConnectionStatus('pending_sent');
+            showError('Could not cancel request');
         }
     }, [profile]);
 
@@ -742,6 +1032,7 @@ export default function UserProfileScreen() {
                         {profile.isVerified && (
                             <Ionicons name="checkmark-circle" size={18} color={colors.gold[500]} style={styles.verifiedIcon} />
                         )}
+                        <DegreeBadge degree={connectionDegree} c={c} />
                     </View>
                     <Text style={styles.username}>@{profile.username || 'unknown'}</Text>
                     {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
@@ -767,8 +1058,8 @@ export default function UserProfileScreen() {
                             </View>
                             <Text style={styles.mutualText}>
                                 {mutualTotal <= 3
-                                    ? `${mutualTotal} mutual friend${mutualTotal !== 1 ? 's' : ''}`
-                                    : `You and ${mutualTotal} others follow this person`}
+                                    ? `${mutualTotal} mutual connection${mutualTotal !== 1 ? 's' : ''}`
+                                    : `${mutualTotal} mutual connections`}
                             </Text>
                         </TouchableOpacity>
                     </Animated.View>
@@ -782,7 +1073,7 @@ export default function UserProfileScreen() {
                     >
                         <StatItem value={profile.postsCount ?? 0} label="Posts" />
                         <View style={styles.statDivider} />
-                        <StatItem value={profile.followersCount ?? 0} label="Followers" />
+                        <StatItem value={profile.connectionsCount ?? profile.followersCount ?? 0} label="Connections" />
                         <View style={styles.statDivider} />
                         <StatItem value={profile.followingCount ?? 0} label="Following" />
                     </LinearGradient>
@@ -793,16 +1084,19 @@ export default function UserProfileScreen() {
                     entering={FadeInDown.delay(320).duration(400).springify().damping(18)}
                     style={styles.actionRow}
                 >
-                    <View style={styles.followCol}>
-                        <FollowButton
-                            isFollowing={profile.isFollowing}
-                            isLoading={isFollowLoading}
-                            onPress={handleFollow}
-                            c={c}
-                        />
-                    </View>
+                    <ConnectionButton
+                        status={connectionStatus}
+                        degree={connectionDegree}
+                        mutualCount={profile.mutualConnectionsCount ?? mutualTotal}
+                        onConnect={handleConnect}
+                        onAccept={handleAcceptConnection}
+                        onDecline={handleDeclineConnection}
+                        onRemove={handleRemoveConnection}
+                        onCancelRequest={handleCancelConnectionRequest}
+                        c={c}
+                    />
 
-                    {profile.isFollowing && (
+                    {connectionStatus === 'connected' && (
                         <TouchableOpacity
                             style={styles.messageBtn}
                             activeOpacity={0.8}
@@ -1395,5 +1689,119 @@ const styles = StyleSheet.create({
     },
     skeletonWrap: {
         paddingTop: spacing.md,
+    },
+
+    // ── Degree Badge ────────────────────────────────────────
+    degreeBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
+        borderWidth: 1,
+        marginLeft: 6,
+    },
+    degreeBadgeText: {
+        fontSize: 11,
+        fontWeight: '600',
+        letterSpacing: 0.3,
+    },
+
+    // ── Connection Button States ────────────────────────────
+    connectButton: {
+        height: 40,
+        borderRadius: 20,
+        overflow: 'hidden',
+    },
+    connectGradient: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    connectButtonText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+    },
+    connectDegreePill: {
+        marginLeft: 8,
+        paddingHorizontal: 6,
+        paddingVertical: 1,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255,255,255,0.25)',
+    },
+    connectDegreePillText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#fff',
+    },
+    connectedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.emerald[500] + '40',
+        backgroundColor: colors.emerald[500] + '15',
+        paddingHorizontal: 16,
+        gap: 6,
+    },
+    connectedBadgeText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.emerald[500],
+    },
+    requestedButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        backgroundColor: colors.surface.glass,
+        paddingHorizontal: 16,
+        gap: 6,
+    },
+    requestedButtonText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '600',
+        color: colors.text.muted,
+    },
+    acceptDeclineRow: {
+        flex: 1,
+        flexDirection: 'row',
+        gap: 8,
+    },
+    acceptButton: {
+        flex: 1,
+        height: 40,
+        borderRadius: 20,
+        overflow: 'hidden',
+    },
+    acceptGradient: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+    },
+    acceptButtonText: {
+        fontSize: typography.fontSize.base,
+        fontWeight: '700',
+    },
+    declineButton: {
+        height: 40,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    mutualConnectionsHint: {
+        marginTop: 4,
+        fontSize: 12,
+        color: colors.text.muted,
+        textAlign: 'center',
     },
 });

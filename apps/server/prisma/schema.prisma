@@ -1619,6 +1619,8 @@ enum NotificationType {
   WAVE
   CALL
   POLL
+  CONNECTION_REQUEST
+  CONNECTION_ACCEPTED
 }
 
 enum MigrationPlatform {

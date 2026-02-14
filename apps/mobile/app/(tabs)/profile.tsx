@@ -627,7 +627,11 @@ export default function ProfileScreen() {
                     >
                         <StatItem value={user.postsCount ?? 0} label="Posts" />
                         <View style={styles.statDivider} />
-                        <StatItem value={user.followersCount ?? 0} label="Followers" />
+                        <StatItem
+                            value={user.followersCount ?? 0}
+                            label="Connections"
+                            onPress={() => router.push('/connections' as any)}
+                        />
                         <View style={styles.statDivider} />
                         <StatItem value={user.followingCount ?? 0} label="Following" />
                     </LinearGradient>
