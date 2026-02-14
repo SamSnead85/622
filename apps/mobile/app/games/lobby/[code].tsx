@@ -201,7 +201,7 @@ function LobbyChat({ players, roomCode }: { players: { id: string; name: string 
 
     // Listen for chat messages from socket
     useEffect(() => {
-        const unsub = socketManager.on('game:update' as any, (data: any) => {
+        const unsub = socketManager.on('game:update' as any, (data: Record<string, unknown>) => {
             if (data?.type === 'lobby-chat' && data.message) {
                 setMessages(prev => {
                     const next = [...prev, data.message as ChatMessage].slice(-20);

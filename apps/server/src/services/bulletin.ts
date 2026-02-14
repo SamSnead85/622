@@ -187,14 +187,14 @@ export async function getBulletins(options: {
 // VIRAL SCORE ALGORITHM
 // ============================================
 
-function calculateViralScore(bulletin: any): number {
+function calculateViralScore(bulletin: { createdAt: Date; upvotes: number; downvotes: number; viewCount: number; _count?: { comments?: number }; eventDate?: Date | null }): number {
     const ageHours = (Date.now() - new Date(bulletin.createdAt).getTime()) / (1000 * 60 * 60);
     const gravity = 1.8; // Decay factor
 
     // Reddit-style hot ranking with engagement
     const engagement = (bulletin.upvotes - bulletin.downvotes) +
         (bulletin.viewCount * 0.01) +
-        (bulletin._count?.comments * 2);
+        ((bulletin._count?.comments ?? 0) * 2);
 
     // Time decay
     const score = engagement / Math.pow(ageHours + 2, gravity);

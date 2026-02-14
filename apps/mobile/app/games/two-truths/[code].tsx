@@ -522,10 +522,10 @@ export default function TwoTruthsScreen() {
 
     useEffect(() => {
         const unsubs = [
-            socketManager.on('game:update', (data: any) => {
+            socketManager.on('game:update', (data: Record<string, unknown>) => {
                 gameStore.updateFromDelta(data);
             }),
-            socketManager.on('game:round-start', (_data: any) => {
+            socketManager.on('game:round-start', (_data: Record<string, unknown>) => {
                 // New round — reset local state
                 setStatements(['', '', '']);
                 setLieIndex(null);
@@ -534,10 +534,10 @@ export default function TwoTruthsScreen() {
                 setHasGuessed(false);
                 setPhaseKey(k => k + 1);
             }),
-            socketManager.on('game:round-end', (data: any) => {
+            socketManager.on('game:round-end', (data: Record<string, unknown>) => {
                 gameStore.setRoundEnd(data);
             }),
-            socketManager.on('game:ended', (data: any) => {
+            socketManager.on('game:ended', (data: Record<string, unknown>) => {
                 gameStore.setGameEnded(data);
                 router.replace(`/games/results/${code}`);
             }),

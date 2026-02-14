@@ -156,13 +156,13 @@ export default function InterestsScreen() {
 
             if (interestsRes.status === 'fulfilled') {
                 const interests = interestsRes.value?.interests || [];
-                setSelectedIds(new Set(interests.map((i: any) => i.topicId || i.topic?.id)));
+                setSelectedIds(new Set(interests.map((i: { topicId?: string; topic?: { id: string }; [key: string]: unknown }) => i.topicId || i.topic?.id)));
             }
 
             if (communitiesRes.status === 'fulfilled') {
                 const raw = communitiesRes.value?.communities || communitiesRes.value || [];
                 if (Array.isArray(raw) && raw.length > 0) {
-                    const mapped: SuggestedCommunity[] = raw.slice(0, 6).map((c: any) => {
+                    const mapped: SuggestedCommunity[] = raw.slice(0, 6).map((c: { id: string; name?: string; description?: string; icon?: string; color?: string; memberCount?: number; _count?: { members?: number }; [key: string]: unknown }) => {
                         const fallback = SUGGESTED_COMMUNITIES.find((sc) => sc.id === c.id);
                         const memberCount = c.memberCount ?? c._count?.members ?? 0;
                         return {

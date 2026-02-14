@@ -257,7 +257,8 @@ export default function PrayerTimesScreen() {
             try {
                 const cached = await AsyncStorage.getItem(CACHE_KEY);
                 if (cached) {
-                    let data: any, location: any;
+                    let data: PrayerTime[] | null;
+                    let location: string | undefined;
                     try { ({ data, location } = JSON.parse(cached)); } catch { data = null; }
                     if (Array.isArray(data) && data.length > 0) {
                         setPrayers(data);

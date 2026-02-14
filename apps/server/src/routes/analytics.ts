@@ -56,7 +56,7 @@ router.get('/posts', authenticate, async (req: AuthRequest, res: Response, next:
         const { page = '1', limit = '20', sort = 'recent' } = req.query;
         const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-        const orderBy: any = sort === 'popular'
+        const orderBy: Record<string, unknown> | Record<string, unknown>[] = sort === 'popular'
             ? [{ likes: { _count: 'desc' } }]
             : { createdAt: 'desc' };
 

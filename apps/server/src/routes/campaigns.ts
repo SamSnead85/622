@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
@@ -11,13 +11,13 @@ const router = Router();
 router.use(rateLimiters.general);
 
 // Optional auth — sets req.user if token present, continues otherwise
-const optionalAuth = (req: AuthRequest, res: any, next: any) => {
+const optionalAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) return next();
     authenticate(req, res, () => next());
 };
 
-const requireAdmin = (req: AuthRequest, res: any, next: any) => {
+const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user || (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN')) {
         return res.status(403).json({ error: 'Admin access required' });
     }

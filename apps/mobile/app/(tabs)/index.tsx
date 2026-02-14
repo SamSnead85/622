@@ -1717,7 +1717,7 @@ export default function FeedScreen() {
     // Estimated item height for getItemLayout — eliminates layout jumps
     // Average post: header(56) + content(~60) + media(~260) + actions(44) + spacer(6) ≈ 426
     const ESTIMATED_ITEM_HEIGHT = 426;
-    const getItemLayout = useCallback((_data: any, index: number) => ({
+    const getItemLayout = useCallback((_data: unknown, index: number) => ({
         length: ESTIMATED_ITEM_HEIGHT,
         offset: ESTIMATED_ITEM_HEIGHT * index,
         index,

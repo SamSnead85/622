@@ -61,7 +61,7 @@ router.post('/stripe', async (req: Request, res: Response) => {
                             status: mapStripeStatus(status),
                             stripeSubscriptionId: subscription.id,
                             stripePriceId: subscription.items.data[0]?.price?.id || null,
-                            currentPeriodEnd: new Date(((subscription as any).current_period_end || 0) * 1000),
+                            currentPeriodEnd: new Date((subscription.items.data[0]?.current_period_end || 0) * 1000),
                         },
                     });
                     logger.info(`Updated subscription for user ${existingSubscription.userId}: ${status}`);
@@ -77,13 +77,13 @@ router.post('/stripe', async (req: Request, res: Response) => {
                                 stripeSubscriptionId: subscription.id,
                                 stripePriceId: subscription.items.data[0]?.price?.id || null,
                                 status: mapStripeStatus(status),
-                                currentPeriodEnd: new Date(((subscription as any).current_period_end || 0) * 1000),
+                                currentPeriodEnd: new Date((subscription.items.data[0]?.current_period_end || 0) * 1000),
                             },
                             update: {
                                 status: mapStripeStatus(status),
                                 stripeSubscriptionId: subscription.id,
                                 stripePriceId: subscription.items.data[0]?.price?.id || null,
-                                currentPeriodEnd: new Date(((subscription as any).current_period_end || 0) * 1000),
+                                currentPeriodEnd: new Date((subscription.items.data[0]?.current_period_end || 0) * 1000),
                             },
                         });
                         logger.info(`Created/updated subscription for user ${customer.metadata.userId}: ${status}`);
@@ -107,7 +107,7 @@ router.post('/stripe', async (req: Request, res: Response) => {
                         where: { id: existingSubscription.id },
                         data: {
                             status: 'canceled',
-                            currentPeriodEnd: new Date(((subscription as any).current_period_end || 0) * 1000),
+                            currentPeriodEnd: new Date((subscription.items.data[0]?.current_period_end || 0) * 1000),
                         },
                     });
                     logger.info(`Subscription cancelled for user ${existingSubscription.userId}`);

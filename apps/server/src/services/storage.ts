@@ -149,7 +149,7 @@ export async function uploadFile(
 
             logger.info('[Storage] Uploading to Cloudinary:', { folder, mimeType, size: sanitizedBuffer.length });
 
-            const result: any = isVideo
+            const result: { public_id: string; secure_url: string; [key: string]: unknown } = isVideo
                 ? await uploadVideo(sanitizedBuffer, { folder, publicId: uuid() })
                 : await uploadImage(sanitizedBuffer, { folder, publicId: uuid() });
 

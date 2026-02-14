@@ -65,7 +65,7 @@ export class CacheService {
     /**
      * Set cache value with TTL (time-to-live)
      */
-    async set(key: string, value: any, ttlSeconds: number = 60): Promise<void> {
+    async set(key: string, value: unknown, ttlSeconds: number = 60): Promise<void> {
         if (!this.redis || !this.isEnabled) return;
 
         try {

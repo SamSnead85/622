@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
@@ -1731,7 +1731,7 @@ router.get('/2fa/status', authenticate, async (req: AuthRequest, res, next) => {
 // ============================================
 
 // Admin guard middleware
-const requireAdmin = (req: AuthRequest, res: any, next: any) => {
+const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user || (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN')) {
         return res.status(403).json({ error: 'Admin access required' });
     }
@@ -1863,7 +1863,7 @@ router.post('/provisional-signup', async (req, res, next) => {
         }
 
         // Validate invite code if provided
-        let invite: any = null;
+        let invite: { id: string; senderId: string; referralCode?: string; status?: string } | null = null;
         let inviterId: string | null = null;
         if (inviteCode) {
             invite = await prisma.invite.findUnique({ where: { referralCode: inviteCode } });
@@ -2127,7 +2127,7 @@ router.post('/validate-invite', async (req, res, next) => {
         }
 
         // Check if the sender has a primary community to invite into
-        let community: any = null;
+        let community: { id: string; name: string; slug?: string; avatarUrl?: string | null; coverUrl?: string | null; description?: string | null; memberCount?: number } | null = null;
         const sender = invite.sender;
         if (sender) {
             // Find the first community this user administers

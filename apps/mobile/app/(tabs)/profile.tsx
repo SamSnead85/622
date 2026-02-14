@@ -690,8 +690,8 @@ export default function ProfileScreen() {
                         bio: user.bio,
                         username: user.username,
                         displayName: user.displayName,
-                        interests: (user as any).interests,
-                        culturalProfile: (user as any).culturalProfile,
+                        interests: (user as Record<string, unknown>).interests as unknown[] | undefined,
+                        culturalProfile: (user as Record<string, unknown>).culturalProfile as string | undefined,
                         postsCount: user.postsCount || 0,
                         followingCount: user.followingCount || 0,
                     });

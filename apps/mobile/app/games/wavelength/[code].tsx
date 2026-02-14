@@ -123,7 +123,7 @@ export default function WavelengthGameScreen() {
                     if (gd.clue) setCurrentClue(gd.clue);
                     if (gd.guesses) {
                         const guessList: PlayerGuess[] = (gd.guesses || []).map(
-                            (g: any, i: number) => ({
+                            (g: Record<string, unknown>, i: number) => ({
                                 playerId: g.playerId,
                                 name: g.name || 'Player',
                                 position: g.position,
@@ -198,7 +198,7 @@ export default function WavelengthGameScreen() {
     }, [clueText, gameStore]);
 
     const handleSpectrumTouch = useCallback(
-        (event: any) => {
+        (event: { nativeEvent: { locationX: number } }) => {
             if (isPsychic || hasSubmitted || phase !== 'guessing') return;
             const { locationX } = event.nativeEvent;
             const position = Math.round((locationX / SPECTRUM_WIDTH) * 100);

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
@@ -16,14 +16,14 @@ const router = Router();
 // ============================================
 // MIDDLEWARE: Require ADMIN or SUPERADMIN role
 // ============================================
-const requireAdmin = (req: AuthRequest, res: any, next: any) => {
+const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user || (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN')) {
         return res.status(403).json({ error: 'Admin access required' });
     }
     next();
 };
 
-const requireSuperAdmin = (req: AuthRequest, res: any, next: any) => {
+const requireSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user || req.user.role !== 'SUPERADMIN') {
         return res.status(403).json({ error: 'Super admin access required' });
     }

@@ -16,7 +16,7 @@ export const uploadImage = async (
     options: {
         folder?: string;
         publicId?: string;
-        transformations?: any;
+        transformations?: Record<string, unknown>;
     } = {}
 ) => {
     if (!process.env.CLOUDINARY_CLOUD_NAME) {

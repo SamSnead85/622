@@ -380,7 +380,7 @@ export default function SpaceRoomScreen() {
 
     // ---- Socket event listeners ----
     useEffect(() => {
-        const unsubUpdate = socketManager.on('space:update', (data: any) => {
+        const unsubUpdate = socketManager.on('space:update', (data: Record<string, unknown>) => {
             if (data.spaceId === id) {
                 setSpace((prev) => {
                     if (!prev) return prev;
@@ -396,7 +396,7 @@ export default function SpaceRoomScreen() {
             }
         });
 
-        const unsubMute = socketManager.on('space:mute-update', (data: any) => {
+        const unsubMute = socketManager.on('space:mute-update', (data: Record<string, unknown>) => {
             if (data.spaceId === id) {
                 setSpace((prev) => {
                     if (!prev) return prev;
@@ -413,7 +413,7 @@ export default function SpaceRoomScreen() {
             }
         });
 
-        const unsubReaction = socketManager.on('space:reaction', (data: any) => {
+        const unsubReaction = socketManager.on('space:reaction', (data: Record<string, unknown>) => {
             if (data.spaceId !== id) return;
             const reactionId = `${Date.now()}-${reactionCounter.current++}`;
             setReactions((prev) => [...prev.slice(-15), { id: reactionId, emoji: data.emoji, username: data.username }]);
@@ -423,14 +423,14 @@ export default function SpaceRoomScreen() {
             }, 3000);
         });
 
-        const unsubEnded = socketManager.on('space:ended', (data: any) => {
+        const unsubEnded = socketManager.on('space:ended', (data: Record<string, unknown>) => {
             if (data.spaceId === id) {
                 setIsEnded(true);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             }
         });
 
-        const unsubPromoted = socketManager.on('space:promoted', (data: any) => {
+        const unsubPromoted = socketManager.on('space:promoted', (data: Record<string, unknown>) => {
             if (data.spaceId === id) {
                 setHasRequestedSpeak(false);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -438,7 +438,7 @@ export default function SpaceRoomScreen() {
             }
         });
 
-        const unsubSpeakReq = socketManager.on('space:speak-request', (data: any) => {
+        const unsubSpeakReq = socketManager.on('space:speak-request', (data: Record<string, unknown>) => {
             if (data.spaceId === id && isHost) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 fetchSpace(); // Refresh to show the request

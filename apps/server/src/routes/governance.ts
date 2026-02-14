@@ -2,6 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
 import { rateLimiters } from '../middleware/rateLimit.js';
+import { ProposalStatus } from '@prisma/client';
 
 const router = Router();
 
@@ -15,7 +16,7 @@ router.get('/:communityId/proposals', authenticate, async (req: AuthRequest, res
         const proposals = await prisma.proposal.findMany({
             where: {
                 communityId,
-                ...(status ? { status: status as any } : {}),
+                ...(status ? { status: status as ProposalStatus } : {}),
             },
             include: {
                 author: { select: { id: true, username: true, displayName: true, avatarUrl: true } },

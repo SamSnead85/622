@@ -502,13 +502,13 @@ export default function CommunityDetailScreen() {
             }
             // Fetch member previews (first 5)
             try {
-                const membersData = await apiFetch<any>(
+                const membersData = await apiFetch<{ members?: { userId?: string; id?: string; user?: { avatarUrl?: string; displayName?: string; username?: string }; role?: string; createdAt?: string }[] }>(
                     API.communityMembers(communityId),
                 );
-                const membersList = membersData.members || membersData || [];
+                const membersList = membersData.members || [];
                 const previews = (Array.isArray(membersList) ? membersList : [])
                     .slice(0, 5)
-                    .map((m: any) => ({
+                    .map((m: { userId?: string; id?: string; user?: { avatarUrl?: string; displayName?: string; username?: string }; role?: string; createdAt?: string }) => ({
                         id: m.userId || m.id,
                         avatarUrl: m.user?.avatarUrl,
                         displayName: m.user?.displayName || 'Member',
@@ -539,10 +539,10 @@ export default function CommunityDetailScreen() {
         setMembersLoading(true);
         setMembersError(null);
         try {
-            const data = await apiFetch<any>(API.communityMembers(communityId));
-            const membersList = data.members || data || [];
+            const data = await apiFetch<{ members?: { userId?: string; id?: string; user?: { avatarUrl?: string; displayName?: string; username?: string }; role?: string; createdAt?: string }[] }>(API.communityMembers(communityId));
+            const membersList = data.members || [];
             setAllMembers(
-                (Array.isArray(membersList) ? membersList : []).map((m: any) => ({
+                (Array.isArray(membersList) ? membersList : []).map((m: { userId?: string; id?: string; user?: { avatarUrl?: string; displayName?: string; username?: string }; role?: string; createdAt?: string }) => ({
                     id: m.userId || m.id,
                     avatarUrl: m.user?.avatarUrl,
                     displayName: m.user?.displayName || 'Member',
@@ -663,7 +663,7 @@ export default function CommunityDetailScreen() {
         const unsubs: (() => void)[] = [];
 
         unsubs.push(
-            socketManager.on('message:new', (msg: any) => {
+            socketManager.on('message:new', (msg: Record<string, unknown>) => {
                 if (msg.communityId === communityId || msg.conversationId) {
                     setChatMessages((prev) => {
                         if (prev.some((m) => m.id === msg.id)) return prev;
@@ -678,7 +678,7 @@ export default function CommunityDetailScreen() {
         );
 
         unsubs.push(
-            socketManager.on('typing:start', (data: any) => {
+            socketManager.on('typing:start', (data: Record<string, unknown>) => {
                 if (data.username) {
                     setTypingUsers((prev) =>
                         prev.includes(data.username) ? prev : [...prev, data.username],
@@ -688,7 +688,7 @@ export default function CommunityDetailScreen() {
         );
 
         unsubs.push(
-            socketManager.on('typing:stop', (data: any) => {
+            socketManager.on('typing:stop', (data: Record<string, unknown>) => {
                 setTypingUsers((prev) => prev.filter((u) => u !== data.username));
             }),
         );
@@ -1277,7 +1277,7 @@ export default function CommunityDetailScreen() {
                                 Pending Requests ({joinRequests.length})
                             </Text>
                         </View>
-                        {joinRequests.map((req: any) => (
+                        {joinRequests.map((req: { id: string; username?: string; displayName?: string; avatarUrl?: string; [key: string]: unknown }) => (
                             <Animated.View
                                 key={req.id}
                                 entering={FadeInDown.duration(250)}

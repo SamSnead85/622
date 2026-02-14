@@ -2,6 +2,7 @@ import { Queue, Worker, Job } from 'bullmq';
 import { prisma } from '../../db/client.js';
 import { logger } from '../../utils/logger.js';
 import { sendPushNotification } from './ExpoPushService.js';
+import { NotificationType } from '@prisma/client';
 
 // ============================================
 // NOTIFICATION QUEUE SERVICE
@@ -178,7 +179,7 @@ async function processNotification(payload: NotificationPayload): Promise<void> 
     const recentDuplicate = await prisma.notification.findFirst({
         where: {
             userId: payload.userId,
-            type: payload.type as any,
+            type: payload.type as NotificationType,
             actorId: payload.actorId,
             targetId: payload.targetId,
             createdAt: {
@@ -198,7 +199,7 @@ async function processNotification(payload: NotificationPayload): Promise<void> 
         const recentLikes = await prisma.notification.count({
             where: {
                 userId: payload.userId,
-                type: 'LIKE' as any,
+                type: 'LIKE',
                 targetId: payload.targetId,
                 isRead: false,
                 createdAt: { gte: new Date(Date.now() - 3600000) }, // Last hour
@@ -210,7 +211,7 @@ async function processNotification(payload: NotificationPayload): Promise<void> 
             const existingNotif = await prisma.notification.findFirst({
                 where: {
                     userId: payload.userId,
-                    type: 'LIKE' as any,
+                    type: 'LIKE',
                     targetId: payload.targetId,
                     isRead: false,
                 },
@@ -233,7 +234,7 @@ async function processNotification(payload: NotificationPayload): Promise<void> 
     const notification = await prisma.notification.create({
         data: {
             userId: payload.userId,
-            type: payload.type as any,
+            type: payload.type as NotificationType,
             actorId: payload.actorId,
             targetId: payload.targetId,
             message: payload.message,
@@ -243,7 +244,7 @@ async function processNotification(payload: NotificationPayload): Promise<void> 
     // Send native push notification (non-blocking)
     if (!inQuietHours) {
         const pushTitle = getPushTitle(payload.type);
-        const pushData: Record<string, any> = {
+        const pushData: Record<string, string> = {
             type: payload.type,
             notificationId: notification.id,
         };
@@ -268,7 +269,7 @@ async function processBatchNotifications(payload: BatchNotificationPayload): Pro
     await prisma.notification.createMany({
         data: notifications.map(n => ({
             userId: n.userId,
-            type: n.type as any,
+            type: n.type as NotificationType,
             actorId: n.actorId,
             targetId: n.targetId,
             message: n.message,

@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger.js';
 
+interface RequestWithId extends Request {
+    requestId?: string;
+}
+
 /**
  * Advanced Security Headers Middleware
  * Adds defense-in-depth headers beyond what Helmet provides.
@@ -49,7 +53,7 @@ export function requestId() {
     return (req: Request, res: Response, next: NextFunction) => {
         const id = req.headers['x-request-id'] as string || 
             `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-        (req as any).requestId = id;
+        (req as RequestWithId).requestId = id;
         res.setHeader('X-Request-ID', id);
         next();
     };

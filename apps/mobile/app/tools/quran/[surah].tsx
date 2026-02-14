@@ -52,7 +52,7 @@ function ShimmerBlock({
     width: number | string;
     height: number;
     borderRadius?: number;
-    style?: any;
+    style?: Record<string, unknown>;
 }) {
     const shimmerAnim = useRef(new RNAnimated.Value(0)).current;
 
@@ -238,7 +238,7 @@ export default function SurahDetailScreen() {
             const arabicAyahs = arabicEdition.ayahs || [];
             const englishAyahs = englishEdition.ayahs || [];
 
-            const combined: Ayah[] = arabicAyahs.map((a: any, i: number) => ({
+            const combined: Ayah[] = arabicAyahs.map((a: { number: number; numberInSurah: number; text: string; [key: string]: unknown }, i: number) => ({
                 number: a.number,
                 numberInSurah: a.numberInSurah,
                 text: a.text,

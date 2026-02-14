@@ -191,7 +191,7 @@ function SkeletonShimmer({ width, height, borderRadius = 4, style }: {
     width: number | string;
     height: number;
     borderRadius?: number;
-    style?: any;
+    style?: import('react-native').ViewStyle;
 }) {
     const shimmerAnim = useSharedValue(0);
 
@@ -565,9 +565,9 @@ export default function SearchScreen() {
     const loadDiscoveryData = useCallback(async () => {
         setIsDiscoveryLoading(true);
         const settled = await Promise.allSettled([
-            apiFetch<any>(API.trending).then((data) => {
+            apiFetch<{ topics?: { id?: string; name?: string; tag?: string; postsCount?: number; count?: number }[] }>(API.trending).then((data) => {
                 if (data?.topics && Array.isArray(data.topics)) {
-                    setTrendingData(data.topics.slice(0, 6).map((t: any, i: number) => ({
+                    setTrendingData(data.topics.slice(0, 6).map((t: { id?: string; name?: string; tag?: string; postsCount?: number; count?: number }, i: number) => ({
                         id: t.id || `t${i}`,
                         name: t.name || t.tag || '',
                         postsCount: t.postsCount || t.count || 0,
@@ -577,10 +577,10 @@ export default function SearchScreen() {
                 }
             }),
 
-            apiFetch<any>(`${API.search}?q=&suggested=true&limit=6`).then((data) => {
+            apiFetch<{ users?: { id: string; displayName?: string; username?: string; avatarUrl?: string; isVerified?: boolean }[]; communities?: { id: string; name?: string; membersCount?: number; avatarUrl?: string }[] }>(`${API.search}?q=&suggested=true&limit=6`).then((data) => {
                 const items: SuggestedItem[] = [];
                 if (Array.isArray(data?.users)) {
-                    data.users.slice(0, 3).forEach((u: any) => {
+                    data.users.slice(0, 3).forEach((u: { id: string; displayName?: string; username?: string; avatarUrl?: string; isVerified?: boolean }) => {
                         items.push({
                             id: u.id,
                             type: 'user',
@@ -592,7 +592,7 @@ export default function SearchScreen() {
                     });
                 }
                 if (Array.isArray(data?.communities)) {
-                    data.communities.slice(0, 3).forEach((c: any) => {
+                    data.communities.slice(0, 3).forEach((c: { id: string; name?: string; membersCount?: number; avatarUrl?: string }) => {
                         items.push({
                             id: c.id,
                             type: 'community',
@@ -606,19 +606,24 @@ export default function SearchScreen() {
             }),
 
             // Fetch featured/viral posts
-            apiFetch<any>(`${API.feed}?type=foryou&limit=5&sort=trending`).then((data) => {
+            apiFetch<{ posts?: Record<string, unknown>[]; data?: Record<string, unknown>[] }>(`${API.feed}?type=foryou&limit=5&sort=trending`).then((data) => {
                 const rawPosts = data?.posts || data?.data || [];
                 if (Array.isArray(rawPosts) && rawPosts.length > 0) {
-                    setFeaturedPosts(rawPosts.slice(0, 5).map((p: any) => ({
-                        id: p.id,
-                        content: (p.caption || p.content || '').substring(0, 100),
-                        authorName: p.user?.displayName || p.author?.displayName || 'Unknown',
-                        authorAvatar: p.user?.avatarUrl || p.author?.avatarUrl,
-                        authorUsername: p.user?.username || p.author?.username,
-                        likesCount: p.likesCount ?? p._count?.likes ?? 0,
-                        commentsCount: p.commentsCount ?? p._count?.comments ?? 0,
-                        mediaUrl: p.mediaUrl,
-                    })));
+                    setFeaturedPosts(rawPosts.slice(0, 5).map((p: Record<string, unknown>) => {
+                        const user = p.user as Record<string, unknown> | undefined;
+                        const author = p.author as Record<string, unknown> | undefined;
+                        const _count = p._count as Record<string, unknown> | undefined;
+                        return {
+                            id: p.id as string,
+                            content: ((p.caption || p.content || '') as string).substring(0, 100),
+                            authorName: (user?.displayName || author?.displayName || 'Unknown') as string,
+                            authorAvatar: (user?.avatarUrl || author?.avatarUrl) as string | undefined,
+                            authorUsername: (user?.username || author?.username) as string | undefined,
+                            likesCount: (p.likesCount ?? _count?.likes ?? 0) as number,
+                            commentsCount: (p.commentsCount ?? _count?.comments ?? 0) as number,
+                            mediaUrl: p.mediaUrl as string | undefined,
+                        };
+                    }));
                 }
             }),
         ]);
@@ -702,7 +707,12 @@ export default function SearchScreen() {
         setShowSuggestions(false);
 
         try {
-            const data = await apiFetch<any>(
+            const data = await apiFetch<{
+                users?: { id: string; displayName?: string; username?: string; avatarUrl?: string; bio?: string; followersCount?: number; _count?: { followers?: number }; isVerified?: boolean; isFollowing?: boolean; isOwnProfile?: boolean; connectionDegree?: number | null; isConnected?: boolean }[];
+                communities?: { id: string; name?: string; membersCount?: number; avatarUrl?: string; description?: string }[];
+                posts?: { id: string; caption?: string; content?: string; user?: { displayName?: string; avatarUrl?: string }; author?: { displayName?: string; avatarUrl?: string } }[];
+                hashtags?: { id?: string; tag?: string; name?: string; postsCount?: number; count?: number }[];
+            }>(
                 `${API.search}?q=${encodeURIComponent(text.trim())}`,
                 { signal, cache: false }
             );
@@ -713,7 +723,7 @@ export default function SearchScreen() {
             const formatted: SearchResult[] = [];
 
             if (data?.users && Array.isArray(data.users)) {
-                data.users.forEach((u: any) => {
+                data.users.forEach((u) => {
                     if (!u?.id) return;
                     formatted.push({
                         id: u.id,
@@ -732,7 +742,7 @@ export default function SearchScreen() {
                 });
             }
             if (data?.communities && Array.isArray(data.communities)) {
-                data.communities.forEach((c: any) => {
+                data.communities.forEach((c) => {
                     if (!c?.id) return;
                     formatted.push({
                         id: c.id,
@@ -746,7 +756,7 @@ export default function SearchScreen() {
                 });
             }
             if (data?.posts && Array.isArray(data.posts)) {
-                data.posts.forEach((p: any) => {
+                data.posts.forEach((p) => {
                     if (!p?.id) return;
                     formatted.push({
                         id: p.id,
@@ -758,7 +768,7 @@ export default function SearchScreen() {
                 });
             }
             if (data?.hashtags && Array.isArray(data.hashtags)) {
-                data.hashtags.forEach((h: any) => {
+                data.hashtags.forEach((h) => {
                     if (!h?.id && !h?.tag) return;
                     formatted.push({
                         id: h.id || h.tag,

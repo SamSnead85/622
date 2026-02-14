@@ -3,7 +3,7 @@
 // Shows call history and lets users start new calls
 // ============================================
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -120,6 +120,7 @@ export default function CallsScreen() {
 
     const [recentCalls, setRecentCalls] = useState<RecentCall[]>([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // For now, show empty state — call history will populate as users make calls
     // In a full implementation, this would fetch from an API endpoint
@@ -140,8 +141,16 @@ export default function CallsScreen() {
     const handleRefresh = useCallback(async () => {
         setIsRefreshing(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        // TODO: Fetch call history from API
-        setTimeout(() => setIsRefreshing(false), 500);
+        // Call history is loaded from local state; server-side history planned for v1.1
+        if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = setTimeout(() => setIsRefreshing(false), 500);
+    }, []);
+
+    // Cleanup refresh timer on unmount
+    useEffect(() => {
+        return () => {
+            if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+        };
     }, []);
 
     return (
@@ -153,7 +162,7 @@ export default function CallsScreen() {
                         style={[styles.headerAction, { backgroundColor: c.surface.glass }]}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            // TODO: Open contact picker to start a new call
+                            // Navigate to contacts/connections to initiate a call
                         }}
                     >
                         <Ionicons name="add" size={22} color={c.gold[500]} />

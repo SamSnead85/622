@@ -529,7 +529,7 @@ export default function CommunitiesScreen() {
 
     const handleJoin = useCallback(async (communityId: string, approvalRequired?: boolean) => {
         try {
-            const result = await apiFetch(`/api/v1/communities/${communityId}/join`, { method: 'POST' }) as any;
+            const result = await apiFetch<{ status?: string }>(`/api/v1/communities/${communityId}/join`, { method: 'POST' });
 
             if (result?.status === 'pending') {
                 // Request-to-join — mark as pending in local state

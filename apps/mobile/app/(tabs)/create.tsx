@@ -863,6 +863,7 @@ export default function CreateScreen() {
     const textInputRef = useRef<TextInput>(null);
     const scrollRef = useRef<ScrollView>(null);
     const successTimerRef = useRef<ReturnType<typeof setTimeout>>();
+    const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // --- Core State ---
     const [content, setContent] = useState('');
@@ -954,8 +955,8 @@ export default function CreateScreen() {
         };
         AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)).then(() => {
             setDraftSavedVisible(true);
-            const timer = setTimeout(() => setDraftSavedVisible(false), 2000);
-            return () => clearTimeout(timer);
+            if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+            draftTimerRef.current = setTimeout(() => setDraftSavedVisible(false), 2000);
         }).catch(() => { /* non-critical: draft save failed */ });
     }, [debouncedContent, debouncedCommunityId]);
 
@@ -976,10 +977,11 @@ export default function CreateScreen() {
         return () => clearTimeout(timer);
     }, []);
 
-    // --- Cleanup success timer on unmount ---
+    // --- Cleanup success timer and draft timer on unmount ---
     useEffect(() => {
         return () => {
             if (successTimerRef.current) clearTimeout(successTimerRef.current);
+            if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
         };
     }, []);
 
@@ -1026,7 +1028,7 @@ export default function CreateScreen() {
             const data = await apiFetch<any>(`${API.search}?q=${encodeURIComponent(query)}&type=users&limit=6`, { cache: true, cacheTtl: 10000 });
             const users = data.users || data.results || [];
             setMentionSuggestions(
-                users.map((u: any) => ({
+                users.map((u: { id: string; username?: string; displayName?: string; avatarUrl?: string; [key: string]: unknown }) => ({
                     id: u.id || u.username,
                     label: u.username || u.displayName,
                     subtitle: u.displayName,

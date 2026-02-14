@@ -486,7 +486,7 @@ export default function PostDetailScreen() {
 
                 const rawComments = commentsData.comments || commentsData.data || [];
                 const flat: Comment[] = (Array.isArray(rawComments) ? rawComments : []).map(
-                    (c: any) => ({
+                    (c: { id: string; content?: string; createdAt?: string; user?: Record<string, unknown>; author?: Record<string, unknown>; likesCount?: number; _count?: { likes?: number }; isLiked?: boolean; parentId?: string | null; [key: string]: unknown }) => ({
                         id: c.id,
                         content: c.content || '',
                         createdAt: c.createdAt,
@@ -652,7 +652,7 @@ export default function PostDetailScreen() {
         setReplyTo(null);
 
         try {
-            const body: any = { content: text };
+            const body: Record<string, unknown> = { content: text };
             if (replyTo?.id) body.parentId = replyTo.id;
 
             const data = await apiFetch<any>(API.comments(postId), {

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
@@ -20,7 +20,7 @@ const enrollSchema = z.object({
 });
 
 // Require ADMIN or SUPERADMIN role
-const requireAdmin = (req: AuthRequest, res: any, next: any) => {
+const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user || (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN')) {
         return res.status(403).json({ error: 'Admin access required' });
     }
@@ -270,7 +270,7 @@ router.get('/admin/all', authenticate, requireAdmin, async (req: AuthRequest, re
         const { status, tier, page = '1', limit = '20' } = req.query;
         const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-        const where: any = {};
+        const where: Record<string, unknown> = {};
         if (status) where.status = status;
         if (tier) where.tier = tier;
 

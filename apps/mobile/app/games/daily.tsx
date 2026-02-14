@@ -105,7 +105,15 @@ const CATEGORY_ICONS: Record<string, string> = {
 // Map TriviaEngine questions to daily format
 // ============================================
 
-function getDailyQuestionsFromEngine() {
+interface DailyQuestion {
+    text: string;
+    options: string[];
+    correct: number;
+    category: string;
+    categoryKey: string;
+}
+
+function getDailyQuestionsFromEngine(): DailyQuestion[] {
     const engineQs = getEngineDailyQuestions();
     return engineQs.map(q => ({
         text: q.question,
@@ -677,11 +685,12 @@ export default function DailyChallengeScreen() {
     const [correctStreak, setCorrectStreak] = useState(0);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const scorePopupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Get today's questions from engine (280+ question bank)
     const questions = useMemo(() => getDailyQuestionsFromEngine(), []);
     const currentQuestion = questions[questionIndex];
-    const category = (currentQuestion as any)?.categoryKey ?? 'default';
+    const category = currentQuestion?.categoryKey ?? 'default';
     const categoryColor = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.default;
     const categoryIcon = CATEGORY_ICONS[category] ?? CATEGORY_ICONS.default;
 
@@ -748,6 +757,13 @@ export default function DailyChallengeScreen() {
         };
     }, [gamePhase, currentQuestion, showResult, hasAnswered, questionIndex]);
 
+    // Cleanup score popup timer on unmount
+    useEffect(() => {
+        return () => {
+            if (scorePopupTimerRef.current) clearTimeout(scorePopupTimerRef.current);
+        };
+    }, []);
+
     // ============================================
     // Answer Handler
     // ============================================
@@ -778,7 +794,8 @@ export default function DailyChallengeScreen() {
             // Score popup
             setLastPoints(points);
             setShowScorePopup(true);
-            setTimeout(() => setShowScorePopup(false), 1600);
+            if (scorePopupTimerRef.current) clearTimeout(scorePopupTimerRef.current);
+            scorePopupTimerRef.current = setTimeout(() => setShowScorePopup(false), 1600);
 
             setAnswers((prev) => {
                 const next = [...prev];

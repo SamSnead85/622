@@ -4,7 +4,7 @@
 // and optional recording toggle
 // ============================================
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -69,12 +69,20 @@ interface StreamResult {
 
 function CopyableField({ label, value }: { label: string; value: string }) {
     const [copied, setCopied] = useState(false);
+    const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+        };
+    }, []);
 
     const handleCopy = useCallback(async () => {
         await Clipboard.setStringAsync(value);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+        copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
     }, [value]);
 
     return (

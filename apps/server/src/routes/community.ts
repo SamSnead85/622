@@ -9,6 +9,7 @@ import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
 import { rateLimiters } from '../middleware/rateLimit.js';
+import { BulletinType, BulletinCategory, SuggestionStatus, StreamPlatform } from '@prisma/client';
 
 // Services
 import * as bulletinService from '../services/bulletin.js';
@@ -30,8 +31,8 @@ router.get('/bulletins', optionalAuth, async (req: AuthRequest, res: Response, n
 
         const result = await bulletinService.getBulletins({
             filters: {
-                type: type as any,
-                category: category as any,
+                type: type as BulletinType | undefined,
+                category: category as BulletinCategory | undefined,
                 search: search as string,
             },
             sortBy: (sortBy as 'recent' | 'trending' | 'hot') || 'hot',
@@ -340,8 +341,8 @@ router.get('/streams/suggestions', optionalAuth, async (req: AuthRequest, res: R
         const { status, platform, cursor, limit } = req.query;
 
         const result = await livestreamService.getStreamSuggestions({
-            status: status as any,
-            platform: platform as any,
+            status: status as SuggestionStatus | undefined,
+            platform: platform as StreamPlatform | undefined,
             cursor: cursor as string,
             limit: parseInt(limit as string) || 20,
         });

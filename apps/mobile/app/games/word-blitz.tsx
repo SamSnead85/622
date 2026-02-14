@@ -1068,7 +1068,7 @@ export default function WordBlitzScreen() {
         if (!isRaceMode || !code) return;
 
         const unsubs = [
-            socketManager.on('game:update', (data: any) => {
+            socketManager.on('game:update', (data: Record<string, unknown>) => {
                 if (data?.type === 'progress' && data.playerId !== user?.id) {
                     setOpponentRow(data.row ?? 0);
                 }

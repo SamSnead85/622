@@ -35,7 +35,7 @@ function devError(...args: unknown[]): void {
 // Request Deduplication
 // Prevents identical GET requests from firing concurrently
 // ============================================
-const inflightRequests = new Map<string, { promise: Promise<any>; timestamp: number }>();
+const inflightRequests = new Map<string, { promise: Promise<unknown>; timestamp: number }>();
 
 const INFLIGHT_TTL_MS = 30_000; // 30s TTL for stale entries
 const INFLIGHT_MAX_SIZE = 100;  // Safety valve — clear all if exceeded
@@ -332,7 +332,7 @@ export interface ApiFetchOptions extends RequestInit {
     cacheTtl?: number;
 }
 
-export const apiFetch = async <T = any>(
+export const apiFetch = async <T = unknown>(
     endpoint: string,
     options: ApiFetchOptions = {},
     _isRetry: boolean = false
@@ -415,7 +415,7 @@ export const apiFetch = async <T = any>(
                         if (_onSessionExpired) _onSessionExpired();
                     }
 
-                    const err: any = new Error(data?.error || `API error: ${res.status}`);
+                    const err = new Error(data?.error || `API error: ${res.status}`) as Error & { status: number; data: unknown };
                     err.status = res.status;
                     err.data = data;
                     throw err;
@@ -502,7 +502,7 @@ export const apiUpload = async (
         body: formData,
     }, 60_000); // 60s timeout for uploads
 
-    let data: any;
+    let data: Record<string, unknown> | null = null;
     try {
         data = await res.json();
     } catch {
@@ -510,9 +510,9 @@ export const apiUpload = async (
         throw new Error('Invalid server response');
     }
     if (!res.ok) {
-        throw new Error(data?.error || `Upload failed (HTTP ${res.status})`);
+        throw new Error((data as Record<string, unknown>)?.error as string || `Upload failed (HTTP ${res.status})`);
     }
-    return data;
+    return data as { url: string; key?: string; type?: string; size?: number };
 };
 
 // ============================================
@@ -559,7 +559,7 @@ export async function getConnectionQuality(): Promise<ConnectionQuality> {
 // Batch Request Support
 // ============================================
 
-export interface BatchResult<T = any> {
+export interface BatchResult<T = unknown> {
     status: 'fulfilled' | 'rejected';
     value?: T;
     reason?: unknown;
@@ -573,7 +573,7 @@ export interface BatchResult<T = any> {
  * const results = await apiFetchBatch([API.feed, API.notifications]);
  * if (results[API.feed].status === 'fulfilled') { ... }
  */
-export async function apiFetchBatch<T = any>(
+export async function apiFetchBatch<T = unknown>(
     endpoints: string[],
     options?: ApiFetchOptions,
 ): Promise<Record<string, BatchResult<T>>> {

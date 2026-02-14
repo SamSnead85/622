@@ -424,12 +424,12 @@ export default function MessagesScreen() {
     const loadOnlineContacts = async () => {
         try {
             if (!user?.id) return;
-            const data = await apiFetch<any>(`${API.users}/${user.id}/following?limit=20`);
+            const data = await apiFetch<{ following: { id: string; username: string; displayName: string; avatarUrl?: string; isOnline?: boolean }[] }>(`${API.users}/${user.id}/following?limit=20`);
             const following = data.following || [];
             // Filter to only online contacts for the "Online Now" strip
             const online = following
-                .filter((f: any) => f.isOnline)
-                .map((f: any) => ({
+                .filter((f) => f.isOnline)
+                .map((f) => ({
                     id: f.id,
                     username: f.username,
                     displayName: f.displayName,

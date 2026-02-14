@@ -265,7 +265,7 @@ export default function StreamViewerScreen() {
         });
 
         // Listen for chat messages
-        const unsubChat = socketManager.on('stream:chat', (data: any) => {
+        const unsubChat = socketManager.on('stream:chat', (data: Record<string, unknown>) => {
             if (data.streamId !== id) return;
             const msg: ChatMessage = {
                 id: data.id || `${Date.now()}-${Math.random()}`,
@@ -281,13 +281,13 @@ export default function StreamViewerScreen() {
         });
 
         // Listen for reactions
-        const unsubReaction = socketManager.on('stream:reaction', (data: any) => {
+        const unsubReaction = socketManager.on('stream:reaction', (data: Record<string, unknown>) => {
             if (data.streamId !== id) return;
             addFloatingReaction(data.emoji || '🔥');
         });
 
         // Listen for gifts
-        const unsubGift = socketManager.on('stream:gift', (data: any) => {
+        const unsubGift = socketManager.on('stream:gift', (data: Record<string, unknown>) => {
             if (data.streamId !== id) return;
             const msg: ChatMessage = {
                 id: `gift-${Date.now()}-${Math.random()}`,
@@ -303,13 +303,13 @@ export default function StreamViewerScreen() {
         });
 
         // Listen for viewer count updates
-        const unsubViewers = socketManager.on('stream:viewers', (data: any) => {
+        const unsubViewers = socketManager.on('stream:viewers', (data: Record<string, unknown>) => {
             if (data.streamId !== id) return;
             setViewerCount(data.count || 0);
         });
 
         // Listen for stream ending
-        const unsubEnd = socketManager.on('stream:ended', (data: any) => {
+        const unsubEnd = socketManager.on('stream:ended', (data: Record<string, unknown>) => {
             if (data.streamId !== id) return;
             setChatMessages((prev) => [
                 ...prev,

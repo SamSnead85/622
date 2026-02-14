@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/client.js';
 import crypto from 'crypto';
@@ -10,7 +10,7 @@ const router = Router();
 
 router.use(rateLimiters.general);
 
-const requireAdmin = (req: AuthRequest, res: any, next: any) => {
+const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user || (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN')) {
         return res.status(403).json({ error: 'Admin access required' });
     }

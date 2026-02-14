@@ -663,7 +663,7 @@ export default function ChatScreen() {
                 const msgs = data.messages || data.data || [];
                 setMessages(
                     Array.isArray(msgs)
-                        ? msgs.map((m: any) => ({
+                        ? msgs.map((m: { isRead?: boolean; [key: string]: unknown }) => ({
                               ...m,
                               status: m.isRead ? ('read' as const) : ('delivered' as const),
                           }))
@@ -675,7 +675,7 @@ export default function ChatScreen() {
                     setIsOnline(data.participant.isOnline ?? false);
                 } else if (data.participants) {
                     const other = data.participants.find(
-                        (p: any) => p.id !== user?.id
+                        (p: { id: string; [key: string]: unknown }) => p.id !== user?.id
                     );
                     if (other) {
                         setParticipant(other);

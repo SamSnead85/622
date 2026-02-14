@@ -281,13 +281,20 @@ function GuessChat({
     correctGuessers: CorrectGuesser[];
 }) {
     const scrollRef = useRef<ScrollView>(null);
+    const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         if (guesses.length > 0) {
-            const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
-            return () => clearTimeout(timer);
+            if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+            scrollTimerRef.current = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
         }
     }, [guesses.length]);
+
+    useEffect(() => {
+        return () => {
+            if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+        };
+    }, []);
 
     return (
         <View style={styles.chatContainer}>
@@ -433,7 +440,7 @@ export default function SketchDuelScreen() {
 
     useEffect(() => {
         const unsubs = [
-            socketManager.on('game:update', (data: any) => {
+            socketManager.on('game:update', (data: Record<string, unknown>) => {
                 gameStore.updateFromDelta(data);
 
                 const gd = data.gameData;
@@ -511,7 +518,7 @@ export default function SketchDuelScreen() {
                     }
                 }
             }),
-            socketManager.on('game:round-start', (data: any) => {
+            socketManager.on('game:round-start', (data: Record<string, unknown>) => {
                 setPhase('drawing');
                 setGuessText('');
                 setHasGuessedCorrectly(false);
@@ -531,7 +538,7 @@ export default function SketchDuelScreen() {
                     if (gd.currentCategory) setCategory(gd.currentCategory);
                 }
             }),
-            socketManager.on('game:round-end', (data: any) => {
+            socketManager.on('game:round-end', (data: Record<string, unknown>) => {
                 gameStore.setRoundEnd(data);
                 setPhase('reveal');
                 clearTimer();
@@ -539,7 +546,7 @@ export default function SketchDuelScreen() {
                     setRevealWord(data.summary.word);
                 }
             }),
-            socketManager.on('game:ended', (data: any) => {
+            socketManager.on('game:ended', (data: Record<string, unknown>) => {
                 gameStore.setGameEnded(data);
                 router.replace(`/games/results/${code}`);
             }),

@@ -56,8 +56,8 @@ export const rateLimit = (options: RateLimitOptions) => {
 export const userRateLimit = (options: RateLimitOptions) => {
     return rateLimit({
         ...options,
-        keyGenerator: (req: any) => {
-            return req.userId || req.ip || 'unknown';
+        keyGenerator: (req: Request) => {
+            return (req as Request & { userId?: string }).userId || req.ip || 'unknown';
         }
     });
 };

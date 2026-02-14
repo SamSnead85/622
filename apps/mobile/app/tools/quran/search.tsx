@@ -40,7 +40,7 @@ export default function QuranSearch() {
             const json = await res.json();
             const searchResults = json.search?.results || [];
 
-            setResults(searchResults.map((r: any) => ({
+            setResults(searchResults.map((r: { verse_key?: string; text?: string; [key: string]: unknown }) => ({
                 verseKey: r.verse_key,
                 text: (r.text || '').replace(/<[^>]+>/g, ''),
                 surahName: r.verse_key?.split(':')[0] || '',

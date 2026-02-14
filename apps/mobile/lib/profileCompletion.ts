@@ -25,7 +25,7 @@ interface UserProfile {
     bio?: string | null;
     username?: string | null;
     displayName?: string | null;
-    interests?: any[] | null;
+    interests?: unknown[] | null;
     culturalProfile?: string | null;
     postsCount?: number;
     followingCount?: number;

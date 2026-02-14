@@ -70,7 +70,7 @@ export default function PollCreateScreen() {
         if (!isValid || !communityId) return;
         setCreating(true);
         try {
-            const body: any = {
+            const body: Record<string, unknown> = {
                 question: question.trim(),
                 options: options.filter((o) => o.trim()).map((text) => ({ text: text.trim() })),
                 isAnonymous,

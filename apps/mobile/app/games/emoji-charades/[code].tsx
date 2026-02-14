@@ -564,6 +564,10 @@ export default function EmojiCharadesScreen() {
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const handleRoundEndRef = useRef<(() => void) | null>(null);
+    const latestGuessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const scorePopupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const nextRoundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // ---- Animation Values ----
     const correctFlashOpacity = useSharedValue(0);
@@ -620,7 +624,8 @@ export default function EmojiCharadesScreen() {
                         if (cg.playerId === myUserId) {
                             handleMyCorrectGuess(cg.score);
                         }
-                        setTimeout(() => setLatestCorrectGuess(null), 3000);
+                        if (latestGuessTimerRef.current) clearTimeout(latestGuessTimerRef.current);
+                        latestGuessTimerRef.current = setTimeout(() => setLatestCorrectGuess(null), 3000);
                     }
                     // Phrase for describer
                     if (gd.phrase && gd.describerId === myUserId) {
@@ -809,7 +814,8 @@ export default function EmojiCharadesScreen() {
                 withTiming(0, { duration: 600 }),
             );
 
-            setTimeout(() => {
+            if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+            flashTimerRef.current = setTimeout(() => {
                 setShowCorrectFlash(false);
                 setScorePopupData({ points: 0, visible: false });
             }, 2000);
@@ -854,7 +860,8 @@ export default function EmojiCharadesScreen() {
                 }));
                 handleMyCorrectGuess(score);
                 setLatestCorrectGuess(cg);
-                setTimeout(() => setLatestCorrectGuess(null), 3000);
+                if (latestGuessTimerRef.current) clearTimeout(latestGuessTimerRef.current);
+                latestGuessTimerRef.current = setTimeout(() => setLatestCorrectGuess(null), 3000);
 
                 // Update local scores
                 setLocalScores((prev) => ({
@@ -887,18 +894,21 @@ export default function EmojiCharadesScreen() {
                 [myUserId || '']: (prev[myUserId || ''] || 0) + describerBonus,
             }));
 
-            setTimeout(() => {
+            if (scorePopupTimerRef.current) clearTimeout(scorePopupTimerRef.current);
+            scorePopupTimerRef.current = setTimeout(() => {
                 setScorePopupData({ points: 0, visible: false });
             }, 2500);
         }
 
         // Auto-advance to next round after delay
         if (gameStore.isHost) {
-            setTimeout(() => {
+            if (nextRoundTimerRef.current) clearTimeout(nextRoundTimerRef.current);
+            nextRoundTimerRef.current = setTimeout(() => {
                 if (round < totalRounds) {
                     setRound((r) => r + 1);
                     setPhase('waiting');
-                    setTimeout(() => startNextRound(), 800);
+                    if (nextRoundTimerRef.current) clearTimeout(nextRoundTimerRef.current);
+                    nextRoundTimerRef.current = setTimeout(() => startNextRound(), 800);
                 } else {
                     // Game ended
                     gameStore.setGameEnded({
@@ -917,6 +927,16 @@ export default function EmojiCharadesScreen() {
 
     // Keep ref in sync so the interval always calls the latest version
     handleRoundEndRef.current = handleRoundEnd;
+
+    // ---- Cleanup all setTimeout refs on unmount ----
+    useEffect(() => {
+        return () => {
+            if (latestGuessTimerRef.current) clearTimeout(latestGuessTimerRef.current);
+            if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+            if (scorePopupTimerRef.current) clearTimeout(scorePopupTimerRef.current);
+            if (nextRoundTimerRef.current) clearTimeout(nextRoundTimerRef.current);
+        };
+    }, []);
 
     // ---- Handle "Done" from describer (early end) ----
     const handleDescriberDone = useCallback(() => {

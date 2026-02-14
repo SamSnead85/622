@@ -40,6 +40,7 @@ export default function VerifyEmailScreen() {
     const [resendCooldown, setResendCooldown] = useState(60);
 
     const inputRefs = useRef<(TextInput | null)[]>([]);
+    const navigateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Resend cooldown timer
     useEffect(() => {
@@ -49,6 +50,13 @@ export default function VerifyEmailScreen() {
         }, 1000);
         return () => clearInterval(timer);
     }, [resendCooldown]);
+
+    // Cleanup navigate timer on unmount
+    useEffect(() => {
+        return () => {
+            if (navigateTimerRef.current) clearTimeout(navigateTimerRef.current);
+        };
+    }, []);
 
     const handleCodeChange = useCallback((text: string, index: number) => {
         const newCode = [...code];
@@ -106,7 +114,8 @@ export default function VerifyEmailScreen() {
             setSuccess(true);
 
             // Brief delay to show success, then navigate
-            setTimeout(() => {
+            if (navigateTimerRef.current) clearTimeout(navigateTimerRef.current);
+            navigateTimerRef.current = setTimeout(() => {
                 router.replace('/(auth)/username' as any);
             }, 800);
         } catch (err: unknown) {

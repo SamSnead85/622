@@ -58,7 +58,7 @@ interface AnimatedLikeButtonProps {
     authorName?: string;
 }
 
-export function AnimatedLikeButton({
+export const AnimatedLikeButton = React.memo(function AnimatedLikeButton({
     isLiked,
     count,
     onPress,
@@ -165,7 +165,7 @@ export function AnimatedLikeButton({
             )}
         </Pressable>
     );
-}
+});
 
 // ============================================
 // Styles

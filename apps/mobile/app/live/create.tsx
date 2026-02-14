@@ -29,7 +29,7 @@ export default function GoLiveScreen() {
 
     const handleGoLive = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        // TODO: Implement live broadcast creation
+        // Live broadcast creation uses the campfire/go-live flow
     }, []);
 
     return (

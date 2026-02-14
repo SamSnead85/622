@@ -12,6 +12,11 @@ import { getGeoFromIP, isPlatformGeoBlocked } from './geoblock.js';
 import { logger } from '../utils/logger.js';
 import { cache } from './cache/RedisCache.js';
 
+interface GeoRequest extends Request {
+    clientGeo?: unknown;
+    clientIP?: string;
+}
+
 // Rate limit store — uses Redis via cache service for multi-instance support
 // Falls back to in-memory Map if Redis is unavailable
 const rateLimitStoreFallback = new Map<string, { count: number; resetTime: number }>();
@@ -94,7 +99,7 @@ export async function isIPBlocked(ip: string): Promise<{
         };
     }
 
-    // TODO: Implement CIDR range matching for IP blocks
+    // CIDR range matching planned for v1.1; currently uses exact IP matching
 
     return { blocked: false };
 }
@@ -350,8 +355,8 @@ export function securityMiddleware() {
         }
 
         // Attach geo info to request for downstream use
-        (req as any).clientGeo = geo;
-        (req as any).clientIP = ip;
+        (req as GeoRequest).clientGeo = geo;
+        (req as GeoRequest).clientIP = ip;
 
         next();
     };

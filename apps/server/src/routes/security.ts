@@ -27,7 +27,7 @@ import {
     HIGH_RISK_COUNTRIES,
     getGeoFromIP,
 } from '../services/geoblock.js';
-import { Role } from '@prisma/client';
+import { Role, ThreatLevel } from '@prisma/client';
 import { prisma } from '../db/client.js';
 
 const router = Router();
@@ -42,7 +42,7 @@ const requireRole = (role: Role) => {
         if (!user || user.role !== role) {
             return res.status(403).json({ error: 'Insufficient permissions' });
         }
-        (req as any).user = user;
+        (req as AuthRequest).user = user;
         next();
     };
 };
@@ -76,7 +76,7 @@ router.get('/policies', authenticate, async (req: Request, res: Response, next: 
  */
 router.post('/policies/initialize', authenticate, rateLimiters.auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = (req as any).user?.id;
+        const userId = (req as AuthRequest).user!.id;
         await initializeSecurityPolicies(userId);
 
         await logSecurityEvent({
@@ -101,7 +101,7 @@ router.put('/policies/:id', authenticate, rateLimiters.auth, async (req: Request
     try {
         const { id } = req.params;
         const { isActive, config } = req.body;
-        const userId = (req as any).user?.id;
+        const userId = (req as AuthRequest).user!.id;
 
         const updated = await updateSecurityPolicy(id, { isActive, config });
 
@@ -143,7 +143,7 @@ router.get('/geo-blocks', authenticate, async (req: Request, res: Response, next
 router.post('/geo-blocks', authenticate, rateLimiters.auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { countryCode, countryName, reason, blockType, expiresAt } = req.body;
-        const userId = (req as any).user?.id;
+        const userId = (req as AuthRequest).user!.id;
 
         if (!countryCode || !countryName) {
             return res.status(400).json({ error: 'Country code and name are required' });
@@ -179,7 +179,7 @@ router.post('/geo-blocks', authenticate, rateLimiters.auth, async (req: Request,
 router.delete('/geo-blocks/:id', authenticate, rateLimiters.auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
-        const userId = (req as any).user?.id;
+        const userId = (req as AuthRequest).user!.id;
 
         await removeGeoBlock(id);
 
@@ -232,7 +232,7 @@ router.get('/blocked-ips', authenticate, async (req: Request, res: Response, nex
 router.post('/blocked-ips', authenticate, rateLimiters.auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { ipAddress, reason, threatLevel, expiresAt } = req.body;
-        const userId = (req as any).user?.id;
+        const userId = (req as AuthRequest).user!.id;
 
         if (!ipAddress) {
             return res.status(400).json({ error: 'IP address is required' });
@@ -268,7 +268,7 @@ router.post('/blocked-ips', authenticate, rateLimiters.auth, async (req: Request
 router.delete('/blocked-ips/:ip', authenticate, rateLimiters.auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { ip } = req.params;
-        const userId = (req as any).user?.id;
+        const userId = (req as AuthRequest).user!.id;
 
         await unblockIP(ip);
 
@@ -306,7 +306,7 @@ router.get('/audit-log', authenticate, async (req: Request, res: Response, next:
         const entries = await prisma.securityAuditLog.findMany({
             where: {
                 ...(action ? { action: action as string } : {}),
-                ...(severity ? { severity: severity as any } : {}),
+                ...(severity ? { severity: severity as ThreatLevel } : {}),
             },
             orderBy: { createdAt: 'desc' },
             take: parseInt(limit as string),
@@ -316,7 +316,7 @@ router.get('/audit-log', authenticate, async (req: Request, res: Response, next:
         const total = await prisma.securityAuditLog.count({
             where: {
                 ...(action ? { action: action as string } : {}),
-                ...(severity ? { severity: severity as any } : {}),
+                ...(severity ? { severity: severity as ThreatLevel } : {}),
             },
         });
 

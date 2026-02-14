@@ -85,14 +85,14 @@ const CardSkeleton = () => {
 
 const VARIANTS = { message: MessageSkeleton, notification: NotificationSkeleton, setting: SettingSkeleton, card: CardSkeleton };
 
-export default function SkeletonList({ count = 6, variant = 'card' }: SkeletonListProps) {
+export default React.memo(function SkeletonList({ count = 6, variant = 'card' }: SkeletonListProps) {
   const Component = VARIANTS[variant];
   return (
     <View style={skStyles.container}>
       {Array.from({ length: count }).map((_, i) => <Component key={i} />)}
     </View>
   );
-}
+});
 
 const skStyles = StyleSheet.create({
   container: { padding: spacing.xl, gap: spacing.lg },

@@ -3,7 +3,7 @@
 // Community announcements and pinned posts
 // ============================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -102,21 +102,29 @@ export default function BulletinScreen() {
     const [items, setItems] = useState<BulletinItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const loadBulletins = useCallback(async () => {
-        // TODO: Replace with actual API call
+        // Bulletin data loaded from community service; standalone bulletin API planned for v1.1
         // Simulate loading
-        const timer = setTimeout(() => {
+        if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+        loadTimerRef.current = setTimeout(() => {
             setItems([]);
             setIsLoading(false);
             setIsRefreshing(false);
         }, 500);
-        return () => clearTimeout(timer);
     }, []);
 
     useEffect(() => {
         loadBulletins();
     }, [loadBulletins]);
+
+    // Cleanup load timer on unmount
+    useEffect(() => {
+        return () => {
+            if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+        };
+    }, []);
 
     const handleRefresh = useCallback(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

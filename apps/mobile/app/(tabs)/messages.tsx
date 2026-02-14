@@ -185,18 +185,19 @@ export default function MessagesTab() {
         if (!silent) setIsLoading(true);
         setFetchError(false);
         try {
-            const data = await apiFetch<{ conversations: any[] }>(API.conversations);
+            const data = await apiFetch<{ conversations: { id: string; participant?: Conversation['participant']; participants?: Conversation['participant'][]; lastMessage?: Conversation['lastMessage']; unreadCount?: number; isPinned?: boolean; isArchived?: boolean }[] }>(API.conversations);
             // Server returns `participants` (array), normalize to `participant` (singular) for DMs
-            const normalized: Conversation[] = (data?.conversations || []).map((conv: any) => {
+            const normalized: Conversation[] = (data?.conversations || []).map((conv) => {
                 const participant = conv.participant || (conv.participants && conv.participants[0]) || {
                     id: '',
                     username: 'Unknown',
                     displayName: 'Unknown User',
                 };
                 // Derive isOnline from lastActiveAt if available (within last 5 minutes)
-                if (!participant.isOnline && participant.lastActiveAt) {
+                const participantWithMeta = participant as Conversation['participant'] & { lastActiveAt?: string };
+                if (!participant.isOnline && participantWithMeta.lastActiveAt) {
                     const fiveMinAgo = Date.now() - 5 * 60 * 1000;
-                    participant.isOnline = new Date(participant.lastActiveAt).getTime() > fiveMinAgo;
+                    participant.isOnline = new Date(participantWithMeta.lastActiveAt).getTime() > fiveMinAgo;
                 }
                 return {
                     id: conv.id,
