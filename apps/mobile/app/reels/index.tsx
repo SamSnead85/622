@@ -41,6 +41,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthStore } from '../../stores';
 import { apiFetch, API } from '../../lib/api';
 import { AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
+import { playbackManager } from '../../lib/playbackManager';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -398,8 +399,10 @@ export default function ReelsScreen() {
     // Pause all reel videos when navigating away from this screen
     useFocusEffect(
         useCallback(() => {
+            playbackManager.setActiveScreen('reels');
             return () => {
                 setActiveIndex(-1);
+                playbackManager.pauseAll();
             };
         }, [])
     );

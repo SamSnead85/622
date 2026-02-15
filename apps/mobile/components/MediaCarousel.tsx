@@ -4,7 +4,7 @@
 // Inspired by Instagram carousels with 0G's warm aesthetic
 // ============================================
 
-import React, { useState, useCallback, useRef, memo, useMemo } from 'react';
+import React, { useState, useCallback, useRef, memo, useMemo, useEffect } from 'react';
 import {
     View,
     Text,
@@ -15,6 +15,8 @@ import {
     ViewToken,
     NativeSyntheticEvent,
     NativeScrollEvent,
+    AppState,
+    AppStateStatus,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -123,6 +125,10 @@ const VideoSlide = memo(({ item, isActive, width: slideWidth, height: slideHeigh
 }) => {
     const { colors: c } = useTheme();
     const [isMuted, setIsMuted] = useState(true);
+    const isActiveRef = useRef(isActive);
+    const isScreenFocusedRef = useRef(isScreenFocused);
+    isActiveRef.current = isActive;
+    isScreenFocusedRef.current = isScreenFocused;
 
     const player = useVideoPlayer(item.mediaUrl, (p) => {
         p.loop = true;
@@ -130,7 +136,7 @@ const VideoSlide = memo(({ item, isActive, width: slideWidth, height: slideHeigh
     });
 
     // Auto-play/pause based on visibility AND screen focus
-    React.useEffect(() => {
+    useEffect(() => {
         if (isActive && isScreenFocused) {
             player.play();
         } else {
@@ -138,7 +144,19 @@ const VideoSlide = memo(({ item, isActive, width: slideWidth, height: slideHeigh
         }
     }, [isActive, isScreenFocused, player]);
 
-    React.useEffect(() => {
+    // Pause on app background, resume on foreground (only if still active + focused)
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+            if (nextState === 'background' || nextState === 'inactive') {
+                player.pause();
+            } else if (nextState === 'active' && isActiveRef.current && isScreenFocusedRef.current) {
+                player.play();
+            }
+        });
+        return () => subscription.remove();
+    }, [player]);
+
+    useEffect(() => {
         player.muted = isMuted;
     }, [isMuted, player]);
 

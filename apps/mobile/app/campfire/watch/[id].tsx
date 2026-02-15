@@ -17,8 +17,10 @@ import {
     Platform,
     Pressable,
     ActivityIndicator,
+    AppState,
+    AppStateStatus,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -44,6 +46,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { apiFetch, API } from '../../../lib/api';
 import { socketManager } from '../../../lib/socket';
 import { useAuthStore } from '../../../stores';
+import { playbackManager } from '../../../lib/playbackManager';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -229,6 +232,40 @@ export default function StreamViewerScreen() {
         p.muted = false;
         p.play();
     });
+
+    // Register with playback manager and handle focus
+    useEffect(() => {
+        playbackManager.register(`stream-${id}`, player, 'campfire');
+        return () => {
+            playbackManager.unregister(`stream-${id}`);
+        };
+    }, [player, id]);
+
+    // Pause/resume on screen focus (prevents audio bleeding when navigating away)
+    useFocusEffect(
+        useCallback(() => {
+            playbackManager.setActiveScreen('campfire');
+            if (stream?.playbackUrl) {
+                player.play();
+            }
+            return () => {
+                player.pause();
+                player.muted = true;
+            };
+        }, [player, stream?.playbackUrl])
+    );
+
+    // Pause on app background
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+            if (nextState === 'background' || nextState === 'inactive') {
+                player.pause();
+            } else if (nextState === 'active' && stream?.playbackUrl) {
+                player.play();
+            }
+        });
+        return () => subscription.remove();
+    }, [player, stream?.playbackUrl]);
 
     // ---- Fetch stream data ----
     useEffect(() => {

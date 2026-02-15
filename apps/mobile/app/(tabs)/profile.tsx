@@ -42,6 +42,7 @@ import { showError } from '../../stores/toastStore';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { formatCount, timeAgo } from '../../lib/utils';
 import { getProfileCompletion, ProfileStep } from '../../lib/profileCompletion';
+import { playbackManager } from '../../lib/playbackManager';
 import { ErrorBoundary } from '../../components';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -395,9 +396,14 @@ export default function ProfileScreen() {
     }, [loadUserPosts]);
 
     // Refresh profile data when screen gains focus — debounced to avoid flicker
+    // Also pause all video/audio playback from other screens
     const lastRefreshRef = useRef(0);
     useFocusEffect(
         useCallback(() => {
+            // Stop any video/audio from feed, reels, etc.
+            playbackManager.pauseAll();
+            playbackManager.setActiveScreen('profile');
+
             const now = Date.now();
             // Only refresh if at least 30 seconds since last refresh
             if (user?.id && now - lastRefreshRef.current > 30_000) {

@@ -50,6 +50,7 @@ import { useAuthStore, mapApiPost } from '../../stores';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ScreenHeader, Avatar, GlassCard, AnimatedLikeButton } from '../../components';
 import { showError } from '../../stores/toastStore';
+import { playbackManager } from '../../lib/playbackManager';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -223,9 +224,11 @@ function PostVideoPlayer({ uri }: { uri: string }) {
     // Pause video when navigating away, resume when returning
     useFocusEffect(
         useCallback(() => {
+            playbackManager.setActiveScreen('post-detail');
             player.play();
             return () => {
                 player.pause();
+                player.muted = true;
             };
         }, [player])
     );

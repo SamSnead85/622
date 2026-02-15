@@ -29,6 +29,7 @@ import { OfflineBanner } from '../components/OfflineBanner';
 import { socketManager, CallIncoming } from '../lib/socket';
 import { initI18n } from '../lib/i18n';
 import { startAutoSync, stopAutoSync, syncQueue } from '../lib/offlineQueue';
+import { playbackManager } from '../lib/playbackManager';
 
 // ============================================
 // Suppress noisy dev warnings that don't affect production
@@ -271,6 +272,8 @@ function RootLayoutInner() {
                 }
             } else if (nextAppState === 'background') {
                 socketManager.updatePresence('away');
+                // Pause all video/audio playback when app goes to background
+                playbackManager.pauseAll();
             }
             appState.current = nextAppState;
         });

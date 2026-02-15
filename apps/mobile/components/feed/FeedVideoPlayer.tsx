@@ -5,13 +5,18 @@
 // Auto-plays when active, pauses when scrolled away.
 // First video in feed plays unmuted, others muted.
 // Shows poster thumbnail while buffering.
+// Integrates with global PlaybackManager to ensure
+// only one video plays at a time across the app.
+// Pauses when app goes to background (AppState).
 
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import {
     View,
     Pressable,
     StyleSheet,
     ActivityIndicator,
+    AppState,
+    AppStateStatus,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +25,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { colors } from '@zerog/ui';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
 import { clampAspectRatio } from '../../lib/utils';
+import { playbackManager } from '../../lib/playbackManager';
 
 // ── Props ───────────────────────────────────────────
 
@@ -30,6 +36,7 @@ export interface FeedVideoPlayerProps {
     isFirstVideo: boolean;
     shouldReduceData?: boolean;
     mediaAspectRatio?: string;
+    postId?: string;
 }
 
 // ── Component ───────────────────────────────────────
@@ -41,15 +48,29 @@ function FeedVideoPlayerInner({
     isFirstVideo,
     shouldReduceData,
     mediaAspectRatio,
+    postId,
 }: FeedVideoPlayerProps) {
     const videoAspect = 1 / clampAspectRatio(mediaAspectRatio);
     const [isMuted, setIsMuted] = useState(!isFirstVideo);
     const [showFirstFrame, setShowFirstFrame] = useState(false);
+    const appStateRef = useRef(AppState.currentState);
+    const isActiveRef = useRef(isActive);
+    isActiveRef.current = isActive;
 
     const player = useVideoPlayer(uri, (p) => {
         p.loop = true;
         p.muted = !isFirstVideo;
     });
+
+    const playerKey = `feed-video-${postId || uri}`;
+
+    // Register/unregister with global playback manager
+    useEffect(() => {
+        playbackManager.register(playerKey, player, 'feed');
+        return () => {
+            playbackManager.unregister(playerKey);
+        };
+    }, [player, playerKey]);
 
     // Detect when the first frame is ready
     useEffect(() => {
@@ -67,7 +88,7 @@ function FeedVideoPlayerInner({
             player.pause();
             return;
         }
-        if (isActive) {
+        if (isActive && appStateRef.current === 'active') {
             player.play();
         } else {
             player.pause();
@@ -83,6 +104,20 @@ function FeedVideoPlayerInner({
             setIsMuted(false);
         }
     }, [isActive, isFirstVideo, player, shouldReduceData]);
+
+    // AppState listener — pause when app goes to background,
+    // resume when coming back to foreground (only if still active)
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+            if (nextState === 'background' || nextState === 'inactive') {
+                player.pause();
+            } else if (nextState === 'active' && isActiveRef.current && !shouldReduceData) {
+                player.play();
+            }
+            appStateRef.current = nextState;
+        });
+        return () => subscription.remove();
+    }, [player, shouldReduceData]);
 
     const toggleMute = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

@@ -54,6 +54,7 @@ import { timeAgo, formatCount, clampAspectRatio } from '../../lib/utils';
 import { CommentsSheet } from '../../components/CommentsSheet';
 import { FeedVideoPlayer as ExtractedFeedVideoPlayer } from '../../components/feed';
 import { QuickActionsMenu } from '../../components/feed';
+import { playbackManager } from '../../lib/playbackManager';
 
 // ============================================
 // Avatar Glow Ring — premium animated ring
@@ -1574,10 +1575,13 @@ export default function FeedScreen() {
     useFocusEffect(
         useCallback(() => {
             setScreenFocused(true);
+            playbackManager.setActiveScreen('feed');
             return () => {
                 setScreenFocused(false);
                 activeVideoIdRef.current = null;
                 setActiveVideoId(null);
+                // Immediately pause all feed players when leaving
+                playbackManager.pauseAll();
             };
         }, [])
     );

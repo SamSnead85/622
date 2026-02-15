@@ -15,7 +15,7 @@ import {
     FlatList,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -45,6 +45,7 @@ import { colors, typography, spacing, borderRadius } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../../components';
 import { useAuthStore, useFeedStore, useCommunitiesStore, mapApiPost } from '../../stores';
+import { playbackManager } from '../../lib/playbackManager';
 import { apiFetch, apiUpload, API } from '../../lib/api';
 import type { Community } from '../../stores';
 import { IMAGE_PLACEHOLDER, AVATAR_PLACEHOLDER } from '../../lib/imagePlaceholder';
@@ -865,6 +866,14 @@ export default function CreateScreen() {
     const scrollRef = useRef<ScrollView>(null);
     const successTimerRef = useRef<ReturnType<typeof setTimeout>>();
     const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Pause all video/audio when entering the create screen
+    useFocusEffect(
+        useCallback(() => {
+            playbackManager.pauseAll();
+            playbackManager.setActiveScreen('create');
+        }, [])
+    );
 
     // --- Core State ---
     const [content, setContent] = useState('');
