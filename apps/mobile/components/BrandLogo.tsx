@@ -24,18 +24,36 @@ function BrandLogoComponent({ size = 'standard' }: BrandLogoProps) {
     const markSize = MARK_SIZE[size];
     const borderRadius = size === 'hero' ? 20 : size === 'standard' ? 16 : 12;
 
-    // In light mode, use a dark rounded mark with inverse text for contrast
+    // Light mode: blue accent mark with white text — matches the app identity
     if (!isDark) {
         return (
-            <View style={[styles.mark, { width: markSize, height: markSize, borderRadius, backgroundColor: colors.text.primary }]}>
-                <Text style={[styles.markText, { fontSize: fontSize * 0.6, color: colors.text.inverse }]}>
+            <View
+                style={[
+                    styles.mark,
+                    {
+                        width: markSize,
+                        height: markSize,
+                        borderRadius,
+                        backgroundColor: colors.gold[500],
+                    },
+                ]}
+            >
+                <Text
+                    style={[
+                        styles.markText,
+                        {
+                            fontSize: fontSize * 0.6,
+                            color: colors.text.inverse,
+                        },
+                    ]}
+                >
                     0G
                 </Text>
             </View>
         );
     }
 
-    // In dark mode, use the brand accent color with glow effect
+    // Dark/warm mode: brand accent color with glow effect
     // Blue glow in dark mode, amber glow in warm mode
     return (
         <View style={styles.container}>

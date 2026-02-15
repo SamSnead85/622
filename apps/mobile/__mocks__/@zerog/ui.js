@@ -89,18 +89,18 @@ const lightColors = {
         300: '#6B7A8A',
     },
     gold: {
-        500: '#C88400',
-        400: '#E09800',
-        300: '#F0B040',
-        600: '#A86E00',
-        700: '#8A5A00',
+        500: '#2563EB',
+        400: '#3B82F6',
+        300: '#60A5FA',
+        600: '#1D4ED8',
+        700: '#1E40AF',
     },
     amber: {
-        500: '#D42050',
-        400: '#E83868',
-        300: '#F06888',
-        600: '#B01840',
-        700: '#901030',
+        500: '#7C3AED',
+        400: '#8B5CF6',
+        300: '#A78BFA',
+        600: '#6D28D9',
+        700: '#5B21B6',
     },
     coral: {
         500: '#DC3545',
@@ -118,8 +118,8 @@ const lightColors = {
         300: '#60A5FA',
     },
     badge: {
-        gold: '#A07828',
-        goldLight: '#C09030',
+        gold: '#2563EB',
+        goldLight: '#3B82F6',
     },
     text: {
         primary: '#1A2030',
@@ -149,8 +149,8 @@ const lightColors = {
         strong: 'rgba(100, 120, 150, 0.24)',
     },
     gradients: {
-        goldShine: ['#C88400', '#E09800', '#C88400'],
-        obsidianFade: ['#F8F9FB', '#E8ECF0'],
+        goldShine: ['#2563EB', '#3B82F6', '#2563EB'],
+        obsidianFade: ['#F8F9FB', '#E6E9EF'],
         glassOverlay: ['rgba(248, 249, 251, 0.92)', 'rgba(248, 249, 251, 0.65)'],
     },
 };

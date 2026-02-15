@@ -40,12 +40,13 @@ export default function WelcomeScreen() {
     }, [router]);
 
     // Adaptive colors that work in both modes
-    const accentColor = isDark ? c.gold[500] : c.gold[600];
-    const accentBg = isDark ? c.gold[500] : c.text.primary;
-    const accentText = isDark ? c.text.inverse : c.text.inverse;
-    const pillBg = c.surface.glass;
+    // In light mode, use the blue accent for CTAs (matches the brand identity)
+    const accentColor = c.gold[500];
+    const accentBg = c.gold[500];
+    const accentText = c.text.inverse;
+    const pillBg = isDark ? c.surface.glass : c.obsidian[700];
     const pillText = c.text.secondary;
-    const pillIcon = isDark ? c.gold[500] : c.gold[500];
+    const pillIcon = c.gold[500];
 
     return (
         <View

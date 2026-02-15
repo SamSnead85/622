@@ -537,7 +537,7 @@ export default function SettingsScreen() {
                             {([
                                 { key: 'dark' as const, icon: 'moon-outline' as const, label: 'Dark Blue', previewColors: ['#0A1628', '#1A2A4A', '#4A90FF'] },
                                 { key: 'warm' as const, icon: 'flame-outline' as const, label: 'Warm', previewColors: ['#1A1412', '#2A1F1A', '#FFB020'] },
-                                { key: 'light' as const, icon: 'sunny-outline' as const, label: 'Light', previewColors: ['#F8F9FB', '#E8EBF0', '#C88400'] },
+                                { key: 'light' as const, icon: 'sunny-outline' as const, label: 'Light', previewColors: ['#F8F9FB', '#E6E9EF', '#2563EB'] },
                                 { key: 'system' as const, icon: 'phone-portrait-outline' as const, label: 'Auto', previewColors: ['#0A1628', '#F8F9FB', '#4A90FF'] },
                             ]).map((opt) => {
                                 const isActive = themeMode === opt.key;
