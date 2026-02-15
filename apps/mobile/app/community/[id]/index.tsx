@@ -36,6 +36,7 @@ import Animated, {
     ZoomIn,
 } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { Post, mapApiPost, useCommunitiesStore, useAuthStore } from '../../../stores';
 import { apiFetch, API } from '../../../lib/api';
 import { ScreenHeader, LoadingView, CommunityInviteSheet, Avatar } from '../../../components';
@@ -413,6 +414,7 @@ export default function CommunityDetailScreen() {
     const router = useRouter();
     const { id: communityId } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
+    const { colors: c } = useTheme();
     const joinCommunity = useCommunitiesStore((s) => s.joinCommunity);
     const leaveCommunity = useCommunitiesStore((s) => s.leaveCommunity);
     const currentUser = useAuthStore((s) => s.user);
@@ -451,6 +453,8 @@ export default function CommunityDetailScreen() {
 
     // ── Moderation State ──────────────────────────────────
     const [showModPanel, setShowModPanel] = useState(false);
+    const [joinRequests, setJoinRequests] = useState<any[]>([]);
+    const [requestsLoading, setRequestsLoading] = useState(false);
 
     // ── Animation Values ──────────────────────────────────
     const scrollY = useSharedValue(0);
@@ -605,6 +609,43 @@ export default function CommunityDetailScreen() {
             }
         } finally {
             setRulesLoading(false);
+        }
+    }, [communityId]);
+
+    // ── Derived moderation flag (must be before callbacks that use it) ──
+    const isAdmin = community?.role === 'admin';
+    const isModerator = community?.role === 'moderator';
+    const canModerate = isAdmin || isModerator;
+
+    // ── Join Requests (Admin) ──────────────────────────
+    const loadJoinRequests = useCallback(async () => {
+        if (!communityId || !canModerate) return;
+        setRequestsLoading(true);
+        try {
+            const data = await apiFetch<any[]>(`/api/v1/communities/${communityId}/requests`);
+            setJoinRequests(Array.isArray(data) ? data : []);
+        } catch { /* ignore */ }
+        setRequestsLoading(false);
+    }, [communityId, canModerate]);
+
+    const handleApproveRequest = useCallback(async (requestId: string) => {
+        try {
+            await apiFetch(`/api/v1/communities/${communityId}/requests/${requestId}/approve`, { method: 'POST' });
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setJoinRequests((prev) => prev.filter((r) => r.id !== requestId));
+            loadAllMembers(); // Refresh members list
+        } catch {
+            Alert.alert('Approval Failed', 'Failed to approve request.');
+        }
+    }, [communityId, loadAllMembers]);
+
+    const handleRejectRequest = useCallback(async (requestId: string) => {
+        try {
+            await apiFetch(`/api/v1/communities/${communityId}/requests/${requestId}/reject`, { method: 'POST' });
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setJoinRequests((prev) => prev.filter((r) => r.id !== requestId));
+        } catch {
+            Alert.alert('Rejection Failed', 'Failed to reject request.');
         }
     }, [communityId]);
 
@@ -1002,10 +1043,6 @@ export default function CommunityDetailScreen() {
     );
 
     // ── Derived values ──────────────────────────────
-    const isAdmin = community?.role === 'admin';
-    const isModerator = community?.role === 'moderator';
-    const canModerate = isAdmin || isModerator;
-
     const isDemo =
         community?.welcomeMessage?.toLowerCase().includes('demo group') ||
         community?.slug === 'miraj-collective';
@@ -1013,11 +1050,7 @@ export default function CommunityDetailScreen() {
     // ── Loading / Error States ──────────────────────
     if (isLoading) {
         return (
-            <View style={styles.container}>
-                <LinearGradient
-                    colors={[colors.obsidian[900], colors.obsidian[800]]}
-                    style={StyleSheet.absoluteFill}
-                />
+            <View style={[styles.container, { backgroundColor: c.background }]}>
                 <LoadingView message="Loading community..." />
             </View>
         );
@@ -1025,20 +1058,16 @@ export default function CommunityDetailScreen() {
 
     if (!community) {
         return (
-            <View style={[styles.container, styles.centered]}>
-                <LinearGradient
-                    colors={[colors.obsidian[900], colors.obsidian[800]]}
-                    style={StyleSheet.absoluteFill}
-                />
-                <Ionicons name="people-outline" size={48} color={colors.text.muted} />
-                <Text style={styles.errorText}>Community not found</Text>
+            <View style={[styles.container, styles.centered, { backgroundColor: c.background }]}>
+                <Ionicons name="people-outline" size={48} color={c.text.muted} />
+                <Text style={[styles.errorText, { color: c.text.primary }]}>Community not found</Text>
                 <TouchableOpacity
                     onPress={() => router.back()}
                     style={styles.backLink}
                     accessibilityLabel="Go back"
                     accessibilityRole="button"
                 >
-                    <Text style={styles.backLinkText}>Go back</Text>
+                    <Text style={[styles.backLinkText, { color: c.gold[500] }]}>Go back</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -1048,13 +1077,9 @@ export default function CommunityDetailScreen() {
     if (showChat) {
         return (
             <KeyboardAvoidingView
-                style={styles.container}
+                style={[styles.container, { backgroundColor: c.background }]}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
-                <LinearGradient
-                    colors={[colors.obsidian[900], colors.obsidian[800]]}
-                    style={StyleSheet.absoluteFill}
-                />
                 <ScreenHeader
                     title={`${community.name} Chat`}
                     onBack={() => setShowChat(false)}
@@ -1066,7 +1091,7 @@ export default function CommunityDetailScreen() {
                             }}
                             accessibilityLabel="Refresh chat"
                         >
-                            <Ionicons name="refresh" size={20} color={colors.text.primary} />
+                            <Ionicons name="refresh" size={20} color={c.text.primary} />
                         </TouchableOpacity>
                     }
                 />
@@ -1099,15 +1124,15 @@ export default function CommunityDetailScreen() {
                 <View
                     style={[
                         styles.chatInputRow,
-                        { paddingBottom: insets.bottom + spacing.sm },
+                        { paddingBottom: insets.bottom + spacing.sm, backgroundColor: c.surface.glass },
                     ]}
                 >
                     <TextInput
-                        style={styles.chatInputField}
+                        style={[styles.chatInputField, { color: c.text.primary }]}
                         value={chatInput}
                         onChangeText={handleChatInputChange}
                         placeholder="Type a message..."
-                        placeholderTextColor={colors.text.muted}
+                        placeholderTextColor={c.text.muted}
                         returnKeyType="send"
                         onSubmitEditing={sendChatMessage}
                         editable={!chatSending}
@@ -1117,6 +1142,7 @@ export default function CommunityDetailScreen() {
                     <TouchableOpacity
                         style={[
                             styles.chatSendBtn,
+                            { backgroundColor: c.gold[500] },
                             (!chatInput.trim() || chatSending) && styles.chatSendBtnDisabled,
                         ]}
                         onPress={sendChatMessage}
@@ -1124,15 +1150,15 @@ export default function CommunityDetailScreen() {
                         accessibilityLabel="Send message"
                     >
                         {chatSending ? (
-                            <ActivityIndicator size="small" color={colors.text.primary} />
+                            <ActivityIndicator size="small" color={c.text.inverse} />
                         ) : (
                             <Ionicons
                                 name="send"
                                 size={18}
                                 color={
                                     chatInput.trim()
-                                        ? colors.obsidian[900]
-                                        : colors.text.muted
+                                        ? c.text.inverse
+                                        : c.text.muted
                                 }
                             />
                         )}
@@ -1290,41 +1316,6 @@ export default function CommunityDetailScreen() {
             </View>
         </Animated.View>
     );
-
-    // ── Join Requests (Admin) ──────────────────────────
-    const [joinRequests, setJoinRequests] = useState<any[]>([]);
-    const [requestsLoading, setRequestsLoading] = useState(false);
-
-    const loadJoinRequests = useCallback(async () => {
-        if (!communityId || !canModerate) return;
-        setRequestsLoading(true);
-        try {
-            const data = await apiFetch<any[]>(`/api/v1/communities/${communityId}/requests`);
-            setJoinRequests(Array.isArray(data) ? data : []);
-        } catch { /* ignore */ }
-        setRequestsLoading(false);
-    }, [communityId, canModerate]);
-
-    const handleApproveRequest = useCallback(async (requestId: string) => {
-        try {
-            await apiFetch(`/api/v1/communities/${communityId}/requests/${requestId}/approve`, { method: 'POST' });
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setJoinRequests((prev) => prev.filter((r) => r.id !== requestId));
-            loadAllMembers(); // Refresh members list
-        } catch {
-            Alert.alert('Approval Failed', 'Failed to approve request.');
-        }
-    }, [communityId, loadAllMembers]);
-
-    const handleRejectRequest = useCallback(async (requestId: string) => {
-        try {
-            await apiFetch(`/api/v1/communities/${communityId}/requests/${requestId}/reject`, { method: 'POST' });
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            setJoinRequests((prev) => prev.filter((r) => r.id !== requestId));
-        } catch {
-            Alert.alert('Rejection Failed', 'Failed to reject request.');
-        }
-    }, [communityId]);
 
     const renderMembersTab = () => {
         if (membersLoading) return <TabLoadingState />;

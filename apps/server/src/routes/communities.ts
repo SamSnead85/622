@@ -208,7 +208,6 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             category: z.string().max(50).optional(),
             avatarUrl: z.string().url().optional(),
             coverUrl: z.string().url().optional(),
-            isPrivate: z.boolean().optional(),
             isPublic: z.boolean().optional(),
             approvalRequired: z.boolean().optional(),
             // Branding
@@ -216,9 +215,11 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             tagline: z.string().max(120).optional(),
             logoUrl: z.string().url().optional(),
             websiteUrl: z.string().max(200).optional(),
+            // Rules (array of non-empty strings)
+            rules: z.array(z.string().min(1).max(200)).max(10).optional(),
         });
 
-        const data = createSchema.parse(req.body);
+        const { rules: ruleTexts, ...data } = createSchema.parse(req.body);
         const slug = data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
         // Check if slug exists
@@ -248,12 +249,26 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
             },
         });
 
+        // Create community rules if provided
+        if (ruleTexts && ruleTexts.length > 0) {
+            await prisma.communityRule.createMany({
+                data: ruleTexts.map((text, index) => ({
+                    communityId: community.id,
+                    title: text,
+                    description: text,
+                    order: index,
+                })),
+            });
+        }
+
         res.status(201).json({
-            ...community,
-            membersCount: 1,
-            postsCount: 0,
-            isMember: true,
-            role: 'ADMIN',
+            community: {
+                ...community,
+                membersCount: 1,
+                postsCount: 0,
+                isMember: true,
+                role: 'ADMIN',
+            },
         });
     } catch (error) {
         next(error);
