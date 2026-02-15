@@ -564,7 +564,7 @@ export default function CommunitiesScreen() {
     // ============================================
 
     useEffect(() => {
-        fetchCommunities();
+        fetchCommunities().catch(() => { /* handled in store */ });
         fetchDiscover();
         fetchFeatured();
     }, []);
@@ -701,6 +701,20 @@ export default function CommunitiesScreen() {
             .slice(0, 5);
     }, [discoverList]);
 
+    // Exclude recommended IDs from the main grid to avoid duplicate cards
+    const recommendedIds = useMemo(
+        () => new Set(recommendedCommunities.map((c) => c.id)),
+        [recommendedCommunities],
+    );
+
+    // The grid data: on Discover tab without search, exclude items already shown in Recommended
+    const gridData = useMemo(() => {
+        if (activeTab === 'discover' && !debouncedQuery.trim() && recommendedIds.size > 0) {
+            return discoverList.filter((c) => !recommendedIds.has(c.id));
+        }
+        return activeData;
+    }, [activeTab, debouncedQuery, discoverList, activeData, recommendedIds]);
+
     const renderGridItem = useCallback(({ item, index }: { item: Community; index: number }) => (
         <Animated.View entering={FadeInDown.delay(Math.min(index * 60, 300)).duration(300)}>
             <CommunityCard
@@ -734,6 +748,10 @@ export default function CommunitiesScreen() {
                 </View>
             );
         }
+        // Don't show empty state if recommended communities are visible in the header
+        if (activeTab === 'discover' && !debouncedQuery.trim() && recommendedCommunities.length > 0) {
+            return null;
+        }
         return (
             <EmptyState
                 tab={activeTab}
@@ -750,11 +768,7 @@ export default function CommunitiesScreen() {
 
     return (
         <ErrorBoundary>
-        <View style={[styles.container, { backgroundColor: c.obsidian[900] }]}>
-            <LinearGradient
-                colors={[c.obsidian[900], c.obsidian[800]]}
-                style={StyleSheet.absoluteFill}
-            />
+        <View style={[styles.container, { backgroundColor: c.background }]}>
 
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
@@ -813,7 +827,7 @@ export default function CommunitiesScreen() {
 
             {/* Grid */}
             <FlatList
-                data={activeData}
+                data={gridData}
                 renderItem={renderGridItem}
                 keyExtractor={(item) => item.id}
                 numColumns={2}
@@ -911,67 +925,76 @@ export default function CommunitiesScreen() {
                             <View style={styles.recommendedSection}>
                                 <View style={styles.recommendedHeader}>
                                     <Text style={[styles.recommendedTitle, { color: c.text.primary }]}>Recommended for You</Text>
-                                    <TouchableOpacity>
-                                        <Text style={[styles.recommendedSeeAll, { color: c.gold[500] }]}>See All</Text>
-                                    </TouchableOpacity>
                                 </View>
                                 <ScrollView
                                     horizontal
                                     showsHorizontalScrollIndicator={false}
                                     contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.md }}
                                 >
-                                    {recommendedCommunities.map((item, index) => (
-                                        <Animated.View
-                                            key={`rec-${item.id}`}
-                                            entering={FadeInDown.delay(Math.min(index * 60, 300)).duration(300)}
-                                        >
-                                            <TouchableOpacity
-                                                style={styles.recommendedCard}
-                                                onPress={() => {
-                                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                    router.push(`/community/${item.id}`);
-                                                }}
-                                                activeOpacity={0.85}
+                                    {recommendedCommunities.map((item, index) => {
+                                        const isMember = !!item.role;
+                                        const isPending = item.requestStatus === 'pending';
+                                        const isApproval = item.approvalRequired === true;
+                                        return (
+                                            <Animated.View
+                                                key={`rec-${item.id}`}
+                                                entering={FadeInDown.delay(Math.min(index * 60, 300)).duration(300)}
                                             >
-                                                <View style={styles.recommendedCoverWrap}>
-                                                    {item.coverUrl || item.avatarUrl ? (
-                                                        <Image
-                                                            source={{ uri: item.coverUrl || item.avatarUrl }}
-                                                            style={StyleSheet.absoluteFill}
-                                                            contentFit="cover"
-                                                            placeholder={IMAGE_PLACEHOLDER.blurhash}
-                                                            transition={IMAGE_PLACEHOLDER.transition}
-                                                            cachePolicy="memory-disk"
-                                                        />
-                                                    ) : (
+                                                <TouchableOpacity
+                                                    style={styles.recommendedCard}
+                                                    onPress={() => {
+                                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                        router.push(`/community/${item.id}`);
+                                                    }}
+                                                    activeOpacity={0.85}
+                                                >
+                                                    <View style={styles.recommendedCoverWrap}>
+                                                        {item.coverUrl || item.avatarUrl ? (
+                                                            <Image
+                                                                source={{ uri: item.coverUrl || item.avatarUrl }}
+                                                                style={StyleSheet.absoluteFill}
+                                                                contentFit="cover"
+                                                                placeholder={IMAGE_PLACEHOLDER.blurhash}
+                                                                transition={IMAGE_PLACEHOLDER.transition}
+                                                                cachePolicy="memory-disk"
+                                                            />
+                                                        ) : (
+                                                            <LinearGradient
+                                                                colors={getCoverGradient(item)}
+                                                                style={StyleSheet.absoluteFill}
+                                                                start={{ x: 0, y: 0 }}
+                                                                end={{ x: 1, y: 1 }}
+                                                            />
+                                                        )}
                                                         <LinearGradient
-                                                            colors={getCoverGradient(item)}
-                                                            style={StyleSheet.absoluteFill}
-                                                            start={{ x: 0, y: 0 }}
-                                                            end={{ x: 1, y: 1 }}
+                                                            colors={['transparent', colors.surface.overlayMedium]}
+                                                            style={styles.recommendedCoverFade}
                                                         />
-                                                    )}
-                                                    <LinearGradient
-                                                        colors={['transparent', colors.surface.overlayMedium]}
-                                                        style={styles.recommendedCoverFade}
-                                                    />
-                                                </View>
-                                                <View style={styles.recommendedBody}>
-                                                    <Text style={[styles.recommendedName, { color: c.text.primary }]} numberOfLines={1}>
-                                                        {item.name}
-                                                    </Text>
-                                                    <Text style={[styles.recommendedMembers, { color: c.text.secondary }]}>
-                                                        {formatCount(item.membersCount || 0)} members
-                                                    </Text>
-                                                    <View style={styles.activityRow}>
-                                                        <View style={styles.activeDot} />
-                                                        <Text style={styles.activeText}>Active now</Text>
                                                     </View>
-                                                </View>
-                                            </TouchableOpacity>
-                                        </Animated.View>
-                                    ))}
+                                                    <View style={styles.recommendedBody}>
+                                                        <Text style={[styles.recommendedName, { color: c.text.primary }]} numberOfLines={1}>
+                                                            {item.name}
+                                                        </Text>
+                                                        <Text style={[styles.recommendedMembers, { color: c.text.secondary }]}>
+                                                            {formatCount(item.membersCount || 0)} members
+                                                        </Text>
+                                                        <View style={styles.activityRow}>
+                                                            <View style={styles.activeDot} />
+                                                            <Text style={styles.activeText}>Active now</Text>
+                                                        </View>
+                                                    </View>
+                                                </TouchableOpacity>
+                                            </Animated.View>
+                                        );
+                                    })}
                                 </ScrollView>
+                            </View>
+                        )}
+
+                        {/* ─── "All Communities" label before the grid ─── */}
+                        {gridData.length > 0 && (
+                            <View style={styles.recommendedHeader}>
+                                <Text style={[styles.recommendedTitle, { color: c.text.primary }]}>All Communities</Text>
                             </View>
                         )}
                     </View>
@@ -1537,7 +1560,7 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
     },
     recommendedTitle: {
-        fontSize: typography.fontSize.md,
+        fontSize: typography.fontSize.lg,
         fontWeight: '700',
         color: colors.text.primary,
     },
