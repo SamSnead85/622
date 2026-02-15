@@ -51,6 +51,7 @@ const AVATAR_SIZE = 108;
 const AVATAR_RING_SIZE = AVATAR_SIZE + 8;
 const POST_GAP = 3;
 const POST_SIZE = (SCREEN_WIDTH - POST_GAP * 2) / 3;
+const LIST_ITEM_HEIGHT = 105; // paddingVertical(12) + imageHeight(80) + paddingVertical(12) + hairline
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<Post>);
 
@@ -425,6 +426,20 @@ export default function ProfileScreen() {
             <PostGridItem post={item} index={index} />
         ),
         [],
+    );
+
+    // getItemLayout for FlatList performance (avoids measuring each item)
+    const getItemLayout = useCallback(
+        (_data: ArrayLike<Post> | null | undefined, index: number) => {
+            if (viewMode === 'grid') {
+                // Grid: 3 columns, each row is POST_SIZE + POST_GAP tall
+                const rowHeight = POST_SIZE + POST_GAP;
+                return { length: rowHeight, offset: rowHeight * Math.floor(index / 3), index };
+            }
+            // List: fixed height per item
+            return { length: LIST_ITEM_HEIGHT, offset: LIST_ITEM_HEIGHT * index, index };
+        },
+        [viewMode],
     );
 
     // List view render — shows larger post preview with caption
@@ -1073,6 +1088,7 @@ export default function ProfileScreen() {
                         colors={[colors.gold[500]]}
                     />
                 }
+                getItemLayout={getItemLayout}
                 removeClippedSubviews={Platform.OS === 'android'}
                 maxToRenderPerBatch={12}
                 windowSize={9}
