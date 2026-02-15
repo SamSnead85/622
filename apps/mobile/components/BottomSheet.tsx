@@ -1,22 +1,19 @@
 // ============================================
-// BottomSheet — Shared bottom sheet primitive
+// BottomSheet — Instagram-style dismissible sheet
 // ============================================
 //
-// A single, well-architected bottom sheet used across the entire app.
-// Features:
-//   - PanResponder on drag handle ONLY (content is freely scrollable/tappable)
-//   - Proper flex layout: handle + header at top, content in middle (flex: 1), footer at bottom
-//   - KeyboardAvoidingView integration for sheets with text inputs
-//   - Safe area handling built in
-//   - Slide-up animation via Animated
-//   - Backdrop tap to dismiss
+// Swipe down from ANYWHERE on the sheet to dismiss — just like Instagram.
+// The key trick: the PanResponder is on the entire sheet, but it only
+// captures the gesture when the user is dragging downward AND the inner
+// scroll is at the top (offset 0). This means:
+//   - If the FlatList has content to scroll up, scrolling works normally
+//   - If the FlatList is at the top and user drags down, the sheet slides
+//   - Tapping the backdrop also dismisses
+//   - The close button also dismisses
 //
-// Usage:
-//   <BottomSheet visible={open} onClose={close} title="Comments" footer={<InputBar />}>
-//       <FlatList ... />
-//   </BottomSheet>
+// Layout: handle → header → content (flex:1) → footer (fixed)
 
-import React, { useRef, useCallback, useEffect, memo } from 'react';
+import React, { useRef, useCallback, useEffect, memo, useState, createContext, useContext } from 'react';
 import {
     View,
     Text,
@@ -38,34 +35,55 @@ import { useTheme } from '../contexts/ThemeContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const DEFAULT_HEIGHT_RATIO = 0.72;
-const DRAG_DISMISS_THRESHOLD = 100;
+const DRAG_DISMISS_THRESHOLD = 80;
+const VELOCITY_DISMISS_THRESHOLD = 0.5;
+
+// ── Context ─────────────────────────────────────────
+// Allows children (FlatList, ScrollView) to report their scroll offset
+// so the BottomSheet knows when swipe-to-dismiss should activate.
+
+type ScrollHandler = (event: { nativeEvent: { contentOffset: { y: number } } }) => void;
+
+const BottomSheetScrollContext = createContext<ScrollHandler | null>(null);
+
+/**
+ * Hook for children inside a BottomSheet to get the scroll handler.
+ * Attach this to your FlatList/ScrollView's `onScroll` prop to enable
+ * swipe-to-dismiss from anywhere on the sheet.
+ *
+ * @example
+ * const onScroll = useBottomSheetScroll();
+ * <FlatList onScroll={onScroll} scrollEventThrottle={16} bounces={false} />
+ */
+export function useBottomSheetScroll(): ScrollHandler | null {
+    return useContext(BottomSheetScrollContext);
+}
 
 // ── Props ───────────────────────────────────────────
 
 export interface BottomSheetProps {
-    /** Whether the sheet is visible */
     visible: boolean;
-    /** Called when the sheet should close (backdrop tap, swipe down, close button) */
     onClose: () => void;
-    /** Title displayed in the header. If omitted, no header is rendered. */
     title?: string;
-    /** Height as a ratio of screen height (0-1). Default: 0.72 */
     heightRatio?: number;
-    /** Content to render in the scrollable middle area */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     children: any;
-    /** Fixed footer content (e.g., input bar). Rendered below the scrollable area. */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     footer?: any;
-    /** Icon name for the close button. Default: "close" */
     closeIcon?: string;
-    /** Whether to wrap in KeyboardAvoidingView. Default: true if footer is provided */
     keyboardAvoiding?: boolean;
-    /** Right-side header action (e.g., a send button) */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     headerRight?: any;
-    /** Whether to show the drag handle. Default: true */
     showHandle?: boolean;
+    /**
+     * Called by the BottomSheet to provide a scroll offset reporter.
+     * Pass this to your FlatList/ScrollView's onScroll to enable
+     * swipe-to-dismiss from anywhere (not just the handle).
+     *
+     * Usage in children:
+     *   <FlatList onScroll={onContentScroll} scrollEventThrottle={16} />
+     */
+    onContentScroll?: (event: { nativeEvent: { contentOffset: { y: number } } }) => void;
 }
 
 // ── Component ───────────────────────────────────────
@@ -81,69 +99,136 @@ function BottomSheetInner({
     keyboardAvoiding,
     headerRight,
     showHandle = true,
+    onContentScroll: externalOnContentScroll,
 }: BottomSheetProps) {
     const { colors: c } = useTheme();
     const insets = useSafeAreaInsets();
     const sheetHeight = SCREEN_HEIGHT * heightRatio;
 
-    // ── Swipe-to-dismiss animation ──────────────────
     const translateY = useRef(new RNAnimated.Value(0)).current;
+    const backdropOpacity = useRef(new RNAnimated.Value(1)).current;
 
-    // Reset translateY when sheet opens
+    // Track whether the inner scroll content is at the very top.
+    // When it is, a downward drag should dismiss the sheet instead of scrolling.
+    const scrollOffsetRef = useRef(0);
+    const [isScrollAtTop, setIsScrollAtTop] = useState(true);
+
+    // Expose a way for children (FlatList) to report their scroll offset
+    // We'll pass this via context-like callback
+    const handleScrollOffset = useCallback((offset: number) => {
+        scrollOffsetRef.current = offset;
+        setIsScrollAtTop(offset <= 1);
+    }, []);
+
+    // Reset when sheet opens
     useEffect(() => {
         if (visible) {
             translateY.setValue(0);
+            backdropOpacity.setValue(1);
+            scrollOffsetRef.current = 0;
+            setIsScrollAtTop(true);
         }
-    }, [visible, translateY]);
+    }, [visible, translateY, backdropOpacity]);
 
-    // PanResponder — attached ONLY to the drag handle area
+    // ── PanResponder on the ENTIRE sheet ────────────
+    // Only captures when dragging down AND scroll is at top
     const panResponder = useRef(
         PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: (_, gestureState) =>
-                gestureState.dy > 6 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
-            onPanResponderMove: (_, gestureState) => {
-                // Only allow downward dragging
-                if (gestureState.dy > 0) {
-                    translateY.setValue(gestureState.dy);
+            onStartShouldSetPanResponder: () => false,
+            onMoveShouldSetPanResponder: (_, gs) => {
+                // Only capture if:
+                // 1. Dragging downward (dy > 8 to avoid accidental captures)
+                // 2. More vertical than horizontal
+                // 3. Inner scroll is at the top
+                const isDraggingDown = gs.dy > 8;
+                const isVertical = Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5;
+                const atTop = scrollOffsetRef.current <= 1;
+                return isDraggingDown && isVertical && atTop;
+            },
+            onPanResponderGrant: () => {
+                // Provide haptic feedback when grab starts
+            },
+            onPanResponderMove: (_, gs) => {
+                if (gs.dy > 0) {
+                    translateY.setValue(gs.dy);
+                    // Fade backdrop as sheet slides down
+                    const progress = Math.min(gs.dy / sheetHeight, 1);
+                    backdropOpacity.setValue(1 - progress * 0.6);
                 }
             },
-            onPanResponderRelease: (_, gestureState) => {
-                if (gestureState.dy > DRAG_DISMISS_THRESHOLD) {
-                    // Dismiss
-                    RNAnimated.timing(translateY, {
-                        toValue: sheetHeight,
-                        duration: 200,
-                        useNativeDriver: true,
-                    }).start(() => onClose());
+            onPanResponderRelease: (_, gs) => {
+                const shouldDismiss =
+                    gs.dy > DRAG_DISMISS_THRESHOLD ||
+                    gs.vy > VELOCITY_DISMISS_THRESHOLD;
+
+                if (shouldDismiss) {
+                    // Animate out
+                    RNAnimated.parallel([
+                        RNAnimated.timing(translateY, {
+                            toValue: sheetHeight,
+                            duration: 200,
+                            useNativeDriver: true,
+                        }),
+                        RNAnimated.timing(backdropOpacity, {
+                            toValue: 0,
+                            duration: 200,
+                            useNativeDriver: true,
+                        }),
+                    ]).start(() => onClose());
                 } else {
                     // Snap back
-                    RNAnimated.spring(translateY, {
-                        toValue: 0,
-                        useNativeDriver: true,
-                        damping: 20,
-                        stiffness: 200,
-                    }).start();
+                    RNAnimated.parallel([
+                        RNAnimated.spring(translateY, {
+                            toValue: 0,
+                            useNativeDriver: true,
+                            damping: 20,
+                            stiffness: 200,
+                        }),
+                        RNAnimated.timing(backdropOpacity, {
+                            toValue: 1,
+                            duration: 150,
+                            useNativeDriver: true,
+                        }),
+                    ]).start();
                 }
             },
         })
     ).current;
 
     const handleClose = useCallback(() => {
-        RNAnimated.timing(translateY, {
-            toValue: sheetHeight,
-            duration: 200,
-            useNativeDriver: true,
-        }).start(() => onClose());
-    }, [onClose, translateY, sheetHeight]);
+        RNAnimated.parallel([
+            RNAnimated.timing(translateY, {
+                toValue: sheetHeight,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+            RNAnimated.timing(backdropOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+        ]).start(() => onClose());
+    }, [onClose, translateY, backdropOpacity, sheetHeight]);
 
-    // Determine if we need keyboard avoidance
     const needsKeyboard = keyboardAvoiding ?? !!footer;
 
     if (!visible) return null;
 
+    // Create the onContentScroll handler that children should attach to their FlatList/ScrollView.
+    // This reports scroll offset so the PanResponder knows when to capture swipe-down gestures.
+    const onContentScroll = useCallback((e: { nativeEvent: { contentOffset: { y: number } } }) => {
+        handleScrollOffset(e.nativeEvent.contentOffset.y);
+        // Forward to external handler if provided
+        if (externalOnContentScroll) {
+            externalOnContentScroll(e);
+        }
+    }, [handleScrollOffset, externalOnContentScroll]);
+
+    // Pass onContentScroll to children via React context or by cloning.
+    // We use a simple approach: wrap children in a context provider.
     const sheetContent = (
         <RNAnimated.View
+            {...panResponder.panHandlers}
             style={[
                 styles.sheet,
                 {
@@ -153,36 +238,36 @@ function BottomSheetInner({
                 },
             ]}
         >
-            {/* ── Drag handle area (PanResponder attached here ONLY) ── */}
-            <View {...panResponder.panHandlers}>
-                {showHandle && (
-                    <View style={styles.handleBar}>
-                        <View style={[styles.handle, { backgroundColor: c.text.muted + '50' }]} />
-                    </View>
-                )}
+            {/* Drag handle — visual indicator */}
+            {showHandle && (
+                <View style={styles.handleBar}>
+                    <View style={[styles.handle, { backgroundColor: c.text.muted + '50' }]} />
+                </View>
+            )}
 
-                {/* Header */}
-                {title != null && (
-                    <View style={[styles.header, { borderBottomColor: c.border.subtle }]}>
-                        <Text style={[styles.headerTitle, { color: c.text.primary }]}>{title}</Text>
-                        <TouchableOpacity
-                            style={styles.headerCloseBtn}
-                            onPress={handleClose}
-                            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                            accessibilityLabel="Close"
-                            accessibilityRole="button"
-                        >
-                            <Ionicons name={closeIcon as keyof typeof Ionicons.glyphMap} size={22} color={c.text.secondary} />
-                        </TouchableOpacity>
-                        {headerRight ? <View style={styles.headerRight}>{headerRight}</View> : null}
-                    </View>
-                )}
-            </View>
+            {/* Header */}
+            {title != null && (
+                <View style={[styles.header, { borderBottomColor: c.border.subtle }]}>
+                    <Text style={[styles.headerTitle, { color: c.text.primary }]}>{title}</Text>
+                    <TouchableOpacity
+                        style={styles.headerCloseBtn}
+                        onPress={handleClose}
+                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                        accessibilityLabel="Close"
+                        accessibilityRole="button"
+                    >
+                        <Ionicons name={closeIcon as keyof typeof Ionicons.glyphMap} size={22} color={c.text.secondary} />
+                    </TouchableOpacity>
+                    {headerRight ? <View style={styles.headerRight}>{headerRight}</View> : null}
+                </View>
+            )}
 
-            {/* ── Scrollable content area (flex: 1) ── */}
-            <View style={styles.contentContainer}>{children}</View>
+            {/* Scrollable content (flex: 1) — context provides scroll handler */}
+            <BottomSheetScrollContext.Provider value={onContentScroll}>
+                <View style={styles.contentContainer}>{children}</View>
+            </BottomSheetScrollContext.Provider>
 
-            {/* ── Fixed footer (intrinsic height, pinned to bottom) ── */}
+            {/* Fixed footer */}
             {footer ? (
                 <View style={[styles.footerContainer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
                     {footer}
@@ -199,10 +284,12 @@ function BottomSheetInner({
             statusBarTranslucent
             onRequestClose={handleClose}
         >
-            {/* Backdrop */}
-            <Pressable style={styles.backdrop} onPress={handleClose} />
+            {/* Backdrop — tap to dismiss */}
+            <RNAnimated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+            </RNAnimated.View>
 
-            {/* Sheet — optionally wrapped in KeyboardAvoidingView */}
+            {/* Sheet */}
             {needsKeyboard ? (
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -271,17 +358,13 @@ const styles = StyleSheet.create({
         left: 16,
         top: 12,
     },
-    // The content container takes all remaining space
     contentContainer: {
         flex: 1,
     },
-    // Footer has intrinsic height — no flex
     footerContainer: {
-        // paddingBottom is set dynamically for safe area
+        // paddingBottom set dynamically for safe area
     },
 });
-
-// ── Export ───────────────────────────────────────────
 
 export const BottomSheet = memo(BottomSheetInner);
 export default BottomSheet;

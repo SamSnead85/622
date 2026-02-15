@@ -3,7 +3,7 @@
 // Import all reusable components from here
 // ============================================
 
-export { BottomSheet } from './BottomSheet';
+export { BottomSheet, useBottomSheetScroll } from './BottomSheet';
 export type { BottomSheetProps } from './BottomSheet';
 export { BackButton } from './BackButton';
 export { ScreenHeader } from './ScreenHeader';

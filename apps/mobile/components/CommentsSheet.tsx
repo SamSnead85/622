@@ -28,7 +28,7 @@ import { useAuthStore } from '../stores';
 import { apiFetch, API } from '../lib/api';
 import { AVATAR_PLACEHOLDER } from '../lib/imagePlaceholder';
 import { timeAgo } from '../lib/utils';
-import { BottomSheet } from './BottomSheet';
+import { BottomSheet, useBottomSheetScroll } from './BottomSheet';
 import { EmptyState } from './EmptyState';
 import { LoadingView } from './LoadingView';
 
@@ -286,6 +286,62 @@ const InputFooter = memo(({
     );
 });
 
+// ── CommentsList — lives inside BottomSheet context ─
+
+const CommentsList = memo(({
+    comments,
+    isLoading,
+    flatListRef,
+    onReply,
+    onLike,
+}: {
+    comments: Comment[];
+    isLoading: boolean;
+    flatListRef: React.RefObject<FlatList | null>;
+    onReply: (comment: Comment) => void;
+    onLike: (commentId: string) => void;
+}) => {
+    const sheetScroll = useBottomSheetScroll();
+
+    if (isLoading) {
+        return <LoadingView message="" />;
+    }
+
+    if (comments.length === 0) {
+        return (
+            <EmptyState
+                icon="chatbubble-outline"
+                title="No comments yet"
+                message="Start the conversation."
+                iconSize={40}
+            />
+        );
+    }
+
+    return (
+        <FlatList
+            ref={flatListRef}
+            data={comments}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+                <CommentRow
+                    comment={item}
+                    depth={0}
+                    onReply={onReply}
+                    onLike={onLike}
+                />
+            )}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 8 }}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            onScroll={sheetScroll ?? undefined}
+            scrollEventThrottle={16}
+            bounces={false}
+        />
+    );
+});
+
 // ── Main CommentsSheet ──────────────────────────────
 
 function CommentsSheetInner({ postId, onClose, onCommentCountChange }: CommentsSheetProps) {
@@ -458,34 +514,13 @@ function CommentsSheetInner({ postId, onClose, onCommentCountChange }: CommentsS
             heightRatio={0.72}
             footer={footer}
         >
-            {isLoading ? (
-                <LoadingView message="" />
-            ) : comments.length === 0 ? (
-                <EmptyState
-                    icon="chatbubble-outline"
-                    title="No comments yet"
-                    message="Start the conversation."
-                    iconSize={40}
-                />
-            ) : (
-                <FlatList
-                    ref={flatListRef}
-                    data={comments}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <CommentRow
-                            comment={item}
-                            depth={0}
-                            onReply={handleReply}
-                            onLike={handleLike}
-                        />
-                    )}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 8 }}
-                    keyboardShouldPersistTaps="handled"
-                    keyboardDismissMode="interactive"
-                />
-            )}
+            <CommentsList
+                comments={comments}
+                isLoading={isLoading}
+                flatListRef={flatListRef}
+                onReply={handleReply}
+                onLike={handleLike}
+            />
         </BottomSheet>
     );
 }
