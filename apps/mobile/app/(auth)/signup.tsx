@@ -17,6 +17,7 @@ import {
     ActivityIndicator,
     Keyboard,
     Pressable,
+    Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -509,11 +510,7 @@ export default function SignupScreen() {
     }, [validateForm, signup, email, password, displayName, router, buttonScale]);
 
     return (
-        <LinearGradient
-            colors={[c.background, isDark ? c.obsidian[800] : c.obsidian[900], c.background]}
-            locations={[0, 0.5, 1]}
-            style={styles.container}
-        >
+        <View style={[styles.container, { backgroundColor: c.background }]}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
@@ -548,6 +545,25 @@ export default function SignupScreen() {
                                 Your community is waiting
                             </Text>
                         </View>
+                    </Animated.View>
+
+                    {/* Step indicator — shows progress through signup flow */}
+                    <Animated.View entering={FadeIn.delay(80).duration(300)} style={styles.stepRow}>
+                        {['Account', 'Verify', 'Username'].map((step, i) => (
+                            <View key={step} style={styles.stepItem}>
+                                <View style={[
+                                    styles.stepDot,
+                                    {
+                                        backgroundColor: i === 0 ? c.gold[500] : c.border.subtle,
+                                    },
+                                ]}>
+                                    {i === 0 && <Ionicons name="person-add" size={10} color={c.text.inverse} />}
+                                    {i > 0 && <Text style={[styles.stepNum, { color: i === 0 ? c.text.inverse : c.text.muted }]}>{i + 1}</Text>}
+                                </View>
+                                <Text style={[styles.stepLabel, { color: i === 0 ? c.text.primary : c.text.muted }]}>{step}</Text>
+                                {i < 2 && <View style={[styles.stepLine, { backgroundColor: c.border.subtle }]} />}
+                            </View>
+                        ))}
                     </Animated.View>
 
                     {/* General Error Banner */}
@@ -827,12 +843,27 @@ export default function SignupScreen() {
                     {/* Terms */}
                     <Animated.View entering={FadeIn.delay(420).duration(300)}>
                         <Text style={[styles.terms, { color: c.text.muted }]}>
-                            By signing up, you agree to our Terms of Service and Privacy Policy
+                            By signing up, you agree to our{' '}
+                            <Text
+                                style={{ color: c.gold[500], fontWeight: '600' }}
+                                onPress={() => Linking.openURL('https://0g.social/terms')}
+                                accessibilityRole="link"
+                            >
+                                Terms of Service
+                            </Text>
+                            {' and '}
+                            <Text
+                                style={{ color: c.gold[500], fontWeight: '600' }}
+                                onPress={() => Linking.openURL('https://0g.social/privacy')}
+                                accessibilityRole="link"
+                            >
+                                Privacy Policy
+                            </Text>
                         </Text>
                     </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </LinearGradient>
+        </View>
     );
 }
 
@@ -865,6 +896,42 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
         fontFamily: 'Inter',
         opacity: 0.7,
+    },
+
+    // ---- Step Indicator ----
+    stepRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.xl,
+        gap: 4,
+    },
+    stepItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    stepDot: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    stepNum: {
+        fontSize: 10,
+        fontWeight: '700',
+        fontFamily: 'Inter-Bold',
+    },
+    stepLabel: {
+        fontSize: typography.fontSize.xs,
+        fontWeight: '500',
+        fontFamily: 'Inter-Medium',
+    },
+    stepLine: {
+        width: 24,
+        height: 1.5,
+        borderRadius: 1,
     },
 
     // ---- Error Banner ----

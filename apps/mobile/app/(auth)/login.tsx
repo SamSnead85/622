@@ -375,11 +375,7 @@ export default function LoginScreen() {
     }, [email, resetSending]);
 
     return (
-        <LinearGradient
-            colors={[c.background, isDark ? c.obsidian[800] : c.obsidian[900], c.background]}
-            locations={[0, 0.5, 1]}
-            style={styles.container}
-        >
+        <View style={[styles.container, { backgroundColor: c.background }]}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
@@ -611,7 +607,7 @@ export default function LoginScreen() {
                     </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </LinearGradient>
+        </View>
     );
 }
 

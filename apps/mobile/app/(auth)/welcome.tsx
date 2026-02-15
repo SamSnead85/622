@@ -4,7 +4,7 @@
 // and luxury brand aesthetics (centered, breathing room, contrast)
 // ============================================
 
-import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +18,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
+
+const TERMS_URL = 'https://0g.social/terms';
+const PRIVACY_URL = 'https://0g.social/privacy';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -149,9 +152,21 @@ export default function WelcomeScreen() {
                 <Animated.View entering={FadeIn.delay(1000).duration(400)} style={styles.footer}>
                     <Text style={[styles.termsText, { color: c.text.muted }]}>
                         By continuing, you agree to our{' '}
-                        <Text style={[styles.termsLink, { color: accentColor }]}>Terms</Text>
+                        <Text
+                            style={[styles.termsLink, { color: accentColor }]}
+                            onPress={() => Linking.openURL(TERMS_URL)}
+                            accessibilityRole="link"
+                        >
+                            Terms
+                        </Text>
                         {' & '}
-                        <Text style={[styles.termsLink, { color: accentColor }]}>Privacy Policy</Text>.
+                        <Text
+                            style={[styles.termsLink, { color: accentColor }]}
+                            onPress={() => Linking.openURL(PRIVACY_URL)}
+                            accessibilityRole="link"
+                        >
+                            Privacy Policy
+                        </Text>.
                     </Text>
                 </Animated.View>
             </ScrollView>

@@ -84,10 +84,8 @@ export default function RequestAccessScreen() {
     // ---- Success State ----
     if (isSubmitted) {
         return (
-            <LinearGradient
-                colors={[c.background, isDark ? c.obsidian[300] : c.background, c.background]}
-                locations={[0, 0.5, 1]}
-                style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+            <View
+                style={[styles.container, { backgroundColor: c.background, paddingTop: insets.top, paddingBottom: insets.bottom }]}
             >
                 <View style={styles.successContainer}>
                     <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.successIconWrap}>
@@ -118,17 +116,13 @@ export default function RequestAccessScreen() {
                         </TouchableOpacity>
                     </Animated.View>
                 </View>
-            </LinearGradient>
+            </View>
         );
     }
 
     // ---- Form State ----
     return (
-        <LinearGradient
-            colors={[c.background, isDark ? c.obsidian[300] : c.background, c.background]}
-            locations={[0, 0.5, 1]}
-            style={styles.container}
-        >
+        <View style={[styles.container, { backgroundColor: c.background }]}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
@@ -275,7 +269,7 @@ export default function RequestAccessScreen() {
                     </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </LinearGradient>
+        </View>
     );
 }
 

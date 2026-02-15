@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Keyboard,
+    Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -163,12 +164,43 @@ export default function VerifyEmailScreen() {
         }
     }, [code, isVerifying, handleVerify]);
 
+    const handleChangeEmail = useCallback(() => {
+        Alert.alert(
+            'Change Email',
+            'You\'ll need to go back and sign up with a different email address.',
+            [
+                { text: 'Stay Here', style: 'cancel' },
+                {
+                    text: 'Go Back',
+                    onPress: () => router.replace('/(auth)/signup' as any),
+                },
+            ],
+        );
+    }, [router]);
+
     return (
-        <LinearGradient
-            colors={[c.background, isDark ? c.obsidian[800] : c.obsidian[900], c.background]}
-            locations={[0, 0.5, 1]}
-            style={[styles.container, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 20 }]}
+        <View
+            style={[styles.container, { backgroundColor: c.background, paddingTop: insets.top + 40, paddingBottom: insets.bottom + 20 }]}
         >
+            {/* Step indicator — step 2 of 3 */}
+            <Animated.View entering={FadeInDown.delay(50).duration(300)} style={styles.stepRow}>
+                {['Account', 'Verify', 'Username'].map((step, i) => (
+                    <View key={step} style={styles.stepItem}>
+                        <View style={[
+                            styles.stepDot,
+                            {
+                                backgroundColor: i <= 1 ? c.gold[500] : c.border.subtle,
+                            },
+                        ]}>
+                            {i < 1 && <Ionicons name="checkmark" size={10} color={c.text.inverse} />}
+                            {i >= 1 && <Text style={[styles.stepNum, { color: i <= 1 ? c.text.inverse : c.text.muted }]}>{i + 1}</Text>}
+                        </View>
+                        <Text style={[styles.stepLabel, { color: i <= 1 ? c.text.primary : c.text.muted }]}>{step}</Text>
+                        {i < 2 && <View style={[styles.stepLine, { backgroundColor: i < 1 ? c.gold[500] : c.border.subtle }]} />}
+                    </View>
+                ))}
+            </Animated.View>
+
             {/* Shield icon */}
             <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.iconWrap}>
                 <View style={[styles.iconCircle, { backgroundColor: c.emerald[500] + '15' }]}>
@@ -187,6 +219,10 @@ export default function VerifyEmailScreen() {
                         {user?.email || 'your email'}
                     </Text>
                 </Text>
+                {/* Change email link */}
+                <TouchableOpacity onPress={handleChangeEmail} style={styles.changeEmailBtn}>
+                    <Text style={[styles.changeEmailText, { color: c.gold[500] }]}>Wrong email?</Text>
+                </TouchableOpacity>
             </Animated.View>
 
             {/* OTP Input */}
@@ -283,6 +319,16 @@ export default function VerifyEmailScreen() {
                 </TouchableOpacity>
             </Animated.View>
 
+            {/* Troubleshooting tips */}
+            <Animated.View entering={FadeInDown.delay(600).duration(400)} style={styles.troubleWrap}>
+                <Text style={[styles.troubleTitle, { color: c.text.muted }]}>Not seeing the email?</Text>
+                <Text style={[styles.troubleTip, { color: c.text.muted }]}>
+                    {'\u2022'} Check your spam or junk folder{'\n'}
+                    {'\u2022'} Make sure {user?.email || 'your email'} is correct{'\n'}
+                    {'\u2022'} Allow a few minutes for delivery
+                </Text>
+            </Animated.View>
+
             {/* Skip */}
             <TouchableOpacity onPress={handleSkip} style={styles.skipWrap} accessibilityRole="button" accessibilityLabel="Skip verification for now">
                 <Text style={[styles.skipText, { color: c.text.muted }]}>
@@ -292,7 +338,7 @@ export default function VerifyEmailScreen() {
                     You'll need to verify before posting
                 </Text>
             </TouchableOpacity>
-        </LinearGradient>
+        </View>
     );
 }
 
@@ -394,6 +440,63 @@ const styles = StyleSheet.create({
     resendButton: {
         fontSize: typography.fontSize.sm,
         fontWeight: '600' as const,
+    },
+    // ---- Step indicator ----
+    stepRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.xl,
+        gap: 4,
+    },
+    stepItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    stepDot: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    stepNum: {
+        fontSize: 10,
+        fontWeight: '700' as const,
+    },
+    stepLabel: {
+        fontSize: 11,
+        fontWeight: '500' as const,
+    },
+    stepLine: {
+        width: 24,
+        height: 1.5,
+        borderRadius: 1,
+    },
+    // ---- Change email ----
+    changeEmailBtn: {
+        alignSelf: 'center',
+        marginTop: spacing.sm,
+    },
+    changeEmailText: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '500' as const,
+    },
+    // ---- Troubleshooting ----
+    troubleWrap: {
+        alignItems: 'center',
+        marginBottom: spacing.lg,
+    },
+    troubleTitle: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '600' as const,
+        marginBottom: 4,
+    },
+    troubleTip: {
+        fontSize: typography.fontSize.xs,
+        lineHeight: 18,
+        textAlign: 'center',
     },
     skipWrap: {
         alignItems: 'center',

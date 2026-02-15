@@ -3,7 +3,7 @@
 // Simplified: pick a username, then go to main app
 // ============================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
@@ -49,17 +49,51 @@ const reqStyles = StyleSheet.create({
     text: { fontSize: typography.fontSize.sm },
 });
 
+// Generate username suggestions from a display name
+function generateSuggestions(displayName: string): string[] {
+    if (!displayName || displayName.trim().length < 2) return [];
+    const clean = displayName.trim().toLowerCase().replace(/[^a-z0-9 ]/g, '');
+    const parts = clean.split(/\s+/).filter(Boolean);
+    const suggestions: string[] = [];
+
+    if (parts.length >= 2) {
+        // firstname.lastname style
+        suggestions.push(`${parts[0]}_${parts[parts.length - 1]}`);
+        // firstlast
+        suggestions.push(`${parts[0]}${parts[parts.length - 1]}`);
+        // first initial + last
+        suggestions.push(`${parts[0][0]}${parts[parts.length - 1]}`);
+    }
+    if (parts[0]) {
+        // firstname + random digits
+        const rand = Math.floor(Math.random() * 900) + 100;
+        suggestions.push(`${parts[0]}${rand}`);
+        suggestions.push(`${parts[0]}_0g`);
+    }
+
+    return suggestions
+        .map(s => s.substring(0, 20))
+        .filter(s => s.length >= 3 && /^[a-z0-9_]+$/.test(s));
+}
+
 export default function UsernameScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { colors: c, isDark } = useTheme();
     const refreshUser = useAuthStore((s) => s.refreshUser);
+    const user = useAuthStore((s) => s.user);
 
     const [username, setUsername] = useState('');
     const [loading, setLoading] = useState(false);
     const [checking, setChecking] = useState(false);
     const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
     const [error, setError] = useState('');
+
+    // Generate suggestions from user's display name
+    const suggestions = useMemo(
+        () => generateSuggestions(user?.displayName || ''),
+        [user?.displayName],
+    );
 
     // Username availability check
     useEffect(() => {
@@ -130,11 +164,7 @@ export default function UsernameScreen() {
     }, [refreshUser, router]);
 
     return (
-        <LinearGradient
-            colors={[c.background, isDark ? c.obsidian[800] : c.obsidian[900], c.background]}
-            locations={[0, 0.5, 1]}
-            style={styles.container}
-        >
+        <View style={[styles.container, { backgroundColor: c.background }]}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
@@ -150,16 +180,35 @@ export default function UsernameScreen() {
                     {/* Back button */}
                     <BackButton
                         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.back(); }}
-                        style={{ alignSelf: 'flex-start', marginBottom: spacing.xl }}
+                        style={{ alignSelf: 'flex-start', marginBottom: spacing.md }}
                     />
+
+                    {/* Step indicator — step 3 of 3 */}
+                    <Animated.View entering={FadeIn.delay(50).duration(300)} style={styles.stepRow}>
+                        {['Account', 'Verify', 'Username'].map((step, i) => (
+                            <View key={step} style={styles.stepItem}>
+                                <View style={[
+                                    styles.stepDot,
+                                    {
+                                        backgroundColor: i <= 2 ? c.gold[500] : c.border.subtle,
+                                    },
+                                ]}>
+                                    {i < 2 && <Ionicons name="checkmark" size={10} color={c.text.inverse} />}
+                                    {i === 2 && <Text style={[styles.stepNum, { color: c.text.inverse }]}>{i + 1}</Text>}
+                                </View>
+                                <Text style={[styles.stepLabel, { color: i <= 2 ? c.text.primary : c.text.muted }]}>{step}</Text>
+                                {i < 2 && <View style={[styles.stepLine, { backgroundColor: c.gold[500] }]} />}
+                            </View>
+                        ))}
+                    </Animated.View>
 
                     {/* Header */}
                     <Animated.View entering={FadeInDown.delay(100).duration(500)}>
                         <Text style={[styles.title, { color: c.text.primary }]}>
-                            What would you like{'\n'}to be called?
+                            Choose your handle
                         </Text>
                         <Text style={[styles.subtitle, { color: c.text.secondary }]}>
-                            Your @handle is unique. You can change it anytime
+                            This is how people will find you. You can change it anytime.
                         </Text>
                     </Animated.View>
 
@@ -224,12 +273,40 @@ export default function UsernameScreen() {
                             {error ? <Text style={[styles.statusText, { color: c.coral[500] }]}>{error}</Text> : null}
                         </View>
 
+                        {/* Character counter */}
+                        <Text style={[styles.charCounter, { color: username.length > 20 ? c.coral[500] : c.text.muted }]}>
+                            {username.length}/20
+                        </Text>
+
                         {/* Requirements */}
                         <View style={styles.requirements}>
                             <RequirementItem met={username.length >= 3} text="At least 3 characters" colors={c} />
                             <RequirementItem met={username.length <= 20} text="Maximum 20 characters" colors={c} />
                             <RequirementItem met={/^[a-z0-9_]*$/.test(username)} text="Only lowercase, numbers, underscores" colors={c} />
                         </View>
+
+                        {/* Username suggestions */}
+                        {suggestions.length > 0 && !username && (
+                            <Animated.View entering={FadeIn.delay(300).duration(300)} style={styles.suggestionsWrap}>
+                                <Text style={[styles.suggestionsTitle, { color: c.text.muted }]}>Suggestions</Text>
+                                <View style={styles.suggestionsRow}>
+                                    {suggestions.slice(0, 4).map((s) => (
+                                        <TouchableOpacity
+                                            key={s}
+                                            style={[styles.suggestionChip, { backgroundColor: c.surface.glass, borderColor: c.border.subtle }]}
+                                            onPress={() => {
+                                                setUsername(s);
+                                                setError('');
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            }}
+                                            accessibilityLabel={`Use username ${s}`}
+                                        >
+                                            <Text style={[styles.suggestionText, { color: c.text.secondary }]}>@{s}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </Animated.View>
+                        )}
                     </Animated.View>
 
                     {/* Spacer */}
@@ -270,7 +347,7 @@ export default function UsernameScreen() {
                     </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </LinearGradient>
+        </View>
     );
 }
 
@@ -351,6 +428,70 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
     },
 
+    // ---- Step indicator ----
+    stepRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.xl,
+        gap: 4,
+    },
+    stepItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    stepDot: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    stepNum: {
+        fontSize: 10,
+        fontWeight: '700',
+    },
+    stepLabel: {
+        fontSize: 11,
+        fontWeight: '500',
+    },
+    stepLine: {
+        width: 24,
+        height: 1.5,
+        borderRadius: 1,
+    },
+    // ---- Character counter ----
+    charCounter: {
+        fontSize: typography.fontSize.xs,
+        textAlign: 'right',
+        marginTop: spacing.xs,
+    },
+    // ---- Suggestions ----
+    suggestionsWrap: {
+        marginTop: spacing.lg,
+    },
+    suggestionsTitle: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: '500',
+        marginBottom: spacing.sm,
+        fontFamily: 'Inter-Medium',
+    },
+    suggestionsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.sm,
+    },
+    suggestionChip: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+    },
+    suggestionText: {
+        fontSize: typography.fontSize.sm,
+        fontFamily: 'Inter-Medium',
+    },
     // ---- Spacer ----
     spacer: { flex: 1, minHeight: 40 },
 
