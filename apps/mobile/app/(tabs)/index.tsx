@@ -383,10 +383,11 @@ function LikeHeartOverlay({ show }: { show: boolean }) {
 
     useEffect(() => {
         if (show) {
+            // Instagram-style: start small, overshoot big, then shrink slightly before fading
             scale.value = 0;
             opacity.value = 1;
-            scale.value = withSpring(1.2, { damping: 6, stiffness: 200 });
-            opacity.value = withDelay(600, withTiming(0, { duration: 400 }));
+            scale.value = withSpring(1.3, { damping: 5, stiffness: 180, mass: 0.8 });
+            opacity.value = withDelay(700, withTiming(0, { duration: 300 }));
         }
     }, [show]);
 
@@ -397,7 +398,7 @@ function LikeHeartOverlay({ show }: { show: boolean }) {
 
     return (
         <Animated.View style={[styles.heartOverlay, animatedStyle]} pointerEvents="none">
-            <Ionicons name="heart" size={80} color={colors.gold[500]} />
+            <Ionicons name="heart" size={110} color="#FF3040" />
         </Animated.View>
     );
 }
@@ -406,27 +407,32 @@ function LikeHeartOverlay({ show }: { show: boolean }) {
 // Read More Text
 // ============================================
 function ReadMoreText({ text }: { text: string }) {
+    const { colors: c } = useTheme();
     const [expanded, setExpanded] = useState(false);
     const [needsExpansion, setNeedsExpansion] = useState(false);
 
+    // Instagram-style: "more" appears inline at end of truncated text
     return (
         <View>
             <Text
                 style={styles.postContent}
-                numberOfLines={expanded ? undefined : 3}
+                numberOfLines={expanded ? undefined : 2}
                 onTextLayout={(e) => {
-                    if (!expanded && e.nativeEvent.lines.length > 3) {
+                    if (!expanded && e.nativeEvent.lines.length > 2) {
                         setNeedsExpansion(true);
                     }
                 }}
             >
                 {text}
+                {needsExpansion && !expanded && (
+                    <Text
+                        style={{ color: c.text.muted, fontSize: 14 }}
+                        onPress={() => setExpanded(true)}
+                    >
+                        {' '}...more
+                    </Text>
+                )}
             </Text>
-            {needsExpansion && !expanded && (
-                <TouchableOpacity onPress={() => setExpanded(true)} accessibilityRole="button" accessibilityLabel="Read more">
-                    <Text style={styles.readMore}>Read more</Text>
-                </TouchableOpacity>
-            )}
         </View>
     );
 }
@@ -664,6 +670,32 @@ const FeedPostCard = memo(
                                     
                                 </Text>
                             </View>
+                        </TouchableOpacity>
+                        {/* Three-dot menu — Instagram-style */}
+                        <TouchableOpacity
+                            style={styles.postMenuBtn}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                if (isOwnPost) {
+                                    // Own post: reorder/delete
+                                    Alert.alert('Post Options', undefined, [
+                                        { text: 'Move Up', onPress: () => onReorder?.(post.id, 'up') },
+                                        { text: 'Move Down', onPress: () => onReorder?.(post.id, 'down') },
+                                        { text: 'Delete', style: 'destructive', onPress: () => onDelete?.(post.id) },
+                                        { text: 'Cancel', style: 'cancel' },
+                                    ]);
+                                } else {
+                                    // Other's post: report
+                                    Alert.alert('Post Options', undefined, [
+                                        { text: 'Report', style: 'destructive', onPress: () => onReport?.(post.id) },
+                                        { text: 'Cancel', style: 'cancel' },
+                                    ]);
+                                }
+                            }}
+                            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                            accessibilityLabel="More options"
+                        >
+                            <Ionicons name="ellipsis-horizontal" size={20} color={colors.text.secondary} />
                         </TouchableOpacity>
                     </View>
 
@@ -2330,6 +2362,7 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.sm,
     },
     authorRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+    postMenuBtn: { padding: 8 },
     verifiedBadge: { marginStart: 4 },
     crossPostBadge: {
         marginStart: 4,

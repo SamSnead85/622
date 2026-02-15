@@ -40,7 +40,7 @@ import { useAuthStore, Post, mapApiPost } from '../../stores';
 import { apiFetch, apiUpload, API } from '../../lib/api';
 import { showError } from '../../stores/toastStore';
 import { IMAGE_PLACEHOLDER } from '../../lib/imagePlaceholder';
-import { formatCount } from '../../lib/utils';
+import { formatCount, timeAgo } from '../../lib/utils';
 import { getProfileCompletion, ProfileStep } from '../../lib/profileCompletion';
 import { ErrorBoundary } from '../../components';
 
@@ -215,6 +215,7 @@ export default function ProfileScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [loadedTabs, setLoadedTabs] = useState<Set<ProfileTab>>(new Set(['posts']));
     const [loadError, setLoadError] = useState<string | null>(null);
     const [viewerImage, setViewerImage] = useState<string | null>(null);
@@ -418,6 +419,44 @@ export default function ProfileScreen() {
             <PostGridItem post={item} index={index} />
         ),
         [],
+    );
+
+    // List view render — shows larger post preview with caption
+    const renderPostList = useCallback(
+        ({ item }: { item: Post }) => (
+            <TouchableOpacity
+                style={styles.postListItem}
+                activeOpacity={0.85}
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push(`/post/${item.id}`);
+                }}
+            >
+                {item.mediaUrl ? (
+                    <Image
+                        source={{ uri: item.thumbnailUrl || item.mediaUrl }}
+                        style={styles.postListImage}
+                        placeholder={IMAGE_PLACEHOLDER.blurhash}
+                        transition={150}
+                        cachePolicy="memory-disk"
+                        contentFit="cover"
+                    />
+                ) : null}
+                <View style={styles.postListContent}>
+                    <Text style={[styles.postListText, { color: c.text.primary }]} numberOfLines={2}>
+                        {item.content || 'No caption'}
+                    </Text>
+                    <View style={styles.postListMeta}>
+                        <Ionicons name="heart" size={12} color={c.text.muted} />
+                        <Text style={[styles.postListMetaText, { color: c.text.muted }]}>{formatCount(item.likesCount)}</Text>
+                        <Ionicons name="chatbubble" size={12} color={c.text.muted} style={{ marginLeft: 12 }} />
+                        <Text style={[styles.postListMetaText, { color: c.text.muted }]}>{formatCount(item.commentsCount)}</Text>
+                        <Text style={[styles.postListMetaText, { color: c.text.muted, marginLeft: 'auto' }]}>{timeAgo(item.createdAt)}</Text>
+                    </View>
+                </View>
+            </TouchableOpacity>
+        ),
+        [c, router],
     );
 
     // ── Loading State ────────────────────────────────────
@@ -887,6 +926,28 @@ export default function ProfileScreen() {
                     {/* Bottom gold line */}
                     <View style={styles.tabBottomLine} />
                 </Animated.View>
+
+                {/* Grid/List toggle — Instagram-style */}
+                {activeTab === 'posts' && (
+                    <View style={styles.viewModeRow}>
+                        <TouchableOpacity
+                            style={[styles.viewModeBtn, viewMode === 'grid' && styles.viewModeBtnActive]}
+                            onPress={() => setViewMode('grid')}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            accessibilityLabel="Grid view"
+                        >
+                            <Ionicons name="grid" size={18} color={viewMode === 'grid' ? colors.gold[500] : colors.text.muted} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.viewModeBtn, viewMode === 'list' && styles.viewModeBtnActive]}
+                            onPress={() => setViewMode('list')}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            accessibilityLabel="List view"
+                        >
+                            <Ionicons name="list" size={20} color={viewMode === 'list' ? colors.gold[500] : colors.text.muted} />
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
         </View>
     );
@@ -985,13 +1046,14 @@ export default function ProfileScreen() {
 
             <AnimatedFlatList
                 ref={flatListRef}
+                key={viewMode}
                 data={postsData}
-                renderItem={renderPost}
+                renderItem={viewMode === 'list' ? renderPostList : renderPost}
                 keyExtractor={(item: Post) => item.id}
-                numColumns={3}
+                numColumns={viewMode === 'grid' ? 3 : 1}
                 ListHeaderComponent={renderHeader}
                 ListEmptyComponent={renderEmpty}
-                columnWrapperStyle={styles.postsRow}
+                columnWrapperStyle={viewMode === 'grid' ? styles.postsRow : undefined}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 onScroll={scrollHandler}
@@ -1458,6 +1520,23 @@ const styles = StyleSheet.create({
         display: 'none',
     },
 
+    // ── View Mode Toggle ─────────────────────────────────
+    viewModeRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 24,
+        paddingVertical: 8,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border.subtle,
+    },
+    viewModeBtn: {
+        padding: 6,
+        borderRadius: 6,
+    },
+    viewModeBtnActive: {
+        // Active state handled by icon color
+    },
+
     // ── Posts Grid ────────────────────────────────────────
     postsRow: {
         gap: POST_GAP,
@@ -1520,6 +1599,40 @@ const styles = StyleSheet.create({
         fontSize: 9,
         color: colors.text.primary,
         fontWeight: '600',
+    },
+
+    // ── Post List View ───────────────────────────────────
+    postListItem: {
+        flexDirection: 'row',
+        paddingHorizontal: spacing.md,
+        paddingVertical: 12,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border.subtle,
+        gap: 12,
+    },
+    postListImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 8,
+    },
+    postListContent: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    postListText: {
+        fontSize: 14,
+        lineHeight: 20,
+        fontFamily: 'Inter-Regular',
+    },
+    postListMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 6,
+        gap: 4,
+    },
+    postListMetaText: {
+        fontSize: 12,
+        fontFamily: 'Inter-Regular',
     },
 
     // ── Skeleton ─────────────────────────────────────────

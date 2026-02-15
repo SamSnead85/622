@@ -12,7 +12,6 @@ import {
     View,
     Text,
     StyleSheet,
-    FlatList,
     TextInput,
     TouchableOpacity,
     ActivityIndicator,
@@ -28,7 +27,7 @@ import { useAuthStore } from '../stores';
 import { apiFetch, API } from '../lib/api';
 import { AVATAR_PLACEHOLDER } from '../lib/imagePlaceholder';
 import { timeAgo } from '../lib/utils';
-import { BottomSheet, useBottomSheetScroll } from './BottomSheet';
+import { BottomSheet, BottomSheetFlatList } from './BottomSheet';
 import { EmptyState } from './EmptyState';
 import { LoadingView } from './LoadingView';
 
@@ -291,18 +290,14 @@ const InputFooter = memo(({
 const CommentsList = memo(({
     comments,
     isLoading,
-    flatListRef,
     onReply,
     onLike,
 }: {
     comments: Comment[];
     isLoading: boolean;
-    flatListRef: React.RefObject<FlatList | null>;
     onReply: (comment: Comment) => void;
     onLike: (commentId: string) => void;
 }) => {
-    const sheetScroll = useBottomSheetScroll();
-
     if (isLoading) {
         return <LoadingView message="" />;
     }
@@ -318,12 +313,15 @@ const CommentsList = memo(({
         );
     }
 
+    // BottomSheetFlatList from @gorhom/bottom-sheet automatically
+    // coordinates with the sheet's gesture system — when scrolled to
+    // top, a downward drag dismisses the sheet. When scrolled down,
+    // normal scrolling works. This is the Instagram behavior.
     return (
-        <FlatList
-            ref={flatListRef}
+        <BottomSheetFlatList<Comment>
             data={comments}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
+            keyExtractor={(item: Comment) => item.id}
+            renderItem={({ item }: { item: Comment }) => (
                 <CommentRow
                     comment={item}
                     depth={0}
@@ -335,9 +333,6 @@ const CommentsList = memo(({
             contentContainerStyle={{ paddingBottom: 8 }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
-            onScroll={sheetScroll ?? undefined}
-            scrollEventThrottle={16}
-            bounces={false}
         />
     );
 });
@@ -354,7 +349,6 @@ function CommentsSheetInner({ postId, onClose, onCommentCountChange }: CommentsS
     const [inputText, setInputText] = useState('');
     const [replyTo, setReplyTo] = useState<Comment | null>(null);
     const inputRef = useRef<TextInput>(null);
-    const flatListRef = useRef<FlatList>(null);
     const isMountedRef = useRef(true);
 
     useEffect(() => {
@@ -483,6 +477,9 @@ function CommentsSheetInner({ postId, onClose, onCommentCountChange }: CommentsS
 
     const handleReply = useCallback((comment: Comment) => {
         setReplyTo(comment);
+        // Auto-insert @username like Instagram does
+        const mention = `@${comment.author.username} `;
+        setInputText((prev) => prev.startsWith(mention) ? prev : mention);
         setTimeout(() => inputRef.current?.focus(), 100);
     }, []);
 
@@ -510,14 +507,13 @@ function CommentsSheetInner({ postId, onClose, onCommentCountChange }: CommentsS
         <BottomSheet
             visible={!!postId}
             onClose={onClose}
-            title="Comments"
+            title={comments.length > 0 ? `Comments (${comments.length})` : 'Comments'}
             heightRatio={0.72}
             footer={footer}
         >
             <CommentsList
                 comments={comments}
                 isLoading={isLoading}
-                flatListRef={flatListRef}
                 onReply={handleReply}
                 onLike={handleLike}
             />
