@@ -2027,7 +2027,7 @@ export default function FeedScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="More options"
                     >
-                        <Ionicons name="add-circle-outline" size={24} color={c.text.secondary} />
+                        <Ionicons name="menu" size={24} color={c.text.secondary} />
                     </TouchableOpacity>
                 </View>
             </View>
