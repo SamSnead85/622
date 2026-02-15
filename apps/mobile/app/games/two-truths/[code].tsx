@@ -38,7 +38,8 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '@zerog/ui';
-import { ScreenHeader, GlassCard, LoadingView } from '../../../components';
+import { ScreenHeader, GlassCard, LoadingView, ErrorBoundary } from '../../../components';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { useGameStore } from '../../../stores';
 import { socketManager } from '../../../lib/socket';
 
@@ -480,6 +481,7 @@ export default function TwoTruthsScreen() {
     const { code } = useLocalSearchParams<{ code: string }>();
     const insets = useSafeAreaInsets();
     const gameStore = useGameStore();
+    const { colors: c } = useTheme();
 
     // Storyteller input state
     const [statements, setStatements] = useState<[string, string, string]>(['', '', '']);
@@ -627,12 +629,14 @@ export default function TwoTruthsScreen() {
 
     if (!storytellerPlayer) {
         return (
+            <ErrorBoundary>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800]]}
+                colors={[c.obsidian[900], c.obsidian[800]]}
                 style={styles.gradient}
             >
                 <LoadingView message="Setting up round..." />
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
@@ -932,8 +936,9 @@ export default function TwoTruthsScreen() {
     // ============================================
 
     return (
+        <ErrorBoundary>
         <LinearGradient
-            colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+            colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
             style={styles.gradient}
         >
             {/* Header Bar */}
@@ -993,6 +998,7 @@ export default function TwoTruthsScreen() {
                 )}
             </View>
         </LinearGradient>
+        </ErrorBoundary>
     );
 }
 

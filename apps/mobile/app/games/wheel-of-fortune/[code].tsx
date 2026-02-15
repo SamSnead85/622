@@ -20,7 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { typography, spacing } from '@zerog/ui';
-import { GlassCard, LoadingView } from '../../../components';
+import { GlassCard, LoadingView, ErrorBoundary } from '../../../components';
 import { useGameStore } from '../../../stores';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { socketManager } from '../../../lib/socket';
@@ -330,7 +330,7 @@ export default function WheelOfFortuneScreen() {
     const curName = players.find(p => p.id === currentPlayerId)?.name ?? '...';
 
     if (!phrase && gs.status === 'idle') {
-        return <LinearGradient colors={[bg9, bg8]} style={s.flex}><LoadingView message="Connecting to game..." /></LinearGradient>;
+        return <ErrorBoundary><LinearGradient colors={[bg9, bg8]} style={s.flex}><LoadingView message="Connecting to game..." /></LinearGradient></ErrorBoundary>;
     }
 
     // ---- Shared header ----
@@ -355,6 +355,7 @@ export default function WheelOfFortuneScreen() {
     // HOST VIEW
     // ============================================
     if (isHost) return (
+        <ErrorBoundary>
         <LinearGradient colors={[bg9, bg8, bg9]} style={s.flex}>
             {Header}
             <ScrollView style={s.flex} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
@@ -402,12 +403,14 @@ export default function WheelOfFortuneScreen() {
                 <View style={{ height: spacing['3xl'] }} />
             </ScrollView>
         </LinearGradient>
+        </ErrorBoundary>
     );
 
     // ============================================
     // PLAYER VIEW
     // ============================================
     return (
+        <ErrorBoundary>
         <LinearGradient colors={[bg9, bg8, bg9]} style={s.flex}>
             {Header}
             <ScrollView style={s.flex} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
@@ -517,6 +520,7 @@ export default function WheelOfFortuneScreen() {
                 </KeyboardAvoidingView>
             </Modal>
         </LinearGradient>
+        </ErrorBoundary>
     );
 }
 

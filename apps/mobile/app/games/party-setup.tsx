@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
-import { ScreenHeader } from '../../components';
+import { ScreenHeader, ErrorBoundary } from '../../components';
 import { socketManager } from '../../lib/socket';
 import { useAuthStore } from '../../stores';
 
@@ -84,6 +84,7 @@ export default function PartySetupScreen() {
     }, [selectedGame]);
 
     return (
+        <ErrorBoundary>
         <View style={[styles.container, { backgroundColor: c.background }]}>
             <ScreenHeader title="Game Night Setup" />
             <ScrollView
@@ -191,6 +192,7 @@ export default function PartySetupScreen() {
                 )}
             </ScrollView>
         </View>
+        </ErrorBoundary>
     );
 }
 

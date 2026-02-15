@@ -35,7 +35,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
-import { ScreenHeader } from '../../components';
+import { ScreenHeader, ErrorBoundary } from '../../components';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthStore } from '../../stores';
 import { showSuccess, showError } from '../../stores/toastStore';
 import { socketManager } from '../../lib/socket';
@@ -924,6 +925,7 @@ function OpponentProgress({ row, solved }: { row: number; solved: boolean }) {
 // ============================================
 
 export default function WordBlitzScreen() {
+    const { colors: c } = useTheme();
     const router = useRouter();
     const { mode = 'daily', code } = useLocalSearchParams<{ mode?: 'daily' | 'race'; code?: string }>();
     const insets = useSafeAreaInsets();
@@ -1385,8 +1387,9 @@ export default function WordBlitzScreen() {
     // ============================================
 
     return (
+        <ErrorBoundary>
         <LinearGradient
-            colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+            colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
             style={styles.gradient}
         >
             {/* Header */}
@@ -1494,6 +1497,7 @@ export default function WordBlitzScreen() {
                 onShare={shareResults}
             />
         </LinearGradient>
+        </ErrorBoundary>
     );
 }
 

@@ -28,7 +28,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors, typography, spacing } from '@zerog/ui';
-import { ScreenHeader, GlassCard, Button, LoadingView } from '../../../components';
+import { ScreenHeader, GlassCard, Button, LoadingView, ErrorBoundary } from '../../../components';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { useGameStore, useAuthStore } from '../../../stores';
 import { socketManager } from '../../../lib/socket';
 
@@ -87,6 +88,7 @@ export default function CipherGameScreen() {
     const gameStore = useGameStore();
     const authStore = useAuthStore();
     const myUserId = authStore.user?.id;
+    const { colors: c } = useTheme();
 
     // ---- Game State ----
     const [words, setWords] = useState<WordTile[]>([]);
@@ -241,21 +243,24 @@ export default function CipherGameScreen() {
     // ---- Loading State ----
     if (gameStore.status === 'idle') {
         return (
-            <View style={styles.container}>
+            <ErrorBoundary>
+            <View style={[styles.container, { backgroundColor: c.background }]}>
                 <LinearGradient
-                    colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+                    colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
                     style={StyleSheet.absoluteFill}
                 />
                 <ScreenHeader title="Cipher" showBack noBorder />
                 <LoadingView message="Connecting to game..." />
             </View>
+            </ErrorBoundary>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <ErrorBoundary>
+        <View style={[styles.container, { backgroundColor: c.background }]}>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+                colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
                 style={StyleSheet.absoluteFill}
             />
             <ScreenHeader title="Cipher" showBack noBorder />
@@ -595,6 +600,7 @@ export default function CipherGameScreen() {
                 <View style={{ height: spacing['3xl'] }} />
             </ScrollView>
         </View>
+        </ErrorBoundary>
     );
 }
 

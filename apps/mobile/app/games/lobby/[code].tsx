@@ -40,7 +40,7 @@ import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { ScreenHeader, GlassCard, Avatar, LoadingView, GameInviteSheet } from '../../../components';
+import { ScreenHeader, GlassCard, Avatar, LoadingView, GameInviteSheet, ErrorBoundary } from '../../../components';
 import { useGameStore, useAuthStore } from '../../../stores';
 import { socketManager } from '../../../lib/socket';
 
@@ -563,22 +563,25 @@ export default function LobbyScreen() {
     // ---- Loading state ----
     if (isJoining) {
         return (
-            <View style={styles.container}>
+            <ErrorBoundary>
+            <View style={[styles.container, { backgroundColor: c.background }]}>
                 <LinearGradient
-                    colors={[colors.obsidian[900], colors.obsidian[800]]}
+                    colors={[c.obsidian[900], c.obsidian[800]]}
                     style={StyleSheet.absoluteFill}
                 />
                 <LoadingView message="Joining game..." />
             </View>
+            </ErrorBoundary>
         );
     }
 
     // ---- Error state ----
     if (error && players.length === 0) {
         return (
-            <View style={styles.container}>
+            <ErrorBoundary>
+            <View style={[styles.container, { backgroundColor: c.background }]}>
                 <LinearGradient
-                    colors={[colors.obsidian[900], colors.obsidian[800]]}
+                    colors={[c.obsidian[900], c.obsidian[800]]}
                     style={StyleSheet.absoluteFill}
                 />
                 <ScreenHeader title="Lobby" showBack onBack={handleLeave} noBorder />
@@ -608,13 +611,15 @@ export default function LobbyScreen() {
                     </View>
                 </View>
             </View>
+            </ErrorBoundary>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <ErrorBoundary>
+        <View style={[styles.container, { backgroundColor: c.background }]}>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+                colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
                 style={StyleSheet.absoluteFill}
             />
 
@@ -818,6 +823,7 @@ export default function LobbyScreen() {
             {/* ---- Invite Sheet ---- */}
             <GameInviteSheet code={roomCode} gameType={gameType} visible={showInvite} onClose={() => setShowInvite(false)} />
         </View>
+        </ErrorBoundary>
     );
 }
 

@@ -38,7 +38,7 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
-import { ScreenHeader } from '../../components';
+import { ScreenHeader, ErrorBoundary } from '../../components';
 import { GlassCard } from '../../components';
 import { useGameStore, useAuthStore } from '../../stores';
 import { showError } from '../../stores/toastStore';
@@ -823,9 +823,10 @@ export default function GamesHubScreen() {
     }, [router]);
 
     return (
-        <View style={styles.container}>
+        <ErrorBoundary>
+        <View style={[styles.container, { backgroundColor: c.background }]}>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+                colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
                 style={StyleSheet.absoluteFill}
             />
 
@@ -1099,6 +1100,7 @@ export default function GamesHubScreen() {
                 onClose={() => setShowPlayWithFriend(false)}
             />
         </View>
+        </ErrorBoundary>
     );
 }
 

@@ -33,7 +33,7 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
 import { useTheme } from '../../contexts/ThemeContext';
-import { ScreenHeader, GlassCard } from '../../components';
+import { ScreenHeader, GlassCard, ErrorBoundary } from '../../components';
 
 const GUEST_NAME_KEY = '@guest-name';
 
@@ -156,9 +156,10 @@ export default function GuestJoinScreen() {
     }, [router]);
 
     return (
+        <ErrorBoundary>
         <View style={styles.container}>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+                colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
                 style={StyleSheet.absoluteFill}
             />
 
@@ -305,6 +306,7 @@ export default function GuestJoinScreen() {
             </KeyboardAvoidingView>
 
         </View>
+        </ErrorBoundary>
     );
 }
 

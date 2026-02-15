@@ -39,7 +39,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
-import { ScreenHeader, GlassCard, Button } from '../../components';
+import { ScreenHeader, GlassCard, Button, ErrorBoundary } from '../../components';
+import { useTheme } from '../../contexts/ThemeContext';
 import {
     getQuestions,
     CATEGORY_INFO,
@@ -524,6 +525,7 @@ function PracticeResults({
 // ============================================
 
 export default function PracticeScreen() {
+    const { colors: c } = useTheme();
     const router = useRouter();
     const params = useLocalSearchParams<{ category?: string }>();
     const insets = useSafeAreaInsets();
@@ -659,17 +661,20 @@ export default function PracticeScreen() {
     // ---- Render: Topic Selection ----
     if (phase === 'topic_select') {
         return (
-            <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={styles.gradient}>
+            <ErrorBoundary>
+            <LinearGradient colors={[c.obsidian[900], c.obsidian[800]]} style={styles.gradient}>
                 <ScreenHeader title="Solo Practice" showBack noBorder />
                 <TopicSelector onStart={startGame} />
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
     // ---- Render: Results ----
     if (phase === 'results') {
         return (
-            <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={styles.gradient}>
+            <ErrorBoundary>
+            <LinearGradient colors={[c.obsidian[900], c.obsidian[800]]} style={styles.gradient}>
                 <ScreenHeader title="Results" showBack noBorder />
                 <PracticeResults
                     score={score}
@@ -681,6 +686,7 @@ export default function PracticeScreen() {
                     onBack={handleBack}
                 />
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
@@ -694,8 +700,9 @@ export default function PracticeScreen() {
     };
 
     return (
+        <ErrorBoundary>
         <LinearGradient
-            colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+            colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
             style={styles.gradient}
         >
             {/* Top Bar */}
@@ -793,6 +800,7 @@ export default function PracticeScreen() {
                 )}
             </View>
         </LinearGradient>
+        </ErrorBoundary>
     );
 }
 

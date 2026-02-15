@@ -19,7 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '@zerog/ui';
-import { GlassCard, LoadingView } from '../../../components';
+import { GlassCard, LoadingView, ErrorBoundary } from '../../../components';
 import { useGameStore } from '../../../stores';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { socketManager } from '../../../lib/socket';
@@ -325,6 +325,7 @@ export default function FamilyFeudScreen() {
     const router = useRouter();
     const { code } = useLocalSearchParams<{ code: string }>();
     const gameStore = useGameStore();
+    const { colors: tc } = useTheme();
     const isMountedRef = useRef(true);
 
     const { gameData, players, isHost, myPlayerId, round, totalRounds } = gameStore;
@@ -369,7 +370,7 @@ export default function FamilyFeudScreen() {
     const handleLeave = useCallback(() => { gameStore.leaveGame(); router.replace('/games'); }, [gameStore, router]);
 
     if (!gameData || Object.keys(gameData).length === 0) {
-        return <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={st.grad}><LoadingView message="Loading Family Feud..." /></LinearGradient>;
+        return <ErrorBoundary><LinearGradient colors={[tc.obsidian[900], tc.obsidian[800]]} style={st.grad}><LoadingView message="Loading Family Feud..." /></LinearGradient></ErrorBoundary>;
     }
 
     const ctrlProps = { phase, teams, controllingTeam: controlling, myTeam, strikes, hasBuzzed, onJoinTeam: handleJoinTeam, onBuzz: handleBuzz, onGuess: handleGuess, onHostAction: handleHostAction, isHost, players, round, totalRounds };
@@ -381,19 +382,23 @@ export default function FamilyFeudScreen() {
 
     if (isHost && curQ && phase !== 'team_setup') {
         return (
-            <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]} style={st.grad}>
+            <ErrorBoundary>
+            <LinearGradient colors={[tc.obsidian[900], tc.obsidian[800], tc.obsidian[900]]} style={st.grad}>
                 <HostBoardView question={curQ.question} answers={curQ.answers} revealedAnswers={revealed} strikes={strikes} teams={teams} controllingTeam={controlling} phase={phase} round={round} totalRounds={totalRounds} />
                 <View style={st.hostOverlay}><PlayerCtrl {...ctrlProps} /></View>
                 {leaveBtn()}
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
     return (
-        <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]} style={st.grad}>
+        <ErrorBoundary>
+        <LinearGradient colors={[tc.obsidian[900], tc.obsidian[800], tc.obsidian[900]]} style={st.grad}>
             <PlayerCtrl {...ctrlProps} />
             {leaveBtn(true)}
         </LinearGradient>
+        </ErrorBoundary>
     );
 }
 

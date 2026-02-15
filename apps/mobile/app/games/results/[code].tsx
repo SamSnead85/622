@@ -36,7 +36,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors, typography, spacing } from '@zerog/ui';
-import { ScreenHeader, GlassCard, Avatar } from '../../../components';
+import { ScreenHeader, GlassCard, Avatar, ErrorBoundary } from '../../../components';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { useGameStore, useAuthStore } from '../../../stores';
 import { updateGameStats } from '../index';
 
@@ -319,6 +320,7 @@ function RankingRow({ player, rank, index }: RankingRowProps) {
 // ============================================
 
 export default function ResultsScreen() {
+    const { colors: c } = useTheme();
     const router = useRouter();
     const { code } = useLocalSearchParams<{ code: string }>();
     const gameStore = useGameStore();
@@ -385,9 +387,10 @@ export default function ResultsScreen() {
     }, [podiumPlayers]);
 
     return (
-        <View style={styles.container}>
+        <ErrorBoundary>
+        <View style={[styles.container, { backgroundColor: c.background }]}>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+                colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
                 style={StyleSheet.absoluteFill}
             />
 
@@ -491,6 +494,7 @@ export default function ResultsScreen() {
                 <View style={{ height: spacing['3xl'] }} />
             </ScrollView>
         </View>
+        </ErrorBoundary>
     );
 }
 

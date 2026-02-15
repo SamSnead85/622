@@ -34,7 +34,8 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { colors, typography, spacing } from '@zerog/ui';
-import { ScreenHeader, GlassCard, LoadingView } from '../../../components';
+import { ScreenHeader, GlassCard, LoadingView, ErrorBoundary } from '../../../components';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { useGameStore, useAuthStore } from '../../../stores';
 import { socketManager } from '../../../lib/socket';
 
@@ -389,6 +390,7 @@ export default function SketchDuelScreen() {
     const { code } = useLocalSearchParams<{ code: string }>();
     const gameStore = useGameStore();
     const authStore = useAuthStore();
+    const { colors: c } = useTheme();
     const myUserId = authStore.user?.id;
 
     // ---- Game State ----
@@ -705,7 +707,8 @@ export default function SketchDuelScreen() {
     }
 
     return (
-        <View style={styles.container}>
+        <ErrorBoundary>
+        <View style={[styles.container, { backgroundColor: c.background }]}>
             {/* Correct guess green flash overlay */}
             <Animated.View
                 style={[styles.correctFlashOverlay, correctFlashStyle]}
@@ -871,6 +874,7 @@ export default function SketchDuelScreen() {
                 artistId={artistId}
             />
         </View>
+        </ErrorBoundary>
     );
 }
 

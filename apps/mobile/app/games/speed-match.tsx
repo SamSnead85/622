@@ -36,7 +36,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
-import { ScreenHeader, GlassCard } from '../../components';
+import { ScreenHeader, GlassCard, ErrorBoundary } from '../../components';
+import { useTheme } from '../../contexts/ThemeContext';
 import { socketManager } from '../../lib/socket';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -907,6 +908,7 @@ function ResultsView({
 // ============================================
 
 export default function SpeedMatchScreen() {
+    const { colors: c } = useTheme();
     const router = useRouter();
     const params = useLocalSearchParams<{ mode?: 'color' | 'pattern' | 'math'; code?: string }>();
     const insets = useSafeAreaInsets();
@@ -1169,7 +1171,8 @@ export default function SpeedMatchScreen() {
 
     if (phase === 'menu') {
         return (
-            <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={styles.gradient}>
+            <ErrorBoundary>
+            <LinearGradient colors={[c.obsidian[900], c.obsidian[800]]} style={styles.gradient}>
                 <ScreenHeader title="Speed Match" showBack noBorder />
                 <ScrollView
                     style={{ flex: 1 }}
@@ -1197,6 +1200,7 @@ export default function SpeedMatchScreen() {
                     </View>
                 </ScrollView>
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
@@ -1206,7 +1210,8 @@ export default function SpeedMatchScreen() {
 
     if (phase === 'results') {
         return (
-            <LinearGradient colors={[colors.obsidian[900], colors.obsidian[800]]} style={styles.gradient}>
+            <ErrorBoundary>
+            <LinearGradient colors={[c.obsidian[900], c.obsidian[800]]} style={styles.gradient}>
                 <ScreenHeader title={config.title} showBack noBorder />
                 <ResultsView
                     mode={gameMode}
@@ -1218,6 +1223,7 @@ export default function SpeedMatchScreen() {
                     onBack={handleBack}
                 />
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
@@ -1226,8 +1232,9 @@ export default function SpeedMatchScreen() {
     // ============================================
 
     return (
+        <ErrorBoundary>
         <LinearGradient
-            colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+            colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
             style={styles.gradient}
         >
             {/* Top Bar */}
@@ -1297,6 +1304,7 @@ export default function SpeedMatchScreen() {
                 </Animated.View>
             )}
         </LinearGradient>
+        </ErrorBoundary>
     );
 }
 

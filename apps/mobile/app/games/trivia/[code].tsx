@@ -32,7 +32,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { colors, typography, spacing } from '@zerog/ui';
-import { ScreenHeader, GlassCard, LoadingView } from '../../../components';
+import { ScreenHeader, GlassCard, LoadingView, ErrorBoundary } from '../../../components';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { useGameStore } from '../../../stores';
 import { socketManager } from '../../../lib/socket';
 
@@ -318,6 +319,7 @@ export default function TriviaScreen() {
     const { code } = useLocalSearchParams<{ code: string }>();
     const insets = useSafeAreaInsets();
     const gameStore = useGameStore();
+    const { colors: c } = useTheme();
 
     // Local state
     const [hasAnswered, setHasAnswered] = useState(false);
@@ -520,12 +522,14 @@ export default function TriviaScreen() {
 
     if (!currentQuestion) {
         return (
+            <ErrorBoundary>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800]]}
+                colors={[c.obsidian[900], c.obsidian[800]]}
                 style={styles.gradient}
             >
                 <LoadingView message="Waiting for question..." />
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
@@ -537,8 +541,9 @@ export default function TriviaScreen() {
     const categoryColor = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.default;
 
     return (
+        <ErrorBoundary>
         <LinearGradient
-            colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+            colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
             style={styles.gradient}
         >
             {/* Header Bar */}
@@ -663,6 +668,7 @@ export default function TriviaScreen() {
                 </View>
             </View>
         </LinearGradient>
+        </ErrorBoundary>
     );
 }
 

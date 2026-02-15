@@ -40,7 +40,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '@zerog/ui';
-import { ScreenHeader, GlassCard, Button } from '../../components';
+import { ScreenHeader, GlassCard, Button, ErrorBoundary } from '../../components';
+import { useTheme } from '../../contexts/ThemeContext';
 import {
     getDailyQuestions as getEngineDailyQuestions,
     CATEGORY_INFO,
@@ -665,6 +666,7 @@ function AlreadyCompletedView({ streak, onBack }: { streak: number; onBack: () =
 // ============================================
 
 export default function DailyChallengeScreen() {
+    const { colors: c } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
@@ -925,12 +927,14 @@ export default function DailyChallengeScreen() {
 
     if (gamePhase === 'loading') {
         return (
+            <ErrorBoundary>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800]]}
+                colors={[c.obsidian[900], c.obsidian[800]]}
                 style={styles.gradient}
             >
                 <ScreenHeader title="Daily Challenge" showBack noBorder />
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
@@ -940,13 +944,15 @@ export default function DailyChallengeScreen() {
 
     if (gamePhase === 'already_completed') {
         return (
+            <ErrorBoundary>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800]]}
+                colors={[c.obsidian[900], c.obsidian[800]]}
                 style={styles.gradient}
             >
                 <ScreenHeader title="Daily Challenge" showBack noBorder />
                 <AlreadyCompletedView streak={streak} onBack={handleBack} />
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
@@ -956,8 +962,9 @@ export default function DailyChallengeScreen() {
 
     if (gamePhase === 'results') {
         return (
+            <ErrorBoundary>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800]]}
+                colors={[c.obsidian[900], c.obsidian[800]]}
                 style={styles.gradient}
             >
                 <ScreenHeader title="Daily Challenge" showBack noBorder />
@@ -970,6 +977,7 @@ export default function DailyChallengeScreen() {
                     onBack={handleBack}
                 />
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
@@ -978,8 +986,9 @@ export default function DailyChallengeScreen() {
     // ============================================
 
     return (
+        <ErrorBoundary>
         <LinearGradient
-            colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+            colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
             style={styles.gradient}
         >
             {/* Header Bar */}
@@ -1100,6 +1109,7 @@ export default function DailyChallengeScreen() {
                 )}
             </View>
         </LinearGradient>
+        </ErrorBoundary>
     );
 }
 

@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { typography, spacing } from '@zerog/ui';
+import { ErrorBoundary } from '../../../components';
 import { useTheme } from '../../../contexts/ThemeContext';
 
 // Known game types that have dedicated screens
@@ -62,6 +63,7 @@ export default function GameRoomScreen() {
 
     if (isRedirecting) {
         return (
+            <ErrorBoundary>
             <View style={[styles.container, { backgroundColor: c.background }]}>
                 <View style={styles.centered}>
                     <ActivityIndicator size="large" color={c.gold[400]} />
@@ -70,10 +72,12 @@ export default function GameRoomScreen() {
                     </Text>
                 </View>
             </View>
+            </ErrorBoundary>
         );
     }
 
     return (
+        <ErrorBoundary>
         <View style={[styles.container, { backgroundColor: c.background }]}>
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
@@ -149,6 +153,7 @@ export default function GameRoomScreen() {
                 </Animated.View>
             </View>
         </View>
+        </ErrorBoundary>
     );
 }
 

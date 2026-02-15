@@ -18,7 +18,8 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { typography, spacing } from '@zerog/ui';
-import { LoadingView } from '../../../components';
+import { LoadingView, ErrorBoundary } from '../../../components';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { useGameStore } from '../../../stores';
 import { socketManager } from '../../../lib/socket';
 
@@ -131,6 +132,7 @@ export default function JeopardyScreen() {
     const router = useRouter();
     const { code } = useLocalSearchParams<{ code: string }>();
     const insets = useSafeAreaInsets();
+    const { colors: c } = useTheme();
     const gs = useGameStore();
 
     const [hasBuzzed, setHasBuzzed] = useState(false);
@@ -219,9 +221,11 @@ export default function JeopardyScreen() {
     // ---- Loading ----
     if (cats.length === 0) {
         return (
+            <ErrorBoundary>
             <LinearGradient colors={[J.bgDark, J.bg]} style={s.flex}>
                 <LoadingView message="Loading Jeopardy board..." />
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
@@ -260,6 +264,7 @@ export default function JeopardyScreen() {
     // ================================================================
     if (isHost) {
         return (
+            <ErrorBoundary>
             <LinearGradient colors={[J.bgDark, J.bg, J.bgDark]} style={s.flex}>
                 <Header right={
                     <>
@@ -410,6 +415,7 @@ export default function JeopardyScreen() {
                     </View>
                 )}
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
@@ -417,6 +423,7 @@ export default function JeopardyScreen() {
     // PLAYER VIEW
     // ================================================================
     return (
+        <ErrorBoundary>
         <LinearGradient colors={[J.bgDark, J.bg, J.bgDark]} style={s.flex}>
             <View style={[s.header, { paddingTop: insets.top + spacing.xs }]}>
                 <TouchableOpacity onPress={leave} style={s.closeBtn}>
@@ -550,6 +557,7 @@ export default function JeopardyScreen() {
                 <Text style={{ fontSize: typography.fontSize.xs, color: J.goldDim }}>{players.filter((p) => p.isConnected).length} playing</Text>
             </View>
         </LinearGradient>
+        </ErrorBoundary>
     );
 }
 

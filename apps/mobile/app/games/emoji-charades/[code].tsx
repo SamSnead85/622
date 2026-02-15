@@ -38,7 +38,8 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
 import { colors, typography, spacing } from '@zerog/ui';
-import { ScreenHeader, GlassCard, LoadingView } from '../../../components';
+import { ScreenHeader, GlassCard, LoadingView, ErrorBoundary } from '../../../components';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { useGameStore, useAuthStore } from '../../../stores';
 import { socketManager } from '../../../lib/socket';
 
@@ -539,6 +540,7 @@ export default function EmojiCharadesScreen() {
     const { code } = useLocalSearchParams<{ code: string }>();
     const gameStore = useGameStore();
     const authStore = useAuthStore();
+    const { colors: c } = useTheme();
     const myUserId = authStore.user?.id;
 
     // ---- Game State ----
@@ -967,21 +969,24 @@ export default function EmojiCharadesScreen() {
     // ---- Loading State ----
     if (gameStore.status === 'idle') {
         return (
-            <View style={styles.container}>
+            <ErrorBoundary>
+            <View style={[styles.container, { backgroundColor: c.background }]}>
                 <LinearGradient
-                    colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+                    colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
                     style={StyleSheet.absoluteFill}
                 />
                 <ScreenHeader title="Emoji Charades" showBack noBorder />
                 <LoadingView message="Connecting to game..." />
             </View>
+            </ErrorBoundary>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <ErrorBoundary>
+        <View style={[styles.container, { backgroundColor: c.background }]}>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+                colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
                 style={StyleSheet.absoluteFill}
             />
             <ScreenHeader title="Emoji Charades" showBack noBorder />
@@ -1352,6 +1357,7 @@ export default function EmojiCharadesScreen() {
                 <View style={{ height: spacing['3xl'] }} />
             </ScrollView>
         </View>
+        </ErrorBoundary>
     );
 }
 

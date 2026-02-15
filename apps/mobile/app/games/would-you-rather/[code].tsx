@@ -34,7 +34,8 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '@zerog/ui';
-import { ScreenHeader, GlassCard, LoadingView } from '../../../components';
+import { ScreenHeader, GlassCard, LoadingView, ErrorBoundary } from '../../../components';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { useGameStore } from '../../../stores';
 import { socketManager } from '../../../lib/socket';
 
@@ -316,6 +317,7 @@ export default function WouldYouRatherScreen() {
     const { code } = useLocalSearchParams<{ code: string }>();
     const insets = useSafeAreaInsets();
     const gameStore = useGameStore();
+    const { colors: c } = useTheme();
 
     // Local state
     const [selectedOption, setSelectedOption] = useState<'A' | 'B' | null>(null);
@@ -415,12 +417,14 @@ export default function WouldYouRatherScreen() {
 
     if (!currentPrompt && phase === 'waiting') {
         return (
+            <ErrorBoundary>
             <LinearGradient
-                colors={[colors.obsidian[900], colors.obsidian[800]]}
+                colors={[c.obsidian[900], c.obsidian[800]]}
                 style={styles.gradient}
             >
                 <LoadingView message="Getting ready..." />
             </LinearGradient>
+            </ErrorBoundary>
         );
     }
 
@@ -450,8 +454,9 @@ export default function WouldYouRatherScreen() {
     // ============================================
 
     return (
+        <ErrorBoundary>
         <LinearGradient
-            colors={[colors.obsidian[900], colors.obsidian[800], colors.obsidian[900]]}
+            colors={[c.obsidian[900], c.obsidian[800], c.obsidian[900]]}
             style={styles.gradient}
         >
             {/* ---- Top Bar ---- */}
@@ -575,6 +580,7 @@ export default function WouldYouRatherScreen() {
                 )}
             </View>
         </LinearGradient>
+        </ErrorBoundary>
     );
 }
 
