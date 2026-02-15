@@ -10,6 +10,7 @@
     },
     "dependencies": {
         "@mux/mux-player-react": "^3.10.2",
+        "@zerog/types": "*",
         "clsx": "^2.1.1",
         "framer-motion": "^10.18.0",
         "lucide-react": "^0.563.0",

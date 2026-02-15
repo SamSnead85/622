@@ -21,9 +21,13 @@
                 "name": "next"
             }
         ],
+        "baseUrl": ".",
         "paths": {
             "@/*": [
                 "./src/*"
+            ],
+            "@zerog/types": [
+                "../../packages/types/src"
             ]
         }
     },
