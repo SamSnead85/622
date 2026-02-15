@@ -17,6 +17,7 @@ import {
     RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -174,6 +175,8 @@ interface GameDef {
     desc: string;
     players: string;
     color: string;
+    gradient: [string, string];
+    artwork: string; // illustration URL
     isNew: boolean;
     category: GameCategory;
     isSolo?: boolean;
@@ -186,32 +189,52 @@ const GAME_CATEGORIES: { key: GameCategory; label: string; icon: keyof typeof Io
     { key: 'solo', label: 'Solo', icon: 'person' },
 ];
 
+// Themed illustration artwork for each game (Unsplash curated)
+const ART = {
+    wyr:        'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop', // friends debating
+    twoTruths:  'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400&h=300&fit=crop', // group laughing
+    sketch:     'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400&h=300&fit=crop', // art/painting
+    emoji:      'https://images.unsplash.com/photo-1616587226960-4a03badbe8bf?w=400&h=300&fit=crop', // colorful fun
+    predict:    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop', // thinking people
+    wavelength: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop', // sound waves/spectrum
+    infiltrator:'https://images.unsplash.com/photo-1509281373149-e957c6296406?w=400&h=300&fit=crop', // mystery/detective
+    trivia:     'https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=400&h=300&fit=crop', // lightning/speed
+    speedMatch: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop', // gaming/neon
+    wordBlitz:  'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=400&h=300&fit=crop', // books/words
+    jeopardy:   'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=400&h=300&fit=crop', // quiz show stage
+    wheel:      'https://images.unsplash.com/photo-1596838132731-3301c3fd4317?w=400&h=300&fit=crop', // carnival wheel
+    familyFeud: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop', // family/team fun
+    cipher:     'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=400&h=300&fit=crop', // code/matrix
+    daily:      'https://images.unsplash.com/photo-1435527173128-983b87201f4d?w=400&h=300&fit=crop', // calendar/daily
+    practice:   'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&h=300&fit=crop', // study/learning
+};
+
 const games: GameDef[] = [
     // Party Games — fun, loud, group play
-    { type: 'would-you-rather', name: 'Would You Rather', icon: 'swap-horizontal' as const, desc: 'Pick a side, debate your friends!', players: '2-8', color: colors.amber[400], isNew: true, category: 'party' },
-    { type: 'two-truths', name: 'Two Truths & a Lie', icon: 'finger-print' as const, desc: 'Bluff your way to victory', players: '3-8', color: colors.coral[400], isNew: true, category: 'party' },
-    { type: 'sketch-duel', name: 'Sketch Duel', icon: 'brush' as const, desc: 'Draw it, guess it, laugh about it', players: '3-8', color: colors.emerald[400], isNew: true, category: 'party' },
-    { type: 'emoji-charades', name: 'Emoji Charades', icon: 'happy' as const, desc: 'Describe with emojis, guess the phrase!', players: '3-8', color: colors.amber[500], isNew: false, category: 'party' },
-    { type: 'predict', name: 'Predict', icon: 'people' as const, desc: 'Guess what others think', players: '3-8', color: colors.azure[500], isNew: false, category: 'party' },
-    { type: 'wavelength', name: 'Wavelength', icon: 'radio' as const, desc: 'Read minds on a spectrum', players: '2-8', color: colors.emerald[500], isNew: false, category: 'party' },
-    { type: 'infiltrator', name: 'Infiltrator', icon: 'eye-off' as const, desc: 'Find the hidden spy', players: '4-8', color: colors.coral[500], isNew: false, category: 'party' },
+    { type: 'would-you-rather', name: 'Would You Rather', icon: 'swap-horizontal' as const, desc: 'Pick a side, debate your friends!', players: '2-8', color: colors.amber[400], gradient: ['#F59E0B', '#D97706'], artwork: ART.wyr, isNew: true, category: 'party' },
+    { type: 'two-truths', name: 'Two Truths & a Lie', icon: 'finger-print' as const, desc: 'Bluff your way to victory', players: '3-8', color: colors.coral[400], gradient: ['#F87171', '#DC2626'], artwork: ART.twoTruths, isNew: true, category: 'party' },
+    { type: 'sketch-duel', name: 'Sketch Duel', icon: 'brush' as const, desc: 'Draw it, guess it, laugh about it', players: '3-8', color: colors.emerald[400], gradient: ['#34D399', '#059669'], artwork: ART.sketch, isNew: true, category: 'party' },
+    { type: 'emoji-charades', name: 'Emoji Charades', icon: 'happy' as const, desc: 'Describe with emojis, guess the phrase!', players: '3-8', color: colors.amber[500], gradient: ['#FBBF24', '#D97706'], artwork: ART.emoji, isNew: false, category: 'party' },
+    { type: 'predict', name: 'Predict', icon: 'people' as const, desc: 'Guess what others think', players: '3-8', color: colors.azure[500], gradient: ['#60A5FA', '#2563EB'], artwork: ART.predict, isNew: false, category: 'party' },
+    { type: 'wavelength', name: 'Wavelength', icon: 'radio' as const, desc: 'Read minds on a spectrum', players: '2-8', color: colors.emerald[500], gradient: ['#6EE7B7', '#10B981'], artwork: ART.wavelength, isNew: false, category: 'party' },
+    { type: 'infiltrator', name: 'Infiltrator', icon: 'eye-off' as const, desc: 'Find the hidden spy', players: '4-8', color: colors.coral[500], gradient: ['#FB7185', '#E11D48'], artwork: ART.infiltrator, isNew: false, category: 'party' },
 
     // Brain Games — quick thinking, reflexes
-    { type: 'trivia', name: 'Rapid Fire', icon: 'flash' as const, desc: 'Fast-paced trivia blitz', players: '2-8', color: colors.amber[500], isNew: false, category: 'brain' },
-    { type: 'speed-match', name: 'Speed Match', icon: 'speedometer' as const, desc: 'Color Rush, Memory, Math — how fast are you?', players: '1-2', color: colors.coral[500], isNew: false, category: 'brain' },
-    { type: 'word-blitz', name: 'Word Blitz', icon: 'text' as const, desc: 'Daily word puzzle + race mode', players: '1-2', color: colors.emerald[500], isNew: false, category: 'brain' },
+    { type: 'trivia', name: 'Rapid Fire', icon: 'flash' as const, desc: 'Fast-paced trivia blitz', players: '2-8', color: colors.amber[500], gradient: ['#FCD34D', '#F59E0B'], artwork: ART.trivia, isNew: false, category: 'brain' },
+    { type: 'speed-match', name: 'Speed Match', icon: 'speedometer' as const, desc: 'Color Rush, Memory, Math — how fast are you?', players: '1-2', color: colors.coral[500], gradient: ['#FB923C', '#EA580C'], artwork: ART.speedMatch, isNew: false, category: 'brain' },
+    { type: 'word-blitz', name: 'Word Blitz', icon: 'text' as const, desc: 'Daily word puzzle + race mode', players: '1-2', color: colors.emerald[500], gradient: ['#A7F3D0', '#059669'], artwork: ART.wordBlitz, isNew: false, category: 'brain' },
 
     // Game Night — host-as-display party games for in-person gatherings
-    { type: 'jeopardy', name: 'Jeopardy!', icon: 'help-circle' as const, desc: 'Classic quiz show — host reads, players buzz in', players: '2-12', color: colors.azure[400], isNew: true, category: 'party' },
-    { type: 'wheel-of-fortune', name: 'Wheel of Fortune', icon: 'sync-circle' as const, desc: 'Spin, guess letters, solve the puzzle', players: '2-8', color: colors.emerald[400], isNew: true, category: 'party' },
-    { type: 'family-feud', name: 'Family Feud', icon: 'people-circle' as const, desc: 'Team vs team — name the top answers!', players: '4-16', color: colors.coral[400], isNew: true, category: 'party' },
+    { type: 'jeopardy', name: 'Jeopardy!', icon: 'help-circle' as const, desc: 'Classic quiz show — host reads, players buzz in', players: '2-12', color: colors.azure[400], gradient: ['#3B82F6', '#1D4ED8'], artwork: ART.jeopardy, isNew: true, category: 'party' },
+    { type: 'wheel-of-fortune', name: 'Wheel of Fortune', icon: 'sync-circle' as const, desc: 'Spin, guess letters, solve the puzzle', players: '2-8', color: colors.emerald[400], gradient: ['#10B981', '#047857'], artwork: ART.wheel, isNew: true, category: 'party' },
+    { type: 'family-feud', name: 'Family Feud', icon: 'people-circle' as const, desc: 'Team vs team — name the top answers!', players: '4-16', color: colors.coral[400], gradient: ['#F472B6', '#DB2777'], artwork: ART.familyFeud, isNew: true, category: 'party' },
 
     // Strategy Games — deeper thinking
-    { type: 'cipher', name: 'Cipher', icon: 'grid' as const, desc: 'Strategic word deduction', players: '4-8', color: colors.gold[500], isNew: false, category: 'strategy' },
+    { type: 'cipher', name: 'Cipher', icon: 'grid' as const, desc: 'Strategic word deduction', players: '4-8', color: colors.gold[500], gradient: ['#D4A84B', '#92702A'], artwork: ART.cipher, isNew: false, category: 'strategy' },
 
     // Solo Games — play anytime
-    { type: 'daily', name: 'Daily Challenge', icon: 'calendar' as const, desc: '7 trivia questions, new every day', players: '1', color: colors.gold[500], isNew: false, category: 'solo', isSolo: true },
-    { type: 'practice', name: 'Solo Practice', icon: 'school' as const, desc: 'Unlimited trivia by topic', players: '1', color: colors.azure[500], isNew: false, category: 'solo', isSolo: true },
+    { type: 'daily', name: 'Daily Challenge', icon: 'calendar' as const, desc: '7 trivia questions, new every day', players: '1', color: colors.gold[500], gradient: ['#D4A84B', '#92702A'], artwork: ART.daily, isNew: false, category: 'solo', isSolo: true },
+    { type: 'practice', name: 'Solo Practice', icon: 'school' as const, desc: 'Unlimited trivia by topic', players: '1', color: colors.azure[500], gradient: ['#93C5FD', '#3B82F6'], artwork: ART.practice, isNew: false, category: 'solo', isSolo: true },
 ];
 
 // ============================================
@@ -280,16 +303,24 @@ function RecentlyPlayedSection({ onPlay }: { onPlay: (type: string) => void }) {
                             accessibilityRole="button"
                             accessibilityLabel={`Play ${game.name} again`}
                         >
-                            <LinearGradient
-                                colors={[game.color + '20', game.color + '08']}
-                                style={styles.recentCardBg}
+                            <Image
+                                source={{ uri: game.artwork }}
+                                style={StyleSheet.absoluteFill}
+                                contentFit="cover"
+                                cachePolicy="memory-disk"
                             />
-                            <View style={[styles.recentIconBg, { backgroundColor: game.color + '20' }]}>
-                                <Ionicons name={game.icon} size={20} color={game.color} />
+                            <LinearGradient
+                                colors={['transparent', 'rgba(0,0,0,0.7)']}
+                                style={StyleSheet.absoluteFill}
+                            />
+                            <View style={styles.recentCardContent}>
+                                <View style={[styles.recentIconBg, { backgroundColor: game.gradient[0] }]}>
+                                    <Ionicons name={game.icon} size={16} color="#fff" />
+                                </View>
+                                <Text style={styles.recentCardName} numberOfLines={1}>{game.name}</Text>
                             </View>
-                            <Text style={styles.recentCardName} numberOfLines={1}>{game.name}</Text>
                             <View style={styles.recentPlayBadge}>
-                                <Ionicons name="play" size={10} color={colors.gold[500]} />
+                                <Ionicons name="play" size={10} color="#fff" />
                             </View>
                         </TouchableOpacity>
                     </Animated.View>
@@ -423,21 +454,9 @@ interface GameCardProps {
 
 function GameCard({ game, index, onPlay }: GameCardProps) {
     const scale = useSharedValue(1);
-    const glowOpacity = useSharedValue(0);
-
-    useEffect(() => {
-        glowOpacity.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-            ),
-            -1,
-            false,
-        );
-    }, [glowOpacity]);
 
     const handlePressIn = useCallback(() => {
-        scale.value = withSpring(0.97, { damping: 15, stiffness: 300 });
+        scale.value = withSpring(0.96, { damping: 15, stiffness: 300 });
     }, [scale]);
 
     const handlePressOut = useCallback(() => {
@@ -451,10 +470,6 @@ function GameCard({ game, index, onPlay }: GameCardProps) {
 
     const animatedCardStyle = useAnimatedStyle(() => ({
         transform: [{ scale: scale.value }],
-    }));
-
-    const glowStyle = useAnimatedStyle(() => ({
-        opacity: interpolate(glowOpacity.value, [0, 1], [0.05, 0.15]),
     }));
 
     // Stagger columns: left column gets base delay, right column gets extra offset
@@ -475,46 +490,56 @@ function GameCard({ game, index, onPlay }: GameCardProps) {
                 accessibilityRole="button"
                 accessibilityLabel={`Play ${game.name}, ${game.players} players. ${game.desc}`}
             >
-                <GlassCard style={styles.gameCard} padding="md">
-                    {/* Gradient accent strip */}
-                    <LinearGradient
-                        colors={[game.color, game.color + '00']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.cardAccentStrip}
-                    />
-
-                    {/* Animated corner glow */}
-                    <Animated.View style={[styles.cardCornerGlow, { backgroundColor: game.color }, glowStyle]} />
-
-                    {/* NEW badge */}
-                    {game.isNew && <NewBadge />}
-
-                    {/* Large icon */}
-                    <View style={styles.cardIconContainer}>
+                <View style={styles.gameCard}>
+                    {/* ── Artwork Cover ── */}
+                    <View style={styles.artworkWrap}>
+                        <Image
+                            source={{ uri: game.artwork }}
+                            style={StyleSheet.absoluteFill}
+                            contentFit="cover"
+                            transition={300}
+                            cachePolicy="memory-disk"
+                        />
+                        {/* Dark gradient overlay for text readability */}
                         <LinearGradient
-                            colors={[game.color + '25', game.color + '08']}
-                            style={styles.iconCircle}
-                        >
-                            <Ionicons name={game.icon} size={28} color={game.color} />
-                        </LinearGradient>
-                    </View>
+                            colors={['transparent', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.75)']}
+                            style={StyleSheet.absoluteFill}
+                        />
+                        {/* Colored accent tint at top */}
+                        <LinearGradient
+                            colors={[game.gradient[0] + '50', 'transparent']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 0, y: 1 }}
+                            style={styles.artworkTint}
+                        />
 
-                    <Text style={styles.cardName} numberOfLines={1}>{game.name}</Text>
-                    <Text style={styles.cardDesc} numberOfLines={2}>{game.desc}</Text>
+                        {/* NEW badge */}
+                        {game.isNew && <NewBadge />}
 
-                    <View style={styles.cardFooter}>
-                        <View style={styles.playerBadge}>
-                            <Ionicons name="people-outline" size={12} color={colors.text.muted} />
-                            <Text style={styles.playerText}>{game.players}</Text>
-                        </View>
-
-                        <View style={[styles.playButton, { backgroundColor: game.color + '20' }]}>
-                            <Text style={[styles.playButtonText, { color: game.color }]}>Play</Text>
-                            <Ionicons name="arrow-forward" size={14} color={game.color} />
+                        {/* Small icon badge in bottom-left of artwork */}
+                        <View style={[styles.artworkIconBadge, { backgroundColor: game.gradient[0] }]}>
+                            <Ionicons name={game.icon} size={14} color="#fff" />
                         </View>
                     </View>
-                </GlassCard>
+
+                    {/* ── Card Body ── */}
+                    <View style={styles.cardBody}>
+                        <Text style={styles.cardName} numberOfLines={1}>{game.name}</Text>
+                        <Text style={styles.cardDesc} numberOfLines={2}>{game.desc}</Text>
+
+                        <View style={styles.cardFooter}>
+                            <View style={styles.playerBadge}>
+                                <Ionicons name="people-outline" size={11} color={colors.text.muted} />
+                                <Text style={styles.playerText}>{game.players}</Text>
+                            </View>
+
+                            <View style={[styles.playButton, { backgroundColor: game.gradient[0] }]}>
+                                <Text style={styles.playButtonText}>Play</Text>
+                                <Ionicons name="arrow-forward" size={12} color="#fff" />
+                            </View>
+                        </View>
+                    </View>
+                </View>
             </AnimatedPressable>
         </Animated.View>
     );
@@ -1198,43 +1223,47 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
     },
     recentCard: {
-        width: 100,
-        backgroundColor: colors.surface.glass,
+        width: 110,
+        height: 90,
         borderRadius: 14,
-        paddingVertical: spacing.md,
-        paddingHorizontal: spacing.sm,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: colors.border.subtle,
         overflow: 'hidden',
         position: 'relative',
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
     },
-    recentCardBg: {
-        ...StyleSheet.absoluteFillObject,
-        borderRadius: 14,
+    recentCardContent: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: spacing.xs,
+        alignItems: 'center',
+        gap: 4,
     },
     recentIconBg: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
+        width: 28,
+        height: 28,
+        borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: spacing.xs,
     },
     recentCardName: {
-        fontSize: typography.fontSize.xs,
-        fontWeight: '600',
-        color: colors.text.primary,
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#fff',
         textAlign: 'center',
+        textShadowColor: 'rgba(0,0,0,0.5)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 3,
     },
     recentPlayBadge: {
         position: 'absolute',
-        top: spacing.xs,
-        right: spacing.xs,
-        width: 18,
-        height: 18,
-        borderRadius: 9,
-        backgroundColor: colors.gold[500] + '20',
+        top: 6,
+        right: 6,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: 'rgba(0,0,0,0.5)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1578,51 +1607,51 @@ const styles = StyleSheet.create({
         width: CARD_WIDTH,
     },
     gameCard: {
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: colors.surface.glass,
+        borderWidth: 1,
+        borderColor: colors.border.subtle,
+    },
+    artworkWrap: {
+        width: '100%',
+        height: CARD_WIDTH * 0.65,
         position: 'relative',
         overflow: 'hidden',
-        minHeight: 195,
     },
-    cardAccentStrip: {
+    artworkTint: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        height: 3,
-        borderTopLeftRadius: 14,
-        borderTopRightRadius: 14,
+        height: 40,
     },
-    cardCornerGlow: {
+    artworkIconBadge: {
         position: 'absolute',
-        top: -30,
-        right: -30,
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-    },
-    cardIconContainer: {
-        marginBottom: spacing.sm,
-        marginTop: spacing.xs,
-    },
-    iconCircle: {
-        width: 52,
-        height: 52,
-        borderRadius: 16,
+        bottom: 8,
+        left: 8,
+        width: 28,
+        height: 28,
+        borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
     },
+    cardBody: {
+        paddingHorizontal: spacing.sm + 2,
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.sm + 2,
+    },
     cardName: {
-        fontSize: typography.fontSize.lg,
+        fontSize: 14,
         fontWeight: '700',
-        fontFamily: 'Inter-Bold',
         color: colors.text.primary,
-        marginBottom: spacing.xxs,
+        marginBottom: 2,
     },
     cardDesc: {
-        fontSize: typography.fontSize.xs,
+        fontSize: 11,
         color: colors.text.muted,
-        lineHeight: 16,
+        lineHeight: 15,
         marginBottom: spacing.sm,
-        flex: 1,
     },
     cardFooter: {
         flexDirection: 'row',
@@ -1632,24 +1661,24 @@ const styles = StyleSheet.create({
     playerBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 3,
     },
     playerText: {
-        fontSize: typography.fontSize.xs,
+        fontSize: 11,
         color: colors.text.muted,
     },
     playButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.xs + 2,
-        borderRadius: 10,
+        gap: 3,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 8,
     },
     playButtonText: {
-        fontSize: typography.fontSize.sm,
+        fontSize: 12,
         fontWeight: '700',
-        fontFamily: 'Inter-Bold',
+        color: '#fff',
     },
 
     // ---- NEW Badge ----
